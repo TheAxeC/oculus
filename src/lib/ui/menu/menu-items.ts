@@ -32,6 +32,8 @@ export type MenuItem = {
     /** Draw the choice dimmed and let a press do nothing, as a disabled button does (`clickOf`). */
     disabled?: boolean;
     glyph?: string;
+    /** Turn the glyph round and round, for a choice whose action is under way. */
+    turning?: boolean;
     /** A hue name from state/shared/words/tones.ts, drawn as a dot before the label. */
     tone?: string;
     /** Live text drawn at the end of the item; an empty string draws no badge. */

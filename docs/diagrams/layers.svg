@@ -166,7 +166,7 @@
 <g id="node36" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="961.78,-238.32 938.22,-238.32 938.22,-225.84 961.78,-225.84 961.78,-238.32"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="950" y="-229.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1275</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="950" y="-229.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1280</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">
@@ -177,7 +177,7 @@
 <g id="node37" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="871.55,-295.92 852.45,-295.92 852.45,-283.44 871.55,-283.44 871.55,-295.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="862" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">964</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="862" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">969</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">

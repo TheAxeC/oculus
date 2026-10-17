@@ -9,6 +9,8 @@
         title?: string;
         /** A glyph name; a control with one is drawn as its icon, one without as its words. */
         glyph?: string;
+        /** Turn the glyph round and round while the action it started is under way. */
+        turning?: boolean;
         active?: boolean;
         /** Drawn disabled, with `title` saying why; pressing it does nothing. */
         disabled?: boolean;
@@ -164,6 +166,7 @@
                 label={action.label}
                 title={action.title}
                 glyph={action.glyph}
+                turning={action.turning === true}
                 active={action.active}
                 disabled={action.disabled}
                 compact={action.glyph !== undefined}
@@ -185,6 +188,7 @@
                     label: action.label,
                     title: action.title,
                     glyph: action.glyph,
+                    turning: action.turning,
                     active: action.active,
                     disabled: action.disabled
                 }))}

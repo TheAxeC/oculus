@@ -1,7 +1,8 @@
 // Layer 4, test. The clone store: the folder panel a project's clone and a repository's clone ask
 // for (the project's starts at the project's folder, a repository's at the home folder), the
 // request each sends, the panel that opens again when the server holds files back, which controls
-// the store disables while a clone runs, what it says of a refusal, that a cancelled panel sends
+// the store disables while a clone runs, the notice with a moving line it posts from the pick to
+// the answer and takes away at the answer, what it says of a refusal, that a cancelled panel sends
 // nothing, and that a clone that worked hands its folder to the question of what to do with it.
 
 import { describe, expect, it, vi } from 'vitest';
@@ -34,7 +35,8 @@ function setup(
     home = ''
 ) {
     const sent: Sent[] = [];
-    const said: { message: string; tone?: string }[] = [];
+    const said: { message: string; tone?: string; moving?: true }[] = [];
+    const removed: number[] = [];
     const asked: string[] = [];
     const writes = {
         postCommand: async (path: string, body: unknown) => {
@@ -47,17 +49,21 @@ function setup(
     const store = createClone(
         writes,
         {
+            // Each notice is numbered by its place in `said`, and one posted with a moving line is
+            // marked so.
             post: (message, options) => {
                 said.push({
                     message,
-                    ...(options?.tone === undefined ? {} : { tone: options.tone })
+                    ...(options?.tone === undefined ? {} : { tone: options.tone }),
+                    ...(options?.progress?.percent === null ? { moving: true as const } : {})
                 });
-                return 0;
-            }
+                return said.length - 1;
+            },
+            remove: (id) => removed.push(id)
         },
         { home: () => home, after }
     );
-    return { store, sent, said, asked };
+    return { store, sent, said, removed, asked };
 }
 
 const ok = (body: Record<string, unknown>): Posted => ({ ok: true, status: 200, body, failed: '' });
@@ -71,7 +77,7 @@ const picked = (...paths: string[]): Posted => ok({ ok: true, paths });
 
 describe('cloning the repository of a project', () => {
     it('opens the panel at the folder of the project, clones into the pick and asks what to do', async () => {
-        const { store, sent, said, asked } = setup((path) =>
+        const { store, sent, said, removed, asked } = setup((path) =>
             path === PICK ? picked('/work/hub/side-projects/p') : ok({ ok: true })
         );
         expect(await store.cloneProject('p1', 'Tool', '/work/hub/side-projects/p')).toBe(true);
@@ -82,7 +88,11 @@ describe('cloning the repository of a project', () => {
                 body: { action: 'clone', id: 'p1', dir: '/work/hub/side-projects/p' }
             }
         ]);
-        expect(said).toEqual([{ message: 'Cloned Tool' }]);
+        expect(said).toEqual([
+            { message: 'Cloning Tool...', moving: true },
+            { message: 'Cloned Tool' }
+        ]);
+        expect(removed).toEqual([0]);
         expect(asked).toEqual(['/work/hub/side-projects/p']);
     });
 
@@ -97,7 +107,7 @@ describe('cloning the repository of a project', () => {
 
     it('opens the panel again when the server holds files back, naming them, and clones into the next pick', async () => {
         let picks = 0;
-        const { store, sent, said, asked } = setup((path) => {
+        const { store, sent, said, removed, asked } = setup((path) => {
             if (path === PICK) return picked(picks++ === 0 ? '/work/one' : '/work/two');
             return picks === 1
                 ? refused('The folder holds README.md, which the repository tracks.', {
@@ -113,19 +123,26 @@ describe('cloning the repository of a project', () => {
             ['/api/clone', '/work/two']
         ]);
         expect(said).toEqual([
+            { message: 'Cloning Tool...', moving: true },
             { message: 'The folder holds README.md, which the repository tracks.', tone: 'error' },
+            { message: 'Cloning Tool...', moving: true },
             { message: 'Cloned Tool' }
         ]);
+        expect(removed).toEqual([0, 2]);
         expect(asked).toEqual(['/work/two']);
     });
 
     it("says the server's sentence when it refuses for another reason, ends and is free again", async () => {
-        const { store, sent, said, asked } = setup((path) =>
+        const { store, sent, said, removed, asked } = setup((path) =>
             path === PICK ? picked('/work/p') : refused('The remote has no commits.')
         );
         expect(await store.cloneProject('p1', 'Tool', '/work/p')).toBe(false);
         expect(sent.map((one) => one.path)).toEqual([PICK, '/api/clone']);
-        expect(said).toEqual([{ message: 'The remote has no commits.', tone: 'error' }]);
+        expect(said).toEqual([
+            { message: 'Cloning Tool...', moving: true },
+            { message: 'The remote has no commits.', tone: 'error' }
+        ]);
+        expect(removed).toEqual([0]);
         expect(asked).toEqual([]);
         expect(store.cloning('p1')).toBe(false);
     });
@@ -161,7 +178,7 @@ describe('listing the repositories of the account', () => {
 
 describe('cloning a repository of the account', () => {
     it('opens the panel at the home folder, clones into the pick and asks what to do', async () => {
-        const { store, sent, said, asked } = setup(
+        const { store, sent, said, removed, asked } = setup(
             (path) =>
                 path === PICK ? picked('/work/code') : ok({ ok: true, dir: '/work/code/Tool' }),
             '/home/me'
@@ -178,7 +195,11 @@ describe('cloning a repository of the account', () => {
                 }
             }
         ]);
-        expect(said).toEqual([{ message: 'Cloned Tool' }]);
+        expect(said).toEqual([
+            { message: 'Cloning Tool...', moving: true },
+            { message: 'Cloned Tool' }
+        ]);
+        expect(removed).toEqual([0]);
         expect(asked).toEqual(['/work/code/Tool']);
     });
 
@@ -204,13 +225,15 @@ describe('cloning a repository of the account', () => {
     });
 
     it("says git's sentence of a refused clone and asks nothing", async () => {
-        const { store, said, asked } = setup((path) =>
+        const { store, said, removed, asked } = setup((path) =>
             path === PICK
                 ? picked('/work/code')
                 : refused("destination path 'Tool' already exists and is not an empty directory.")
         );
         expect(await store.cloneRepo(REPO)).toBe(false);
+        expect(removed).toEqual([0]);
         expect(said).toEqual([
+            { message: 'Cloning Tool...', moving: true },
             {
                 message: "destination path 'Tool' already exists and is not an empty directory.",
                 tone: 'error'

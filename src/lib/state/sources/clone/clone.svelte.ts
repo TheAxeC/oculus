@@ -11,12 +11,16 @@
 // itself. A repository that tracks a file the chosen folder holds is refused by the server before
 // anything is written, and the panel opens again. A panel the reader cancels sends nothing and ends
 // the clone.
+//
+// From the moment a folder is picked until the server answers, a notice with a moving line says
+// what runs ("Cloning Tool..."); at the answer that notice is taken away and the done line or the
+// refusal is posted. A running notice the reader cleared before the answer is not posted again.
 
 import { z } from 'zod';
 import type { GithubListing, GithubRepo } from '../../../data/model/index.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
-import type { NoticeSink, WritesStore } from '../../shared/stores/shapes.ts';
+import type { NoticeSink, Posted, WritesStore } from '../../shared/stores/shapes.ts';
 import { pickedOf, pickerLine } from '../explorer/acts/folders.ts';
 import type { CloneAfter } from './clone-after.svelte.ts';
 
@@ -70,7 +74,7 @@ export type CloneDeps = {
 
 export function createClone(
     writes: WritesStore,
-    notices: Pick<NoticeSink, 'post'>,
+    notices: Pick<NoticeSink, 'post' | 'remove'>,
     deps: CloneDeps
 ): CloneStore {
     let running = $state<string[]>([]);
@@ -97,6 +101,19 @@ export function createClone(
         return picked.paths.at(0) ?? null;
     }
 
+    /**
+     * Post `words` with a moving line while the clone into the picked folder runs, take the notice
+     * away at the server's answer and hand that answer back.
+     */
+    async function sent(words: string, body: Record<string, unknown>): Promise<Posted> {
+        const notice = notices.post(words, { progress: { percent: null, cancel: null } });
+        try {
+            return await writes.postCommand(CLONE_PATH, body);
+        } finally {
+            notices.remove(notice);
+        }
+    }
+
     async function cloneProject(id: string, title: string, from: string): Promise<boolean> {
         if (running.includes(id)) return false;
         running = [...running, id];
@@ -104,7 +121,11 @@ export function createClone(
             for (;;) {
                 const dir = await pickFolder(from);
                 if (dir === null) return false;
-                const posted = await writes.postCommand(CLONE_PATH, { action: 'clone', id, dir });
+                const posted = await sent(t('app.clone.running', title), {
+                    action: 'clone',
+                    id,
+                    dir
+                });
                 if (posted.ok) {
                     notices.post(t('app.clone.done', title));
                     deps.after.ask(dir);
@@ -128,7 +149,7 @@ export function createClone(
     async function cloneRepo(repo: Pick<GithubRepo, 'name' | 'url'>): Promise<boolean> {
         const parent = await pickFolder(deps.home());
         if (parent === null) return false;
-        const posted = await writes.postCommand(CLONE_PATH, {
+        const posted = await sent(t('app.clone.running', repo.name), {
             action: 'github-clone',
             repo: { name: repo.name, url: repo.url },
             parent

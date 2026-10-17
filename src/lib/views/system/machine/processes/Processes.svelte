@@ -1,14 +1,18 @@
 <script module lang="ts">
     // Layer 3, view registration. The Processes view is the last view of the System page's group,
-    // after Gallery, past the nine a chord reaches.
+    // after Gallery, past the nine a chord reaches. Its badge is how many programs it lists as
+    // running, the rows its table draws and the app hosts above the table that are running or
+    // starting, on its tab and in the catalogue only: it gives the rail nothing.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
     export const registration: ViewRegistration = {
         id: 'processes',
         label: 'views.processes',
         glyph: 'views.processes_glyph',
         group: 'views',
         order: 9,
-        unique: true
+        unique: true,
+        badge: (client) => countText(client.processes.count())
     };
 </script>
 
@@ -57,9 +61,9 @@
 
 <Pane title={t('views.processes')}>
     <div class="processes" data-instance={instance.id}>
-        {#if apps.hosts().length > 0}
+        {#if processes.hosts().length > 0}
             <AppHosts
-                rows={apps.hosts()}
+                rows={processes.hosts()}
                 onstop={(row: AppHostRow) =>
                     (asking = {
                         message: t('processes.host_stop_question', row.title),

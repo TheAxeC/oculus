@@ -208,6 +208,11 @@ export type SelectorsStore = {
     repositories: (which?: 'listed' | 'all') => RepositoryGroup[];
     /** The root that shows the repository a root belongs to, null for a root none of them holds. */
     repositoryRootOf: (root: string) => string | null;
+    /**
+     * Every root of the channel that lies in the repository a root belongs to, that root among
+     * them; the root alone when no repository holds it.
+     */
+    rootsOfRepository: (root: string) => readonly string[];
     touchers: (path: string, exclude?: string | null) => GroupedSession[];
     sessionsForProject: (folder: string) => GroupedSession[];
 };
@@ -643,6 +648,10 @@ export function createSelectors(
         return shownFor(repositoriesNow, root);
     }
 
+    function rootsOfRepository(root: string): readonly string[] {
+        return repositoriesEvery.find((group) => group.roots.includes(root))?.roots ?? [root];
+    }
+
     /**
      * The live sessions holding one path open, other than the one asking. It is what the "also
      * open" mark on a touched file names: two agents editing one file is the thing worth seeing at
@@ -718,6 +727,7 @@ export function createSelectors(
         gitRoots,
         repositories,
         repositoryRootOf,
+        rootsOfRepository,
         touchers,
         sessionsForProject
     };

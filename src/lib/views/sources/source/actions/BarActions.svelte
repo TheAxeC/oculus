@@ -10,7 +10,8 @@
     //   Open Preview               a Markdown file shown as source, the file's preview tab in
     //                              this pane
     //   Open Preview to the Side   the same preview tab, in a new pane to the right
-    //   Submit Job                 a .slurm file on disk under a served root; disabled while a
+    //   Submit Job                 a .slurm file on disk under a served root; disabled, its
+    //                              glyph turning and its hover words saying what runs, while a
     //                              Submit of the tab is planning or running
     //   Toggle Blame               a file in a repository, including its version at HEAD and in
     //                              the index
@@ -43,8 +44,11 @@
         blameable: boolean;
         /** Whether the file is a .slurm job script on disk under a served root. */
         submittable: boolean;
-        /** Whether a Submit of the tab is planning or running. */
-        submitting: boolean;
+        /**
+         * What a Submit of the tab runs now, planning or running, as words; the empty string while
+         * nothing runs.
+         */
+        submitting: string;
         /** The LaTeX side of the tab, whose controls lead the bar for a LaTeX file. */
         latex: LatexTab;
         /** Save, which the tab performs since an untitled text asks for a name first. */
@@ -134,7 +138,9 @@
             bare
             label={t('source.submit')}
             glyph="submit_job"
-            waiting={submitting}
+            title={submitting === '' ? undefined : submitting}
+            turning={submitting !== ''}
+            waiting={submitting !== ''}
             onclick={onsubmit}
         />
     {/if}

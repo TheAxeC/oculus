@@ -82,7 +82,9 @@
                 {#if group === 'changed'}
                     <ToolButton
                         label={t('repositories.folder_discard_title')}
-                        title={busy ? t('git.busy') : t('repositories.folder_discard_title')}
+                        title={busy
+                            ? repositories.busyWords(root)
+                            : t('repositories.folder_discard_title')}
                         glyph="note_back"
                         compact
                         tabindex={reach}
@@ -93,7 +95,9 @@
                 {#if group === 'staged'}
                     <ToolButton
                         label={t('repositories.folder_unstage_title')}
-                        title={busy ? t('git.busy') : t('repositories.folder_unstage_title')}
+                        title={busy
+                            ? repositories.busyWords(root)
+                            : t('repositories.folder_unstage_title')}
                         glyph="unstage"
                         compact
                         tabindex={reach}
@@ -103,7 +107,9 @@
                 {:else}
                     <ToolButton
                         label={t('repositories.folder_stage_title')}
-                        title={busy ? t('git.busy') : t('repositories.folder_stage_title')}
+                        title={busy
+                            ? repositories.busyWords(root)
+                            : t('repositories.folder_stage_title')}
                         glyph="stage"
                         compact
                         tabindex={reach}

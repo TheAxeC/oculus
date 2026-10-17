@@ -2,7 +2,7 @@
     // Layer 3, view registration. Problems is the last of the eight views of the Explorer page's
     // group (orders 0, 1, 2, 3, 5, 6 and 7 are Files, Repositories, Search, References, LaTeX, the
     // debug view and the debug console), so it is reached by the chord `s8`, and its badge is the
-    // number of problems the page holds.
+    // number of problems the page holds, which it also gives its rail button.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'problems',
@@ -11,7 +11,8 @@
         group: 'explorer',
         order: 8,
         badge: (client) => client.railBadges.problemsBadge(),
-        badgeTitle: (client) => client.railBadges.problemsBadgeTitle()
+        badgeTitle: (client) => client.railBadges.problemsBadgeTitle(),
+        railPart: (client) => ({ count: client.railBadges.problemsCount() })
     };
 </script>
 

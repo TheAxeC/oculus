@@ -1,11 +1,13 @@
 // Layer 3, shell. What the activity rail is made of apart from its markup: the fades of its
-// scrolled list, where an arrow key takes its stop, the one badge a page button draws, a page
-// button's right-click menu, and the `rail:` list a drag or a Hide on a page button writes. Apart
-// from the components so each can be read without a rendering.
+// scrolled list, where an arrow key takes its stop, the one badge a page button draws (the sum of
+// the parts its page's views give it, with their hover words and the most urgent of their tones),
+// a page button's right-click menu, and the `rail:` list a drag or a Hide on a page button writes.
+// Apart from the components so each can be read without a rendering.
 
 import { nextStop } from '$lib/ui/tree/roving';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import type { RailEntry } from '$lib/state/workbench/navigation/rail';
+import type { Registration, RegistrationBadge } from '$lib/state/workbench/navigation/registry';
 import { t } from '$lib/state/shared/words/text';
 
 /**
@@ -61,12 +63,62 @@ export function railMenu(made: boolean): MenuItem[] {
 }
 
 /**
- * The one badge a page button draws: the first of its page's badges, which are in the order of the
- * page's tabs, or of its arrangement before the page is made. The page's other counts stay on
- * their tabs. None for a page whose views count nothing.
+ * One view of a rail page as its button reads it: its name as drawn, the part it gives the rail
+ * (null for a view that gives none) and the badge its tab draws.
  */
-export function firstBadge<Badge>(badges: readonly Badge[]): Badge | null {
-    return badges.at(0) ?? null;
+export type RailView = {
+    label: string;
+    part: ReturnType<NonNullable<Registration['railPart']>> | null;
+    badge: Pick<RegistrationBadge, 'text' | 'glyph' | 'tone' | 'title'>;
+};
+
+/** The badge a page button draws: its words, the glyph of a mark, its tone and its hover words. */
+export type RailBadge = { text: string; glyph: string; tone?: string; title: string };
+
+/**
+ * The tones that say a count means "act", most urgent first (`nav_live`'s comment in
+ * config/layout.yml); any other tone ranks after them.
+ */
+const URGENT_TONES: readonly string[] = ['red', 'amber', 'green'];
+
+/** The most urgent of the tones by URGENT_TONES, else the first of them; none for no tone. */
+function urgentTone(tones: readonly (string | undefined)[]): string | undefined {
+    const toned = tones.filter((tone): tone is string => tone !== undefined && tone !== '');
+    return URGENT_TONES.find((tone) => toned.includes(tone)) ?? toned.at(0);
+}
+
+/**
+ * The one badge a page button draws, from the views of its page in the order of its tabs, or of
+ * its arrangement before the page is made, each view once: the sum of the parts the views give the
+ * rail, its hover words each part above zero as the view's name and its count, and the most urgent
+ * tone among those parts. A sum of 0 draws no number; then the first view whose badge is a mark and
+ * no count gives its mark, with its own hover words and tone. None for a page with neither. The
+ * tabs keep their own counts, and a view that gives the rail no part adds nothing to the sum.
+ */
+export function railBadge(views: readonly RailView[]): RailBadge | null {
+    const counted = views.flatMap((view) =>
+        view.part !== null && view.part.count > 0 ? [{ label: view.label, part: view.part }] : []
+    );
+    const sum = counted.reduce((total, one) => total + one.part.count, 0);
+    if (sum > 0) {
+        const tone = urgentTone(counted.map((one) => one.part.tone));
+        return {
+            text: String(sum),
+            glyph: '',
+            ...(tone === undefined ? {} : { tone }),
+            title: counted
+                .map((one) => t('views.badge_title', one.label, one.part.count))
+                .join(t('ui.page_badge_separator'))
+        };
+    }
+    const mark = views.find((view) => view.badge.text === '' && view.badge.glyph !== '')?.badge;
+    if (mark === undefined) return null;
+    return {
+        text: '',
+        glyph: mark.glyph,
+        ...(mark.tone === undefined ? {} : { tone: mark.tone }),
+        title: mark.title
+    };
 }
 
 /**

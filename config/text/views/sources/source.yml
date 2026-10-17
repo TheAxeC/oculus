@@ -211,6 +211,7 @@ text:
         submit_not_slurm: This is not a .slurm file on disk.
         submit_outside: This script is outside the folders oculus serves.
         submit_outside_code: This job script is not inside the code folder of its project.
+        submit_planning: Preparing the job...
         submit_running: Copying the code and submitting the job...
         submit_submit_failed: 'sbatch failed: {0}'
         submit_unconfirmed: The question was not answered, so nothing was run.

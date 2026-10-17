@@ -7,7 +7,10 @@
 //
 // One flow runs at a time: the press does nothing while one is planning or running, and the control
 // waits meanwhile (drawn disabled and kept focusable, ToolButton's `waiting`), so the keyboard is
-// on it again when the confirm closes or a refusal is said. The confirm is an Ask drawn by
+// on it again when the confirm closes or a refusal is said. The flow says which of the two runs, as
+// the words the control's turning glyph carries: "Preparing the job..." from the press to the
+// confirm or the refusal, and "Copying the code and submitting the job..." from the yes to the
+// outcome; while the confirm is open nothing runs. The confirm is an Ask drawn by
 // views/shared/writes/AskConfirm.svelte in the tab. The server computes the plan again at the press
 // of the yes and refuses a plan that differs, so the page never decides what runs.
 
@@ -38,8 +41,11 @@ export type SubmitJobDeps = {
 
 /** The flow of one tab. */
 export type SubmitJob = {
-    /** Whether a press is planning or running, while which the control waits. */
-    readonly busy: boolean;
+    /**
+     * What runs now, as the words the control says while it waits: the planning of a press, or
+     * the run after a yes; the empty string while nothing runs.
+     */
+    readonly running: string;
     /** The confirm held, or null while none is. */
     readonly asking: Ask | null;
     /** Whether the tab is a .slurm job script on disk under a served root, which Submit acts on. */
@@ -84,13 +90,13 @@ function confirmFor(plan: SubmitPlan, run: () => void): Ask {
 
 /** Create the flow of one tab. */
 export function createSubmitJob(deps: SubmitJobDeps): SubmitJob {
-    let busy = $state(false);
+    let running = $state('');
     let asking: Ask | null = $state(null);
 
     /** The yes: send the plan back, say what happened, and show the job in Live HPC. */
     async function run(plan: SubmitPlan): Promise<void> {
-        busy = true;
-        deps.said(t('source.submit_running'), 'status');
+        running = t('source.submit_running');
+        deps.said(running, 'status');
         try {
             const done = await deps.hpc.submitJob(plan);
             if ('refused' in done) {
@@ -100,13 +106,13 @@ export function createSubmitJob(deps: SubmitJobDeps): SubmitJob {
             deps.said(t('source.submit_done', done.job), 'status');
             deps.openView('hpc');
         } finally {
-            busy = false;
+            running = '';
         }
     }
 
     async function press(): Promise<void> {
-        if (busy) return;
-        busy = true;
+        if (running !== '') return;
+        running = t('source.submit_planning');
         try {
             if (deps.unsaved()) {
                 await deps.save();
@@ -120,13 +126,13 @@ export function createSubmitJob(deps: SubmitJobDeps): SubmitJob {
             }
             asking = confirmFor(planned.plan, () => void run(planned.plan));
         } finally {
-            busy = false;
+            running = '';
         }
     }
 
     return {
-        get busy() {
-            return busy;
+        get running() {
+            return running;
         },
         get asking() {
             return asking;

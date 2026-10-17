@@ -87,7 +87,7 @@
 
     /** Why a commit made this way cannot be made now, or the empty string when it can. */
     function blocked(how: CommitHow): string {
-        if (busy) return t('git.busy');
+        if (busy) return repositories.busyWords(root);
         if (unmerged === 1) return t('git.commit_unmerged_one');
         if (unmerged > 1) return t('git.commit_unmerged', unmerged);
         if ((how === 'push' || how === 'sync') && !tracked) return t('git.push_none');
@@ -195,7 +195,7 @@
         {#if action === 'sync'}
             <ToolButton
                 label={t('repositories.sync_changes')}
-                title={busy ? t('git.busy') : undefined}
+                title={busy ? repositories.busyWords(root) : undefined}
                 glyph="sync"
                 primary
                 disabled={busy}
@@ -212,7 +212,7 @@
         {:else if action === 'publish'}
             <ToolButton
                 label={t('repositories.publish')}
-                title={busy ? t('git.busy') : undefined}
+                title={busy ? repositories.busyWords(root) : undefined}
                 glyph="publish"
                 primary
                 disabled={busy}

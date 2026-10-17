@@ -35,6 +35,7 @@ text:
         icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
+        page_badge_separator: ', '
         page_badge_tip: '{0} ({1})'
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}

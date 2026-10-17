@@ -15,10 +15,13 @@
     // on a heading, Replace and Replace All only while the replace row is shown and none while a
     // replace is in flight. A heading and a hit are each one line of the tree's row height with the
     // words at the workbench size; a failed run is the message box with a control that runs the
-    // same query again.
+    // same query again. While a run is under way a moving line is drawn across the top, named
+    // Searching, above the sentence that says so; under the system's reduce-motion setting it is
+    // drawn still.
 
     import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -128,6 +131,9 @@
 {/snippet}
 
 {#if running}
+    <div class="running">
+        <Progress percent={null} label={t('search.running')} />
+    </div>
     <Empty message={t('search.running')} glyph={t('search.empty_glyph')} />
 {:else if error !== ''}
     <Empty error message={error} action={again} />
@@ -272,6 +278,10 @@
 {/if}
 
 <style>
+    .running {
+        display: flex;
+    }
+
     .count {
         margin: 0 0 6px;
         color: var(--muted-txt, var(--muted));

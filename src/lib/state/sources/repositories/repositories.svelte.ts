@@ -3,8 +3,10 @@
 // with, and the panes a diff, a conflicted file, a file and a commit open in.
 //
 // It is a store rather than handlers inside the components because what a press leaves behind is
-// state a reader sees: which roots have a write in flight, what the last one on each answered, and
-// the message typed for each. The Repositories view, the sessions Changes panel and the status bar
+// state a reader sees: which roots have a write in flight and which action it is, what the last one
+// on each answered, and the message typed for each. The action in flight is the page's own: a page
+// reloaded holds none, and a tab closed while one runs leaves it to every other place that shows
+// the root until its answer. The Repositories view, the sessions Changes panel and the status bar
 // all press through it, so a commit made from one is the commit the others show, and the message
 // typed in one commit box is the message the other shows for the same repository. A write is
 // refused only on the root it is over, so a commit in one repository leaves the controls of every
@@ -48,9 +50,43 @@ export type WorktreeStart = 'shell' | 'claude' | 'codex';
 /** What a Delete Branch came to: deleted, kept as git calls it not fully merged, or refused. */
 export type BranchDeletion = 'deleted' | 'not-merged' | 'refused';
 
+/** An action in flight that says what it does, and the words it says while it runs. */
+export type RunningAction = { action: string; words: string };
+
+/**
+ * The words an action says while it runs, by the name the page sends it under: the ones a reader
+ * waits on for long enough to ask what is happening. Every other action says Working.
+ */
+const RUNNING_WORDS: Record<string, () => string> = {
+    commit: () => t('git.running_commit'),
+    push: () => t('git.running_push'),
+    pull: () => t('git.running_pull'),
+    fetch: () => t('git.running_fetch'),
+    sync: () => t('git.running_sync'),
+    publish: () => t('git.running_publish'),
+    switchBranch: () => t('git.running_checkout'),
+    checkoutDetached: () => t('git.running_checkout'),
+    merge: () => t('git.running_merge'),
+    stash: () => t('git.running_stash'),
+    stashApply: () => t('git.running_stash_apply'),
+    stashPop: () => t('git.running_stash_pop'),
+    stashDrop: () => t('git.running_stash_drop')
+};
+
 export type RepositoriesStore = {
     /** Whether a write is in flight on this root. */
     busy: (root: string) => boolean;
+    /**
+     * The action in flight on the first of these roots whose action says words of its own, with
+     * those words; null when none of them runs one. A view hands the roots of its repository, so
+     * an action started through another root of the same repository is seen.
+     */
+    running: (roots: readonly string[]) => RunningAction | null;
+    /**
+     * What a control over this root says while a write runs on it: the words of the action in
+     * flight, or Working for an action that says none.
+     */
+    busyWords: (root: string) => string;
     /** What the last write on this root answered, or the empty string. */
     outcome: (root: string) => string;
     /** Clear what the last write on this root answered. */
@@ -219,14 +255,24 @@ export function createRepositories(
     access: OpenAccess
 ): RepositoriesStore {
     const state: {
-        busy: string[];
+        /** The name of the action in flight on each root that has one. */
+        acting: Record<string, string>;
         outcomes: Record<string, string>;
         messages: Record<string, string>;
         suggesting: string[];
-    } = $state({ busy: [], outcomes: {}, messages: {}, suggesting: [] });
+    } = $state({ acting: {}, outcomes: {}, messages: {}, suggesting: [] });
 
     function busy(root: string): boolean {
-        return state.busy.includes(root);
+        return Object.hasOwn(state.acting, root);
+    }
+
+    function running(roots: readonly string[]): RunningAction | null {
+        for (const root of roots) {
+            const action = busy(root) ? state.acting[root] : undefined;
+            const words = action === undefined ? undefined : RUNNING_WORDS[action];
+            if (action !== undefined && words !== undefined) return { action, words: words() };
+        }
+        return null;
     }
 
     function outcome(root: string): string {
@@ -254,7 +300,7 @@ export function createRepositories(
         options: SendOptions = {}
     ): Promise<{ ok: boolean; output: string; error: string; code?: string }> {
         if (root === '' || busy(root)) return { ok: false, output: '', error: '' };
-        state.busy = [...state.busy, root];
+        state.acting = { ...state.acting, [root]: action };
         say(root, '');
         try {
             const answer = await writes.writeGit(
@@ -274,7 +320,9 @@ export function createRepositories(
                 code: answer.code
             };
         } finally {
-            state.busy = state.busy.filter((one) => one !== root);
+            state.acting = Object.fromEntries(
+                Object.entries(state.acting).filter(([one]) => one !== root)
+            );
         }
     }
 
@@ -417,6 +465,8 @@ export function createRepositories(
 
     return {
         busy,
+        running,
+        busyWords: (root) => running([root])?.words ?? t('git.busy'),
         outcome,
         clearOutcome: (root) => say(root, ''),
         cancel,

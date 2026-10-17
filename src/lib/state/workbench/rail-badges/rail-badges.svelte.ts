@@ -1,6 +1,10 @@
 // Layer 2, client state. Reactive view badges over the latest portfolio and socket feed payload,
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
+//
+// Beside the words a tab draws, the store answers the counts themselves, as numbers: the parts the
+// views give their rail button (a registration's `railPart`, which the rail sums), read from the
+// same state the tab reads, so a tab and the rail never count one thing two ways.
 
 import { scalar, isMap, numericSetting } from '../../../data/helpers/guards.ts';
 import type { EntitiesStore } from '../../shared/stores/shapes.ts';
@@ -11,6 +15,8 @@ import type { CalendarStore } from '../../life/calendar.svelte.ts';
 import type { HpcStore } from '../../system/machine/hpc/hpc.svelte.ts';
 import type { InboxStore } from '../../feeds/inbox.svelte.ts';
 import { splitPosts } from '../../feeds/linkedin.ts';
+import { needsInput, sessionRows } from '../../sessions/folds.ts';
+import { findingsCount as listedFindings } from '../navigation/status.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusTone, toneOf, UNKNOWN_TONE } from '../../shared/words/tones.ts';
 import {
@@ -27,6 +33,21 @@ import type { Collection, GitState } from '../../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
+
+/**
+ * What one view gives its rail button: a count and the tone its tab's badge has, a hue name from
+ * state/shared/words/tones.ts: an urgency tone (red, amber, green) where the view or `nav_live`'s
+ * `tone:` sets one, else the hue of the statuses or the cell it counts, as the Funding count's
+ * violet, or none.
+ */
+export type RailPart = { count: number; tone?: string };
+
+/**
+ * The cell of a board's tab whose count the board gives its rail button: for the Projects board,
+ * whose cells are its types, the cell of a type key of `tab_split`; for a board split by
+ * `tab_rollup`, the cell at a bucket's place in the board's list, counted from 0.
+ */
+export type RailCell = { type: string } | { bucket: number };
 
 /** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
@@ -51,6 +72,18 @@ function cellsTitle(cells: BadgeCell[]): string {
 /** The reactive view badges of one client. */
 export type RailBadgesStore = {
     boardBadge: (view: string) => string;
+    /** The count of one cell of a board's tab, found by `RailCell`, with the cell's tone. */
+    boardPart: (view: string, cell: RailCell) => RailPart;
+    collectionCount: (key: string) => number;
+    inboxCount: () => number;
+    applicationsCount: () => number;
+    auditCount: () => number;
+    problemsCount: () => number;
+    repositoriesCount: () => number;
+    /** The findings the Findings view lists. */
+    findingsCount: () => number;
+    /** The sessions the Session list draws as needing input, an archived one left out. */
+    sessionInputCount: () => number;
     collectionBadge: (key: string) => string;
     collectionBadgeTone: (key: string) => string;
     collectionBadgeTitle: (key: string) => string;
@@ -102,12 +135,26 @@ export function createRailBadges(
         return String(selectors.board(selectors.boardPreset(view)).length);
     }
 
+    /**
+     * The count of the cell of a board's tab that `cell` names, 0 when the tab draws none: the
+     * cell at the bucket's place for a rollup board, the cell whose label is the type key for the
+     * Projects board, whose cells are labelled by their types.
+     */
+    function boardPart(view: string, cell: RailCell): RailPart {
+        const cells = boardCells(view);
+        const found =
+            'bucket' in cell ? cells.at(cell.bucket) : cells.find((one) => one.label === cell.type);
+        return found === undefined ? { count: 0 } : { count: found.count, tone: found.color };
+    }
+
     /** The number of entries in one collection's configured `nav_live` status set. */
-    function collectionBadge(key: string): string {
+    function collectionCount(key: string): number {
         const collection = selectors.collectionOf(key);
-        return countText(
-            liveEntries(collection?.entries ?? [], liveRule(selectors.configMap(), key))
-        );
+        return liveEntries(collection?.entries ?? [], liveRule(selectors.configMap(), key));
+    }
+
+    function collectionBadge(key: string): string {
+        return countText(collectionCount(key));
     }
 
     /** The configured urgency tone, or the first counted status's vocabulary tone. */
@@ -128,6 +175,27 @@ export function createRailBadges(
     /** Threads of the live plate awaiting an answer or an action, from the `inbox` channel. */
     function inboxBadge(): string {
         return countText(inbox.actionable());
+    }
+
+    /**
+     * The findings the Findings view lists, the one count of those rows the status bar's item reads
+     * too: the snapshot's, the config channel's and the apps channel's.
+     */
+    function findingsCount(): number {
+        return listedFindings(entities.portfolio(), entities.config(), entities.apps());
+    }
+
+    /**
+     * The sessions of the Session list in its "needs input" state, which the list draws for a live
+     * session whose latest hook is a notification; an archived session is drawn as archived and
+     * left out. The archived mark is the channel's: between an Archive press and the channel's
+     * answer the list draws the press while this count reads the channel, and once the channel
+     * gives the row the mark the list and the count agree.
+     */
+    function sessionInputCount(): number {
+        const rows = sessionRows(entities.sessions()?.workspaces ?? []);
+        return new Set(rows.filter((row) => needsInput(row) && !row.hidden).map((row) => row.id))
+            .size;
     }
 
     /**
@@ -166,12 +234,11 @@ export function createRailBadges(
     }
 
     /** Active applications, which are urgent rather than a general `nav_live` rollup. */
-    function applicationsBadge(): string {
+    function applicationsCount(): number {
         const entries = selectors.collectionOf('applications')?.entries ?? [];
-        return countText(
-            entries.filter((entry) => scalar(entry.fields.status).trim().toLowerCase() === 'active')
-                .length
-        );
+        return entries.filter(
+            (entry) => scalar(entry.fields.status).trim().toLowerCase() === 'active'
+        ).length;
     }
 
     /** Audit findings the reader has not parked, which is what the Audit view opens on. */
@@ -201,14 +268,14 @@ export function createRailBadges(
      * nothing, and a repository a Repositories tab closed still counts, since the closed list is
      * that tab's own. The counts the apps' source controls give are added.
      */
-    function repositoriesBadge(): string {
+    function repositoriesCount(): number {
         let total = selectors.appSourceCount();
         for (const { shown } of selectors.repositories()) {
             const held = selectors.gitFor(shown);
             if (!held?.repository) continue;
             total += held.held.merge + held.held.staged + held.held.changes + held.held.untracked;
         }
-        return countText(total);
+        return total;
     }
 
     /** The types the Projects board's projects hold, in the vocabulary's configured type order. */
@@ -280,17 +347,26 @@ export function createRailBadges(
 
     return {
         boardBadge,
+        boardPart,
+        collectionCount,
+        inboxCount: () => inbox.actionable(),
+        applicationsCount,
+        auditCount: () => audit.openCount(),
+        problemsCount,
+        repositoriesCount,
+        findingsCount,
+        sessionInputCount,
         collectionBadge,
         collectionBadgeTone,
         collectionBadgeTitle,
         inboxBadge,
         leadsBadge,
         linkedinBadgeGlyph,
-        applicationsBadge,
+        applicationsBadge: () => countText(applicationsCount()),
         auditBadge,
         problemsBadge,
         problemsBadgeTitle,
-        repositoriesBadge,
+        repositoriesBadge: () => countText(repositoriesCount()),
         boardCells,
         queueCells,
         calendarCells,

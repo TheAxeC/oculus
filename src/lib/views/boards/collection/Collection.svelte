@@ -2,9 +2,11 @@
     // Layer 3, view registration. The generic collection component registers each configured
     // collection at its place in the catalogue, which is the rail page it sits on
     // (state/workbench/layout/tabs/left-out.ts `COLLECTION_PLACES`), and a collection sources.yml
-    // or a hub adds that no placement names in the Registries group after them.
+    // or a hub adds that no placement names in the Registries group after them. What a collection
+    // gives its rail button is rail-part.ts's.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import { COLLECTION_PLACES } from '$lib/state/workbench/layout/tabs/left-out';
+    import { collectionRailPart } from './rail-part';
 
     export const registration = (keys: string[]): ViewRegistration[] =>
         keys.map((id, index) => {
@@ -23,7 +25,8 @@
                     : (client) => client.railBadges.collectionBadgeTone(id),
                 badgeTitle: applications
                     ? undefined
-                    : (client) => client.railBadges.collectionBadgeTitle(id)
+                    : (client) => client.railBadges.collectionBadgeTitle(id),
+                ...collectionRailPart(id)
             };
         });
 </script>

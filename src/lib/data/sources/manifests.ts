@@ -21,7 +21,7 @@ import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { isMap } from '../helpers/guards.ts';
 import type { Finding, RawManifest, RepositoryRoot, ScanRule } from '../model/index.ts';
 import { HUB_FILE, MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-names.ts';
-import { originOf, sameAddress } from './origin.ts';
+import { gitFolderOf, originOf, repositoryStandIns, sameAddress } from './origin.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
 /** The folder of a project that holds its code, which is what the deposit mirrors. */
@@ -282,11 +282,14 @@ function urlOf(data: Record<string, unknown> | null): string | null {
 }
 
 /**
- * The projects among the folders found, in the order found: a folder whose repository's `origin` is
- * the `repository.url` of another folder found is that project's clone and is left out, with its
- * findings. Two folders that are clones of each other's address are two clones of one repository,
- * and the one found first stays. Each project that stays is claimed under its id and made a record;
- * an id an earlier project holds is a finding and the project is not read.
+ * The projects among the folders found, in the order found. Folders that share one git folder, a
+ * main checkout and its linked worktrees, are one repository and one project, read from the main
+ * checkout when it was found and otherwise from the first of them; the others are left out, with
+ * their findings (`repositoryStandIns` of origin.ts). A folder whose repository's `origin` is the
+ * `repository.url` of a folder of another repository is that project's clone and is left out, with
+ * its findings. Two folders that are clones of each other's address are two clones of one
+ * repository, and the one found first stays. Each project that stays is claimed under its id and
+ * made a record; an id an earlier project holds is a finding and the project is not read.
  */
 function settle(
     found: Found[],
@@ -296,11 +299,13 @@ function settle(
 ): RawManifest[] {
     const urls = found.map((one) => urlOf(one.data));
     const origins = found.map((one) => originOf(one.dir));
+    const standIns = repositoryStandIns(found.map((one) => gitFolderOf(one.dir)));
     const cloneOf = (at: number): boolean => {
         const origin = origins[at];
         if (origin === null) return false;
         return urls.some((url, other) => {
-            if (other === at || url === null || !sameAddress(url, origin)) return false;
+            if (standIns[other] === standIns[at]) return false;
+            if (url === null || !sameAddress(url, origin)) return false;
             const own = urls[at];
             const mutual =
                 own !== null && origins[other] !== null && sameAddress(own, origins[other]);
@@ -309,7 +314,7 @@ function settle(
     };
     const manifests: RawManifest[] = [];
     found.forEach((one, at) => {
-        if (cloneOf(at)) return;
+        if (standIns[at] !== at || cloneOf(at)) return;
         findings.push(...one.findings);
         if (one.data === null || !claim(one.id, one.file)) return;
         const place = { file: one.file, folder: one.folder, id: one.id, dir: one.dir };

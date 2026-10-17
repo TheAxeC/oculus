@@ -1,8 +1,10 @@
 <script lang="ts">
     // Layer 3, shell. The rail's page buttons, drawn as the items of VS Code's activity bar: an
     // icon each, its page's name and digit as the tooltip, the page on screen marked by the accent
-    // bar, and one badge inside the button over the icon's lower right corner, the count of the
-    // first view of the page that counts anything. The page's other counts stay on their tabs.
+    // bar, and one badge inside the button over the icon's lower right corner: the sum of the
+    // parts the page's views give the rail (a registration's `railPart`), in the most urgent of
+    // their tones, with each part above zero named in the tooltip (rail.ts, `railBadge`); with no
+    // count, the mark of the first view whose badge is a mark. The tabs keep their own counts.
     //
     // A button dragged along the rail and let go elsewhere on it moves its page there, with a line
     // between two buttons saying where it would land, and its right-click menu offers Hide, Reset
@@ -17,11 +19,11 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { firstBadge, railInsertAt, railMenu } from '$lib/shell/rail/rail';
+    import { railBadge, railInsertAt, railMenu, type RailBadge } from '$lib/shell/rail/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import type { RailPage } from '$lib/state/workbench/navigation/rail';
-    import { badgeOf, type RegistrationBadge } from '$lib/state/workbench/navigation/registry';
+    import { badgeOf, registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -52,24 +54,36 @@
     const shown = $derived(currentPage().rail);
 
     /**
-     * The badge one page button draws: the first of those of the views its page holds, in the
-     * order of the page's tabs, leaving out a view whose badge is empty.
+     * The badge one page button draws, from the views its page holds in the order of the page's
+     * tabs: each one's name, the part it gives the rail and its tab's badge.
      */
-    function badgeFor(entry: RailPage): RegistrationBadge | null {
-        const badges = railPageViews(allPages(), entry.page, entry.node).flatMap((id) => {
+    function badgeFor(entry: RailPage): RailBadge | null {
+        const views = railPageViews(allPages(), entry.page, entry.node).flatMap((id) => {
             const found = viewFor(id);
             if (found === undefined) return [];
-            const badge = badgeOf(found, client);
-            return badge.text === '' && badge.glyph === '' ? [] : [badge];
+            return [
+                {
+                    label: registrationLabel(found),
+                    part: found.railPart?.(client) ?? null,
+                    badge: badgeOf(found, client)
+                }
+            ];
         });
-        return firstBadge(badges);
+        return railBadge(views);
+    }
+
+    /** The theme token pair a toned badge is drawn from; nothing for one that takes the accent. */
+    function badgeStyle(tone: string | undefined): string | undefined {
+        return tone === undefined
+            ? undefined
+            : `--rail-badge-bg: var(--c-${tone}); --rail-badge-fg: var(--on-c-${tone})`;
     }
 
     /**
      * The hover words of one page button: its name, the digit that reaches it for the first nine,
      * and what its badge counts.
      */
-    function tip(entry: RailPage, index: number, badge: RegistrationBadge | null): string {
+    function tip(entry: RailPage, index: number, badge: RailBadge | null): string {
         const name =
             index < SHORTCUTS ? t('ui.page_shortcut', entry.label, index + 1) : entry.label;
         return badge === null ? name : t('ui.page_badge_tip', name, badge.title);
@@ -202,7 +216,12 @@
                     onclick={(event: MouseEvent) => show(entry, event)}
                 />
                 {#if badge !== null}
-                    <span class="badge" aria-hidden="true" data-rail-badge>
+                    <span
+                        class="badge"
+                        style={badgeStyle(badge.tone)}
+                        aria-hidden="true"
+                        data-rail-badge
+                    >
                         {#if badge.glyph !== ''}
                             <Glyph name={badge.glyph} />
                         {/if}
@@ -237,11 +256,10 @@
 
     /* VS Code's activity badge: a 16 px pill of 9 px bold text in the UI face, its right edge 8 px
        in from the item's and its top at the item's middle, so it sits over the icon's lower right
-       corner inside the item's box. Every badge is one colour, the accent with its black or white,
-       as VS Code draws every activity badge in one; a view's tone stays on its tab and in the
-       catalogue. It grows leftward with its text and is cut before it would leave the box. It takes
-       no pointer, so the button under it is pressed through it, and the button's tooltip carries
-       what it counts. */
+       corner inside the item's box. A badge with a tone is drawn in that tone's pair, the tokens a
+       tab's badge uses, and one without in the accent with its black or white. It grows leftward
+       with its text and is cut before it would leave the box. It takes no pointer, so the button
+       under it is pressed through it, and the button's tooltip carries what it counts. */
     .badge {
         position: absolute;
         display: flex;
@@ -257,8 +275,8 @@
         padding: 0 4px;
         overflow: hidden;
         border-radius: var(--radius-pill);
-        background: var(--accent);
-        color: var(--on-accent);
+        background: var(--rail-badge-bg, var(--accent));
+        color: var(--rail-badge-fg, var(--on-accent));
         font-family: var(--font-ui);
         font-size: var(--rail-badge-text);
         font-weight: 600;

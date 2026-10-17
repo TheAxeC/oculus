@@ -11,9 +11,12 @@
     // repositoryKeyRows() lists, Right and Left opening and closing a head or a group. In the
     // view's tree mode the change groups and the files of the open commit draw folders, and the key
     // rows list them. A write in flight (with its Cancel) and what the last write answered are said
-    // on one message line laid over the foot of the pane, which takes no room of its own, so no row
-    // moves under the pointer when it shows or clears; its close control clears the answer, and
-    // the next write replaces it.
+    // on one message line laid over the foot of the pane (repo/RepoMessage.svelte). While an action
+    // that says words of its own runs on any root of the repository (a commit, a push, a checkout:
+    // the store's `running`), a moving line is laid across the top of the section, under the
+    // repository's row, with those words as its name and its hover words; it takes no room either,
+    // so no row moves when it shows or clears, and under the system's reduce-motion setting it is
+    // drawn still.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -35,15 +38,17 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
-    import Branches from './refs/Branches.svelte';
-    import Changes from './changes/Changes.svelte';
-    import Graph from './graph/Graph.svelte';
-    import Stashes from './refs/Stashes.svelte';
-    import Tags from './refs/Tags.svelte';
-    import Worktrees from './refs/Worktrees.svelte';
+    import Branches from '../refs/Branches.svelte';
+    import Changes from '../changes/Changes.svelte';
+    import Graph from '../graph/Graph.svelte';
+    import Stashes from '../refs/Stashes.svelte';
+    import Tags from '../refs/Tags.svelte';
+    import Worktrees from '../refs/Worktrees.svelte';
     import CommandBar from '$lib/views/shared/sessions/CommandBar.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
+    import RepoMessage from './RepoMessage.svelte';
     import {
         drawnChanges,
         everything,
@@ -52,7 +57,7 @@
         pressed,
         refOf,
         type Pick
-    } from './changes/picking';
+    } from '../changes/picking';
     import { filesKeymap } from '$lib/state/sources/explorer/acts/keys';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
@@ -62,7 +67,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import { useState } from '$lib/state/client/use';
-    import { askBranchDelete, askTagDelete } from './menus/graph-menu';
+    import { askBranchDelete, askTagDelete } from '../menus/graph-menu';
 
     type Props = {
         root: string;
@@ -115,14 +120,14 @@
         onpicked
     }: Props = $props();
 
-    const { repositories } = useState();
+    const { repositories, selectors } = useState();
 
     let graphRows: KeyRow[] = $state([]);
 
     const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows, { root, mode }));
     const shape = $derived(repoShape(root, git));
     const busy = $derived(repositories.busy(root));
-    const outcome = $derived(repositories.outcome(root));
+    const running = $derived(repositories.running(selectors.rootsOfRepository(root)));
 
     /** The keys of the change rows: the selection's two Shift keys and Open to the Side. */
     const keymap = filesKeymap(onMac()).filter(
@@ -244,6 +249,13 @@
 </script>
 
 <section class="repo" data-root={root}>
+    {#if running !== null}
+        <div class="running" data-repo-running={running.action}>
+            <div class="bar" title={running.words}>
+                <Progress percent={null} label={running.words} />
+            </div>
+        </div>
+    {/if}
     {#if shape !== 'readable'}
         {#if git.branch !== ''}
             <div class="branch" title={root}>
@@ -376,36 +388,7 @@
             {/snippet}
         </TreeView>
     {/if}
-    {#if busy || outcome !== ''}
-        <div class="anchor">
-            <div class="line" data-repo-message aria-live="polite">
-                {#if busy}
-                    <p class="none">{t('git.busy')}</p>
-                    {#if !repositories.suggesting(root)}
-                        <span class="act">
-                            <ToolButton
-                                small
-                                label={t('git.cancel')}
-                                title={t('git.cancel_title')}
-                                onclick={() => void repositories.cancel(root)}
-                            />
-                        </span>
-                    {/if}
-                {:else}
-                    <p class="outcome">{outcome}</p>
-                    <span class="act">
-                        <ToolButton
-                            label={t('repositories.outcome_close')}
-                            glyph={t('repositories.outcome_close_glyph')}
-                            compact
-                            small
-                            onclick={() => repositories.clearOutcome(root)}
-                        />
-                    </span>
-                {/if}
-            </div>
-        </div>
-    {/if}
+    <RepoMessage {root} />
 </section>
 
 <style>
@@ -418,30 +401,21 @@
         min-width: 0;
     }
 
-    /* A zero-height block at the end of the section, pushed to the pane's foot when the rows are
-       shorter than the pane and stuck to the foot of the scrolled pane when they are longer: the
-       line hangs from it upward and over the rows, so no row moves when it shows or clears. The
-       pane's body keeps 10px of padding below the rows (ui/frame/Pane.svelte), and both offsets
-       take the line over it to the pane's edge. */
-    .anchor {
-        position: sticky;
-        bottom: -10px;
-        z-index: 2;
+    /* A zero-height block at the top of the section whose line lies in the 6px gap above it,
+       between the repository's row and the section, so nothing moves when it shows or clears; the
+       negative margin takes back the section's gap after it. */
+    .running {
+        position: relative;
         height: 0;
-        margin-top: auto;
-        margin-bottom: -10px;
+        margin-bottom: -6px;
     }
 
-    .line {
+    .bar {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0;
+        top: -5px;
         display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px 0;
-        background: var(--panel);
     }
 
     /* The message box and its button, 11px in from the left of the row and 12px from its right. */
@@ -481,26 +455,6 @@
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-mono);
         font-size: var(--fs-sm);
-    }
-
-    .none {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
-    }
-
-    .outcome {
-        flex: 1 1 auto;
-        min-width: 0;
-        margin: 0;
-        font-size: var(--fs-md);
-        overflow-wrap: anywhere;
-    }
-
-    /* The line's button keeps its own width, so in a narrow pane the sentence wraps beside it and
-       the button stays inside the line. */
-    .act {
-        flex: none;
     }
 
     .sequence {

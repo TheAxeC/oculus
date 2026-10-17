@@ -1,18 +1,36 @@
 <script module lang="ts">
     // Layer 3, view registration. One board component owns the five portfolio board registrations,
-    // the Projects page's group.
+    // the Projects page's group. Three boards give their rail button the count of one cell of their
+    // tab, the cards in work, with that cell's tone: Projects the cell of its `active` type, a key
+    // of `tab_split`, and Coauthor and Personal the cell of the first bucket of their `tab_rollup`
+    // list in config/layout.yml, whatever that bucket is labelled. Archive and Software give the
+    // rail nothing.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import type { RailCell } from '$lib/state/workbench/rail-badges/rail-badges.svelte';
 
-    const boardRegistration = (id: string, order: number): ViewRegistration => ({
-        id,
-        label: `views.${id}`,
-        glyph: `views.${id}_glyph`,
-        group: 'projects',
-        order,
-        badge: (client) => client.railBadges.boardBadge(id),
-        badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
-        badgeCells: (client) => client.railBadges.boardCells(id)
-    });
+    /** The cell of a board's tab whose count the board gives its rail button. */
+    const RAIL_CELLS: Partial<Record<string, RailCell>> = {
+        projects: { type: 'active' },
+        coauthor: { bucket: 0 },
+        personal: { bucket: 0 }
+    };
+
+    const boardRegistration = (id: string, order: number): ViewRegistration => {
+        const cell = RAIL_CELLS[id];
+        return {
+            id,
+            label: `views.${id}`,
+            glyph: `views.${id}_glyph`,
+            group: 'projects',
+            order,
+            badge: (client) => client.railBadges.boardBadge(id),
+            badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
+            badgeCells: (client) => client.railBadges.boardCells(id),
+            ...(cell === undefined
+                ? {}
+                : { railPart: (client) => client.railBadges.boardPart(id, cell) })
+        };
+    };
 
     export const registration: ViewRegistration[] = [
         boardRegistration('projects', 1),

@@ -10,7 +10,9 @@
     // starts a terminal hands its id to the tray, which shows it and closes itself as a task
     // press does; a Run now that starts nothing, or any refusal, is a line in the tray's `said`.
     // A delete is asked by the tray's confirmation, which stands over the tray, so the row only
-    // names the row to ask about.
+    // names the row to ask about. While any press runs every control of the section is disabled;
+    // the Run now pressed also draws the sync glyph turning before its words until the start is
+    // answered, and no glyph at rest.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -29,6 +31,8 @@
 
     let { onshow, onsaid, ondelete }: Props = $props();
     let busy = $state(false);
+    /** The key of the row whose Run now is waiting for its start to be answered, or null. */
+    let starting: string | null = $state(null);
 
     const rows = $derived(schedule.rows());
 
@@ -41,6 +45,16 @@
         if (!answer.ok) onsaid(answer.error);
         else if (answer.terminal !== null) onshow(answer.terminal);
         else if (answer.skipped !== '') onsaid(answer.skipped);
+    }
+
+    /** Run a row now, its control turning until the start is answered. */
+    async function runNow(row: (typeof rows)[number]): Promise<void> {
+        starting = row.key;
+        try {
+            await press(() => schedule.runNow(row));
+        } finally {
+            starting = null;
+        }
     }
 </script>
 
@@ -125,9 +139,11 @@
                         {/if}
                         <ToolButton
                             label={t('app.schedules.run_now')}
-                            compact
+                            glyph={starting === row.key ? 'sync' : undefined}
+                            turning={starting === row.key}
+                            compact={starting !== row.key}
                             disabled={busy}
-                            onclick={() => press(() => schedule.runNow(row))}
+                            onclick={() => runNow(row)}
                         />
                     {/if}
                     <ToolButton

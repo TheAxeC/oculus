@@ -12,6 +12,7 @@ text:
             name_label: Name of the workspace file
             name_prompt: 'Name the workspace file that keeps the folders; {0} is opened after it is saved'
             open: Open
+            running: Cloning {0}...
             save: Save
         collections: 'Collections: {0}'
         datasets: 'Datasets: {0}'

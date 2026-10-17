@@ -54,7 +54,7 @@
 {/if}
 <ToolButton
     label={t('repositories.fetch')}
-    title={busy ? t('git.busy') : undefined}
+    title={busy ? repositories.busyWords(root) : undefined}
     glyph="fetch"
     compact
     tabindex={reach}
@@ -64,7 +64,7 @@
 {#if tracked}
     <ToolButton
         label={t('repositories.pull')}
-        title={busy ? t('git.busy') : undefined}
+        title={busy ? repositories.busyWords(root) : undefined}
         glyph="pull"
         compact
         tabindex={reach}
@@ -73,7 +73,7 @@
     />
     <ToolButton
         label={t('git.push')}
-        title={busy ? t('git.busy') : undefined}
+        title={busy ? repositories.busyWords(root) : undefined}
         glyph="push"
         compact
         tabindex={reach}
@@ -83,7 +83,7 @@
 {:else if canPublish(git)}
     <ToolButton
         label={t('repositories.publish')}
-        title={busy ? t('git.busy') : undefined}
+        title={busy ? repositories.busyWords(root) : undefined}
         glyph="publish"
         compact
         tabindex={reach}

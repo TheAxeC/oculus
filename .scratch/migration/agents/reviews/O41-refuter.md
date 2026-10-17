@@ -179,3 +179,188 @@ Points the orchestrator asked about:
 - The tree checks that timed out on rerun: not the step's files, not rerun again under the rules file.
 
 Reviewer usage: aaf31f5ef12ea8dc2, claude-opus-5-5, 337,168 tokens, 86 tool uses, 18.4 min.
+
+## Repair round 1, refuted
+
+All from `tools/oculus` in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O41` unless named otherwise. The delta read is `diff -u` of each path of the snapshot's `files.txt` against the worktree (15 paths differ: DESIGN.md, HELP.md, channels.dot and .svg, RepoItems.svelte, selectors.svelte.ts, processes.svelte.ts, registry.ts, rail-badges.svelte.ts, Projects.svelte, SessionList.svelte, RepoList.svelte, Processes.svelte, +page.svelte, repo/Repo.svelte), plus `git diff cc0a63390` of `src/lib/ui/menu/Menu.svelte` and `src/lib/ui/menu/MenuOpener.svelte`, the only changed paths `files.txt` does not list (`git status --short`).
+
+```
+The brief's "Verify before you report":
+1. `npm run diagrams`, then `npm run test:quick`, once, after your last change: every command passes.
+md5 -q docs/diagrams/* | md5      -> f104611eeafdc693515aac815b73c561
+npm run diagrams                  -> 6.9 s
+md5 -q docs/diagrams/* | md5      -> f104611eeafdc693515aac815b73c561   (no diagram's content changed)
+npm run test:quick
+test:quick: 73 changed file(s), from git since HEAD
+test:quick: 46 test file(s), 9 essential
+ok      ASCII gate (0.7 s)
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.2 s)
+ok      eslint (1.5 s)
+ok      svelte-check (6.7 s): 1792273850200 COMPLETED 514 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (39.3 s): Duration  33.55s (transform 48.51s, setup 0ms, import 82.73s, tests 34.95s, environment 966ms)
+test:quick: 41.7 s (limit 45.0 s); every command passed
+(run a second time only to read its head lines; the same result)
+
+2. The ASCII gate of `agents/spec.md` (its perl form) over every file you touched prints nothing.
+the spec's perl gate over the 71 files `git status --short` names (deleted paths left out, folders expanded,
+the two .scratch files included)   -> printed nothing; perl exit 0
+
+3. `wc -l` over every file you touched: no source file over 880 lines, no component over 520, tests included.
+largest: Graph.svelte 519, ProjectCard.svelte 518, Repositories.svelte 517, Source.svelte 517, Collection.svelte 506,
+repo/Repo.svelte 471; selectors.svelte.ts 734, status.ts 602; tests/data/sources/manifests/manifests.test.ts 748
+
+4. `npx vitest run tests/data/sources/manifests.test.ts tests/state/sources/clone.test.ts`, in the base copy before
+   your change and in the worktree after it
+(O41-base) npx vitest run tests/data/sources/manifests.test.ts tests/state/sources/clone.test.ts
+ Test Files  2 passed (2)
+      Tests  66 passed (66)
+
+The round brief's "Verify before you report":
+- `npx vitest run tests/data/sources/manifests/manifests.test.ts tests/data/sources/manifests/clones.test.ts tests/state/sources/clone.test.ts` passes (74 tests or more).
+ Test Files  3 passed (3)
+      Tests  74 passed (74)
+- `sh utils/unused-exports.sh` diffed with .../O41-base/unused-exports.txt adds no line.
+157c157
+< src/lib/state/sessions/folds.ts: pruneTree, sessionCount, hiddenCounts, terminalPlaces, LIST_FILTER, needsInput, matchesSearch, keptByFilter
+---
+> src/lib/state/sessions/folds.ts: pruneTree, sessionCount, hiddenCounts, terminalPlaces, LIST_FILTER, matchesSearch, keptByFilter
+(no line added)
+- Cases 1 to 10 of the brief rerun after the change, and the runs items 1 and 4 ask for.  (below)
+
+The round report's evidence, rerun in the same form in the scratch folder rail/ (outputs to r1/):
+OCULUS_ROOT=<worktree>/tools/oculus node --no-warnings --import ./register.mjs procs.ts   -> exit 0, identical to procs.out
+two running app hosts, no terminal, no read yet: hosts listed=2 count=2
+two running app hosts, a read with no rows: hosts listed=2 count=2
+one terminal process and two running app hosts: hosts listed=2 count=3
+one terminal process, two running hosts, one ended, one waiting: hosts listed=4 count=3
+OUT_DIR=<scratch>/r1 OCULUS_ROOT=<worktree>/tools/oculus node --no-warnings --import ./register.mjs boards.ts -> exit 0, identical to boards.out
+layout.yml projects: count=4 tone="green"
+layout.yml coauthor: count=3 tone="green"
+layout.yml archive: no part
+layout.yml personal: count=2 tone="brass"
+layout.yml software: no part
+relabelled coauthor's first bucket: "in progress" to "in prep"
+relabelled projects: count=4 tone="green"
+relabelled coauthor: count=3 tone="green"
+relabelled archive: no part
+relabelled personal: count=2 tone="brass"
+relabelled software: no part
+OCULUS_ROOT=<worktree>/tools/oculus node --no-warnings --import ./register.mjs after.ts  -> exit 0, identical to after.out
+OCULUS_ROOT=<O41-base>/tools/oculus node --no-warnings --import ./register.mjs before.ts -> exit 0, identical to before.out
+npx vitest run tests/checks/source/keys.test.ts tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts tests/checks/tree/duplication.test.ts tests/checks/imports/cycles.test.ts tests/checks/imports/order.test.ts tests/checks/diagrams/diagrams.test.ts --testTimeout 60000
+ Test Files  9 passed (9)
+      Tests  120 passed (120)
+item 2's grep: grep -rn -e 'railPart' -e 'RailPart' -e 'means "act"' -e "means 'act'" DESIGN.md HELP.md docs src config
+  -> DESIGN.md:338 (rewritten), rail.ts:79 and config/layout.yml:280 (name the urgency tones, no claim that a part has a
+     tone only then), and the hooks themselves; registry.ts:152-158 and rail-badges.svelte.ts:37-42 hold the new clause
+grep -c -F 'While a clone runs, its Clone control turns its glyph and a notice with a moving line says "Cloning <name>..."; clearing the notice does not stop the clone.' HELP.md -> 1 (HELP.md:496)
+changed and removed names over src tests config docs HELP.md DESIGN.md README.md (svg and local.yml left out):
+  firstBadge 0, submit\.busy 0, state\.busy 0, repositories/Repo\.svelte 0, sources/manifests\.test\.ts 0, boardPart\( 2
+grep -rnw repositoryRoots (now) -> server only: roots.ts, pty/routes.ts, root/context.ts, git-start.ts, debug, schedules
+  and commands routes, tests/server/root/workspace-follow.test.ts, DESIGN.md:387 (the server's, as at the base); 16 hits at
+  the base; rootsOfRepository, RailCell, uncarried, drawAhead: 0 hits at the base; tableRows: 8 local hits at the base
+history words over every added line of `git diff cc0a63390` and the five untracked files (2481 lines):
+  only present-tense or spatial uses; two hits are not in the round report's list: MenuOpener.svelte:146 "the wrapper
+  around it still opens the tooltip" and RailPages.svelte:261 "is cut before it would leave the box" (Finding 5)
+channels.dot edges, snapshot vs now -> one added: "ch app-hosts" -> "state/system/machine/processes/processes"
+find (files newer than the builder's round1/quick2.txt, 23:44:41) -> ./HELP.md (23:45:02)
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. `repositories.svelte.ts:295-327` (`send` refuses an empty or busy root before writing `acting`, clears it in `finally`), `running` at 269-276; the selector is now `rootsOfRepository` (`selectors.svelte.ts:651`), read at `RepoList.svelte:173`, `repo/Repo.svelte:130` and `+page.svelte:241`.
+- 2: holds, as the first report read it; the row and the view now read `rootsOfRepository`.
+- 3: holds. `RepoItems.svelte:220-271`: the sync item turns `sync`; the Publish item turns `sync`, says `syncing.words` and waits, for one remote (a `ToolButton`) and several (the `Menu`, whose opener waits). The several-remotes item stays a `Menu` while it runs, which the brief's item 3 drew as "one status `ToolButton` ... in place of its ... `Menu`": Finding 2.
+- 4: holds. `clone.svelte.ts:108-115` posts the running notice with `progress: { percent: null, cancel: null }` and removes it in `finally`; `ProjectCard.svelte:257`, `CardActions.svelte:169,191`.
+- 5: holds, as the first report read it.
+- 6: holds, as the first report read it.
+- 7: holds, as the first report read it.
+- 8: holds, as the first report read it.
+- 9: holds. The tone sentence is true now at `DESIGN.md:338`, `registry.ts:152-158` and `rail-badges.svelte.ts:37-42`.
+- 10: holds. `Projects.svelte:12-16` names no `label:` of `tab_rollup`; `boardPart` (`rail-badges.svelte.ts:143-148`) finds `{ bucket }` by place and `{ type }` by the type key; `rollup` returns every bucket in the config's order, a zero bucket included (`rail-badges.ts:94-107`), and `typeSplit` labels its cells by the type keys (`rail-badges.ts:86-91`), so bucket 0 is the first bucket even when it counts nothing; the `boards.ts` rerun above.
+- 11: holds. The Processes count is the table's rows plus the hosts whose state is `running` (`processes.svelte.ts:84-86`), the `procs.ts` rerun gives 2 and 3; the view and the tab read the same rows (`processes.hosts()`, `Processes.svelte:64-66`). See Finding 1 on what the move left in the apps store.
+- 12: holds, `after.ts` rerun identical.
+- 13: holds, as the first report read it.
+- 14: holds, as the first report read it.
+- 15: holds, the rows of `clones.test.ts` pass.
+- 16: holds for `settle`; the search route stays under "Declined to judge".
+- 17: holds. `HELP.md:496` carries the dictated sentence (grep -c 1); the tone clause is fixed (item 9); HELP.md:280, :451 and :495 gain one sentence each (judged under round item 7 below).
+
+Cases of the brief's "Cases":
+
+- 1: met, `after.ts` rerun: 25, green, "Projects, key 2 (Projects 20, Coauthor 2, Personal 3)". The board parts are written by hand there; `boards.ts` runs the three board hooks through `boardPart` and the real `config/layout.yml` on its own counts (4, 3, 2), so the path of case 1's parts is run, its numbers are not.
+- 2, 3, 4, 5, 7, 9, 10: met, `after.ts` rerun identical to the first report's output.
+- 6: met, rerun: 14, no tone; the Processes count does not reach the rail.
+- 8: met by reading `pages.ts:228` (`[...new Set(...)]`); the harness hands one entry and does not run the split tab.
+- 11 to 13, 15 to 22: met by reading, as the first report read them; the look on landing settles what is drawn.
+- 14: met by reading: while the publish runs, the item is the waiting `Menu` with the `sync` glyph turning and "Publishing the branch..." as its title, and it is the same element when the answer comes; the brief's shape for it is a `ToolButton` (Finding 2). The look settles the drawing and the focus.
+- 23 to 30: met after (74 passed); the failure on the unchanged tree is not reproduced ("Declined to judge").
+- 31: met after; the five changed G80 rows read as `git diff cc0a63390 -- tests/state/sources/clone.test.ts` shows, each asserting the running notice and `removed`.
+
+Items of the round brief:
+
+- 1: partial. The count and its three comments are as asked (`processes.svelte.ts:1-9,35-46,71-86`, `Processes.svelte:1-5`), runs 2 and 3; the move left the apps store's `hosts` with no caller and a doc comment that names the Processes view as its reader: Finding 1.
+- 2: holds; the grep rerun above prints no sentence that says the tone is present only when the count means "act". HELP.md:41's added "before any other colour, such as Funding's violet" is `urgentTone` (`rail.ts:84-87`).
+- 3: holds. The sentence is word for word at HELP.md:496. "its Clone control turns its glyph": `ProjectCard.svelte:257` `turning: cloning(item.id)`, `CardActions.svelte:169,191`. "a notice with a moving line says ...": `clone.svelte.ts:109`, `config/text/app.yml` `running: Cloning {0}...`. "clearing the notice does not stop the clone": the post registers no `cleared` (`notices.svelte.ts` `post` sets `hearing` only for `options.cleared`; `clear` calls only that listener), and nothing aborts `postCommand`. For `:clone` there is no Clone control; the sentence's "its" reads as the project's control, as the report says.
+- 4: holds; `boards.ts` rerun, the count stays 3 with Coauthor's first bucket relabelled.
+- 5: holds. The one-remote `ToolButton` and the several-remotes `Menu` are each one element across the publish (`RepoItems.svelte:241-271`, no `{#if}` on `publishing`); `ToolButton`'s `waiting` sets `aria-disabled` without `disabled` and drops the press (`ToolButton.svelte:99-103`); the waiting opener drops the trigger's `on*` keys (`MenuOpener.svelte:76-81`). Findings 2 and 6.
+- 6: holds for the case the round names. The effect at `SessionList.svelte:108-114` reads the whole channel, dismissed rows included (`sessionsByWorkspace(true)` is `entities.sessions()?.workspaces ?? []`, `selectors.svelte.ts:540-542`), the same rows `sessionInputCount` reads (`rail-badges.svelte.ts:196`); it writes only when a held mark is carried, and its next run finds none and writes nothing, so it settles; a failed write's put-back equals the channel's mark and is dropped on the next run. `topNow` gets the same drop. Two residual cases: Finding 3.
+- 7: holds in substance; the parts asked are present. The clone test's edits are given per test rather than per line, and they match `git diff cc0a63390 -- tests/state/sources/clone.test.ts`. Findings 4 and 5 are gaps in its proof.
+
+The changes past the findings, judged:
+
+- The rename of the client selector `repositoryRoots` to `rootsOfRepository`: the base held the server's `repositoryRoots(open)` (`src/lib/server/files/roots.ts:29`), which answers every repository root of the workspace, so one name stood for two functions; the round's item 7 asked for this grep, and the rules file's "The principles every package is judged on" asks a name to be grepped before it is written. The rename reaches every client hit (grep above), O40's worktree changes none of the four files (`diff -q` of each against `O40-base`), and svelte-check passes. Within the round.
+- `Menu.svelte` and `MenuOpener.svelte`: the several-remotes Publish item is a `Menu`, whose opener had no `turning` and no `waiting`; keeping its element is what keeps the focus (the confirm's give-back focuses only a connected control, `ui/frame/quiet-focus.ts`). Both props default to false, so no other `Menu` changes; O40 changes neither file. Needed by round item 5; the shape it gives is Finding 2.
+- HELP.md:280 (the Processes tab's count), :451 (Publish Branch while a publish runs) and :495 (a linked worktree is one clone with its main checkout): each is true by the code read above (`processes.svelte.ts:84-86`; `RepoItems.svelte:241-271`, `repositories.publish` is "Publish Branch" in `config/text/views/sources/repositories.yml:170`; `clones.ts` and the G32 rows). The rules file's "What every package obeys" asks a step to write what a user meets into HELP.md. They go past the brief's limit of HELP.md, shared with O40, to the sentences item 17 names; O40's worktree changes HELP.md at base lines 53, 66, 87, 259, 274, 307, 388 and 391 (`diff` against `O40-base`, whose HELP.md is the same file as O41-base's), none adjacent to 41, 91, 279-281, 375, 449 or 493-494, so they merge line by line.
+
+### Findings
+
+1. Standards. `src/lib/state/system/apps/apps.svelte.ts:199-200`: "/** The host of every app that names one, as the Processes view and the tabs draw them. */ hosts: () => AppHostRow[];" and `src/lib/state/system/machine/processes/processes.svelte.ts:71-73`: "function hosts(): AppHostRow[] { return entities.appHosts()?.rows ?? []; }"; what is wrong: the round moved the Processes view's read to the processes store by repeating the apps store's expression (`apps.svelte.ts:370`, `deps.entities.appHosts()?.rows ?? []`) instead of reading the apps store, as the round's item 1 offered. `AppsStore.hosts` now has no caller: `grep -rnE "\.hosts\(\)" src tests` prints no client reader of it, and `git show cc0a63390:.../Processes.svelte` shows `apps.hosts()` at lines 60 and 62 as its only one. Its doc comment names the Processes view and the tabs as its readers, which is false now. Rules: "The principles every package is judged on" (a fold exists once and is reused; an export left without a caller is removed or made local) and "What every package obeys" (a sentence in a doc comment the change makes false is a defect). Failure scenario: a later step changes which hosts the Processes view lists in `apps.hosts`, as its doc comment says it serves that view; the view and its count do not change, and a reader looking for the rows the count reads finds two copies of the read. Verdict: round item 1 partial. Fix at landing: `createProcesses` takes the apps store's `hosts` (or the apps store drops `hosts` and its doc comment).
+
+2. Spec. `src/lib/shell/status/RepoItems.svelte:257-271`: "<Menu status placement="above" label={t('repositories.publish')} glyph={publishing ? 'sync' : 'publish'} turning={publishing} waiting={publishing} ..."; what is wrong: the brief's item 3 drew the Publish item "for one remote or several ... while publish runs as one status `ToolButton` with the `sync` glyph turning ... in place of its `publish` glyph or its `Menu`". For several remotes the round keeps the `Menu` and makes its opener wait, so the running item is a menu button (`aria-haspopup="menu"`, `aria-expanded="false"` from bits-ui's trigger props, `node_modules/bits-ui/dist/bits/menu/menu.svelte.js:1467-1481`, now with `aria-disabled="true"`) drawn by `MenuOpener` in place of a `ToolButton`. The reason is sound (a swapped element loses the focus the round asks to keep), but the round report states the change as a file outside the path list, not as a departure from item 3's shape that the orchestrator may reverse (rules file, "No silent design decisions"). Failure scenario: the look on landing checks case 14 against item 3 and expects the ToolButton; a screen reader announces "Publish Branch, menu button, dimmed" while it runs. Verdict: none on the build; a decision to book.
+
+3. Behaviour. `src/lib/views/sessions/session-list/SessionList.svelte:106-114` and `274-284`: "// A mark drawn ahead goes once the channel's row carries it, a mark put back after a write // that did not land among them, since that is the mark the channel's row carries." and "drawAhead(field, row.id, next); ... if (answer.ok) return; drawAhead(field, row.id, !next);"; what is wrong: the effect drops a held mark whenever the channel's row equals it, whether or not a write for that row is in flight, and the put-back writes `!next` whatever the channel holds by then. Two cases follow. A quick Archive then Unarchive on one row: the second press draws `false`, which equals the channel's `hidden` and is dropped at once; the first write then lands and the list draws the row archived until the second write lands. A failed write while the channel has moved to `next` (the same mark set from another tab or page during the write): the put-back `!next` contradicts the channel and is held until the channel changes again, so the list draws the row unarchived while the count leaves it out, the disagreement the round set out to end, and the comment's "since that is the mark the channel's row carries" is false then. Failure scenario: as above. Verdict: none on round item 6 as named; a residual of it. Fix: on a failed write, delete the row's held mark in place of writing `!next`; and hold a mark while a write for that row is in flight.
+
+4. Proof. `.scratch/migration/agents/reviews/O41-report.md`, "Round 1", "Verify": "From `tools/oculus` in the worktree, after the last change:" and "The verify list ran three times this round."; what is wrong: the quoted `test:quick` lines are those of the builder's `round1/quick2.txt` (svelte-check `1792273448517`, vitest 40.6 s), written at 23:44:41, and `HELP.md` was written at 23:45:02 (`find -newer quick2.txt` above), so the quoted run is not after the last change. The three runs are given with no red line: `round1/quick1.txt` prints "every command passed" with "test:quick: 47.0 s (limit 45.0 s)" and "over the time limit"; the rules file's "Token discipline" allows a second run only after a red line in a changed file. The reviewer's run over the tree as it stands passes every command, so no decision rests on either. Verdict: none.
+
+5. Proof. `.scratch/migration/agents/reviews/O41-report.md`, "Round 1", item 7, "History words": "Each hit, with its context and judgment"; what is wrong: the list leaves out two added comment lines with a hit, `src/lib/ui/menu/MenuOpener.svelte:146` "the wrapper around it still opens the tooltip" (this round) and `src/lib/shell/rail/RailPages.svelte:261` "is cut before it would leave the box", because `round1/added.py` takes a line of a CSS comment that does not open the comment as code. Both are present-tense uses and right. Verdict: none.
+
+6. Standards. `src/lib/shell/status/RepoItems.svelte:25-30`: "// turning and the same words, and is waiting: drawn disabled, it takes no press and opens no // list until the answer, and it stays the same button, in the focus order, so the keyboard // the confirm gives back lands on it. The glyph is still under the system's reduce-motion // setting. The page says which action runs // (`git.running`), as it does the writes."; what is wrong: the paragraph edited this round keeps a line that ends short inside a sentence ("setting. The page says which action runs", 47 columns, followed by "(`git.running`), as it does the writes.", which fits on it), against the rules file's "What every package obeys" (a comment the step edits is rewrapped as a whole paragraph at 100 columns); and "the keyboard the confirm gives back" names the focus by another word, against the rules file's Prose rule (name the actual thing). Failure scenario: a reader of the head comment does not know what the confirm gives back, and the next edit of the paragraph inherits the broken wrap. Verdict: none. Fix at landing: rewrap, and "so the focus the confirm gives back lands on it".
+
+### Declined to judge
+
+- The landing merge of `DESIGN.md` with O40: O41 changes base line 703 (the Clone bullet) and O40's worktree changes base line 704 (the "Unsaved text" bullet), consecutive lines of the same file at the same base (`cmp` of the two base copies' DESIGN.md: same; `diff` of each worktree against it); git marks consecutive changed lines from two sides as a conflict, while the dispatch entry's `shared_paths` says "different sections". A round-0 change, outside this round's delta; the cherry-pick at landing settles it.
+- Focus, tab order, the tooltip and the dimming of the waiting Publish item and the waiting opener, and the Session list after an archive: a DOM shows them; the look on landing. The waiting opener's `held` also drops the trigger's attachment, whose key is a symbol (`svelte-toolbelt/dist/utils/attach-ref.js:25-47`, `Object.entries` skips it); its teardown keeps the ref while the button is connected (line 33), so the read finds no harm, and only a page shows it.
+- Whether the git watcher gives the branch its upstream before a publish's answer, which would swap the Publish item for the sync item mid-run and drop the focus: needs a running server.
+- A host in the `starting` state is not counted; the round's item 1 says "whose state is running", and `AppHosts.svelte:56` words only `running` as running while it draws Stop for `starting` too (line 83). Read as the round wrote it; whether a starting host should count is the orchestrator's.
+- The failing lines of cases 23 to 31 on the unchanged tree, the search route over worktrees, and `guarded.md`'s G13 and G32 paths (the round leaves them to landing): as the first report declined them, for the same reasons.
+
+Reviewer usage: a3da982beb8e425df, claude-opus-5-5, 271,818 tokens, 79 tool uses, 17.4 min.
+
+## Closed
+
+The findings of the run over the last round go to no builder; each is fixed at landing or raised to Axel.
+
+- First run, Spec 1 (Processes count without the app hosts): closed in round 1, round item 1.
+- First run, Spec 2 (three brief premises wrong: FolderRow's path, ChangesRepo.svelte's "Working", the removed test path): no change needed in the build; the builder handled all three.
+- First run, Proof 1 (the archived predicate's line): closed in round 1, item 7.
+- First run, Proof 2 (cases run with hand-written parts): closed in round 1, item 4's run through the registrations; case 8 met by reading.
+- First run, Proof 3 (tree-check timeouts): no change needed; the run with a 60 s timeout passes 120 tests.
+- First run, Standards 1 (the "act" tone clause): closed in round 1, item 2.
+- First run, Standards 2 (HELP.md Clone sentence): closed in round 1, item 3.
+- First run, Standards 3 (report parts missing): closed in round 1, item 7.
+- First run, Standards 4 (guarded.md G13 and G32 paths): fixed at landing by the orchestrator.
+- First run, Standards 5 (board cells by label): closed in round 1, item 4.
+- First run, Behaviour 1 (the Views catalogue counts): closed in round 1, item 7; seen at the look.
+- First run, Behaviour 2 (inert Publish loses focus): closed in round 1, item 5.
+- First run, Behaviour 3 (Session list override): closed in round 1, item 6; residual in round finding 3.
+- Round 1, finding 1 (apps store's hosts left with no caller): fixed at landing, the processes store reads the apps store's hosts.
+- Round 1, finding 2 (several-remotes Publish stays a Menu): ruled at landing, the waiting Menu stands, since swapping the element loses the focus round item 5 keeps; booked in the landing.
+- Round 1, finding 3 (Session list marks during a write and after a failed one): fixed at landing, a failed write deletes the row's held mark and a mark is held while its write is in flight.
+- Round 1, findings 4 and 5: no change needed; the reviewer's own runs over the tree stand.
+- Round 1, finding 6 (RepoItems head comment wrap and wording): fixed at landing.
+- Round 1, declined: a host that is starting: ruled at landing, a host the view draws with Stop (running or starting) counts.
+- Round 1, declined: DESIGN.md lines 703 and 704 shared with O40: resolved at whichever landing meets it.

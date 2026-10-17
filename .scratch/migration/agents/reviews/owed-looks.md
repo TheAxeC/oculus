@@ -14,6 +14,11 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 
 - Q97: the one-pane System arrangement. It no longer exists: S4 (1184e5f38) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
+- O41 case 21, the clone notice and the Clone control turning: every clone starts by opening the macOS folder panel, which a look never presses; held by G80's row 'opens the panel at the home folder, clones into the pick and asks what to do' in `tests/state/sources/clone.test.ts`, which asserts the running notice posted and removed.
+- O41 case 18, Submit Job turning through its plan and its run: its press reaches the cluster, and a look submits no job; read in `submit-job.svelte.ts` at O41's review.
+- O41 case 20, an update task and a schedule's Run now turning: a press starts an agent from the page, which no look does; read in `UpdateTray.svelte` and `ScheduleList.svelte` at O41's review.
+- O41, the motion under the system's reduce-motion setting: the setting is a system setting the session does not change; `Progress.svelte` and `Glyph.svelte` hold the still rule, read at O41's review.
+
 ## Taken
 
 - The looks below marked "O37 build" were taken 2026-10-16 while O37 builds, on a scratch oculus on 8796 served from the gate worktree at bda7b0346 (oculus code equal to main's), with a scratch home and the scratch hubs `look37/hub` and `look37/hub2` and a scratch repository `look37/repo` (three commits, a branch `look-branch`, a pre-commit hook of `sleep 25`), all under the session scratchpad.

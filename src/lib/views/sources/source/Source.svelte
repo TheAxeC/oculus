@@ -449,7 +449,7 @@
         previewable={file.previewable}
         blameable={file.blameable}
         submittable={submit.submittable}
-        submitting={submit.busy}
+        submitting={submit.running}
         latex={latexTab}
         onsave={() => void tabSave.save()}
         onsubmit={() => void submit.press()}

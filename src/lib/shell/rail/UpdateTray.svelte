@@ -12,8 +12,10 @@
     // the task next, and the control that opens the schedule dialog for the task.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
-    // pane and a press starts it straight away. A run that goes unattended is a schedule's Run
-    // unattended choice and no press's.
+    // pane and a press starts it straight away. From the press until the start is answered (the
+    // terminal is shown, or the refusal is said) the pressed control draws the sync glyph turning
+    // before its label, and no glyph at rest; the run then goes on in the terminal. A run that goes
+    // unattended is a schedule's Run unattended choice and no press's.
     //
     // The tray stands on the modal ground ui/frame/Modal.svelte draws: the focus moves into it when
     // it opens, Tab stays inside it, and the focus goes back where it was when it closes. Escape
@@ -155,6 +157,8 @@
                             <ToolButton
                                 label={task.label}
                                 title={task.note}
+                                glyph={running === task.kind ? 'sync' : undefined}
+                                turning={running === task.kind}
                                 active={running === task.kind}
                                 disabled={running !== null || chatting}
                                 onclick={() => start(task.kind)}

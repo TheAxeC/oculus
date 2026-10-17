@@ -79,7 +79,7 @@
     {/if}
     {#if item.glyph !== undefined}
         <span class="lead">
-            <Glyph name={item.glyph} />
+            <Glyph name={item.glyph} turning={item.turning === true} />
         </span>
     {/if}
     <!-- Hidden from the accessible name: the item keeps its label as its name, which is what a

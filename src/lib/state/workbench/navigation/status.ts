@@ -46,6 +46,7 @@ import {
     shownFor,
     type RepositoryGroup
 } from '../../sources/repositories/repositories.ts';
+import type { RunningAction } from '../../sources/repositories/repositories.svelte.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
@@ -87,9 +88,12 @@ export type RepoChoice = { root: string; label: string };
 /**
  * What the branch and sync items ask of the page, which alone may write: check a branch out, push
  * the branch, sync it (pull, then push), publish it to a remote, and show the repository in the
- * Repositories view. A write git refuses shows the repository too, whose line says why.
+ * Repositories view. A write git refuses shows the repository too, whose line says why. The page
+ * also says which action that says words of its own runs on any root of a root's repository, with
+ * those words, so the items show it whichever root it was started through.
  */
 export type StatusGit = {
+    running: (root: string) => RunningAction | null;
     switchBranch: (root: string, name: string) => Promise<void>;
     push: (root: string) => Promise<void>;
     sync: (root: string) => Promise<void>;
@@ -99,6 +103,7 @@ export type StatusGit = {
 
 /** What a bar no page has handed a writer asks for: nothing is shown and nothing is written. */
 export const NO_GIT: StatusGit = {
+    running: () => null,
     switchBranch: () => Promise.resolve(),
     push: () => Promise.resolve(),
     sync: () => Promise.resolve(),

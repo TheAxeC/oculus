@@ -13,17 +13,15 @@ import {
     joinHubs,
     portfolioConfigFrom,
     readOtherHub
-} from '../../../src/lib/data/index.ts';
-import { readCollections } from '../../../src/lib/data/sources/collections.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
-import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
-import type { Snapshot } from '../../../src/lib/data/model/index.ts';
-import { placeClones } from '../../../src/lib/data/sources/clones.ts';
-import { originOf, sameAddress } from '../../../src/lib/data/sources/origin.ts';
-import { repositoriesOf } from '../../../src/lib/server/files/roots.ts';
-import { it, plantFile, plantScratch, test } from '../../fixtures/scratch.ts';
-import { plantHub, workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
+} from '../../../../src/lib/data/index.ts';
+import { readCollections } from '../../../../src/lib/data/sources/collections.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
+import { createChecker } from '../../../../src/lib/data/snapshot/schema/check.ts';
+import type { Snapshot } from '../../../../src/lib/data/model/index.ts';
+import { repositoriesOf } from '../../../../src/lib/server/files/roots.ts';
+import { it, plantFile, plantScratch } from '../../../fixtures/scratch.ts';
+import { plantHub, workspaceWith, type FolderSpec } from '../../../fixtures/hubs/workspace.ts';
 
 const MERGED = loadConfig(engineDir()).config;
 
@@ -487,6 +485,37 @@ const ROWS: Row[] = [
         }
     },
     {
+        name: 'two scan folders, one a linked worktree of the repository of the other, as one project read from the main checkout',
+        scan: [{ dir: 'side-projects' }],
+        hub: plain(
+            [
+                'side-projects/early/project.yml',
+                'title: P\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/o/p\n'
+            ],
+            [
+                'side-projects/late/project.yml',
+                'title: P\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/o/p\n'
+            ],
+            [
+                'side-projects/late/.git/config',
+                '[remote "origin"]\n\turl = https://example.org/o/p\n'
+            ],
+            ['side-projects/late/.git/worktrees/early/commondir', '../..\n']
+        ),
+        // The worktree the walk meets first names its folder under the main checkout's .git by
+        // its absolute path, as `git worktree add` writes it.
+        setup: (at) => {
+            const named = join(at.hub, 'side-projects/late/.git/worktrees/early');
+            plantFile(at.hub, 'side-projects/early/.git', `gitdir: ${named}\n`);
+        },
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['late']);
+            expect(read.snapshot.entities.projects.late.file).toBe(
+                join(read.at.hub, 'side-projects/late/project.yml')
+            );
+        }
+    },
+    {
         name: 'a project folder that is not a clone of anything with a repository block, as cloned nowhere until the watcher lists repositories',
         scan: [{ dir: 'side-projects' }],
         hub: plain([
@@ -714,118 +743,6 @@ describe('a hub reports only the files its own configuration names', () => {
         const read = readCollections(hub, portfolio.collections, textCatalog(config));
         expect(read.findings.filter((one) => one.key === 'venues').map((one) => one.file)).toEqual([
             join(hub, 'two.yml')
-        ]);
-    });
-});
-
-describe('the address of a repository', () => {
-    const SAME = [
-        ['https://github.com/TheAxeC/x', 'https://github.com/theaxec/x.git'],
-        ['https://github.com/theaxec/x', 'git@github.com:TheAxeC/x.git'],
-        ['git@github.com:theaxec/x.git', 'ssh://git@github.com/theaxec/x'],
-        ['https://GitLab.example.org/o/r.git', 'git@gitlab.example.org:o/r'],
-        ['https://example.org/o/r/', 'https://example.org/o/r'],
-        ['ssh://git@Example.org:22/o/r.git', 'https://example.org/o/r'],
-        ['git@GitHub.com:TheAxeC/X.git', 'https://github.com/theaxec/x']
-    ];
-    test.for(SAME)('%s and %s are one repository', ([a, b]) => {
-        expect(sameAddress(a, b)).toBe(true);
-    });
-
-    const DIFFERENT = [
-        ['https://example.org/o/R', 'https://example.org/o/r'],
-        ['https://example.org/o/r', 'https://other.example.org/o/r'],
-        ['https://github.com/o/r', 'https://github.com/o/s'],
-        ['/some/folder', 'https://github.com/o/r'],
-        ['not an address', 'not an address']
-    ];
-    test.for(DIFFERENT)('%s and %s are two', ([a, b]) => {
-        expect(sameAddress(a, b)).toBe(false);
-    });
-});
-
-describe('the origin of a folder', () => {
-    const CONFIG =
-        '[core]\n\tbare = false\n[remote "upstream"]\n\turl = https://example.org/u\n[remote "origin"]\n\turl = https://example.org/o\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';
-
-    test("is the url of the origin remote of the folder's .git", () => {
-        const dir = plantScratch('oculus-origin-', { '.git/config': CONFIG });
-        expect(originOf(dir)).toBe('https://example.org/o');
-    });
-
-    test('is read from the common folder of a worktree whose .git is a file', () => {
-        const dir = plantScratch('oculus-origin-tree-', {
-            'main/.git/config': CONFIG,
-            'main/.git/worktrees/w/commondir': '../..\n',
-            'w/.git': 'gitdir: ../main/.git/worktrees/w\n'
-        });
-        expect(originOf(join(dir, 'w'))).toBe('https://example.org/o');
-    });
-
-    const NONE: { name: string; files: Record<string, string> }[] = [
-        { name: 'a folder with no .git', files: { 'a.txt': 'a\n' } },
-        {
-            name: 'a repository with no origin',
-            files: { '.git/config': '[core]\n\tbare = false\n' }
-        },
-        {
-            name: 'a repository whose only remote is not origin',
-            files: { '.git/config': '[remote "upstream"]\n\turl = https://example.org/u\n' }
-        },
-        { name: 'a .git file that names no folder', files: { '.git': 'nothing\n' } }
-    ];
-    test.for(NONE)('is none for $name', ({ files }) => {
-        expect(originOf(plantScratch('oculus-origin-none-', files))).toBeNull();
-    });
-});
-
-describe('the clones of a project', () => {
-    /**
-     * A built snapshot over a hub holding the projects `x` (a url) and `y` (none), and the repos.
-     */
-    function placed(origins: Record<string, string>) {
-        const hub = plantScratch('oculus-clones-hub-', {
-            'projects/ideas/x/project.yml':
-                'title: X\ntier: projects\ntype: idea\nrepository:\n  url: https://github.com/theaxec/x\n',
-            'projects/ideas/y/project.yml': 'title: Y\ntier: projects\ntype: idea\n'
-        });
-        plantHub(hub);
-        const folders = Object.fromEntries(
-            Object.entries(origins).map(([name, url]) => [
-                `${name}/.git/config`,
-                `[remote "origin"]\n\turl = ${url}\n`
-            ])
-        );
-        const repos = plantScratch('oculus-clones-repos-', folders);
-        const dirs = Object.keys(origins).map((name) => join(repos, name));
-        const { snapshot } = buildPortfolioWithSchemas(hub, portfolioConfigFrom(MERGED), 0, []);
-        placeClones(snapshot, dirs, textCatalog(MERGED));
-        return { snapshot, dirs };
-    }
-
-    it('is the repository whose origin is the url however it is written, and none for a project with no url', () => {
-        const { snapshot, dirs } = placed({
-            a: 'git@github.com:TheAxeC/x.git',
-            b: 'https://github.com/theaxec/other'
-        });
-        expect(snapshot.entities.projects.x.repository?.clones).toEqual([dirs[0]]);
-        expect(snapshot.entities.projects.y.repository).toBeUndefined();
-        expect(snapshot.findings.filter((one) => one.key === 'repository.url')).toEqual([]);
-    });
-
-    it('is empty for a project no repository has the url of', () => {
-        const { snapshot } = placed({ a: 'https://github.com/theaxec/other' });
-        expect(snapshot.entities.projects.x.repository?.clones).toEqual([]);
-    });
-
-    it('lists two clones in the order the repositories are listed, with one finding on the project naming both', () => {
-        const { snapshot, dirs } = placed({
-            a: 'git@github.com:TheAxeC/x.git',
-            b: 'https://github.com/theaxec/x'
-        });
-        expect(snapshot.entities.projects.x.repository?.clones).toEqual(dirs);
-        expect(findingsOn({ snapshot, at: {} as Places }, 'repository.url')).toEqual([
-            said('cloned_twice', 'https://github.com/theaxec/x', dirs.join(', '))
         ]);
     });
 });

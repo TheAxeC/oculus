@@ -254,6 +254,7 @@
                 label: cloning(item.id) ? t('project.card.clone_running') : t('project.card.clone'),
                 title: t('project.card.clone_tip', toClone),
                 glyph: t('project.card.clone_glyph'),
+                turning: cloning(item.id),
                 disabled: cloning(item.id),
                 onclick: async () => {
                     await cloneProject(item.id, label, place.dir);

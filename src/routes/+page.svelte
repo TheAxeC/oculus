@@ -85,7 +85,7 @@
         },
         problems,
         repositories,
-        selectors: { waitingCount },
+        selectors: { waitingCount, rootsOfRepository },
         socket: { connect, disconnect, seedApps, seedConfig, status: socketStatus },
         ui: {
             instanceState,
@@ -234,9 +234,11 @@
 
     /**
      * The git writes of the status bar's branch, sync and publish items, through the Repositories
-     * view's own store. A write git refuses shows the repository, whose line says why.
+     * view's own store, and the action that store has in flight on the item's repository. A write
+     * git refuses shows the repository, whose line says why.
      */
     const git: StatusGit = {
+        running: (root) => repositories.running(rootsOfRepository(root)),
         switchBranch: async (root, name) => {
             if (!(await repositories.switchBranch(root, name))) showRepository(root);
         },

@@ -1,13 +1,17 @@
 <script module lang="ts">
-    // Layer 3, view registration. Findings follows Status in the System page's group.
+    // Layer 3, view registration. Findings follows Status in the System page's group. Its badge is
+    // how many findings it lists, the count it also gives its rail button.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
     export const registration: ViewRegistration = {
         id: 'findings',
         label: 'views.findings',
         glyph: 'views.findings_glyph',
         group: 'views',
         order: 5,
-        unique: true
+        unique: true,
+        badge: (client) => countText(client.railBadges.findingsCount()),
+        railPart: (client) => ({ count: client.railBadges.findingsCount() })
     };
 </script>
 

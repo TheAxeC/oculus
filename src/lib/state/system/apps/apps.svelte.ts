@@ -197,8 +197,6 @@ type ApprovalOutcome = { ok: true } | { ok: false; error: string };
 export type AppsStore = ManageStore &
     FlowsStore & {
         rows: () => AppRow[];
-        /** The host of every app that names one, as the Processes view and the tabs draw them. */
-        hosts: () => AppHostRow[];
         /** The host row of this view id, or undefined while the app has none to show. */
         hostOf: (id: string) => AppHostRow | undefined;
         findings: () => Finding[];
@@ -797,7 +795,6 @@ export function createApps(deps: AppsDeps): AppsStore {
         ...manage,
         ...flows,
         rows,
-        hosts,
         hostOf: (id) => hosts().find((one) => one.app === id),
         findings: () => deps.entities.apps()?.findings ?? [],
         folders: () => deps.entities.apps()?.folders ?? [],

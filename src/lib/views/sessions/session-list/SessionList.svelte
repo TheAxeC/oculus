@@ -1,14 +1,19 @@
 <script module lang="ts">
     // Layer 3, view registration. The session list opens the Sessions page's group, as it opens the
-    // page.
+    // page. Its badge is how many sessions the list draws as needing input, an archived one left
+    // out, the count it also gives its rail button; a list limited to a folder carries the same
+    // count, the view's.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+    import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
 
     export const registration: ViewRegistration = {
         id: 'session-list',
         label: 'sessions.rail_title',
         glyph: 'sessions.rail_glyph',
         group: 'sessions',
-        order: 0
+        order: 0,
+        badge: (client) => countText(client.railBadges.sessionInputCount()),
+        railPart: (client) => ({ count: client.railBadges.sessionInputCount() })
     };
 </script>
 
@@ -32,8 +37,11 @@
     //
     // The filter and the search text are kept in the instance's state, so a list comes back as it
     // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
-    // ~/.oculus/sessions.json and are drawn at once, before the write lands, and put back when it
-    // does not.
+    // ~/.oculus/sessions.json and are drawn at once, before the write lands. A mark drawn ahead is
+    // held while its write is in flight and then until the sessions channel gives its row the same
+    // mark, and a write that does not land drops it: from then on the row's mark is the channel's,
+    // so a change made from another place is drawn and the list's archived rows are the ones the
+    // channel names.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -51,6 +59,7 @@
         isTop,
         listFilterOf,
         listGroups,
+        sessionRows,
         toggled,
         type ListFilter
     } from '$lib/state/sessions/folds';
@@ -89,9 +98,22 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The marks drawn ahead of their writes, by session id. */
+    /**
+     * The marks drawn ahead of their writes, by session id, each held while its write is in flight
+     * and then until the channel gives the row the same mark.
+     */
     let archivedNow: Record<string, boolean> = $state({});
     let topNow: Record<string, boolean> = $state({});
+    /** The writes of a mark in flight, by `<field>:<session id>`, counted. */
+    let writing: Record<string, number> = $state({});
+    // A mark drawn ahead goes once the channel's row carries it and no write of it is in flight.
+    $effect(() => {
+        const rows = sessionRows(sessionsByWorkspace(true));
+        const archivedHeld = uncarried(archivedNow, rows, (row) => row.hidden, 'hidden');
+        if (archivedHeld !== null) archivedNow = archivedHeld;
+        const topHeld = uncarried(topNow, rows, isTop, 'top');
+        if (topHeld !== null) topNow = topHeld;
+    });
     let failure = $state('');
     let arming = $state('');
     let armedResume = $state('');
@@ -137,6 +159,47 @@
             ...filter,
             ...next
         });
+    }
+
+    /**
+     * The marks of `drawn` that no row of the channel carries yet or whose write is in flight, or
+     * null when none goes, so an unchanged map is not written.
+     */
+    function uncarried(
+        drawn: Record<string, boolean>,
+        rows: GroupedSession[],
+        mark: (row: GroupedSession) => boolean,
+        field: 'hidden' | 'top'
+    ): Record<string, boolean> | null {
+        const carried = new Set(
+            rows
+                .filter((row) => drawn[row.id] === mark(row) && !writing[`${field}:${row.id}`])
+                .map((row) => row.id)
+        );
+        if (carried.size === 0) return null;
+        return Object.fromEntries(Object.entries(drawn).filter(([id]) => !carried.has(id)));
+    }
+
+    /** Draw one mark of one row ahead of the channel. */
+    function drawAhead(field: 'hidden' | 'top', id: string, value: boolean): void {
+        if (field === 'hidden') archivedNow = { ...archivedNow, [id]: value };
+        else topNow = { ...topNow, [id]: value };
+    }
+
+    /** Stop drawing one row's mark ahead, so the row draws the channel's mark again. */
+    function forget(field: 'hidden' | 'top', id: string): void {
+        const without = (drawn: Record<string, boolean>) =>
+            Object.fromEntries(Object.entries(drawn).filter(([one]) => one !== id));
+        if (field === 'hidden') archivedNow = without(archivedNow);
+        else topNow = without(topNow);
+    }
+
+    /** Count one write of a row's mark in, or one answered write out. */
+    function hold(key: string, step: 1 | -1): void {
+        const count = (writing[key] ?? 0) + step;
+        writing = Object.fromEntries(
+            Object.entries({ ...writing, [key]: count }).filter(([, held]) => held > 0)
+        );
     }
 
     function archived(row: GroupedSession): boolean {
@@ -228,19 +291,27 @@
         showTerminal(answer.id);
     }
 
-    /** Flip one mark at once and write it; a write that does not land puts the mark back. */
+    /**
+     * Flip one mark at once and write it. A write that does not land stops drawing the mark ahead,
+     * so the row draws the mark the channel carries, whatever another place wrote meanwhile.
+     */
     async function mark(
         row: GroupedSession,
         field: 'hidden' | 'top',
         next: boolean
     ): Promise<void> {
-        const drawn = field === 'hidden' ? archivedNow : topNow;
-        drawn[row.id] = next;
+        const key = `${field}:${row.id}`;
+        drawAhead(field, row.id, next);
         failure = '';
-        const answer = await writeSession(row.id, { [field]: next });
-        if (answer.ok) return;
-        drawn[row.id] = !next;
-        failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
+        hold(key, 1);
+        try {
+            const answer = await writeSession(row.id, { [field]: next });
+            if (answer.ok) return;
+            if (writing[key] === 1) forget(field, row.id);
+            failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
+        } finally {
+            hold(key, -1);
+        }
     }
 
     /** A title typed and taken (a string), the field opened (null), or closed without one (''). */

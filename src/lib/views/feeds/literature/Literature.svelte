@@ -23,6 +23,9 @@
     // server answers from its cache within `literature.cache_min`. A search started while one is in
     // flight aborts it, and only the latest search's answers are drawn. Every filter is applied
     // again to the merged list, whatever the sources did with it; changing the sort asks nothing.
+    // While a search is under way a moving line is drawn across the top of the results, named
+    // Searching, above the papers already answered; under the system's reduce-motion setting it is
+    // drawn still.
     //
     // The view sends the query and its filters to the sources toggled on, through the server, and
     // writes nothing but the Lit Watch entry the reader adds. It never writes a `.bib` file.
@@ -31,6 +34,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -198,6 +202,11 @@
         {:else if run.asked() === null}
             <Empty message={t('literature.idle')} glyph="book" />
         {:else}
+            {#if run.running()}
+                <div class="running">
+                    <Progress percent={null} label={t('literature.searching')} />
+                </div>
+            {/if}
             {#if papers.length > 0}
                 <p class="count">
                     {papers.length === 1
@@ -233,6 +242,10 @@
 </Pane>
 
 <style>
+    .running {
+        display: flex;
+    }
+
     /* One column the width of the pane, however long a line inside it: a grid's own column would
        otherwise grow to the widest line it holds and widen the pane. */
     .literature,

@@ -18,6 +18,15 @@
     // pushes it to a remote and makes that its upstream; with several remotes it lists them. A
     // write git refuses opens the Repositories view on the repository, whose line says why. The
     // writes are the page's, handed in, since the shell may not write.
+    //
+    // While a push, a pull, a fetch, a sync or a publish runs on any root of the repository, from
+    // the press to its answer, the sync item draws the sync glyph turning in place of the behind
+    // and ahead glyphs, its counts kept, and the action's words (Pushing...) as its hover words;
+    // while a publish runs, the Publish item, for one remote or several, draws the sync glyph
+    // turning and the same words, and is waiting: drawn disabled, it takes no press and opens no
+    // list until the answer, and it stays the same button, in the focus order, so the focus the
+    // confirm gives back lands on it. The glyph is still under the system's reduce-motion setting.
+    // The page says which action runs (`git.running`), as it does the writes.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -105,6 +114,17 @@
     );
     /** Whether a press of the sync item pushes, which is when the branch is only ahead. */
     const pushes = $derived(repo.ahead > 0 && repo.behind === 0);
+
+    /** The actions that move the branch against its upstream, which the sync item shows. */
+    const SYNC_ACTIONS: readonly string[] = ['push', 'pull', 'fetch', 'sync', 'publish'];
+
+    /** The action that moves the branch running on the repository, or null when none runs. */
+    const syncing = $derived.by(() => {
+        const running = git.running(repo.root);
+        return running !== null && SYNC_ACTIONS.includes(running.action) ? running : null;
+    });
+    /** Whether a publish runs on the repository, which the Publish item waits on. */
+    const publishing = $derived(syncing?.action === 'publish');
 
     /** A branch picked from the list, checked out once the reader confirms. */
     function picked(name: string): void {
@@ -194,26 +214,38 @@
     <span data-status="sync">
         <ToolButton
             label={t('statusbar.sync_name', repo.behind, repo.ahead)}
-            title={pushes
-                ? repo.ahead === 1
-                    ? t('statusbar.sync_tip_push_one', upstream)
-                    : t('statusbar.sync_tip_push', repo.ahead, upstream)
-                : t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream)}
+            title={syncing !== null
+                ? syncing.words
+                : pushes
+                  ? repo.ahead === 1
+                      ? t('statusbar.sync_tip_push_one', upstream)
+                      : t('statusbar.sync_tip_push', repo.ahead, upstream)
+                  : t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream)}
             status
             onclick={synced}
         >
-            <Glyph name="behind" />
-            <span data-sync="behind">{repo.behind}</span>
-            <Glyph name="ahead" />
-            <span data-sync="ahead">{repo.ahead}</span>
+            {#if syncing !== null}
+                <Glyph name="sync" turning />
+                <span data-sync="behind">{repo.behind}</span>
+                <span data-sync="ahead">{repo.ahead}</span>
+            {:else}
+                <Glyph name="behind" />
+                <span data-sync="behind">{repo.behind}</span>
+                <Glyph name="ahead" />
+                <span data-sync="ahead">{repo.ahead}</span>
+            {/if}
         </ToolButton>
     </span>
 {:else if sync && !detached && repo.remotes.length === 1}
     <span data-status="publish">
         <ToolButton
             label={t('repositories.publish')}
-            title={t('statusbar.publish_tip', repo.branch, repo.remotes[0])}
-            glyph="publish"
+            title={publishing && syncing !== null
+                ? syncing.words
+                : t('statusbar.publish_tip', repo.branch, repo.remotes[0])}
+            glyph={publishing ? 'sync' : 'publish'}
+            turning={publishing}
+            waiting={publishing}
             compact
             status
             onclick={() => publish(repo.remotes[0])}
@@ -225,8 +257,12 @@
             status
             placement="above"
             label={t('repositories.publish')}
-            glyph="publish"
-            title={t('statusbar.publish_tip_many', repo.branch)}
+            glyph={publishing ? 'sync' : 'publish'}
+            turning={publishing}
+            waiting={publishing}
+            title={publishing && syncing !== null
+                ? syncing.words
+                : t('statusbar.publish_tip_many', repo.branch)}
             items={remotes}
             onpick={publish}
         />

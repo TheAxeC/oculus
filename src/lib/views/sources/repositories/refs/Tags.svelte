@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/Repo.svelte. The Tags section: one row per
-    // tag with the commit it points at, an annotated tag with its message's subject, and Delete,
-    // which asks first. Pressing a row shows the commit in the graph. Creating a tag at HEAD and
-    // pushing the tags are in the view's `...` menu, as VS Code puts them in its own.
+    // Layer 3, partial of views/sources/repositories/repo/Repo.svelte. The Tags section: one row
+    // per tag with the commit it points at, an annotated tag with its message's subject, and
+    // Delete, which asks first. Pressing a row shows the commit in the graph. Creating a tag at
+    // HEAD and pushing the tags are in the view's `...` menu, as VS Code puts them in its own.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';

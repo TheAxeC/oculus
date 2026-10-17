@@ -1,7 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Repositories follows the file browser in the Explorer page's
-    // group: the same roots, read as repositories rather than as folders. Its rail badge is the
-    // number of changes over every repository of its list, each counted once.
+    // group: the same roots, read as repositories rather than as folders. Its badge, which it also
+    // gives its rail button, is the number of changes over every repository of its list, each
+    // counted once.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -10,7 +11,8 @@
         glyph: 'views.repositories_glyph',
         group: 'explorer',
         order: 1,
-        badge: (client) => client.railBadges.repositoriesBadge()
+        badge: (client) => client.railBadges.repositoriesBadge(),
+        railPart: (client) => ({ count: client.railBadges.repositoriesCount() })
     };
 </script>
 
@@ -24,13 +26,13 @@
     // repositories, the repositories found below them and the folders projects are cloned into.
     // Roots of the `git` channel that lie in one repository (a folder of the workspace inside the
     // hub's repository) are that repository's row, shown by the root that is its top folder. A
-    // folder that is no repository or is gone has no row, and neither has a session's workspace
-    // (an agent's worktree of a listed repository shows in that repository's Worktrees section). A
+    // folder that is no repository or is gone has no row, and neither has a session's workspace (an
+    // agent's worktree of a listed repository shows in that repository's Worktrees section). A
     // repository whose read failed keeps its row, and each row carries the few words and tone its
     // state comes to (views/shared/changes/repo-shape.ts). A repository that went quiet is a fact
     // about that repository, so the view neither drops it from the list nor hands itself to another
-    // one, and repositories/Repo.svelte draws the one sentence that state comes to in place of the
-    // sections.
+    // one, and repositories/repo/Repo.svelte draws the one sentence that state comes to in place of
+    // the sections.
     //
     // Which repository is shown, which sections and folders are closed, which commit of the graph
     // is open, the mode and the request the Branch control of a row makes for the Branches section
@@ -81,7 +83,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
-    import Repo from './Repo.svelte';
+    import Repo from './repo/Repo.svelte';
     import RepoList from './RepoList.svelte';
     import AppSource from './apps/AppSource.svelte';
     import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
@@ -501,7 +503,8 @@
     /* The icon controls of the rows draw 1px of padding round the 16px icon, and are a 20px box
        because the compact control's min-width and height are `--header-action`, with no border;
        the last part of a row (its count or status letter) sits 12px from the row's edge. The view
-       fills the pane, so the repository's message line (Repo.svelte) sits at the pane's foot. */
+       fills the pane, so the repository's message line (repo/RepoMessage.svelte) sits at the
+       pane's foot. */
     .repos {
         --tree-end-inset: 12px;
         --action-pad: 1px;

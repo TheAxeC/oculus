@@ -164,6 +164,7 @@
             state={readable}
             {branchItems}
             {busy}
+            busyWords={repositories.busyWords(workspace)}
             {branchName}
             {outcome}
             {shared}

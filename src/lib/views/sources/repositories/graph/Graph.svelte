@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/Repo.svelte. VS Code's Source Control Graph:
-    // one row per commit of the history of the checked-out branch and its upstream together, each
-    // commit once, with its lanes drawn from its parents, the names on it as pills (the first
+    // Layer 3, partial of views/sources/repositories/repo/Repo.svelte. VS Code's Source Control
+    // Graph: one row per commit of the history of the checked-out branch and its upstream together,
+    // each commit once, with its lanes drawn from its parents, the names on it as pills (the first
     // whole, the rest as glyphs grouped by kind, and a head pill on HEAD's commit) and the head's
     // subject in bold, fifty at a time with a Load More row after them.
     //

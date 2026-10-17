@@ -56,7 +56,7 @@ text:
         scholar: Google Scholar
         scholar_tip: Opens this query on Google Scholar. Only the query, the author and the years are carried over.
         search: Search
-        searching: Searching ...
+        searching: Searching...
         sep: ' | '
         sort: Sort
         sort_citations: Citations

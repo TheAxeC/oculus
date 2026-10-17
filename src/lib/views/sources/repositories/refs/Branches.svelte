@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/Repo.svelte. The branches of one
+    // Layer 3, partial of views/sources/repositories/repo/Repo.svelte. The branches of one
     // repository as a section: one explorer row per branch with its upstream after its name, the
     // checked-out one drawn as the one in force (a bold name with a check), the switch control on
     // every other one, and the row a new branch is named on, whose visible label is the name of its

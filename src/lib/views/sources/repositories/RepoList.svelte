@@ -12,9 +12,13 @@
     // Branch, then the number of changed paths as a badge, and last the `...` menu of the row (the
     // items of its right-click menu). The Branch, Sync and Publish controls give way before the
     // repository's name does; the badge and the `...` keep their room. Sync and Publish ask the
-    // question the view's `...` menu asks and press through the same store call; the Branch
-    // control asks the view to show the repository and open its Branches section. Branch, Sync
-    // and Publish are disabled while a write runs on the repository.
+    // question the view's `...` menu asks and press through the same store call; the Branch control
+    // asks the view to show the repository and open its Branches section. Branch, Sync and Publish
+    // are disabled while a write runs on the repository, and say what runs as their hover words:
+    // the words of the action, or Working for an action that says none. While an action that says
+    // words of its own runs on any root of the repository, a moving line is laid along the foot of
+    // the row, over it so the row keeps its height and passing the pointer through to the row, with
+    // those words as its name; under the system's reduce-motion setting it is drawn still.
     //
     // A root that is no repository, that is gone or whose read failed keeps its row, with the few
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as
@@ -34,6 +38,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import AppSourceItem from './apps/AppSourceItem.svelte';
     import { repoPick, repoRowMenu } from './menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
@@ -103,7 +108,7 @@
         onsource
     }: Props = $props();
 
-    const { repositories } = useState();
+    const { repositories, selectors } = useState();
 
     /** A pick from a repository row's menu. */
     function picked(root: string, pick: string): void {
@@ -165,6 +170,7 @@
                     {@const shape = repoShape(root, git)}
                     {@const readable = shape === 'readable' && git !== null}
                     {@const count = git === null || !readable ? 0 : changeCount(git)}
+                    {@const running = repositories.running(selectors.rootsOfRepository(root))}
                     <li role="none" data-repo-row={root}>
                         <ContextMenu
                             label={labels[root] ?? root}
@@ -197,9 +203,10 @@
                                 {#snippet actions(reach: number)}
                                     {#if git !== null && readable}
                                         {@const working = repositories.busy(root)}
+                                        {@const words = working ? repositories.busyWords(root) : ''}
                                         <ToolButton
                                             label={branchOf(git)}
-                                            title={working ? t('git.busy') : branchTitle(git)}
+                                            title={working ? words : branchTitle(git)}
                                             glyph="branch"
                                             small
                                             cut
@@ -210,7 +217,7 @@
                                         {#if tracksUpstream(git)}
                                             <ToolButton
                                                 label={branchState(git)}
-                                                title={working ? t('git.busy') : branchState(git)}
+                                                title={working ? words : branchState(git)}
                                                 glyph="sync"
                                                 small
                                                 tabindex={reach}
@@ -231,9 +238,7 @@
                                         {:else if canPublish(git)}
                                             <ToolButton
                                                 label={t('repositories.publish')}
-                                                title={working
-                                                    ? t('git.busy')
-                                                    : t('repositories.publish')}
+                                                title={working ? words : t('repositories.publish')}
                                                 glyph="publish"
                                                 compact
                                                 tabindex={reach}
@@ -270,6 +275,11 @@
                                 {/snippet}
                             </TreeItem>
                         </ContextMenu>
+                        {#if running !== null}
+                            <div class="running">
+                                <Progress percent={null} label={running.words} />
+                            </div>
+                        {/if}
                     </li>
                 {/each}
                 {#each sources as one (scmKey(one.app, one.id))}
@@ -286,6 +296,20 @@
 </TreeView>
 
 <style>
+    /* The row's own box, so its moving line is laid along the row's foot. */
+    [data-repo-row] {
+        position: relative;
+    }
+
+    .running {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        pointer-events: none;
+    }
+
     .shape {
         color: var(--tone-txt, var(--muted-txt));
     }

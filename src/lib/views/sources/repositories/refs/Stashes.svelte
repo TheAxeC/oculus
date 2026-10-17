@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/Repo.svelte. The Stashes section: one row per
-    // stash, newest first, its message and when it was made, with View, Apply, Pop and Drop, as
+    // Layer 3, partial of views/sources/repositories/repo/Repo.svelte. The Stashes section: one row
+    // per stash, newest first, its message and when it was made, with View, Apply, Pop and Drop, as
     // VS Code's Stashes view offers them. Pressing a row views it: the stash's whole diff in a diff
     // pane. Drop asks first, since a dropped stash is not listed anywhere afterwards; an apply or a
     // pop that conflicts leaves its conflicts under Merge Changes, which the server says.

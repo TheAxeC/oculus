@@ -33,22 +33,10 @@ dispatch:      # steps in flight, up to six (Z632)
   session_id: a9544cabcb0062b1d
   launched: 2026-10-17
   report: tools/oculus/.scratch/migration/agents/reviews/O40-report.md
+  builder_usage: 365,721 tokens, 1,232 tool uses, 234.6 min
   round: 0
   brief_check: agents/reviews/O40-brief-check.md (a720dd5aa206b347e, claude-opus-5-5, 238,481 tokens, 81 tool uses, 12.3 min)
-  landing: not-started
-- step: O41
-  base: cc0a63390
-  worktree: .agents/worktrees/migration-O41
-  executor: agent
-  worker: claude:opus (ordo-high)
-  session_id: a3b197066c39c6c82
-  launched: 2026-10-17
-  report: tools/oculus/.scratch/migration/agents/reviews/O41-report.md
-  builder_usage: 113,596 tokens, 281 tool uses, 49.4 min
-  round: 1
-  brief_check: agents/reviews/O41-brief-check.md (a5ee76e018077f142, claude-opus-5-5, 254,121 tokens, 97 tool uses, 16.1 min)
-  reviewer_report: agents/reviews/O41-refuter.md (aaf31f5ef12ea8dc2, claude-opus-5-5, 337,168 tokens, 86 tool uses, 18.4 min)
-  shared_paths: "with oculus/migration O40: src/lib/views/sources/search/Search.svelte (O41 the markup around the results, O40 the script near line 249), src/lib/views/shared/changes/CommitBox.svelte (O41 lines 90, 198 and 215, O40 lines 72 to 89; line 90 is adjacent to O40's last hunk and is resolved by hand at landing if the cherry-pick marks it), src/lib/views/sources/source/actions/submit-job.svelte.ts (O40 has not changed it), config/text/ui.yml (O41 the keys beside page_badge_tip, O40 the close-question keys), HELP.md and DESIGN.md (different sections), src/lib/views/sources/source/Source.svelte (outside O41's write list: O41 line 452, O40 the hunks at lines 117, 180, 222 and 276); each merge is line by line"
+  reviewer_report: agents/reviews/O40-refuter.md (a03ea6cee5f5d717c, claude-opus-5-5, 179,623 tokens, 148 tool uses, 25.1 min)
   landing: not-started
 ```
 
@@ -183,6 +171,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 136 (2026-10-18): Axel asked for File > Open in Browser in the app's menu, opening an oculus tab in the default browser, and asked which other menu items the app needs. Decisions open: (1) where it lands: a step of its own after O40 (recommended; O40 is O37's look defects, so folding it in widens O40 past its part) or folded into O40's repair round; (2) what it opens: the main page of the app's own server at `/`, which shares the saved layout with every app window (recommended), or the address of the window it is pressed in (a float's `?float=` address cannot be open in a window and a browser tab at once); (3) which of the further menu items listed in the session's answer of 2026-10-18 go in (VS Code 1.137's labels from its `nls.messages.json`, mapped to the commands oculus already has); (4) keys: none of the new items takes a key that the page or an app's keybinding holds now.
+- Open item 137 (2026-10-18, O41's look): the Source Control view's moving line is drawn at the top of `Repo.svelte` (`src/lib/views/sources/repositories/repo/Repo.svelte:252-258`), which sits right under the Repositories list, so with two repositories listed it lies 5 px under the second row's own foot line and reads as that row's (seen on the scratch oculus: `repo` pushing, `repo2` syncing, lines at y 113, 135 and 140). O41's brief item 2 placed it "across its top, under its header". Options: (a) keep it where it is; (b) draw the view's line under the view's title bar, where VS Code's Source Control draws its progress, so no row is next to it; (c) draw no view line while the Repositories list is shown, the row's foot line and the busy words line saying what runs. Recommendation: (b), since it keeps a line for a reader whose list is collapsed and places it where a VS Code reader looks; (c) loses the line when the list is collapsed. The lazy option is (a), which leaves the misreading. Where it lands: a step after O40, since O40's builder is not working in these files.
+
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -206,6 +197,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports used nowhere (twelve, among them `holdTerminals`, `stubFetch` and the whole of `feeds-fixture.ts`): O37, defect 8.
 
 ## Closed items
+
+- Open item 133 (2026-10-18): (a), the Markdown server started for a link rewrite stays alive while the page that asked for it is open; G36's text and its lifetime row change; built in O40's repair round (Axel).
+- Open item 134 (2026-10-18): (a), "Open File (Index)" is added beside "Open File (HEAD)" and row 46 is fixed under it; built in O40's repair round (Axel).
+- Open item 135 (2026-10-18): (a), guarded entries and tests for the merge tab following git, the commit box taking git's new prepared message, two browser tabs splitting, and the terminal keeping its scroll position; written in O40's repair round (Axel).
 - Float group ruled by Axel (2026-10-13): the float's views in a group of their own, "Float" with `w`; the Apps guide in the Help group; References open on the Explorer page; booked in plan.md Rulings (Float group), written into D74's brief as part 13 with cases 84 to 88, and sent to D74's builder.
 - Open item 92 ruled by Axel (2026-10-13): notes more like Obsidian, part 1 (a), part 2 (a), the graph view (a), a New Note control per hub (a), and Search and Go to File, links that make a missing note, images and embeds, tags and math agreed; the properties panel, Canvas, Bases, Sync, Publish and plugins not built; booked in plan.md Rulings (Open item 92) and as step D76, added by Axel, after D74 and beside D73 when their paths are disjoint; Q72 waits for D76.
 - Open items 90 and 91 ruled (a) by Axel (2026-10-13): one settings file per hub, `.oculus/config.yml`, and one `collections:` list naming every file of records, the `*_file` keys gone; booked in plan.md Rulings and folded into D74 parts 8 and 9; D74 now waits for D72, whose three `collections:` entries part 9 needs.
@@ -298,6 +293,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-18 (O41 landed). O41 landed on main (booking in plan.md under O41, `agents/reviews/O41-landing.md`) after one repair round and the review over it; that review's findings fixed at landing or ruled (`agents/reviews/O41-refuter.md`, Closed), one look defect fixed at landing (the Literature line's words "Searching ..." to "Searching..."); `npm run test:landing` passed in the gate after one worker-start timeout rerun, `test:checks` again after the text fix, main's staged oculus tree equal to the gate's (6,463 lines). The look: the rail's sums, tones and hover words, the catalogue and tab counts, the Search and Literature lines and the Usage refresh on TEST; the git cases on a scratch oculus on 8796; clone, Submit Job, update tasks and reduce-motion not taken (`agents/reviews/owed-looks.md`). O40's reviewer a03ea6cee5f5d717c reported (`agents/reviews/O40-refuter.md`). Open items: 136, 137. In flight (1 of 6): O40 (reviewed). Next: O40's repair round 1 (rulings 133 to 135 (a) and the review's findings), the review over it, /land O40; then O38, O39.
 - 2026-10-17 (O40 prepared). Axel ruled open items 130 and 131: the six diagnosis agents were stopped, and diagnosis is banned for everyone, standing. O40's brief (`agents/briefs/O40.md`) covers all 45 open rows of `agents/reviews/O37-defects.md`, 43 built and rows 24 and 83 needing no change; its brief check a720dd5aa206b347e (claude-opus-5-5) reported findings under eight headings, each closed in the brief (`agents/reviews/O40-brief-check.md`, Closed); Z932 taken. Defects: 85, 42 done, 43 open, all in O40. Builder a9544cabcb0062b1d launched on base 06aaa0da4 in `.agents/worktrees/migration-O40`. Next: its report, then /refute and /land with the looks (rows of the report's look lines, D68's browser panel after row 69, row 85 with the real pointer). Then O38, then O39.
 - 2026-10-17 (O30 case 27 taken). On Axel's greenlight (ruling 128 (b)) the session took O30 case 27 with the real pointer on its scratch app on 8796: a tab dragged onto the desktop opened a new window, and a tab dragged into a popped-out window moved into its pane; a drag that starts on a window that is not the active one does nothing, booked for O40 as row 85 of `agents/reviews/O37-defects.md` (85 defects, 40 done, 45 open for O40). Next: O40, prepared and started on Axel's go, then O38, then O39.
 - 2026-10-17 (O37 landed). O37 landed on main (booking in plan.md under O37, `agents/reviews/O37-landing.md`) after one repair round and the review over it: the review's findings closed at landing, 40 of the 84 look defects done and 44 open for O40 (`agents/reviews/O37-defects.md`), the owed looks taken but O30 case 27 (open item 128, ruled (b): it waits on Axel's greenlight) and D68's browser panel (O40), red lines in six test files, four tree checks and the format check fixed, Z930 taken; `npm run test:landing` passed in the gate and main's staged oculus tree equals the gate's. Open items: 128. In flight (0 of 6): none. Next: O38's /spec, each deletion on Axel's yes path by path; O40 on Axel's go.

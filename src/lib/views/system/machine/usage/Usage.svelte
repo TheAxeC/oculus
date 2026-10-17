@@ -23,6 +23,10 @@
     // `usage_refresh_min` of config/behavior.yml (its default when the file's value is refused),
     // read off the config channel the page already holds, so the refresher's payload carries no
     // time it can be computed from.
+    //
+    // A Claude account's card carries Refresh, whose glyph turns from the reader's press until that
+    // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own
+    // cadence turns nothing.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -50,7 +54,7 @@
 
     const {
         entities: { config, usage },
-        usageRefresh: { refreshRefusal, refreshUsageAccount }
+        usageRefresh: { refreshRefusal, refreshing, refreshUsageAccount }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -192,6 +196,7 @@
                                         compact
                                         label={t('usage.refresh')}
                                         glyph="refresh"
+                                        turning={refreshing(account.label)}
                                         onclick={() => refreshUsageAccount(account.label)}
                                     />
                                 </span>

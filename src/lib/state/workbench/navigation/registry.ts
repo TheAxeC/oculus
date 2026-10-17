@@ -15,23 +15,35 @@ import type { Component } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import type { Dock, Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
-import type { BadgeCell, RailBadgesStore } from '../rail-badges/rail-badges.svelte.ts';
+import type { BadgeCell, RailBadgesStore, RailPart } from '../rail-badges/rail-badges.svelte.ts';
 import type { CalendarStore } from '../../life/calendar.svelte.ts';
 import type { HpcStore } from '../../system/machine/hpc/hpc.svelte.ts';
+import type { ProcessesStore } from '../../system/machine/processes/processes.svelte.ts';
 import { lookup, t } from '../../shared/words/text.ts';
 
 /**
  * What a registration's badge hooks read of the client: the calendar's and the HPC queue's badge
- * words, and the rail badges' counts, hues, hover words and cells, each taken out of its store's
- * own type, so a store that changes a member's shape changes it here too. The client object
- * (state/client/context.ts) holds these stores, so it is handed to badgeOf as it is.
+ * words, the count of the Processes view's rows, and the rail badges' counts, hues, hover words and
+ * cells, each taken out of its store's own type, so a store that changes a member's shape changes
+ * it here too. The client object (state/client/context.ts) holds these stores, so it is handed to
+ * badgeOf and to a rail part as it is.
  */
 export type BadgeClient = {
     calendar: Pick<CalendarStore, 'badgeText'>;
     hpc: Pick<HpcStore, 'badgeText'>;
+    processes: Pick<ProcessesStore, 'count'>;
     railBadges: Pick<
         RailBadgesStore,
         | 'boardBadge'
+        | 'boardPart'
+        | 'collectionCount'
+        | 'inboxCount'
+        | 'applicationsCount'
+        | 'auditCount'
+        | 'problemsCount'
+        | 'repositoriesCount'
+        | 'findingsCount'
+        | 'sessionInputCount'
         | 'boardBadgeTitle'
         | 'boardCells'
         | 'collectionBadge'
@@ -137,6 +149,15 @@ export type Registration = {
      * all.
      */
     badgeTabText?: (state: BadgeClient) => string;
+    /**
+     * What the view gives the button of the rail page its tab is on: a count, read from the state
+     * the tab's badge reads, and the tone the tab's badge has: an urgency tone (red, amber, green)
+     * where the view or `nav_live`'s `tone:` sets one, else the hue of the statuses or the cell it
+     * counts, as the Funding count's violet, or none. The button draws the sum of its page's parts
+     * (shell/rail/rail.ts, `railBadge`). A registration without it gives the rail nothing,
+     * whatever its tab draws.
+     */
+    railPart?: (state: BadgeClient) => RailPart;
 };
 
 /** What a view module exports; the loader supplies the module's default component. */

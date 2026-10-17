@@ -7,7 +7,9 @@
     // ToolButton.svelte, in the same fill and the same height. It holds nothing: it is the
     // trigger of the menu's bits-ui Dropdown Menu, whose attributes and handlers the menu hands it
     // as `trigger`, so whether the list is open, what a press or a key does and what the button
-    // says to assistive technology are the menu's.
+    // says to assistive technology are the menu's. A waiting opener is drawn disabled and is
+    // handed none of the trigger's handlers, so no press or key opens the list, while it keeps
+    // its place in the focus order, as ToolButton.svelte's waiting button does.
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
@@ -46,6 +48,10 @@
          * beside it and square corners on its left.
          */
         primary?: boolean;
+        /** The glyph going round. */
+        turning?: boolean;
+        /** Drawn disabled, opening nothing, and kept in the focus order. */
+        waiting?: boolean;
     };
 
     let {
@@ -62,8 +68,17 @@
         words = '',
         title,
         stop,
-        primary = false
+        primary = false,
+        turning = false,
+        waiting = false
     }: Props = $props();
+
+    /** The trigger's attributes, without its handlers while the opener waits. */
+    const held = $derived(
+        waiting
+            ? Object.fromEntries(Object.entries(trigger).filter(([key]) => !key.startsWith('on')))
+            : trigger
+    );
 </script>
 
 <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
@@ -84,13 +99,15 @@
         class:rail
         class:status
         class:primary
+        class:waiting
         bind:this={button}
         aria-label={label}
+        aria-disabled={waiting ? 'true' : undefined}
         data-stop={stop}
-        {...trigger}
+        {...held}
     >
         {#if glyph !== undefined}
-            <Glyph name={glyph} />
+            <Glyph name={glyph} {turning} />
         {/if}
         {#if status}
             <span class="label">{words}</span>
@@ -123,6 +140,13 @@
 
     .opener:hover {
         border-color: var(--accent);
+    }
+
+    /* A waiting opener looks disabled and takes no pointer, as ToolButton.svelte's waiting button;
+       the wrapper around it still opens the tooltip. */
+    .opener.waiting {
+        opacity: 0.5;
+        pointer-events: none;
     }
 
     /* The small text button, VS Code's, as ToolButton.svelte draws it: 11px words on a 14px line,

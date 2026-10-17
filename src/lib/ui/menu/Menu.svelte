@@ -92,6 +92,13 @@
         stop?: string;
         /** A key pressed on the opener, for a strip that moves its own stop with the arrow keys. */
         onkeydown?: (event: KeyboardEvent) => void;
+        /** The opener's glyph going round, while what the menu started runs. */
+        turning?: boolean;
+        /**
+         * The opener waiting on what the menu started: drawn disabled, it opens no list on a press
+         * or a key, and it stays in the focus order (MenuOpener.svelte).
+         */
+        waiting?: boolean;
     };
 
     let {
@@ -113,7 +120,9 @@
         title,
         tabindex,
         stop,
-        onkeydown
+        onkeydown,
+        turning = false,
+        waiting = false
     }: Props = $props();
 
     /** How far from the button the list sits. */
@@ -162,6 +171,8 @@
                 {words}
                 {title}
                 {stop}
+                {turning}
+                {waiting}
             />
         {/snippet}
     </DropdownMenu.Trigger>

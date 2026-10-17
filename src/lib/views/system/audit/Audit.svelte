@@ -1,5 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. The audit follows Findings in the System page's group.
+    // Layer 3, view registration. The audit follows Findings in the System page's group. Its badge
+    // is the open findings of the audit, the count it also gives its rail button.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -9,7 +10,8 @@
         group: 'views',
         order: 6,
         unique: true,
-        badge: (client) => client.railBadges.auditBadge()
+        badge: (client) => client.railBadges.auditBadge(),
+        railPart: (client) => ({ count: client.railBadges.auditCount() })
     };
 </script>
 

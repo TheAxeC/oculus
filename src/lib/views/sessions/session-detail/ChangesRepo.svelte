@@ -23,6 +23,8 @@
         state: GitState;
         branchItems: MenuItem[];
         busy: boolean;
+        /** What the busy line says while a write runs: the action's words, or Working. */
+        busyWords: string;
         branchName: string;
         outcome: string;
         shared: (path: string) => string[];
@@ -38,6 +40,7 @@
         state,
         branchItems,
         busy,
+        busyWords,
         branchName,
         outcome,
         shared,
@@ -93,7 +96,7 @@
     />
     {#if busy}
         <div class="busy">
-            <p class="none">{t('git.busy')}</p>
+            <p class="none">{busyWords}</p>
             {#if oncancel !== undefined}
                 <ToolButton
                     small
