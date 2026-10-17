@@ -37,8 +37,17 @@ dispatch:      # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O40-brief-check.md (a720dd5aa206b347e, claude-opus-5-5, 238,481 tokens, 81 tool uses, 12.3 min)
   landing: not-started
 - step: O41
-  brief_check: "running: a5ee76e018077f142"
-  landing: preparing
+  base: cc0a63390
+  worktree: .agents/worktrees/migration-O41
+  executor: agent
+  worker: claude:opus (ordo-high)
+  session_id: a3b197066c39c6c82
+  launched: 2026-10-17
+  report: tools/oculus/.scratch/migration/agents/reviews/O41-report.md
+  round: 0
+  brief_check: agents/reviews/O41-brief-check.md (a5ee76e018077f142, claude-opus-5-5, 254,121 tokens, 97 tool uses, 16.1 min)
+  shared_paths: "with oculus/migration O40: src/lib/views/sources/search/Search.svelte (O41 the markup around the results, O40 the script near line 249), src/lib/views/shared/changes/CommitBox.svelte (O41 lines 90, 198 and 215, O40 lines 72 to 89; line 90 is adjacent to O40's last hunk and is resolved by hand at landing if the cherry-pick marks it), src/lib/views/sources/source/actions/submit-job.svelte.ts (O40 has not changed it), config/text/ui.yml (O41 the keys beside page_badge_tip, O40 the close-question keys), HELP.md and DESIGN.md (different sections); each merge is line by line"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
