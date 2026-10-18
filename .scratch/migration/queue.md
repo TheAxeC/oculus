@@ -1,14 +1,14 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (3 steps):
-- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): next, now that O40 has landed.
+- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): next; its /spec stopped on open item 147, the menu keys on macOS, and runs again once Axel has ruled.
 - O38 (cockpit retired, hub tools cleaned): once O42 has landed.
 - O39 (oculus in its own repository): once O38 has landed.
 
 Owed looks: none.
 
 Landed, newest first:
-- O40 (O37's open look defects), 2026-10-18, this landing's commit.
+- O40 (O37's open look defects), 2026-10-18, 2eab73263.
 - O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
 - O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.
 - O33 (phase A, oculus ready for its own repository), 2026-10-16, bda7b0346.
