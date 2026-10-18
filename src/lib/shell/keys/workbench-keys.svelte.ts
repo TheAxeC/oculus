@@ -1,5 +1,7 @@
 // Layer 3, shell. Workbench keyboard dispatch connects pure key actions to layout state and the
-// focused pane's ordered card ids. Views alone render the cursor held in each instance.
+// focused pane's ordered card ids. Views alone render the cursor held in each instance. The app
+// menu's commands carry out the same actions through `act`, with no key pressed
+// (shell/window/menu-answer.ts).
 
 import type { DragStore } from '$lib/state/workbench/drag.svelte';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
@@ -27,6 +29,7 @@ import {
     togglesPalette,
     type PaletteKey
 } from '$lib/data/helpers/keys/oculus/palette-keys';
+import { SHEET_CHARACTER } from '$lib/data/helpers/keys/oculus/page-keys';
 import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
 import { initialKeyState, resolveKey, type KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
 import { DOC_PICK, type RailOrder } from '$lib/state/workbench/navigation/catalogue';
@@ -102,6 +105,13 @@ type Options = {
 
 export type WorkbenchKeys = {
     keys: (event: KeyboardEvent) => void;
+    /**
+     * Carry out a key's action with no key pressed, as a command of the app's menu asks: on the
+     * pane the keyboard is in, else the pane that holds the page's active tab.
+     */
+    act: (action: KeyAction) => void;
+    /** Whether an overlay holds the keys: the palette, the update tray, a confirm or the sheet. */
+    covered: () => boolean;
     paneFocused: (event: FocusEvent) => void;
     frameFocused: () => void;
     panePressed: (event: PointerEvent) => void;
@@ -139,7 +149,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             !event.metaKey &&
             !event.ctrlKey &&
             !event.altKey &&
-            event.key === '?'
+            event.key === SHEET_CHARACTER
         ) {
             event.preventDefault();
             options.setSheetOpen(false);
@@ -576,7 +586,18 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         rememberPane(event.target);
     }
 
-    return { keys, paneFocused, frameFocused, panePressed, clearCursor, syncCards, stopCards };
+    return {
+        keys,
+        act: (action) => void perform(action, focusedPaneElement()),
+        covered: () =>
+            options.paletteOpen() || options.updateOpen() || options.sheetOpen() || dialogShown(),
+        paneFocused,
+        frameFocused,
+        panePressed,
+        clearCursor,
+        syncCards,
+        stopCards
+    };
 }
 
 /** Whether a key target is inside the source tab's editor. */

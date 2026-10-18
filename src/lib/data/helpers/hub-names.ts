@@ -12,6 +12,7 @@
 // its id. With no primary every hub's records are prefixed. Each function below that tells a
 // record's hub or id apart takes the primary's name, or null when the workspace names none.
 
+import { isMap } from './guards.ts';
 import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
 
 /**
@@ -283,6 +284,15 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'lint.writing_glyphs', file: 'behavior.yml' },
     { key: 'app_settings', file: 'behavior.yml' }
 ];
+
+/**
+ * The `wallpaper.image` value of a merged config as text, empty when it holds none: the image the
+ * wallpaper route serves, and the key the page's wallpaper layer asks for it by.
+ */
+export function wallpaperValue(config: Record<string, unknown> | undefined): string {
+    const block = config !== undefined && isMap(config.wallpaper) ? config.wallpaper : {};
+    return typeof block.image === 'string' ? block.image.trim() : '';
+}
 
 /** The placeholder of `recover_command` that the dataset's key, as one shell word, replaces. */
 export const RECOVER_KEY = '{key}';

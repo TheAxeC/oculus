@@ -20,7 +20,7 @@
 // shows, so both read one value.
 
 import type { editor } from 'monaco-editor';
-import { SAVE_PRESS } from '$lib/data/helpers/keys/oculus/editor-keys';
+import { SAVE_PRESS } from '$lib/data/helpers/keys/oculus/page-keys';
 import type { EditorAction, EditorOwnAction, KeyPress } from './types';
 
 /**

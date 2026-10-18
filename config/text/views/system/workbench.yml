@@ -12,7 +12,7 @@ text:
     settings:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
-        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash) and `files.file_icon_at_arrow` (true sets a file's icon where its sibling folders' arrows sit), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
         desc_config: "The settings of this hub, kept in its .oculus/config.yml: the scan folders, the files of its records, collections and feeds, the picture folders, the cluster its jobs run on and the values of its apps' settings. A value there replaces the engine's value of the same key whole. The domains and theme words are kept in the hub's registry files."
         desc_cpp_schema: "The keys a repository's .oculus/cpp.yml may hold, each with its words and the values it takes, which the editor completes and checks."
         desc_deck_schema: "The keys a deck's present.yml may hold, each with its words, which the editor completes and checks."
@@ -204,11 +204,11 @@ text:
         settings_not_this_kind: 'The value is not of the kind this setting takes.'
         settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
         settings_origin_also: 'Also set in {0}: {1}'
-        settings_origin_cut: 'longer than the file window reads'
         settings_origin_field: 'not a field of a language record'
         settings_origin_key: 'not a key the file reads; only languages is read'
         settings_origin_language: 'not one of the languages that have colours'
         settings_origin_map: 'not a map'
+        settings_origin_none: '{0} has no {1}, or one that does not read as text, is longer than the file window reads or is a link out of the folder'
         settings_origin_not_a_map: 'languages is not a map of language name to its record'
         settings_origin_repeat: 'a name an earlier row already took'
         settings_origin_unnamed: 'a row with no name'

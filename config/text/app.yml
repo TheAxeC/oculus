@@ -39,8 +39,6 @@ text:
             clone_none: No GitHub repository matches
             clone_type: Type the address of a repository to clone it
             clone_typed: 'Clone the repository at {0}'
-            cmd_accent: Set the accent colour
-            cmd_accent_hint: '<name | #hex | reset>'
             cmd_clone: Clone a GitHub repository
             cmd_clone_hint: '<name | url>'
             cmd_compile_database: Choose the compile database of the repository
@@ -170,6 +168,7 @@ text:
             workspace_save_name: Type a name for the workspace
         palette_empty: No match
         palette_unavailable: Unavailable
+        palette_unavailable_named: '{0}: unavailable'
         palette_dock_none: No float is docked at this edge
         pillars: 'Pillars: {0}'
         projects: 'Projects: {0}'

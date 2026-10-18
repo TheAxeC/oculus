@@ -2,10 +2,22 @@
 // resolves to given the guards the workbench reads (a field typed in, an overlay open, the desktop
 // app, a debug session), so that shortcut precedence is testable and the audit of an app's
 // keybindings can ask whether oculus takes a key by resolving it. The workbench
-// (shell/keys/workbench-keys.svelte.ts) supplies the guards and performs the returned action.
+// (shell/keys/workbench-keys.svelte.ts) supplies the guards and performs the returned action. The
+// presses are read from the page's key tables (page-keys.ts and palette-table.ts), which the
+// desktop app's menu shows its keys from too.
 
 import { debugKeyOf, type DebugKey } from './debug-keys.ts';
-import { SAVE_PRESS } from './editor-keys.ts';
+import {
+    APP_PRESSES,
+    CYCLE_PRESSES,
+    holdsPress,
+    letterOf,
+    navigatePresses,
+    SAVE_PRESS,
+    SEARCH_PRESSES,
+    SHEET_CHARACTER,
+    type Press
+} from './page-keys.ts';
 import { isPress, KEY_ROWS } from './palette-table.ts';
 
 /** The part of the rail's order the keys read: the lists a one-letter chord counts into. */
@@ -156,10 +168,7 @@ function problemStep(event: KeyEventLike, context: KeyContext): 1 | -1 | null {
  */
 function savesFile(event: KeyEventLike, context: KeyContext): boolean {
     if (event.defaultPrevented === true) return false;
-    const mac = context.mac !== false;
-    if ((mac ? event.metaKey : event.ctrlKey) !== true) return false;
-    if ((mac ? event.ctrlKey : event.metaKey) === true) return false;
-    return event.code === SAVE_PRESS.code && event.shiftKey !== true && event.altKey !== true;
+    return event.code === SAVE_PRESS.code && holdsPress(SAVE_PRESS, event, context.mac !== false);
 }
 
 /**
@@ -174,14 +183,11 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     if (context.app !== true || event.defaultPrevented === true) return null;
     if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
     const mac = context.mac !== false;
-    if ((mac ? event.metaKey : event.ctrlKey) !== true) return null;
-    if ((mac ? event.ctrlKey : event.metaKey) === true) return null;
-    if (event.altKey === true) return null;
-    if (event.shiftKey === true)
-        return event.code === 'KeyT' ? { kind: 'reopen-closed-tab' } : null;
-    if (event.code === 'KeyW') return { kind: 'close-tab' };
-    if (event.code === 'KeyN') return { kind: 'new-text-file' };
-    if (event.code === 'KeyF') return { kind: 'find' };
+    const kinds = Object.keys(APP_PRESSES) as (keyof typeof APP_PRESSES)[];
+    const kind = kinds.find(
+        (one) => event.code === APP_PRESSES[one].code && holdsPress(APP_PRESSES[one], event, mac)
+    );
+    if (kind !== undefined) return { kind };
     if (KEY_ROWS.symbols.presses.some((press) => isPress(press, event, mac))) {
         return { kind: 'workspace-symbol' };
     }
@@ -197,12 +203,15 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
  * (the terminal, which hands Ctrl and Minus to its program) stays that view's.
  */
 function navigateKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
-    if (event.defaultPrevented === true || event.code !== 'Minus') return null;
+    if (event.defaultPrevented === true) return null;
     if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
-    if (event.ctrlKey !== true || event.metaKey === true) return null;
-    const alt = event.altKey === true;
-    if (event.shiftKey === true) return alt ? null : { kind: 'go-forward' };
-    return alt === (context.mac === false) ? { kind: 'go-back' } : null;
+    const mac = context.mac !== false;
+    const presses = navigatePresses(mac);
+    const kinds = Object.keys(presses) as (keyof typeof presses)[];
+    const kind = kinds.find(
+        (one) => event.code === presses[one].code && holdsPress(presses[one], event, mac)
+    );
+    return kind === undefined ? null : { kind };
 }
 
 /**
@@ -247,21 +256,27 @@ export function resolveKey(
     }
     // Cmd+Shift+F and Cmd+Shift+H open the Search view, the second with its replace row shown, as
     // VS Code's Find in Files and Replace in Files do. Cmd is the Meta key on macOS and the Control
-    // key elsewhere, so the chord is the one of the two held. Like the tab keys it answers with a
-    // field focused, and an overlay keeps the keyboard while it is open.
+    // key elsewhere, so the chord is the one of the two held. The letter is the typed one, read
+    // from the table's press with its Shift. Like the tab keys it answers with a field focused, and
+    // an overlay keeps the keyboard while it is open.
     const command = (event.metaKey === true) !== (event.ctrlKey === true);
+    const search = (Object.keys(SEARCH_PRESSES) as (keyof typeof SEARCH_PRESSES)[]).find((one) => {
+        const press: Press = SEARCH_PRESSES[one];
+        return (
+            letterOf(press) === event.key.toLowerCase() &&
+            (event.shiftKey === true) === (press.shift === true)
+        );
+    });
     if (
         command &&
-        event.shiftKey === true &&
+        search !== undefined &&
         event.altKey !== true &&
         event.defaultPrevented !== true &&
         !context.paletteOpen &&
         !context.trayOpen &&
-        !context.confirmOpen &&
-        (event.key.toLowerCase() === 'f' || event.key.toLowerCase() === 'h')
+        !context.confirmOpen
     ) {
-        const kind = event.key.toLowerCase() === 'f' ? 'find-in-files' : 'replace-in-files';
-        return { action: { kind }, state: { ...state, chord: '' } };
+        return { action: { kind: search }, state: { ...state, chord: '' } };
     }
     if (savesFile(event, context)) {
         return { action: { kind: 'save' }, state: { ...state, chord: '' } };
@@ -291,17 +306,14 @@ export function resolveKey(
     // do the same, since the app has no browser tabs to keep them for. A field, a textarea and an
     // overlay keep the keyboard while they hold it, and Cmd and a bracket is left alone, being a
     // browser's own navigation.
-    if (
-        context.app === true &&
-        event.key === 'Tab' &&
-        event.ctrlKey === true &&
-        event.metaKey !== true &&
-        event.altKey !== true &&
-        event.defaultPrevented !== true &&
-        !held
-    ) {
+    const cycle = (['next', 'previous'] as const).find(
+        (one) =>
+            event.key === CYCLE_PRESSES[one].code &&
+            holdsPress(CYCLE_PRESSES[one], event, context.mac !== false)
+    );
+    if (context.app === true && cycle !== undefined && event.defaultPrevented !== true && !held) {
         return {
-            action: { kind: 'cycle-tab', by: event.shiftKey === true ? -1 : 1 },
+            action: { kind: 'cycle-tab', by: cycle === 'next' ? 1 : -1 },
             state: { ...state, chord: '' }
         };
     }
@@ -325,7 +337,7 @@ export function resolveKey(
     if (event.key === 'Escape' && context.cursorActive) {
         return { action: { kind: 'clear-cursor' }, state: { ...state, chord: '' } };
     }
-    if (event.key === '?') {
+    if (event.key === SHEET_CHARACTER) {
         return { action: { kind: 'sheet' }, state: { ...state, chord: '' } };
     }
     if (Object.hasOwn(order.chords, event.key)) {

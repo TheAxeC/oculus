@@ -60,8 +60,14 @@ function entriesOf(file: string): Record<string, unknown>[] {
     return (parse(readFileSync(file, 'utf8')) as { entries: Record<string, unknown>[] }).entries;
 }
 
-/** The key rule: the authors, the year and the title a paper carries, and the key it gets. */
-const KEY_ROWS: { authors: string[]; year?: number; title: string; key: string }[] = [
+/** The title of the rows whose first author is written with "et al.". */
+const CERTIFIED = 'Certified robustness of tensor networks';
+
+/**
+ * The key rule: the authors, the year and the title a paper carries, and the key it gets. Authors
+ * are a list or one line of names, as a feed sends them (G110).
+ */
+const KEY_ROWS: { authors: string | string[]; year?: number; title: string; key: string }[] = [
     {
         authors: ['Axel Faes', 'Marc M. Van Hulle'],
         year: 2024,
@@ -79,7 +85,16 @@ const KEY_ROWS: { authors: string[]; year?: number; title: string; key: string }
         title: '\u00dcber tensors',
         key: 'muller2025uber'
     },
-    { authors: [], title: 'Tensor', key: 'anonndtensor' }
+    { authors: [], title: 'Tensor', key: 'anonndtensor' },
+    { authors: 'M. Osei et al.', year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: 'M. Osei et al', year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: 'M. Osei ET AL.', year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: ['Osei M.', 'et al.'], year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: ['Osei M.'], year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: ['Van Hulle M.M.'], year: 2023, title: 'Tensor', key: 'vanhulle2023tensor' },
+    { authors: ['et al.'], year: 2026, title: CERTIFIED, key: 'anon2026certified' },
+    { authors: 'Osei, M., et al.', year: 2026, title: CERTIFIED, key: 'osei2026certified' },
+    { authors: 'Marc M. Van Hulle', year: 2023, title: 'Tensor', key: 'vanhulle2023tensor' }
 ];
 
 describe('Save to Literature', () => {

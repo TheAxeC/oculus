@@ -239,7 +239,7 @@
         options: editorOptions,
         repoSettings,
         paintLimit,
-        fs: client.fs
+        folders: () => client.fs.workspaces().folders
     });
     const options = $derived(diffOptions(resolved, editorOptions()));
     /**

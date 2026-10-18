@@ -26,6 +26,7 @@
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
+import { profileWords, TERMINAL_PROFILES } from '$lib/state/sessions/terminals.svelte';
 import {
     TERMINAL_VIEW,
     tabTerminals,
@@ -308,9 +309,6 @@ const ATTACH = 'attach:';
 const PROFILE_LIST = 'profile';
 const PROFILE = 'profile:';
 
-/** The kinds New Terminal With Profile offers, in the order its submenu lists them. */
-const PROFILES: readonly ComposerAgent[] = ['shell', 'claude', 'codex'];
-
 /**
  * The Kill Terminal item: while the terminal is armed it carries the armed control's label, so the
  * reader sees that this pick kills.
@@ -507,17 +505,13 @@ function attachItems(attachable: readonly Attachable[], t: Words): MenuItem[] {
  */
 export function kindsMenu(t: Words, attachable: readonly Attachable[]): MenuItem[] {
     return grouped([
-        PROFILES.map((kind) => ({ id: `${PROFILE}${kind}`, label: kindLabel(kind, t) })),
+        TERMINAL_PROFILES.map((kind) => ({
+            id: `${PROFILE}${kind}`,
+            label: profileWords(kind, t)
+        })),
         [{ id: MENU_PROMPT, label: t('sessions.menu_with_prompt') }],
         attachItems(attachable, t)
     ]);
-}
-
-/** The words of one kind of terminal. */
-export function kindLabel(kind: ComposerAgent, t: Words): string {
-    if (kind === 'claude') return t('sessions.kind_claude');
-    if (kind === 'codex') return t('sessions.kind_codex');
-    return t('sessions.kind_shell');
 }
 
 /**
@@ -530,9 +524,9 @@ export function emptyListMenu(t: Words, attachable: readonly Attachable[]): Menu
         {
             id: PROFILE_LIST,
             label: t('sessions.menu_new_profile'),
-            items: PROFILES.map((kind) => ({
+            items: TERMINAL_PROFILES.map((kind) => ({
                 id: `${PROFILE}${kind}`,
-                label: kindLabel(kind, t)
+                label: profileWords(kind, t)
             }))
         },
         ...attachItems(attachable, t)
@@ -609,7 +603,7 @@ export function colorOf(id: string): string | null {
 /** The kind a New Terminal With Profile pick names, or null for any other item. */
 export function profileOf(id: string): ComposerAgent | null {
     if (!id.startsWith(PROFILE)) return null;
-    return PROFILES.find((kind) => `${PROFILE}${kind}` === id) ?? null;
+    return TERMINAL_PROFILES.find((kind) => `${PROFILE}${kind}` === id) ?? null;
 }
 
 /** How many matches the search addon marks, its own default; the count says more as `1000+`. */

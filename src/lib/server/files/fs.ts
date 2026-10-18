@@ -25,7 +25,9 @@
 // workspace, carries what it holds that Make Folder a Hub and Make Folder a Project are offered by
 // (project/make.ts, `folderMarks`), three stats of each folder listed, and a folder of the
 // workspace also whether a folder above it is a hub, so the Files view's menu draws the two items
-// as it opens.
+// as it opens. Each folder of the workspace also carries the text of its `.oculus/settings.yml`,
+// so the page's readers of the editor's per-folder records take it from the folder list and ask
+// for nothing; the git watch marks the workspaces changed when that file changes.
 //
 // The workspace is the open workspace file of server/files/workspace and nothing else: a GET with
 // no root answers it, and the actions on it as a whole are Save Workspace As (`save-workspace`, a
@@ -42,15 +44,18 @@
 // (`inside`, `realPath`).
 
 import { json } from '@sveltejs/kit';
-import { lstatSync, readdirSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, relative } from 'node:path';
 import { z } from 'zod';
+import { TEXT_LIMIT } from '../../data/file-ops.ts';
+import { REPO_SETTINGS } from '../../data/helpers/editor/editor.ts';
+import { isWholeText } from '../../data/helpers/files/text-kind.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderMarks } from '../../data/helpers/hub-names.ts';
 import { configDir } from '../../data/sources/config/folder.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { resolveRootPath, type Root } from './files.ts';
+import { resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
 import { folderMarks, hubAbove } from './project/make.ts';
@@ -99,6 +104,10 @@ type AnsweredFolder = {
     marks?: FolderMarks;
     /** A folder above it, up to the home folder and not including it, is a hub. */
     above?: true;
+    /**
+     * The text of the folder's `.oculus/settings.yml`, or null when none reads (`settingsText`).
+     */
+    settings: string | null;
 };
 
 /** What a GET with no root answers: the open workspace and the files the switcher offers. */
@@ -356,6 +365,24 @@ function configPlace(open: OpenWorkspace, engine: string): { root: string; path:
 }
 
 /**
+ * The text of a folder's `.oculus/settings.yml`, read under the file route's guards: resolved by
+ * `resolveRootFileResult`, so a missing file and a link out of the folder give null, and read as
+ * the page reads a text, so a file over TEXT_LIMIT and one that is not whole UTF-8 text give null.
+ */
+function settingsText(roots: Root[], name: string): string | null {
+    const found = resolveRootFileResult(roots, name, REPO_SETTINGS);
+    if ('error' in found) return null;
+    try {
+        if (statSync(found.path).size > TEXT_LIMIT) return null;
+        const bytes = readFileSync(found.path);
+        if (bytes.length > TEXT_LIMIT || !isWholeText(bytes)) return null;
+        return new TextDecoder().decode(bytes);
+    } catch {
+        return null;
+    }
+}
+
+/**
  * The answer a GET with no root gives: the open workspace and the files that can be switched to.
  */
 export function workspacesAnswer(
@@ -386,7 +413,8 @@ export function workspacesAnswer(
                 hub: one.hub,
                 ...(foldsCase(one.dir) ? { folds: true as const } : {}),
                 ...(Object.keys(marks).length === 0 ? {} : { marks }),
-                ...(real !== null && hubAbove(real, home) ? { above: true as const } : {})
+                ...(real !== null && hubAbove(real, home) ? { above: true as const } : {}),
+                settings: settingsText(open.roots, one.name)
             };
         }),
         primary: open.primary,

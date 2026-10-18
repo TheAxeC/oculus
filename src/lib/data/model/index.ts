@@ -710,6 +710,7 @@ export {
     UPDATE_TASKS
 } from './machine/model-machine.ts';
 export { DEBUG_CONSOLE_KINDS, DEBUG_CONSOLE_MAX, DEBUG_STATUSES } from './machine/model-debug.ts';
+export { profileWords, TERMINAL_PROFILES, type TerminalProfile } from './machine/terminal-kinds.ts';
 export type {
     AppHostRow,
     AppHostsPayload,

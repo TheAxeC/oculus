@@ -18,7 +18,8 @@
     // Workspace or of Add Task is said in the palette, which stays open, as is an argument of
     // `:tab`, `:goto`, `:theme` or `:file-icons` that is empty or names nothing. Add Task writes
     // the task and posts a notice with an Open action; Shift+Enter, or a press with Shift held,
-    // opens the task's page as well.
+    // opens the task's page as well. The commands that run at once, and the words of an
+    // unavailable one, are shell/window/colon-effects.ts's, which the app menu's answer runs too.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
@@ -26,34 +27,39 @@
     import { addTask } from '$lib/state/forms/new-entry';
     import { pageView } from '$lib/state/forms/page-entry';
     import { fileIconThemeNamed, themeNamed } from '$lib/state/shared/words/appearance';
-    import { commandRowValue, opensAsMode, type CommandRow } from '$lib/shell/keys/palette-modes';
+    import { commandRowValue, type CommandRow } from '$lib/shell/keys/palette-modes';
     import {
-        addFolderCommand,
         argumentRefusal,
-        folderCommand,
-        workspaceCommand,
         type CommandOutcome,
         type PaletteCommand,
         type ParsedCommand
     } from '$lib/state/workbench/palette';
+    import {
+        colonEffects,
+        dockEdgeOf,
+        noteOf,
+        opensAsMode,
+        pressRefusal
+    } from '$lib/shell/window/colon-effects';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { useWalk } from '$lib/shell/titlebar/history-walk';
 
+    const client = useState();
     const {
-        explorer,
-        fs: { closeWorkspace, primary },
-        layout: { openView, reopenClosed, toggleDock },
+        fs: { primary },
+        layout: { openView, reopenClosed },
         notices,
         selectors: { collectionsOfKey },
         writes: { newEntry },
         paletteSource: { paletteSource },
-        ui: { setCrt, setFileIcons, setTheme, crt },
+        ui: { setFileIcons, setTheme },
         registry: { views },
         appShell: { offers },
         float
-    } = useState();
+    } = client;
+    const effects = colonEffects(client);
     /**
      * The page or float the palette opens views on: this window's float, else the reader's page.
      */
@@ -133,10 +139,8 @@
      */
     function run(command: PaletteCommand, named: boolean): void {
         if (!command.available) {
-            // The folder commands are unavailable while the panel is open, which a press says.
-            if (command.name === 'folder' || command.name === 'folder-add') {
-                onsaid(t('files.picker_busy'));
-            }
+            const refused = pressRefusal(command);
+            if (refused !== null) onsaid(refused);
             return;
         }
         const argument = named ? parsed.argument : '';
@@ -151,15 +155,15 @@
             return;
         }
         if (command.name === 'folder') {
-            panelled(folderCommand(explorer.openFolder));
+            panelled(effects.folder());
             return;
         }
         if (command.name === 'folder-add') {
-            panelled(addFolderCommand(explorer.addFolders));
+            panelled(effects.folderAdd());
             return;
         }
         if (command.name === 'workspace-close') {
-            void settled(workspaceCommand(() => closeWorkspace({ said: true }), ''));
+            void settled(effects.workspaceClose());
             return;
         }
         const project = current.snapshot?.entities.projects[argument];
@@ -176,7 +180,7 @@
         if (command.name === 'theme') {
             setTheme(themeNamed(argument, offers()) ?? argument);
         } else if (command.name === 'crt') {
-            setCrt(!crt());
+            effects.crt();
         } else if (command.name === 'file-icons') {
             void setFileIcons(fileIconThemeNamed(argument, offers()) ?? argument);
         } else if (command.name === 'tab') {
@@ -193,12 +197,9 @@
             void history.back();
         } else if (command.name === 'go-forward') {
             void history.forward();
-        } else if (command.name === 'toggle-left-dock') {
-            toggleDock('left');
-        } else if (command.name === 'toggle-bottom-dock') {
-            toggleDock('bottom');
-        } else if (command.name === 'toggle-right-dock') {
-            toggleDock('right');
+        } else {
+            const edge = dockEdgeOf(command.name);
+            if (edge !== null) effects.dock(edge);
         }
         onclose();
         if (shown !== '') void landOn(shown);
@@ -226,7 +227,7 @@
             parts: [...row.name, ...(hint === '' ? [] : [{ text: hint, hit: false }])],
             hintParts: row.words,
             disabled: !command.available,
-            note: command.available ? undefined : (command.why ?? t('app.palette_unavailable')),
+            note: command.available ? undefined : noteOf(command),
             pick: () => run(command, row.named)
         }}
     />

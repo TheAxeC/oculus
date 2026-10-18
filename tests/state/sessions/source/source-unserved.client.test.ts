@@ -58,8 +58,12 @@ it('reads the file again once the root is served again after it left the list', 
     const { env, served, read } = await left();
     await list(env, served, ['other']);
     await list(env, served, ['fixture', 'other']);
-    expect([env.fileReads.slice(read), env.source.sourceDraft('one').disk]).toEqual([
-        [KEY],
-        'same'
-    ]);
+    // The store takes the answer in after the request ends, which a loaded run can delay past
+    // `settled`, so the test waits for the outcome rather than for one turn of the timers.
+    await vi.waitFor(() =>
+        expect([env.fileReads.slice(read), env.source.sourceDraft('one').disk]).toEqual([
+            [KEY],
+            'same'
+        ])
+    );
 });

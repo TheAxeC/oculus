@@ -15,8 +15,8 @@
 // every hub's images and serves each of them as `<hub name>/<file name>` (`?image=`).
 
 import { json } from '@sveltejs/kit';
-import { isMap } from '../../data/helpers/guards.ts';
 import { findingText, type TextCatalog } from '../../data/helpers/finding-text.ts';
+import { wallpaperValue } from '../../data/helpers/hub-names.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { images, isName, stream, type HubPictures } from './images.ts';
 
@@ -43,12 +43,6 @@ function wallpaperImages(pictures: readonly HubPictures[]): WallpaperImage[] {
     return pictures.flatMap((one) =>
         images(one.wallpaper).map((file) => ({ hub: one.hub, file, dir: one.wallpaper }))
     );
-}
-
-/** The `wallpaper.image` value of the merged config as text, empty when it holds none. */
-export function wallpaperValue(config: Record<string, unknown>): string {
-    const block = isMap(config.wallpaper) ? config.wallpaper : {};
-    return typeof block.image === 'string' ? block.image.trim() : '';
 }
 
 /**

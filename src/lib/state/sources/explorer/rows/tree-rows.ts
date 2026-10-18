@@ -6,9 +6,12 @@
 //
 // A line is a root, a folder, a file, a file nested under another file (nesting.ts), a run of
 // folders drawn as one line (compact.ts), the pending line of a name being typed, or the line above
-// a rooted tab's head that moves it up.
+// a rooted tab's head that moves it up. Whether a file's line drops the empty slot of a folder's
+// arrow is `files.file_icon_at_arrow`, which the tree's view reads through `fileIconAtArrow`.
 
 import type { NestingRule } from '../../../../data/helpers/files/nesting.ts';
+
+export { fileIconAtArrow } from '../../../../data/sources/config/settings.ts';
 import type { Naming } from '../naming.ts';
 import {
     childPath,

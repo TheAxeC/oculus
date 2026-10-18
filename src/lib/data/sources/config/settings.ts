@@ -357,6 +357,22 @@ export function confirmDelete(
     }
 }
 
+/**
+ * Whether a file's row in the Files view drops the empty slot of a folder's arrow:
+ * `files.file_icon_at_arrow`, its default when it is missing or wrong, and true for a configuration
+ * that holds no catalog yet.
+ */
+export function fileIconAtArrow(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): boolean {
+    try {
+        return settingReader(config, problems).flag('files.file_icon_at_arrow');
+    } catch {
+        return true;
+    }
+}
+
 /** The mail connector's settings of config/behavior.yml. */
 export type MailSettings = {
     pollMin: number;
@@ -841,6 +857,7 @@ const PROBLEM_READERS: ((
     literatureSettings,
     openSettings,
     confirmDelete,
+    fileIconAtArrow,
     mailSettings,
     appsSettings,
     changesKeep,

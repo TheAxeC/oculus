@@ -10,11 +10,12 @@
 // seconds, and leaves the tmux sessions running. Its standard output and error are guarded against
 // a reader that has gone (output.ts), so a closed pipe never ends it.
 
-import { app, Menu, nativeImage, nativeTheme, session } from 'electron';
+import { app, Menu, nativeImage, nativeTheme, session, shell } from 'electron';
 import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { RecentEntry } from '../lib/data/helpers/keys/oculus/menu-commands.ts';
 import { engineDir } from '../lib/data/sources/config.ts';
 import { wordsOf } from '../lib/server/root/process/words.ts';
 import { LISTEN_HOST } from '../lib/server/root/mover.ts';
@@ -34,6 +35,7 @@ import { forkServer, type ServerProcess } from './server/process.ts';
 import { registerBridge } from './windows/bridge.ts';
 import { printPdf } from './windows/print.ts';
 import { buildMenu } from './windows/menu.ts';
+import { commandWindow, openInBrowser, type MenuActions } from './windows/menu-template.ts';
 import { createPicker } from './windows/pick.ts';
 import { createWindowStore } from './windows/window-state.ts';
 import { createWindows, type Entry } from './windows/windows.ts';
@@ -134,7 +136,17 @@ async function run(
             if (server === null) origin = next;
         }
     });
-    registerBridge(windows, createSaveTurn(), (address) => printPdf(address, { preload }));
+    /** The recent workspaces a page last sent, which the menu's Open Recent lists. */
+    let recent: RecentEntry[] = [];
+    registerBridge(
+        windows,
+        createSaveTurn(),
+        (address) => printPdf(address, { preload }),
+        (entries) => {
+            recent = entries;
+            setMenu();
+        }
+    );
 
     const pick = createPicker(windows, t, (message) => server?.send(message));
 
@@ -188,22 +200,39 @@ async function run(
         windows.remember(entry);
     }
 
-    Menu.setApplicationMenu(
-        buildMenu(t, {
-            newWindow: () => {
-                if (origin !== null) windows.openMain(origin);
-            },
-            closeWindow: windows.closeFocused,
-            command: (name) => {
-                const main = windows.lastMain();
-                if (main === null) return;
-                show(main);
-                main.win.webContents.send(EVENT, 'command', name);
-            },
-            zoom,
-            switchToMain: showMain
-        })
-    );
+    /**
+     * What the menu's items ask of the app. A page command goes to the window `commandWindow`
+     * names, which is shown, with Open Recent's path as the message's one argument.
+     */
+    const menuActions: MenuActions = {
+        newWindow: () => {
+            if (origin !== null) windows.openMain(origin);
+        },
+        closeWindow: windows.closeFocused,
+        command: (name, path) => {
+            const target = commandWindow(name, windows.reader(), windows.lastMain());
+            if (target === null) return;
+            show(target);
+            const contents = target.win.webContents;
+            if (path === undefined) contents.send(EVENT, 'command', name);
+            else contents.send(EVENT, 'command', name, path);
+        },
+        zoom,
+        switchToMain: showMain,
+        openInBrowser: () => {
+            const where = windows.reader();
+            const entry = where.kind === 'entry' ? where.entry : null;
+            openInBrowser(entry, windows.lastMain(), (address) => {
+                void shell.openExternal(address);
+            });
+        }
+    };
+
+    /** Set the application menu, over the recent workspaces a page last sent. */
+    function setMenu(): void {
+        Menu.setApplicationMenu(buildMenu(t, menuActions, recent));
+    }
+    setMenu();
 
     let stopped = false;
     app.on('before-quit', (event) => {

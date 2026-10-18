@@ -181,7 +181,7 @@
         options: editorOptions,
         repoSettings,
         paintLimit,
-        fs: client.fs
+        folders: () => client.fs.workspaces().folders
     });
     /** The language the tab paints in: the one chosen from the status bar, or the name's. */
     const language = $derived(options.language);

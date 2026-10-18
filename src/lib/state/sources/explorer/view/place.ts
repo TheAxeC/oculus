@@ -60,7 +60,27 @@ export type FsRoot = {
     folds?: true;
     marks?: FolderMarks;
     above?: true;
+    /**
+     * The text of the folder's `.oculus/settings.yml`, null when it has none that reads as text;
+     * absent reads as null. The editor's per-folder records are read from it (`settingsOf`).
+     */
+    settings?: string | null;
 };
+
+/**
+ * The text of the `.oculus/settings.yml` of the workspace folder a tab is rooted at: the folder of
+ * that key, else the folder whose path or real path the root is, so a HEAD or Index tab, rooted at
+ * the repository path of a folder, reads that folder's settings. Null for the empty root, a root
+ * that is no folder of the workspace and a folder whose file is missing, does not read as text, is
+ * longer than the file window reads or is reached through a link out of the folder.
+ */
+export function settingsOf(folders: readonly FsRoot[], root: string): string | null {
+    if (root === '') return null;
+    const folder =
+        folders.find((one) => one.key === root) ??
+        folders.find((one) => one.dir === root || (one.real !== '' && one.real === root));
+    return folder?.settings ?? null;
+}
 
 /**
  * What the folder `path` of the workspace folder `root` offers to make, from the marks the page

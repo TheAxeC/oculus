@@ -12,9 +12,10 @@
 // `moveTerminal` moves one from its tab to another; `attachable` lists the running terminals no tab
 // owns, and `attachTerminal` joins one of them to the end of a Terminal tab and shows it there (the
 // tab's Attach to Session); `startInTab` starts a terminal of a kind at once in the tab's folder,
-// or in a folder given, and shows it, `newTerminalIn` does the same in a Terminal tab of one pane,
-// and `splitTerminal` starts one of the split terminal's kind and folder right of it in the tab's
-// row, refusing one whose folder tmux did not report; `composeIn` puts the composer of a start with
+// or in a folder given, and shows it, `newTerminalIn` and `startOnPage` do the same in a Terminal
+// tab of one pane and of one page, and `splitTerminal` starts one of the split terminal's kind and
+// folder right of it in the tab's row, refusing one whose folder tmux did not report (`splitShown`
+// splits the one a tab shows, when it can); `composeIn` puts the composer of a start with
 // a prompt in the page's Terminal tab, in the tab's folder; `composeAt` does the same for a folder
 // and an agent a worktree names, or for a hub task, whose seed it asks the server for
 // (state/sessions/terminal/composer/opening.svelte.ts holds the three composers and the held
@@ -53,9 +54,7 @@ import {
     emptyTab,
     isTerminalId,
     ownerOf,
-    pageTarget,
     readTab,
-    showingRow,
     splitRight,
     tabFolder,
     withTerminal,
@@ -70,6 +69,9 @@ import {
     closeEnded,
     endedTerminals,
     moveInto,
+    pageTabOf,
+    sessionTerminal,
+    showIn,
     terminalLabel,
     terminalTabTitle,
     unownedTerminals
@@ -102,6 +104,10 @@ export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
 export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
+
+// The kinds of terminal a reader starts by name and their words reach a view and the shell from
+// here too, for the Terminal tab's menus, the composer and the page's answer to the app menu.
+export { profileWords, TERMINAL_PROFILES, type TerminalProfile } from '../../data/model/index.ts';
 
 // The name of an update task the server's task action accepts. The boundary table lets a shell
 // file import this module and not `data/helpers/run/tasks`, so the type reaches the tray from here.
@@ -261,6 +267,10 @@ export type TerminalsStore = {
      * the tab's row. A terminal the store knows nothing of is refused in words on the tab.
      */
     splitTerminal: (tab: string, terminal: string) => Promise<TerminalAnswer>;
+    /** Start a terminal of a kind in a page's Terminal tab, or a new one there (the app's menu). */
+    startOnPage: (page: string, kind: TerminalKind) => Promise<TerminalAnswer>;
+    /** Split the terminal a Terminal tab shows, when it can split (the app's menu). */
+    splitShown: (tab: string) => void;
     /** What the last refused action of a tab said, or the empty string. */
     refusal: (tab: string) => string;
     /** Say a failure on a tab's bar, or clear it with the empty string. */
@@ -356,46 +366,19 @@ export function createTerminals(
         return workbench?.defaultFolder() ?? Promise.resolve('');
     }
 
-    /**
-     * The Terminal tab of a page that a terminal no tab owns, or New, goes to: pageTarget's rule.
-     */
+    /** The Terminal tab of a page that a terminal no tab owns, or New, goes to (`pageTabOf`). */
     function pageTab(tabs: readonly TerminalTab[], page: string): TerminalTab | null {
-        if (workbench === undefined) return null;
-        const onPage = tabs.filter((tab) => tab.page === page);
-        const chosen = pageTarget(onPage, workbench.activeTab(page));
-        return onPage.find((tab) => tab.id === chosen) ?? null;
+        return workbench === undefined ? null : pageTabOf(workbench, tabs, page);
     }
 
     /**
-     * Show a terminal. The tab that owns it is activated, its page switched to when it is another,
-     * and shows it in the tab's row. A terminal no tab owns joins the end of the Terminal tab of
-     * the page on screen, or of a new Terminal tab there, and is shown. An id that is not a
-     * terminal's shows nothing.
+     * Show a terminal by `showIn`'s rule. An id that is not a terminal's shows nothing. Its grid
+     * takes the keyboard unless `preserveFocus`.
      */
     function showTerminal(id: string, label = '', preserveFocus = true): void {
         if (workbench === undefined || !isTerminalId(id)) return;
         focus.id = preserveFocus ? null : id;
-        const tabs = terminalTabs();
-        const owner = ownerOf(tabs, id);
-        if (owner !== null) {
-            if (owner.page !== workbench.currentPage()) workbench.switchPage(owner.page);
-            const held = readTab(owner.state);
-            const next = showingRow(held, id);
-            if (next !== held) workbench.restate(owner.id, owner.page, next);
-            workbench.activate(owner.id, owner.page);
-            return;
-        }
-        const page = workbench.currentPage();
-        const target = pageTab(tabs, page);
-        if (target === null) {
-            const joined = withTerminal(emptyTab(crypto.randomUUID()), id, 0);
-            workbench.open(page, { ...joined, label });
-            return;
-        }
-        const held = readTab(target.state);
-        const joined = withTerminal(held, id, held.terminals.length);
-        workbench.restate(target.id, page, label === '' ? joined : { ...joined, label });
-        workbench.activate(target.id, page);
+        showIn(workbench, terminalTabs(), id, label);
     }
 
     function hideTerminal(id: string): void {
@@ -613,20 +596,9 @@ export function createTerminals(
         return post({ action: 'fork', tool, id, cols, rows });
     }
 
-    /**
-     * The oculus terminal a session runs in: the one that resumed it, or the one whose pane process
-     * is the session's own. The pane's process is the agent itself, since tmux runs the argv
-     * directly, so a Claude session the registry reports by pid is found by it. Null for a session
-     * that runs in a terminal of its own.
-     */
+    /** The oculus terminal a session runs in, by `sessionTerminal`'s rule over the terminals. */
     function terminalOfSession(record: Pick<SessionRecord, 'id' | 'pid'> | null): Terminal | null {
-        if (record === null) return null;
-        const all = terminals().filter((one) => one.foreign !== true);
-        return (
-            all.find((one) => one.resumes?.id === record.id) ??
-            all.find((one) => record.pid !== null && one.pid !== 0 && one.pid === record.pid) ??
-            null
-        );
+        return sessionTerminal(terminals(), record);
     }
 
     /**
@@ -757,6 +729,33 @@ export function createTerminals(
         return startFor(tab, record.kind, record.cwd, (held, id) => splitRight(held, terminal, id));
     }
 
+    /**
+     * New Terminal and New Terminal With Profile of the app's menu: a terminal of a kind starts in
+     * the Terminal tab of a page or float (`pageTabOf`), or in a new Terminal tab opened there,
+     * which is activated.
+     */
+    async function startOnPage(page: string, kind: TerminalKind): Promise<TerminalAnswer> {
+        if (workbench === undefined) return { ok: false, id: '', error: '' };
+        const tab =
+            pageTab(terminalTabs(), page)?.id ??
+            workbench.open(page, emptyTab(crypto.randomUUID()));
+        if (tab === '') return { ok: false, id: '', error: '' };
+        workbench.activate(tab, page);
+        return startInTab(tab, kind);
+    }
+
+    /**
+     * Split Terminal of the app's menu: the terminal a Terminal tab shows splits, as the tab's own
+     * Split does. A tab that is no Terminal tab, shows none, or shows one with no folder is left.
+     */
+    function splitShown(tab: string): void {
+        const target = tabById(tab);
+        const shown = target === null ? null : readTab(target.state).shown;
+        if (shown !== null && (terminalRecord(shown)?.cwd ?? '') !== '') {
+            void splitTerminal(tab, shown);
+        }
+    }
+
     /** Give a terminal a title; an empty one clears it. */
     async function renameTerminal(id: string, title: string): Promise<TerminalAnswer> {
         return post({ action: 'rename', id, title });
@@ -862,6 +861,8 @@ export function createTerminals(
         startingIn,
         newTerminalIn,
         splitTerminal,
+        startOnPage,
+        splitShown,
         refusal,
         say,
         renameTerminal,

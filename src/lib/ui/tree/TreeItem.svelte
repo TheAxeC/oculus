@@ -143,7 +143,10 @@
     {#each guides as at (at)}
         <span class="guide" aria-hidden="true"></span>
     {/each}
-    <span class="twisty" class:open={expanded === true} aria-hidden="true">
+    <span
+        class={['twisty', { open: expanded === true, leaf: expanded === undefined }]}
+        aria-hidden="true"
+    >
         {#if expanded !== undefined}
             <Glyph name="chevron" />
         {/if}
@@ -257,15 +260,15 @@
        themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
        the text size. */
     /* A row never narrows past its guides, its arrow, its icon and the first characters of its
-       name (`--depth` guides, each its indent and gap, and the 4px gaps of the line): in a pane
-       narrower than that it runs past the pane's edge, its tint with it, and the pane scrolls
-       sideways, so the controls a narrow row draws give way (row/TreeActions.svelte) rather than
-       lie over the icon. The name part keeps the same least width, so the controls are what
-       give way. */
+       name (`--depth` guides, each its indent and twice its gap, and the 4px gaps of the line):
+       in a pane narrower than that it runs past the pane's edge, its tint with it, and the pane
+       scrolls sideways, so the controls a narrow row draws give way (row/TreeActions.svelte)
+       rather than lie over the icon. The name part keeps the same least width, so the controls
+       are what give way. */
     .item {
         --row-least: calc(
             var(--depth, 0) *
-                (var(--tree-indent) * var(--text-scale, 1) + var(--tree-guide-gap, 4px) + 4px) + 2 *
+                (var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap, 4px)) + 2 *
                 (var(--icon-box) * var(--text-scale, 1) + 4px) + 4ch + 6px
         );
         display: flex;
@@ -363,12 +366,14 @@
        guides of the rows under one folder join into one vertical rule. It is drawn while the tree
        is hovered or holds the focus, and is transparent otherwise. A tree sets the gap before a
        guide and how far the line sits right of its column (`--tree-guide-gap`,
-       `--tree-guide-shift`). */
+       `--tree-guide-shift`). The margin after a guide is its gap less the row's 4px gap, so each
+       level is the indent and twice the gap: 16px by default, the indent alone at a gap of 0. */
     .guide {
         flex: 0 0 calc(var(--tree-indent) * var(--text-scale, 1));
         align-self: stretch;
         box-sizing: border-box;
         margin-left: var(--tree-guide-gap, 4px);
+        margin-right: calc(var(--tree-guide-gap, 4px) - 4px);
         border-left: 1px solid transparent;
         translate: calc(var(--tree-guide-shift, 0px) * var(--text-scale, 1));
     }
@@ -389,6 +394,11 @@
 
     .twisty.open {
         transform: rotate(90deg);
+    }
+
+    /* The arrow slot of a row that does not open, which a tree drops with `--tree-leaf-twisty`. */
+    .twisty.leaf {
+        display: var(--tree-leaf-twisty, inline-flex);
     }
 
     .name {

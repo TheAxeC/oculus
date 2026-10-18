@@ -33,7 +33,7 @@
         options: selectors.editorOptions,
         repoSettings: selectors.repoSettings,
         paintLimit: selectors.paintLimit,
-        fs: client.fs
+        folders: () => client.fs.workspaces().folders
     });
     const nothing = (): void => undefined;
     createTabAsks({

@@ -361,7 +361,7 @@ export function createClientState(
                 options: selectors.editorOptions(),
                 languages: selectors.languages(),
                 paintLimit: selectors.paintLimit(),
-                fileText: fs.fileText,
+                folders: () => fs.workspaces().folders,
                 repoSettings: selectors.repoSettings
             },
             draft,

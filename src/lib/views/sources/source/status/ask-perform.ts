@@ -17,6 +17,7 @@
 // wrap in the editor.
 
 import {
+    REVERT_ACTION,
     SAVE_ACTION,
     type EditorAsk,
     type SelectRange
@@ -59,7 +60,7 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
     if (deps.editing) {
         listed.push(
             { id: SAVE_ACTION, label: t('source.cmd_save'), run: deps.save },
-            { id: 'oculus.revert', label: t('source.cmd_revert'), run: deps.revert },
+            { id: REVERT_ACTION, label: t('source.cmd_revert'), run: deps.revert },
             {
                 id: WRAP_ACTION,
                 label: t('source.toggle_word_wrap'),

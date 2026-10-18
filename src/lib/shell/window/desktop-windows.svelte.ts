@@ -5,14 +5,13 @@
 //
 // The main window's page asks the host to open a window for each float placed in a window, which
 // the host does once per float, so the windows come back with the main window and with the next
-// start; answers the menu's Settings and Help; and performs the drop of a tab another window
-// handed it. A popped-out page writes its window's place when the host reports the window moved or
-// resized, puts its tabs back in the main window when the reader closes the window, and has the
-// host close the window when its float stops being one placed in a window. Every window, sent to
-// the server's new origin after a restart, carries the arrangement there and goes.
+// start, and performs the drop of a tab another window handed it. A popped-out page writes its
+// window's place when the host reports the window moved or resized, puts its tabs back in the main
+// window when the reader closes the window, and has the host close the window when its float stops
+// being one placed in a window. Every window, sent to the server's new origin after a restart,
+// carries the arrangement there and goes. The menu's commands are window/menu-commands.svelte.ts's.
 
 import type { ClientState } from '../../state/client/context.ts';
-import { SETTINGS_VIEW } from '../../state/workbench/navigation/rail.ts';
 import { carryWorkbench } from '../../state/workbench/layout/index.ts';
 
 /** The bar a window's title takes above its content, which a screen point is moved by. */
@@ -62,11 +61,6 @@ export function useDesktopWindows(client: ClientState): void {
                 }
             }
         });
-        $effect(() =>
-            bridge.on('command', (name) => {
-                layout.openView(name === 'settings' ? SETTINGS_VIEW : 'help', undefined);
-            })
-        );
         return;
     }
 

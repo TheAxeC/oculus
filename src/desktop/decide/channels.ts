@@ -11,6 +11,12 @@ export const CLOSE_SELF = 'oculus:close-self';
 export const FOCUS_MAIN = 'oculus:focus-main';
 export const SHOW_FIND = 'oculus:show-find';
 
+/**
+ * A page handing the host the open workspace's recent workspace files, which the menu's Open Recent
+ * lists, nothing answered.
+ */
+export const RECENT_WORKSPACES = 'oculus:recent-workspaces';
+
 /** A double press on the empty part of the page's title bar strip, nothing answered. */
 export const TITLE_DOUBLE_CLICK = 'oculus:title-double-click';
 

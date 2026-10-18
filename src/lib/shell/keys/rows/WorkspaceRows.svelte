@@ -10,6 +10,7 @@
     // success closes it.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import { colonEffects } from '$lib/shell/window/colon-effects';
     import type { FolderRow } from '$lib/shell/keys/palette-modes';
     import {
         workspaceCommand,
@@ -19,9 +20,11 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
+    const state = useState();
     const {
-        fs: { newWorkspace, removeRoot, saveWorkspace, selectWorkspace }
-    } = useState();
+        fs: { newWorkspace, removeRoot, saveWorkspace }
+    } = state;
+    const effects = colonEffects(state);
 
     type Props = {
         /** The workspaces `:workspace` lists, or null for the commands that make one. */
@@ -76,7 +79,7 @@
                 label: choice.label,
                 active: choice.current,
                 ...(choice.missing ? { note: t('app.palette.workspace_missing') } : {}),
-                pick: () => void settled(workspaceCommand(saying(selectWorkspace), choice.path))
+                pick: () => void settled(effects.openWorkspace(choice.path))
             }}
         />
     {/each}

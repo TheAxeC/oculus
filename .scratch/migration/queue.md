@@ -1,13 +1,13 @@
-In flight (1 of 6 slots in use):
-- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): reviewed 2026-10-18 (17 findings); repair round 1 with the builder.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (2 steps):
-- O38 (cockpit retired, hub tools cleaned): once O42 has landed.
-- O39 (oculus in its own repository): once O38 has landed.
+- O38 (cockpit retired, hub tools cleaned): next; each deletion on Axel's yes path by path.
+- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.
 
 Landed, newest first:
+- O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 6d9136eb9.
 - O40 (O37's open look defects), 2026-10-18, 2eab73263.
 - O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
 - O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.

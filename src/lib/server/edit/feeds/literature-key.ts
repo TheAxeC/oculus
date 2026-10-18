@@ -26,8 +26,14 @@ const PARTICLES = [
     'ten'
 ];
 
-/** A word of one to three capital letters, which is how Europe PMC writes the given names. */
-const INITIALS = /^[A-Z]{1,3}$/;
+/**
+ * A word of one to three capital letters, each with or without a full stop after it, which is how
+ * Europe PMC and other feeds write the given names after a surname: `MM`, `M.` or `M.M.`.
+ */
+const INITIALS = /^(?:[A-Z]\.?){1,3}$/;
+
+/** A trailing "et al." of a name, in any case, with or without its full stops. */
+const ET_AL = /(?:^|\s+)et(?:\.\s*|\s+)al\.?$/i;
 
 /** The combining marks an accented letter leaves after it is decomposed. */
 const MARKS = /[\u0300-\u036f]/g;
@@ -47,12 +53,13 @@ function isParticle(word: string): boolean {
 }
 
 /**
- * The surname of an author name. A name with a comma is "surname, given names"; a name that ends
- * in initials ("Faes A", "Van Hulle MM") has its surname before them; any other name has its last
- * word, with the particles in front of that word joined to it ("Marc M. Van Hulle").
+ * The surname of an author name, read after a trailing "et al." is dropped. A name with a comma is
+ * "surname, given names"; a name that ends in initials ("Faes A", "Van Hulle MM", "Osei M.") has
+ * its surname before them; any other name has its last word, with the particles in front of that
+ * word joined to it ("Marc M. Van Hulle", "M. Osei et al."). A name that is only "et al." has none.
  */
 function surnameOf(name: string): string {
-    const text = name.trim();
+    const text = name.trim().replace(ET_AL, '');
     const comma = text.indexOf(',');
     if (comma >= 0) return text.slice(0, comma);
     const words = text.split(/\s+/).filter((word) => word !== '');
@@ -73,12 +80,18 @@ function firstWord(title: string): string {
     return '';
 }
 
+/** Whether an author list element is a name and not only "et al.". */
+function isName(author: string): boolean {
+    return author.trim().replace(ET_AL, '') !== '';
+}
+
 /**
- * The key of a paper before a suffix: `anon` for no author, `nd` for no year, and nothing for a
- * title with no word.
+ * The key of a paper before a suffix: the first author's surname, an element that is only "et al."
+ * passed over; `anon` for no author, `nd` for no year, and nothing for a title with no word.
  */
 export function citationBase(authors: string[], year: string, title: string): string {
-    const surname = authors.length === 0 ? '' : keyPart(surnameOf(authors[0]));
+    const first = authors.find(isName);
+    const surname = first === undefined ? '' : keyPart(surnameOf(first));
     const when = keyPart(year);
     return `${surname === '' ? 'anon' : surname}${when === '' ? 'nd' : when}${firstWord(title)}`;
 }

@@ -84,6 +84,7 @@
         type PaletteStart
     } from '$lib/shell/keys/palette-modes';
     import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
+    import { dockedEdges } from '$lib/shell/window/colon-effects';
     import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
     import {
         appItems,
@@ -237,9 +238,7 @@
             cloneList.active
     );
     /** The edges a float is docked at, whose dock toggles can run. */
-    const dockedEdges = $derived(
-        floats().flatMap((one) => (one.place.kind === 'dock' ? [one.place.edge] : []))
-    );
+    const docked = $derived(dockedEdges(floats()));
     const commandList = $derived(
         parsed === null || line !== null || listsRows
             ? []
@@ -251,7 +250,7 @@
                       served?.language ?? '',
                       explorer.panelOpen(),
                       closedCount() > 0,
-                      dockedEdges
+                      docked
                   ),
                   knownViews,
                   parsed

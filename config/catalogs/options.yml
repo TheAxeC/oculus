@@ -754,6 +754,12 @@ options:
             help: Whether moving a file or folder to the Trash in the Files view asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here.
             default: true
             control: toggle
+        files.file_icon_at_arrow:
+            heading: editor
+            section: Files
+            help: Whether a file's row in the Files view drops the empty slot of a folder's arrow, so the file's icon sits where its sibling folders' arrows sit. false lines its icon up with its sibling folders' icons, as VS Code's Explorer does.
+            default: true
+            control: toggle
         git.message_model:
             heading: editor
             section: Git

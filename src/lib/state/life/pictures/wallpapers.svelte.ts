@@ -1,5 +1,7 @@
 // Layer 2, client state. The wallpaper images of every hub of the open workspace, grouped by hub,
-// for the picker under the wallpaper rows of the Settings view.
+// for the picker under the wallpaper rows of the Settings view, and the value a pick's write holds
+// out until the file holds it, which the page's wallpaper layer draws meanwhile, so the picture
+// follows the click rather than the server's next read of the settings file.
 //
 // The list is not in the snapshot: it is fetched from GET /api/wallpaper?list the first time the
 // picker asks and read again each time a picker opens (`reload`), since the folders of the
@@ -9,6 +11,7 @@
 // no list of hubs, each with a list of names, is held as a failed read naming what was wrong.
 
 import { z } from 'zod';
+import { wallpaperValue } from '../../../data/helpers/hub-names.ts';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 import { failedAnswer } from '../../shared/answers/answers.ts';
 import { inBrowser } from '../../shared/stores/in-browser.ts';
@@ -49,6 +52,10 @@ export type WallpapersStore = {
     list: () => WallpaperList;
     /** Ask again, which is what the picker does after the workspace's folders changed. */
     reload: () => void;
+    /** The `wallpaper.image` value to draw: a pick's while its write is out, else the config's. */
+    shown: (config: Record<string, unknown> | undefined) => string;
+    /** Set the value a picker's write holds out, null when it has none. */
+    hold: (value: string | null) => void;
 };
 
 /** The query key of the list. */
@@ -80,5 +87,14 @@ export function createWallpapers(queries: Queries): WallpapersStore {
         if (inBrowser()) queries.refetch(KEY, ask, 'drop');
     }
 
-    return { list, reload };
+    let out = $state<string | null>(null);
+
+    return {
+        list,
+        reload,
+        shown: (config) => out ?? wallpaperValue(config),
+        hold: (value) => {
+            out = value;
+        }
+    };
 }

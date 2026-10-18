@@ -8,7 +8,8 @@
     // 0 20px 1em, the side padding no more than 8% of the width it is given, so a message in a
     // narrow pane keeps the room to break between words. An error is VS Code's input message box:
     // left aligned, a red border and tint, 12px words on 17px lines, and the view's retry control
-    // after the words as `action`.
+    // after the words as `action`. Under the rice theme an empty state is a shell comment: `# `
+    // and the message on one line, left aligned, and the action on the line under it.
 
     import type { Snippet } from 'svelte';
     import CodeText from '../display/CodeText.svelte';
@@ -73,13 +74,24 @@
         overflow-wrap: anywhere;
     }
 
-    /* The terminal shape: a shell comment, left aligned on one line. */
+    /*
+     * The terminal shape: a shell comment, left aligned. The `# ` mark, the glyph and the message
+     * run as one line of text, which wraps in a narrow pane, and the action sits on the line under
+     * it. The error box keeps its flex row.
+     */
     :global(body.rice) .empty {
-        flex-direction: row;
-        justify-content: flex-start;
         padding: 10px 0;
         text-align: left;
         font-family: var(--font-mono);
+    }
+
+    :global(body.rice) .empty:not(.error) {
+        display: block;
+    }
+
+    :global(body.rice) .empty:not(.error) .action {
+        display: block;
+        margin-top: 6px;
     }
 
     :global(body.rice) .empty.error {

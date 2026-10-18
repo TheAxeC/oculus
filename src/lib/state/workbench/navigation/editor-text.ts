@@ -8,10 +8,9 @@
 
 import type { Indent, SourceDraft } from '../../sessions/source/draft.ts';
 import type { SaveRules } from '../../sessions/source/source.svelte.ts';
-import { languageOfFile, type LanguageMap } from '../../sources/fs.ts';
-import type { FileText } from '../../sources/fs-transport.ts';
+import { languageOfFile, settingsOf, type FsRoot, type LanguageMap } from '../../sources/fs.ts';
 import { PLAIN } from '../../shared/words/languages.ts';
-import { REPO_SETTINGS, resolveEditor } from '../../../data/helpers/editor/editor.ts';
+import { resolveEditor } from '../../../data/helpers/editor/editor.ts';
 import type {
     EditorOptions as ConfiguredEditor,
     LanguageRecords
@@ -105,18 +104,17 @@ export type SaveRulesInput = {
     options: ConfiguredEditor | null;
     languages: LanguageMap;
     paintLimit: number | null;
-    /** The text of a root's settings file, as the file store holds it. */
-    fileText: (root: string, path: string) => FileText;
+    /** The folders of the workspace, each with its settings text (`settingsOf`). */
+    folders: () => readonly FsRoot[];
     /** A settings file's text read by the rule of the configuration the page holds. */
     repoSettings: (text: string) => RepoSettings;
 };
 
 /** The records of the root's settings file, null when it has none that can be read. */
 function recordsOf(input: SaveRulesInput, root: string): LanguageRecords | null {
-    if (root === '') return null;
-    const file = input.fileText(root, REPO_SETTINGS);
-    if (file.loading || file.error !== '' || file.truncated) return null;
-    const read = input.repoSettings(file.text);
+    const text = settingsOf(input.folders(), root);
+    if (text === null) return null;
+    const read = input.repoSettings(text);
     return read.kind === 'read' ? read.languages : null;
 }
 
@@ -124,7 +122,7 @@ function recordsOf(input: SaveRulesInput, root: string): LanguageRecords | null 
  * What a save does to a source tab's text: whether it trims the spaces and tabs at the end of each
  * line, whether it ends the text with one line ending and whether it formats the document first.
  * They come from the configured options in the order `resolveEditor` states, for the language the
- * editor draws the tab in: the repository's `.oculus/settings.yml` record, then `editor.languages`,
+ * editor draws the tab in: the folder's `.oculus/settings.yml` record, then `editor.languages`,
  * then the global key. None is on until the configuration has arrived, since the page holds no
  * default for any of them. The tab's own options (views/shared/prose/editor/source-options.ts)
  * resolve the same values by the same function; this is for the saves that no view makes, such as

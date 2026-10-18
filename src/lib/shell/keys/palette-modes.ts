@@ -34,7 +34,6 @@ import {
 } from '$lib/state/system/machine/lsp/lsp.svelte';
 import { t } from '$lib/state/shared/words/text';
 import {
-    LSP_CHOICES,
     choiceOfCommand,
     choicesOfLanguage,
     type LspChoiceKind
@@ -46,18 +45,6 @@ import {
  * line; the command mode, a colon too, says nothing of lines.
  */
 export type PaletteStart = { text: string; files: boolean; line: boolean };
-
-/** The commands that, chosen, open the list of their own instead of running. */
-const MODE_COMMANDS = [
-    'language',
-    'workspace',
-    'workspace-save',
-    'workspace-new',
-    'eslint-config',
-    'clone',
-    'folder-remove',
-    ...Object.values(LSP_CHOICES).map((one) => one.command)
-];
 
 /**
  * One row of the command mode: a colon command with its name and its words in matched and unmatched
@@ -156,11 +143,6 @@ export function folderRemovals(
     return roots
         .filter((root) => wordsHold(`${root.key} ${root.dir}`, argument))
         .map((root) => ({ value: `folder:${root.key}`, key: root.key, dir: root.dir }));
-}
-
-/** Whether choosing a command types its name and a space, which opens its list. */
-export function opensAsMode(name: string): boolean {
-    return MODE_COMMANDS.includes(name);
 }
 
 /** The file whose ESLint configuration the query lists, when it is `:eslint-config`. */

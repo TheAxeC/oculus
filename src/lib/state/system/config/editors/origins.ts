@@ -1,21 +1,21 @@
 // Layer 2, client state. The lines the Settings view says under the `editor.languages` row about
-// where a language's values can also come from: a served root's `.oculus/settings.yml` overrides
-// the row per language, so the row says which roots set a language, which root's file was not read
-// and why, and which entries of a read file were skipped. A root with no file, a file still being
-// read, an empty file and a file that sets no language say nothing.
+// where a language's values can also come from: a workspace folder's `.oculus/settings.yml`
+// overrides the row per language, so the row says which folders set a language, which folder has
+// no file that reads as text, which folder's file does not parse and why, and which entries of a
+// read file were skipped. An empty file and a file that sets no language say nothing. The texts
+// come with the folder list (`settings` of each folder), so nothing here asks the server.
 //
 // Each sentence is one catalog entry. It is cut at the root's place in it into `lead`, `label` and
 // `tail`, so the view draws the root as a link inside the sentence.
 
 import { REPO_SETTINGS } from '../../../../data/helpers/editor/editor.ts';
 import type { RepoProblem, RepoSettings } from '../../../../data/sources/config/editor-options.ts';
-import { refusedAnswer } from '../../../shared/answers/answers.ts';
 import { t } from '../../../shared/words/text.ts';
-import type { FileText } from '../../../sources/fs-transport.ts';
+import type { FsRoot } from '../../../sources/explorer/view/place.ts';
 
-/** What one line says: a root's languages, a file not read, or an entry skipped. */
+/** What one line says: a root's languages, no file read, a file not read, or an entry skipped. */
 export type Origin = {
-    kind: 'also' | 'unread' | 'skipped';
+    kind: 'also' | 'none' | 'unread' | 'skipped';
     /** The root the line is about, which the label opens the settings file of. */
     root: string;
     /** The words before, the name of, and the words after the root in the sentence. */
@@ -63,8 +63,15 @@ function entryName(problem: RepoProblem): string {
 }
 
 /** The lines about one root, none for a root with nothing to say. */
-function originsOf(root: string, file: FileText, parse: (text: string) => RepoSettings): Origin[] {
-    if (file.loading) return [];
+function originsOf(
+    root: string,
+    text: string | null,
+    parse: (text: string) => RepoSettings
+): Origin[] {
+    if (text === null) {
+        const none = t('workbench.settings_origin_none', ROOT, REPO_SETTINGS);
+        return [{ kind: 'none', root, ...cutAtRoot(root, none) }];
+    }
     const unread = (reason: string): Origin[] => [
         {
             kind: 'unread',
@@ -72,12 +79,7 @@ function originsOf(root: string, file: FileText, parse: (text: string) => RepoSe
             ...cutAtRoot(root, t('workbench.settings_origin_unread', ROOT, REPO_SETTINGS, reason))
         }
     ];
-    if (file.error !== '') {
-        // A file that is not there is a root that sets nothing; any other failure is said.
-        return file.error === refusedAnswer(404) ? [] : unread(file.error);
-    }
-    if (file.truncated) return unread(t('workbench.settings_origin_cut'));
-    const parsed = parse(file.text);
+    const parsed = parse(text);
     if (parsed.kind === 'unparsed') return unread(parsed.line);
     if (parsed.kind === 'not-a-map') return unread(t('workbench.settings_origin_not_a_map'));
     const names = Object.keys(parsed.languages).sort();
@@ -108,15 +110,18 @@ function originsOf(root: string, file: FileText, parse: (text: string) => RepoSe
 }
 
 /**
- * The lines under the `editor.languages` row: for each root once, in the order given, what its
- * settings file sets or why it was not read. `fileText` is the file store's read, and `parse` reads
- * a file's text by the rule of the catalog the page holds (`repoSettings` of the selectors).
+ * The lines under the `editor.languages` row: for each folder once, in the order given, what its
+ * settings file sets or why it was not read. `parse` reads a file's text by the rule of the catalog
+ * the page holds (`repoSettings` of the selectors).
  */
 export function repoOrigins(
-    roots: { key: string }[],
-    fileText: (root: string, path: string) => FileText,
+    folders: readonly Pick<FsRoot, 'key' | 'settings'>[],
     parse: (text: string) => RepoSettings
 ): Origin[] {
-    const keys = [...new Set(roots.map((one) => one.key))];
-    return keys.flatMap((key) => originsOf(key, fileText(key, REPO_SETTINGS), parse));
+    const seen = new Set<string>();
+    return folders.flatMap((one) => {
+        if (seen.has(one.key)) return [];
+        seen.add(one.key);
+        return originsOf(one.key, one.settings ?? null, parse);
+    });
 }

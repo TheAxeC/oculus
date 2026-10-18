@@ -29,29 +29,53 @@ text:
         menu:
             about: About oculus
             app: oculus
+            close_tab: Close Tab
             close_window: Close Window
+            command_palette: Command Palette
             copy: Copy
+            crt: CRT Overlay
             cut: Cut
+            debug_start: Start or Continue
             devtools: Toggle Developer Tools
             edit: Edit
             file: File
+            file_icon_theme: File Icon Theme...
+            find_in_files: Find in Files
             front: Bring All to Front
             full_screen: Toggle Full Screen
+            go: Go
+            go_to_file: Go to File...
+            go_to_line: Go to Line...
+            go_to_project: Go to Project...
+            go_to_symbol: Go to Symbol in Workspace...
             help: Help
             help_item: oculus Help
             hide: Hide oculus
             hide_others: Hide Others
+            keyboard_shortcuts: Keyboard Shortcuts
             minimize: Minimize
             new_window: New Window
+            next_tab: Next Tab
+            open_recent: Open Recent
+            open_view: Open View...
             paste: Paste
+            previous_tab: Previous Tab
+            quick_open: Quick Open
             quit: Quit oculus
             redo: Redo
             reload: Reload
+            reopen_closed_tab: Reopen Closed Tab
+            run: Run
+            save_all: Save All
             select_all: Select All
+            services: Services
             settings: Settings...
             show_all: Show All
             switch_main: Switch to Main Window
+            theme: Theme...
+            toggle_breakpoint: Toggle Breakpoint
             undo: Undo
+            update_tasks: Update Tasks
             view: View
             window: Window
             zoom: Zoom

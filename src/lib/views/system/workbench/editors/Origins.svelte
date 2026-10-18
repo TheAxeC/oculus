@@ -1,8 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial. The lines under the `editor.languages` row about the repositories
-    // that override it: each served root whose `.oculus/settings.yml` sets a language, a root whose
-    // file was not read and why, and the entries of a read file that were skipped. The root's name
-    // opens its settings file in a source tab.
+    // Layer 3, view partial. The lines under the `editor.languages` row about the folders that
+    // override it: each folder of the workspace whose `.oculus/settings.yml` sets a language, a
+    // folder whose file was not read and why, one with no file that reads as text, and the entries
+    // of a read file that were skipped. The settings texts come with the folder list. The folder's
+    // name opens its settings file in a source tab.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
@@ -12,14 +13,14 @@
     import { REPO_SETTINGS } from '$lib/state/workbench/navigation/editor-text';
 
     const {
-        fs: { fileText, workspaces },
+        fs: { workspaces },
         layout: { openView },
         selectors: { repoSettings }
     } = useState();
 
     /** The folders of the open workspace, in the order the workspace gives them. */
     const roots = $derived(workspaces().folders);
-    const origins = $derived(repoOrigins(roots, fileText, repoSettings));
+    const origins = $derived(repoOrigins(roots, repoSettings));
 </script>
 
 {#each origins as origin (`${origin.kind}:${origin.root}:${origin.tail}`)}

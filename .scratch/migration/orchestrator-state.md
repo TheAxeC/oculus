@@ -24,20 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:      # steps in flight, up to six (Z632)
-- step: O42
-  brief_check: agents/reviews/O42-brief-check.md (a66ad9473b70689d0, claude-opus-5-5, 284,652 tokens, 95 tool uses, 16.0 min)
-  base: 3587a477a
-  worktree: .agents/worktrees/migration-O42
-  executor: agent
-  worker: claude:opus
-  session_id: aaa21bf27aeba936c (claude-opus-5-5)
-  launched: 2026-10-18
-  report: agents/reviews/O42-report.md
-  builder_usage: 345,248 tokens, 469 tool uses, 86.5 min
-  reviewer_report: agents/reviews/O42-refuter.md (a1771f58c31fcccbc, claude-opus-5-5, 350,419 tokens, 85 tool uses, 16.7 min)
-  round: 1
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -308,6 +295,11 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-18 (O42 landed). O42 landed on main (booking in plan.md under O42, `agents/reviews/O42-landing.md`) after one repair round and the review over it; that review's findings fixed at landing or kept with their reason (`agents/reviews/O42-refuter.md`, Closed); ruling 149 (b) carried out (the Accent Colour... item and `:accent` removed); Axel's look found the wallpaper not following a pick and the Files tree indented too far, both fixed at landing at his word, with ruling 150 (a), `files.file_icon_at_arrow` default true. In flight (0 of 6): none. Next: O38 (the cockpit retired and the hub's tools cleaned), each deletion and each edit of a skill's file on Axel's yes path by path (ruling 121), then O39.
+- 2026-10-18 (O42 staged on main, the app looks owed). The review over round 1 (adad48ff0edac1de7) is appended to `agents/reviews/O42-refuter.md`, every finding closed under its Closed heading. In the gate: the landing fixes, `test:checks` red on the import order (colon-effects and `opensAsMode` moved to `shell/window`) and on `phosphor.css` comments naming P1 and P3, then on one comment width; `npm run diagrams && npm run test:landing` passed every other command, `npm run test:checks` passed alone after the last fix (19 files, 313 tests). Main's staged oculus tree equals the gate's (6,439 lines); stale cherry-pick sequencer state cleared in the gate and on main with `git cherry-pick --quit`. The header look on TEST holds. Waiting on Axel's looks in the desktop app, then the booking and the commit. In flight (1 of 6): O42 (staged). Next: Axel's looks, the booking, the commit, O38.
+- 2026-10-18 (O42 round 1 under review). The builder reported all 17 rulings DONE (section "Repair round 1" of `agents/reviews/O42-report.md`, usage in `builder_usage`); the reviewer over the round, adad48ff0edac1de7 on claude-opus-5-5, runs against `.agents/worktrees/migration-O42-round-1`. In flight (1 of 6): O42 (review over round 1). Next: its report, then /land O42 with the looks, then O38.
+- 2026-10-18 (O42 resumed at Axel's word). The same builder aaa21bf27aeba936c resumed with round 1 from item 2. In flight (1 of 6): O42 (round 1). Next: the builder's round report, the review over the round, /land O42, O38.
+- 2026-10-18 (O42 paused at Axel's word). The builder aaa21bf27aeba936c was stopped during repair round 1; its round work so far is item 1 (S1, `SHEET_CHARACTER` in `workbench-keys.svelte.ts`), the other 66 snapshot paths unchanged. Paused: no resume, review, landing or dispatch until Axel says to go on. In flight (1 of 6): O42 (round 1, paused). Next on his go: resume the same builder with the round, then the review over the round, /land O42, O38.
 - 2026-10-18 (O42 round 1 sent). O42's builder aaa21bf27aeba936c reported every item DONE (`agents/reviews/O42-report.md`, usage in `builder_usage`); the reviewer a1771f58c31fcccbc on claude-opus-5-5 wrote `agents/reviews/O42-refuter.md`: Part 2 violated (the header's branch drawn in capitals, B2), case 4 partial (the colon path of `menuPage` untested, P1), spec findings S1 to S11, behaviour findings B1 to B4 and B7. Round 1 (`agents/briefs/O42-round1.md`, 17 items) sent to the builder; snapshot `.agents/worktrees/migration-O42-round-1` with `files.txt` (67 paths). Open items: none. In flight (1 of 6): O42 (round 1). Next: the review over the round, /land O42 with its looks, then O38.
 - 2026-10-18 (O42 launched). Ruling 148 (a) booked; O42 prepared at base 3587a477a with the brief check's findings closed; builder aaa21bf27aeba936c on claude-opus-5-5 in `.agents/worktrees/migration-O42`. In flight (1 of 6): O42. Next: the builder's report, /refute O42, /land O42.
 - 2026-10-18 (O42 stopped at its brief check). Ruling 147 (a) booked; /spec O42 ran again, its brief check a66ad9473b70689d0 (claude-opus-5-5) found the brief needed widened paths and tests no guarded entry covers; every finding but 4.1 is closed in `agents/reviews/O42-brief-check.md` under Closed, to be applied when /spec runs again; 4.1 is open item 148. No brief, no worktree, no dispatch entry. In flight (0 of 6): none. Next: Axel's ruling on 148, then /spec O42 again.

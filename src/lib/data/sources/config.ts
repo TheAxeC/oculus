@@ -74,6 +74,7 @@ export {
     changesKeep,
     closedPaths,
     confirmDelete,
+    fileIconAtArrow,
     latexBuild,
     latexFormatting,
     lintSettings,

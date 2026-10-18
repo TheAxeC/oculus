@@ -1,20 +1,34 @@
 // Layer 2, client state. The rules that read the terminal list against the Terminal tabs: which
 // terminals have ended as one `sessions` message says, which running terminals no tab owns, what a
-// terminal is called wherever it is listed and what a Terminal tab calls it, what the ended ones
-// take out of the tabs and where a moved terminal goes. The store in
-// state/sessions/terminals.svelte.ts calls them with what it holds and the tests call them with
-// what a case builds. The file holds two functions that write to the workbench they are handed,
-// closeEnded and moveInto; the others are pure.
+// terminal is called wherever it is listed and what a Terminal tab calls it, which terminal a
+// session runs in, what the ended ones take out of the tabs and where a moved terminal goes. The
+// store in state/sessions/terminals.svelte.ts calls them with what it holds and the tests call them
+// with what a case builds. The file holds three functions that write to the workbench they are
+// handed, closeEnded, moveInto and showIn; the others are pure.
 //
 // `endingOf` names what an app runs, for the question a disable asks.
 //
 // A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions view's rows
 // and the Processes view keep `terminalLabel` (title, else name).
 
-import { isTerminalId, type DebugPayload, type Terminal } from '../../../data/model/index.ts';
+import {
+    isTerminalId,
+    type DebugPayload,
+    type SessionRecord,
+    type Terminal
+} from '../../../data/model/index.ts';
 import type { AppEnding } from '../../system/apps/flows.ts';
 import { t } from '../../shared/words/text.ts';
-import { ownerOf, readTab, tabTerminals, withTerminal, withoutTerminal } from './terminal-tabs.ts';
+import {
+    emptyTab,
+    ownerOf,
+    pageTarget,
+    readTab,
+    showingRow,
+    tabTerminals,
+    withTerminal,
+    withoutTerminal
+} from './terminal-tabs.ts';
 import type { TerminalTab, TerminalTabs } from './workbench-shape.ts';
 
 /**
@@ -130,6 +144,74 @@ export function moveInto(
     const at = before >= 0 && before < index ? index - 1 : index;
     workbench.restate(target.id, target.page, withTerminal(held, id, at));
     workbench.activate(target.id, target.page);
+}
+
+/**
+ * The Terminal tab of a page or float that a terminal no tab owns, New and the app menu's starts
+ * go to: pageTarget's rule over that page's tabs.
+ */
+export function pageTabOf(
+    workbench: TerminalTabs,
+    tabs: readonly TerminalTab[],
+    page: string
+): TerminalTab | null {
+    const onPage = tabs.filter((tab) => tab.page === page);
+    const chosen = pageTarget(onPage, workbench.activeTab(page));
+    return onPage.find((tab) => tab.id === chosen) ?? null;
+}
+
+/**
+ * Show a terminal. The tab that owns it is activated, its page switched to when it is another,
+ * and shows it in the tab's row. A terminal no tab owns joins the end of the Terminal tab of the
+ * page on screen, or of a new Terminal tab there, and is shown; `label` names a tab that takes it.
+ * An id that is not a terminal's shows nothing.
+ */
+export function showIn(
+    workbench: TerminalTabs,
+    tabs: readonly TerminalTab[],
+    id: string,
+    label: string
+): void {
+    if (!isTerminalId(id)) return;
+    const owner = ownerOf(tabs, id);
+    if (owner !== null) {
+        if (owner.page !== workbench.currentPage()) workbench.switchPage(owner.page);
+        const held = readTab(owner.state);
+        const next = showingRow(held, id);
+        if (next !== held) workbench.restate(owner.id, owner.page, next);
+        workbench.activate(owner.id, owner.page);
+        return;
+    }
+    const page = workbench.currentPage();
+    const target = pageTabOf(workbench, tabs, page);
+    if (target === null) {
+        const joined = withTerminal(emptyTab(crypto.randomUUID()), id, 0);
+        workbench.open(page, { ...joined, label });
+        return;
+    }
+    const held = readTab(target.state);
+    const joined = withTerminal(held, id, held.terminals.length);
+    workbench.restate(target.id, page, label === '' ? joined : { ...joined, label });
+    workbench.activate(target.id, page);
+}
+
+/**
+ * The oculus terminal a session runs in: the one that resumed it, or the one whose pane process is
+ * the session's own. The pane's process is the agent itself, since tmux runs the argv directly, so
+ * a Claude session the registry reports by pid is found by it. Null for a session that runs in a
+ * terminal of its own.
+ */
+export function sessionTerminal(
+    terminals: readonly Terminal[],
+    record: Pick<SessionRecord, 'id' | 'pid'> | null
+): Terminal | null {
+    if (record === null) return null;
+    const all = terminals.filter((one) => one.foreign !== true);
+    return (
+        all.find((one) => one.resumes?.id === record.id) ??
+        all.find((one) => record.pid !== null && one.pid !== 0 && one.pid === record.pid) ??
+        null
+    );
 }
 
 /**

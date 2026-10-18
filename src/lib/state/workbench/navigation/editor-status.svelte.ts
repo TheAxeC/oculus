@@ -99,6 +99,9 @@ export type EditorAsk =
 /** The id of the tab action Cmd+S asks of the source tab on screen. */
 export const SAVE_ACTION = 'oculus.save';
 
+/** The id of the tab action the desktop app's Revert File asks of the source tab on screen. */
+export const REVERT_ACTION = 'oculus.revert';
+
 /** An ask as the instance reads it, numbered so it is performed once. */
 export type EditorRequest = EditorAsk & { instance: string; seq: number };
 

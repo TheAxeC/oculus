@@ -269,7 +269,7 @@
 <g id="node30" class="node">
 <title>folder views/sessions to layer state</title>
 <polygon fill="none" stroke="none" points="131.55,-913.6 112.45,-913.6 112.45,-901.12 131.55,-901.12 131.55,-913.6"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="122" y="-904.96" font-family="Helvetica,Arial,sans-serif" font-size="8.00">117</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="122" y="-904.96" font-family="Helvetica,Arial,sans-serif" font-size="8.00">119</text>
 </g>
 <!-- folder views/sessions&#45;&gt;folder views/sessions to layer state -->
 <g id="edge48" class="edge">
@@ -298,7 +298,7 @@
 <g id="node32" class="node">
 <title>folder views/sources to folder views/shared</title>
 <polygon fill="none" stroke="none" points="146.33,-360.4 131.67,-360.4 131.67,-347.92 146.33,-347.92 146.33,-360.4"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-351.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">97</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-351.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">96</text>
 </g>
 <!-- folder views/sources&#45;&gt;folder views/sources to folder views/shared -->
 <g id="edge52" class="edge">
@@ -320,7 +320,7 @@
 <g id="node34" class="node">
 <title>folder views/sources to layer state</title>
 <polygon fill="none" stroke="none" points="108.55,-692.32 89.45,-692.32 89.45,-679.84 108.55,-679.84 108.55,-692.32"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="99" y="-683.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">358</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="99" y="-683.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">359</text>
 </g>
 <!-- folder views/sources&#45;&gt;folder views/sources to layer state -->
 <g id="edge56" class="edge">
@@ -444,7 +444,7 @@
 <g id="node44" class="node">
 <title>folder views/shared to layer state</title>
 <polygon fill="none" stroke="none" points="117.55,-86.08 98.45,-86.08 98.45,-73.6 117.55,-73.6 117.55,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="108" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">327</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="108" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">328</text>
 </g>
 <!-- folder views/shared&#45;&gt;folder views/shared to layer state -->
 <g id="edge76" class="edge">

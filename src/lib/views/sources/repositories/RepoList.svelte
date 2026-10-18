@@ -59,6 +59,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { branchState } from '$lib/views/shared/changes/branch-state';
+    import { branchOf, branchTitle } from './repo/branch-words';
     import { shapeBadge, shapeBadgeTone } from '$lib/views/shared/changes/repo-shape';
 
     type Props = {
@@ -126,21 +127,6 @@
             sources.map((one) => scmKey(one.app, one.id))
         )
     );
-
-    /**
-     * The branch a row names: the first 8 characters of HEAD's commit for a detached HEAD (the
-     * detached sentence when the log is not read), else the branch.
-     */
-    function branchOf(git: GitState): string {
-        if (!git.detached) return git.branch;
-        const head = git.log.at(0)?.hash;
-        return head === undefined ? t('sessions.ch_detached') : head.slice(0, 8);
-    }
-
-    /** What the branch control says when pointed at: the detached sentence for a detached HEAD. */
-    function branchTitle(git: GitState): string {
-        return git.detached ? t('sessions.ch_detached') : git.branch;
-    }
 
     function sync(root: string, git: GitState): void {
         const words = syncWords(git);

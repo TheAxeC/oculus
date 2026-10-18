@@ -1,11 +1,13 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. The one repository the
-    // view shows: its commit box, a line saying a merge, a rebase or a cherry pick is in progress
-    // with Abort and, for a rebase, Continue (a cherry pick is finished by committing, so it has
-    // none), then Changes, Graph, Stashes, Tags, Branches and Worktrees as collapsible sections of
-    // explorer rows, each with its count as a badge at the right edge of its head. The branch and
-    // how far it is from its upstream are on the repository's row in the list above, and the path
-    // is that row's hover words, so a repository that reads draws neither line of its own. The
+    // view shows, under a header row in the explorer's section-head style: the repositories glyph,
+    // the name the list's row draws for it and, whenever a branch is known, the branch as the row's
+    // Branch control draws it (repo/branch-words.ts), with the path as the header's hover words.
+    // Under the header: its commit box, a line saying a merge, a rebase or a cherry pick is in
+    // progress with Abort and, for a rebase, Continue (a cherry pick is finished by committing, so
+    // it has none), then Changes, Graph, Stashes, Tags, Branches and Worktrees as collapsible
+    // sections of explorer rows, each with its count as a badge at the right edge of its head. How
+    // far the branch is from its upstream is on the repository's row in the list above. The
     // sections are one tree and one stop of the focus order through ui/tree/TreeView.svelte, moved
     // along with the arrow keys over the rows state/sources/repositories/change-tree.ts's
     // repositoryKeyRows() lists, Right and Left opening and closing a head or a group. In the
@@ -13,18 +15,16 @@
     // rows list them. A write in flight (with its Cancel) and what the last write answered are said
     // on one message line laid over the foot of the pane (repo/RepoMessage.svelte). While an action
     // that says words of its own runs on any root of the repository (a commit, a push, a checkout:
-    // the store's `running`), a moving line is laid across the top of the section, under the
-    // repository's row, with those words as its name and its hover words; it takes no room either,
-    // so no row moves when it shows or clears, and under the system's reduce-motion setting it is
-    // drawn still.
+    // the store's `running`), a moving line runs along the foot of the header, laid over it, with
+    // those words as its name and its hover words; it takes no room either, so no row moves when it
+    // shows or clears, and under the system's reduce-motion setting it is drawn still.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
     // a repository whose read failed, and the muted sentence for a folder that is not there and for
     // one that is no repository. Every sentence is the one the Changes panel draws, from the one
-    // catalog key, so the two views say one thing about one state. The branch line and the path
-    // stay above the row whenever the state names a branch, since the branch was read before
-    // whatever failed.
+    // catalog key, so the two views say one thing about one state. The header keeps the branch
+    // whenever the state names one, since the branch was read before whatever failed.
     //
     // The sections press through the Source Control store themselves; what asks first is asked in
     // the view's dialog, handed in as `ask`. The graph's menus check a branch out through the
@@ -65,12 +65,14 @@
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { branchState } from '$lib/views/shared/changes/branch-state';
+    import { branchOf } from './branch-words';
     import { useState } from '$lib/state/client/use';
     import { askBranchDelete, askTagDelete } from '../menus/graph-menu';
 
     type Props = {
         root: string;
+        /** The name the list's row draws for the repository. */
+        name: string;
         git: GitState;
         /** The section ids the reader closed. */
         collapsed: string[];
@@ -100,6 +102,7 @@
 
     let {
         root,
+        name,
         git,
         collapsed,
         commit,
@@ -248,24 +251,24 @@
     }
 </script>
 
+{#snippet branchWords()}
+    <span class="branch" data-repo-branch>{branchOf(git)}</span>
+{/snippet}
+
 <section class="repo" data-root={root}>
-    {#if running !== null}
-        <div class="running" data-repo-running={running.action}>
-            <div class="bar" title={running.words}>
+    <div class="head" title={root}>
+        <TreeItem
+            label={name}
+            glyph="repositories"
+            heading
+            detail={git.detached || git.branch !== '' ? branchWords : undefined}
+        />
+        {#if running !== null}
+            <div class="bar" data-repo-running={running.action} title={running.words}>
                 <Progress percent={null} label={running.words} />
             </div>
-        </div>
-    {/if}
-    {#if shape !== 'readable'}
-        {#if git.branch !== ''}
-            <div class="branch" title={root}>
-                <span class="lb">{t('sessions.ch_branch')}</span>
-                <span class="nm">{git.branch}</span>
-                <span class="mt">{branchState(git)}</span>
-            </div>
         {/if}
-        <p class="path" title={root}>{root}</p>
-    {/if}
+    </div>
     {#if shape !== 'readable'}
         <!-- git's reason as the row's hover words, the attribute the Changes panel carries it on:
              ui/tree/TreeItem.svelte draws its own tooltip for a row that is pressed, and this row
@@ -401,20 +404,24 @@
         min-width: 0;
     }
 
-    /* A zero-height block at the top of the section whose line lies in the 6px gap above it,
-       between the repository's row and the section, so nothing moves when it shows or clears; the
-       negative margin takes back the section's gap after it. */
-    .running {
+    /* The header holds the moving line, which lies over its foot so nothing moves when it shows
+       or clears. */
+    .head {
         position: relative;
-        height: 0;
-        margin-bottom: -6px;
+    }
+
+    /* The header's name is drawn in capitals (ui/tree/TreeItem.svelte's heading row); the branch
+       words after it keep their own case, since a branch name, the short hash of a detached HEAD
+       and the detached sentence read as git and the catalog write them. */
+    .branch {
+        text-transform: none;
     }
 
     .bar {
         position: absolute;
         left: 0;
         right: 0;
-        top: -5px;
+        bottom: 0;
         display: flex;
     }
 
@@ -427,34 +434,6 @@
     .commands {
         padding: 0 12px 0 11px;
         margin-bottom: 4px;
-    }
-
-    .branch {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: var(--fs-md);
-    }
-
-    .branch .lb {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-    }
-
-    .branch .mt {
-        margin-left: auto;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .path {
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
     }
 
     .sequence {

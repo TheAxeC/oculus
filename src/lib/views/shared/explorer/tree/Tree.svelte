@@ -87,6 +87,7 @@
     import { filesKeymap, keyWords } from '$lib/state/sources/explorer/acts/keys';
     import { stemLength } from '$lib/state/sources/explorer/ops.svelte';
     import { rememberAnswer } from '$lib/state/sources/explorer/acts/confirm';
+    import { fileIconAtArrow } from '$lib/state/sources/explorer/rows/tree-rows';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -189,6 +190,8 @@
     const mac = onMac();
     const keymap = filesKeymap(mac);
     const view = viewAccess(client, () => owner);
+    /** Whether a file's row drops its empty arrow slot (`files.file_icon_at_arrow`). */
+    const arrowless = $derived(fileIconAtArrow(client.selectors.configMap()));
 
     /** What this tree's Files view remembers, reactive. */
     const held = $derived(filesViewOf(client.ui.instanceState(owner)));
@@ -358,6 +361,7 @@
         {/if}
         <ul
             class="rows"
+            class:arrowless
             role="none"
             ondragleave={dragger.left}
             ondragover={dragger.overTail}
@@ -478,8 +482,8 @@
 </TreeView>
 
 <style>
-    /* VS Code's Explorer measures: the indent guide sits at the centre of the folder's twistie,
-       with no gap before the first, and the status letter 16px from the row's edge. */
+    /* VS Code's Explorer measures: each level is the 8px indent alone, the indent guide sits at
+       the centre of the folder's twistie, and the status letter is 16px from the row's edge. */
     .rows {
         --tree-guide-gap: 0px;
         --tree-guide-shift: calc(var(--icon-box) / 2);
@@ -490,6 +494,12 @@
         padding: 0;
         list-style: none;
         min-width: 0;
+    }
+
+    /* A file's row drops its empty arrow slot, so its icon sits where its sibling folders' arrows
+       sit. */
+    .arrowless {
+        --tree-leaf-twisty: none;
     }
 
     .row {

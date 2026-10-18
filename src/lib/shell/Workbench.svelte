@@ -36,7 +36,9 @@
     // theme, the wallpaper and which of the two glyph vocabularies renders.
     //
     // It is also where the languages the acting apps add are handed to the editor's kit
-    // (window/app-languages.svelte.ts), in the main window and in a popped-out window alike.
+    // (window/app-languages.svelte.ts), in the main window and in a popped-out window alike, and
+    // where the commands of the desktop app's menu are answered (window/menu-commands.svelte.ts),
+    // on the area the window draws.
 
     import { activeLabel, pageActiveTab, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
@@ -59,6 +61,7 @@
     import { useAppearance } from './window/appearance.svelte';
     import { useAppLanguages } from './window/app-languages.svelte';
     import { sourceKeys } from './window/source-keys';
+    import { useMenuCommands } from './window/menu-commands.svelte';
     import TitleBar from './titlebar/TitleBar.svelte';
     import { NO_WALK, provideWalk, type HistoryWalk } from './titlebar/history-walk';
     import { provideStripActions } from './titlebar/strip-actions.svelte';
@@ -147,6 +150,8 @@
         walkProblem?: (by: 1 | -1) => boolean;
         /** The window's navigation history, which the page reads since the shell may not. */
         history?: HistoryWalk;
+        /** Save every tab's unsaved edits, the menu's Save All; the page owns it. */
+        saveAll?: () => void;
     };
 
     let {
@@ -161,7 +166,8 @@
         git = NO_GIT,
         waiting = 0,
         walkProblem = () => false,
-        history = NO_WALK
+        history = NO_WALK,
+        saveAll = () => undefined
     }: Props = $props();
 
     const walk = provideWalk(() => history);
@@ -186,6 +192,8 @@
     /** The maximised pane, when one is, which the keys move the card cursor in. */
     const focus = $derived(focused());
     const activeMain = $derived(activeInstance());
+    /** The active tab of the area the page draws: its float's in a popped-out window. */
+    const pageTab = () => pageActiveTab(floatId, floats(), activeMain);
     /** The engine documents the rail pages' arrangements show, then the `docs:` entries. */
     const listedDocs = $derived([
         ...pages.flatMap((one) => arrangedDocs(one.page, one.node)),
@@ -205,7 +213,7 @@
         history: walk,
         ui: client.ui,
         navigation: () => navigation,
-        activeTab: () => pageActiveTab(floatId, floats(), activeMain),
+        activeTab: pageTab,
         focus: () => focus,
         paletteOpen: () => paletteOpen,
         paletteMode: () => (paletteOpen ? modeOf(paletteQuery, paletteStart.files) : null),
@@ -230,16 +238,9 @@
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
         runDefault: (which) => void client.commands.runDefault(which),
         debugging: () => client.debug.active(),
-        ...sourceKeys(client, activeInstance),
+        ...sourceKeys(client, pageTab),
         debugKey: (which) => pressDebug(client.debug, which),
         walkProblem: (by) => walkProblem(by),
-        appKey: (event, textual, editor) =>
-            client.appShell.press(event, {
-                tab: activeMain,
-                status: client.editorStatus.statusOf(activeMain?.id ?? ''),
-                textual,
-                editor
-            }),
         mac: onMac(),
         app: client.desktop !== undefined,
         find: () => client.desktop?.bridge.showFind(),
@@ -250,6 +251,15 @@
         },
         openPalette: (prefill) => openPalette(prefill),
         showPalette: (key) => showPalette(key)
+    });
+
+    useMenuCommands(client, {
+        covered: keyboard.covered,
+        act: keyboard.act,
+        openPalette: (prefill, files, line) => openPalette(prefill, files, line),
+        openUpdate: () => openUpdate(),
+        saveAll: () => saveAll(),
+        tab: pageTab
     });
 
     // A browser with no saved layout starts on the first rail page rather than on a page no button
@@ -443,7 +453,6 @@
         position: fixed;
         inset: 0;
         z-index: -1;
-        background-image: url(/api/wallpaper);
         background-position: center;
         background-size: cover;
         background-repeat: no-repeat;

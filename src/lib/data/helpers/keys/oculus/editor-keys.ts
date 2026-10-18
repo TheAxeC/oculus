@@ -1,27 +1,10 @@
-// Layer 1, data. The keys the editor takes for the workbench: the save key, which the shell
-// resolves (resolve.ts) and a Save control's tooltip shows, and the first presses of the LaTeX
-// tab's actions and chords (views/sources/source/latex/latex-tab.svelte.ts). The tab binds exactly
-// these, and the audit of an app's keybindings reads them as keys oculus takes.
+// Layer 1, data. The keys the editor takes for the workbench: the first presses of the LaTeX tab's
+// actions and chords (views/sources/source/latex/latex-tab.svelte.ts). The tab binds exactly
+// these, and the audit of an app's keybindings reads them as keys oculus takes. A press is written
+// as the page's key tables write one (page-keys.ts), where the save key is.
 
 import { nameOfCode, type KeyPlatform } from '../keys.ts';
-
-/**
- * One key press: the physical key's name (`KeyB`, `BracketLeft`, `F8`), which is also Monaco's, and
- * the modifiers held with it.
- */
-export type Press = {
-    code: string;
-    /** Cmd on macOS and Ctrl elsewhere, Monaco's CtrlCmd. */
-    cmd?: true;
-    /** The Ctrl key on macOS, Monaco's WinCtrl. */
-    ctrl?: true;
-    shift?: true;
-    /** The Alt key, Option on macOS, Monaco's Alt. */
-    alt?: true;
-};
-
-/** The save key: Cmd+S, Ctrl+S off macOS. */
-export const SAVE_PRESS = { code: 'KeyS', cmd: true } as const satisfies Press;
+import type { Press } from './page-keys.ts';
 
 /** The keys of the LaTeX tab's actions that have one press. */
 export const LATEX_PRESSES = {

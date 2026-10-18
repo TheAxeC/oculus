@@ -450,6 +450,7 @@
                 {#key shown}
                     <Repo
                         root={shown}
+                        name={labels[shown] ?? shown}
                         git={held}
                         collapsed={view.collapsed}
                         commit={view.commit}

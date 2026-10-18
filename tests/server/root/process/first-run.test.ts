@@ -7,15 +7,15 @@
 import { chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
+import { engineDir } from '../../../../src/lib/data/places/engine-dir.ts';
 import {
     installLacks,
     machineFacts,
     machineLacks,
     type Lack
-} from '../../../src/lib/server/root/process/start/first-run.ts';
-import { wordsOf } from '../../../src/lib/server/root/process/words.ts';
-import { it, plantFile, plantScratch } from '../../fixtures/scratch.ts';
+} from '../../../../src/lib/server/root/process/start/first-run.ts';
+import { wordsOf } from '../../../../src/lib/server/root/process/words.ts';
+import { it, plantFile, plantScratch } from '../../../fixtures/scratch.ts';
 
 const t = wordsOf(engineDir());
 const PREFIX = 'oculus-first-run-';

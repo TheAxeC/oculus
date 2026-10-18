@@ -111,7 +111,6 @@ export type PaletteCommand = {
         | 'theme'
         | 'crt'
         | 'file-icons'
-        | 'accent'
         | 'tab'
         | 'reopen-closed-tab'
         | 'go-back'
@@ -522,12 +521,6 @@ export function commands(
                     .join(' | ')
             ),
             available: true
-        },
-        {
-            name: 'accent',
-            description: t('app.palette.cmd_accent'),
-            hint: t('app.palette.cmd_accent_hint'),
-            available: false
         },
         {
             name: 'tab',

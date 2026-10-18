@@ -1,28 +1,24 @@
 // Layer 3, shared view partial, read by Source.svelte and the diff sections. What a source tab
 // hands its editor for the indentation, the word wrap and the rulers: the configured values, the
-// repository's `.oculus/settings.yml` read through the file store, the file's own indentation and
-// the tab's own choices, resolved in the order data/helpers/editor/editor.ts's `resolveEditor`
-// states. The record looked up is the one of the language the editor draws the text in: the one
-// chosen from the status bar, else the name's, and plaintext for a text past the paint limit.
+// folder's `.oculus/settings.yml`, the file's own indentation and the tab's own choices, resolved
+// in the order data/helpers/editor/editor.ts's `resolveEditor` states. The record looked up is the
+// one of the language the editor draws the text in: the one chosen from the status bar, else the
+// name's, and plaintext for a text past the paint limit.
 //
 // Every getter reads what it is handed afresh, so a `$derived` over one of them is made again when
-// the tab's draft, the configuration, the root's settings file or the file store moves. The
-// settings file is asked of the store once the store's listings name it: the root's listing with
-// every entry shown names `.oculus`, and that folder's listing names `settings.yml`. So a root
-// without the file is asked no read that fails, and a file made later is read once a listing names
-// it. It is parsed once per text and configuration, so a save of the file takes effect without a
-// reload and a tab with no root asks for nothing.
+// the tab's draft, the configuration or the folder list moves. The settings text comes with the
+// folder list (`settingsOf`), which is read again when the file changes, so no request is sent for
+// it and a tab rooted at a folder's repository path reads that folder's file. It is parsed once per
+// text and configuration, so a save of the file takes effect without a reload.
 //
 // The page holds no default for any of these values. Until the config channel's first message the
 // configured options are null, and so are the indentation, the word wrap and the rulers here, which
 // the editor leaves to its own until the configuration arrives.
 
-import { languageOfFile, SHOWN_EVERYTHING, type LanguageMap } from '$lib/state/sources/fs';
-import type { FsStore } from '$lib/state/sources/fs.svelte';
+import { languageOfFile, settingsOf, type FsRoot, type LanguageMap } from '$lib/state/sources/fs';
 import type { EditorOptions } from '$lib/ui/controls/editor/options';
 import {
     detectIndent,
-    REPO_SETTINGS,
     resolveEditor,
     shownLanguage,
     toggleWrap,
@@ -50,8 +46,8 @@ export type SourceOptionsInput = {
     /** A settings file's text read by the rule of the configuration the page holds. */
     repoSettings: (text: string) => RepoSettings;
     paintLimit: () => number | null;
-    /** The file store's reads: the listings that name the settings file, and its text. */
-    fs: Pick<FsStore, 'listing' | 'fileText'>;
+    /** The folders of the workspace, each with its settings text. */
+    folders: () => readonly FsRoot[];
 };
 
 /** The options of a tab as the editor takes them. */
@@ -106,31 +102,13 @@ export function createSourceOptions(input: SourceOptionsInput): SourceOptions {
 
     /** The records of the root's settings file, null when it has none that can be read. */
     function repository(options: ConfiguredEditor): LanguageRecords | null {
-        const root = input.root();
-        if (root === '' || !named(root)) return null;
-        const file = input.fs.fileText(root, REPO_SETTINGS);
-        if (file.loading || file.error !== '' || file.truncated) return null;
-        if (parsed?.text !== file.text || parsed.options !== options) {
-            const read = input.repoSettings(file.text);
-            parsed = {
-                text: file.text,
-                options,
-                records: read.kind === 'read' ? read.languages : null
-            };
+        const text = settingsOf(input.folders(), input.root());
+        if (text === null) return null;
+        if (parsed?.text !== text || parsed.options !== options) {
+            const read = input.repoSettings(text);
+            parsed = { text, options, records: read.kind === 'read' ? read.languages : null };
         }
         return parsed.records;
-    }
-
-    /** Whether the store's listings name the root's settings file, each folder read in turn. */
-    function named(root: string): boolean {
-        const parts = REPO_SETTINGS.split('/');
-        let folder = '';
-        for (const part of parts) {
-            const found = input.fs.listing(root, folder, SHOWN_EVERYTHING);
-            if (found.error !== '' || !found.entries.some((one) => one.name === part)) return false;
-            folder = folder === '' ? part : `${folder}/${part}`;
-        }
-        return true;
     }
 
     /** The indentation the text's own lines give. */

@@ -70,7 +70,7 @@
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { kindLabel } from '../terminal-list';
+    import { profileWords } from '$lib/state/sessions/terminals.svelte';
 
     type Props = {
         /** The tab whose instance state keeps the picks. */
@@ -236,7 +236,7 @@
     async function start(confirmed = false): Promise<void> {
         if (starting) return;
         const question =
-            agent === 'shell' ? null : skipQuestion(agent, kindLabel(agent, t), choices, picks);
+            agent === 'shell' ? null : skipQuestion(agent, profileWords(agent, t), choices, picks);
         if (question !== null && !confirmed) {
             asking = question;
             return;
@@ -284,7 +284,7 @@
         prompt = '';
         attached = [];
         setInstanceState(owner, splitEnded(instanceState(owner)));
-        onstarted(answer.id, kindLabel(agent, t));
+        onstarted(answer.id, profileWords(agent, t));
     }
 
     /** Approve the seed shown in the approval panel, then make the same start again. */
@@ -317,7 +317,7 @@
             <SeedApproval
                 seed={approving.seed}
                 folder={approving.cwd}
-                agent={kindLabel(agent, t)}
+                agent={profileWords(agent, t)}
                 busy={approvingNow}
                 onapprove={() => void approve()}
                 oncancel={() => (approving = null)}
@@ -374,12 +374,12 @@
                 />
                 <span class="picker" data-picker="agent">
                     <Menu
-                        label={kindLabel(agent, t)}
+                        label={profileWords(agent, t)}
                         glyph={markGlyph(agent, '')}
                         placement="down"
                         items={AGENTS.map((one) => ({
                             id: one,
-                            label: kindLabel(one, t),
+                            label: profileWords(one, t),
                             glyph: markGlyph(one, ''),
                             active: one === agent
                         }))}

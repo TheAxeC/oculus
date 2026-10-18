@@ -15,6 +15,17 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - When the server ends on its own, a dialog says why and offers Restart. Open windows keep their pages, unsaved text and terminals, and reconnect.
 - The app adds: windows that remember their place, floats that become windows, a native folder panel, a find bar, spelling suggestions, and the keys marked "in the app" under [The keys](#the-keys).
 - In the app a link to another site opens in the default browser, and the presenter screen opens the audience window on another display when there is one.
+- The app's menu bar holds oculus, File, Edit, View, Go, Run, Terminal, Window and Help.
+- A menu item runs what its key or its palette command runs, in the window you are in, and shows that key.
+- On macOS a key that holds neither Cmd nor Ctrl (`?`, F1, F5, F9, F10, F11) is shown on no menu item.
+- Settings... and oculus Help open in the main window you used last.
+- A menu item ending in "..." opens the palette typed with its command.
+- Settings... opens Settings, and Open Folder... and Add Folder to Workspace... open the folder panel.
+- Open Recent lists the recent workspaces, a file that is gone greyed out.
+- Open in Browser opens the window's server in the default browser.
+- A menu command that cannot run says why in a notice.
+- No menu item runs while the palette, the update tray, a confirm or the key sheet is open.
+- No menu item runs while the audience window of a presentation or an undocked DevTools window has the focus.
 
 ### On Linux and WSL2
 
@@ -314,6 +325,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - The star on a row bookmarks it in `.oculus/bookmarks.yml` of the primary hub. The Bookmarks section lists them: a file bookmark opens the file, a folder bookmark shows it in Files. Bookmarks can be renamed, removed and reordered.
 - An app can add a badge and a colour to a row.
 - Delete moves to the Trash after asking. Do not ask me again writes `files: { confirm_delete: false }` to `behavior.yml`.
+- A file's icon sits where its sibling folders' arrows sit. `files: { file_icon_at_arrow: false }` in `behavior.yml`, or the Settings toggle Files: File Icon At Arrow, lines it up with their icons instead, as VS Code does.
 - Drag onto a folder to move (Option to copy). Files dragged in from the system upload.
 - Every create, rename, move, copy, paste, upload and delete is undoable in History (Cmd+Z in Files). An undone delete restores files up to 5 MB.
 - Before each save, the old text is kept in the local history (`~/.oculus/history`, 50 copies per file, none over 256 KB). The Timeline section lists those copies and the file's commits; Restore writes a copy back.

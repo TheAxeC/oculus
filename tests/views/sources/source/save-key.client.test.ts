@@ -50,7 +50,7 @@ it('saves the file on Cmd+S before the first config message has arrived', async 
             ui: { ...client.ui, saveTab },
             apps: { ...client.apps, save: appSave }
         },
-        () => ({ id: 'tab', view: 'source' })
+        () => ({ id: 'tab', view: 'source', state: {} })
     );
     keys.saveSource();
     flushSync();

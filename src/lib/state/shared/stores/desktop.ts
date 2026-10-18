@@ -7,6 +7,8 @@
 // Every position is in screen points, as Electron reports a window's content bounds. The preload
 // (src/desktop/preload.cjs) names this type in a JSDoc import and implements it.
 
+import type { MenuCommand, RecentEntry } from '../../../data/helpers/keys/oculus/menu-commands.ts';
+
 /** A window's content area on the screen. */
 type ScreenBounds = { x: number; y: number; w: number; h: number };
 
@@ -44,17 +46,17 @@ export { READY_WAIT_MS } from '../../../data/file-ops.ts';
 export type PrintAnswer =
     { ok: true; bytes: Uint8Array } | { ok: false; error: 'timeout' | 'failed' | 'refused' };
 
-/** The menu commands the host sends a page. */
-type DesktopCommand = 'settings' | 'help';
-
 /** The messages the host sends a page, by name, with what each carries. */
 type DesktopEvents = {
     /** The window of a popped-out float moved or was resized. */
     bounds: ScreenBounds;
     /** A tab was released over this window from another one. */
     'drop-here': DropHere;
-    /** A menu item the page answers. */
-    command: DesktopCommand;
+    /**
+     * A menu item the page answers, by the name of the list (menu-commands.ts); Open Recent's
+     * workspace file comes as the listener's argument.
+     */
+    command: MenuCommand;
     /** The count of the find the window runs. */
     found: FindCount;
     /** The find bar was shown. */
@@ -105,10 +107,15 @@ export type DesktopBridge = {
     fullScreen: () => Promise<boolean>;
     /** Whether the spell checker holds a word wrong, and what it suggests. */
     spelling: (word: string) => Promise<Spelling>;
-    /** Hear a message of the host; answers how to stop. */
+    /** Hand the host the open workspace's recent workspace files, for the menu's Open Recent. */
+    recentWorkspaces: (entries: RecentEntry[]) => void;
+    /**
+     * Hear a message of the host; answers how to stop. A message may carry one argument after its
+     * payload, which the listener reads as it reads anything the host sends.
+     */
     on: <K extends keyof DesktopEvents>(
         event: K,
-        listener: (payload: DesktopEvents[K]) => void
+        listener: (payload: DesktopEvents[K], argument?: unknown) => void
     ) => () => void;
 };
 

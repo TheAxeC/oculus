@@ -327,4 +327,5 @@
     waiting={waitingCount()}
     walkProblem={problems.walk}
     history={client.history}
+    saveAll={() => void client.autosave.saveEvery()}
 />

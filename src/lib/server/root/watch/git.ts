@@ -59,11 +59,12 @@
 // and a read of the state is asked for when a relevant event came in the window, or when the root's
 // last read ran out of time. An event at a folder's `project.yml` or `.oculus` adds the folder
 // above that folder too, whose listing carries what the folder holds for the make controls
-// (files/project/make.ts, `markedBy`), and for the root's own the timer says the workspaces may
-// have changed, since their answer carries the root's. The message is published by the timer and
-// not by the read, so a file listing is never held behind git. It is this watcher's because it
-// already watches every root recursively and already throttles the burst a save makes, so no second
-// watcher and no second throttle are needed.
+// (files/project/make.ts, `markedBy`). For the root's own, and for the root's own
+// `.oculus/settings.yml`, the timer says the workspaces may have changed, since their answer
+// carries the root's marks and that file's text (files/fs.ts). The message is published by the
+// timer and not by the read, so a file listing is never held behind git. It is this watcher's
+// because it already watches every root recursively and already throttles the burst a save makes,
+// so no second watcher and no second throttle are needed.
 //
 // The reads run git as child processes (server/core/git/run.ts), so the event loop serves requests
 // while they work. Each root has at most one read running and at most one waiting: a read asked for
@@ -87,6 +88,7 @@
 import { existsSync, lstatSync, readdirSync, watch } from 'node:fs';
 import type { FSWatcher, Stats } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { REPO_SETTINGS } from '../../../data/helpers/editor/editor.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import type {
     FilesPayload,
@@ -551,7 +553,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         windows.set(root, span);
         span.folders.add(parentOf(path));
         const owner = markedBy(path);
-        if (owner === '') marked.add(root);
+        if (owner === '' || path === REPO_SETTINGS) marked.add(root);
         else if (owner !== null) span.folders.add(parentOf(owner));
         if (span.folders.size > MOST_FOLDERS) span.whole = true;
         if (relevant(path)) {

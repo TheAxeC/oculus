@@ -39,14 +39,15 @@ const bridge = {
     titleColours: (color, symbolColor) =>
         ipcRenderer.send('oculus:title-colours', color, symbolColor),
     fullScreen: () => ipcRenderer.invoke('oculus:full-screen'),
+    recentWorkspaces: (entries) => ipcRenderer.send('oculus:recent-workspaces', entries),
     spelling: (word) =>
         Promise.resolve({
             misspelled: webFrame.isWordMisspelled(word),
             suggestions: webFrame.getWordSuggestions(word)
         }),
     on: (event, listener) => {
-        const heard = (_event, name, payload) => {
-            if (name === event) listener(payload);
+        const heard = (_event, name, payload, argument) => {
+            if (name === event) listener(payload, argument);
         };
         ipcRenderer.on('oculus:event', heard);
         return () => ipcRenderer.off('oculus:event', heard);

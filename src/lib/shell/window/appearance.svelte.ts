@@ -33,8 +33,11 @@ export type Appearance = {
     /** Whether the wallpaper is drawn: the viewer wants one and the theme shows under it. */
     wall: () => boolean;
     /**
-     * The image's own two numbers, as the properties its layer's filter reads: the dim is how much
-     * light is taken out of the picture, so the brightness left is what the filter wants.
+     * The layer's style: the image's address, which names the `wallpaper.image` value (a pick's
+     * while its write is out, else the config's), so a new choice is a new address the browser
+     * fetches rather than the picture it holds, and the image's
+     * own two numbers, as the properties its layer's filter reads: the dim is how much light is
+     * taken out of the picture, so the brightness left is what the filter wants.
      */
     image: () => string;
 };
@@ -44,15 +47,22 @@ export function useAppearance({
     ui,
     notices,
     appShell,
-    desktop
-}: Pick<ClientState, 'ui' | 'notices' | 'appShell' | 'desktop'>): Appearance {
+    desktop,
+    entities,
+    wallpapers
+}: Pick<
+    ClientState,
+    'ui' | 'notices' | 'appShell' | 'desktop' | 'entities' | 'wallpapers'
+>): Appearance {
     const { crt, icons, textScale, theme, wallpaper } = ui;
     /** The app themes the page said are unavailable, so a theme is told once. */
     const told = new Set<string>();
     const wall = $derived(wallpaper() && wallpaperOnTheme(theme(), appShell.offers()));
     const paper = $derived(wallpaperSettings());
+    const chosen = $derived(wallpapers.shown(entities.config()?.config));
     const image = $derived(
-        `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
+        `background-image: url("/api/wallpaper?v=${encodeURIComponent(chosen)}"); ` +
+            `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
     );
 
     $effect(() => {

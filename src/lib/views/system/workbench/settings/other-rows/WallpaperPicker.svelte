@@ -14,7 +14,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        wallpapers: { list, reload }
+        wallpapers: { list, reload, hold }
     } = useState();
 
     let { row, writer }: { row: ConfigRow; writer: RowWriter } = $props();
@@ -22,6 +22,13 @@
     // The folders of the workspace and the files in them are read again each time a picker opens.
     $effect(() => {
         reload();
+    });
+
+    // While a pick's write is out the page's wallpaper layer draws it, until the file holds it.
+    $effect(() => {
+        const out = writer.shown(row);
+        hold(typeof out === 'string' ? out : null);
+        return () => hold(null);
     });
 
     /** The value in force: the one sent while its write is out, else the file's. */

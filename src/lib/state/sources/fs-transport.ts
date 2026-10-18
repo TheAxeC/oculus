@@ -238,7 +238,8 @@ const folderShape = z
         hub: z.boolean().catch(false),
         folds: z.literal(true).optional().catch(undefined),
         marks: marksShape,
-        above: z.literal(true).optional().catch(undefined)
+        above: z.literal(true).optional().catch(undefined),
+        settings: z.string().nullable().optional().catch(null)
     })
     .transform((one): FsRoot => ({
         key: one.name,
@@ -247,7 +248,8 @@ const folderShape = z
         ...(one.hub ? { hub: true as const } : {}),
         ...(one.folds === undefined ? {} : { folds: true as const }),
         ...(one.marks === undefined ? {} : { marks: one.marks }),
-        ...(one.above === undefined ? {} : { above: true as const })
+        ...(one.above === undefined ? {} : { above: true as const }),
+        settings: one.settings ?? null
     }));
 
 const workspaceFileShape = unchanged(

@@ -1,7 +1,8 @@
 // Layer 2, server (the desktop host). The app's windows: the main windows, each on a server's page,
 // and the windows of popped-out floats, each on the same page with `?float=<id>`. This module makes
 // them, keeps them, and decides what each does with an address, a crash and a close; what a page
-// may ask of the host over the bridge is bridge.ts, and the menu is menu.ts.
+// may ask of the host over the bridge is bridge.ts, and the menu is menu.ts, whose commands go to
+// the window `reader` names.
 //
 // The audience window of a presentation is made by show.ts and is not one of these entries.
 //
@@ -29,6 +30,7 @@ import { EVENT } from '../decide/channels.ts';
 import { oculusAnswers } from '../server/health.ts';
 import { createFindBar, type FindBar } from './find-bar.ts';
 import { createAudience } from './show.ts';
+import { focusedOf, type Focused } from './menu-template.ts';
 import type { WindowStore } from './window-state.ts';
 
 /** How far each further main window is moved from the one before, in points. */
@@ -95,6 +97,11 @@ export type Windows = {
     mainOf: (page: string) => Entry | null;
     /** The window the reader is in, or the main window focused last. */
     focused: () => Entry | null;
+    /**
+     * The window focused: the entry the reader is in, no window, or a window that is none of these
+     * entries, a presentation's audience window or an undocked DevTools window among them.
+     */
+    reader: () => Focused<Entry>;
     /**
      * Close the window the reader is in: an audience window, else the window `focused` names.
      */
@@ -484,6 +491,14 @@ export function createWindows(deps: WindowsDeps): Windows {
         return list.find((one) => one.win === focus) ?? lastMain();
     }
 
+    function reader(): Focused<Entry> {
+        const focus = BrowserWindow.getFocusedWindow();
+        return focusedOf(
+            focus === null ? null : { win: focus, devTools: focus.webContents.isDevToolsFocused() },
+            list
+        );
+    }
+
     return {
         openMain,
         openFloat,
@@ -492,6 +507,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         moveTo,
         lastMain,
         focused,
+        reader,
         mainOf,
         closeFocused: () => {
             if (!audience.closeFocused()) focused()?.win.close();

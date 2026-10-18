@@ -17,10 +17,10 @@ import {
     readState,
     stateFileOf,
     writeState
-} from '../../../src/lib/server/files/workspace/state.ts';
-import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { plantHub, writeFs } from '../../fixtures/hubs/workspace.ts';
+} from '../../../../src/lib/server/files/workspace/state.ts';
+import { openWorkspace } from '../../../../src/lib/server/files/workspace/open.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
+import { plantHub, writeFs } from '../../../fixtures/hubs/workspace.ts';
 
 /** A fresh directory under the temporary directory, asserted to be inside it. */
 function fresh(): string {

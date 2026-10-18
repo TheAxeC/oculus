@@ -1,8 +1,9 @@
 // Layer 2, client state test. The page's store of what the apps add to the shell
 // (lib/state/system/apps/shell/shell.svelte.ts): the commands Cmd-K lists with their hint, the key
-// bound to a command, the status items drawn, what a press of a command or of a key does, and the
-// custom editors a file opens in or is offered. These are the registry, key and editor rows of G77
-// as the page reads them.
+// bound to a command, the status items drawn, what a press of a command or of a key does, the tab a
+// key's `when` reads in a popped-out window (shell/window/source-keys.ts), and the custom editors a
+// file opens in or is offered. These are the registry, key and editor rows of G77 as the page reads
+// them.
 //
 // The channels are plain payloads and the calls to the server a double that answers as the
 // `/api/app-host` route does (tests/routes/apps). What this does NOT cover: the widgets that draw
@@ -15,6 +16,9 @@ import type { Posted } from '../../../../src/lib/state/shared/stores/shapes.ts';
 import type { CommandResult } from '../../../../src/lib/state/system/apps/shell/requests.svelte.ts';
 import { createFrameShell } from '../../../../src/lib/state/system/apps/shell/frames.svelte.ts';
 import { createAppShell } from '../../../../src/lib/state/system/apps/shell/shell.svelte.ts';
+import type { PlaceTab } from '../../../../src/lib/state/system/apps/shell/place.ts';
+import { pageActiveTab } from '../../../../src/lib/shell/panes/workbench-title.ts';
+import { sourceKeys } from '../../../../src/lib/shell/window/source-keys.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { installRealText } from '../../../views/shared/real-text.ts';
@@ -94,6 +98,7 @@ function store(
         holds?: (root: string, path: string) => boolean;
         runInTab?: (app: string, command: string, args: unknown[]) => Promise<CommandResult | null>;
         config?: Record<string, unknown>;
+        fileOfTab?: (tab: PlaceTab) => { root: string; path: string } | null;
     } = {}
 ) {
     const posted: Record<string, unknown>[] = [];
@@ -123,7 +128,7 @@ function store(
         picture: () => '',
         runInTab: over.runInTab ?? (() => Promise.resolve(null)),
         holds: over.holds ?? (() => false),
-        fileOfTab: () => null,
+        fileOfTab: over.fileOfTab ?? (() => null),
         platform: 'mac'
     });
     return { shell, posted, notices, actions };
@@ -240,6 +245,49 @@ describe('a press of a command', () => {
             { tab: null, status: null, textual: true, editor: false }
         );
         expect([taken, posted]).toEqual([false, []]);
+    });
+});
+
+describe('a key of an app pressed in a popped-out window', () => {
+    it("reads the float's tab for a `when` while the main area shows another file", () => {
+        const base = row();
+        const markdown = row({
+            contributes: {
+                ...base.contributes,
+                keybindings: base.contributes.keybindings.map((one) => ({
+                    ...one,
+                    when: 'resourceExtname == .md'
+                }))
+            }
+        });
+        const { shell, posted } = store(
+            [markdown],
+            { ok: true },
+            {
+                fileOfTab: (tab) => tab.state as { root: string; path: string }
+            }
+        );
+        const tab = (id: string, path: string) => ({
+            id,
+            view: 'source' as const,
+            state: { root: 'fixture', path }
+        });
+        const main = tab('main', 'a.py');
+        const floats = [
+            { id: 'f1', pane: { kind: 'pane', tabs: [tab('held', 'notes.md')], active: 'held' } }
+        ];
+        const client = { appShell: shell, editorStatus: { statusOf: () => null } } as never;
+        const keys = (float: string | null) =>
+            sourceKeys(client, () => pageActiveTab(float, floats as never, main));
+        const event = { key: 'u', code: 'KeyU', metaKey: true, altKey: true } as KeyboardEvent;
+        const taken = [
+            keys('f1').appKey(event, false, false),
+            keys(null).appKey(event, false, false)
+        ];
+        expect([taken, posted]).toEqual([
+            [true, false],
+            [{ action: 'run', command: 'notes.hello', args: [], app: 'app:notes' }]
+        ]);
     });
 });
 

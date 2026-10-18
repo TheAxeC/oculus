@@ -23,6 +23,7 @@ import {
     FULL_SCREEN,
     OPEN_FLOAT_WINDOW,
     PRINT_PDF,
+    RECENT_WORKSPACES,
     SAVE_LAYOUT,
     SHOW_FIND,
     STOP_FIND,
@@ -34,6 +35,7 @@ import { rectOf, type Rect } from '../decide/place.ts';
 import type { SaveTurn } from '../decide/save-turn.ts';
 import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
 import { overlayColours, titleAction } from '../decide/window-options.ts';
+import type { RecentEntry } from '../../lib/data/helpers/keys/oculus/menu-commands.ts';
 import type {
     FindOptions,
     PrintAnswer,
@@ -91,6 +93,23 @@ function dropOf(value: unknown): { tab: string; at: { x: number; y: number } } |
     return { tab: value.tab, at: { x: at.x, y: at.y } };
 }
 
+/**
+ * The recent workspaces one value is: each entry with a path, its words and whether its file is
+ * gone, an entry of any other shape left out; null for a value that is no list.
+ */
+function recentOf(value: unknown): RecentEntry[] | null {
+    if (!Array.isArray(value)) return null;
+    return value.flatMap((one: unknown) =>
+        isRecord(one) &&
+        typeof one.path === 'string' &&
+        one.path !== '' &&
+        typeof one.label === 'string' &&
+        typeof one.missing === 'boolean'
+            ? [{ path: one.path, label: one.label, missing: one.missing }]
+            : []
+    );
+}
+
 /** The origin and path of an address, or null for one that is none. */
 function addressOf(url: string): { origin: string; pathname: string } | null {
     try {
@@ -101,8 +120,16 @@ function addressOf(url: string): { origin: string; pathname: string } | null {
     }
 }
 
-/** Register the bridge's handlers over the app's windows. */
-export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer): void {
+/**
+ * Register the bridge's handlers over the app's windows. `recent` hears each list of recent
+ * workspaces a page sends, for the menu's Open Recent.
+ */
+export function registerBridge(
+    windows: Windows,
+    turn: SaveTurn,
+    print: Printer,
+    recent: (entries: RecentEntry[]) => void
+): void {
     /** The tabs handed to a window that has not answered yet, by request number. */
     const waiting = new Map<number, { contents: WebContents; settle: (taken: boolean) => void }>();
     let requests = 0;
@@ -250,6 +277,11 @@ export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer)
         const colours = overlayColours(process.platform, color, symbolColor);
         if (caller === null || colours === null) return;
         caller.entry.win.setTitleBarOverlay(colours);
+    });
+
+    ipcMain.on(RECENT_WORKSPACES, (event, value: unknown) => {
+        const entries = recentOf(value);
+        if (callerOf(event, RECENT_WORKSPACES) !== null && entries !== null) recent(entries);
     });
 
     ipcMain.handle(FULL_SCREEN, (event) => {
