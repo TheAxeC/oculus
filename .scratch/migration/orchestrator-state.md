@@ -158,8 +158,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 151 (2026-10-18, O38's /spec, a premise found false): O38 deletes `tools/data`, but the Data view's Recover runs this hub's `recover_command: python3 tools/data/redownload.py {key}` (`.oculus/config.yml:65`, set by ruling O33 repository and release), and oculus has no re-downloader of its own; deleting the folder leaves Recover running a missing script. (a) `redownload.py` moves to `registries/redownload.py`, beside the `registries/data.yml` it reads, its README text into the head of `registries/data.yml`, `recover_command` becomes `python3 registries/redownload.py {key}`, and `tools/data` goes; Recover keeps working. (b) `redownload.py` is deleted with `tools/data`, `recover_command` is removed, the Data view shows no Recover control, and each dataset is fetched by hand from its `retrieval` notes; the lazy option, since it drops the scripted fetch (PhysioNet mirrors, the SHA256-checked MIMIC manifests, Zenodo files). Recommended: (a).
-- Open item 152 (2026-10-18, O38's /spec, ruling 121): the path-by-path list of O38's deletions and of its edit of `.agents/skills/project-cleanup/SKILL.md`, given to Axel in the message that ends O38's /spec stop, waits for his yes on each path before the brief is written and the builder dispatched.
+- Open item 153 (2026-10-18, O38's /spec): the six decisions inside `agents/briefs/O38-recover.md` (the kind names and fields; `path:` replacing `hpc_path`; the cluster target; moving absinta, jakel, macnair2024 and the nine cellxgene sets into `~/data/<key>`; bci-iv-4 from the Stanford record or `request`; nothing written back to the registry) and item 24 of `agents/briefs/O38-paths.md` (the 34 scout log lines kept, recommended, or reworded).
+
 
 
 
