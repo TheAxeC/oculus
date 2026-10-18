@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (2 steps):
-- O38 (cockpit retired, hub tools cleaned): next; /spec stopped on open items 151 (where `redownload.py` goes) and 152 (Axel's yes path by path); prepared again once he has ruled.
+- O38 (cockpit retired, hub tools cleaned, Recover built into oculus): next; 151 (a) and 152 ruled; waits on open item 153 (the six decisions of the Recover design and the scout log lines), then /spec writes the brief.
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.
