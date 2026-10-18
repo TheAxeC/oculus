@@ -24,7 +24,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []      # steps in flight, up to six (Z632)
+dispatch:      # steps in flight, up to six (Z632)
+- step: O42
+  brief_check: agents/reviews/O42-brief-check.md (a66ad9473b70689d0, claude-opus-5-5, 284,652 tokens, 95 tool uses, 16.0 min)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -158,7 +161,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 148 (2026-10-18, O42's brief check, finding 4.1 of `agents/reviews/O42-brief-check.md`): O42 needs tests no entry of `agents/guarded.md` covers, and `agents/spec.md` lets a step write a test only for an entry Axel has approved. The entries O42 would add: G108, "Each command of the app's menu runs its page command once, in the window the reader is in, shows the key the page binds for it (taken on macOS only when it holds Cmd or Ctrl), and does nothing under an overlay, in an audience window or for a name not in the list", tested by a table over the page's answer (one row per command name and each refusal) and a test of the menu's template reading each item's command name and key from the page's key tables; G109, "Each workspace folder's `.oculus/settings.yml` reaches the page as text in the folder list, read under the file route's guards (null for a missing file, one that is not text, one over the limit and one reached through a link out of the folder), is read again when the file changes, and the source tab's options, the Settings `editor.languages` row and the save rules take it from there with no request of their own", tested by a server table over `workspacesAnswer` and the watcher's mark and a client test counting the readers' requests; G110, "A paper's citation key is made from its first author's surname whatever the author string's form: a comma, initials with or without full stops, a trailing or separate `et al.`", tested by rows in `tests/server/edit/literature.test.ts`. Options: (a) approve G108, G109 and G110 as written. Pro: the menu's dispatch, a settings read that must not hand a file outside the folder to the page, and a key written into the Literature file each have a cost when wrong, and each gets a test that fails without the fix. Con: three entries and their tests to keep. (b) add no entry: those behaviours are proved by reading and at the look on landing, with no test kept. Pro: nothing to keep. Con: a later change can break the settings guard or the key silently. Recommendation: (a); (b) is the lazy option.
 
 
 
@@ -184,6 +186,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 148 (2026-10-18): (a), the guarded entries G108, G109 and G110 approved as written, built with their tests in O42 (Axel).
 - Open item 147 (2026-10-18): (a), on macOS an item whose key holds Cmd or Ctrl shows the key and takes it when the page leaves it; an item whose key holds neither shows none there; those keys join ACCELERATORS (Axel).
 - Open item 146 (2026-10-18): (a), in O42 (Axel).
 - Open item 143 (2026-10-18): (c), a client test, written at O40's landing (Axel).
