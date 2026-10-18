@@ -1,0 +1,121 @@
+/* Everforest (sainnhe/everforest, MIT), medium contrast: dark, then light. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Everforest (sainnhe/everforest) ------------------------------------- */
+body.everforest {
+    color-scheme: dark;
+    --bg: #272e33;
+    --panel: #2d353b;
+    --card: #343f44;
+    --ink: #d3c6aa;
+    --muted: #859289;
+    --line: #3d484d;
+    --chip: #343f44;
+    --shadow: none;
+    --accent: #a7c080;
+    --c-red: #e67e80;
+    --c-red-d: #e67e80;
+    --c-red-s: #3d484d;
+    --c-red-bg: #343f44;
+    --c-red-t: #e67e80;
+    --c-amber: #dbbc7f;
+    --c-amber-s: #3d484d;
+    --c-amber-bg: #343f44;
+    --c-gold: #dbbc7f;
+    --c-orange: #e69875;
+    --c-honey: #dbbc7f;
+    --c-brass: #dbbc7f;
+    --c-green: #a7c080;
+    --c-green-d: #a7c080;
+    --c-lime: #a7c080;
+    --c-teal: #83c092;
+    --c-cyan: #7fbbb3;
+    --c-cyan-d: #7fbbb3;
+    --c-sky: #7fbbb3;
+    --c-blue: #7fbbb3;
+    --c-indigo: #d699b6;
+    --c-violet: #d699b6;
+    --c-purple: #d699b6;
+    --c-magenta: #d699b6;
+    --c-pink: #d699b6;
+    --c-rose: #d699b6;
+    --c-mauve: #d699b6;
+    --c-crimson: #e67e80;
+    --c-slate: #859289;
+    --c-grey: #859289;
+    --c-grey-d: #859289;
+    --c-on: #272e33;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a7c080;
+    --c-scm-modified: #dbbc7f;
+    --c-gutter-modified: #7fbbb3;
+    --c-scm-deleted: #e67e80;
+    --c-scm-conflict: #d699b6;
+    --c-scm-added-bg: #414b42;
+    --c-scm-deleted-bg: #4d3e42;
+    --c-scm-conflict-bg: #4a434d;
+    /* The Source Control Graph's names: Everforest's blue, purple and orange. */
+    --c-graph-ref: #7fbbb3;
+    --c-graph-remote: #d699b6;
+    --c-graph-base: #e69875;
+}
+
+/* --- Everforest Light (sainnhe/everforest) ---------------------------- */
+body.everforestlight {
+    --bg: #efebd4;
+    --panel: #fdf6e3;
+    --card: #f4f0d9;
+    --ink: #5c6a72;
+    --muted: #829181;
+    --line: #e6e2cc;
+    --chip: #f4f0d9;
+    --shadow: none;
+    --accent: #8da101;
+    --c-red: #f85552;
+    --c-red-d: #f85552;
+    --c-red-s: #e6e2cc;
+    --c-red-bg: #f4f0d9;
+    --c-red-t: #f85552;
+    --c-amber: #dfa000;
+    --c-amber-s: #e6e2cc;
+    --c-amber-bg: #f4f0d9;
+    --c-gold: #dfa000;
+    --c-orange: #f57d26;
+    --c-honey: #dfa000;
+    --c-brass: #dfa000;
+    --c-green: #8da101;
+    --c-green-d: #8da101;
+    --c-lime: #8da101;
+    --c-teal: #35a77c;
+    --c-cyan: #3a94c5;
+    --c-cyan-d: #3a94c5;
+    --c-sky: #3a94c5;
+    --c-blue: #3a94c5;
+    --c-indigo: #df69ba;
+    --c-violet: #df69ba;
+    --c-purple: #df69ba;
+    --c-magenta: #df69ba;
+    --c-pink: #df69ba;
+    --c-rose: #df69ba;
+    --c-mauve: #df69ba;
+    --c-crimson: #f85552;
+    --c-slate: #829181;
+    --c-grey: #829181;
+    --c-grey-d: #829181;
+    --c-on: #fdf6e3;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #8da101;
+    --c-scm-modified: #dfa000;
+    --c-gutter-modified: #3a94c5;
+    --c-scm-deleted: #f85552;
+    --c-scm-conflict: #df69ba;
+    --c-scm-added-bg: #e2e2ad;
+    --c-scm-deleted-bg: #fccfc0;
+    --c-scm-conflict-bg: #f6d4d9;
+    /* The Source Control Graph's names: Everforest Light's blue, purple and orange. */
+    --c-graph-ref: #3a94c5;
+    --c-graph-remote: #df69ba;
+    --c-graph-base: #f57d26;
+}

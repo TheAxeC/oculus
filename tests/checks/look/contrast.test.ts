@@ -15,10 +15,10 @@
 // `--on-accent-bg` on the selected tree row's surface `--accent-bg`; the on-chip ink on its filled
 // chip; and the ink of the orange debugging status bar on the fill its hovered and open items
 // take. A pair below the threshold is printed with its ratio and fails. It is never fixed by
-// loosening the threshold or by editing a colour here: a colour is an authored value in tokens.css
-// or themes.css, or a generated one in vscode.css. A failure of an authored value is a finding
-// about that value or about derive.ts, and a failure of a generated value is a finding about the
-// mapping in utils/migrations/convert-vscode-themes.ts, not something this file repairs.
+// loosening the threshold or by editing a colour here: a colour is an authored value in tokens.css,
+// themes.css or rice/, or a generated one in vscode.css. A failure of an authored value is a
+// finding about that value or about derive.ts, and a failure of a generated value is a finding
+// about the mapping in utils/migrations/convert-vscode-themes.ts, not something this file repairs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

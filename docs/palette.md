@@ -97,7 +97,7 @@ A colon starts a command. The commands that list choices type their name and a s
 
 | Command | Argument | What it does |
 | --- | --- | --- |
-| `:theme` | `<light / dark / vscode-dark-modern / vscode-light-modern / vscode-light-2026 / vscode-light-plus / vscode-light-visual-studio / vscode-quiet-light / vscode-solarized-light / vscode-abyss / vscode-dark-2026 / vscode-dark-plus / vscode-dark-visual-studio / vscode-kimbie-dark / vscode-monokai / vscode-monokai-dimmed / vscode-red / vscode-solarized-dark / vscode-tomorrow-night-blue / vscode-dark-high-contrast / vscode-light-high-contrast / mocha / gruvbox / nord / synthwave / tokyoneon / tokyonight / rosepine / everforest / dracula / kanagawa / solarized / latte / gruvboxlight>` | Switch the theme |
+| `:theme` | `<light / dark / vscode-dark-modern / vscode-light-modern / vscode-light-2026 / vscode-light-plus / vscode-light-visual-studio / vscode-quiet-light / vscode-solarized-light / vscode-abyss / vscode-dark-2026 / vscode-dark-plus / vscode-dark-visual-studio / vscode-kimbie-dark / vscode-monokai / vscode-monokai-dimmed / vscode-red / vscode-solarized-dark / vscode-tomorrow-night-blue / vscode-dark-high-contrast / vscode-light-high-contrast / mocha / macchiato / frappe / gruvbox / nord / synthwave / tokyoneon / tokyonight / tokyostorm / rosepine / rosepinemoon / everforest / dracula / onedark / oxocarbon / flexoki / phosphor / phosphoramber / kanagawa / kanagawadragon / solarized / latte / gruvboxlight / rosepinedawn / tokyolight / kanagawalotus / everforestlight / flexokilight>` | Switch the theme |
 | `:crt` | - | Turn the CRT overlay on or off |
 | `:file-icons` | `<Seti>` | Switch the file icon theme |
 | `:accent` | `<name / #hex / reset>` | Set the accent colour |

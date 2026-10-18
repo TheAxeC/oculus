@@ -1,7 +1,7 @@
-// The derived colour tokens. tokens.css, themes.css and vscode.css hold the colours an author or
-// the VS Code converter picked; the ones a component actually paints text with are computed from
-// them, because a single foreground cannot be readable on a dark green and a light gold at once.
-// Two families:
+// The derived colour tokens. tokens.css, themes.css, the rice palettes of rice/ and vscode.css hold
+// the colours an author or the VS Code converter picked; the ones a component actually paints text
+// with are computed from them, because a single foreground cannot be readable on a dark green and
+// a light gold at once. Two families:
 //
 //   --on-<token>    black or white, whichever scores higher ON that colour: text on a filled chip.
 //   --<token>-txt   the token's own hue, nudged in lightness until it clears 4.5:1 on every surface

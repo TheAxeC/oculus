@@ -9,6 +9,7 @@
 
     import '$lib/themes/tokens.css';
     import '$lib/themes/themes.css';
+    import.meta.glob('/src/lib/themes/rice/*.css', { eager: true });
     import '$lib/themes/vscode.css';
     import '$lib/themes/code.css';
     import '$lib/themes/slide.css';

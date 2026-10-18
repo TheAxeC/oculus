@@ -25,7 +25,7 @@ const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
 
 /**
  * The grid's palette and font in force, read off the body, which is where the theme's class sits
- * and where its tokens are set (`body.rice.dracula` and the like in themes.css); the root element
+ * and where its tokens are set (`body.rice.dracula` and the like in themes/rice/); the root element
  * carries the light defaults only, so a read there would paint a light grid under a dark theme.
  * The font is the page's monospace token, and a selection is drawn as the selected row of a tree
  * is, on `--accent-bg` in `--on-accent-bg`, the one selection surface every theme derives. Before

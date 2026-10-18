@@ -1,0 +1,180 @@
+/* Kanagawa (rebelot/kanagawa.nvim, MIT): Wave and Dragon, then Lotus. One block per palette,
+   each a set of overrides on the tokens of tokens.css; the shape every rice palette shares is
+   `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
+body.kanagawa {
+    color-scheme: dark;
+    --bg: #1f1f28;
+    --panel: #2a2a37;
+    --card: #31313f;
+    --ink: #dcd7ba;
+    --muted: #727169;
+    --line: #363646;
+    --chip: #31313f;
+    --shadow: none;
+    --accent: #ffa066;
+    --c-red: #c34043;
+    --c-red-d: #c34043;
+    --c-red-s: #363646;
+    --c-red-bg: #31313f;
+    --c-red-t: #c34043;
+    --c-amber: #dca561;
+    --c-amber-s: #363646;
+    --c-amber-bg: #31313f;
+    --c-gold: #e6c384;
+    --c-orange: #ffa066;
+    --c-honey: #e6c384;
+    --c-brass: #e6c384;
+    --c-green: #98bb6c;
+    --c-green-d: #98bb6c;
+    --c-lime: #98bb6c;
+    --c-teal: #7aa89f;
+    --c-cyan: #7fb4ca;
+    --c-cyan-d: #7fb4ca;
+    --c-sky: #7fb4ca;
+    --c-blue: #7e9cd8;
+    --c-indigo: #957fb8;
+    --c-violet: #957fb8;
+    --c-purple: #957fb8;
+    --c-magenta: #d27e99;
+    --c-pink: #d27e99;
+    --c-rose: #d27e99;
+    --c-mauve: #d27e99;
+    --c-crimson: #c34043;
+    --c-slate: #727169;
+    --c-grey: #727169;
+    --c-grey-d: #727169;
+    --c-on: #1f1f28;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #98bb6c;
+    --c-scm-modified: #dca561;
+    --c-gutter-modified: #7e9cd8;
+    --c-scm-deleted: #c34043;
+    --c-scm-conflict: #d27e99;
+    --c-scm-added-bg: #373e36;
+    --c-scm-deleted-bg: #40262d;
+    --c-scm-conflict-bg: #43323f;
+    /* The Source Control Graph's names: Kanagawa's crystal blue, oni violet and surimi orange. */
+    --c-graph-ref: #7e9cd8;
+    --c-graph-remote: #957fb8;
+    --c-graph-base: #ffa066;
+}
+
+/* --- Kanagawa Dragon (rebelot/kanagawa.nvim) -------------------------- */
+body.kanagawadragon {
+    color-scheme: dark;
+    --bg: #12120f;
+    --panel: #1d1c19;
+    --card: #282727;
+    --ink: #c5c9c5;
+    --muted: #a6a69c;
+    --line: #393836;
+    --chip: #282727;
+    --shadow: none;
+    --accent: #b6927b;
+    --c-red: #c4746e;
+    --c-red-d: #c4746e;
+    --c-red-s: #393836;
+    --c-red-bg: #282727;
+    --c-red-t: #c4746e;
+    --c-amber: #c4b28a;
+    --c-amber-s: #393836;
+    --c-amber-bg: #282727;
+    --c-gold: #c4b28a;
+    --c-orange: #b6927b;
+    --c-honey: #c4b28a;
+    --c-brass: #c4b28a;
+    --c-green: #87a987;
+    --c-green-d: #8a9a7b;
+    --c-lime: #8a9a7b;
+    --c-teal: #8ea4a2;
+    --c-cyan: #8ba4b0;
+    --c-cyan-d: #8ba4b0;
+    --c-sky: #8ba4b0;
+    --c-blue: #8ba4b0;
+    --c-indigo: #949fb5;
+    --c-violet: #8992a7;
+    --c-purple: #8992a7;
+    --c-magenta: #a292a3;
+    --c-pink: #a292a3;
+    --c-rose: #a292a3;
+    --c-mauve: #8992a7;
+    --c-crimson: #c4746e;
+    --c-slate: #7a8382;
+    --c-grey: #7a8382;
+    --c-grey-d: #7a8382;
+    --c-on: #12120f;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #87a987;
+    --c-scm-modified: #c4b28a;
+    --c-gutter-modified: #8ba4b0;
+    --c-scm-deleted: #c4746e;
+    --c-scm-conflict: #a292a3;
+    --c-scm-added-bg: #2f342c;
+    --c-scm-deleted-bg: #392b27;
+    --c-scm-conflict-bg: #343030;
+    /* The Source Control Graph's names: Kanagawa Dragon's blue, violet and orange. */
+    --c-graph-ref: #8ba4b0;
+    --c-graph-remote: #8992a7;
+    --c-graph-base: #b6927b;
+}
+
+/* --- Kanagawa Lotus (light) (rebelot/kanagawa.nvim) ------------------- */
+body.kanagawalotus {
+    --bg: #e5ddb0;
+    --panel: #f2ecbc;
+    --card: #e7dba0;
+    --ink: #545464;
+    --muted: #716e61;
+    --line: #d5cea3;
+    --chip: #e7dba0;
+    --shadow: none;
+    --accent: #cc6d00;
+    --c-red: #c84053;
+    --c-red-d: #d7474b;
+    --c-red-s: #d5cea3;
+    --c-red-bg: #e7dba0;
+    --c-red-t: #c84053;
+    --c-amber: #de9800;
+    --c-amber-s: #d5cea3;
+    --c-amber-bg: #e7dba0;
+    --c-gold: #77713f;
+    --c-orange: #cc6d00;
+    --c-honey: #836f4a;
+    --c-brass: #836f4a;
+    --c-green: #6f894e;
+    --c-green-d: #6e915f;
+    --c-lime: #6e915f;
+    --c-teal: #597b75;
+    --c-cyan: #4e8ca2;
+    --c-cyan-d: #5a7785;
+    --c-sky: #6693bf;
+    --c-blue: #4d699b;
+    --c-indigo: #5d57a3;
+    --c-violet: #624c83;
+    --c-purple: #624c83;
+    --c-magenta: #b35b79;
+    --c-pink: #b35b79;
+    --c-rose: #b35b79;
+    --c-mauve: #766b90;
+    --c-crimson: #c84053;
+    --c-slate: #716e61;
+    --c-grey: #716e61;
+    --c-grey-d: #716e61;
+    --c-on: #f2ecbc;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #6f894e;
+    --c-scm-modified: #de9800;
+    --c-gutter-modified: #4d699b;
+    --c-scm-deleted: #c84053;
+    --c-scm-conflict: #b35b79;
+    --c-scm-added-bg: #d3d4a2;
+    --c-scm-deleted-bg: #e8c3a3;
+    --c-scm-conflict-bg: #e3c9ac;
+    /* The Source Control Graph's names: Kanagawa Lotus's blue, violet and orange. */
+    --c-graph-ref: #4d699b;
+    --c-graph-remote: #624c83;
+    --c-graph-base: #cc6d00;
+}

@@ -1,9 +1,9 @@
-// Layer 4, test helper. Every theme the picker offers, read out of the three stylesheets
-// (tokens.css, themes.css and the generated vscode.css) and derived the way ui/theme/theme.ts
-// derives it in the browser. A picker row with a class word that no block of the sheets holds is
-// refused by name, so no row is measured as another theme.
+// Layer 4, test helper. Every theme the picker offers, read out of the stylesheets (tokens.css,
+// themes.css, the rice palettes of rice/ and the generated vscode.css) and derived the way
+// ui/theme/theme.ts derives it in the browser. A picker row with a class word that no block of the
+// sheets holds is refused by name, so no row is measured as another theme.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deriveTokens } from '../../../src/lib/themes/derive.ts';
@@ -26,9 +26,19 @@ const THEMES_DIR = resolve(
     'themes'
 );
 
-/** The stylesheets' text: the default tokens, the ported theme blocks and the VS Code blocks. */
+/**
+ * The stylesheets' text: the default tokens, the hand-written theme blocks of themes.css and of the
+ * rice palettes, in the order of their file names as ui/theme/theme.ts reads them, and the VS Code
+ * blocks.
+ */
 export const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
-export const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
+export const THEMES = [
+    readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8'),
+    ...readdirSync(join(THEMES_DIR, 'rice'))
+        .filter((name) => name.endsWith('.css'))
+        .sort()
+        .map((name) => readFileSync(join(THEMES_DIR, 'rice', name), 'utf8'))
+].join('\n');
 export const VSCODE = readFileSync(join(THEMES_DIR, 'vscode.css'), 'utf8');
 
 /** Every `:root` and `body.<class>` block of the sheets. */

@@ -1,0 +1,231 @@
+/* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Catppuccin Mocha ---------------------------------------------------- */
+body.mocha {
+    color-scheme: dark;
+    --bg: #181825;
+    --panel: #1e1e2e;
+    --card: #292c3c;
+    --ink: #cdd6f4;
+    --muted: #7f849c;
+    --line: #313244;
+    --chip: #292c3c;
+    --shadow: none;
+    --accent: #f5a97f;
+    --c-red: #f38ba8;
+    --c-red-d: #eba0ac;
+    --c-red-s: #4b2b38;
+    --c-red-bg: #33222c;
+    --c-red-t: #f5c2d0;
+    --c-amber: #fab387;
+    --c-amber-s: #4a3a26;
+    --c-amber-bg: #332a1f;
+    --c-gold: #f9e2af;
+    --c-orange: #fab387;
+    --c-green: #a6e3a1;
+    --c-green-d: #94d68f;
+    --c-lime: #c6e79a;
+    --c-teal: #94e2d5;
+    --c-cyan: #89dceb;
+    --c-sky: #89dceb;
+    --c-blue: #89b4fa;
+    --c-indigo: #b4befe;
+    --c-violet: #cba6f7;
+    --c-purple: #cba6f7;
+    --c-magenta: #dd9ce8;
+    --c-pink: #f5c2e7;
+    --c-mauve: #e5a3c6;
+    --c-on: #181825;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a6e3a1;
+    --c-scm-modified: #fab387;
+    --c-gutter-modified: #89b4fa;
+    --c-scm-deleted: #f38ba8;
+    --c-scm-conflict: #dd9ce8;
+    --c-scm-added-bg: #34413e;
+    --c-scm-deleted-bg: #442f3f;
+    --c-scm-conflict-bg: #3f324c;
+    /* The Source Control Graph's names: Catppuccin Mocha's blue, mauve and peach. */
+    --c-graph-ref: #89b4fa;
+    --c-graph-remote: #cba6f7;
+    --c-graph-base: #fab387;
+}
+
+/* --- Catppuccin Macchiato (catppuccin/palette) ------------------------ */
+body.macchiato {
+    color-scheme: dark;
+    --bg: #1e2030;
+    --panel: #24273a;
+    --card: #2d3044;
+    --ink: #cad3f5;
+    --muted: #8087a2;
+    --line: #363a4f;
+    --chip: #2d3044;
+    --shadow: none;
+    --accent: #f5a97f;
+    --c-red: #ed8796;
+    --c-red-d: #ee99a0;
+    --c-red-s: #363a4f;
+    --c-red-bg: #2d3044;
+    --c-red-t: #ee99a0;
+    --c-amber: #f5a97f;
+    --c-amber-s: #363a4f;
+    --c-amber-bg: #2d3044;
+    --c-gold: #eed49f;
+    --c-orange: #f5a97f;
+    --c-honey: #eed49f;
+    --c-brass: #eed49f;
+    --c-green: #a6da95;
+    --c-green-d: #a6da95;
+    --c-lime: #a6da95;
+    --c-teal: #8bd5ca;
+    --c-cyan: #91d7e3;
+    --c-cyan-d: #7dc4e4;
+    --c-sky: #91d7e3;
+    --c-blue: #8aadf4;
+    --c-indigo: #b7bdf8;
+    --c-violet: #c6a0f6;
+    --c-purple: #c6a0f6;
+    --c-magenta: #f5bde6;
+    --c-pink: #f5bde6;
+    --c-rose: #f0c6c6;
+    --c-mauve: #f0c6c6;
+    --c-crimson: #ed8796;
+    --c-slate: #8087a2;
+    --c-grey: #8087a2;
+    --c-grey-d: #8087a2;
+    --c-on: #1e2030;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a6da95;
+    --c-scm-modified: #f5a97f;
+    --c-gutter-modified: #8aadf4;
+    --c-scm-deleted: #ed8796;
+    --c-scm-conflict: #f5bde6;
+    --c-scm-added-bg: #3a4549;
+    --c-scm-deleted-bg: #46374a;
+    --c-scm-conflict-bg: #484057;
+    /* The Source Control Graph's names: Catppuccin Macchiato's blue, mauve and peach. */
+    --c-graph-ref: #8aadf4;
+    --c-graph-remote: #c6a0f6;
+    --c-graph-base: #f5a97f;
+}
+
+/* --- Catppuccin Frappe (catppuccin/palette) --------------------------- */
+body.frappe {
+    color-scheme: dark;
+    --bg: #292c3c;
+    --panel: #303446;
+    --card: #383c50;
+    --ink: #c6d0f5;
+    --muted: #838ba7;
+    --line: #414559;
+    --chip: #383c50;
+    --shadow: none;
+    --accent: #ef9f76;
+    --c-red: #e78284;
+    --c-red-d: #ea999c;
+    --c-red-s: #414559;
+    --c-red-bg: #383c50;
+    --c-red-t: #ea999c;
+    --c-amber: #ef9f76;
+    --c-amber-s: #414559;
+    --c-amber-bg: #383c50;
+    --c-gold: #e5c890;
+    --c-orange: #ef9f76;
+    --c-honey: #e5c890;
+    --c-brass: #e5c890;
+    --c-green: #a6d189;
+    --c-green-d: #a6d189;
+    --c-lime: #a6d189;
+    --c-teal: #81c8be;
+    --c-cyan: #99d1db;
+    --c-cyan-d: #85c1dc;
+    --c-sky: #99d1db;
+    --c-blue: #8caaee;
+    --c-indigo: #babbf1;
+    --c-violet: #ca9ee6;
+    --c-purple: #ca9ee6;
+    --c-magenta: #f4b8e4;
+    --c-pink: #f4b8e4;
+    --c-rose: #eebebe;
+    --c-mauve: #eebebe;
+    --c-crimson: #e78284;
+    --c-slate: #838ba7;
+    --c-grey: #838ba7;
+    --c-grey-d: #838ba7;
+    --c-on: #292c3c;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a6d189;
+    --c-scm-modified: #ef9f76;
+    --c-gutter-modified: #8caaee;
+    --c-scm-deleted: #e78284;
+    --c-scm-conflict: #f4b8e4;
+    --c-scm-added-bg: #444f51;
+    --c-scm-deleted-bg: #4f4151;
+    --c-scm-conflict-bg: #514a61;
+    /* The Source Control Graph's names: Catppuccin Frappe's blue, mauve and peach. */
+    --c-graph-ref: #8caaee;
+    --c-graph-remote: #ca9ee6;
+    --c-graph-base: #ef9f76;
+}
+
+/* --- Latte (light) (catppuccin.com) -------------------------------------- */
+body.latte {
+    --bg: #eff1f5;
+    --panel: #ffffff;
+    --card: #e6e9ef;
+    --ink: #4c4f69;
+    --muted: #7c7f93;
+    --line: #ccd0da;
+    --chip: #e6e9ef;
+    --shadow: none;
+    --accent: #fe640b;
+    --c-red: #d20f39;
+    --c-red-d: #d20f39;
+    --c-red-s: #ccd0da;
+    --c-red-bg: #e6e9ef;
+    --c-red-t: #d20f39;
+    --c-amber: #df8e1d;
+    --c-amber-s: #ccd0da;
+    --c-amber-bg: #e6e9ef;
+    --c-gold: #df8e1d;
+    --c-orange: #fe640b;
+    --c-honey: #df8e1d;
+    --c-brass: #df8e1d;
+    --c-green: #40a02b;
+    --c-green-d: #40a02b;
+    --c-lime: #40a02b;
+    --c-teal: #179299;
+    --c-cyan: #04a5e5;
+    --c-cyan-d: #04a5e5;
+    --c-sky: #04a5e5;
+    --c-blue: #1e66f5;
+    --c-indigo: #7287fd;
+    --c-violet: #8839ef;
+    --c-purple: #8839ef;
+    --c-magenta: #ea76cb;
+    --c-pink: #ea76cb;
+    --c-rose: #ea76cb;
+    --c-mauve: #dd7878;
+    --c-crimson: #d20f39;
+    --c-slate: #7c7f93;
+    --c-grey: #7c7f93;
+    --c-grey-d: #7c7f93;
+    --c-on: #eff1f5;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #40a02b;
+    --c-scm-modified: #df8e1d;
+    --c-gutter-modified: #1e66f5;
+    --c-scm-deleted: #d20f39;
+    --c-scm-conflict: #ea76cb;
+    --c-scm-added-bg: #cce1cd;
+    --c-scm-deleted-bg: #e9c4cf;
+    --c-scm-conflict-bg: #eed8ed;
+    /* The Source Control Graph's names: Catppuccin Latte's blue, mauve and peach. */
+    --c-graph-ref: #1e66f5;
+    --c-graph-remote: #8839ef;
+    --c-graph-base: #fe640b;
+}

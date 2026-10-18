@@ -1,0 +1,183 @@
+/* Rose Pine (rose-pine/palette, MIT): main and Moon, then Dawn. One block per palette, each a
+   set of overrides on the tokens of tokens.css; the shape every rice palette shares is
+   `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
+body.rosepine {
+    color-scheme: dark;
+    --bg: #191724;
+    --panel: #1f1d2e;
+    --card: #232135;
+    --ink: #e0def4;
+    --muted: #6e6a86;
+    --line: #26233a;
+    --chip: #232135;
+    --shadow: none;
+    --accent: #ebbcba;
+    --c-red: #eb6f92;
+    --c-red-d: #eb6f92;
+    --c-red-s: #26233a;
+    --c-red-bg: #232135;
+    --c-red-t: #eb6f92;
+    --c-amber: #f6c177;
+    --c-amber-s: #26233a;
+    --c-amber-bg: #232135;
+    --c-gold: #f6c177;
+    --c-orange: #ebbcba;
+    --c-honey: #f6c177;
+    --c-brass: #f6c177;
+    --c-green: #9ccfd8;
+    --c-green-d: #9ccfd8;
+    --c-lime: #a3be8c;
+    --c-teal: #9ccfd8;
+    --c-cyan: #31748f;
+    --c-cyan-d: #31748f;
+    --c-sky: #9ccfd8;
+    --c-blue: #31748f;
+    --c-indigo: #c4a7e7;
+    --c-violet: #c4a7e7;
+    --c-purple: #c4a7e7;
+    --c-magenta: #eb6f92;
+    --c-pink: #ebbcba;
+    --c-rose: #ebbcba;
+    --c-mauve: #c4a7e7;
+    --c-crimson: #eb6f92;
+    --c-slate: #6e6a86;
+    --c-grey: #6e6a86;
+    --c-grey-d: #6e6a86;
+    --c-on: #191724;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ccfd8;
+    --c-scm-modified: #f6c177;
+    --c-gutter-modified: #31748f;
+    --c-scm-deleted: #eb6f92;
+    --c-scm-conflict: #eb6f92;
+    --c-scm-added-bg: #333c48;
+    --c-scm-deleted-bg: #43293a;
+    --c-scm-conflict-bg: #43293a;
+    /* The Source Control Graph's names: Rose Pine's pine, iris and rose, a teal, a purple and a
+       pale pink, since Rose Pine has no blue or orange. */
+    --c-graph-ref: #31748f;
+    --c-graph-remote: #c4a7e7;
+    --c-graph-base: #ebbcba;
+}
+
+/* --- Rose Pine Moon (rose-pine/palette) ------------------------------- */
+body.rosepinemoon {
+    color-scheme: dark;
+    --bg: #232136;
+    --panel: #2a273f;
+    --card: #322e48;
+    --ink: #e0def4;
+    --muted: #908caa;
+    --line: #393552;
+    --chip: #322e48;
+    --shadow: none;
+    --accent: #ea9a97;
+    --c-red: #eb6f92;
+    --c-red-d: #eb6f92;
+    --c-red-s: #393552;
+    --c-red-bg: #322e48;
+    --c-red-t: #eb6f92;
+    --c-amber: #f6c177;
+    --c-amber-s: #393552;
+    --c-amber-bg: #322e48;
+    --c-gold: #f6c177;
+    --c-orange: #ea9a97;
+    --c-honey: #f6c177;
+    --c-brass: #f6c177;
+    --c-green: #9ccfd8;
+    --c-green-d: #9ccfd8;
+    --c-lime: #9ccfd8;
+    --c-teal: #9ccfd8;
+    --c-cyan: #3e8fb0;
+    --c-cyan-d: #3e8fb0;
+    --c-sky: #9ccfd8;
+    --c-blue: #3e8fb0;
+    --c-indigo: #c4a7e7;
+    --c-violet: #c4a7e7;
+    --c-purple: #c4a7e7;
+    --c-magenta: #eb6f92;
+    --c-pink: #ea9a97;
+    --c-rose: #ea9a97;
+    --c-mauve: #c4a7e7;
+    --c-crimson: #eb6f92;
+    --c-slate: #908caa;
+    --c-grey: #908caa;
+    --c-grey-d: #908caa;
+    --c-on: #232136;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ccfd8;
+    --c-scm-modified: #f6c177;
+    --c-gutter-modified: #3e8fb0;
+    --c-scm-deleted: #eb6f92;
+    --c-scm-conflict: #eb6f92;
+    --c-scm-added-bg: #3d4459;
+    --c-scm-deleted-bg: #4b334d;
+    --c-scm-conflict-bg: #4b334d;
+    /* The Source Control Graph's names: Rose Pine Moon's pine, iris and rose, since Rose Pine has
+       no blue or orange. */
+    --c-graph-ref: #3e8fb0;
+    --c-graph-remote: #c4a7e7;
+    --c-graph-base: #ea9a97;
+}
+
+/* --- Rose Pine Dawn (light) (rose-pine/palette) ----------------------- */
+body.rosepinedawn {
+    --bg: #faf4ed;
+    --panel: #fffaf3;
+    --card: #f2e9e1;
+    --ink: #464261;
+    --muted: #797593;
+    --line: #dcd4d2;
+    --chip: #f2e9e1;
+    --shadow: none;
+    --accent: #d7827e;
+    --c-red: #b4637a;
+    --c-red-d: #b4637a;
+    --c-red-s: #dcd4d2;
+    --c-red-bg: #f2e9e1;
+    --c-red-t: #b4637a;
+    --c-amber: #ea9d34;
+    --c-amber-s: #dcd4d2;
+    --c-amber-bg: #f2e9e1;
+    --c-gold: #ea9d34;
+    --c-orange: #d7827e;
+    --c-honey: #ea9d34;
+    --c-brass: #ea9d34;
+    --c-green: #56949f;
+    --c-green-d: #56949f;
+    --c-lime: #56949f;
+    --c-teal: #56949f;
+    --c-cyan: #286983;
+    --c-cyan-d: #286983;
+    --c-sky: #286983;
+    --c-blue: #286983;
+    --c-indigo: #907aa9;
+    --c-violet: #907aa9;
+    --c-purple: #907aa9;
+    --c-magenta: #b4637a;
+    --c-pink: #d7827e;
+    --c-rose: #d7827e;
+    --c-mauve: #907aa9;
+    --c-crimson: #b4637a;
+    --c-slate: #797593;
+    --c-grey: #797593;
+    --c-grey-d: #797593;
+    --c-on: #fffaf3;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #56949f;
+    --c-scm-modified: #ea9d34;
+    --c-gutter-modified: #286983;
+    --c-scm-deleted: #b4637a;
+    --c-scm-conflict: #b4637a;
+    --c-scm-added-bg: #d6e2df;
+    --c-scm-deleted-bg: #edd6d6;
+    --c-scm-conflict-bg: #edd6d6;
+    /* The Source Control Graph's names: Rose Pine Dawn's pine, iris and rose, since Rose Pine has
+       no blue or orange. */
+    --c-graph-ref: #286983;
+    --c-graph-remote: #907aa9;
+    --c-graph-base: #d7827e;
+}

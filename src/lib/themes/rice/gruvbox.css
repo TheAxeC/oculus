@@ -1,0 +1,112 @@
+/* Gruvbox (morhetz/gruvbox, MIT): dark, then light. One block per palette, each a set of
+   overrides on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in
+   themes.css, and the picker rows are the `themes:` list of config/appearance.yml. */
+
+/* --- Gruvbox dark -------------------------------------------------------- */
+body.gruvbox {
+    color-scheme: dark;
+    --bg: #1d2021;
+    --panel: #282828;
+    --card: #32302f;
+    --ink: #ebdbb2;
+    --muted: #928374;
+    --line: #3c3836;
+    --chip: #32302f;
+    --shadow: none;
+    --accent: #fe8019;
+    --c-red: #fb4934;
+    --c-red-d: #cc241d;
+    --c-red-s: #5a201a;
+    --c-red-bg: #3c1f1c;
+    --c-red-t: #fb7c6c;
+    --c-amber: #fabd2f;
+    --c-amber-s: #4d3b16;
+    --c-amber-bg: #37301a;
+    --c-gold: #d79921;
+    --c-orange: #fe8019;
+    --c-green: #b8bb26;
+    --c-green-d: #98971a;
+    --c-lime: #b8bb26;
+    --c-teal: #8ec07c;
+    --c-cyan: #83a598;
+    --c-sky: #83a598;
+    --c-blue: #458588;
+    --c-indigo: #83a598;
+    --c-violet: #d3869b;
+    --c-purple: #b16286;
+    --c-magenta: #d3869b;
+    --c-pink: #d3869b;
+    --c-mauve: #d3869b;
+    --c-on: #1d2021;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #b8bb26;
+    --c-scm-modified: #fabd2f;
+    --c-gutter-modified: #458588;
+    --c-scm-deleted: #fb4934;
+    --c-scm-conflict: #d3869b;
+    --c-scm-added-bg: #3c3f22;
+    --c-scm-deleted-bg: #492825;
+    --c-scm-conflict-bg: #413439;
+    /* The Source Control Graph's names: Gruvbox's blue, purple and bright orange. */
+    --c-graph-ref: #458588;
+    --c-graph-remote: #b16286;
+    --c-graph-base: #fe8019;
+}
+
+/* --- Gruvbox Light (morhetz/gruvbox) ------------------------------------- */
+body.gruvboxlight {
+    --bg: #f9f5d7;
+    --panel: #fbf1c7;
+    --card: #f2e5bc;
+    --ink: #3c3836;
+    --muted: #7c6f64;
+    --line: #ebdbb2;
+    --chip: #f2e5bc;
+    --shadow: none;
+    --accent: #af3a03;
+    --c-red: #9d0006;
+    --c-red-d: #9d0006;
+    --c-red-s: #ebdbb2;
+    --c-red-bg: #f2e5bc;
+    --c-red-t: #9d0006;
+    --c-amber: #b57614;
+    --c-amber-s: #ebdbb2;
+    --c-amber-bg: #f2e5bc;
+    --c-gold: #b57614;
+    --c-orange: #af3a03;
+    --c-honey: #b57614;
+    --c-brass: #b57614;
+    --c-green: #79740e;
+    --c-green-d: #79740e;
+    --c-lime: #79740e;
+    --c-teal: #427b58;
+    --c-cyan: #427b58;
+    --c-cyan-d: #427b58;
+    --c-sky: #076678;
+    --c-blue: #076678;
+    --c-indigo: #8f3f71;
+    --c-violet: #8f3f71;
+    --c-purple: #8f3f71;
+    --c-magenta: #8f3f71;
+    --c-pink: #b16286;
+    --c-rose: #b16286;
+    --c-mauve: #b16286;
+    --c-crimson: #9d0006;
+    --c-slate: #7c6f64;
+    --c-grey: #7c6f64;
+    --c-grey-d: #7c6f64;
+    --c-on: #fbf1c7;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #79740e;
+    --c-scm-modified: #b57614;
+    --c-gutter-modified: #076678;
+    --c-scm-deleted: #9d0006;
+    --c-scm-conflict: #8f3f71;
+    --c-scm-added-bg: #dfdbaf;
+    --c-scm-deleted-bg: #e7c4ad;
+    --c-scm-conflict-bg: #e4d1c3;
+    /* The Source Control Graph's names: Gruvbox Light's faded blue, purple and orange. */
+    --c-graph-ref: #076678;
+    --c-graph-remote: #8f3f71;
+    --c-graph-base: #af3a03;
+}

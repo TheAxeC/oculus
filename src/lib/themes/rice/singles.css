@@ -1,0 +1,357 @@
+/* The families with one palette each: Nord (nordtheme.com, MIT). Dracula (draculatheme.com,
+   MIT). Solarized (ethanschoonover.com/solarized, MIT). One Dark (joshdick/onedark.vim, MIT),
+   with the page a step darker than the panel. Synthwave '84 (robb0wen/synthwave-vscode, MIT).
+   Oxocarbon (nyoom-engineering/oxocarbon.nvim, MIT), whose shades are blends of #161616 and
+   white as the theme makes them; it has no yellow or orange, so the warning hues are IBM
+   Carbon's yellow 30 and orange 40 (@carbon/colors, Apache-2.0), the system it is drawn from.
+   One block per palette, each a set of overrides on the tokens of tokens.css; the shape every
+   rice palette shares is `body.rice` in themes.css, and the picker rows are the `themes:` list
+   of config/appearance.yml. */
+
+/* --- Nord ---------------------------------------------------------------- */
+body.nord {
+    color-scheme: dark;
+    --bg: #2e3440;
+    --panel: #3b4252;
+    --card: #434c5e;
+    --ink: #eceff4;
+    --muted: #8b96aa;
+    --line: #434c5e;
+    --chip: #434c5e;
+    --shadow: none;
+    --accent: #88c0d0;
+    --c-red: #bf616a;
+    --c-red-d: #a5545c;
+    --c-red-s: #4a2f34;
+    --c-red-bg: #3d2b30;
+    --c-red-t: #d08a92;
+    --c-amber: #ebcb8b;
+    --c-amber-s: #4b432c;
+    --c-amber-bg: #3b3728;
+    --c-gold: #d0b06a;
+    --c-orange: #d08770;
+    --c-green: #a3be8c;
+    --c-green-d: #8ba876;
+    --c-lime: #b5cc9c;
+    --c-teal: #8fbcbb;
+    --c-cyan: #88c0d0;
+    --c-sky: #88c0d0;
+    --c-blue: #5e81ac;
+    --c-indigo: #81a1c1;
+    --c-violet: #b48ead;
+    --c-purple: #a37b9c;
+    --c-magenta: #b48ead;
+    --c-pink: #c295b8;
+    --c-mauve: #b48ead;
+    --c-on: #2e3440;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #a3be8c;
+    --c-scm-modified: #ebcb8b;
+    --c-gutter-modified: #5e81ac;
+    --c-scm-deleted: #bf616a;
+    --c-scm-conflict: #b48ead;
+    --c-scm-added-bg: #45504f;
+    --c-scm-deleted-bg: #4b3d48;
+    --c-scm-conflict-bg: #494656;
+    /* The Source Control Graph's names: Nord's frost blue (nord10), a muted purple and the aurora
+       orange (nord12). */
+    --c-graph-ref: #5e81ac;
+    --c-graph-remote: #a37b9c;
+    --c-graph-base: #d08770;
+}
+
+/* --- Dracula (draculatheme.com) ------------------------------------------ */
+body.dracula {
+    color-scheme: dark;
+    --bg: #21222c;
+    --panel: #282a36;
+    --card: #343746;
+    --ink: #f8f8f2;
+    --muted: #6272a4;
+    --line: #44475a;
+    --chip: #343746;
+    --shadow: none;
+    --accent: #bd93f9;
+    --c-red: #ff5555;
+    --c-red-d: #ff5555;
+    --c-red-s: #44475a;
+    --c-red-bg: #343746;
+    --c-red-t: #ff5555;
+    --c-amber: #ffb86c;
+    --c-amber-s: #44475a;
+    --c-amber-bg: #343746;
+    --c-gold: #f1fa8c;
+    --c-orange: #ffb86c;
+    --c-honey: #f1fa8c;
+    --c-brass: #f1fa8c;
+    --c-green: #50fa7b;
+    --c-green-d: #50fa7b;
+    --c-lime: #50fa7b;
+    --c-teal: #8be9fd;
+    --c-cyan: #8be9fd;
+    --c-cyan-d: #8be9fd;
+    --c-sky: #8be9fd;
+    --c-blue: #6272a4;
+    --c-indigo: #bd93f9;
+    --c-violet: #bd93f9;
+    --c-purple: #bd93f9;
+    --c-magenta: #ff79c6;
+    --c-pink: #ff79c6;
+    --c-rose: #ff79c6;
+    --c-mauve: #ff79c6;
+    --c-crimson: #ff5555;
+    --c-slate: #6272a4;
+    --c-grey: #6272a4;
+    --c-grey-d: #6272a4;
+    --c-on: #21222c;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #50fa7b;
+    --c-scm-modified: #ffb86c;
+    --c-gutter-modified: #6272a4;
+    --c-scm-deleted: #ff5555;
+    --c-scm-conflict: #ff79c6;
+    --c-scm-added-bg: #2a4d3c;
+    --c-scm-deleted-bg: #4d2c34;
+    --c-scm-conflict-bg: #4d334b;
+    /* The Source Control Graph's names: Dracula's comment colour (its one blue), purple and
+       orange. */
+    --c-graph-ref: #6272a4;
+    --c-graph-remote: #bd93f9;
+    --c-graph-base: #ffb86c;
+}
+
+/* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
+body.solarized {
+    color-scheme: dark;
+    --bg: #002b36;
+    --panel: #073642;
+    --card: #0a3f4c;
+    --ink: #93a1a1;
+    --muted: #586e75;
+    --line: #0b4451;
+    --chip: #0a3f4c;
+    --shadow: none;
+    --accent: #268bd2;
+    --c-red: #dc322f;
+    --c-red-d: #dc322f;
+    --c-red-s: #0b4451;
+    --c-red-bg: #0a3f4c;
+    --c-red-t: #dc322f;
+    --c-amber: #b58900;
+    --c-amber-s: #0b4451;
+    --c-amber-bg: #0a3f4c;
+    --c-gold: #b58900;
+    --c-orange: #cb4b16;
+    --c-honey: #b58900;
+    --c-brass: #b58900;
+    --c-green: #859900;
+    --c-green-d: #859900;
+    --c-lime: #859900;
+    --c-teal: #2aa198;
+    --c-cyan: #2aa198;
+    --c-cyan-d: #2aa198;
+    --c-sky: #268bd2;
+    --c-blue: #268bd2;
+    --c-indigo: #6c71c4;
+    --c-violet: #6c71c4;
+    --c-purple: #6c71c4;
+    --c-magenta: #d33682;
+    --c-pink: #d33682;
+    --c-rose: #d33682;
+    --c-mauve: #d33682;
+    --c-crimson: #dc322f;
+    --c-slate: #586e75;
+    --c-grey: #586e75;
+    --c-grey-d: #586e75;
+    --c-on: #002b36;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #859900;
+    --c-scm-modified: #b58900;
+    --c-gutter-modified: #268bd2;
+    --c-scm-deleted: #dc322f;
+    --c-scm-conflict: #d33682;
+    --c-scm-added-bg: #1b412b;
+    --c-scm-deleted-bg: #2c2c35;
+    --c-scm-conflict-bg: #2a2d45;
+    /* The Source Control Graph's names: Solarized's blue, violet and orange. */
+    --c-graph-ref: #268bd2;
+    --c-graph-remote: #6c71c4;
+    --c-graph-base: #cb4b16;
+}
+
+/* --- One Dark (joshdick/onedark.vim) ---------------------------------- */
+body.onedark {
+    color-scheme: dark;
+    --bg: #21252b;
+    --panel: #282c34;
+    --card: #2c323c;
+    --ink: #abb2bf;
+    --muted: #5c6370;
+    --line: #3e4452;
+    --chip: #2c323c;
+    --shadow: none;
+    --accent: #61afef;
+    --c-red: #e06c75;
+    --c-red-d: #be5046;
+    --c-red-s: #3e4452;
+    --c-red-bg: #2c323c;
+    --c-red-t: #e06c75;
+    --c-amber: #d19a66;
+    --c-amber-s: #3e4452;
+    --c-amber-bg: #2c323c;
+    --c-gold: #e5c07b;
+    --c-orange: #d19a66;
+    --c-honey: #e5c07b;
+    --c-brass: #e5c07b;
+    --c-green: #98c379;
+    --c-green-d: #98c379;
+    --c-lime: #98c379;
+    --c-teal: #56b6c2;
+    --c-cyan: #56b6c2;
+    --c-cyan-d: #56b6c2;
+    --c-sky: #61afef;
+    --c-blue: #61afef;
+    --c-indigo: #c678dd;
+    --c-violet: #c678dd;
+    --c-purple: #c678dd;
+    --c-magenta: #c678dd;
+    --c-pink: #e06c75;
+    --c-rose: #e06c75;
+    --c-mauve: #c678dd;
+    --c-crimson: #be5046;
+    --c-slate: #5c6370;
+    --c-grey: #5c6370;
+    --c-grey-d: #5c6370;
+    --c-on: #21252b;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #98c379;
+    --c-scm-modified: #d19a66;
+    --c-gutter-modified: #61afef;
+    --c-scm-deleted: #e06c75;
+    --c-scm-conflict: #c678dd;
+    --c-scm-added-bg: #3b4640;
+    --c-scm-deleted-bg: #47373f;
+    --c-scm-conflict-bg: #433951;
+    /* The Source Control Graph's names: One Dark's blue, purple and dark yellow. */
+    --c-graph-ref: #61afef;
+    --c-graph-remote: #c678dd;
+    --c-graph-base: #d19a66;
+}
+
+/* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
+body.synthwave {
+    color-scheme: dark;
+    --bg: #241b2f;
+    --panel: #2a2139;
+    --card: #34294f;
+    --ink: #f4eee4;
+    --muted: #848bbd;
+    --line: #463465;
+    --chip: #34294f;
+    --shadow: none;
+    --accent: #ff7edb;
+    --c-red: #fe4450;
+    --c-red-d: #fe4450;
+    --c-red-s: #463465;
+    --c-red-bg: #34294f;
+    --c-red-t: #fe4450;
+    --c-amber: #ffcc99;
+    --c-amber-s: #463465;
+    --c-amber-bg: #34294f;
+    --c-gold: #f9d423;
+    --c-orange: #ff8b39;
+    --c-honey: #f9d423;
+    --c-brass: #f9d423;
+    --c-green: #72f1b8;
+    --c-green-d: #72f1b8;
+    --c-lime: #72f1b8;
+    --c-teal: #36f9f6;
+    --c-cyan: #36f9f6;
+    --c-cyan-d: #36f9f6;
+    --c-sky: #36f9f6;
+    --c-blue: #03edf9;
+    --c-indigo: #b381c5;
+    --c-violet: #b381c5;
+    --c-purple: #b381c5;
+    --c-magenta: #ff7edb;
+    --c-pink: #ff7edb;
+    --c-rose: #ff7edb;
+    --c-mauve: #d5a6e0;
+    --c-crimson: #fe4450;
+    --c-slate: #848bbd;
+    --c-grey: #848bbd;
+    --c-grey-d: #848bbd;
+    --c-on: #241b2f;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #72f1b8;
+    --c-scm-modified: #ffcc99;
+    --c-gutter-modified: #03edf9;
+    --c-scm-deleted: #fe4450;
+    --c-scm-conflict: #ff7edb;
+    --c-scm-added-bg: #34464a;
+    --c-scm-deleted-bg: #502336;
+    --c-scm-conflict-bg: #502f51;
+    /* The Source Control Graph's names: Synthwave '84's cyan, a purple and its orange. */
+    --c-graph-ref: #03edf9;
+    --c-graph-remote: #b381c5;
+    --c-graph-base: #ff8b39;
+}
+
+/* --- Oxocarbon (nyoom-engineering/oxocarbon.nvim) --------------------- */
+body.oxocarbon {
+    color-scheme: dark;
+    --bg: #131313;
+    --panel: #161616;
+    --card: #2a2a2a;
+    --ink: #d5d5d5;
+    --muted: #8d8d8d;
+    --line: #404040;
+    --chip: #2a2a2a;
+    --shadow: none;
+    --accent: #ff7eb6;
+    --c-red: #ee5396;
+    --c-red-d: #ee5396;
+    --c-red-s: #404040;
+    --c-red-bg: #2a2a2a;
+    --c-red-t: #ee5396;
+    --c-amber: #f1c21b;
+    --c-amber-s: #404040;
+    --c-amber-bg: #2a2a2a;
+    --c-gold: #f1c21b;
+    --c-orange: #ff832b;
+    --c-honey: #f1c21b;
+    --c-brass: #f1c21b;
+    --c-green: #42be65;
+    --c-green-d: #42be65;
+    --c-lime: #42be65;
+    --c-teal: #08bdba;
+    --c-cyan: #3ddbd9;
+    --c-cyan-d: #3ddbd9;
+    --c-sky: #82cfff;
+    --c-blue: #78a9ff;
+    --c-indigo: #33b1ff;
+    --c-violet: #be95ff;
+    --c-purple: #be95ff;
+    --c-magenta: #ff7eb6;
+    --c-pink: #ff7eb6;
+    --c-rose: #ff7eb6;
+    --c-mauve: #be95ff;
+    --c-crimson: #ee5396;
+    --c-slate: #8d8d8d;
+    --c-grey: #8d8d8d;
+    --c-grey-d: #8d8d8d;
+    --c-on: #131313;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #42be65;
+    --c-scm-modified: #f1c21b;
+    --c-gutter-modified: #78a9ff;
+    --c-scm-deleted: #ee5396;
+    --c-scm-conflict: #ff7eb6;
+    --c-scm-added-bg: #1d3323;
+    --c-scm-deleted-bg: #3b202c;
+    --c-scm-conflict-bg: #3e2831;
+    /* The Source Control Graph's names: Oxocarbon's blue, purple and IBM Carbon's orange 40. */
+    --c-graph-ref: #78a9ff;
+    --c-graph-remote: #be95ff;
+    --c-graph-base: #ff832b;
+}

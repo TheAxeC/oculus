@@ -1,0 +1,121 @@
+/* Flexoki (kepano/flexoki, MIT): dark on its 400 hues, then light on its 600 hues. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Flexoki (kepano/flexoki) ----------------------------------------- */
+body.flexoki {
+    color-scheme: dark;
+    --bg: #100f0f;
+    --panel: #1c1b1a;
+    --card: #282726;
+    --ink: #cecdc3;
+    --muted: #878580;
+    --line: #343331;
+    --chip: #282726;
+    --shadow: none;
+    --accent: #da702c;
+    --c-red: #d14d41;
+    --c-red-d: #af3029;
+    --c-red-s: #343331;
+    --c-red-bg: #282726;
+    --c-red-t: #d14d41;
+    --c-amber: #d0a215;
+    --c-amber-s: #343331;
+    --c-amber-bg: #282726;
+    --c-gold: #d0a215;
+    --c-orange: #da702c;
+    --c-honey: #d0a215;
+    --c-brass: #d0a215;
+    --c-green: #879a39;
+    --c-green-d: #879a39;
+    --c-lime: #879a39;
+    --c-teal: #3aa99f;
+    --c-cyan: #3aa99f;
+    --c-cyan-d: #3aa99f;
+    --c-sky: #3aa99f;
+    --c-blue: #4385be;
+    --c-indigo: #8b7ec8;
+    --c-violet: #8b7ec8;
+    --c-purple: #8b7ec8;
+    --c-magenta: #ce5d97;
+    --c-pink: #ce5d97;
+    --c-rose: #ce5d97;
+    --c-mauve: #8b7ec8;
+    --c-crimson: #af3029;
+    --c-slate: #878580;
+    --c-grey: #878580;
+    --c-grey-d: #878580;
+    --c-on: #100f0f;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #879a39;
+    --c-scm-modified: #d0a215;
+    --c-gutter-modified: #4385be;
+    --c-scm-deleted: #d14d41;
+    --c-scm-conflict: #ce5d97;
+    --c-scm-added-bg: #2e311f;
+    --c-scm-deleted-bg: #3b2421;
+    --c-scm-conflict-bg: #3a262f;
+    /* The Source Control Graph's names: Flexoki's blue, purple and orange. */
+    --c-graph-ref: #4385be;
+    --c-graph-remote: #8b7ec8;
+    --c-graph-base: #da702c;
+}
+
+/* --- Flexoki Light (kepano/flexoki) ----------------------------------- */
+body.flexokilight {
+    --bg: #f2f0e5;
+    --panel: #fffcf0;
+    --card: #e6e4d9;
+    --ink: #100f0f;
+    --muted: #6f6e69;
+    --line: #dad8ce;
+    --chip: #e6e4d9;
+    --shadow: none;
+    --accent: #bc5215;
+    --c-red: #af3029;
+    --c-red-d: #942822;
+    --c-red-s: #dad8ce;
+    --c-red-bg: #e6e4d9;
+    --c-red-t: #af3029;
+    --c-amber: #ad8301;
+    --c-amber-s: #dad8ce;
+    --c-amber-bg: #e6e4d9;
+    --c-gold: #ad8301;
+    --c-orange: #bc5215;
+    --c-honey: #ad8301;
+    --c-brass: #ad8301;
+    --c-green: #66800b;
+    --c-green-d: #66800b;
+    --c-lime: #66800b;
+    --c-teal: #24837b;
+    --c-cyan: #24837b;
+    --c-cyan-d: #24837b;
+    --c-sky: #24837b;
+    --c-blue: #205ea6;
+    --c-indigo: #5e409d;
+    --c-violet: #5e409d;
+    --c-purple: #5e409d;
+    --c-magenta: #a02f6f;
+    --c-pink: #a02f6f;
+    --c-rose: #a02f6f;
+    --c-mauve: #5e409d;
+    --c-crimson: #af3029;
+    --c-slate: #6f6e69;
+    --c-grey: #6f6e69;
+    --c-grey-d: #6f6e69;
+    --c-on: #fffcf0;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #66800b;
+    --c-scm-modified: #ad8301;
+    --c-gutter-modified: #205ea6;
+    --c-scm-deleted: #af3029;
+    --c-scm-conflict: #a02f6f;
+    --c-scm-added-bg: #dadeb9;
+    --c-scm-deleted-bg: #eccbc0;
+    --c-scm-conflict-bg: #e8cbd1;
+    /* The Source Control Graph's names: Flexoki Light's blue, purple and orange. */
+    --c-graph-ref: #205ea6;
+    --c-graph-remote: #5e409d;
+    --c-graph-base: #bc5215;
+}

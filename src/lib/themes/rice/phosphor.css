@@ -1,0 +1,126 @@
+/* Phosphor: the single-colour text of a green P1 and an amber P3 monitor, made for the CRT
+   overlay. The ink, the accent and the muted text are the phosphor's colour; the other hues stay
+   apart from it, so an error, a warning and a change still read as what they are. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   config/appearance.yml. */
+
+/* --- Phosphor: a green P1 monitor, pairs with the CRT overlay --------- */
+body.phosphor {
+    color-scheme: dark;
+    --bg: #050a06;
+    --panel: #0a120c;
+    --card: #0f1a12;
+    --ink: #5cf28a;
+    --muted: #3fae66;
+    --line: #1a2e1f;
+    --chip: #0f1a12;
+    --shadow: none;
+    --accent: #39ff7a;
+    --c-red: #ff5c5c;
+    --c-red-d: #ff5c5c;
+    --c-red-s: #1a2e1f;
+    --c-red-bg: #0f1a12;
+    --c-red-t: #ff5c5c;
+    --c-amber: #ffb000;
+    --c-amber-s: #1a2e1f;
+    --c-amber-bg: #0f1a12;
+    --c-gold: #e8d44d;
+    --c-orange: #ff8c3a;
+    --c-honey: #e8d44d;
+    --c-brass: #e8d44d;
+    --c-green: #39ff7a;
+    --c-green-d: #39ff7a;
+    --c-lime: #a8ff60;
+    --c-teal: #3fe0b0;
+    --c-cyan: #4fe3d6;
+    --c-cyan-d: #4fe3d6;
+    --c-sky: #6fd8ff;
+    --c-blue: #5aa9ff;
+    --c-indigo: #8f9cff;
+    --c-violet: #b48cff;
+    --c-purple: #b48cff;
+    --c-magenta: #ff6ad5;
+    --c-pink: #ff8ccf;
+    --c-rose: #ff8ccf;
+    --c-mauve: #c79bd8;
+    --c-crimson: #ff4d6a;
+    --c-slate: #3fae66;
+    --c-grey: #3fae66;
+    --c-grey-d: #3fae66;
+    --c-on: #050a06;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #39ff7a;
+    --c-scm-modified: #ffb000;
+    --c-gutter-modified: #5aa9ff;
+    --c-scm-deleted: #ff5c5c;
+    --c-scm-conflict: #ff6ad5;
+    --c-scm-added-bg: #123a1f;
+    --c-scm-deleted-bg: #341f1a;
+    --c-scm-conflict-bg: #34212e;
+    /* The Source Control Graph's names: a blue, a violet and an orange, kept apart from the green
+       ink. */
+    --c-graph-ref: #5aa9ff;
+    --c-graph-remote: #b48cff;
+    --c-graph-base: #ff8c3a;
+}
+
+/* --- Phosphor Amber: an amber P3 monitor, pairs with the CRT overlay --- */
+body.phosphoramber {
+    color-scheme: dark;
+    --bg: #0c0802;
+    --panel: #140d03;
+    --card: #1c1305;
+    --ink: #ffb000;
+    --muted: #b88a2e;
+    --line: #33230a;
+    --chip: #1c1305;
+    --shadow: none;
+    --accent: #ffc23d;
+    --c-red: #ff5c4a;
+    --c-red-d: #ff5c4a;
+    --c-red-s: #33230a;
+    --c-red-bg: #1c1305;
+    --c-red-t: #ff5c4a;
+    --c-amber: #ffc23d;
+    --c-amber-s: #33230a;
+    --c-amber-bg: #1c1305;
+    --c-gold: #ffd966;
+    --c-orange: #ff8c3a;
+    --c-honey: #ffd966;
+    --c-brass: #ffd966;
+    --c-green: #9fdc4a;
+    --c-green-d: #9fdc4a;
+    --c-lime: #9fdc4a;
+    --c-teal: #4fd1a8;
+    --c-cyan: #5fd7d0;
+    --c-cyan-d: #5fd7d0;
+    --c-sky: #7fcfff;
+    --c-blue: #6aa8ff;
+    --c-indigo: #9aa0ff;
+    --c-violet: #c19cff;
+    --c-purple: #c19cff;
+    --c-magenta: #ff78c8;
+    --c-pink: #ff99c8;
+    --c-rose: #ff99c8;
+    --c-mauve: #d6a0c8;
+    --c-crimson: #ff4d5e;
+    --c-slate: #b88a2e;
+    --c-grey: #b88a2e;
+    --c-grey-d: #b88a2e;
+    --c-on: #0c0802;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9fdc4a;
+    --c-scm-modified: #ffc23d;
+    --c-gutter-modified: #6aa8ff;
+    --c-scm-deleted: #ff5c4a;
+    --c-scm-conflict: #ff78c8;
+    --c-scm-added-bg: #2c300f;
+    --c-scm-deleted-bg: #3c1a0f;
+    --c-scm-conflict-bg: #3c1f24;
+    /* The Source Control Graph's names: a blue, a violet and an orange, kept apart from the amber
+       ink. */
+    --c-graph-ref: #6aa8ff;
+    --c-graph-remote: #c19cff;
+    --c-graph-base: #ff8c3a;
+}

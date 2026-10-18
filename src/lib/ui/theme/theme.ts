@@ -4,17 +4,24 @@
 // also names the classes the sheets hold a theme block for (`themeClasses`), which the Settings
 // view offers as the words of a theme's `class`.
 //
-// The three stylesheets (tokens.css, themes.css and the generated vscode.css) reach this module as
-// text through Vite's `?raw` import, which is the same bytes the page is styled with. The
-// derivation therefore runs on the authored values themselves and nothing restates a colour in
-// TypeScript. The caller may pass its own tokens sheet and its own theme sheets, which is how the
-// test runs it over the files read from disk.
+// The stylesheets (tokens.css, themes.css, the rice palettes of rice/ and the generated vscode.css)
+// reach this module as text through Vite's `?raw` import, which is the same bytes the page is
+// styled with. The derivation therefore runs on the authored values themselves and nothing restates
+// a colour in TypeScript. The caller may pass its own tokens sheet and its own theme sheets, which
+// is how the test runs it over the files read from disk.
 
 import { deriveTokens } from '$lib/themes/derive';
 import { parseBlocks, resolveTheme } from '$lib/themes/parse';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import themesCss from '$lib/themes/themes.css?raw';
 import vscodeCss from '$lib/themes/vscode.css?raw';
+
+/** The rice palettes, one sheet per family, in the order of their file names. */
+const riceSheets: Record<string, string> = import.meta.glob('/src/lib/themes/rice/*.css', {
+    query: '?raw',
+    import: 'default',
+    eager: true
+});
 
 /**
  * What this needs of a Document, so a test can hand it a plain object and read back what was set.
@@ -24,8 +31,8 @@ export type Themeable = {
     documentElement: { style: { setProperty: (name: string, value: string) => void } };
 };
 
-/** The sheets that hold theme blocks, themes.css and the generated vscode.css, as one text. */
-export const THEME_SHEETS = `${themesCss}\n${vscodeCss}`;
+/** The sheets that hold theme blocks, themes.css, rice/ and vscode.css, as one text. */
+export const THEME_SHEETS = [themesCss, ...Object.values(riceSheets), vscodeCss].join('\n');
 
 /** The body class the CRT overlay is switched on by; themes.css draws it on top of any theme. */
 export const CRT_CLASS = 'crt';

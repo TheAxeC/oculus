@@ -1,10 +1,10 @@
 /* The palette. Two layers of colour:
      - chrome  (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
      - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
-   A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
-   hand-written blocks and vscode.css the generated ones. Every colour a component uses resolves
-   through a token here, so the contrast test can walk them all. The -txt and --on-* tokens the
-   components read are derived from these by derive.ts. */
+   A theme is a block of overrides on these tokens and never a per-rule edit; themes.css and the
+   family files of rice/ hold the hand-written blocks and vscode.css the generated ones. Every
+   colour a component uses resolves through a token here, so the contrast test can walk them all.
+   The -txt and --on-* tokens the components read are derived from these by derive.ts. */
 :root {
     --bg: #f1f5f9;
     --panel: #fff;
@@ -83,8 +83,8 @@
     /* The Source Control Graph's names in the three colours VS Code draws them in: the reference
        colour (the checked-out branch and every local branch), the remote reference colour (a
        remote branch) and the base reference colour (the upstream's base). These are the light and
-       dark themes' blue, purple and orange; every palette block of themes.css sets its own three,
-       and the converter sets them for the VS Code themes from the theme's `scmGraph.*` keys, else
+       dark themes' blue, purple and orange; every palette block of rice/ sets its own three, and
+       the converter sets them for the VS Code themes from the theme's `scmGraph.*` keys, else
        VS Code's defaults, its charts' blue and purple and, for the base colour, VS Code's fixed
        orange. Palette entries, so derive.ts mints the ink a pill's words take on each fill. */
     --c-graph-ref: #2563eb;

@@ -1,0 +1,239 @@
+/* Tokyo Night (folke/tokyonight.nvim, Apache-2.0, and enkia/tokyo-night-vscode-theme, MIT):
+   Night, Storm and Neon, then Light. One block per palette, each a set of overrides on the
+   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and
+   the picker rows are the `themes:` list of config/appearance.yml. */
+
+/* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
+body.tokyonight {
+    color-scheme: dark;
+    --bg: #16161e;
+    --panel: #1a1b26;
+    --card: #20222f;
+    --ink: #c0caf5;
+    --muted: #565f89;
+    --line: #292e42;
+    --chip: #20222f;
+    --shadow: none;
+    --accent: #7aa2f7;
+    --c-red: #f7768e;
+    --c-red-d: #f7768e;
+    --c-red-s: #292e42;
+    --c-red-bg: #20222f;
+    --c-red-t: #f7768e;
+    --c-amber: #e0af68;
+    --c-amber-s: #292e42;
+    --c-amber-bg: #20222f;
+    --c-gold: #e0af68;
+    --c-orange: #ff9e64;
+    --c-honey: #e0af68;
+    --c-brass: #e0af68;
+    --c-green: #9ece6a;
+    --c-green-d: #9ece6a;
+    --c-lime: #9ece6a;
+    --c-teal: #73daca;
+    --c-cyan: #7dcfff;
+    --c-cyan-d: #7dcfff;
+    --c-sky: #7dcfff;
+    --c-blue: #7aa2f7;
+    --c-indigo: #7aa2f7;
+    --c-violet: #bb9af7;
+    --c-purple: #bb9af7;
+    --c-magenta: #bb9af7;
+    --c-pink: #ff75a0;
+    --c-rose: #ff75a0;
+    --c-mauve: #c0a4e0;
+    --c-crimson: #f7768e;
+    --c-slate: #565f89;
+    --c-grey: #565f89;
+    --c-grey-d: #565f89;
+    --c-on: #16161e;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ece6a;
+    --c-scm-modified: #e0af68;
+    --c-gutter-modified: #7aa2f7;
+    --c-scm-deleted: #f7768e;
+    --c-scm-conflict: #bb9af7;
+    --c-scm-added-bg: #313b2d;
+    --c-scm-deleted-bg: #432934;
+    --c-scm-conflict-bg: #373049;
+    /* The Source Control Graph's names: Tokyo Night's blue, magenta and orange. */
+    --c-graph-ref: #7aa2f7;
+    --c-graph-remote: #bb9af7;
+    --c-graph-base: #ff9e64;
+}
+
+/* --- Tokyo Night Storm (folke/tokyonight.nvim) ------------------------ */
+body.tokyostorm {
+    color-scheme: dark;
+    --bg: #1f2335;
+    --panel: #24283b;
+    --card: #292e42;
+    --ink: #c0caf5;
+    --muted: #737aa2;
+    --line: #3b4261;
+    --chip: #292e42;
+    --shadow: none;
+    --accent: #7aa2f7;
+    --c-red: #f7768e;
+    --c-red-d: #f7768e;
+    --c-red-s: #3b4261;
+    --c-red-bg: #292e42;
+    --c-red-t: #f7768e;
+    --c-amber: #e0af68;
+    --c-amber-s: #3b4261;
+    --c-amber-bg: #292e42;
+    --c-gold: #e0af68;
+    --c-orange: #ff9e64;
+    --c-honey: #e0af68;
+    --c-brass: #e0af68;
+    --c-green: #9ece6a;
+    --c-green-d: #9ece6a;
+    --c-lime: #9ece6a;
+    --c-teal: #73daca;
+    --c-cyan: #7dcfff;
+    --c-cyan-d: #7dcfff;
+    --c-sky: #7dcfff;
+    --c-blue: #7aa2f7;
+    --c-indigo: #bb9af7;
+    --c-violet: #bb9af7;
+    --c-purple: #bb9af7;
+    --c-magenta: #bb9af7;
+    --c-pink: #ff75a0;
+    --c-rose: #ff75a0;
+    --c-mauve: #c0a4e0;
+    --c-crimson: #f7768e;
+    --c-slate: #737aa2;
+    --c-grey: #737aa2;
+    --c-grey-d: #737aa2;
+    --c-on: #1f2335;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #9ece6a;
+    --c-scm-modified: #e0af68;
+    --c-gutter-modified: #7aa2f7;
+    --c-scm-deleted: #f7768e;
+    --c-scm-conflict: #bb9af7;
+    --c-scm-added-bg: #394443;
+    --c-scm-deleted-bg: #483549;
+    --c-scm-conflict-bg: #3e3b5b;
+    /* The Source Control Graph's names: Tokyo Night Storm's blue, magenta and orange. */
+    --c-graph-ref: #7aa2f7;
+    --c-graph-remote: #bb9af7;
+    --c-graph-base: #ff9e64;
+}
+
+/* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
+body.tokyoneon {
+    color-scheme: dark;
+    --bg: #0f0f17;
+    --panel: #16161e;
+    --card: #1c1d2b;
+    --ink: #c8d3f5;
+    --muted: #636da6;
+    --line: #252636;
+    --chip: #1c1d2b;
+    --shadow: none;
+    --accent: #c099ff;
+    --c-red: #ff007c;
+    --c-red-d: #ff007c;
+    --c-red-s: #252636;
+    --c-red-bg: #1c1d2b;
+    --c-red-t: #ff007c;
+    --c-amber: #ffc777;
+    --c-amber-s: #252636;
+    --c-amber-bg: #1c1d2b;
+    --c-gold: #ffc777;
+    --c-orange: #ff966c;
+    --c-honey: #ffc777;
+    --c-brass: #ffc777;
+    --c-green: #c3e88d;
+    --c-green-d: #c3e88d;
+    --c-lime: #c3e88d;
+    --c-teal: #4fd6be;
+    --c-cyan: #86e1fc;
+    --c-cyan-d: #86e1fc;
+    --c-sky: #86e1fc;
+    --c-blue: #82aaff;
+    --c-indigo: #c099ff;
+    --c-violet: #c099ff;
+    --c-purple: #c099ff;
+    --c-magenta: #ff007c;
+    --c-pink: #fca7ea;
+    --c-rose: #fca7ea;
+    --c-mauve: #fca7ea;
+    --c-crimson: #ff007c;
+    --c-slate: #636da6;
+    --c-grey: #636da6;
+    --c-grey-d: #636da6;
+    --c-on: #0f0f17;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #c3e88d;
+    --c-scm-modified: #ffc777;
+    --c-gutter-modified: #82aaff;
+    --c-scm-deleted: #ff007c;
+    --c-scm-conflict: #ff007c;
+    --c-scm-added-bg: #333a2f;
+    --c-scm-deleted-bg: #3f0c2b;
+    --c-scm-conflict-bg: #3f0c2b;
+    /* The Source Control Graph's names: Tokyo Night Moon's blue, magenta and orange. */
+    --c-graph-ref: #82aaff;
+    --c-graph-remote: #c099ff;
+    --c-graph-base: #ff966c;
+}
+
+/* --- Tokyo Night Light (enkia/tokyo-night-vscode-theme) --------------- */
+body.tokyolight {
+    --bg: #d6d8df;
+    --panel: #e6e7ed;
+    --card: #d4d4da;
+    --ink: #343b58;
+    --muted: #707280;
+    --line: #c1c2c7;
+    --chip: #d4d4da;
+    --shadow: none;
+    --accent: #2959aa;
+    --c-red: #8c4351;
+    --c-red-d: #8c4351;
+    --c-red-s: #c1c2c7;
+    --c-red-bg: #d4d4da;
+    --c-red-t: #8c4351;
+    --c-amber: #8f5e15;
+    --c-amber-s: #c1c2c7;
+    --c-amber-bg: #d4d4da;
+    --c-gold: #8f5e15;
+    --c-orange: #965027;
+    --c-honey: #634f30;
+    --c-brass: #634f30;
+    --c-green: #385f0d;
+    --c-green-d: #33635c;
+    --c-lime: #385f0d;
+    --c-teal: #33635c;
+    --c-cyan: #006c86;
+    --c-cyan-d: #0f4b6e;
+    --c-sky: #006c86;
+    --c-blue: #2959aa;
+    --c-indigo: #2959aa;
+    --c-violet: #5a3e8e;
+    --c-purple: #5a3e8e;
+    --c-magenta: #7b43ba;
+    --c-pink: #7b43ba;
+    --c-rose: #8c4351;
+    --c-mauve: #5a3e8e;
+    --c-crimson: #8c4351;
+    --c-slate: #707280;
+    --c-grey: #707280;
+    --c-grey-d: #707280;
+    --c-on: #e6e7ed;
+    /* Source Control: added, modified, deleted and conflicted paths and lines. */
+    --c-scm-added: #166775;
+    --c-scm-modified: #8f5e15;
+    --c-gutter-modified: #2959aa;
+    --c-scm-deleted: #8c4351;
+    --c-scm-conflict: #7b43ba;
+    --c-scm-added-bg: #b4c8d0;
+    --c-scm-deleted-bg: #d0c0c8;
+    --c-scm-conflict-bg: #ccc0e1;
+    /* The Source Control Graph's names: Tokyo Night Light's blue, purple and orange. */
+    --c-graph-ref: #2959aa;
+    --c-graph-remote: #5a3e8e;
+    --c-graph-base: #965027;
+}
