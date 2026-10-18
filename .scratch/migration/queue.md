@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): builder working since 2026-10-18.
+- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): reviewed 2026-10-18 (17 findings); repair round 1 with the builder.
 
 Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O42 has landed.

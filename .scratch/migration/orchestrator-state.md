@@ -34,7 +34,9 @@ dispatch:      # steps in flight, up to six (Z632)
   session_id: aaa21bf27aeba936c (claude-opus-5-5)
   launched: 2026-10-18
   report: agents/reviews/O42-report.md
-  round: 0
+  builder_usage: 345,248 tokens, 469 tool uses, 86.5 min
+  reviewer_report: agents/reviews/O42-refuter.md (a1771f58c31fcccbc, claude-opus-5-5, 350,419 tokens, 85 tool uses, 16.7 min)
+  round: 1
   landing: not-started
 ```
 
@@ -306,6 +308,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-18 (O42 round 1 sent). O42's builder aaa21bf27aeba936c reported every item DONE (`agents/reviews/O42-report.md`, usage in `builder_usage`); the reviewer a1771f58c31fcccbc on claude-opus-5-5 wrote `agents/reviews/O42-refuter.md`: Part 2 violated (the header's branch drawn in capitals, B2), case 4 partial (the colon path of `menuPage` untested, P1), spec findings S1 to S11, behaviour findings B1 to B4 and B7. Round 1 (`agents/briefs/O42-round1.md`, 17 items) sent to the builder; snapshot `.agents/worktrees/migration-O42-round-1` with `files.txt` (67 paths). Open items: none. In flight (1 of 6): O42 (round 1). Next: the review over the round, /land O42 with its looks, then O38.
 - 2026-10-18 (O42 launched). Ruling 148 (a) booked; O42 prepared at base 3587a477a with the brief check's findings closed; builder aaa21bf27aeba936c on claude-opus-5-5 in `.agents/worktrees/migration-O42`. In flight (1 of 6): O42. Next: the builder's report, /refute O42, /land O42.
 - 2026-10-18 (O42 stopped at its brief check). Ruling 147 (a) booked; /spec O42 ran again, its brief check a66ad9473b70689d0 (claude-opus-5-5) found the brief needed widened paths and tests no guarded entry covers; every finding but 4.1 is closed in `agents/reviews/O42-brief-check.md` under Closed, to be applied when /spec runs again; 4.1 is open item 148. No brief, no worktree, no dispatch entry. In flight (0 of 6): none. Next: Axel's ruling on 148, then /spec O42 again.
 - 2026-10-18 (O42 stopped at /spec). The premise checks found ruling 136's "an item shows the page's key and takes none (registerAccelerator: false)" false on macOS; open item 147. No brief, no worktree, no dispatch entry. The other parts of O42 hold on the tree. In flight (0 of 6): none. Next: Axel's ruling on 147, then /spec O42 again.
