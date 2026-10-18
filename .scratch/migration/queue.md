@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): builder working since 2026-10-18.
 
-Queued, in order (3 steps):
-- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."): next; its /spec stopped at the brief check on open item 148, the new guarded entries, and runs again once Axel has ruled.
+Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O42 has landed.
 - O39 (oculus in its own repository): once O38 has landed.
 
