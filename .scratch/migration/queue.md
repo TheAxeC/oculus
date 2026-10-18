@@ -7,7 +7,7 @@ Queued, in order (2 steps):
 Owed looks: none.
 
 Landed, newest first:
-- O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 6d9136eb9.
+- O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 00bdbdd4a.
 - O40 (O37's open look defects), 2026-10-18, 2eab73263.
 - O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
 - O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.
