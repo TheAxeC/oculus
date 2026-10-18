@@ -39,7 +39,7 @@ Each of the 54 entries, rewritten:
 | ajile12 | `dandi` 000055, the chosen asset per subject | 55 assets in the dandiset |
 | miller-ecog-library | `stanford` druid zk881ps0522 | 23 files, 7 GB, sha1 per file |
 | stanford_fingerflex | `stanford` druid zk881ps0522, files `fingerflex.zip` | the same record |
-| bci-iv-4 | `stanford` druid zk881ps0522, files `BCI_Competion4_dataset4_data_fingerflexions.zip`, once you confirm it is the same data; otherwise `request` (BBCI login) | the file is in the record |
+| bci-iv-4 | `request` (BBCI login) | ruled by Axel (open item 153) |
 | lld-mmri-medsam2, acdc | `huggingface` (`wanglab/LLD-MMRI-MedSAM2`; `mathpluscode/ACDC` with `*.nii.gz`, `*.csv`) | 998 files (4.8 GB) and 755 files (1.1 GB), sha256 on the large files |
 | absinta-gse180759 | `geo` GSE180759, `GSE180759_expression_matrix.csv.gz`, `GSE180759_annotation.txt.gz` | both listed |
 | jakel-gse118257 | `geo` GSE118257, `GSE118257_MSCtr_snRNA_ExpressionMatrix_R.txt.gz`, `GSE118257_MSCtr_snRNA_FinalAnnotationTable.txt.gz` | the registry's notes name files GEO does not have; these two are what GEO lists |
@@ -102,13 +102,13 @@ New and rewritten:
 - The hub `README.md:10,18`.
 - Tests: the file list read for each kind from a recorded API answer, the state of each file row (verified, partial, different, missing), a resumed fetch, a checksum mismatch, access missing, a key starting with a dash, a target folder outside `~/data`.
 
-## Decisions for Axel inside this design
+## Decisions, ruled (open item 153)
 
 1. The kind names and fields of section 1.
-2. `path:` replacing `hpc_path`.
-3. The cluster as a target, with download on the login node and check and unpack in an `sbatch` job.
-4. Moving the data of absinta, jakel, macnair2024 and the 9 cellxgene sets into `~/data/<key>`, with the project code that reads them.
-5. bci-iv-4 from the Stanford record, or `request`.
+2. `path:` replaces `hpc_path`.
+3. The cluster is a target: download on the login node, check and unpack in an `sbatch` job.
+4. absinta, jakel, macnair2024 and the nine cellxgene sets move into `~/data/<key>`, with the project code that reads them.
+5. bci-iv-4 is `request`.
 6. Nothing is written back to the registry after a recovery; the log holds the record.
 
 ## Option (b)

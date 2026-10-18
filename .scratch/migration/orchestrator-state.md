@@ -158,7 +158,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 153 (2026-10-18, O38's /spec): the six decisions inside `agents/briefs/O38-recover.md` (the kind names and fields; `path:` replacing `hpc_path`; the cluster target; moving absinta, jakel, macnair2024 and the nine cellxgene sets into `~/data/<key>`; bci-iv-4 from the Stanford record or `request`; nothing written back to the registry) and item 24 of `agents/briefs/O38-paths.md` (the 34 scout log lines kept, recommended, or reworded).
 
 
 

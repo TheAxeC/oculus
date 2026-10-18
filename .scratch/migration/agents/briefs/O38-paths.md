@@ -40,5 +40,5 @@
 21. btfno: `admin/build_supplement.sh:4`, `CLAUDE.md:22` and `README.md:102`, `tools/deposit/deposit.py` becomes oculus's Deposit view.
 22. `projects/archive/published/2026/glassbox-decision-pipelines/README.md:101`: the push command becomes oculus's Deposit view.
 23. oculus `DESIGN.md:696,738` and the tests: as open item 151.
-24. `feeds/position-leads.yml:10-48`: 34 log lines record runs as "(local `/research-cockpit scout`)"; each becomes "(scout task)", or each stays as the record of what ran. Axel's choice.
+24. `feeds/position-leads.yml:10-48`: the 34 log lines naming `/research-cockpit scout` stay as they are, each the record of a run (open item 153).
 25. Memory, updated by the session: `research-cockpit-infra.md` rewritten as the record of a retired tool with its `MEMORY.md` line; `unicode-sweep-2026-08-24.md:18`, `feedback-no-unicode-in-python.md:14`, `repo-transferability-and-drive-move.md:25,80`, `feedback-deposit-self-contained-argfree.md:18`, `project-glassbox-decision-pipelines.md:19` point at oculus.
