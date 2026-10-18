@@ -80,7 +80,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         explorer,
         problems,
         appShell: { opens },
-        fs: { bookmarks, entries, heldEntries, listing, readFileKind },
+        fs: { bookmarks, entries, heldEntries, listing, readFileKind, settledEntries },
         layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
         selectors: { configMap, gitFor, repositories },
         ui: { instanceState }
@@ -200,10 +200,12 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         tab
     });
 
-    // A refresh that no longer lists a selected row takes it out of the selection.
+    // A refresh that no longer lists a selected row takes it out of the selection. A folder being
+    // read again after a write is no refresh yet: the item a paste or a New File placed in it and
+    // selected is missing from its held entries until the answer lands.
     $effect(() => {
         const now = { selected: view.selected, selection: view.selection, anchor: view.anchor };
-        const next = selectPruned(now, held);
+        const next = selectPruned(now, (root, path) => settledEntries(root, path, listed));
         if (selectionChanged(now, next)) untrack(() => tab.patch(next));
     });
 

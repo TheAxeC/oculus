@@ -249,11 +249,18 @@ export function createSource(
     // served again the tab reads the file again, a tab with unsaved text included. A read of a
     // restored tab that found no file while the served roots were being read waits here: the tab
     // is unserved when its root is not among them, and cannot be opened when it is. When the read
-    // of the served roots failed, such a tab cannot be opened at once.
+    // of the served roots failed, such a tab cannot be opened at once. A tab its channel marked
+    // unserved while the list still names its root reads nothing: the list is behind the server
+    // until the page reads the workspace again, and the tab reads its file once its root joins the
+    // list after leaving it.
     $effect.root(() => {
+        /** The served roots of the effect's last run, null before the first. */
+        let before: readonly string[] | null = null;
         $effect(() => {
             const keys = deps.served();
             if (keys === null) return;
+            const was = before;
+            before = keys;
             for (const [id, waiting] of [...unsettled]) {
                 unsettled.delete(id);
                 untrack(() => {
@@ -270,7 +277,7 @@ export function createSource(
                     const out = !keys.includes(place.root);
                     if (out && draft.disk !== 'unserved') {
                         updateDraft(id, { disk: 'unserved', conflict: false, error: '' });
-                    } else if (!out && draft.disk === 'unserved') {
+                    } else if (!out && draft.disk === 'unserved' && !was?.includes(place.root)) {
                         void reloadSource(id);
                     }
                 });
@@ -490,6 +497,12 @@ export function createSource(
         const draft = sourceDraft(id);
         const place = diskFileOf(draft.file);
         if (!draft.loaded || place === null) return;
+        // A file of a root the workspace no longer serves is asked for nothing: the tab is
+        // unserved.
+        if (unserved(place.root)) {
+            if (draft.disk !== 'unserved') updateDraft(id, { disk: 'unserved', conflict: false });
+            return;
+        }
         if (draft.text !== draft.saved && draft.disk !== 'unserved') return;
         const answer = await loadSource(place.root, place.path);
         if (ui.instanceState(id) === undefined) return;

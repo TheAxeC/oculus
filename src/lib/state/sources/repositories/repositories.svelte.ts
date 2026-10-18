@@ -194,6 +194,11 @@ export type RepositoriesStore = {
      * changed one. An untracked row has no such version.
      */
     openHead: (root: string, group: string, path: string) => void;
+    /**
+     * Open a tracked file as the index holds it, in a read-only source tab that keeps that side,
+     * for a staged row and for a changed one.
+     */
+    openIndex: (root: string, group: string, path: string) => void;
     /** Open the files between a ref and a commit in a diff pane of its own. */
     openCompare: (root: string, from: string, to: string) => void;
     /** Open a linked worktree's file against the main worktree's in a diff pane. */
@@ -580,6 +585,10 @@ export function createRepositories(
         openHead(root, group, path) {
             if (group !== 'staged' && group !== 'changed') return;
             layout.openView('source', headTabState(root, path, 'head'));
+        },
+        openIndex(root, group, path) {
+            if (group !== 'staged' && group !== 'changed') return;
+            layout.openView('source', headTabState(root, path, 'index'));
         },
         openCompare(root, from, to) {
             const subject = {

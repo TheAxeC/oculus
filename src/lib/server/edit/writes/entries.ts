@@ -18,7 +18,13 @@
 // `writeEntry` and `createEntry` from their own `entryId`, carried in the endpoint's JSON and read
 // into `WriteAnswer`), so the page is told where the entry now is after a rename rather than
 // reading the file's id rule a second time.
+//
+// An add and a delete of an entry record the text they replaced, whole lines and one line around it
+// (`replaced`), so that their undo puts the file back byte for byte while it still holds what the
+// write left there (`putBackEntry`); a file changed there since is put right by the writer the
+// other way, which never writes over the change.
 
+import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
@@ -36,10 +42,11 @@ import {
     setEntryFields,
     startEntries
 } from '../entry-edit/index.ts';
-import { plain } from '../../core/changes.ts';
+import { plain, same } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import {
+    collectionText,
     entryId,
     entryOf,
     identityOf,
@@ -47,6 +54,7 @@ import {
     readCollection,
     type Collection
 } from '../../files/fs/collections.ts';
+import { putBack, replacedLines, replacedShape } from './config/config-checks.ts';
 import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
@@ -438,12 +446,10 @@ export function removeEntry(
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     const entry = entryOf(held, value);
-    const out = saved(
-        held.file,
-        held.source,
-        deleteEntry(held.source, held.ident, value, config.text)
-    );
+    const edit = deleteEntry(held.source, held.ident, value, config.text);
+    const out = saved(held.file, held.source, edit);
     if (out.changed.length === 0) return out;
+    const replaced = replacedLines(held.source, edit.text);
     return {
         ...out,
         records: [
@@ -453,7 +459,59 @@ export function removeEntry(
                 field: 'entries',
                 before: plain(entry),
                 after: null,
-                undo: 'delete'
+                undo: 'delete',
+                ...(replaced === null ? {} : { replaced })
+            }
+        ]
+    };
+}
+
+/**
+ * Take back the add or the delete of one entry by the text its record replaced, which leaves the
+ * file byte for byte as it was before the write: `key` is the entry's identity and `entry` the
+ * entry the undo puts back, null for the undo of an add. The text goes back only while the file
+ * holds what the write left at the record's place and the file with the text back lists the entries
+ * the undo leaves, every other entry as it is now; otherwise nothing is written and the answer is
+ * null, and the undo goes through removeEntry or createEntry. The record of the undo is the one
+ * those writers make, with the text it replaced.
+ */
+export function putBackEntry(
+    hub: string,
+    config: PortfolioConfig,
+    collection: string,
+    taken: { key: string; entry: Record<string, unknown> | null; replaced: unknown },
+    own?: string
+): WriteOutcome | null {
+    const held = readCollection(hub, config, collection, own);
+    const put = replacedShape.safeParse(taken.replaced);
+    if (held === null || !put.success) return null;
+    const text = putBack(held.source, put.data);
+    const back = text === null ? null : collectionText(held.file, text, own);
+    if (text === null || back === null) return null;
+    const { key, entry } = taken;
+    const others = (items: Record<string, unknown>[]) =>
+        items.filter((one) => scalar(one[held.ident]) !== key);
+    const now = entryOf(held, key);
+    const restored = entryOf(back, key);
+    const fits =
+        isDeepStrictEqual(others(back.items), others(held.items)) &&
+        (entry === null
+            ? restored === undefined && now !== undefined
+            : now === undefined && restored !== undefined && same(restored, entry));
+    if (!fits) return null;
+    const out = saved(held.file, held.source, { text, changed: ['entries'], refused: [] });
+    const replaced = replacedLines(held.source, text);
+    return {
+        ...out,
+        records: [
+            {
+                file: held.file,
+                key,
+                field: 'entries',
+                before: entry === null ? plain(now) : null,
+                after: entry,
+                undo: entry === null ? 'delete' : 'create',
+                ...(replaced === null ? {} : { replaced })
             }
         ]
     };
@@ -591,6 +649,7 @@ export function createEntry(
     // renderer made: a field it leaves out for its empty value is not in the record, so the undo
     // finds the entry as the record says it is.
     const [written] = renderedShape.parse(parse(block));
+    const replaced = replacedLines(held.source, edit.text);
     const records: ChangeRecord[] =
         out.changed.length === 0
             ? []
@@ -601,7 +660,8 @@ export function createEntry(
                       field: 'entries',
                       before: null,
                       after: written,
-                      undo: 'create'
+                      undo: 'create',
+                      ...(replaced === null ? {} : { replaced })
                   }
               ];
     return {

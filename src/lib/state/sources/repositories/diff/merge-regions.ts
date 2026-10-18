@@ -327,6 +327,35 @@ export function openCount(regions: readonly Region[], choices: readonly Choice[]
         .length;
 }
 
+/** How many line breaks a text holds. */
+function breaks(text: string): number {
+    let count = 0;
+    for (const one of text) if (one === '\n') count += 1;
+    return count;
+}
+
+/**
+ * The runs of the Result's lines each open conflict holds, as the Result editor tints them: the
+ * line its piece starts on (from 1, the lines of the pieces before it plus one) and how many lines
+ * the piece holds. A settled conflict and an open one whose piece holds no line have none.
+ */
+export function openRuns(
+    regions: readonly Region[],
+    pieces: readonly string[],
+    choices: readonly Choice[]
+): { line: number; count: number }[] {
+    const runs: { line: number; count: number }[] = [];
+    let line = 1;
+    pieces.forEach((piece, at) => {
+        const count = breaks(piece) + (piece === '' || piece.endsWith('\n') ? 0 : 1);
+        if (regions[at]?.kind === 'conflict' && choices[at] === 'open' && count > 0) {
+            runs.push({ line, count });
+        }
+        line += breaks(piece);
+    });
+    return runs;
+}
+
 /**
  * Whether Complete Merge takes the path's deletion rather than writing the Result: a side deleted
  * the path and the Result is empty, which is what that side's version of the file is.

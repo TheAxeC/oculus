@@ -13,7 +13,8 @@
     // toggles the row in the selection, with Shift it selects the range from the anchor
     // (acts/selection.ts). The selection is the instance's state, pruned by the view when a refresh
     // no longer lists a row. Every action of the menu and of the keys acts on the selection when
-    // the row is in it, and on the row alone otherwise.
+    // the row is in it, and on the row alone otherwise. A paste selects the first item it placed
+    // and brings it into view (TreeView's `reveal`).
     //
     // The tree is one stop of the focus order through ui/tree/TreeView.svelte, and the stop is the
     // selected row, which is the instance's, so it is the same row when the tab comes back. A key
@@ -211,6 +212,9 @@
     );
     const question = $derived(asking.asked());
 
+    /** The row a paste asked to bring into view, answered once by the tree view. */
+    let shownRow = $state<{ id: string; seq: number } | null>(null);
+
     const picks = createPicks({
         client,
         view,
@@ -228,6 +232,7 @@
         select: (row: TreeRow) => onselect(row),
         onrefused: (note: string, told: boolean) => onrefused?.(note, told),
         opened: (file) => onmade?.(file),
+        shown: (row) => (shownRow = { id: rowKey(row), seq: (shownRow?.seq ?? 0) + 1 }),
         get naming() {
             return namingHooks;
         }
@@ -333,6 +338,7 @@
     label={t('files.tree')}
     rows={keyRows}
     current={selected === null ? '' : rowKey(selected)}
+    reveal={shownRow}
     {keymap}
     onkey={keyed}
     onfocusrow={(id: string) => {

@@ -50,7 +50,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 - A page is a working surface: a tree of splits and panes, each pane a strip of tabs. The layout is saved as it changes, and every browser tab and app window of one server shares it.
 - The Pages view lists every page with show, rename and close; a rail page also has Reset. Drag a page's row onto a pane's edge to show it there.
-- Settings has Reset all pages: it rebuilds every rail page and the floats, and leaves your own pages and workbenches alone. It asks first, and about each tab with unsaved text.
+- Settings has Reset all pages: it rebuilds every rail page and the floats, and leaves your own pages and workbenches alone. It asks first, and about each tab with unsaved text; Save saves that tab first, and a save that fails stops the reset with nothing done.
 - Eleven views exist once: Settings, Focus, Usage, Live HPC, Audit, Findings, History, Processes, Pages, Workbenches and Status. Opening one goes to wherever it is. Files, Search, Terminal and the session views can be open on several pages.
 - Split a pane by dragging a tab onto its edge, or from the pane menu. Every drag has a menu equivalent; Shift+F10 opens the menu of the focused control.
 - Show a page here... (pane menu) draws another page inside this one. It is the same page, so a tab opened in it is open everywhere that page shows.
@@ -63,7 +63,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` in `appearance.yml` set the tab strip; they are also in Settings and in the strip's right-click menu.
 - New Text File (right-click on a strip's empty part) opens an untitled text. Its first Save asks for a folder and a name.
 - A tab showing a file draws its path as a breadcrumb. Press a folder to show it in Files; in a source tab the path goes on with the symbols around the caret.
-- A dot in place of the close control means unsaved text. Closing that tab, its pane or its page asks first. Unsaved text survives a tab switch and a reload.
+- A dot in place of the close control means unsaved text. Closing that tab, its pane or its page asks whether to save it first. Save (the default, Enter) saves each such tab and closes the ones that saved; a tab whose save fails, or that has nothing to save it to (an untitled tab), stays open with its text. Don't Save closes and loses the text. Cancel or Escape keeps every tab and its text. Unsaved text survives a tab switch and a reload.
 - While a tab holds unsaved text of a file, every control that would write that file is disabled, and any write to it is refused, so your text is never overwritten.
 - The rail is one Tab stop; each tab strip is one, with its pane menu after it. Arrow keys move inside a strip.
 
@@ -85,6 +85,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - Every command is listed in [the palette page](docs/palette.md), written by `npm run docs:palette`.
 - Cmd+P finds a file by name across the served folders (at most 200 rows). It lists hidden files, honours `.gitignore`, and skips `node_modules`, `.git` and `.svelte-kit`. `search.timeout_s` and `search.max_names` limit it.
 - `#` (Cmd+T in the app) searches the workspace's symbols through the language server.
+- In a float's own window the palette opens views and files in that window; a view that exists once goes to wherever it is.
 
 ### The update tray and schedules
 
@@ -257,6 +258,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - Add asks for the fields that name the new entry, writes it to the file of the hub that lists the collection in its `collections:` and opens its page. A taken key is refused. When more than one hub lists the collection, Add also asks which hub's file takes the entry, the primary chosen first. The Literature view's Add asks the same when it is given a DOI or an address.
 - A field whose schema line says `filter: true` is a filter in the bar beside the search: a select or tags field as chips of its values with their counts, a text field whose values are all whole numbers as a range (from, to), and any other text field as chips. The filters are kept per tab.
 - Delete asks first and names everything that refers to the entry; those references become findings. History undoes it.
+- The undo of an Add or a Delete, a lead's and a Lit Watch entry's Delete included, gives the file back as it was, quotes, empty fields and blank lines kept, while the file still holds what the write left. A file edited by hand since keeps the hand edit, and the entry is written back from its record.
 - A card's status, deadline and date change on the card and are written at once.
 - Edit in File opens the file at the entry. Each view drawn from one file has a control, last in its toolbar, that opens the file.
 - An entry with an empty or shared key cannot be written; Findings lists it.
@@ -271,7 +273,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - **Data.** A dataset has a Recover control when its hub's `.oculus/config.yml` sets `recover_command`, a command holding `{key}`: Recover runs it in a terminal in that hub's folder, with `{key}` replaced by the dataset's key as one shell word; the terminal stays after the command ended, with its output and its exit status, and its Rerun runs the command again. With no hub setting it, no dataset has the control and the intro says so; a command without `{key}` is a finding and gives no control.
 - **Present.** A deck is a folder with a `present.yml` and Markdown slides (several per file, split by `---`). The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files. Right-click a slide to edit, add, duplicate or delete it; History undoes each. A dropped image is copied into the deck. Export to PDF writes `<name>.pdf` in the deck's folder (in the app; the print dialog in a browser). Notes come from the slide's `notes:` key.
 - **Literature search.** Sends the query only to the sources that are on. Results with one DOI, PubMed id or arXiv id merge. Copy BibTeX writes no file. Add to Lit Watch and Save to Literature are the writes.
-- **Literature.** The papers kept, one entry each, keyed by citation key: the first author's surname, the year and the first word of the title (`faes2024blockterm`), with `b`, `c` and on added when the key is taken. Save to Literature on a Literature search card and on a Lit Watch card writes the paper to the primary hub's Literature file (else the first hub's) and is undoable in History; a card whose paper is there reads In Literature. A paper with the DOI of one already kept, or with the title of one when either has no DOI, is refused. Add asks for one value: a DOI or its doi.org address, an arXiv id or address, or a PubMed id or address is looked up through the sources the search asks and saved, and any other address is saved as it is with a key made from its last path word. When every source fails nothing is saved and Add names them; an empty answer asks for the new entry's key, as Add does on every collection. A venue that names an entry of the venues registry opens it. Copy BibTeX on an entry, and in the toolbar for the entries shown, fetches each entry's BibTeX by DOI or makes it from the fields, under the entry's own key, and says how many were copied and which were not.
+- **Literature.** The papers kept, one entry each, keyed by citation key: the first author's surname, the year and the first word of the title (`faes2024blockterm`), with `b`, `c` and on added when the key is taken. Save to Literature on a Literature search card and on a Lit Watch card writes the paper to the primary hub's Literature file, named in its settings or at the engine's path (else to the first hub that holds one), says under the button what the save answered, and is undoable in History; a card whose paper is there reads In Literature. A paper with the DOI of one already kept, or with the title of one when either has no DOI, is refused. Add asks for one value: a DOI or its doi.org address, an arXiv id or address, or a PubMed id or address is looked up through the sources the search asks and saved, and any other address is saved as it is with a key made from its last path word. When every source fails nothing is saved and Add names them; an empty answer asks for the new entry's key, as Add does on every collection. A venue that names an entry of the venues registry opens it. Copy BibTeX on an entry, and in the toolbar for the entries shown, fetches each entry's BibTeX by DOI or makes it from the fields, under the entry's own key, and says how many were copied and which were not.
 - **Position Leads.** `applied` opens a new Applications entry filled from the lead and marks the lead applied. `decline` marks it declined; reopen undoes that.
 - **Inbox.** Send and Archive are the only writes to a mailbox, each after a confirmation. No draft is made at the provider.
 - **LinkedIn.** One file per post in `linkedin_dir`. Add asks for a title and a category and opens the new file.
@@ -304,7 +306,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - The Files view follows the disk within a couple of seconds. Show Hidden Files, Show Ignored Files and File Nesting are toggles of the view, kept per tab. A tab lists hidden files (dotfiles and the build folders) and the files git ignores until its menu turns them off. The file tree of a project card lists neither.
 - A workspace is a file `.oculus/workspaces/<name>.yml` of a hub: `folders:` (each `{ name, path }`) and `primary:`. The template is in [templates](docs/templates.md). With no workspace open, the workspace is unsaved and starts empty.
 - The `...` menu and the palette (`:workspace`, `:workspace-save`, `:workspace-new`, `:workspace-close`, `:folder`) switch, save, make and close workspaces. Each workspace keeps its own pages.
-- Add Folder to Workspace opens the folder panel; Remove Folder takes a folder out. Both keep the file's comments and are undoable. Drag folders to reorder them.
+- Add Folder to Workspace opens the folder panel; Remove Folder takes a folder out. From the palette, Open Folder and Add Folder to Workspace close the palette as the panel opens. Both keep the file's comments and are undoable. Drag folders to reorder them.
 - A folder entry may set `repository_scan_depth` (0 up, -1 for no limit) for the Repositories view.
 - The filter box matches names already read; Fuzzy Match matches letters in order.
 - On a row: Enter or F2 renames, Cmd+Down opens, Cmd+Enter opens beside, Cmd+Backspace deletes, Cmd+C / X / V copy, cut and paste, Option+Cmd+C copies the path. A name with `/` makes the folders between.
@@ -344,7 +346,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 
 ### Language servers
 
-- Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) are served by a language server per folder. It stops 60 seconds after the last tab closes. Restart is in the status bar's language menu.
+- Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) are served by a language server per folder. It stops 60 seconds after the last tab closes; the Markdown server a move in the Files view starts to update links, with no Markdown tab open, stays while the page is open and stops 60 seconds after the page closes. Restart is in the status bar's language menu.
 - A server gives hover, go to definition, references, completion, signature help, diagnostics and the Outline; format, organize imports and hierarchies where it offers them. clangd also gives inlay hints, inactive regions and Switch Source/Header.
 - pyright uses the repository's `.venv` or `venv`, else `python3`, else `:interpreter`. A repository's own interpreter runs only after you approve it.
 - clangd uses the compile database the status bar names: a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml` (template in [templates](docs/templates.md)).
@@ -387,9 +389,12 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - Once an agent runs, the steer box sends more text and Stop interrupts.
 - From two terminals on, a list at the right names them. Split, Kill (two presses; a press elsewhere, inside an app's or a document's page included, Esc or four seconds take the first back), rename (double click). Drag a row to reorder it or move it to another tab. Attach to Session takes in a terminal no tab owns.
 - Drag the list's left edge to size it; double click it for the default width. Narrow, it shows each terminal's icon alone. A pane too narrow for it draws it narrower, then as icons, then not at all: the bar names the shown terminal, and the header's terminals menu shows any other. A row's Split and Kill give way before its name.
+- Kill stays where it is when its first press arms it, so the second press lands on it. The armed words take a line of their own under the row, wrapped to the list's width; a list narrowed to icons leaves them to the terminal's bar.
 - Cmd+click opens a web address. A paste with a line break asks first. A file dropped from Files types its path.
 - Change Icon lists each icon in words with its name beside it. Type to narrow the list by either.
 - Closing a tab, pane or page ends its terminals, asking when one runs a program. Moving and reloading end none.
+- A terminal scrolled up comes back at the lines it showed after a reload, a move to another pane, Float and Return to Page.
+- A terminal given a new size (a pane or a window resized) is drawn again from what tmux holds, so the grid shows the lines tmux's pane holds at that size. A terminal scrolled up keeps its lines.
 - The sessions list groups sessions by workspace: pinned first, then those that need input, then newest.
 
 ## Project commands
@@ -455,6 +460,7 @@ configurations:
 - The Graph shows the history of the branch and its upstream together, fifty commits at a time, each commit once: a commit only the upstream holds is marked incoming and one only the branch holds outgoing, each with a dashed circle. Incoming Changes and Outgoing Changes stand above their commits with their count, and a press on one lists the files changed over its whole range, each opening that range's diff. The checked-out branch and the local branches, the remote branches (with a cloud) and the branch's base are drawn in colours of their own; a tag is plain. Cherry Pick and the Compare commands are on a commit.
 - Untracked lists every new file on its own row, a new folder's files under that folder in tree view; a repository inside the repository is one folder row, whose press shows it in Files. A group of more than 200 changes shows the first 200 under a warning that says so.
 - Discard on an untracked file moves it to the Trash. Add to .gitignore appends the path.
+- Open File (HEAD) on a Staged or Changes row opens the file as the last commit holds it, and Open File (Index) opens it as staged; both tabs are read-only, and an Index tab stays on the staged version across saves, reloads and new commits.
 - Close Repository hides a repository from that tab; Reopen Closed Repositories brings it back. Open Worktree adds a worktree's folder to the workspace; Open Worktree in New Window also opens a new window.
 - In a source tab the gutter marks changes; Blame shows who changed each line.
 - New worktree makes `<root>/.agents/worktrees/<name>` on a new branch and opens a shell (or Claude, or Codex) there. Merging it back is `git merge`, refused with uncommitted changes. Removing it is a separate control and refuses uncommitted or untracked files.

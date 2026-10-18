@@ -8,27 +8,56 @@
 // model refuses them.
 //
 // A place is revealed by Monaco's own reveal, which keeps it clear of the sticky scroll lines. An
-// ask run before the editor has a height (a tab opened at a problem, its editor made a moment
-// before) is revealed again once it has one: Monaco reveals into a viewport of no height by putting
-// the place's line at the top, under the sticky lines.
+// ask run before the editor has its height (a tab opened at a problem, its editor made a moment
+// before, or a hidden tab shown for it, whose editor is laid out again at the sizes its pane passes
+// through) is revealed again at each height the editor is laid out at for a second after it first
+// has one, until the reader presses, types or turns the wheel in it: Monaco reveals into a viewport
+// of no height, or of a few lines, by putting the place's line at its top, which the full height
+// then leaves under the sticky lines.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
 import { shikiId } from './kit/languages/grammars';
 import type { EditorCommand, EditorEnding, EditorReach } from './types';
 
-/** Reveal a place now and, when the editor has no height yet, again once it has one. */
+/** How long after the editor first has a height a new height reveals the place again. */
+const SETTLING_MS = 1000;
+
+/**
+ * Reveal a place now and again at each new height the editor is laid out at, from the first one
+ * with a height for SETTLING_MS, until the reader presses, types or turns the wheel in it.
+ */
 function revealLaidOut(
-    made: Pick<Monaco.editor.IStandaloneCodeEditor, 'getLayoutInfo' | 'onDidLayoutChange'>,
+    made: Pick<
+        Monaco.editor.IStandaloneCodeEditor,
+        'getLayoutInfo' | 'onDidLayoutChange' | 'onMouseDown' | 'onKeyDown' | 'getDomNode'
+    >,
     reveal: () => void
 ): void {
     reveal();
-    if (made.getLayoutInfo().height > 0) return;
-    const laid = made.onDidLayoutChange((info) => {
-        if (info.height <= 0) return;
-        laid.dispose();
-        reveal();
-    });
+    let height = made.getLayoutInfo().height;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const settling = (): void => {
+        timer ??= setTimeout(stop, SETTLING_MS);
+    };
+    const node = made.getDomNode();
+    const held = [
+        made.onDidLayoutChange((info) => {
+            if (info.height <= 0 || info.height === height) return;
+            height = info.height;
+            settling();
+            reveal();
+        }),
+        made.onMouseDown(stop),
+        made.onKeyDown(stop)
+    ];
+    node?.addEventListener('wheel', stop, { capture: true, passive: true });
+    if (height > 0) settling();
+    function stop(): void {
+        clearTimeout(timer);
+        for (const one of held) one.dispose();
+        node?.removeEventListener('wheel', stop, { capture: true });
+    }
 }
 
 /** Do one ask of the parent's on a loaded editor and its model. */

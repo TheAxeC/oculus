@@ -28,11 +28,12 @@
 // skipped. An idle or ended one is closed, oculus having started that terminal itself, and the new
 // run starts. A decision waits for the first `sessions` payload that lists terminals, so a terminal
 // that outlived a restart of the server is seen; while tmux cannot be read before then (a socket
-// path too long to reach), the payload carries tmux's words as `waiting`, so the tray says why no
-// schedule runs. A due time that arrives while a decision waits is not decided on its own: the
-// newest one replaces the waiting due time, so the payload's arrival starts one run for the latest
-// due time. Only a due time that arrives after the claim is written and while the start is awaited
-// is recorded as skipped.
+// path too long to reach), the payload carries tmux's words as `waiting` (oculus's own when tmux
+// said nothing, as a call killed at its timeout), so the tray says why no schedule runs. A due time
+// that arrives while a decision waits is not decided on its own: the newest one replaces the
+// waiting due time, so the payload's arrival starts one run for the latest due time. Only a due
+// time that arrives after the claim is written and while the start is awaited is recorded as
+// skipped.
 //
 // A Run now follows the same rule, handles no due time, and runs a paused or Off entry.
 

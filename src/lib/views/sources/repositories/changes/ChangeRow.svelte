@@ -16,13 +16,14 @@
     // so the two lists agree.
     //
     // A row of Changes, Staged and Untracked opens a right-click menu of what its controls do
-    // (menus/change-menu.ts), with Reveal in Explorer View, Add to .gitignore, Open File (HEAD)
-    // and, on a linked worktree, Compare with Workspace besides; the merge group has none. The
-    // controls and the menu's writes act on the same paths (`acted`): every selected row of the
-    // group when this row is among them, this row alone otherwise; the menu's items that open
-    // something open this row. A Discard picked there asks the question the row's Discard control
-    // asks: the restore question on a changed row, and on an untracked row the Trash question,
-    // whose yes moves the files to the Trash, each naming the count when it acts on several.
+    // (menus/change-menu.ts), with Reveal in Explorer View, Add to .gitignore, Open File (HEAD),
+    // Open File (Index) and, on a linked worktree, Compare with Workspace besides; the merge group
+    // has none. The controls and the menu's writes act on the same paths (`acted`): every selected
+    // row of the group when this row is among them, this row alone otherwise; the menu's items that
+    // open something open this row. A Discard picked there asks the question the row's Discard
+    // control asks: the restore question on a changed row, and on an untracked row the Trash
+    // question, whose yes moves the files to the Trash, each naming the count when it acts on
+    // several.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -119,6 +120,8 @@
         openChange: (at: string, kind: string, path: string) =>
             repositories.openChange(at, kind, path),
         openHead: (at: string, kind: string, path: string) => repositories.openHead(at, kind, path),
+        openIndex: (at: string, kind: string, path: string) =>
+            repositories.openIndex(at, kind, path),
         compareWorkspace: (at: string, _kind: string, path: string) => {
             repositories.compareWorkspace(at, path);
         },

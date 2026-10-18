@@ -94,6 +94,9 @@ export type ListingShown = { hidden: boolean; ignored: boolean };
 /** What every listing shows unless a file browser's toggles ask for more. */
 export const SHOWN_DEFAULT: ListingShown = { hidden: false, ignored: false };
 
+/** The pair of toggles that asks a folder for every entry it holds. */
+export const SHOWN_EVERYTHING: ListingShown = { hidden: true, ignored: true };
+
 /** One folder of a compacted row: its own name and its path under the root. */
 export type ChainStep = { name: string; path: string };
 

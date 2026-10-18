@@ -19,12 +19,21 @@
     import PageLeaf from './PageLeaf.svelte';
     import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { edgeAt } from '$lib/state/workbench/drag.svelte';
-    import { paneAt, resize, showable, type Layout } from '$lib/state/workbench/layout';
+    import { paneAt, showable, type Layout } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { change, currentPage, expandChild, focused, layout, pageOf, pages, unembedPage },
+        layout: {
+            currentPage,
+            expandChild,
+            focused,
+            layout,
+            pageOf,
+            pages,
+            resizeSplit,
+            unembedPage
+        },
         drag: { dragging, hover }
     } = useState();
 
@@ -104,8 +113,7 @@
                     pane={paneOf}
                     fold={foldOf}
                     leaf={leafOf}
-                    onresize={(at: number[], sizes: number[]) =>
-                        change((tree) => resize(tree, at, sizes), nested)}
+                    onresize={(at: number[], sizes: number[]) => resizeSplit(at, sizes, nested)}
                     onexpand={(at: number[], index: number) => expandChild(at, index, nested)}
                 />
             {/if}

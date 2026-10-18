@@ -1,7 +1,8 @@
 // Layer 2, client state, part of fs.svelte.ts. The history of one file: the copies the server kept
 // before its saves, and the first page of the commits of a repository that touched it, with the
 // read of each page after it. Each is held in the client state's query client. The copies are read
-// again when a `files` message says something under their root was written, and the first page of
+// again when a `files` message says something under their root was written, except while a
+// workspace write is out, after which fs.svelte.ts marks every key held, and the first page of
 // the commits when the repository's HEAD moves, since the HEAD is part of its key. A read that
 // failed is held as the answer, as a flag; the sentence saying so is the view's.
 
@@ -44,12 +45,16 @@ const COPIES = ['fs', 'history'];
 
 /**
  * The history reads of one client. `roots` are the roots of the workspace in force, which say what
- * a `files` message that names a directory concerns.
+ * a `files` message that names a directory concerns, and `left` says whether a root left the
+ * workspace, whose copies are asked for nothing. `switching` says whether a workspace write is
+ * out, while which a `files` message marks no copies, since its roots are not known yet.
  */
 export function createFileHistory(
     queries: Queries,
     entities: EntitiesStore,
-    roots: () => FsRoot[]
+    roots: () => FsRoot[],
+    left: (root: string) => boolean,
+    switching: () => boolean
 ) {
     /** The version of the last `files` message heard, or null before the first. */
     let heard: number | null = null;
@@ -61,6 +66,7 @@ export function createFileHistory(
         if (message.channel !== 'files' || heard === message.version) return;
         const gap = heard === null || message.version !== heard + 1;
         heard = message.version;
+        if (switching()) return;
         const named = entities.payloadOf(message, 'files')?.root ?? '';
         if (gap) {
             queries.mark(COPIES, 'replace');
@@ -78,7 +84,9 @@ export function createFileHistory(
      * The copies of one file's local history, read again when something under its root is written.
      */
     function copies(root: string, path: string): FileCopies {
-        if (root === '' || path === '') return { copies: [], failed: false, loading: false };
+        if (root === '' || path === '' || left(root)) {
+            return { copies: [], failed: false, loading: false };
+        }
         const key = [...COPIES, root, treeKey(root, path)];
         const { data } = queries.read(key, () => readCopies(root, path), { enabled: inBrowser() });
         return data ?? noCopies();

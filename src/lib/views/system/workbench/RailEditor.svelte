@@ -19,7 +19,7 @@
     // icon, and the rule's line names what the row lacks.
     //
     // The save key on the tab (Cmd+S, Ctrl+S off macOS) saves a list that differs from the file's,
-    // as Save does (ui.svelte.ts's registerTabSave).
+    // as Save does (ui.svelte.ts's registerTabSave), and so does the Save of a close question.
     //
     // Until the configuration is read, the file's list is not known: no row is drawn from it, the
     // sentence that the rail has no button waits for the read, and Save waits with it.
@@ -103,29 +103,26 @@
      * open and still holds the list that was sent: a tab closed while the write was out keeps no
      * state, and a list typed on while it was out is the reader's newer word and is kept.
      */
-    async function save(): Promise<void> {
-        if (sending || problems.length > 0 || draft === null) return;
+    async function save(): Promise<boolean> {
+        if (sending || problems.length > 0 || draft === null) return false;
         const sent = draft;
         sending = true;
         const answer = await writeRail(sent);
         sending = false;
-        if (instanceView(id) === undefined) return;
+        if (instanceView(id) === undefined) return answer.ok;
         if (!answer.ok) {
             outcome = railRefusal(answer.error);
-            return;
+            return false;
         }
         const now = railDraft(instanceState(id));
         if (now !== null && sameRail(now, sent)) {
             setInstanceState(id, withRailDraft(instanceState(id), null));
         }
         outcome = t('workbench.rail_saved');
+        return true;
     }
 
-    $effect(() =>
-        registerTabSave(id, () => {
-            if (dirty) void save();
-        })
-    );
+    $effect(() => registerTabSave(id, () => (dirty ? save() : Promise.resolve(true))));
 
     /** Forget the list being typed; the file's list is shown again. */
     function revert(): void {

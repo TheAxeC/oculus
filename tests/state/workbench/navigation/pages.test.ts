@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 import {
     closeAsk,
     closeWords,
+    createPageFlows,
     fileOfTab,
+    type HeldClose,
     pageInstanceIds,
     shownFileOfTab
 } from '../../../../src/lib/state/workbench/navigation/pages.ts';
@@ -46,7 +48,7 @@ describe('what a close asks once a busy terminal is known', () => {
             many: MANY,
             busy: [build]
         });
-        expect(ask?.message).toBe(MANY);
+        expect([ask?.message, ask?.dirty]).toEqual([t('ui.tab_close_dirty'), ['text']]);
         const detail = ask?.detail ?? '';
         expect(detail).toContain('notes.md');
         expect(detail).toContain('build');
@@ -95,7 +97,7 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
         expect(asked && closeWords(asked)).toBe(t('ui.tab_close_dirty'));
     });
 
-    it('asks how many go when several tabs close, naming only the tabs left unsaved', async () => {
+    it('asks to save the tabs left unsaved when several tabs close, naming them, and how many go once none is', async () => {
         const ui = held((open, ids) => ids.forEach((id) => open.delete(id)));
         const asked = closeAsk({
             ids: ['text', 'other'],
@@ -105,7 +107,7 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
             busy: []
         });
         expect(await ui.saveBeforeClose(['text', 'other'])).toEqual([]);
-        expect(asked?.message).toBe('Close 2 tabs?');
+        expect([asked?.message, asked?.dirty]).toEqual([t('ui.tab_close_dirty'), ['text']]);
         expect(asked?.detail).toContain('text');
         const after = closeAsk({
             ids: ['text', 'other'],
@@ -114,7 +116,63 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
             many: 'Close 2 tabs?',
             busy: []
         });
-        expect(after).toEqual({ message: 'Close 2 tabs?', detail: '' });
+        expect(after).toEqual({ message: 'Close 2 tabs?', detail: '', dirty: [] });
+    });
+});
+
+describe('the close of a page holding unsaved text', () => {
+    /**
+     * The flows of one page `p` holding the tabs `a` and `text`, `text` holding unsaved text, whose
+     * Save writes it when `takes`: the question the close holds, and what its Save closed.
+     */
+    async function closing(takes: boolean) {
+        const dirty = new Set(['text']);
+        const closed: string[] = [];
+        let hold: (given: HeldClose) => void = () => undefined;
+        const held = new Promise<HeldClose>((put) => (hold = put));
+        const flows = createPageFlows({
+            pages: () => [page('p', 'P', pane(['a', 'text']))],
+            unsaved: (id) => dirty.has(id),
+            saveBeforeClose: (ids) => Promise.resolve(ids.filter((id) => dirty.has(id))),
+            saveForClose: (ids) => {
+                if (takes) ids.forEach((id) => dirty.delete(id));
+                return Promise.resolve(takes ? [] : ids);
+            },
+            busyTerminals: () => Promise.resolve([]),
+            viewFor: () => undefined,
+            closePage: (id) => closed.push(`page ${id}`),
+            closeTab: (id, on) => closed.push(`tab ${id} of ${on}`),
+            holdClose: (given) => {
+                if (given !== null) hold(given);
+            },
+            ask: () => Promise.resolve('no')
+        });
+        flows.close('p');
+        const asked = await held;
+        await flows.saveAndClose(asked);
+        return { asked, closed, left: dirty.has('text') };
+    }
+
+    const ROWS = [
+        {
+            row: 'asks to save it, and Save closes the page once the save took',
+            takes: true,
+            closed: ['page p'],
+            left: false
+        },
+        {
+            row: 'keeps the page with the tab whose save failed, its text kept, and closes the others',
+            takes: false,
+            closed: ['tab a of p'],
+            left: true
+        }
+    ];
+
+    it.each(ROWS)('$row', async (row) => {
+        const { asked, closed, left } = await closing(row.takes);
+        expect(asked.dirty).toEqual(['text']);
+        expect(asked.message.startsWith(t('ui.tab_close_dirty'))).toBe(true);
+        expect([closed, left]).toEqual([row.closed, row.left]);
     });
 });
 

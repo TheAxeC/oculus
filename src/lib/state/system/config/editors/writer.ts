@@ -1,19 +1,21 @@
 // Layer 2, client state. The write sequence of the list and family editors of one view. A Save
 // sends one `config-value` with the whole value and the row's value as its base; the file then
-// answers, and the watcher pushes the file's new text, which the view hands to `pushed`. The draft
-// stays on screen until the file holds what was sent: the answer alone ends nothing but a refusal
-// or a failure, which keep the draft and say why.
+// answers, and the watcher pushes the file's new text, which the view hands to `pushed`. An answer
+// that the file holds the value sent ends the draft and marks the row saved, which the editor says
+// until the row is edited or sent again, as the rail list's Save says it; the editor shows the
+// value sent (`shown`) until the push brings it. A refusal or a failure keeps the draft and says
+// why.
 //
-// While a write is out the editor shows the draft and a second Save waits. A push carrying the
-// value sent ends the draft; a push carrying another value, which means the file changed in the
-// meantime, ends it with the sentence that it did. A push that lands before the answer is the same
-// push. A push that leaves the row in a form the editor does not draw ends the draft the tab holds
-// of it, with the sentence that it was dropped, since a draft with no editor cannot be saved or
-// discarded. A push carrying the value sent marks the row saved, which the editor says until the
-// row is edited or sent again, as the rail list's Save says it. A closed sequence sends nothing,
-// says nothing and moves no state. It is a plain closure with no runes; the view hands it a
-// callback that redraws, one that drops a draft, one that says whether the tab holds a draft of a
-// row, and the lists the draft's fields are checked against before it is sent.
+// While a write is out the editor shows the draft and a second Save waits. A push that lands before
+// the answer carrying the value sent ends the draft and marks the row saved as the answer does. A
+// push carrying another value than the one sent and the one it was based on, which means the file
+// changed in the meantime, ends the draft, or the value shown, with the sentence that it did. A
+// push that leaves the row in a form the editor does not draw ends the draft the tab holds of it,
+// with the sentence that it was dropped, since a draft with no editor cannot be saved or discarded.
+// A closed sequence sends nothing, says nothing and moves no state. It is a plain closure with no
+// runes; the view hands it a callback that redraws, one that drops a draft, one that says whether
+// the tab holds a draft of a row, and the lists the draft's fields are checked against before it is
+// sent.
 
 import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
@@ -51,8 +53,13 @@ export type EditorWriter = {
     reset: (row: ConfigRow) => Promise<void>;
     /** The row as the file holds it now: ends the draft the file has taken, overtaken or left. */
     pushed: (row: ConfigRow) => void;
-    /** Whether a write of the row is out or waiting for the file to hold it. */
+    /** Whether a write of the row is out and not answered. */
     sending: (row: ConfigRow) => boolean;
+    /**
+     * The value the file answered it holds for the row, while the push has not brought it yet, and
+     * undefined otherwise: what the editor shows in place of the row's value.
+     */
+    shown: (row: ConfigRow) => unknown;
     /** The sentence under the row, or null. */
     said: (row: ConfigRow) => Message | null;
     /** Whether the file took the row's last write, until the row is edited or sent again. */
@@ -69,6 +76,8 @@ type Out = { sent: unknown; base: unknown; turn: number };
 /** Open the write sequence of a view's editors. */
 export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks): EditorWriter {
     const out = new Map<string, Out>();
+    /** The writes the file has answered for and the push has not brought yet. */
+    const landed = new Map<string, Out>();
     const saying = new Map<string, Message>();
     const taken = new Set<string>();
     let turns = 0;
@@ -81,6 +90,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         turns += 1;
         const turn = turns;
         out.set(row.id, { sent: value, base: row.value, turn });
+        landed.delete(row.id);
         saying.delete(row.id);
         taken.delete(row.id);
         hooks.changed();
@@ -90,8 +100,13 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         if (said !== null) {
             saying.set(row.id, said);
             out.delete(row.id);
-        } else if (answer.changed.length === 0) {
+        } else {
+            const held = out.get(row.id);
             out.delete(row.id);
+            if (held !== undefined && answer.changed.length > 0) {
+                landed.set(row.id, held);
+                taken.add(row.id);
+            }
             hooks.ended(row);
         }
         hooks.changed();
@@ -118,6 +133,17 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
             hooks.changed();
             return;
         }
+        const answeredFor = landed.get(row.id);
+        if (answeredFor !== undefined) {
+            if (sameInOrder(row.value, answeredFor.base)) return;
+            landed.delete(row.id);
+            if (!sameInOrder(row.value, answeredFor.sent)) {
+                taken.delete(row.id);
+                saying.set(row.id, message('changedSince', row.file));
+            }
+            hooks.changed();
+            return;
+        }
         const held = out.get(row.id);
         if (held === undefined) return;
         if (sameInOrder(row.value, held.sent)) {
@@ -139,6 +165,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         reset,
         pushed,
         sending: (row) => out.has(row.id),
+        shown: (row) => landed.get(row.id)?.sent,
         said: (row) => saying.get(row.id) ?? null,
         saved: (row) => taken.has(row.id),
         clear: (row) => {

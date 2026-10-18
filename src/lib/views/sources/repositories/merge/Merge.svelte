@@ -25,16 +25,22 @@
     //
     // Incoming and Current are read-only Monaco editors, each conflict's lines tinted and its
     // choices on a bar above it; the Result is a writable Monaco editor the reader may also type
-    // into, and typing into a conflict's lines settles it by hand. A choice rewrites the Result as
-    // one edit of the editor's, so undo takes it back, and the choice goes with it: the conflict
-    // reads open again, as it did before; the Result editor says whether an edit was its undo, its
-    // redo or typing. The count of conflicts still open is the status at the end of the pane's
-    // bar; Complete Merge and Accept Deletion are icon actions on its header. Complete
-    // Merge writes the Result over the file and stages it, which is what tells git the conflict is
-    // resolved; with conflicts still open it asks first. Where a side deleted the file, the pane
-    // says which, Accept Deletion takes the deletion (the file leaves the index and the worktree)
-    // after a confirm, and Complete Merge over an empty Result does the same, since an empty Result
-    // is the deleted side.
+    // into, each open conflict's lines tinted there too, and typing into a conflict's lines settles
+    // it by hand. A choice rewrites the Result as one edit of the editor's, so undo takes it back,
+    // and the choice goes with it: the conflict reads open again, as it did before; the Result
+    // editor says whether an edit was its undo, its redo or typing. The count of conflicts still
+    // open is the status at the end of the pane's bar; Complete Merge and Accept Deletion are icon
+    // actions on its header. Complete Merge writes the Result over the file and stages it, which is
+    // what tells git the conflict is resolved; with conflicts still open it asks first. Where a
+    // side deleted the file, the pane says which, Accept Deletion takes the deletion (the file
+    // leaves the index and the worktree) after a confirm, and Complete Merge over an empty Result
+    // does the same, since an empty Result is the deleted side.
+    //
+    // The three versions are read again whenever the repository's git state moves
+    // (merge-reads.svelte.ts): a read that brings the same versions keeps the reader's choices and
+    // typing, a read after this tab's own Complete Merge or Accept Deletion keeps the done note,
+    // and any other draws what git holds now, new conflicts or the answer that the path is no
+    // longer in conflict.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -43,22 +49,16 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import MergeSide, { type SideConflict } from './MergeSide.svelte';
+    import { MergeReads } from './merge-reads.svelte';
     import {
         chooseIn,
         editIn,
-        historyOf,
-        initialPieces,
         openCount,
-        regionsOf,
+        openRuns,
         takesDeletion,
         type Choice,
-        type EditKind,
-        type MergeHistory,
-        type Region
+        type EditKind
     } from '$lib/state/sources/repositories/diff/merge-regions';
-    import { readJson } from '$lib/data/shapes/shapes';
-    import { mergeSidesOf } from '$lib/state/sources/repositories/answers';
-    import { sidesUrl, type GitMergeSides } from '$lib/state/sources/repositories/repositories';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { languageOf } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
@@ -67,7 +67,7 @@
 
     const {
         repositories,
-        selectors: { languages },
+        selectors: { languages, gitFor },
         ui: { codeTheme, editorLook }
     } = useState();
 
@@ -76,52 +76,28 @@
     const root = $derived(instanceText(instance.state, 'root'));
     const path = $derived(instanceText(instance.state, 'path'));
 
-    let sides: GitMergeSides | null = $state(null);
-    let failure = $state('');
-    let regions: Region[] = $state([]);
-    /** The Result's pieces and each region's choice, with the choices undo and redo can move. */
-    let history: MergeHistory = $state.raw(historyOf({ pieces: [], choices: [] }));
-    let done = $state(false);
+    /** The three versions, read again as the repository's git state moves. */
+    const reads = new MergeReads({
+        root: () => root,
+        path: () => path,
+        git: () => gitFor(root),
+        get: (url) => fetch(url)
+    });
     let asking = $state(false);
     let deleting = $state(false);
-    /** What the last read was over, so a redraw does not read again. */
-    let taken = '';
 
-    const pieces = $derived(history.held.pieces);
-    const choices = $derived(history.held.choices);
+    const sides = $derived(reads.sides);
+    const failure = $derived(reads.failure);
+    const regions = $derived(reads.regions);
+    const done = $derived(reads.done);
+    const pieces = $derived(reads.history.held.pieces);
+    const choices = $derived(reads.history.held.choices);
     const result = $derived(pieces.join(''));
     const left = $derived(openCount(regions, choices));
+    const tints = $derived(openRuns(regions, pieces, choices));
     const busy = $derived(repositories.busy(root));
     const language = $derived(languageOf(path, languages()));
     const look = $derived(editorLook());
-
-    $effect(() => {
-        const wanted = `${root}\n${path}`;
-        if (root === '' || path === '' || wanted === taken) return;
-        taken = wanted;
-        void load(root, path);
-    });
-
-    async function load(from: string, file: string): Promise<void> {
-        failure = '';
-        done = false;
-        try {
-            const response = await fetch(sidesUrl(from, file));
-            const answer = mergeSidesOf(response.ok, await readJson(response));
-            if (answer.sides === null) {
-                failure = answer.failure;
-                return;
-            }
-            sides = answer.sides;
-            regions = regionsOf(answer.sides.base, answer.sides.ours, answer.sides.theirs);
-            history = historyOf({
-                pieces: initialPieces(regions),
-                choices: regions.map((): Choice => 'open')
-            });
-        } catch {
-            failure = t('repositories.merge_failed');
-        }
-    }
 
     /** The conflicts as one side draws them, by where their lines are in that side. */
     function conflictsOf(side: 'ours' | 'theirs'): SideConflict[] {
@@ -134,12 +110,12 @@
     }
 
     function choose(region: number, choice: Choice): void {
-        history = chooseIn(history, regions, region, choice);
+        reads.history = chooseIn(reads.history, regions, region, choice);
     }
 
     /** The Result's text after an edit, and whether the editor made it by undo, redo or typing. */
     function typed(next: string, edit: EditKind): void {
-        history = editIn(history, regions, next, edit);
+        reads.history = editIn(reads.history, regions, next, edit);
     }
 
     async function complete(): Promise<void> {
@@ -148,12 +124,12 @@
             deleting = true;
             return;
         }
-        if (await repositories.resolve(root, path, result)) done = true;
+        if (await repositories.resolve(root, path, result)) reads.finished();
     }
 
     async function takeDeletion(): Promise<void> {
         deleting = false;
-        if (await repositories.acceptDeletion(root, path)) done = true;
+        if (await repositories.acceptDeletion(root, path)) reads.finished();
     }
 </script>
 
@@ -186,7 +162,7 @@
 {/snippet}
 
 {#snippet again()}
-    <ToolButton small label={t('repositories.merge_retry')} onclick={() => void load(root, path)} />
+    <ToolButton small label={t('repositories.merge_retry')} onclick={() => void reads.again()} />
 {/snippet}
 
 <Pane title={t('repositories.merge_editor_title', path)} toolbar={tools} {bar} tinted>
@@ -246,6 +222,7 @@
                         {path}
                         {look}
                         codeTheme={codeTheme()}
+                        highlights={tints}
                         onchange={typed}
                     />
                 </div>

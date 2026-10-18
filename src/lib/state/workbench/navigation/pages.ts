@@ -18,6 +18,11 @@
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
 // the closes is edited for it.
+//
+// A close question over unsaved text asks whether to save it, as VS Code's does, with three
+// answers: Don't Save closes and loses the text, Cancel keeps every tab, and Save, which holds the
+// keyboard, runs each unsaved tab's save (the ui store's `saveForClose`) and closes the tabs whose
+// save took, keeping open, with its text, a tab whose save failed or that has no save.
 
 import { z } from 'zod';
 import {
@@ -117,8 +122,16 @@ export function closeQuestion(ids: string[], unsaved: (id: string) => boolean): 
     return ids.some((id) => unsaved(id)) ? 'dirty' : 'none';
 }
 
-/** What a close asks, already translated: the question and the line under it. */
-export type CloseAsk = { message: string; detail: string };
+/**
+ * What a close asks, already translated: the question, the line under it, and the tabs holding
+ * unsaved text, which a question with any asks to save.
+ */
+export type CloseAsk = { message: string; detail: string; dirty: string[] };
+
+/** The question over the unsaved text of `count` tabs. */
+function dirtyWords(count: number): string {
+    return count === 1 ? t('ui.tab_close_dirty') : t('ui.tabs_close_dirty', count);
+}
 
 /** A close's question and the line under it as the one sentence a dialog with one field shows. */
 export function closeWords(asked: CloseAsk): string {
@@ -138,11 +151,12 @@ export function busyLines(busy: readonly BusyTerminal[]): string {
 
 /**
  * What closing these instances asks, given a fresh read of the busy terminals they own; null when
- * it acts at once. Without a busy terminal it is closeQuestion's answer in words: nothing for one
- * saved tab, the unsaved question for one holding unsaved text, the caller's own `many` question
- * for more than one, with the tabs holding unsaved text named under it. With a busy terminal the
- * one question names it and its program, and a close that also loses unsaved text names those tabs
- * first, so one press asks one question.
+ * it acts at once. A close that loses unsaved text asks whether to save it (dirtyWords over the
+ * tabs holding it), and names them under the question when the close takes other tabs too. A close
+ * with none asks closeQuestion's question in words: nothing for one saved tab, the caller's own
+ * `many` question for more than one. A busy terminal is named with its program under whichever
+ * question is asked, or under the busy question when there is no other, so one press asks one
+ * question.
  */
 export function closeAsk(over: {
     ids: string[];
@@ -153,21 +167,18 @@ export function closeAsk(over: {
 }): CloseAsk | null {
     const { ids, unsaved, nameOf, many, busy } = over;
     if (ids.length === 0) return null;
-    const asked = closeQuestion(ids, unsaved);
-    const lost = ids.filter(unsaved).map(nameOf);
-    const named = lost.length > 0 ? t('ui.terminal_close_unsaved', lost.join(', ')) : '';
-    if (busy.length === 0) {
-        if (asked === 'many') return { message: many, detail: named };
-        return asked === 'dirty' ? { message: t('ui.tab_close_dirty'), detail: '' } : null;
-    }
-    const lines = [named].concat(busyLines(busy)).filter((line) => line !== '');
-    const message =
-        asked === 'many'
-            ? many
-            : lost.length > 0
-              ? t('ui.tab_close_dirty')
-              : t('ui.terminal_close_busy');
-    return { message, detail: lines.join(' ') };
+    const dirty = ids.filter(unsaved);
+    const named =
+        dirty.length > 0 && ids.length > 1
+            ? t('ui.terminal_close_unsaved', dirty.map(nameOf).join(', '))
+            : '';
+    const detail = [named]
+        .concat(busyLines(busy))
+        .filter((line) => line !== '')
+        .join(' ');
+    if (dirty.length > 0) return { message: dirtyWords(dirty.length), detail, dirty };
+    if (closeQuestion(ids, unsaved) === 'many') return { message: many, detail, dirty };
+    return busy.length > 0 ? { message: t('ui.terminal_close_busy'), detail, dirty } : null;
 }
 
 /**
@@ -310,11 +321,31 @@ export function resetAsk(
     return { message, detail: lines.join(' ') };
 }
 
-/** A question held for a confirm to draw, and the answer that lets it go. */
-export type Question = { message: string; detail: string; answer: (yes: boolean) => void };
+/**
+ * The answer to a question: yes (its confirm, or Don't Save over unsaved text), no (Cancel), or
+ * save (the Save of a question over unsaved text).
+ */
+type Answer = 'yes' | 'no' | 'save';
 
-/** Asks one question and answers whether the reader said yes. */
-export type Asker = (message: string, detail: string) => Promise<boolean>;
+/**
+ * A question held for a confirm to draw, whether it asks to save unsaved text (and so draws Don't
+ * Save, Cancel and Save), and the answer that lets it go.
+ */
+export type Question = {
+    message: string;
+    detail: string;
+    saves: boolean;
+    answer: (given: Answer) => void;
+};
+
+/** Asks one question, one over unsaved text when `saves`, and answers what the reader said. */
+export type Asker = (message: string, detail: string, saves?: boolean) => Promise<Answer>;
+
+/** The saves a reset makes: the ones the autosave mode makes on a close, and a close's Save. */
+export type ResetSaves = {
+    beforeClose: (ids: string[]) => Promise<string[]>;
+    forClose: (ids: string[]) => Promise<string[]>;
+};
 
 /**
  * An asker over a component's held question: each call hands `show` a question, and the answer
@@ -322,19 +353,20 @@ export type Asker = (message: string, detail: string) => Promise<boolean>;
  * answers the held one no, so no call is left waiting.
  */
 export function questionFor(show: (held: Question | null) => void): Asker {
-    let waiting: ((yes: boolean) => void) | null = null;
-    return (message, detail) =>
-        new Promise<boolean>((resolve) => {
-            waiting?.(false);
+    let waiting: ((given: Answer) => void) | null = null;
+    return (message, detail, saves = false) =>
+        new Promise<Answer>((resolve) => {
+            waiting?.('no');
             waiting = resolve;
             show({
                 message,
                 detail,
-                answer: (yes) => {
+                saves,
+                answer: (given) => {
                     if (waiting !== resolve) return;
                     waiting = null;
                     show(null);
-                    resolve(yes);
+                    resolve(given);
                 }
             });
         });
@@ -342,27 +374,30 @@ export function questionFor(show: (held: Question | null) => void): Asker {
 
 /**
  * Run a reset once the reader agreed to it: the reset's own question first, then, for each tab of
- * the pages it rebuilds or removes and of the floats it replaces that holds unsaved text after
- * `save` has saved the ones the autosave mode saves on a close, the question closing that tab asks
- * (closeQuestion over the one tab), one tab at a time, with the tab and its page (or its float)
- * named under it, since the tab may not be on screen; then, once, the busy question naming each
- * terminal of those pages running a program (`busy` is the fresh read). A no to any of them ends it
- * with nothing done. Answers whether the reset ran.
+ * the pages it rebuilds or removes and of the floats it replaces that holds unsaved text after the
+ * saves the autosave mode makes on a close, the question closing that tab asks (closeQuestion over
+ * the one tab), one tab at a time, with the tab and its page (or its float) named under it, since
+ * the tab may not be on screen; then, once, the busy question naming each terminal of those pages
+ * running a program (`busy` is the fresh read). A no to any of them ends it with nothing done, and
+ * so does a Save whose save failed, since the reset would take that tab away with its text. Answers
+ * whether the reset ran.
  */
 export async function resetAfterAsking(
     all: readonly Page[],
     words: { message: string; detail: string },
     touched: readonly Host[],
     unsaved: (id: string) => boolean,
-    save: (ids: string[]) => Promise<string[]>,
+    saves: ResetSaves,
     name: (instance: Instance) => string,
     ask: Asker,
     act: () => void,
     busy: () => Promise<readonly BusyTerminal[]>
 ): Promise<boolean> {
-    if (!(await ask(words.message, words.detail))) return false;
+    if ((await ask(words.message, words.detail)) !== 'yes') return false;
     // The tabs `editor.autosave` saves on a close are saved, so only the ones left unsaved ask.
-    await save(touched.flatMap((page) => tabsOf(page.workbench.root).map((one) => one.id)));
+    await saves.beforeClose(
+        touched.flatMap((page) => tabsOf(page.workbench.root).map((one) => one.id))
+    );
     for (const page of touched) {
         for (const instance of tabsOf(page.workbench.root)) {
             if (closeQuestion([instance.id], unsaved) !== 'dirty') continue;
@@ -371,27 +406,42 @@ export async function resetAfterAsking(
                 held === ''
                     ? t('workbench.reset_float_tab', name(instance))
                     : t('workbench.reset_tab', name(instance), held);
-            if (!(await ask(t('ui.tab_close_dirty'), detail))) return false;
+            const given = await ask(dirtyWords(1), detail, true);
+            if (given === 'no') return false;
+            if (given === 'save' && (await saves.forClose([instance.id])).length > 0) return false;
         }
     }
     const running = await busy();
-    if (running.length > 0 && !(await ask(t('ui.terminal_close_busy'), busyLines(running)))) {
+    if (
+        running.length > 0 &&
+        (await ask(t('ui.terminal_close_busy'), busyLines(running))) !== 'yes'
+    ) {
         return false;
     }
     act();
     return true;
 }
 
+/**
+ * A page's close that waits on its dialog: the words, the page, its tabs holding unsaved text, and
+ * the close's Save (`saveAndClose` of the flows that hold it).
+ */
+export type HeldClose = { message: string; id: string; dirty: string[]; save: () => Promise<void> };
+
 /** What the close and the reset of a page read of the client. */
 export type PageFlowDeps = {
     pages: () => readonly Page[];
     unsaved: (id: string) => boolean;
     saveBeforeClose: (ids: string[]) => Promise<string[]>;
+    /** The Save of a close question; see the ui store. */
+    saveForClose: (ids: string[]) => Promise<string[]>;
     busyTerminals: (instances: readonly Instance[]) => Promise<readonly BusyTerminal[]>;
     viewFor: (id: string) => Pick<Registration, 'label' | 'words'> | undefined;
     closePage: (id: string) => void;
+    /** Close one tab of a page. */
+    closeTab: (id: string, page: string) => void;
     /** Hold a close's question and the page a yes closes for a dialog to draw; null drops it. */
-    holdClose: (held: { message: string; id: string } | null) => void;
+    holdClose: (held: HeldClose | null) => void;
     /** Ask one question of a reset, as questionFor makes it. */
     ask: Asker;
 };
@@ -404,6 +454,11 @@ export type PageFlows = {
      * tab sentence. A close pressed again while its read is in flight does nothing.
      */
     close: (id: string) => void;
+    /**
+     * The Save of a page's close question: save its tabs holding unsaved text, then close the page,
+     * or, when a save failed, every tab of it but the ones left holding unsaved text.
+     */
+    saveAndClose: (held: HeldClose) => Promise<void>;
     /**
      * Reset a page: the reset's own question naming it, then the close question of each tab holding
      * unsaved text, then the busy terminals; `act` makes the page again when every answer was yes.
@@ -436,10 +491,32 @@ export function createPageFlows(deps: PageFlowDeps): PageFlows {
                     many: t('ui.page_close_confirm', pageName(found.page, found.at), ids.length),
                     busy
                 });
-                if (asked === null) deps.closePage(id);
-                else deps.holdClose({ message: closeWords(asked), id });
+                if (asked === null) {
+                    deps.closePage(id);
+                    return;
+                }
+                const held: HeldClose = {
+                    message: closeWords(asked),
+                    id,
+                    dirty: asked.dirty,
+                    save: () => saveAndClose(held)
+                };
+                deps.holdClose(held);
             }
         );
+    }
+
+    async function saveAndClose(held: HeldClose): Promise<void> {
+        const left = await deps.saveForClose(held.dirty);
+        if (left.length === 0) {
+            deps.closePage(held.id);
+            return;
+        }
+        const found = pageAt(deps.pages(), held.id);
+        if (found === null) return;
+        for (const one of pageInstanceIds(found.page)) {
+            if (!left.includes(one)) deps.closeTab(one, held.id);
+        }
     }
 
     function reset(id: string, act: () => void): void {
@@ -452,7 +529,7 @@ export function createPageFlows(deps: PageFlowDeps): PageFlows {
             words,
             [found.page],
             deps.unsaved,
-            deps.saveBeforeClose,
+            { beforeClose: deps.saveBeforeClose, forClose: deps.saveForClose },
             (instance) => tabNameOf(instance, deps.viewFor),
             deps.ask,
             act,
@@ -460,7 +537,7 @@ export function createPageFlows(deps: PageFlowDeps): PageFlows {
         );
     }
 
-    return { close, reset };
+    return { close, saveAndClose, reset };
 }
 
 /** A root the server serves: its key and the folder it stands for. */

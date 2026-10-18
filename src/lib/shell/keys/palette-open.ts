@@ -1,8 +1,10 @@
 // Layer 3, shell. Opens one palette result through the layout. A project, an entry's page and a
 // person's page are opened with the state that names them, as a card's title opens them. A result
 // that reveals a card (a LinkedIn idea) puts transient reveal state in the UI store of the
-// activated instance, so it does not create a second tab for the same view; the saved search of
-// the instance is cleared with it, so a card the search would hide is mounted for the reveal.
+// activated instance, so it does not create a second tab for the same view; the saved search of the
+// instance is cleared with it, so a card the search would hide is mounted for the reveal. In a
+// popped-out window a result opens into that window's float, and a view that exists once goes to
+// wherever it is.
 //
 // An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
 // and answers that tab's instance. Pin Editor and Unpin Editor are editor items too, and act on the
@@ -31,11 +33,13 @@ type Opener = {
     paletteSource: Pick<PaletteSourceStore, 'runOffered'>;
     appShell: Pick<ClientState['appShell'], 'run'>;
     commands: Pick<ClientState['commands'], 'press'>;
+    /** The float this window draws alone, which a result opens into; null in the main window. */
+    float: string | null;
 };
 
 /** Open one result and return the instance the layout activated or created. */
 export function openPaletteItem(
-    { layout, ui, editorStatus: editor, paletteSource: offers, appShell, commands }: Opener,
+    { layout, ui, editorStatus: editor, paletteSource: offers, appShell, commands, float }: Opener,
     item: PaletteItem
 ): string {
     if (item.kind === 'app') {
@@ -72,8 +76,11 @@ export function openPaletteItem(
     }
 
     const reveal = item.state?.reveal;
-    if (typeof reveal !== 'string' || reveal === '') return layout.openView(item.view, item.state);
-    const id = layout.openView(item.view);
+    const into = float ?? undefined;
+    if (typeof reveal !== 'string' || reveal === '') {
+        return layout.openView(item.view, item.state, into);
+    }
+    const id = layout.openView(item.view, undefined, into);
     ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), ...item.state, search: '' });
     return id;
 }

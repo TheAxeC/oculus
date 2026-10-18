@@ -14,7 +14,7 @@ import { createAutosave } from '../../../src/lib/state/sessions/source/autosave.
 import type { SourceDraft } from '../../../src/lib/state/sessions/source/draft.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { cell, rooted } from '../../ui/frame/rooted.svelte.ts';
-import { hashOf, server } from './source-server.ts';
+import { hashOf, server } from './source/source-server.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 afterEach(() => vi.unstubAllGlobals());

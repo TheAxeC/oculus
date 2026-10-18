@@ -15,9 +15,10 @@
 // The merge group keeps its own controls and gets no menu. Discard Changes on an untracked path is
 // not a restore, which git has no form for: the path goes to the Trash (`trashUntracked`) behind
 // the question VS Code asks, and a tracked path is restored as before. Open File (HEAD) offers the
-// version HEAD holds, for a Staged row and a Changes row alike; an untracked path has none. Compare
-// with Workspace is offered on a linked worktree's rows and is a read. While a write is in flight
-// on the repository its controls are disabled, so the menus offer no write either.
+// version HEAD holds and Open File (Index) the version the index holds, for a Staged row and a
+// Changes row alike; an untracked path has neither. Compare with Workspace is offered on a linked
+// worktree's rows and is a read. While a write is in flight on the repository its controls are
+// disabled, so the menus offer no write either.
 //
 // The items are pure functions of the group, so which items a row offers is asserted without a DOM,
 // and the words come in as `t` so every label is a catalog key.
@@ -31,6 +32,7 @@ export type MenuGroupId = 'changed' | 'staged' | 'untracked';
 
 export const CHANGE_OPEN_CHANGES = 'open-changes';
 export const CHANGE_OPEN_HEAD = 'open-head';
+const CHANGE_OPEN_INDEX = 'open-index';
 export const CHANGE_OPEN_FILE = 'open-file';
 export const CHANGE_STAGE = 'stage';
 export const CHANGE_UNSTAGE = 'unstage';
@@ -52,9 +54,10 @@ export function hasMenu(group: string): group is MenuGroupId {
 
 /**
  * A changed file's items: Open Changes (a diff, which an untracked file has none of), Open File
- * (HEAD) (the version it is compared against, which an untracked file has none of) and Open File,
- * then Stage Changes or Unstage Changes and, outside Staged, Discard Changes and Add to
- * .gitignore, then Reveal in Explorer View, then, on a linked worktree, Compare with Workspace.
+ * (HEAD) and Open File (Index) (the committed and the staged version, which an untracked file has
+ * none of) and Open File, then Stage Changes or Unstage Changes and, outside Staged, Discard
+ * Changes and Add to .gitignore, then Reveal in Explorer View, then, on a linked worktree, Compare
+ * with Workspace.
  */
 export function changeMenu(
     group: MenuGroupId,
@@ -78,7 +81,8 @@ export function changeMenu(
                 ? []
                 : [
                       item(CHANGE_OPEN_CHANGES, t('repositories.menu_open_changes')),
-                      item(CHANGE_OPEN_HEAD, t('repositories.menu_open_head'))
+                      item(CHANGE_OPEN_HEAD, t('repositories.menu_open_head')),
+                      item(CHANGE_OPEN_INDEX, t('repositories.menu_open_index'))
                   ]),
             item(CHANGE_OPEN_FILE, t('repositories.open_file'))
         ],
@@ -213,11 +217,15 @@ export function folderPicked(
     } else if (pick === CHANGE_DISCARD) askDiscardFolder(target, deps, t);
 }
 
+/** A call that opens a version of a change row's path, by its repository, group and path. */
+type RowOpen = (root: string, group: string, path: string) => void;
+
 /** The calls a pick runs: the Source Control store's, the view's question and the Files view's. */
 export type ChangeDeps = {
     ask: Ask;
-    openChange: (root: string, group: string, path: string) => void;
-    openHead: (root: string, group: string, path: string) => void;
+    openChange: RowOpen;
+    openHead: RowOpen;
+    openIndex: RowOpen;
     openFile: (root: string, path: string) => void;
     stagePaths: (root: string, paths: readonly string[]) => void;
     unstagePaths: (root: string, paths: readonly string[]) => void;
@@ -282,6 +290,7 @@ export function changePicked(
     const { root, group, path, acted } = row;
     if (pick === CHANGE_OPEN_CHANGES) deps.openChange(root, group, path);
     else if (pick === CHANGE_OPEN_HEAD) deps.openHead(root, group, path);
+    else if (pick === CHANGE_OPEN_INDEX) deps.openIndex(root, group, path);
     else if (pick === CHANGE_OPEN_FILE) deps.openFile(root, path);
     else if (pick === CHANGE_STAGE) deps.stagePaths(root, acted);
     else if (pick === CHANGE_UNSTAGE) deps.unstagePaths(root, acted);

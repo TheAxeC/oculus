@@ -23,7 +23,7 @@
     import RailFoot from './RailFoot.svelte';
     import RailList from './RailList.svelte';
     import RailPages from './RailPages.svelte';
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestions from '$lib/ui/tabs/CloseQuestions.svelte';
     import { RAIL_HIDE, RAIL_RESET, railHidden, railMoved, railStop } from '$lib/shell/rail/rail';
     import {
         questionFor,
@@ -58,7 +58,7 @@
         },
         notices: { post },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals, saveBeforeClose }
+        ui: { unsaved, busyTerminals, saveBeforeClose, saveForClose }
     } = useState();
 
     type Props = {
@@ -139,7 +139,7 @@
             words,
             [made],
             unsaved,
-            saveBeforeClose,
+            { beforeClose: saveBeforeClose, forClose: saveForClose },
             (instance) => tabNameOf(instance, viewFor),
             ask,
             () => {
@@ -330,12 +330,7 @@
     </div>
 </nav>
 
-<CloseQuestion
-    message={question?.message ?? null}
-    detail={question?.detail}
-    onconfirm={() => question?.answer(true)}
-    oncancel={() => question?.answer(false)}
-/>
+<CloseQuestions {question} />
 
 <style>
     /* VS Code's activity bar: the bar's width, no padding, the items flush one under the next, the

@@ -36,12 +36,12 @@
     // unpressable, since pressing it again would be refused for the same reason until the page is
     // read afresh. An answer that wrote no field is a refusal here too: the row says the value is
     // back only when the endpoint names the field it wrote. The row an undo writes is labelled by
-    // what the undo did: an entry put back for a delete, an entry removed for an add, a field set
-    // back for a field write.
+    // what the undo did: an entry put back for a delete, an add undone for an add, a field set back
+    // for a field write.
     //
     // The filter is in the bar under the header, with the status sentence of the last press at the
-    // bar's end. A row's undo control and the pills that open its values are drawn while the
-    // pointer is over the row or the focus is inside it, and an opened pill stays drawn.
+    // bar's end. The pills that open a row's values are always drawn; a row's undo control is drawn
+    // while the pointer is over the row or the focus is inside it.
 
     import { SvelteSet } from 'svelte/reactivity';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
@@ -288,16 +288,14 @@
                                     {:else if pair.held.size === 0}
                                         <span class="value">{pair.held.text}</span>
                                     {:else}
-                                        <span class="reveal" class:open={opened.has(key)}>
-                                            <Disclosure
-                                                count={pair.held.size}
-                                                label={pair.held.size === 1
-                                                    ? t('history.items_one')
-                                                    : t('history.items')}
-                                                expanded={opened.has(key)}
-                                                onclick={() => toggle(key)}
-                                            />
-                                        </span>
+                                        <Disclosure
+                                            count={pair.held.size}
+                                            label={pair.held.size === 1
+                                                ? t('history.items_one')
+                                                : t('history.items')}
+                                            expanded={opened.has(key)}
+                                            onclick={() => toggle(key)}
+                                        />
                                         {#if opened.has(key)}
                                             <pre class="raw" data-value={key}>{pair.held.text}</pre>
                                         {/if}
@@ -331,8 +329,8 @@
         list-style: none;
     }
 
-    /* A row's controls are drawn while the pointer is over the row or the focus is inside it, and
-       always where nothing hovers. They stay in the layout and in the tab order while clear. */
+    /* A row's Undo is drawn while the pointer is over the row or the focus is inside it, and
+       always where nothing hovers. It stays in the layout and in the tab order while clear. */
     li {
         --row-reveal: 0;
         border-bottom: 1px solid var(--line);
@@ -353,11 +351,6 @@
         display: inline-flex;
         opacity: var(--row-reveal);
         transition: opacity 120ms ease-out;
-    }
-
-    /* A pill that is open is the row's selected control, so it stays drawn. */
-    .reveal.open {
-        opacity: 1;
     }
 
     /* Each line of a row is one line of the tree's row height, and a line that wraps grows by

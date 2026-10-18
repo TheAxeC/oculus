@@ -12,7 +12,7 @@
     // so the confirm names the pages the store then acts on.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestions from '$lib/ui/tabs/CloseQuestions.svelte';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { railPages } from '$lib/state/workbench/navigation/rail';
     import {
@@ -32,7 +32,7 @@
         entities: { config },
         layout: { floats, pages, resetPages },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals, saveBeforeClose }
+        ui: { unsaved, busyTerminals, saveBeforeClose, saveForClose }
     } = useState();
 
     const rail = $derived(railPages(config()?.config));
@@ -61,7 +61,7 @@
             words,
             [...rebuilt, ...removed, ...replaced],
             unsaved,
-            saveBeforeClose,
+            { beforeClose: saveBeforeClose, forClose: saveForClose },
             (instance) => tabNameOf(instance, viewFor),
             asker,
             () => {
@@ -87,12 +87,7 @@
     {/if}
 </div>
 
-<CloseQuestion
-    message={question?.message ?? null}
-    detail={question?.detail}
-    onconfirm={() => question?.answer(true)}
-    oncancel={() => question?.answer(false)}
-/>
+<CloseQuestions {question} />
 
 <style>
     .reset {

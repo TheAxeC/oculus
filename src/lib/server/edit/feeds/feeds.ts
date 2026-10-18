@@ -29,7 +29,7 @@ import {
     startEntries,
     takeOutAppended
 } from '../entry-edit/index.ts';
-import { replacedText } from '../writes/config/config-checks.ts';
+import { putBack, replacedLines, replacedText } from '../writes/config/config-checks.ts';
 import { saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
 import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -634,6 +634,11 @@ export function removeRadarEntry(
  * through, since addLead fills a missing status and today's date for a new entry and an entry that
  * is coming back needs neither.
  *
+ * The text the deletion replaced (`replaced`, of its record) goes back at its place first, so the
+ * file is what it was byte for byte, while the file still holds what the deletion left there and
+ * the file with the text back lists the recorded entry and every other entry as it is now; a file
+ * edited since gets the entry rendered and appended, and no hand change is written over.
+ *
  * A feed whose last entry was deleted keeps its `entries:` key with nothing under it, which is not
  * a list to append to; the entry is then written under that key the way a first entry is.
  */
@@ -641,7 +646,8 @@ export function restoreFeedEntry(
     hub: string,
     config: PortfolioConfig,
     feed: FeedKind,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    replaced?: unknown
 ): WriteOutcome {
     const full = feedFile(hub, config, feed);
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
@@ -662,6 +668,9 @@ export function restoreFeedEntry(
             [{ field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }]
         );
     }
+    const back = putBackDeleted(source, parsed.entries, ident, value, fields, replaced);
+    if (back !== null)
+        return saved(full, source, { text: back, changed: ['entries'], refused: [] });
     const values: Record<string, FieldValue> = {};
     const refused: Refusal[] = [];
     for (const [field, given] of Object.entries(fields)) {
@@ -694,6 +703,41 @@ export function restoreFeedEntry(
         : startEntries(source, 'entries', block, config.text);
     const out = saved(full, source, edit);
     return { ...out, refused: [...refused, ...out.refused] };
+}
+
+/**
+ * The feed file's text with the text a deletion replaced put back at its place, or null when the
+ * file no longer holds what the deletion left there, or the text back would not list `fields` as
+ * the entry `value` names and every entry of `entries` as it is now.
+ */
+function putBackDeleted(
+    source: string,
+    entries: Record<string, unknown>[],
+    ident: string,
+    value: string,
+    fields: Record<string, unknown>,
+    replaced: unknown
+): string | null {
+    const put = replacedShape.safeParse(replaced);
+    const text = put.success ? putBack(source, put.data) : null;
+    if (text === null) return null;
+    let reread: { entries: Record<string, unknown>[] } | null;
+    try {
+        reread = readFeedFileText(text);
+    } catch {
+        reread = null;
+    }
+    if (reread === null) return null;
+    const named = (one: Record<string, unknown>) => scalar(one[ident]).trim() === value;
+    const restored = reread.entries.filter(named);
+    const fits =
+        restored.length === 1 &&
+        isDeepStrictEqual(restored[0], fields) &&
+        isDeepStrictEqual(
+            reread.entries.filter((one) => !named(one)),
+            entries
+        );
+    return fits ? text : null;
 }
 
 /**
@@ -777,12 +821,22 @@ export function deleteFeedEntry(
     if (parsed === null || entry === undefined) return { found: false, changed: [], refused: [] };
     const shared = sharedRefusal(parsed.entries, rule.identity, config.text);
     if (shared !== null) return shared;
-    const out = saved(full, source, deleteEntry(source, rule.identity, id, config.text));
+    const edit = deleteEntry(source, rule.identity, id, config.text);
+    const out = saved(full, source, edit);
     if (out.changed.length === 0) return out;
+    const replaced = replacedLines(source, edit.text);
     return {
         ...out,
         records: [
-            { file: full, key: id, field: 'entries', before: entry, after: null, undo: 'delete' }
+            {
+                file: full,
+                key: id,
+                field: 'entries',
+                before: entry,
+                after: null,
+                undo: 'delete',
+                ...(replaced === null ? {} : { replaced })
+            }
         ]
     };
 }

@@ -17,6 +17,8 @@ import { ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
 import { inside } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
+import { engineLiteraturePath, literatureFile } from '../feeds/literature.ts';
+import { LITERATURE_FILE } from '../../../data/sources/collections.ts';
 import type { PrimaryTarget, WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 
@@ -171,15 +173,22 @@ export function homeOf(into: WriteTarget): PrimaryTarget | null {
 }
 
 /**
- * The target for a write to a collection that names no hub: the primary's when its `collections:`
- * names the collection, else the first hub's whose list does, else `homeOf`'s.
+ * The target for a write to a collection that names no hub: the primary's when it holds the
+ * collection, else the first hub's that does, else `homeOf`'s. A hub holds a collection its
+ * `collections:` names, and the Literature collection its list leaves to the engine's path when it
+ * holds the file there (`literatureFile`, the file Save to Literature writes).
  */
 export function homeNaming(into: WriteTarget, collection: string): PrimaryTarget | null {
-    const names = (config: WriteTarget['config']): boolean =>
-        config.collections.some((one) => one.key === collection);
+    const literature = collection === LITERATURE_FILE.key;
+    const enginePath = literature ? engineLiteraturePath(into.engineConfig()) : undefined;
+    const holds = (hub: string, config: WriteTarget['config']): boolean =>
+        config.collections.some((one) => one.key === collection) ||
+        (enginePath !== undefined && literatureFile(hub, config, enginePath) !== null);
     const own = primaryOf(into);
-    if (own !== null && names(own.config)) return own;
-    const one = (into.hubs ?? []).find((held) => held.key !== into.primary && names(held.config));
+    if (own !== null && holds(own.hub, own.config)) return own;
+    const one = (into.hubs ?? []).find(
+        (held) => held.key !== into.primary && holds(held.hub, held.config)
+    );
     return one === undefined ? homeOf(into) : within(into, one);
 }
 

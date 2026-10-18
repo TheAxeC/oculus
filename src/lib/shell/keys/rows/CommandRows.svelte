@@ -11,11 +11,14 @@
     // folder shown, add folders to the workspace, reopen the tabs closed last, walk the navigation
     // history back or forward (shell/titlebar/history-walk.ts), or hide or show the floats docked
     // at an edge, and close the palette. A tab a command showed takes the keyboard on its head once
-    // the page has drawn it, since the tab chosen is where the reader went. A refusal of Open
-    // Folder, of Close Workspace or of Add Task is said in the palette, which stays open, as is an
-    // argument of `:tab`, `:goto`, `:theme` or `:file-icons` that is empty or names nothing. Add
-    // Task writes the task and posts a notice with an Open action; Shift+Enter, or a press with
-    // Shift held, opens the task's page as well.
+    // the page has drawn it, since the tab chosen is where the reader went. Open Folder and Add
+    // Folder to Workspace close the palette as the folder panel opens, and what is left to say of
+    // them (a panel that did not open, a folder refused or a root already) is a notice; pressed
+    // while the panel is open, they say so in the palette, which stays open. A refusal of Close
+    // Workspace or of Add Task is said in the palette, which stays open, as is an argument of
+    // `:tab`, `:goto`, `:theme` or `:file-icons` that is empty or names nothing. Add Task writes
+    // the task and posts a notice with an Open action; Shift+Enter, or a press with Shift held,
+    // opens the task's page as well.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
@@ -48,8 +51,13 @@
         paletteSource: { paletteSource },
         ui: { setCrt, setFileIcons, setTheme, crt },
         registry: { views },
-        appShell: { offers }
+        appShell: { offers },
+        float
     } = useState();
+    /**
+     * The page or float the palette opens views on: this window's float, else the reader's page.
+     */
+    const into = float ?? undefined;
     const history = useWalk();
 
     type Props = {
@@ -74,6 +82,17 @@
         views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
     );
 
+    /**
+     * A command that opens the folder panel: the palette closes as the panel opens, since the panel
+     * takes the keyboard, and what is left to say once it answers is a notice.
+     */
+    function panelled(outcome: Promise<CommandOutcome>): void {
+        onclose();
+        void outcome.then((result) => {
+            if (!result.closed) notices.post(result.said, { tone: 'warning' });
+        });
+    }
+
     /** Close the palette when a command went through; otherwise keep it open saying why. */
     async function settled(outcome: Promise<CommandOutcome>): Promise<void> {
         const result = await outcome;
@@ -93,17 +112,17 @@
             actions: [
                 {
                     label: t('app.palette.task_open'),
-                    run: () => void openView(page.view, page.state)
+                    run: () => void openView(page.view, page.state, into)
                 }
             ]
         });
-        if (open) void landOn(openView(page.view, page.state));
+        if (open) void landOn(openView(page.view, page.state, into));
         onclose();
     }
 
     /** Open a view in a tab, which takes the keyboard on its head once drawn. */
     function openTab(id: string): void {
-        const shown = openView(id);
+        const shown = openView(id, undefined, into);
         onclose();
         if (shown !== '') void landOn(shown);
     }
@@ -113,7 +132,13 @@
      * argument; a command matched by its words is run with none.
      */
     function run(command: PaletteCommand, named: boolean): void {
-        if (!command.available) return;
+        if (!command.available) {
+            // The folder commands are unavailable while the panel is open, which a press says.
+            if (command.name === 'folder' || command.name === 'folder-add') {
+                onsaid(t('files.picker_busy'));
+            }
+            return;
+        }
         const argument = named ? parsed.argument : '';
         // The instance a command showed, when it showed a tab.
         let shown = '';
@@ -126,11 +151,11 @@
             return;
         }
         if (command.name === 'folder') {
-            void settled(folderCommand(explorer.openFolder));
+            panelled(folderCommand(explorer.openFolder));
             return;
         }
         if (command.name === 'folder-add') {
-            void settled(addFolderCommand(explorer.addFolders));
+            panelled(addFolderCommand(explorer.addFolders));
             return;
         }
         if (command.name === 'workspace-close') {
@@ -158,7 +183,8 @@
             openTab(argument);
             return;
         } else if (command.name === 'goto' && project !== undefined) {
-            shown = openView('project', { id: project.id, label: project.short ?? project.title });
+            const state = { id: project.id, label: project.short ?? project.title };
+            shown = openView('project', state, into);
         } else if (command.name === 'update') {
             onupdate();
         } else if (command.name === 'reopen-closed-tab') {

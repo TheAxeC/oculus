@@ -51,6 +51,7 @@
         createPageFlows,
         pageName,
         questionFor,
+        type HeldClose,
         type Question
     } from '$lib/state/workbench/navigation/pages';
     import { repositoryOf } from '$lib/state/workbench/navigation/status';
@@ -64,9 +65,17 @@
         explorer: { panelOpen, pickWorkbenchFolder },
         folders,
         fs: { roots, workspaces },
-        layout: { closePage, currentPage, forgetKept, keptWorkbenches, pages, switchPage },
+        layout: {
+            closeInstance,
+            closePage,
+            currentPage,
+            forgetKept,
+            keptWorkbenches,
+            pages,
+            switchPage
+        },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals, saveBeforeClose }
+        ui: { unsaved, busyTerminals, saveBeforeClose, saveForClose }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -121,7 +130,7 @@
     let note = $state('');
 
     /** The close that waits on its dialog, and the question a reset, a forget or a tab waits on. */
-    let confirming: { message: string; id: string } | null = $state(null);
+    let confirming: HeldClose | null = $state(null);
     let question: Question | null = $state(null);
     const ask = questionFor((held) => (question = held));
 
@@ -129,9 +138,11 @@
         pages,
         unsaved,
         saveBeforeClose,
+        saveForClose,
         busyTerminals,
         viewFor,
         closePage,
+        closeTab: closeInstance,
         holdClose: (held) => (confirming = held),
         ask
     });
@@ -146,11 +157,11 @@
     /** Ask before the layout kept for a folder is dropped. */
     async function forget(folder: FolderRef): Promise<void> {
         note = '';
-        const yes = await ask(
+        const given = await ask(
             t('workbench.workbenches_forget_question', folderName(folder)),
             t('workbench.workbenches_forget_detail', folderPlace(folder))
         );
-        if (yes) forgetKept(folder);
+        if (given === 'yes') forgetKept(folder);
     }
 
     /** The folder panel's answer: the workbench of the folder it gave, or why it gave none. */

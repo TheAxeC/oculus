@@ -13,12 +13,13 @@
     // the stop carries tabindex 0 and everything else in the list -1, Split and Kill included. The
     // arrow keys move the stop, Enter shows the row, Shift+Enter splits it, and Delete or Backspace
     // kills it as Kill does, the first press arming and the second killing; the two controls are
-    // the pointer's way to the same two actions, shown on hover. An armed row (RowFace.svelte) says
-    // in words, in place of its description, that a second press kills the terminal (the bar says
-    // it while the list is narrow). An armed Kill is disarmed when the stop moves off its row, and
-    // a held key arms nothing (terminal-list.ts, `rowKey`, and kill-arm.svelte.ts, `armKept`). The
-    // arm is held by the tab (Terminal.svelte), since the grid's menu arms and kills through the
-    // same `pressKill`, and the tab also takes it off at a press elsewhere, at Escape and after its
+    // the pointer's way to the same two actions, shown on hover. An armed row says in words, on a
+    // line of their own under it, that a second press kills the terminal, wrapped to the list's
+    // width so they are drawn whole and the row's Kill stays where it was (the bar says them while
+    // the list is narrow). An armed Kill is disarmed when the stop moves off its row, and a held
+    // key arms nothing (terminal-list.ts, `rowKey`, and kill-arm.svelte.ts, `armKept`). The arm is
+    // held by the tab (Terminal.svelte), since the grid's menu arms and kills through the same
+    // `pressKill`, and the tab also takes it off at a press elsewhere, at Escape and after its
     // timeout (kill-arm.svelte.ts). A pointer press on a row shows it and hands the keyboard to its
     // grid, so the list holds focus only for a reader who came to it by the keyboard.
     //
@@ -299,7 +300,6 @@
                                  typed into within one. -->
                             <RowFace
                                 {row}
-                                armed={false}
                                 ringing={false}
                                 narrow={false}
                                 onrename={() => undefined}
@@ -323,7 +323,6 @@
                             >
                                 <RowFace
                                     {row}
-                                    armed={arming === row.terminal}
                                     ringing={ringing === row.terminal}
                                     {narrow}
                                     onrename={() => handlers.rename(row.terminal)}
@@ -360,6 +359,11 @@
                         />
                     </span>
                 </div>
+                {#if arming === row.terminal && !narrow}
+                    <div class="armed-words" data-armed-words={row.terminal}>
+                        {t('sessions.terminal_kill_armed')}
+                    </div>
+                {/if}
             </ContextMenu>
         {/each}
         {#if dropIndex !== null && dropIndex >= rows.length}
@@ -471,6 +475,15 @@
         .actions {
             display: flex;
         }
+    }
+
+    /* The armed words take a line of their own under the row, wrapped to the list's width, so they
+       are drawn whole at every width and the row's own line, with its Kill, does not move. */
+    .armed-words {
+        padding: 0 6px 3px 8px;
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
+        overflow-wrap: anywhere;
     }
 
     .mark {

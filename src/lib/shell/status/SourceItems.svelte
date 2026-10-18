@@ -15,7 +15,7 @@
     // (LanguageItems.svelte). The other three open a list over the item. A tab that may not write
     // its file draws no caret and offers no change of its text: its indentation list offers no
     // conversion, its line endings list holds the one the file has, and each item's tooltip says
-    // why.
+    // why. A tab whose indentation is not known yet draws no indentation item.
     //
     // The items are written from the right end of the bar to its left, the language mode first,
     // because the bar's right group lays its items out in reverse (StatusBar.svelte); the order on
@@ -26,7 +26,11 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import LanguageItems from './LanguageItems.svelte';
     import type { ItemsProps } from './status-items';
-    import { INDENT_SIZES, type LineEnding } from '$lib/state/workbench/navigation/editor-text';
+    import {
+        INDENT_SIZES,
+        type Indent,
+        type LineEnding
+    } from '$lib/state/workbench/navigation/editor-text';
     import { caretWords, indentWords, languageName } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -51,34 +55,37 @@
     }
 
     /** The widths of one indentation kind, the one in force checked. */
-    function widths(tabs: boolean): MenuItem[] {
+    function widths(indent: Indent, tabs: boolean): MenuItem[] {
         return INDENT_SIZES.map((size) => ({
             id: `${tabs ? 'tabs' : 'spaces'}:${size}`,
             label: t('statusbar.indent_width', size),
-            active: status.indent.tabs === tabs && status.indent.size === size
+            active: indent.tabs === tabs && indent.size === size
         }));
     }
 
-    const indentChoices = $derived<MenuItem[]>([
-        {
-            id: 'spaces',
-            label: t('statusbar.indent_using_spaces'),
-            active: !status.indent.tabs,
-            items: widths(false)
-        },
-        {
-            id: 'tabs',
-            label: t('statusbar.indent_using_tabs'),
-            active: status.indent.tabs,
-            items: widths(true)
-        },
-        ...(status.writable
-            ? [
-                  { id: 'to-spaces', label: t('statusbar.indent_to_spaces') },
-                  { id: 'to-tabs', label: t('statusbar.indent_to_tabs') }
-              ]
-            : [])
-    ]);
+    /** The indentation list over the indentation in force. */
+    function indentChoices(indent: Indent): MenuItem[] {
+        return [
+            {
+                id: 'spaces',
+                label: t('statusbar.indent_using_spaces'),
+                active: !indent.tabs,
+                items: widths(indent, false)
+            },
+            {
+                id: 'tabs',
+                label: t('statusbar.indent_using_tabs'),
+                active: indent.tabs,
+                items: widths(indent, true)
+            },
+            ...(status.writable
+                ? [
+                      { id: 'to-spaces', label: t('statusbar.indent_to_spaces') },
+                      { id: 'to-tabs', label: t('statusbar.indent_to_tabs') }
+                  ]
+                : [])
+        ];
+    }
 
     const endingChoices = $derived<MenuItem[]>(
         (status.writable ? endings : [status.ending]).map((ending) => ({
@@ -159,7 +166,7 @@
         />
     </span>
 {/if}
-{#if shown('indent')}
+{#if shown('indent') && status.indent !== null}
     <span data-status="indent">
         <Menu
             status
@@ -168,7 +175,7 @@
             words={indentWords(status.indent)}
             glyph="indent"
             title={status.writable ? t('statusbar.indent_tip') : t('statusbar.indent_readonly')}
-            items={indentChoices}
+            items={indentChoices(status.indent)}
             onpick={indentPicked}
         />
     </span>

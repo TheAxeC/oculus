@@ -5,13 +5,15 @@
 //
 // The preview is a Monaco content widget below the position the pointer rests on, or above it when
 // there is no room below, drawn after the pointer has stayed 300 ms on one span. It is kept inside
-// the editor: no taller than the larger room beside the line (`previewRoom`), and a picture no
-// wider than the box, which Monaco holds to the editor's width, and no taller than that room. Math
-// is typeset by KaTeX with `trust: false`, so no command can emit a link or HTML, and a formula
-// that does not parse is drawn as its source in the error colour. A picture is drawn through the
-// address the parent gives for the file (the file route), never from the path in the text, and only
-// once the browser has decoded it, so the box is sized around the drawn image; a picture that does
-// not decode gives no preview. A PDF is drawn as its name. The widget is removed when the pointer
+// the editor: no taller than the larger room beside the line (`previewRoom`), and a picture laid
+// out at a definite size, its own scaled down to no wider than the box's 458 px and no taller than
+// that room with its aspect kept, so the shrink-to-fit widget gives it its width; in an editor
+// narrower than the picture the box scrolls rather than shrinking the picture. Math is typeset by
+// KaTeX with `trust: false`, so no command can emit a link or HTML, and a formula that does not
+// parse is drawn as its source in the error colour. A picture is drawn through the address the
+// parent gives for the file (the file route), never from the path in the text, and only once the
+// browser has decoded it, so the box is sized around the drawn image; a picture that does not
+// decode gives no preview. A PDF is drawn as its name. The widget is removed when the pointer
 // leaves the span or the editor, when the text changes and when the editor scrolls, and an answer
 // that arrives after that is dropped.
 //
@@ -98,6 +100,23 @@ function box(): HTMLDivElement {
         'border-radius:var(--radius-sm);background:var(--panel);color:var(--ink);' +
         `max-width:480px;max-height:${BOX_MAX_HEIGHT}px;overflow:auto`;
     return node;
+}
+
+/**
+ * Lay a decoded picture out at a definite size: its own, scaled down to the widest a picture is
+ * drawn and to `tallest`, its aspect kept. A picture with no size of its own (an SVG without one)
+ * is drawn at the widest, no taller than `tallest`.
+ */
+function sizePicture(picture: HTMLImageElement, tallest: number): void {
+    const { naturalWidth: wide, naturalHeight: high } = picture;
+    if (wide === 0 || high === 0) {
+        picture.style.width = `${String(PICTURE_MAX_WIDTH)}px`;
+        picture.style.maxHeight = `${String(tallest)}px`;
+        return;
+    }
+    const scale = Math.min(1, PICTURE_MAX_WIDTH / wide, tallest / high);
+    picture.style.width = `${String(Math.round(wide * scale))}px`;
+    picture.style.height = `${String(Math.round(high * scale))}px`;
 }
 
 /** Draw a formula into a node: KaTeX's markup, or the source in the error colour. */
@@ -200,14 +219,13 @@ async function previewOf(
         const picture = document.createElement('img');
         picture.src = deps.address(file);
         picture.alt = file;
-        picture.style.cssText =
-            `display:block;max-width:min(100%, ${PICTURE_MAX_WIDTH}px);` +
-            `max-height:${PICTURE_MAX_HEIGHT}px`;
+        picture.style.display = 'block';
         try {
             await picture.decode();
         } catch {
             return null;
         }
+        sizePicture(picture, PICTURE_MAX_HEIGHT);
         node.append(picture);
     }
     return { node, start: call.start, end: call.end };
@@ -265,7 +283,7 @@ function previewing(
         node.style.maxHeight = `${String(Math.min(BOX_MAX_HEIGHT, room))}px`;
         const tallest = Math.max(0, Math.min(PICTURE_MAX_HEIGHT, room - BOX_FRAME));
         const picture = node.querySelector('img');
-        if (picture !== null) picture.style.maxHeight = `${String(tallest)}px`;
+        if (picture !== null) sizePicture(picture, tallest);
     }
 
     function moved(event: Monaco.editor.IEditorMouseEvent): void {

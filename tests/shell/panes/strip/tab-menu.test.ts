@@ -31,13 +31,20 @@ describe('the closes of the tab menu, through its state', () => {
     afterEach(() => vi.unstubAllGlobals());
 
     /**
-     * A pane of the tabs a, b, c and d on the real stores: `b` holds unsaved text and `d` is a
-     * terminal running python. The menu is the tab menu's state over the pane's close question, and
-     * a right-click on the tab named is read before the pick, as the strip does. With `autosave`
-     * the ui store has a saver that records the ids a close hands it and, when it `takes` them,
-     * leaves them with no unsaved text, as the autosave store does for a tab its mode covers.
+     * A pane of the tabs a, b, c and d on the real stores: `b` holds unsaved text (or the tabs
+     * `held.dirty` names) and `d` is a terminal running python. The menu is the tab menu's state
+     * over the pane's close question, and a right-click on the tab named is read before the pick,
+     * as the strip does. With `autosave` the ui store has a saver that records the ids a close
+     * hands it and, when it `takes` them, leaves them with no unsaved text, as the autosave store
+     * does for a tab its mode covers. `held.saves` gives a tab the save a close question's Save
+     * runs: true writes it and takes its unsaved text, false is a save that failed, and a tab it
+     * does not name has no save, as an untitled tab has none.
      */
-    function menuOver(withTerminal = true, autosave?: { takes: boolean }) {
+    function menuOver(
+        withTerminal = true,
+        autosave?: { takes: boolean },
+        held: { dirty?: string[]; saves?: Record<string, boolean> } = {}
+    ) {
         const client = createClientState();
         const tab = (id: string, view: string) => ({ id, view, state: {} });
         const pane = {
@@ -54,9 +61,17 @@ describe('the closes of the tab menu, through its state', () => {
             client.layout,
             fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
         );
-        const dirty = new Set(['b']);
+        const dirty = new Set(held.dirty ?? ['b']);
         const handed: string[][] = [];
+        const saved: string[] = [];
         client.ui.registerUnsaved((id) => dirty.has(id));
+        client.ui.registerCloseSave((id) => {
+            const takes = held.saves?.[id];
+            if (takes === undefined) return null;
+            saved.push(id);
+            if (takes) dirty.delete(id);
+            return Promise.resolve(takes);
+        });
         if (autosave !== undefined) {
             client.ui.registerSaveBeforeClose((ids) => {
                 handed.push(ids);
@@ -111,17 +126,81 @@ describe('the closes of the tab menu, through its state', () => {
             await Promise.all(closes);
         };
         const open = (): string[] => instances().map((one) => one.id);
-        return { question, pick, open, handed };
+        return { question, pick, open, handed, saved, dirty };
     }
 
-    it('asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing', async () => {
-        const { question, pick, open } = menuOver(false);
-        await pick('close-others', 'a');
-        expect(question.message()).toBe(
-            `${catalog('ui.tab_close_many', 2)} ${catalog('ui.terminal_close_unsaved', 'tab b')}`
-        );
-        question.cancel();
-        expect(open()).toEqual(['a', 'b', 'c']);
+    type Unsaved = {
+        row: string;
+        held: { dirty?: string[]; saves?: Record<string, boolean> };
+        item: string;
+        on: string;
+        asks: string;
+        answer: 'cancel' | 'save' | 'dont-save';
+        saved: string[];
+        open: string[];
+        left: string[];
+    };
+
+    const UNSAVED: Unsaved[] = [
+        {
+            row: 'Close Others over a tab holding unsaved text names it, and Cancel closes nothing',
+            held: {},
+            item: 'close-others',
+            on: 'a',
+            asks: `${catalog('ui.tab_close_dirty')} ${catalog('ui.terminal_close_unsaved', 'tab b')}`,
+            answer: 'cancel',
+            saved: [],
+            open: ['a', 'b', 'c'],
+            left: ['b']
+        },
+        {
+            row: 'Close of a tab holding unsaved text, and Save writes it and closes the tab',
+            held: { saves: { b: true } },
+            item: 'close',
+            on: 'b',
+            asks: catalog('ui.tab_close_dirty'),
+            answer: 'save',
+            saved: ['b'],
+            open: ['a', 'c'],
+            left: []
+        },
+        {
+            row: "Close of a tab holding unsaved text, and Don't Save closes it without writing it",
+            held: { saves: { b: true } },
+            item: 'close',
+            on: 'b',
+            asks: catalog('ui.tab_close_dirty'),
+            answer: 'dont-save',
+            saved: [],
+            open: ['a', 'c'],
+            left: ['b']
+        },
+        {
+            row: 'Close All, and Save keeps open with its text a tab whose save failed or that has no save',
+            held: { dirty: ['a', 'b', 'c'], saves: { a: true, b: false } },
+            item: 'close-all',
+            on: 'a',
+            asks: `${catalog('ui.tabs_close_dirty', 3)} ${catalog('ui.terminal_close_unsaved', 'tab a, tab b, tab c')}`,
+            answer: 'save',
+            saved: ['a', 'b'],
+            open: ['b', 'c'],
+            left: ['b', 'c']
+        }
+    ];
+
+    it.each(UNSAVED)('asks to save the unsaved text a close takes: $row', async (row) => {
+        const { question, pick, open, saved, dirty } = menuOver(false, undefined, row.held);
+        await pick(row.item, row.on);
+        expect([question.message(), question.saves()]).toEqual([row.asks, true]);
+        if (row.answer === 'cancel') question.cancel();
+        if (row.answer === 'dont-save') question.confirmed();
+        if (row.answer === 'save') await question.save();
+        expect([saved.sort(), open(), [...dirty].sort(), question.message()]).toEqual([
+            row.saved,
+            row.open,
+            row.left,
+            null
+        ]);
     });
 
     it('asks about the terminal running a program among the tabs an item closes', async () => {

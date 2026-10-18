@@ -20,13 +20,13 @@
     import PageLeaf from './PageLeaf.svelte';
     import PaneView from '../PaneView.svelte';
     import SplitView from '../SplitView.svelte';
-    import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
+    import { paneAt, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
     const client = useState();
     const {
-        layout: { change, currentPage, expandChild, focused, layout }
+        layout: { currentPage, expandChild, focused, layout, resizeSplit }
     } = client;
 
     type Props = {
@@ -77,8 +77,7 @@
                         pane={paneOf}
                         fold={foldOf}
                         leaf={leafOf}
-                        onresize={(path: number[], sizes: number[]) =>
-                            change((tree) => resize(tree, path, sizes))}
+                        onresize={(path: number[], sizes: number[]) => resizeSplit(path, sizes)}
                         onexpand={(path: number[], index: number) => expandChild(path, index)}
                     />
                 </div>

@@ -232,7 +232,6 @@
                 ids={{ title: identity }}
                 paper={radarPaper(entry)}
                 source="lit-watch"
-                {onsaid}
             />
         </div>
     {/if}

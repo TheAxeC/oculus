@@ -5,11 +5,13 @@
 // never a thrown error, so a caller shows the reason and goes on.
 //
 // A GET is read through `fetch` and a POST carries the write token, which is renewed once when the
-// server answers 403, as every write of the page is.
+// server answers 403, as every write of the page is. A GET over a root the workspace no longer
+// serves is not made, and answers the sentence saying so.
 
 import { z } from 'zod';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 import { failedAnswer } from '../../shared/answers/answers.ts';
+import { t } from '../../shared/words/text.ts';
 import type { WritesStore } from '../../shared/stores/shapes.ts';
 import { postWithToken } from '../../shared/stores/token-post.ts';
 import {
@@ -77,10 +79,15 @@ function thrown(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-export function createCalls(writes: WritesStore): LatexCalls {
+export function createCalls(
+    writes: WritesStore,
+    served: (root: string) => boolean = () => true
+): LatexCalls {
     /** The answer of a GET: its body when it succeeded, else the reason it did not. */
     async function get(query: string): Promise<Answered> {
         if (typeof fetch !== 'function') return { reason: '' };
+        const root = new URLSearchParams(query).get('root');
+        if (root !== null && !served(root)) return { reason: t('latex.unserved', root) };
         try {
             const response = await fetch(`/api/latex?${query}`);
             const raw = await readJson(response);

@@ -1,11 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. What one row of the Terminal tab's list (TerminalList.svelte) draws:
     // the terminal's mark in its colour, its title (a double click on it opens Rename), its
-    // description, and the bell while it rings. A row whose Kill is armed draws, in place of the
-    // description and in red, the words that a second press kills the terminal, so the darker bin
-    // is not the only sign of it. A narrow list draws the mark alone, with the bell. While the row
-    // is renamed, the field the list hands in (`children`) is drawn after the mark in place of the
-    // words.
+    // description, and the bell while it rings. The description takes the room the name and the
+    // controls leave and never widens the row's button. A narrow list draws the mark alone, with
+    // the bell. While the row is renamed, the field the list hands in (`children`) is drawn after
+    // the mark in place of the words.
 
     import type { Snippet } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -16,8 +15,6 @@
 
     type Props = {
         row: TerminalChoice;
-        /** The row's Kill waits for its second press. */
-        armed: boolean;
         /** The row's bell is ringing. */
         ringing: boolean;
         /** The list is narrow and draws the mark alone. */
@@ -28,7 +25,7 @@
         children?: Snippet;
     };
 
-    let { row, armed, ringing, narrow, onrename, children }: Props = $props();
+    let { row, ringing, narrow, onrename, children }: Props = $props();
 
     const mark = $derived(markOf(row));
 </script>
@@ -42,9 +39,7 @@
     {:else}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <span class="title" data-row-title ondblclick={onrename}>{row.title}</span>
-        <span class="description" class:armed data-row-description
-            >{armed ? t('sessions.terminal_kill_armed') : row.description}</span
-        >
+        <span class="description" data-row-description>{row.description}</span>
         {#if ringing}
             <span class="bell" data-bell title={t('sessions.terminal_bell')}>
                 <Glyph name="bell" />
@@ -82,13 +77,10 @@
 
     .description {
         flex: 1 1 0;
+        width: 0;
         min-width: 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
-    }
-
-    .description.armed {
-        color: var(--c-red-txt);
     }
 
     .markglyph {

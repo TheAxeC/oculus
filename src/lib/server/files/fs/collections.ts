@@ -104,6 +104,14 @@ export function readCollection(
     } catch {
         return null;
     }
+    return collectionText(file, source, own);
+}
+
+/**
+ * One collection file's text read as readCollection reads the file, or null when it does not parse:
+ * what an undo that puts text back reads its result through before it writes it.
+ */
+export function collectionText(file: string, source: string, own?: string): Collection | null {
     const doc = parseDocument(source);
     if (doc.errors.length > 0 || !isYamlMap(doc.contents)) return null;
     let data: unknown;

@@ -18,6 +18,7 @@
         createPageFlows,
         pageName,
         questionFor,
+        type HeldClose,
         type Question
     } from '$lib/state/workbench/navigation/pages';
     import { t } from '$lib/state/shared/words/text';
@@ -27,9 +28,9 @@
     const MANAGE = 'manage';
 
     const {
-        layout: { closePage, currentPage, pages, switchPage },
+        layout: { closeInstance, closePage, currentPage, pages, switchPage },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals, saveBeforeClose }
+        ui: { unsaved, busyTerminals, saveBeforeClose, saveForClose }
     } = useState();
 
     type Props = {
@@ -42,16 +43,18 @@
     let { stopIndex, ringKeys, onmanage }: Props = $props();
 
     /** The close that waits on its dialog, and the question an unsaved tab waits on. */
-    let confirming: { message: string; id: string } | null = $state(null);
+    let confirming: HeldClose | null = $state(null);
     let question: Question | null = $state(null);
 
     const flows = createPageFlows({
         pages,
         unsaved,
         saveBeforeClose,
+        saveForClose,
         busyTerminals,
         viewFor,
         closePage,
+        closeTab: closeInstance,
         holdClose: (held) => (confirming = held),
         ask: questionFor((held) => (question = held))
     });

@@ -202,7 +202,7 @@ A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, a
 
 - Its `config.yml` paths are read from its own folder. Its `career_file`, `publications_file`, `linkedin_dir` and `portfolio_deck` are not read.
 - Its records have the id `<hub name>:<id>`, and a reference never crosses hubs.
-- A change to a record goes to its own hub's file. A new project goes to the primary hub, and so does a new entry, unless more than one hub lists its collection, when Add asks which hub's file takes it. Save to Literature writes to the primary hub's Literature file.
+- A change to a record goes to its own hub's file. A new project goes to the primary hub, and so does a new entry, unless more than one hub lists its collection, when Add asks which hub's file takes it. Save to Literature writes to the Literature file of the primary hub when the primary holds one, named in its `collections:` or at the engine's path, and else to the first hub that holds one.
 - A collection's view is shown when any hub of the workspace lists its key.
 
 ## Repositories below a hub

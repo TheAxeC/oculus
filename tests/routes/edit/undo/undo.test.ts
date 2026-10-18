@@ -109,6 +109,94 @@ const LINE_ROWS = [
     ])
 ];
 
+/** Two tasks with quoted values and an empty quoted field, a blank line between them. */
+const QUOTED_TASKS = [
+    'title: Tasks',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: funding, type: text }',
+    'entries:',
+    '  - title: "First task"',
+    '    funding: ""',
+    '',
+    '  - title: "Second task"',
+    '    funding: "ZonMw"',
+    ''
+].join('\n');
+
+/** Two leads with quoted values and an empty quoted field, a blank line between them. */
+const QUOTED_LEADS = [
+    'meta: {}',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: status, type: select, options: [open, applied, declined, dismissed] }',
+    '  - { field: fit, type: textarea }',
+    'entries:',
+    '  - title: "First lead"',
+    '    status: open',
+    '    fit: ""',
+    '',
+    '  - title: "Second lead"',
+    '    status: "applied"',
+    ''
+].join('\n');
+
+const DELETE_TASK = { kind: 'delete-entry', collection: 'tasks', id: 'First task' };
+const ADD_TASK = { kind: 'new-entry', collection: 'tasks', fields: { title: 'A third task' } };
+const DELETE_LEAD = { kind: 'feed-delete', feed: 'leads', id: 'First lead' };
+
+/** The titles of a file's entries, in order, and the value of `field` of the one titled `title`. */
+function entriesOf(text: string, title: string, field: string): [unknown[], unknown] {
+    const { entries } = parse(text) as { entries: Record<string, unknown>[] };
+    return [entries.map((one) => one.title), entries.find((one) => one.title === title)?.[field]];
+}
+
+/**
+ * The writes of the third table, over a file of quoted values: with no hand change between the
+ * write and its undo the undo gives the file back byte for byte; with one, the change stays and the
+ * entry the write added is taken out, or the entry it deleted is written again from its record
+ * after the others.
+ */
+const BYTE_ROWS: {
+    name: string;
+    file: string[];
+    held: string;
+    body: unknown;
+    hand?: [string, string];
+    back?: { titles: string[]; kept: [string, string, string] };
+}[] = [
+    { name: 'a task deleted', file: ['tasks', 'tasks.yml'], held: QUOTED_TASKS, body: DELETE_TASK },
+    { name: 'a task added', file: ['tasks', 'tasks.yml'], held: QUOTED_TASKS, body: ADD_TASK },
+    ...[DELETE_TASK, ADD_TASK].map((body) => ({
+        name: `a task ${body === DELETE_TASK ? 'deleted' : 'added'} over a hand change`,
+        file: ['tasks', 'tasks.yml'],
+        held: QUOTED_TASKS,
+        body,
+        hand: ['"ZonMw"', '"NWO"'] as [string, string],
+        back: {
+            titles:
+                body === DELETE_TASK
+                    ? ['Second task', 'First task']
+                    : ['First task', 'Second task'],
+            kept: ['Second task', 'funding', 'NWO'] as [string, string, string]
+        }
+    })),
+    {
+        name: 'a lead deleted',
+        file: ['feeds', 'position-leads.yml'],
+        held: QUOTED_LEADS,
+        body: DELETE_LEAD
+    },
+    {
+        name: 'a lead deleted over a hand change',
+        file: ['feeds', 'position-leads.yml'],
+        held: QUOTED_LEADS,
+        body: DELETE_LEAD,
+        hand: ['"applied"', '"declined"'],
+        back: { titles: ['Second lead', 'First lead'], kept: ['Second lead', 'status', 'declined'] }
+    }
+];
+
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */
     async function made(into: PrimaryTarget, body: unknown, row = ''): Promise<Change> {
@@ -268,6 +356,26 @@ describe('taking a change back', () => {
         expect((await undone(into, emptied)).status).toBe(200);
         expect(tasksOf(into)).not.toContain('A fourth task');
     });
+
+    it.each(BYTE_ROWS)(
+        'puts a file of quoted values back as it was, or keeps a hand change made after the write: $name',
+        async (row) => {
+            const into = target();
+            const file = join(into.hub, ...row.file);
+            writeFileSync(file, row.held);
+            const change = await made(into, row.body, row.name);
+            if (row.hand !== undefined) {
+                writeFileSync(file, readFileSync(file, 'utf8').replace(...row.hand));
+            }
+            expect((await undone(into, change)).status).toBe(200);
+            const text = readFileSync(file, 'utf8');
+            if (row.back === undefined) expect(text).toBe(row.held);
+            else {
+                const [title, field, value] = row.back.kept;
+                expect(entriesOf(text, title, field)).toEqual([row.back.titles, value]);
+            }
+        }
+    );
 
     it('puts a deleted entry back with its subtasks, each as the file held it', async () => {
         const into = target();

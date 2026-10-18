@@ -28,7 +28,6 @@ import {
     latexBuild,
     latexFormatting,
     lintSettings,
-    readMachine,
     refreshSettings,
     slurmSettings,
     textCatalog,
@@ -37,20 +36,12 @@ import {
 } from '../../data/sources/config.ts';
 import { workspaceVocabs } from '../../data/index.ts';
 import type { HostInfo, Snapshot } from '../../data/model/index.ts';
-import { mintToken } from '../core/auth.ts';
 import { words } from '../core/words.ts';
 import type { Finding, FilesPayload } from '../../data/model/index.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
-import {
-    watchCalendar,
-    type CalendarOptions,
-    type CalendarWatcher
-} from '../accounts/calendar/poll.ts';
-import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
 import { machineOpener, pathOpener } from '../files/open.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
-import { Hub } from '../core/channels.ts';
 import { target, type Carried } from '../edit/writes.ts';
 import { hubDirs } from '../../data/helpers/files/private-folders.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
@@ -64,15 +55,11 @@ import { createRunningGit } from '../core/git/running.ts';
 import { expandHome } from '../files/workspace/folders.ts';
 import { wallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
-import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { savedPath } from '../machine/runs/commands/saved.ts';
 import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
-import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
 import { debugControl } from '../machine/debug/session/start.ts';
 import { repositoryRoots } from '../files/roots.ts';
-import { createRelay, type Relay } from '../machine/lsp/relay/relay.ts';
-import type { RelayOptions } from '../machine/lsp/relay/relay-options.ts';
 import { SchemaFeed } from '../machine/lsp/schema-feed.ts';
 import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
@@ -80,59 +67,37 @@ import { followRoots } from '../machine/lsp/held/watch.ts';
 import { servedRoots } from '../machine/lsp/uris.ts';
 import { ownFolder } from '../machine/lsp/servers.ts';
 import { StreamTerminalSet } from '../machine/apps/tools/run/stream-terminals.ts';
-import { Terminals, type StreamTerminals } from '../machine/pty/channel.ts';
 import { stopTerminal } from '../machine/pty/sessions.ts';
-import {
-    watchProcesses,
-    type ProcessesOptions,
-    type ProcessesWatcher
-} from '../machine/processes/watch.ts';
 import { readTable } from '../machine/processes/ps.ts';
 import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
-import { HeldEslints, type HeldEslintsOptions } from '../machine/runs/lint/eslint.ts';
 import { HeldComments } from '../machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../machine/runs/lint/runs.ts';
 import { runEntry } from '../machine/runs/schedules/run.ts';
-import {
-    watchSchedules,
-    type SchedulesOptions,
-    type SchedulesWatcher
-} from '../machine/runs/schedules/watch.ts';
+import type { SchedulesWatcher } from '../machine/runs/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
-import { watchUsageRefresh } from '../machine/usage/refresh.ts';
-import { watchUsage } from '../machine/usage/watch.ts';
-import { createWorkspace } from '../files/workspace/follow.ts';
 import type { OpenWorkspace } from '../files/workspace/open.ts';
 import { hubOption, perOculus } from '../files/workspace/paths.ts';
-import { defaultStateFolder, stateFileOf } from '../files/workspace/state.ts';
+import { stateFileOf } from '../files/workspace/state.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
 import { createMachine } from './process/context/machine.ts';
 import { newWorkspaceFindings, reportFindings, startFindings } from './process/context/findings.ts';
 import { createPortMover } from './process/context/port.ts';
 import { createRebuild, reasonOf, type Parts } from './process/context/rebuild.ts';
+import { contextDependencies, type ContextDependencies } from './process/context/dependencies.ts';
 import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
 import { appFeed } from './process/context/app-feed.ts';
-import { startHosts } from './process/apps-hosts.ts';
-import { watchApps, type AppsWatchOptions, type AppsWatcher } from './watch/apps.ts';
-import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
-import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
-import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
+import type { AutofetchWatcher } from './watch/autofetch.ts';
+import type { GitWatcher } from './watch/git.ts';
 import { nestedFound, startAutofetch, startGit } from './watch/repos/git-start.ts';
-import {
-    changedKeys,
-    rebuiltBy,
-    watchLocal,
-    type ChangedKey,
-    type LocalWatcher
-} from './watch/local.ts';
+import { changedKeys, rebuiltBy, type ChangedKey } from './watch/local.ts';
 import { startPollers, usageStarters } from './watch/pollers.ts';
-import { watchPortfolio, type PortfolioWatcher, type Watcher } from './watch/portfolio.ts';
-import { watchSessions, type SessionsWatcher } from './watch/sessions.ts';
+import type { PortfolioWatcher, Watcher } from './watch/portfolio.ts';
+import type { SessionsWatcher } from './watch/sessions.ts';
 
 /** The machine the server runs on, and the address a page on it reaches the server at. */
 export function hostInfo(port: number): HostInfo {
@@ -144,65 +109,7 @@ export type { ServerContext };
 /** The Node request type used as the context carrier by both server entry points. */
 export type OculusRequest = IncomingMessage & { oculus?: ServerContext };
 
-export type ContextDependencies = {
-    readMachine: typeof readMachine;
-    loadConfig: typeof loadConfig;
-    mintToken: typeof mintToken;
-    /**
-     * The folder `workspace.json` lives in, which the open workspace and the recent list are read
-     * from.
-     */
-    stateFolder: () => string;
-    createWorkspace: typeof createWorkspace;
-    createHub: () => Hub;
-    createTerminals: (hub: Hub, streams: StreamTerminals) => Terminals;
-    createRelay: (options: RelayOptions) => Relay;
-    createDebug: (options: DebugOptions) => DebugClient;
-    createEslints: (options: HeldEslintsOptions) => HeldEslints;
-    watchPortfolio: typeof watchPortfolio;
-    watchSessions: typeof watchSessions;
-    watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
-    watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
-    watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
-    watchSchedules: (hub: Hub, options: SchedulesOptions) => SchedulesWatcher;
-    watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
-    watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
-    watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
-    watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
-    watchLocal: (hubs: string[], changed: () => void) => LocalWatcher;
-    watchApps: (hub: Hub, options: AppsWatchOptions) => AppsWatcher;
-    startHosts: typeof startHosts;
-    watchUsageRefresh: typeof watchUsageRefresh;
-    watchUsage: typeof watchUsage;
-};
-
-const dependencies: ContextDependencies = {
-    readMachine,
-    loadConfig,
-    mintToken,
-    stateFolder: defaultStateFolder,
-    createWorkspace,
-    createHub: () => new Hub(),
-    createTerminals: (hub, streams) => new Terminals(hub, { streams }),
-    createRelay,
-    createDebug: (options) => new DebugClient(options),
-    createEslints: (options) => new HeldEslints(options),
-    watchPortfolio,
-    watchSessions,
-    watchGit: (hub, options) => watchGit(hub, options),
-    watchAutofetch: (hub, options) => watchAutofetch(hub, options),
-    watchBookmarks,
-    watchSchedules,
-    watchHpc,
-    watchProcesses,
-    watchCalendar,
-    watchMail,
-    watchLocal: (hubs, changed) => watchLocal(hubs, changed),
-    watchApps: (hub, options) => watchApps(hub, options),
-    startHosts,
-    watchUsageRefresh,
-    watchUsage
-};
+export type { ContextDependencies };
 
 /**
  * Build every process-owned server object once. `portMove` is how the process that owns the HTTP
@@ -216,7 +123,7 @@ export function createServerContext(
     portMove?: PortMove,
     ready?: Promise<void>
 ): ServerContext {
-    const make = { ...dependencies, ...replacements };
+    const make = { ...contextDependencies, ...replacements };
     const workspace = make.createWorkspace(make.stateFolder());
     const open = (): OpenWorkspace => workspace.open();
     // The machine's values at start: the watchers and the pollers are built from them before any
@@ -298,7 +205,9 @@ export function createServerContext(
     const hub = make.createHub();
     registerFilesChannel(hub);
     const streamTerminals = new StreamTerminalSet();
-    const terminals = make.createTerminals(hub, streamTerminals);
+    const terminals = make.createTerminals(hub, streamTerminals, () =>
+        textCatalog(configCache.quiet().config)
+    );
     const schemas = new SchemaFeed();
     const held = (): Carried => ({
         open: open(),

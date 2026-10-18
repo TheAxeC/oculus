@@ -1,13 +1,16 @@
 // Layer 2, server (the desktop host). The application menu, the macOS one: oculus, File, Edit,
 // View, Window and Help. Every label is a catalog word. Cmd+W is on no item, so it reaches the
-// page, which closes the active tab; the Edit items keep their roles and their labels but do not
-// register their accelerators, so Cmd+Z, Cmd+C and the others reach the page, where Monaco and the
-// terminal answer them themselves, and a text field answers them as Chromium does. The menu's own
-// commands that the page answers (Settings, Help) are sent to a main window over the bridge. Every
-// accelerator is one of ACCELERATORS (data/helpers/keys/oculus/desktop-keys.ts),
-// including on macOS those of the roles that quit, hide and minimize, so the list is every key the
-// menu takes there. Off macOS those roles keep the accelerator Electron gives them on that
-// platform.
+// page, which closes the active tab. The Edit items keep their roles and their labels. Off macOS
+// they do not register their accelerators, so Ctrl+Z, Ctrl+C and the others reach the page, where
+// Monaco and the terminal answer them themselves, and a text field answers them as Chromium does.
+// On macOS Electron registers a role's accelerator whatever `registerAccelerator` says (the option
+// is Linux's and Windows' alone), so there the Edit roles hold Cmd+Z, Cmd+A and the others: Select
+// All selects the text of the focused field, and a key sent to the page alone, as the DevTools
+// protocol sends one without its `commands`, runs no role. The menu's own commands that the page
+// answers (Settings, Help) are sent to a main window over the bridge. Every accelerator is one of
+// ACCELERATORS (data/helpers/keys/oculus/desktop-keys.ts), including on macOS those of the roles
+// that quit, hide and minimize, so the list is every key the menu takes there besides the Edit
+// roles' own. Off macOS those roles keep the accelerator Electron gives them on that platform.
 
 import { Menu, type MenuItemConstructorOptions } from 'electron';
 import { ACCELERATORS } from '../../lib/data/helpers/keys/oculus/desktop-keys.ts';

@@ -121,15 +121,13 @@ function twoHubs(): { into: PrimaryTarget; first: string; lab: string } {
 
 /**
  * The writes of the first table. `files` are the files of the second hub the write changes, and
- * `values` marks a deletion, whose undo writes the entry back as the record holds it, so the file
- * holds the same values and not the same bytes. `unrecoverable` marks a promotion, whose record
- * offers no way back.
+ * `unrecoverable` marks a promotion, whose record offers no way back. Every other write's undo puts
+ * the files back byte for byte, a deletion's included, since its record keeps the text it replaced.
  */
 const ROWS: {
     name: string;
     body: unknown;
     files: string[];
-    values?: boolean;
     unrecoverable?: boolean;
 }[] = [
     {
@@ -183,8 +181,7 @@ const ROWS: {
     {
         name: 'a deletion',
         body: { kind: 'delete-entry', collection: 'tasks', id: 'lab:Another task' },
-        files: ['tasks/tasks.yml'],
-        values: true
+        files: ['tasks/tasks.yml']
     },
     {
         name: 'a Lit Watch field',
@@ -225,14 +222,12 @@ const ROWS: {
     {
         name: 'a Lit Watch deletion',
         body: { kind: 'feed-delete', feed: 'radar', id: 'Paper', root: 'lab' },
-        files: ['feeds/literature-radar.yml'],
-        values: true
+        files: ['feeds/literature-radar.yml']
     },
     {
         name: 'a lead deletion',
         body: { kind: 'feed-delete', feed: 'leads', id: 'Lead', root: 'lab' },
-        files: ['feeds/position-leads.yml'],
-        values: true
+        files: ['feeds/position-leads.yml']
     },
     {
         name: 'a LinkedIn idea posted',
@@ -268,17 +263,7 @@ describe('a write to a record of the second hub', () => {
             }
             expect((await undone(into, change)).status, row.name).toBe(200);
             expect(differing(before.first, filesOf(first)), row.name).toEqual([]);
-            const back = filesOf(lab);
-            expect(differing(before.lab, back), row.name).toEqual(
-                row.values === true ? [...row.files].sort() : []
-            );
-            if (row.values === true) {
-                for (const file of row.files) {
-                    expect(parse(back.get(file) ?? ''), row.name).toEqual(
-                        parse(before.lab.get(file) ?? '')
-                    );
-                }
-            }
+            expect(differing(before.lab, filesOf(lab)), row.name).toEqual([]);
         }
     );
 

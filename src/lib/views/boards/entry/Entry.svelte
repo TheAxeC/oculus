@@ -175,6 +175,23 @@
 
     /** What the card's last write answered, the one outcome line this tab holds. */
     let said = $state('');
+    /**
+     * The entry's values the line was said over. A write's answer lands after the page took the
+     * values the write sent (state/forms/settled.svelte.ts), so the push of those values keeps the
+     * line, and values that differ (an undo, another tab, the disk) take it away.
+     */
+    const shownValues = $derived(JSON.stringify(page?.values ?? null));
+    let saidOver = '';
+
+    /** Say a write's answer on the tab's one outcome line. */
+    function say(words: string): void {
+        said = words;
+        saidOver = shownValues;
+    }
+
+    $effect(() => {
+        if (said !== '' && shownValues !== saidOver) said = '';
+    });
 
     /** True while the question before a delete is open. */
     let deleting = $state(false);
@@ -182,7 +199,7 @@
     /** Open the composer on a task; a refusal is said on the line every write answers on. */
     async function startAgent(task: TaskRef): Promise<void> {
         const refused = await composeAt({ task });
-        if (refused !== '') said = refused;
+        if (refused !== '') say(refused);
     }
 
     function title(): string {
@@ -260,12 +277,10 @@
                     statuses={lifecycle}
                     {file}
                     fault={faults.get(entry.index)}
-                    onsaid={(answer: string) => (said = answer)}
+                    onsaid={say}
                     more
                     extra={taskCardActions(collectionKey, entry, configMap(), startAgent).concat(
-                        literatureCardActions(collectionKey, entry, writeToken, (words) => {
-                            said = words;
-                        })
+                        literatureCardActions(collectionKey, entry, writeToken, say)
                     )}
                 />
             {:else if feedEntry !== null && collectionKey === 'leads'}
@@ -274,7 +289,7 @@
                     vocab={config()?.config ?? {}}
                     cursor={false}
                     expired={isExpired(feedEntry, localDate(Date.now()))}
-                    onsaid={(words: string) => (said = words)}
+                    onsaid={say}
                     beside={instance.id}
                     {blocked}
                 />
@@ -287,7 +302,7 @@
                     projects={snapshot?.entities.projects ?? {}}
                     dismissed={isDismissed(feedEntry)}
                     page
-                    onsaid={(words: string) => (said = words)}
+                    onsaid={say}
                 />
             {/if}
 
@@ -311,7 +326,7 @@
     <DeleteAsk
         collection={collectionKey}
         id={key}
-        onsaid={(answer: string) => (said = answer)}
+        onsaid={say}
         onclose={() => (deleting = false)}
     />
 {/if}

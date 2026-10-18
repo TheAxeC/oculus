@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, shell. The question after a repository was cloned. Open and Add to Workspace are the
-    // two answers; Open of a workspace holding unsaved folders asks once more, Save, Don't Save or
-    // Cancel, and Save asks for the name of the workspace file; while no folder is a hub, Save is
+    // two answers; Open of a workspace holding unsaved folders asks once more, Cancel, Don't Save
+    // or Save, and Save asks for the name of the workspace file; while no folder is a hub, Save is
     // drawn disabled under the sentence that says why. Cancel, Escape and a press on the ground
-    // close the question and change nothing (state/sources/clone/clone-after.svelte.ts).
+    // close the question and change nothing (state/sources/clone/clone-after.svelte.ts). Every step
+    // stands at the palette's level, as the name box does, so none dims the page.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -35,6 +36,7 @@
         onconfirm={() => void after.open()}
         onother={() => void after.add()}
         oncancel={after.cancel}
+        level="palette"
     />
 {:else if held !== null && held.step === 'leave'}
     <Confirm
@@ -42,7 +44,7 @@
         detail={held.savable ? '' : t('files.refused_no_hub')}
         refused={!held.savable}
         confirm={t('app.clone.save')}
-        others={[t('app.clone.dont_save')]}
+        others={[t('ui.confirm_dont_save')]}
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => {
             name = '';
@@ -50,6 +52,7 @@
         }}
         onother={() => void after.dontSave()}
         oncancel={after.cancel}
+        level="palette"
     />
 {:else if held !== null}
     <Modal level="palette" onclose={after.cancel}>

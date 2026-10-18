@@ -333,3 +333,20 @@ F2, F5(a), F5(b), F6, F7, F8, F9 and F10: closed. My reruns or reads reproduce e
 - The report section's absence from the worktree's ledger copy (the builder handed it back in its message): the orchestrator appended it in the main checkout. Reading git state beyond `git status --short` would be needed to say more.
 
 Reviewer usage: ac2f1f4902dfa50d5, claude-opus-5-5, 336,123 tokens, 117 tool uses, 25.3 min.
+
+## Closed
+
+The findings of the review over round 1, each with its disposition (none sent back; one repair round and no other, Axel):
+
+- Finding 1 (item 17, the settings file without a request): raised as open item 138, ruled (b): the folder list the server pushes carries each root's settings text, in O42. O40 lands with the round's lookup.
+- Finding 2 (the Settings `editor.languages` row and the save rules still read the settings file): in open item 138 (b), in O42.
+- Finding 3 (the clone question's leave step reordered): fixed at landing, the order of the base restored with `others={[t('ui.confirm_dont_save')]}`.
+- Finding 4 (the ring search misses clear spots within the link distance): open item 139, ruled (a); a finer search for the closest clear spot written at landing; no other node moves.
+- Finding 5 (the priorcopy and aftercopy runs): not used as proof; the closure of item 31 stands on the reviewer's run of the current code and the base-copy failures.
+- Finding 6 (the F4 "now 0" column printed as a constant): no change; item 38's 50 ms bound is the look's.
+- Finding 7 (the `changeMenu` doc comment): fixed at landing.
+- Finding 8 (`shortlines.py` runs git): not used as proof (open item 116's standing ruling); the reviewer's own counter gives 0 pairs.
+- Finding 9 (the round brief's second form of the first run): the form removed from `agents/briefs/O40-round1.md`.
+- Finding 10 (`EVERYTHING` defined twice): fixed at landing, the store's constant reused.
+- Finding 11 (rows below an armed Kill move down a line): seen at the look.
+- The round's hand-backs: R2's guarded entry, open item 140 (a), written at landing; point E, open item 141 (a), the armed Kill's entry and test written at landing.

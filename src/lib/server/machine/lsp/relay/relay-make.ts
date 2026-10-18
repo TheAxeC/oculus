@@ -70,6 +70,7 @@ export function createState(options: RelayOptions, calls: ServerCalls): RelaySta
         pages: new Map(),
         helds: new Set(),
         orphans: new Set(),
+        ending: new WeakSet(),
         pending: new Map(),
         asks: new Map(),
         next: 0,

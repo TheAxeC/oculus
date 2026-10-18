@@ -131,6 +131,16 @@ export type SearchStore = {
      * search runs again, so the preview and Replace read the answer under the toggles on screen.
      */
     toggleMode: (id: string, mode: SearchMode, roots: string[]) => Promise<void>;
+    /**
+     * Change what the tab searches, its root or the folder it is scoped to. As a toggle does, the
+     * search runs again while results are shown or a run is in flight, so no hit of the last search
+     * stands under the new scope.
+     */
+    rescope: (
+        id: string,
+        changes: Partial<Pick<SearchState, 'root' | 'under'>>,
+        roots: string[]
+    ) => Promise<void>;
     /** Whether a replace is in flight for this tab. */
     replaceRunning: (id: string) => boolean;
     /** What the tab's last replace said, or null. */
@@ -224,11 +234,19 @@ export function createSearch(
         ui.setInstanceState(id, { ...held, ...scoped, ...untagged, ...changes });
     }
 
-    async function toggleMode(id: string, mode: SearchMode, roots: string[]): Promise<void> {
+    /** Make a change that alters the answer, and run again when an answer is shown or due. */
+    async function changeAndRun(
+        id: string,
+        changes: Partial<SearchState>,
+        roots: string[]
+    ): Promise<void> {
         const held = searchState(id);
-        const change: Partial<Record<SearchMode, boolean>> = { [mode]: !held[mode] };
-        setSearchState(id, change);
+        setSearchState(id, changes);
         if (held.answer !== null || searchRunning(id)) await runSearch(id, roots, true);
+    }
+
+    async function toggleMode(id: string, mode: SearchMode, roots: string[]): Promise<void> {
+        await changeAndRun(id, { [mode]: !searchState(id)[mode] }, roots);
     }
 
     function searchRunning(id: string): boolean {
@@ -483,6 +501,7 @@ export function createSearch(
         searchRunning,
         runSearch,
         toggleMode,
+        rescope: changeAndRun,
         replaceRunning,
         replaceSaid,
         replaceHits,

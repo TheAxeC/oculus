@@ -494,7 +494,8 @@ export type RowStores = {
     openWorkbench: ClientState['folders']['open'];
     startTerminal: ClientState['terminals']['startTerminal'];
     showTerminal: ClientState['terminals']['showTerminal'];
-    setSearchState: ClientState['search']['setSearchState'];
+    /** Scope a Search tab to a folder, running its search again when it shows results. */
+    rescope: (id: string, root: string, under: string) => void;
     /** Ask a Search tab to put the cursor in its query box once the box is drawn. */
     wantSearchFocus: ClientState['search']['wantFocus'];
     /** Write to the clipboard; rejects when the page's clipboard refuses the write. */
@@ -521,7 +522,12 @@ export function rowStores(client: ClientState): RowStores {
         openWorkbench: client.folders.open,
         startTerminal: client.terminals.startTerminal,
         showTerminal: client.terminals.showTerminal,
-        setSearchState: client.search.setSearchState,
+        rescope: (id, root, under) =>
+            void client.search.rescope(
+                id,
+                { root, under },
+                client.fs.workspaces().folders.map((one) => one.key)
+            ),
         wantSearchFocus: client.search.wantFocus,
         copy: (text) => navigator.clipboard.writeText(text),
         download: (url, name) => {
@@ -633,7 +639,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
     function findIn(row: TreeRow): void {
         const id = deps.openView('search');
         if (id === '') return;
-        deps.setSearchState(id, { root: row.root, under: row.path });
+        deps.rescope(id, row.root, row.path);
         deps.wantSearchFocus(id, 'query');
     }
 

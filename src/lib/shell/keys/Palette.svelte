@@ -53,9 +53,9 @@
     // The file mode asks the search route for the names of every file under the served roots when
     // it opens (file-names.svelte.ts) and a worker matches them (file-match.worker.ts); the rows
     // are those of the newest query the worker has answered. With nothing typed it lists the files
-    // open in tabs; a colon or a hash typed in it leaves it for the commands or the symbols. A
-    // request to open the palette while it is open installs the text and the mode of the request,
-    // and the query is bound to the window, which reads the mode the palette is in.
+    // open in tabs (file-list.svelte.ts); a colon or a hash typed in it leaves it for the commands
+    // or the symbols. A request to open the palette while it is open installs the text and the mode
+    // of the request, and the query is bound to the window, which reads the mode the palette is in.
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
@@ -75,6 +75,7 @@
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import { createFileNames } from '$lib/shell/keys/lists/file-names.svelte';
+    import { createFileList } from '$lib/shell/keys/lists/file-list.svelte';
     import {
         choiceModeOf,
         choiceRows,
@@ -92,12 +93,9 @@
         fileValue,
         lineQuery,
         modeOf,
-        openFileEntries,
         parseCommand,
         pinItems,
-        plainFile,
         ranked,
-        shownTrees,
         taskItems,
         taskRepoOf,
         viewItems,
@@ -262,23 +260,19 @@
     const matches = $derived(
         parsed === null && mode === 'search' ? ranked(index, query).slice(0, 30) : []
     );
-    /** The trees on screen: the page, the pages it shows and its floats, or this window's float. */
-    const shown = $derived({
-        page: currentPage().id,
-        floats: floats().map((one) => one.id),
-        float: client.float
+    const fileList = createFileList({
+        active: () => open && fileMode,
+        query: () => query,
+        names,
+        hosts,
+        shown: () => ({
+            page: currentPage().id,
+            floats: floats().map((one) => one.id),
+            float: client.float
+        }),
+        first: () => tab?.id ?? null
     });
-    /** The files open in tabs of the trees on screen, the active tab of the pane in use first. */
-    const openFiles = $derived(
-        open && fileMode
-            ? openFileEntries(shownTrees(hosts(), shown), tab?.id ?? null).map(plainFile)
-            : []
-    );
-    /** The rows of the file mode: the open files with nothing typed, else the matches. */
-    const fileFound = $derived.by(() => {
-        if (!fileMode) return [];
-        return query.trim() === '' ? openFiles : names.rows();
-    });
+    const fileFound = $derived(fileList.rows);
     /** How many rows the list draws, and the value of each one a press can run, in its order. */
     const listed = $derived(
         listedRows({
@@ -391,6 +385,8 @@
                                                         listingOpen={query.trim() === ''}
                                                         {names}
                                                         {onclose}
+                                                        onselect={(value: string) =>
+                                                            (chosen = value)}
                                                     />
                                                 {:else if parsed === null}
                                                     <SearchRows {matches} onpick={choose} />

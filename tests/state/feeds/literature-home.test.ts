@@ -1,5 +1,5 @@
 // Layer 2, state tests. Which hub's Literature collection Save to Literature on a card writes to
-// and looks in (G8): the primary hub's when the primary names the collection, else the first hub's
+// and looks in (G8): the primary hub's when the primary holds the collection, else the first hub's
 // that does; the card names that hub's root in the save (SaveToLiterature.svelte), so the server
 // writes the paper where the card looks for it. The collections are listed as the selectors list
 // them, the primary's first and without a root.

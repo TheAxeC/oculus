@@ -270,6 +270,7 @@ A host calls `oculus.window.createStatusBarItem(id, alignment, priority)`; a pag
 - A file matching a `default` editor opens in it. An `option` editor adds Open With... to Files and Reopen Editor With... to a tab.
 - The page gets `document.read()`, `document.save(bytes)` and `document.dirty(flag)`, and the handlers `onSave()` and `onRevert()`.
 - A save checks the file did not change on disk, keeps a local history copy, and is refused while a source tab holds unsaved text of the file.
+- `document.dirty(true)` makes closing the tab ask whether to save it. The question's Save calls `onSave()` and closes the tab when the page has called `document.dirty(false)` by the time `onSave()` answers; a page still marked dirty keeps its tab open.
 
 ### Settings
 

@@ -5,7 +5,6 @@ text:
         clone:
             add: Add to Workspace
             after: 'Cloned {0}. Open it, or add it to the workspace?'
-            dont_save: Don't Save
             done: 'Cloned {0}'
             failed: The repository was not cloned
             leave: 'The unsaved workspace holds folders. Save them as a workspace file before {0} is opened?'

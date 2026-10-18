@@ -7,7 +7,13 @@ import { describe, expect, it } from 'vitest';
 import { linkDecision, movedPort } from '../../../src/desktop/decide/links.ts';
 import { permissionGranted } from '../../../src/desktop/decide/permissions.ts';
 import { mayCall, printTarget, senderOf } from '../../../src/desktop/decide/sender.ts';
-import { overlayColours, windowPreferences } from '../../../src/desktop/decide/window-options.ts';
+import {
+    overlayColours,
+    TITLEBAR_HEIGHT,
+    WINDOW_BACKGROUND,
+    windowFrame,
+    windowPreferences
+} from '../../../src/desktop/decide/window-options.ts';
 import * as channels from '../../../src/desktop/decide/channels.ts';
 import {
     CLOSE_FIND,
@@ -200,4 +206,33 @@ describe('the desktop host decisions', () => {
             preload: '/x/preload.cjs'
         });
     });
+
+    it.each([
+        {
+            row: 'takes the first press on an inactive window and holds the window buttons inside the strip',
+            platform: 'darwin',
+            keys: ['acceptFirstMouse', 'titleBarStyle', 'trafficLightPosition'],
+            frame: { titleBarStyle: 'hidden', acceptFirstMouse: true }
+        },
+        ...['win32', 'linux'].map((platform) => ({
+            row: "draws the window buttons over the strip's right end at its height",
+            platform,
+            keys: ['titleBarOverlay', 'titleBarStyle'],
+            frame: {
+                titleBarStyle: 'hidden',
+                titleBarOverlay: {
+                    height: TITLEBAR_HEIGHT,
+                    color: WINDOW_BACKGROUND,
+                    symbolColor: '#cccccc'
+                }
+            }
+        }))
+    ])(
+        "makes the frame of a main window and a float's window on $platform that $row",
+        ({ platform, keys, frame }) => {
+            const made = windowFrame(platform);
+            expect(Object.keys(made).sort()).toEqual(keys);
+            expect(made).toMatchObject(frame);
+        }
+    );
 });

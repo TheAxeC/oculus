@@ -386,6 +386,50 @@ export function replacedText(source: string, edited: string): ReplacedText | nul
 }
 
 /**
+ * The text that differs between a file and its edit (replacedText) widened to whole lines, and by
+ * one more line on each side where there is one, so that `after` holds the lines around a removal
+ * and an undo finds it again only where the edit left it. Null for two equal texts.
+ */
+export function replacedLines(source: string, edited: string): ReplacedText | null {
+    const found = replacedText(source, edited);
+    if (found === null) return null;
+    const lineStart = (at: number): number => (at === 0 ? 0 : source.lastIndexOf('\n', at - 1) + 1);
+    const lineEnd = (at: number): number => {
+        const next = source.indexOf('\n', at);
+        return next < 0 ? source.length : next + 1;
+    };
+    let start = lineStart(found.offset);
+    if (start > 0) start = lineStart(start - 1);
+    const changedEnd = found.offset + found.before.length;
+    let end =
+        changedEnd === 0 || source[changedEnd - 1] === '\n' ? changedEnd : lineEnd(changedEnd);
+    if (end < source.length) end = lineEnd(end);
+    const kept = source.length - end;
+    return {
+        offset: start,
+        before: source.slice(start, end),
+        after: edited.slice(start, edited.length - kept)
+    };
+}
+
+/**
+ * A file's text with a record's replaced text put back over what the write left, or null when the
+ * file does not hold that text at the record's place.
+ */
+export function putBack(source: string, replaced: ReplacedText): string | null {
+    const { offset, before, after } = replaced;
+    if (!source.startsWith(after, offset)) return null;
+    return `${source.slice(0, offset)}${before}${source.slice(offset + after.length)}`;
+}
+
+/** A record's replaced text as the log holds it: a whole offset and two texts. */
+export const replacedShape = z.object({
+    offset: z.int().min(0),
+    before: z.string(),
+    after: z.string()
+});
+
+/**
  * The directories and the file a write at `path` makes, outermost first: the folders above it that
  * are not there and the file when it is not there.
  */

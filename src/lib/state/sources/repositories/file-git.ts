@@ -12,7 +12,7 @@
 // long ago a commit was made is counted by data/helpers/dates.ts's ago, the one the session list
 // counts by, and worded here.
 
-import type { GitBlameLine, GitLineMark } from '../../../data/model/index.ts';
+import type { GitBlameLine, GitLineMark, GitState } from '../../../data/model/index.ts';
 import { ago as countAgo, type AgoUnit } from '../../../data/helpers/dates.ts';
 import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { t } from '../../shared/words/text.ts';
@@ -39,9 +39,9 @@ export type HeadTabState = {
 };
 
 /**
- * The state of a read-only tab over a tracked file at HEAD or in the index (Open File (HEAD)). The
- * `root` is the repository's own directory, which the git route reads from, and the id names the
- * stage as well, so the file at HEAD, in the index and on disk are three tabs.
+ * The state of a read-only tab over a tracked file at HEAD or in the index (Open File (HEAD) and
+ * Open File (Index)). The `root` is the repository's own directory, which the git route reads from,
+ * and the id names the stage as well, so the file at HEAD, in the index and on disk are three tabs.
  */
 export function headTabState(root: string, path: string, stage: HeadStage): HeadTabState {
     const name = path.split('/').filter(Boolean).at(-1) ?? path;
@@ -90,6 +90,24 @@ export function tabOfFile(served: readonly ServedRoot[], file: RepoFile): TabFil
     const holders = served.filter((root) => pathUnder(root.dir, target) !== '');
     const found = deepestHolding(holders, (root) => root.dir, target);
     return found === null ? null : { root: found.item.key, path: found.path };
+}
+
+/**
+ * Whether git's state says it tracks a file at HEAD, which is when the file has a blame: false in a
+ * repository with no commit, for an untracked path (listed one by one, or under a folder git lists
+ * as a whole) and for a path staged as new and never committed. An ignored file is in none of these
+ * lists; the file browser's listing says that (FsStore's `ignoredFile`).
+ */
+export function gitTracks(
+    state: Pick<GitState, 'log' | 'untracked' | 'untrackedByFolder' | 'staged'>,
+    path: string
+): boolean {
+    if (state.log.length === 0) return false;
+    if (state.untracked.some((one) => one.path === path)) return false;
+    const under = (one: { path: string }) =>
+        one.path.endsWith('/') ? path.startsWith(one.path) : one.path === path;
+    if (state.untrackedByFolder.some(under)) return false;
+    return !state.staged.some((one) => one.path === path && one.status === 'A');
 }
 
 /**

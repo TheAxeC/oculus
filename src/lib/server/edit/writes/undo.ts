@@ -14,7 +14,10 @@
 // back where it stood, and writes the value as any value is written only when it fits nowhere: on
 // a new line, or inside its line for text removed from a flow map. A change that rewrote a bare
 // note or a list of one note as a map carries the text it replaced, which the manifest writer puts
-// back over the lines the write left while the file still holds them.
+// back over the lines the write left while the file still holds them. An add and a delete of a
+// collection entry, and the delete of a lead or a Lit Watch entry, carry the text they replaced
+// too, which goes back the same way, so the file is what it was byte for byte; a file changed there
+// since is put right by the writer the other way.
 
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -50,6 +53,7 @@ import {
     createEntry,
     identityOrder,
     idOfIdentity,
+    putBackEntry,
     removeEntry,
     reorderCollection,
     writeEntry
@@ -527,7 +531,8 @@ function feedUndo(into: PrimaryTarget, change: Change): WriteOutcome | null {
         return writeFeedField(into.hub, into.config, feed, change.key, change.field, value);
     }
     if (change.kind === 'feed-delete') {
-        return restoreFeedEntry(into.hub, into.config, feed, mapBeforeShape.parse(change.before));
+        const before = mapBeforeShape.parse(change.before);
+        return restoreFeedEntry(into.hub, into.config, feed, before, change.replaced);
     }
     if (change.kind === 'radar-add') {
         return removeRadarEntry(into.hub, into.config, change.key, change.replaced);
@@ -551,11 +556,22 @@ function collectionUndo(into: PrimaryTarget, change: Change): WriteOutcome | nul
         );
     }
     if (change.kind === 'new-entry') {
+        const taken = { key: change.key, entry: null, replaced: change.replaced };
+        const back = putBackEntry(hub, config, key, taken, bookmarks);
+        if (back !== null) return back;
         const id = idOfIdentity(held, change.key);
         return id === null ? null : removeEntry(hub, config, key, id, bookmarks);
     }
     if (change.kind === 'delete-entry') {
-        return createEntry(hub, config, key, mapBeforeShape.parse(change.before), bookmarks);
+        const entry = mapBeforeShape.parse(change.before);
+        const back = putBackEntry(
+            hub,
+            config,
+            key,
+            { key: change.key, entry, replaced: change.replaced },
+            bookmarks
+        );
+        return back ?? createEntry(hub, config, key, entry, bookmarks);
     }
     const entry = renamedEntry(held, change);
     if (entry === undefined) return null;

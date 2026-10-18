@@ -30,10 +30,11 @@
     // through `nav.list`, and a key moving to one of its rows not drawn hands the move to it. The
     // list keeps drawn the rows `nav.kept` names, the row at the stop and the row the focus is in,
     // so Tab always finds the stop and a scroll never takes the focus out of the page. Each row's
-    // index path in the collection is read from a map built once per collection, and the labels
-    // the type-ahead reads are kept to the rows the caller hands.
+    // index path in the collection is read from a map built once per collection, and the labels the
+    // type-ahead reads are kept to the rows the caller hands. A caller asks for a row to be brought
+    // into view and focused with `reveal`, answered once its row is among the rows.
 
-    import type { Snippet } from 'svelte';
+    import { untrack, type Snippet } from 'svelte';
     import * as tree from '@zag-js/tree-view';
     import { normalizeProps, useMachine } from '@zag-js/svelte';
     import {
@@ -69,10 +70,25 @@
          */
         keymap?: readonly Chord[];
         onkey?: (action: string, id: string, event: KeyboardEvent) => boolean | undefined;
+        /**
+         * A row to bring into view and focus once the rows hold it, as a paste shows the item it
+         * placed: each new ask (`seq`) is answered once.
+         */
+        reveal?: { id: string; seq: number } | null;
         children: Snippet<[TreeNav]>;
     };
 
-    let { label, rows, current, onfocusrow, ontoggle, keymap, onkey, children }: Props = $props();
+    let {
+        label,
+        rows,
+        current,
+        onfocusrow,
+        ontoggle,
+        keymap,
+        onkey,
+        reveal = null,
+        children
+    }: Props = $props();
 
     const uid = $props.id();
 
@@ -99,6 +115,21 @@
             nodeToString: (node) => labelOf(node.value)
         })
     );
+    /** The last reveal asked for that a list answered. */
+    let revealed = -1;
+    // A reveal waits for its row to be among the rows, and is handed to the list that draws it.
+    $effect(() => {
+        const ask = reveal;
+        if (ask === null || ask.seq === revealed || !byId.has(ask.id)) return;
+        untrack(() => {
+            for (const list of lists) {
+                if (!list.reveal(ask.id)) continue;
+                revealed = ask.seq;
+                return;
+            }
+        });
+    });
+
     /** The row holding the stop: the machine's focused row, else its first row. */
     const stop = $derived(focusOf(rows, current ?? held) ?? root.children.at(0)?.value ?? '');
 

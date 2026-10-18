@@ -40,6 +40,7 @@
         pageName,
         pageUnsaved,
         questionFor,
+        type HeldClose,
         type Question
     } from '$lib/state/workbench/navigation/pages';
     import { railPages, type RailPage } from '$lib/state/workbench/navigation/rail';
@@ -53,9 +54,18 @@
         drag: { startPage },
         entities: { config },
         folders,
-        layout: { closePage, currentPage, openPage, pages, renamePage, resetPage, switchPage },
+        layout: {
+            closeInstance,
+            closePage,
+            currentPage,
+            openPage,
+            pages,
+            renamePage,
+            resetPage,
+            switchPage
+        },
         registry: { viewFor },
-        ui: { unsaved, busyTerminals, saveBeforeClose }
+        ui: { unsaved, busyTerminals, saveBeforeClose, saveForClose }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -94,15 +104,17 @@
      * takes the same question a pane does over the tabs it would take away, so one tab holding
      * unsaved text is asked about in the tab's own words.
      */
-    let confirming: { message: string; id: string } | null = $state(null);
+    let confirming: HeldClose | null = $state(null);
 
     const flows = createPageFlows({
         pages: () => shown,
         unsaved,
         saveBeforeClose,
+        saveForClose,
         busyTerminals,
         viewFor,
         closePage,
+        closeTab: closeInstance,
         holdClose: (held) => (confirming = held),
         ask
     });

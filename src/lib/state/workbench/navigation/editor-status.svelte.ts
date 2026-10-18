@@ -30,6 +30,9 @@
 import { untrack } from 'svelte';
 import type { LintId, LintState } from '../../../data/model/index.ts';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
+import { findInstance } from '../layout/instance.ts';
+import { paneAt } from '../layout/tree.ts';
+import type { Layout } from '../layout/model.ts';
 
 /**
  * One editor action a tab offers the palette: its id, the editor's label, and its keys as the hint
@@ -42,7 +45,8 @@ export type EditorStatus = {
     caret: Caret | null;
     /** How many lines the text holds, the range a go-to-line is read in. */
     lines: number;
-    indent: Indent;
+    /** The indentation the text is shown in, null while the configuration has not said it. */
+    indent: Indent | null;
     ending: LineEnding;
     /** The highlighter's name for the language the tab paints its text in. */
     language: string;
@@ -171,6 +175,27 @@ export function sourceOnScreen(
     if (tab?.view !== 'source') return null;
     const said = statusOf(tab.id);
     return said === null ? null : { instance: tab.id, status: said };
+}
+
+/**
+ * The source tab the status bar draws the items of: the tab on screen when it is a source tab, and
+ * while a view tab of another pane is on screen the source tab on screen last (`kept`), as long as
+ * the page's tree still holds it as its pane's active tab, as VS Code keeps the editor's items
+ * while the side bar holds the focus. A source tab closed, or covered in its own pane by another
+ * tab, gives nothing, as does a page whose active pane draws no tab.
+ */
+export function sourceKept(
+    tab: { id: string; view: string } | null,
+    kept: string | null,
+    tree: Layout,
+    statusOf: (instance: string) => EditorStatus | null
+): SourceOnScreen | null {
+    if (tab === null || tab.view === 'source' || kept === null)
+        return sourceOnScreen(tab, statusOf);
+    const found = findInstance(tree, kept);
+    if (found?.instance.view !== 'source' || paneAt(tree, found.path)?.active !== kept) return null;
+    const said = statusOf(kept);
+    return said === null ? null : { instance: kept, status: said };
 }
 
 /** The views whose tab lists editor actions for the palette: a source tab and a diff pane. */

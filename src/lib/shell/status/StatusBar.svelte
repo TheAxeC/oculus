@@ -9,8 +9,10 @@
     // machine, the repository the bar follows, the findings, the problems, the HPC poll, the usage
     // refreshers, the server connection and the live sessions, with the git writes the branch and
     // sync items ask for. The source tab on screen publishes its own items' state to the editor
-    // status store, which the shell reads. The unsaved tabs and the notifications are the shell's
-    // own, from the layout, ui and notices stores.
+    // status store, which the shell reads; while a view tab of another pane is on screen the bar
+    // keeps the items of the source tab on screen last, until that tab closes or is covered. The
+    // unsaved tabs and the notifications are the shell's own, from the layout, ui and notices
+    // stores.
     //
     // The problems item is VS Code's: the error and warning counts after their icons, and the info
     // count when there are infos, packed as `1K` from 1000 and `10K+` from 10000. Its tooltip names
@@ -54,7 +56,7 @@
         type StatusItem
     } from './status-items';
     import { firstUnsaved, unsavedCount } from '$lib/state/workbench/navigation/pages';
-    import { sourceOnScreen } from '$lib/state/workbench/navigation/editor-status.svelte';
+    import { sourceKept } from '$lib/state/workbench/navigation/editor-status.svelte';
     import {
         NO_GIT,
         type StatusGit,
@@ -94,8 +96,15 @@
     const dirty = $derived(unsavedCount(held, unsaved));
     const hidden = $derived(statusHidden());
 
-    /** The source tab on screen, when the tab on screen is one and has said what it holds. */
-    const source = $derived(sourceOnScreen(activeInstance(), statusOf));
+    /** The source tab on screen last, which the bar keeps while a view tab of another pane is. */
+    let kept = $state<string | null>(null);
+    $effect(() => {
+        const tab = activeInstance();
+        if (tab?.view === 'source') kept = tab.id;
+    });
+
+    /** The source tab whose items the bar draws, once it has said what it holds. */
+    const source = $derived(sourceKept(activeInstance(), kept, layout.layout(), statusOf));
 
     /**
      * Every item in the right-click menu, checked while it is drawn: the bar's own, then those the

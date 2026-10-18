@@ -15,7 +15,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
-    const { workspaceSymbols, layout } = useState();
+    const { workspaceSymbols, layout, float } = useState();
 
     type Props = {
         /** The source tab on screen the list is asked through, or null when none is. */
@@ -69,7 +69,7 @@
                 ? sourceTabState(row.root, row.path, line, column)
                 : libraryTabState(row.path, row.library, line, column);
         onclose();
-        layout.openView('source', state);
+        layout.openView('source', state, float ?? undefined);
     }
 </script>
 

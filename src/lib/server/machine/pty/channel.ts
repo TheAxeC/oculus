@@ -54,12 +54,15 @@ import {
 import { Turns } from './latex/turns.ts';
 import {
     control,
+    noServer,
     run,
     tmuxRuns,
     RESTART_MS,
+    silenceWords,
     type ControlClient,
     type TmuxOptions
 } from './tmux.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../data/sources/config.ts';
 
 /** The prefix of a terminal channel. */
 export const CHANNEL_PREFIX = 'pty:';
@@ -363,6 +366,8 @@ export type TerminalsOptions = {
     idlePoll?: number;
     /** Passed to the default driver. A test points it at a private tmux server. */
     tmux?: TmuxOptions;
+    /** The text catalogue a failed read is worded from; the engine's when absent. */
+    text?: () => Record<string, string>;
 };
 
 /**
@@ -375,6 +380,7 @@ export class Terminals {
     #hub: Hub;
     #driver: TerminalDriver;
     #lines: number;
+    #text: () => Record<string, string>;
     #attached = new Map<string, Set<Sink>>();
     #held = new Map<Sink, Set<string>>();
     /**
@@ -398,7 +404,8 @@ export class Terminals {
     #terminals: Terminal[] | null = null;
     /**
      * Tmux's words for the last read when it failed for a reason other than "no server" (a socket
-     * path too long to reach, a tmux that cannot run), null once a list is taken.
+     * path too long to reach, a tmux that cannot run), or the catalogue's when tmux said nothing (a
+     * call killed at its timeout), null once a list is taken.
      */
     #unreadable: string | null = null;
     #streams: StreamTerminals | undefined;
@@ -425,6 +432,7 @@ export class Terminals {
         this.#hub = hub;
         this.#driver = options.driver ?? tmuxDriver(options.tmux ?? {});
         this.#lines = options.scrollbackLines ?? SCROLLBACK_LINES;
+        this.#text = options.text ?? (() => textCatalog(loadConfig(engineDir()).config));
         this.#driver.onOutput((id, bytes) => this.#output(id, bytes));
         this.#driver.onChange(() => this.refresh());
         this.#streams = options.streams;
@@ -478,8 +486,9 @@ export class Terminals {
 
     /**
      * Why the terminal list cannot be read: tmux's words for the newest read when it failed for a
-     * reason other than "no server", null once a list is taken. The listeners are told when it
-     * changes, so the schedules can say why they wait while no list was ever read.
+     * reason other than "no server", or the catalogue's when tmux said nothing, null once a list is
+     * taken. The listeners are told when it changes, so the schedules can say why they wait while
+     * no list was ever read.
      */
     unreadable(): string | null {
         return this.#unreadable;
@@ -525,7 +534,7 @@ export class Terminals {
             } catch (error) {
                 const said = reason(error);
                 if (!noServer(said)) {
-                    this.#failed(turn, said);
+                    this.#failed(turn, silenceWords(error, this.#text) ?? said);
                     return;
                 }
                 if (confirmed >= NO_SERVER_CONFIRMS) {
@@ -860,17 +869,6 @@ export class Terminals {
             console.error(`pty: resize of ${id} failed: ${reason(error)}`);
         }
     }
-}
-
-/**
- * Whether tmux's error says no server runs: an empty list once every read of a run says it (see
- * `#read`), and a failed read until then.
- */
-export function noServer(said: string): boolean {
-    return (
-        said.includes('no server running on') ||
-        (said.includes('error connecting to') && said.includes('(No such file or directory)'))
-    );
 }
 
 function reason(error: unknown): string {

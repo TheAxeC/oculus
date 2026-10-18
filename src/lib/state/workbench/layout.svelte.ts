@@ -21,7 +21,9 @@
 // closed last, what the reader last acted in, where a view asked for lands, a view opened clear of
 // one instance, the file browser's ask, and the storage. None of them holds an arrangement in a
 // rune (the closed-tab list and the armed keep hold only their own lists), so none of them is a
-// second place an arrangement can change.
+// second place an arrangement can change. Every operation is run under its own name, and the last
+// one that saved is run again on an arrangement another tab saved over it, its path arguments named
+// again there by what they held (layout/saved/rerun.ts).
 
 import { item } from '../../data/helpers/guards.ts';
 import {
@@ -36,6 +38,7 @@ import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelt
 import { createRailPages } from './layout/open/float/rail-pages.ts';
 import { createReopen, type Reopen } from './layout/tabs/reopen.svelte.ts';
 import type { Load } from './layout/saved/load.ts';
+import { createRuns } from './layout/saved/rerun.ts';
 import type { UiStore } from './ui.svelte.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
 import {
@@ -63,7 +66,9 @@ import {
     newPage,
     rebuiltPage,
     resetAll,
+    resize,
     restore,
+    setLocked,
     settleFocus,
     showable,
     tabsOf,
@@ -105,9 +110,6 @@ import { arrangedPages, resetPlan, type RailSource } from './navigation/pages.ts
 import { t } from '../shared/words/text.ts';
 
 export type { OpenOptions };
-
-/** How many times an operation is run again on the envelope the host refused its save with. */
-const MAX_TURNS = 8;
 
 /** What a reader given the id of a page the list does not hold is answered with. */
 const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
@@ -199,6 +201,10 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         restorePanes: (page?: string) => void;
         foldPane: (path: number[], page?: string) => void;
         expandChild: (path: number[], index: number, page?: string) => void;
+        /** Give the children of the split at `path` new shares, as a drag of a sash does. */
+        resizeSplit: (path: number[], sizes: number[], page?: string) => void;
+        /** Lock the pane at `path`, or unlock it. */
+        lockPane: (path: number[], locked: boolean, page?: string) => void;
         focused: (page?: string) => Focus | null;
         openView: Opening['openView'];
         openBeside: Opening['openBeside'];
@@ -323,20 +329,6 @@ export function createLayout(
 
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
     const storage = createStorage(desktop?.turn);
-
-    /**
-     * The name of the store operation being run, which the record of layout writes names as the
-     * call that wrote. Every operation is synchronous, so this is the operation a caller invoked
-     * for as long as a save inside it runs.
-     */
-    let writing = '';
-
-    /**
-     * The last operation that saved the pages, to run again on another tab's save that crossed its
-     * save (`again` of the load), and the count of saves, which tells whether an operation saved.
-     */
-    let lastSaving: { name: string; run: () => unknown } | null = null;
-    let saves = 0;
 
     // Everything below stays in the factory, which owns the arrangement as a whole: the page list
     // and what is on screen, the write path every change goes through, and the operations that
@@ -489,15 +481,16 @@ export function createLayout(
         setLoaded: () => {
             loaded = true;
         },
-        again: () => {
-            if (lastSaving === null || writing !== '') return;
-            writing = lastSaving.name;
-            try {
-                lastSaving.run();
-            } finally {
-                writing = '';
-            }
-        }
+        again: () => runs.again()
+    });
+    /**
+     * The store operations run by name: the name is what the record of layout writes names as the
+     * call that wrote, and the last one that saved is run again on another tab's save.
+     */
+    const runs = createRuns({
+        at,
+        write: () => savePages(store.current),
+        retake: () => load.retake()
     });
 
     const rail = createRailPages(access, {
@@ -600,8 +593,8 @@ export function createLayout(
         fresh = false;
         if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
-        saves += 1;
-        storage.write(next, writing);
+        const call = runs.writing();
+        runs.saved(() => storage.write(store.current, call));
     }
 
     /**
@@ -686,6 +679,16 @@ export function createLayout(
         change((tree) => expand(tree, path, index), page);
     }
 
+    /** Give the children of the split at `path` new shares, as a drag of a sash does. */
+    function resizeSplit(path: number[], sizes: number[], page?: string): void {
+        change((tree) => resize(tree, path, sizes), page);
+    }
+
+    /** Lock the pane at `path`, or unlock it: Lock Group of the pane menu. */
+    function lockPane(path: number[], locked: boolean, page?: string): void {
+        change((tree) => setLocked(tree, path, locked), page);
+    }
+
     /** The maximised pane of a page, or null when every pane of it is shown. */
     function focused(page?: string): Focus | null {
         return focusedPane(workbench(page));
@@ -751,40 +754,7 @@ export function createLayout(
         return instances.activeInstance(attention.touched().id);
     }
 
-    /**
-     * Run every operation under its own name, so a save inside it is recorded as written by that
-     * operation. An operation that calls another keeps the name of the one the caller invoked.
-     */
-    function named<T extends Record<string, unknown>>(operations: T): T {
-        const wrapped = Object.entries(operations).map(([name, operation]) => {
-            if (typeof operation !== 'function') return [name, operation];
-            const run = operation as (...args: unknown[]) => unknown;
-            return [
-                name,
-                (...args: unknown[]): unknown => {
-                    if (writing !== '') return run(...args);
-                    writing = name;
-                    const before = saves;
-                    try {
-                        let answer = run(...args);
-                        // The app's host refused a save made from an envelope another window had
-                        // moved on from; the load took the envelope it holds, and the operation
-                        // runs again on it.
-                        for (let turn = 0; turn < MAX_TURNS && load.retake(); turn++) {
-                            answer = run(...args);
-                        }
-                        if (saves !== before) lastSaving = { name, run: () => run(...args) };
-                        return answer;
-                    } finally {
-                        writing = '';
-                    }
-                }
-            ];
-        });
-        return Object.fromEntries(wrapped) as T;
-    }
-
-    return named({
+    return runs.named({
         currentPage,
         pages,
         pageOf,
@@ -854,6 +824,8 @@ export function createLayout(
         restorePanes,
         foldPane,
         expandChild,
+        resizeSplit,
+        lockPane,
         focused,
         openView: (view, state, page, options) =>
             revealed(placed.openView(view, state, page, options)),

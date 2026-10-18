@@ -168,7 +168,6 @@
             ids={{ doi: hit.doi, title: hit.title }}
             paper={hitPaper(hit)}
             source="search"
-            {onsaid}
         />
     </div>
 

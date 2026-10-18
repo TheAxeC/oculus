@@ -17,6 +17,7 @@
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { basename } from 'node:path';
+import { words } from '../../core/words.ts';
 
 /**
  * The binary. Resolved on PATH, since a homebrew tmux and a system tmux sit in different places.
@@ -48,9 +49,51 @@ export function socketArgs(options: TmuxOptions = {}): string[] {
 }
 
 /**
+ * A tmux call that ended without a sentence of tmux's own: killed at its timeout (`timeout`), or
+ * failed with nothing on stderr (`silent`). Its message is Node's account of the call, which names
+ * the command line and is for the log; what a page is told is worded by the caller from the text
+ * catalogue.
+ */
+class TmuxSilence extends Error {
+    readonly kind: 'timeout' | 'silent';
+    /** The call's timeout, in milliseconds. */
+    readonly timeout: number;
+
+    constructor(kind: 'timeout' | 'silent', timeout: number, message: string) {
+        super(message);
+        this.name = 'TmuxSilence';
+        this.kind = kind;
+        this.timeout = timeout;
+    }
+}
+
+/**
+ * The catalogue's words for a call tmux said nothing in, or null for an error that carries tmux's
+ * own sentence, which is quoted as it is.
+ */
+export function silenceWords(error: unknown, text: () => Record<string, string>): string | null {
+    if (!(error instanceof TmuxSilence)) return null;
+    return error.kind === 'timeout'
+        ? words(text(), 'server.terminals.tmux_timeout', error.timeout / 1000)
+        : words(text(), 'server.terminals.tmux_silent');
+}
+
+/**
+ * Whether tmux's error says no server runs: an empty list once every read of a run says it (see
+ * `#read` of channel.ts), and a failed read until then.
+ */
+export function noServer(said: string): boolean {
+    return (
+        said.includes('no server running on') ||
+        (said.includes('error connecting to') && said.includes('(No such file or directory)'))
+    );
+}
+
+/**
  * One tmux command. The arguments are a list, so nothing here is ever parsed by a shell, and the
  * timeout is what stops a hung tmux from hanging a watcher. A non-zero exit rejects with tmux's own
- * stderr, which is what the terminal endpoint reports back to the page.
+ * stderr, which is what the terminal endpoint reports back to the page; a call killed at its
+ * timeout, or one that failed with nothing on stderr, rejects as a TmuxSilence.
  */
 export function run(
     args: string[],
@@ -69,8 +112,16 @@ export function run(
                     resolve(stdout);
                     return;
                 }
+                if (error.killed === true) {
+                    reject(new TmuxSilence('timeout', timeout, error.message));
+                    return;
+                }
                 const said = stderr.trim();
-                reject(new Error(said === '' ? error.message : said));
+                reject(
+                    said === ''
+                        ? new TmuxSilence('silent', timeout, error.message)
+                        : new Error(said)
+                );
             }
         );
     });

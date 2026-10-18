@@ -1,7 +1,8 @@
 // Layer 3, shell test. Closing the tab of a custom editor (state/system/apps/apps.svelte.ts and
-// shell/panes/strip/close-question.svelte.ts): once the editor's frame calls
-// `document.dirty(true)` the tab holds unsaved changes and closing it asks, and once the frame
-// calls `document.dirty(false)` closing it asks nothing. This is the custom editor's row of G28.
+// shell/panes/strip/close-question.svelte.ts): once the editor's frame calls `document.dirty(true)`
+// the tab holds unsaved changes and closing it asks whether to save them, with the Save every close
+// question over unsaved text has, which saves through the frame; once the frame calls
+// `document.dirty(false)` closing it asks nothing. This is the custom editor's row of G28.
 //
 // The page's client state is the real one over a frame whose connection is a double that hands the
 // page's methods back to the test. What this does NOT cover: the dialog that draws the question,
@@ -41,8 +42,12 @@ const LINK = {
     destroy: () => undefined
 };
 
-/** A client whose page holds the tab `editor` of a custom editor and a source tab `other`. */
-function tabs() {
+/**
+ * A client whose page holds the tab `editor` of a custom editor and a source tab `other`. The
+ * frame's save runs `saving` with the page's methods, as a frame that saves its document and clears
+ * its mark does.
+ */
+function tabs(saving: (methods: Methods) => Promise<unknown> = () => Promise.resolve()) {
     const client = createClientState();
     client.entities.receive({
         channel: 'config',
@@ -84,7 +89,7 @@ function tabs() {
         frame: { contentWindow: {} } as unknown as HTMLIFrameElement,
         connect: (options: FrameOptions) => {
             connected.methods = options.methods;
-            return LINK;
+            return { ...LINK, save: () => saving(options.methods) };
         },
         instance: 'editor',
         id: 'app:notes',
@@ -101,30 +106,75 @@ function tabs() {
     return { client, question, frame, open: () => instances().map((one) => one.id) };
 }
 
+type Row = {
+    row: string;
+    /** The marks the frame sets, in turn, before the close. */
+    marks: boolean[];
+    /** Whether the frame's save clears the mark. */
+    clears: boolean;
+    closes: string;
+    asks: string | null;
+    answer?: 'cancel' | 'save';
+    open: string[];
+};
+
+const ROWS: Row[] = [
+    {
+        row: 'asks once the frame marked the document dirty, and Cancel closes nothing',
+        marks: [true],
+        clears: false,
+        closes: 'editor',
+        asks: t('ui.tab_close_dirty'),
+        answer: 'cancel',
+        open: ['editor', 'other']
+    },
+    {
+        row: "saves through the frame on Save and closes the tab once the frame's save cleared the mark",
+        marks: [true],
+        clears: true,
+        closes: 'editor',
+        asks: t('ui.tab_close_dirty'),
+        answer: 'save',
+        open: ['other']
+    },
+    {
+        row: "keeps the tab on Save while the frame's save leaves the mark",
+        marks: [true],
+        clears: false,
+        closes: 'editor',
+        asks: t('ui.tab_close_dirty'),
+        answer: 'save',
+        open: ['editor', 'other']
+    },
+    {
+        row: 'asks nothing once the frame cleared the mark',
+        marks: [true, false],
+        clears: false,
+        closes: 'editor',
+        asks: null,
+        open: ['other']
+    },
+    {
+        row: 'asks nothing for a tab no frame marked',
+        marks: [],
+        clears: false,
+        closes: 'other',
+        asks: null,
+        open: ['editor']
+    }
+];
+
 describe('closing the tab of a custom editor', () => {
-    it('asks once the frame marked the document dirty, and No closes nothing', async () => {
-        const { client, question, frame, open } = tabs();
-        await frame.documentDirty(true);
-        expect(client.ui.unsaved('editor')).toBe(true);
-        await question.closeTab('editor');
-        expect(question.message()).toBe(t('ui.tab_close_dirty'));
-        question.cancel();
-        expect(open()).toEqual(['editor', 'other']);
-    });
-
-    it('asks nothing once the frame cleared the mark', async () => {
-        const { client, question, frame, open } = tabs();
-        await frame.documentDirty(true);
-        await frame.documentDirty(false);
-        expect(client.ui.unsaved('editor')).toBe(false);
-        await question.closeTab('editor');
-        expect([question.message(), open()]).toEqual([null, ['other']]);
-    });
-
-    it('asks nothing for a tab no frame marked', async () => {
-        const { client, question, open } = tabs();
-        expect(client.ui.unsaved('editor')).toBe(false);
-        await question.closeTab('other');
-        expect([question.message(), open()]).toEqual([null, ['editor']]);
+    it.each(ROWS)('$row', async (row) => {
+        const { client, question, frame, open } = tabs((methods) =>
+            row.clears ? methods.documentDirty(false) : Promise.resolve()
+        );
+        for (const mark of row.marks) await frame.documentDirty(mark);
+        expect(client.ui.unsaved('editor')).toBe(row.marks.at(-1) ?? false);
+        await question.closeTab(row.closes);
+        expect([question.message(), question.saves()]).toEqual([row.asks, row.asks !== null]);
+        if (row.answer === 'cancel') question.cancel();
+        if (row.answer === 'save') await question.save();
+        expect(open()).toEqual(row.open);
     });
 });

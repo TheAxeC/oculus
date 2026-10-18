@@ -80,7 +80,6 @@
         leftOutTabs,
         newTextFileOpener,
         panes,
-        setLocked,
         type Instance,
         type Layout,
         type WindowBounds
@@ -95,7 +94,6 @@
     const {
         layout: {
             activateInstance,
-            change,
             closePane,
             currentPage,
             dockFloat,
@@ -107,6 +105,7 @@
             freeFloat,
             keepPreview,
             layout,
+            lockPane,
             maximisePane,
             moveInstanceToPage,
             openingInstance,
@@ -176,11 +175,14 @@
     /**
      * A press or the focus inside the pane makes it the active one, as a click in an editor group
      * does in VS Code, so the palette's editor items and go-to-line answer for the tab the reader
-     * is typing in and not only for the tab last chosen from a strip.
+     * is typing in and not only for the tab last chosen from a strip. A press or the focus on a tab
+     * of the strip leaves the shown tab alone, since the strip activates the tab pressed, which is
+     * then the tab used last.
      */
-    function entered(): void {
+    function entered(event: Event): void {
         touchPane(page);
-        if (active !== '' && !activePane) activateInstance(active, page);
+        const onTab = event.target instanceof Element && event.target.closest('[role="tab"]');
+        if (active !== '' && !activePane && !onTab) activateInstance(active, page);
     }
 
     /** The roots the server serves, which a file tab's path and breadcrumb are read against. */
@@ -288,8 +290,7 @@
                 windowFloat: (id) => windowFloat(id, windowBounds()),
                 switchMain: () => client.desktop?.bridge.focusMain(),
                 newTextFileIn: openText,
-                setLocked: (at, where, locked) =>
-                    change((tree) => setLocked(tree, where, locked), at),
+                setLocked: (at, where, locked) => lockPane(where, locked, at),
                 setAppearance: setPaneStrip
             }
         );
@@ -452,7 +453,7 @@
             onpointerdown={press}
             onhoverindex={held === null ? undefined : stripHover}
             onsplit={() => pick('split_right')}
-            onunlock={() => change((tree) => setLocked(tree, path, false), page)}
+            onunlock={() => lockPane(path, false, page)}
             onpick={pick}
         />
     </ContextMenu>
@@ -475,6 +476,7 @@
     message={question.message()}
     onconfirm={question.confirmed}
     oncancel={question.cancel}
+    onsave={question.saves() ? question.save : undefined}
 />
 
 <style>

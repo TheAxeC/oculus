@@ -196,8 +196,8 @@ export type ExplorerStore = {
     addFolders: () => Promise<FoldersAdded>;
     /**
      * Whether the page's request for the folder panel is out. While it is, Add Folder to Workspace
-     * and Open Folder are disabled where they are drawn, the Files view's message line says so, and
-     * a call of either does nothing instead of asking for a second panel.
+     * and Open Folder are disabled where they are drawn, and a call of either asks for no second
+     * panel and answers `busy`, which says that the panel is open.
      */
     panelOpen: () => boolean;
     /**

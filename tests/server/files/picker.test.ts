@@ -1,17 +1,20 @@
 // Layer 4, server test. POST /api/folders/pick with a runner standing in for the folder panel
 // (server/files/fs/picker.ts): a missing token, the end of a panel when its connection or its
 // server closes, the answer of a cancel and of any other failure, the desktop app's sheet, which
-// the state's `ask` stands in for, and the panel program of Linux and of a platform with none. No
-// test opens a panel: the runner and the `ask` are always the test's own, and each wait is on a
-// turn of the event loop.
+// the state's `ask` stands in for, the panel program of Linux and of a platform with none, and the
+// macOS script's reading of the panel's answer, run against a stand-in of AppKit. No test opens a
+// panel: the runner and the `ask` are always the test's own, and each wait is on a turn of the
+// event loop.
 
 import { EventEmitter } from 'node:events';
 import { homedir, tmpdir } from 'node:os';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
     closePicker,
     handlePick,
+    pickerScript,
     pickerState,
     type PickConnection,
     type PickerState,
@@ -157,6 +160,29 @@ describe('the folder panel route', () => {
             expect(before).toContain('panel.makeKeyAndOrderFront(null);');
             expect(before).toContain('$.NSApplication.sharedApplication.setActivationPolicy(1);');
         }
+    });
+
+    it('prints the chosen folders when the panel answers OK as JXA hands it back, a string', () => {
+        /** The panel script run against a stand-in of AppKit whose modal run answers `answer`. */
+        const ran = (answer: string): unknown => {
+            const panel = {
+                runModal: answer,
+                URLs: { count: 2, objectAtIndex: (at: number) => ({ path: `/chosen/${at}` }) },
+                makeKeyAndOrderFront: () => undefined
+            };
+            const app = { setActivationPolicy: () => true, activateIgnoringOtherApps: () => true };
+            return runInNewContext(pickerScript(), {
+                ObjC: { import: () => undefined, unwrap: (value: unknown) => value },
+                $: {
+                    NSOpenPanel: { openPanel: panel },
+                    NSHomeDirectory: () => '/home',
+                    NSURL: { fileURLWithPath: (path: string) => path },
+                    NSApplication: { sharedApplication: app }
+                }
+            });
+        };
+        // NSModalResponseOK is 1 and NSModalResponseCancel 0, each read back as a string.
+        expect([ran('1'), ran('0')]).toEqual(['/chosen/0\n/chosen/1', '']);
     });
 
     it('hands the desktop sheet the options of the request, and drops a start that is no folder of this machine', async () => {

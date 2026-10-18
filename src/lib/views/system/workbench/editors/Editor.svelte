@@ -6,16 +6,18 @@
     // held.
     //
     // The draft is the tab's instance state under the file and key (state/system/config/editors/
-    // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the
-    // draft equal to the file's puts the file's own back, which holds nothing. Save sends the
-    // whole value through the editors' write (state/system/config/editors/writer.ts) and waits for
-    // the watcher's push of the file to end the draft; while the write is out the draft is shown
-    // and Save waits. A draft started over a value the file no longer holds is named and cannot
-    // be saved, only discarded, since a Save would write over the other change. The save key on the
-    // tab (Cmd+S, Ctrl+S off macOS) saves a held draft when Save could be pressed. Once the file
-    // holds what was sent the editor says "Saved." until the next edit, as the rail list's Save
-    // does, and a list or family with no entry says so above its Add, so a saved empty family reads
-    // as one and not as a list that failed to draw.
+    // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the draft
+    // equal to the file's puts the file's own back, which holds nothing. Save sends the whole value
+    // through the editors' write (state/system/config/editors/writer.ts); while the write is out
+    // the draft is shown and Save waits, and the answer that the file holds the value ends the
+    // draft, the value sent shown until the watcher's push of the file brings it. A draft started
+    // over a value the file no longer holds is named and cannot be saved, only discarded, since a
+    // Save would write over the other change. The save key on the tab (Cmd+S, Ctrl+S off macOS)
+    // saves a held draft when Save could be pressed, and so does the Save of a close question,
+    // which closes the tab once the write was taken. Once the file answers that it holds what was
+    // sent the editor says "Saved." until the next edit, as the rail list's Save does, and a list
+    // or family with no entry says so above its Add, so a saved empty family reads as one and not
+    // as a list that failed to draw.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -53,8 +55,14 @@
     /** The draft the tab holds, if it holds one. */
     const held = $derived(savedDraft(instanceState(id), row));
 
+    /** The row with the value the file answered it holds in place of its own, until the push. */
+    const current = $derived.by<ConfigRow>(() => {
+        const sent = editors.shown(row);
+        return sent === undefined ? row : { ...row, value: sent };
+    });
+
     /** The draft drawn: the tab's, or the file's value read into one. */
-    const draft = $derived<Draft | null>(held ?? draftOf(row));
+    const draft = $derived<Draft | null>(held ?? draftOf(current));
 
     const problems = $derived.by(() => {
         if (draft === null) return [];
@@ -64,7 +72,7 @@
 
     /** Whether the file now holds another value than the one the draft was started over. */
     const stale = $derived(
-        held !== undefined && movedFrom(savedBase(instanceState(id), row.file, row.key), row)
+        held !== undefined && movedFrom(savedBase(instanceState(id), row.file, row.key), current)
     );
 
     const sending = $derived(editors.sending(row));
@@ -91,11 +99,11 @@
         editors.clear(row);
         const changed = applyEdit(draft, next);
         const state = instanceState(id);
-        if (!isEdited(changed, row, lists)) {
+        if (!isEdited(changed, current, lists)) {
             setInstanceState(id, withSavedDraft(state, row.file, row.key, null));
             return;
         }
-        const base = held === undefined ? row.value : savedBase(state, row.file, row.key);
+        const base = held === undefined ? current.value : savedBase(state, row.file, row.key);
         setInstanceState(id, withSavedDraft(state, row.file, row.key, changed, base));
     }
 
@@ -104,14 +112,17 @@
         setInstanceState(id, withSavedDraft(instanceState(id), row.file, row.key, null));
     }
 
-    function save(): void {
-        if (draft === null || stale) return;
-        void editors.save(row, draft);
+    /** Send the draft; whether the write was taken. */
+    async function save(): Promise<boolean> {
+        if (draft === null || stale) return false;
+        await editors.save(current, draft);
+        return editors.said(row) === null;
     }
 
     $effect(() =>
         registerTabSave(id, () => {
-            if (held !== undefined && !sending && problems.length === 0) save();
+            if (held === undefined) return Promise.resolve(true);
+            return !sending && problems.length === 0 ? save() : Promise.resolve(false);
         })
     );
 </script>

@@ -10,7 +10,9 @@ text:
         code_theme: Code theme
         code_theme_tokens: From the theme
         confirm_cancel: Cancel
+        confirm_dont_save: Don't Save
         confirm_ok: Confirm
+        confirm_save: Save
         confirm_stop: Confirm
         crt_on: CRT
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
@@ -93,7 +95,7 @@ text:
         tab_bar_single: Single Tab
         tab_close: Close
         tab_close_all: Close All
-        tab_close_dirty: Close this tab and lose its unsaved changes?
+        tab_close_dirty: Do you want to save the changes to this tab before it closes?
         tab_close_many: Close these {0} tabs?
         tab_close_others: Close Others
         tab_close_right: Close to the Right
@@ -111,6 +113,7 @@ text:
         tab_split_up: Split Up
         tab_unpin: Unpin
         tab_unsaved: '{0}, unsaved'
+        tabs_close_dirty: Do you want to save the changes to {0} tabs before they close?
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
         terminal_busy_running: '{0} is running {1}.'

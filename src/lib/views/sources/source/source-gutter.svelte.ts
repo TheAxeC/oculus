@@ -1,13 +1,15 @@
 // Layer 3, view partial of Source.svelte. The gutter of a source tab in a repository: VS Code's
 // quick diff marks against the index, and each line's blame, both read from GET /api/git for the
-// repository holding the file. The blame is always read, since the status bar says the caret
-// line's blame whether or not the tab's Blame toggle is on; the toggle decides only whether the
-// gutter and the editor draw it. A tab over the file at HEAD or in the index (`stage`) reads the
-// blame of that version and no marks, since a version of the file has no changes against the
-// index. They are read again whenever the repository's state on the `git` channel moves and after
-// every save (a hidden tab reads again once, when it is shown). The marks and the blame are
-// handed to the editor as its decorations and to the code window as Gutter.svelte's rows. A press
-// on a mark opens the file's diff at its change and a press on a blamed line opens its commit.
+// repository holding the file. The blame is read for every file git tracks, since the status bar
+// says the caret line's blame whether or not the tab's Blame toggle is on; the toggle decides only
+// whether the gutter and the editor draw it. A file git does not track (new, staged and never
+// committed, ignored, or in a repository with no commit) is asked no blame, which git refuses. A
+// tab over the file at HEAD or in the index (`stage`) reads the blame of that version and no marks,
+// since a version of the file has no changes against the index. They are read again whenever the
+// repository's state on the `git` channel moves and after every save (a hidden tab reads again
+// once, when it is shown). The marks and the blame are handed to the editor as its decorations and
+// to the code window as Gutter.svelte's rows. A press on a mark opens the file's diff at its change
+// and a press on a blamed line opens its commit.
 //
 // A tab over a file on disk whose language takes breakpoints (`rite`, and the languages the acting
 // apps name under `contributes.breakpoints`) is also given the debugger's breakpoints of its file,
@@ -62,6 +64,8 @@ export type SourceGutterInput = {
     stage: () => HeadStage | undefined;
     /** The repository's state, whose every move is a new read. */
     repoState: () => unknown;
+    /** Whether git tracks the file, which is when its blame is asked for. */
+    tracked: () => Promise<boolean>;
     /** The Repositories view's opens: a change's diff and a blamed line's commit. */
     repositories: Pick<RepositoriesStore, 'openDiff' | 'openCommit'>;
     loaded: () => boolean;
@@ -121,11 +125,15 @@ export function createSourceGutter(input: SourceGutterInput) {
         const mine = reads;
         const [marked, blamed] = await Promise.all([
             stage === undefined ? readOne(marksUrl(file.root, file.path)) : null,
-            readOne(blameUrl(file.root, file.path, stage))
+            input
+                .tracked()
+                .then((tracked) =>
+                    tracked ? readOne(blameUrl(file.root, file.path, stage)) : null
+                )
         ]);
         if (mine !== reads) return;
         marks = marked === null ? [] : listOf(marked.ok, marked.body, 'marks');
-        blame = listOf(blamed.ok, blamed.body, 'lines');
+        blame = blamed === null ? null : listOf(blamed.ok, blamed.body, 'lines');
         readAt = Date.now();
     }
 

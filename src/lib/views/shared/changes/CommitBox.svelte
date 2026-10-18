@@ -18,9 +18,10 @@
     // high and grows with its lines to ten and then scrolls.
     //
     // While a merge or a cherry pick is in progress the field starts with the message git prepared
-    // for it, is emptied again when the operation ends and the field still holds that text, and the
-    // commit waits until nothing is unmerged. An amend needs no staged path and no
-    // message: with an empty field it keeps the last commit's message.
+    // for it, takes git's new message when that changes while the field still holds the one offered
+    // before, is emptied again when the operation ends and the field still holds that text, and the
+    // commit waits until nothing is unmerged. An amend needs no staged path and no message: with an
+    // empty field it keeps the last commit's message.
 
     import { untrack } from 'svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
@@ -42,6 +43,7 @@
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { followPrepared } from './prepared-message';
     import { useState } from '$lib/state/client/use';
 
     type Props = { root: string; git: GitState };
@@ -66,23 +68,14 @@
         branch === '' ? t('git.commit_placeholder_bare') : t('git.commit_placeholder', branch)
     );
 
-    // A merge or a cherry pick in progress puts git's prepared message in an empty field, once.
-    // When the operation ends and the field still holds the text that was offered, the field is
-    // emptied again; a message the reader changed stays.
+    // A merge or a cherry pick in progress fills the field with git's prepared message and empties
+    // it when the operation ends, while the field holds the message offered (prepared-message.ts).
     $effect(() => {
         const prepared = preparedMessage(git);
-        if (prepared === '') {
-            if (offered === '') return;
-            const held = untrack(() => repositories.message(root));
-            if (held === offered) repositories.setMessage(root, '');
-            offered = '';
-            return;
-        }
-        if (prepared === offered) return;
-        offered = prepared;
-        if (untrack(() => repositories.message(root)).trim() === '') {
-            repositories.setMessage(root, prepared);
-        }
+        const held = untrack(() => repositories.message(root));
+        const followed = followPrepared(prepared, offered, held);
+        if (followed.put !== null) repositories.setMessage(root, followed.put);
+        offered = followed.offered;
     });
 
     /** Why a commit made this way cannot be made now, or the empty string when it can. */

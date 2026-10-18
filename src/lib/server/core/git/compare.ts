@@ -1,9 +1,9 @@
 // Layer 2, server. The read-only git forms behind the graph's compare items and the change rows'
-// Open File (HEAD) and Compare with Workspace: a file as HEAD or the index holds it, who last
-// changed each line of it, the files and the two sides of a file between a ref and a commit, the
-// refs a picker offers, and the base a branch is compared against. state.ts, reads.ts and files.ts
-// hold the state of a workspace and the rest of the reads; every module of this folder reaches git
-// through run.ts's one call site.
+// Open File (HEAD), Open File (Index) and Compare with Workspace: a file as HEAD or the index holds
+// it, who last changed each line of it, the files and the two sides of a file between a ref and a
+// commit, the refs a picker offers, and the base a branch is compared against. state.ts, reads.ts
+// and files.ts hold the state of a workspace and the rest of the reads; every module of this folder
+// reaches git through run.ts's one call site.
 //
 // DESIGN.md, "Git": exactly these read-only commands run here, besides those run.ts lists.
 //

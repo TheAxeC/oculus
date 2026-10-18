@@ -193,11 +193,25 @@ export type UiStore = {
     /**
      * Register what the save key does on one tab, which the view drawing the tab hands in while it
      * holds work a save takes (a Settings tab's rail list, an editor draft or a typed field text);
-     * the answer takes it out again.
+     * the answer takes it out again. The save answers whether the work was written, true when it
+     * held nothing to write.
      */
-    registerTabSave: (id: string, save: () => void) => () => void;
+    registerTabSave: (id: string, save: () => Promise<boolean>) => () => void;
     /** Run what the tab's views registered for the save key; false when none registered any. */
     saveTab: (id: string) => boolean;
+    /**
+     * Register what saves a tab a store holds the text of (a source tab, an app's custom editor),
+     * for the Save of a close question: null for a tab it does not hold, else whether the save
+     * wrote it.
+     */
+    registerCloseSave: (save: (id: string) => Promise<boolean> | null) => void;
+    /**
+     * Save each of these tabs that holds unsaved text, as the Save of a close question does: what
+     * the tab's views registered for the save key, else the store that holds its text. Answers the
+     * tabs left holding unsaved text: those whose save failed and those with no save at all (an
+     * untitled tab, a typed line no save takes).
+     */
+    saveForClose: (ids: string[]) => Promise<string[]>;
     registerTerminalOwner: (owner: TerminalOwner) => void;
     busyTerminals: (instances: readonly OwnedInstance[]) => Promise<BusyTerminal[]>;
     endTerminals: (instances: readonly OwnedInstance[]) => void;
@@ -313,7 +327,10 @@ export function createUi(
     const closeSavers: ((ids: string[]) => Promise<void>)[] = [];
 
     /** What the views of each tab registered for the save key, by the tab's instance id. */
-    const tabSaves = new Map<string, Set<() => void>>();
+    const tabSaves = new Map<string, Set<() => Promise<boolean>>>();
+
+    /** What the stores holding a tab's text registered for the Save of a close question. */
+    const closeSaves: ((id: string) => Promise<boolean> | null)[] = [];
 
     /** The stores owning terminals that registered, asked by busyTerminals() and endTerminals(). */
     const terminalOwners: TerminalOwner[] = [];
@@ -431,8 +448,8 @@ export function createUi(
         return ids.filter(unsaved);
     }
 
-    function registerTabSave(id: string, save: () => void): () => void {
-        const saves = tabSaves.get(id) ?? new Set<() => void>();
+    function registerTabSave(id: string, save: () => Promise<boolean>): () => void {
+        const saves = tabSaves.get(id) ?? new Set<() => Promise<boolean>>();
         saves.add(save);
         tabSaves.set(id, saves);
         return () => {
@@ -443,8 +460,27 @@ export function createUi(
 
     function saveTab(id: string): boolean {
         const saves = [...(tabSaves.get(id) ?? [])];
-        for (const save of saves) save();
+        for (const save of saves) void save();
         return saves.length > 0;
+    }
+
+    /** Whether the save of one tab wrote its work; false for a tab nothing saves. */
+    function savedForClose(id: string): Promise<boolean> {
+        const registered = [...(tabSaves.get(id) ?? [])];
+        let saving: Promise<boolean> | null = null;
+        if (registered.length > 0) {
+            saving = Promise.all(registered.map((save) => save())).then((all) =>
+                all.every(Boolean)
+            );
+        }
+        for (const save of closeSaves) saving ??= save(id);
+        return (saving ?? Promise.resolve(false)).catch(() => false);
+    }
+
+    async function saveForClose(ids: string[]): Promise<string[]> {
+        const dirty = ids.filter(unsaved);
+        const saved = await Promise.all(dirty.map(savedForClose));
+        return dirty.filter((_, at) => !saved[at]);
     }
 
     /** Register a store that owns terminals, at the point the client is wired. */
@@ -805,6 +841,10 @@ export function createUi(
         saveBeforeClose,
         registerTabSave,
         saveTab,
+        registerCloseSave: (save) => {
+            closeSaves.push(save);
+        },
+        saveForClose,
         registerTerminalOwner,
         busyTerminals,
         endTerminals,

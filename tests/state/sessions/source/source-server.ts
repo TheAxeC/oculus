@@ -8,16 +8,16 @@
 import { createHash } from 'node:crypto';
 import { SvelteMap } from 'svelte/reactivity';
 import { vi } from 'vitest';
-import type { Message } from '../../../src/lib/data/model/index.ts';
+import type { Message } from '../../../../src/lib/data/model/index.ts';
 import {
     createSource,
     type SourceDeps
-} from '../../../src/lib/state/sessions/source/source.svelte.ts';
+} from '../../../../src/lib/state/sessions/source/source.svelte.ts';
 import type {
     InstanceStates,
     WriteAnswer,
     WritesStore
-} from '../../../src/lib/state/shared/stores/shapes.ts';
+} from '../../../../src/lib/state/shared/stores/shapes.ts';
 
 export const hashOf = (content: string): string =>
     createHash('sha256').update(content).digest('hex');

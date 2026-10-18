@@ -209,12 +209,12 @@
     const { patch, patchAt, answerAt, flip, toggleSection } = tab;
 
     /**
-     * The one line the view says, laid over its foot: that the folder panel is open while it is,
-     * else the last answer (a refusal as an error, a result that went through whole as
-     * information), else the outcome of an ask to show a path, with what clears it.
+     * The one line the view says, laid over its foot: the last answer (a refusal as an error, a
+     * result that went through whole as information), else the outcome of an ask to show a path,
+     * with what clears it. An open folder panel says nothing here: it is in front of the window,
+     * and the view's controls that would open another are disabled.
      */
     const message = $derived.by(() => {
-        if (panelOpen()) return { text: t('files.picker_busy'), error: false, clear: {} };
         if (view.note !== '') return { text: view.note, error: !view.told, clear: { note: '' } };
         const shown = revealLine(view.revealed);
         return shown === '' ? null : { text: shown, error: false, clear: { revealed: null } };

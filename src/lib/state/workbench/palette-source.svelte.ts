@@ -68,9 +68,9 @@ export type PaletteSourceStore = {
      * Open a file of a served root as a kept tab in the view that can show it, and give the
      * keyboard to the tab; the instance it opened. The file's kind is read first, so a text file
      * opens in the source tab, an HTML file in the document view and anything else in the file
-     * view.
+     * view. `page` is the page or float it opens on, the one the reader is in when none is named.
      */
-    openFile: (root: string, path: string) => Promise<string>;
+    openFile: (root: string, path: string, page?: string) => Promise<string>;
     /** Say which commands one view offers, replacing what it offered before. */
     offer: (instance: string, commands: ViewCommand[]) => void;
     /** Take a view's commands away, which is what an unmounted view does. */
@@ -113,10 +113,10 @@ export function createPaletteSource(
         return id;
     }
 
-    async function openFile(root: string, path: string): Promise<string> {
+    async function openFile(root: string, path: string, page?: string): Promise<string> {
         const type = await actions.readFileKind(root, path);
         const tab = tabForKind(type.kind, root, path, undefined, actions.opens);
-        const id = actions.layout.openView(tab.view, tab.state, undefined, { preview: false });
+        const id = actions.layout.openView(tab.view, tab.state, page, { preview: false });
         actions.layout.keepPreview(id);
         actions.layout.askFocus(id);
         return id;

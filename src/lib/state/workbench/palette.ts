@@ -668,7 +668,7 @@ export async function workspaceCommand(
         : { closed: false, said: refusal(answer.error ?? '', answer.reason) };
 }
 
-/** `:folder`: a folder panel that did not open leaves the palette open, saying why. */
+/** `:folder`: what a folder panel that did not open leaves to say, else nothing. */
 export async function folderCommand(
     open: () => Promise<{ ok: true } | { ok: false; picker: PickRefusal }>
 ): Promise<CommandOutcome> {
@@ -678,8 +678,8 @@ export async function folderCommand(
 
 /**
  * `:folder-add`: the panel's folders become roots, as the Files view's Add Folder to Workspace
- * does. The palette closes unless something is left to say: the panel did not open, a folder was
- * refused or was a root already.
+ * does. Something is left to say when the panel did not open, or a folder was refused or was a root
+ * already.
  */
 export async function addFolderCommand(add: () => Promise<FoldersAdded>): Promise<CommandOutcome> {
     const said = addedLine(await add(), refusal);

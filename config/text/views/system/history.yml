@@ -71,7 +71,7 @@ text:
         kind_lsp: language server choice
         undid_delete_entry: entry put back
         undid_feed_delete: feed entry put back
-        undid_new_entry: entry removed
+        undid_new_entry: add undone
         undid_lead_add: lead removed
         undid_radar_add: Lit Watch entry removed
         undid_literature_save: paper removed from Literature

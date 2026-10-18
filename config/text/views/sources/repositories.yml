@@ -299,6 +299,7 @@ text:
         menu_delete_branch: Delete Branch
         menu_ignore: Add to .gitignore
         menu_open_head: Open File (HEAD)
+        menu_open_index: Open File (Index)
         menu_open_worktree: Open Worktree
         menu_open_worktree_window: Open Worktree in New Window
         ref_current_checkout: This branch is checked out already

@@ -69,13 +69,16 @@ export function trimSlash(dir: string): string {
 }
 
 /**
- * A folder joined with a path below it by one `/`: the folder itself for an empty path, and no
- * doubled slash when the folder is the root `/`.
+ * A folder joined with a path below it by one `/`: the folder itself for an empty path, the path
+ * alone for the empty folder `''` (a root's own folder, so a path relative to a root stays
+ * relative), and no doubled slash when the folder is the root `/` or the path starts with one.
  */
 export function joinPath(dir: string, path: string): string {
     const base = trimSlash(dir);
-    if (path === '') return base;
-    return base === '/' ? `/${path}` : `${base}/${path}`;
+    const below = path.replace(/^\/+/, '');
+    if (below === '') return base;
+    if (base === '') return below;
+    return base === '/' ? `/${below}` : `${base}/${below}`;
 }
 
 /**

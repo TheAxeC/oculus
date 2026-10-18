@@ -61,6 +61,8 @@ const TRAFFIC_LIGHTS = {
 /** The options of a window's frame, the subset the app sets. */
 export type WindowFrame = {
     titleBarStyle: 'hidden';
+    /** On macOS, the first press on an inactive window reaches its page as well as raising it. */
+    acceptFirstMouse?: true;
     trafficLightPosition?: { x: number; y: number };
     titleBarOverlay?: { height: number; color: string; symbolColor: string };
 };
@@ -70,12 +72,18 @@ const SYMBOLS = '#cccccc';
 
 /**
  * The frame of a main window and of a float's window on `platform`: no title bar of the system's.
- * On macOS the window buttons are placed inside the strip; elsewhere they are drawn over the
- * strip's right end at its height, since a hidden title bar there takes them away otherwise.
+ * On macOS the window buttons are placed inside the strip, and the first press on an inactive
+ * window reaches its page, so a tab drag or a click started there acts at once, as it does in VS
+ * Code; elsewhere the buttons are drawn over the strip's right end at its height, since a hidden
+ * title bar there takes them away otherwise.
  */
 export function windowFrame(platform: string): WindowFrame {
     if (platform === 'darwin') {
-        return { titleBarStyle: 'hidden', trafficLightPosition: { ...TRAFFIC_LIGHTS } };
+        return {
+            titleBarStyle: 'hidden',
+            acceptFirstMouse: true,
+            trafficLightPosition: { ...TRAFFIC_LIGHTS }
+        };
     }
     return {
         titleBarStyle: 'hidden',

@@ -409,6 +409,7 @@ export function createClientState(
     ui.registerUnsaved(source.sourceDirty);
     ui.registerGone(source.fileGone);
     ui.registerSaveBeforeClose(autosave.saveBeforeClose);
+    ui.registerCloseSave((id) => (source.sourceDirty(id) ? autosave.saveAsked(id) : null));
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
     const processes = createProcesses(entities, {
@@ -776,6 +777,11 @@ export function createClientState(
                 )
             )
     });
+    // A custom editor's tab is saved by its frame, and the save took when the frame cleared its
+    // mark.
+    ui.registerCloseSave((id) =>
+        apps.dirty(id) ? apps.save(id).then(() => !apps.dirty(id)) : null
+    );
     const appShell = createAppShell({
         entities,
         post: writes.postCommand,

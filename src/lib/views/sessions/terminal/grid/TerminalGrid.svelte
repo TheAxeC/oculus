@@ -51,7 +51,6 @@
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
-    import { viewportOf } from '$lib/state/sessions/terminal/viewport';
     import { keptViewport } from './kept-viewport';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
@@ -348,18 +347,23 @@
                 })
             );
             // The viewport the last grid of this terminal kept, scrolled to once the scrollback is
-            // written and held until the reader moves the grid (a grid drawn again by Float or
-            // Return to Page).
-            const viewport = keptViewport(term, host, () => takeViewport(wanted));
+            // written and held until the reader moves the grid (a grid drawn again by Float, Return
+            // to Page, a pane move or a reload). A terminal that ended keeps nothing.
+            const viewport = keptViewport(
+                term,
+                host,
+                () => takeViewport(wanted),
+                (now) => (terminalById(wanted) === null ? undefined : keepViewport(wanted, now))
+            );
             // The window takes the grid's size before the channel is asked for (`subscribePty`).
             const off = subscribePty(
                 wanted,
                 () => ({ cols: term.cols, rows: term.rows }),
                 (bytes, scrollback) => {
-                    // The scrollback is sent to this socket alone at version 0, so a reconnect
-                    // hands it over again; repainting from it keeps a second copy off the grid.
+                    // The screen comes at version 0, again after a reconnect or a resize
+                    // (pty-wire.ts); the grid is emptied for it and keeps the reader's line.
                     if (scrollback) {
-                        term.reset();
+                        viewport.reset();
                         decoder = new TextDecoder();
                     }
                     const shown = titles(bytes);
@@ -386,12 +390,8 @@
                 rang.dispose();
                 linking.dispose();
                 detachFind();
+                viewport.keep();
                 viewport.stop();
-                // A terminal that ended keeps nothing.
-                if (terminalById(wanted) !== null) {
-                    const { viewportY, baseY } = term.buffer.active;
-                    keepViewport(wanted, viewportOf(viewportY, baseY));
-                }
                 serializer = null;
                 oncontrol(wanted, null);
                 unhold();

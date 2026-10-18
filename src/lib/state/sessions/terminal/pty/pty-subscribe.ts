@@ -55,6 +55,8 @@ export type PtyOrder = {
      * the caller writes it.
      */
     hold: (id: string, message: unknown) => boolean | null;
+    /** Whether a subscribe of the terminal is waiting for its resize. */
+    waits: (id: string) => boolean;
 };
 
 /** An answer of `request`, or `RESIZE_WAIT` passing, whichever comes first. */
@@ -131,6 +133,7 @@ export function createPtyOrder(
             if (newest === undefined) return false;
             newest.held.push(message);
             return true;
-        }
+        },
+        waits: (id) => waiting.has(id)
     };
 }

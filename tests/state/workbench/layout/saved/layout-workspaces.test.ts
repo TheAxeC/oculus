@@ -16,6 +16,7 @@ import {
     heldPages,
     pageAround,
     pane,
+    split,
     layoutKey,
     unreadKey,
     UNSAVED
@@ -58,6 +59,46 @@ function eventSource() {
             for (const listener of [...heard]) listener({ key, newValue } as unknown as Event);
         }
     };
+}
+
+/**
+ * Two browser tabs over the workspace A, each in its own process with its own copy of the storage,
+ * seeded with an arrangement. `deliver` applies the writes of the layout key one at a time in the
+ * order given, as the browser does for two that crossed, copying each into the other tab's storage
+ * and firing the event there, and `central` is what the browser holds after.
+ */
+function twoTabs(seed?: string) {
+    const central: Record<string, string> = {};
+    const queue: { tab: number; key: string; value: string }[] = [];
+    const tabs = [0, 1].map((tab) => {
+        const held: Record<string, string> = seed === undefined ? {} : { [layoutKey(A)]: seed };
+        const storage = {
+            getItem: (key: string): string | null => held[key] ?? null,
+            setItem: (key: string, value: string): void => {
+                held[key] = value;
+                queue.push({ tab, key, value });
+            }
+        };
+        return { held, storage, source: eventSource(), client: createClientState() };
+    });
+    for (const { storage, source, client } of tabs) {
+        client.layout.loadLayout(storage, source);
+        client.layout.workspaceOpened(A);
+    }
+    queue.splice(0);
+    const deliver = (order: number[]): void => {
+        const crossed = queue.filter((write) => write.key === layoutKey(A));
+        queue.splice(0, queue.length, ...order.map((at) => crossed[at]));
+        for (let write = queue.shift(); write !== undefined; write = queue.shift()) {
+            central[write.key] = write.value;
+            for (const [at, other] of tabs.entries()) {
+                if (at === write.tab) continue;
+                other.held[write.key] = write.value;
+                other.source.fire(write.key, write.value);
+            }
+        }
+    };
+    return { tabs, central, deliver };
 }
 
 describe('the arrangement of each workspace', () => {
@@ -226,42 +267,14 @@ describe('a browser tab whose arrangement another tab has moved on from', () => 
         expect(labels(second)).toEqual(['Page 1', 'From the first', 'From the second']);
     });
 
-    // Two tabs in separate processes: each writes its own copy of the storage, and the browser
-    // applies the writes one at a time, in the order a row gives for the two that crossed, copying
-    // each into the other tab's storage and firing the event there.
     it.each([
         ['the first', [0, 1]],
         ['the second', [1, 0]]
     ])('keeps both changes of two saves that crossed, %s applied first', (_, order) => {
-        const central: Record<string, string> = {};
-        const queue: { tab: number; key: string; value: string }[] = [];
-        const tabs = [0, 1].map((tab) => {
-            const held: Record<string, string> = {};
-            const storage = {
-                getItem: (key: string): string | null => held[key] ?? null,
-                setItem: (key: string, value: string): void => {
-                    held[key] = value;
-                    queue.push({ tab, key, value });
-                }
-            };
-            return { held, storage, source: eventSource(), client: createClientState() };
-        });
-        for (const { storage, source, client } of tabs) {
-            client.layout.loadLayout(storage, source);
-            client.layout.workspaceOpened(A);
-        }
+        const { tabs, central, deliver } = twoTabs();
         tabs[0].client.layout.openPage('From the first');
         tabs[1].client.layout.openPage('From the second');
-        const crossed = queue.filter((write) => write.key === layoutKey(A));
-        queue.splice(0, queue.length, ...order.map((at) => crossed[at]));
-        for (let write = queue.shift(); write !== undefined; write = queue.shift()) {
-            central[write.key] = write.value;
-            for (const [at, other] of tabs.entries()) {
-                if (at === write.tab) continue;
-                other.held[write.key] = write.value;
-                other.source.fire(write.key, write.value);
-            }
-        }
+        deliver(order);
         const both = ['Page 1', 'From the first', 'From the second'];
         expect(central[layoutKey(A)]).toContain('From the first');
         expect(central[layoutKey(A)]).toContain('From the second');
@@ -269,6 +282,47 @@ describe('a browser tab whose arrangement another tab has moved on from', () => 
             [...both].sort(),
             [...both].sort()
         ]);
+    });
+});
+
+/** The panes of the one page the arrangement holds, each as its tabs and whether it is folded. */
+function panesOf(client: ReturnType<typeof createClientState>): string[] {
+    const root = client.layout.pages()[0].workbench.root;
+    const children = root.kind === 'split' ? root.children : [root];
+    const folded = root.kind === 'split' ? (root.folded ?? []) : [];
+    return children.map((node, at) => {
+        const name = node.kind === 'pane' ? node.tabs.map((tab) => tab.id).join('+') : node.kind;
+        return folded.includes(at) ? `${name} folded` : name;
+    });
+}
+
+describe('two browser tabs that change the panes of one page within a second', () => {
+    const ROWS = [
+        {
+            row: 'a fold of a pane the other tab moved lands on that pane',
+            first: (client: ReturnType<typeof createClientState>) => client.layout.closePane([0]),
+            second: (client: ReturnType<typeof createClientState>) => client.layout.foldPane([2]),
+            panes: ['b', 'c folded']
+        },
+        {
+            row: 'a fold of a pane the other tab closed is dropped and folds no other pane',
+            first: (client: ReturnType<typeof createClientState>) => client.layout.closePane([1]),
+            second: (client: ReturnType<typeof createClientState>) => client.layout.foldPane([1]),
+            panes: ['a', 'c']
+        }
+    ];
+    it.each(
+        ROWS.flatMap((row) => [
+            { ...row, applied: 'the first', order: [0, 1] },
+            { ...row, applied: 'the second', order: [1, 0] }
+        ])
+    )('$row, $applied applied first', ({ first, second, order, panes }) => {
+        const three = split('row', [1 / 3, 1 / 3, 1 / 3], [pane(['a']), pane(['b']), pane(['c'])]);
+        const { tabs, deliver } = twoTabs(serialiseLayout(heldPages([pageAround('main', three)])));
+        first(tabs[0].client);
+        second(tabs[1].client);
+        deliver(order);
+        expect(tabs.map(({ client }) => panesOf(client))).toEqual([panes, panes]);
     });
 });
 

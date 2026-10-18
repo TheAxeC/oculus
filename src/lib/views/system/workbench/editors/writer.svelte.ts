@@ -11,7 +11,10 @@ import {
 import type { Lists } from '$lib/state/system/config/editors/sources';
 import type { ConfigRow } from '$lib/state/system/config/rows';
 
-/** An editors' write sequence whose `sending`, `said` and `saved` redraw whatever read them. */
+/**
+ * An editors' write sequence whose `sending`, `shown`, `said` and `saved` redraw whatever read
+ * them.
+ */
 export function reactiveEditors(
     write: WriteConfigValue,
     ended: (row: ConfigRow) => void,
@@ -30,6 +33,7 @@ export function reactiveEditors(
     return {
         ...inner,
         sending: (row) => (version < 0 ? false : inner.sending(row)),
+        shown: (row) => (version < 0 ? undefined : inner.shown(row)),
         said: (row) => (version < 0 ? null : inner.said(row)),
         saved: (row) => (version < 0 ? false : inner.saved(row))
     };

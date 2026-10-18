@@ -8,10 +8,10 @@
     //
     // A box keeps its unsent text in the tab's instance state under the file and key
     // (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it on
-    // Escape, and the save key on the tab (Cmd+S, Ctrl+S off macOS) writes it too. The text is kept
-    // while the write is refused, so the reader mends it; a write that is accepted, or needs none,
-    // drops it. A pick or a toggle is written as it is made. While a write is out the control shows
-    // the value sent.
+    // Escape, and the save key on the tab (Cmd+S, Ctrl+S off macOS) and the Save of a close
+    // question write it too. The text is kept while the write is refused, so the reader mends it; a
+    // write that is accepted, or needs none, drops it. A pick or a toggle is written as it is made.
+    // While a write is out the control shows the value sent.
 
     import { drawsEditor } from '$lib/state/system/config/editors/slots';
     import {
@@ -84,18 +84,19 @@
         setInstanceState(id, withTypedText(instanceState(id), row.file, row.key, null));
     }
 
-    async function settle(next: string): Promise<void> {
-        if (typed === undefined || settling === next) return;
+    /** Write the typed text; whether the write was taken. */
+    async function settle(next: string): Promise<boolean> {
+        if (typed === undefined || settling === next) return false;
         settling = next;
         await writer.submit(row, next);
         settling = null;
-        if (writer.said(row) === null) forget();
+        const taken = writer.said(row) === null;
+        if (taken) forget();
+        return taken;
     }
 
     $effect(() =>
-        registerTabSave(id, () => {
-            if (typed !== undefined) void settle(typed);
-        })
+        registerTabSave(id, () => (typed === undefined ? Promise.resolve(true) : settle(typed)))
     );
 
     function revert(event: KeyboardEvent): void {

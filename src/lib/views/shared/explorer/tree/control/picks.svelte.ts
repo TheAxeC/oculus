@@ -80,6 +80,8 @@ export type PicksDeps = {
     naming?: NamingHooks;
     /** Open a file New File... made, as a kept tab in the editor. */
     opened?: (file: { root: string; path: string }) => void;
+    /** Bring a row the tree selected into view and focus it, once it is drawn. */
+    shown?: (row: { root: string; path: string }) => void;
 };
 
 export type Picks = ReturnType<typeof createPicks>;
@@ -199,7 +201,10 @@ export function createPicks(deps: PicksDeps) {
                           .map((one) => ({ root: one.root, path: one.path })),
             acting: acted,
             confirmDelete: () => confirmDelete(client.selectors.configMap()),
-            reveal: (item) => view.patch(shownAt(view.now().expanded, item))
+            reveal: (item) => {
+                view.patch(shownAt(view.now().expanded, item));
+                deps.shown?.(item);
+            }
         },
         t
     );

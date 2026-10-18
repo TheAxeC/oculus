@@ -38,6 +38,8 @@ export type RelayState = {
     helds: Set<Held>;
     /** The servers whose page closed and that wait to be taken over or to end. */
     orphans: Set<Held>;
+    /** The servers a link rewrite took while they were ending, until its last rewrite ends. */
+    ending: WeakSet<Held>;
     pending: Map<number, Pending>;
     asks: Map<string, Ask>;
     /** The last id this relay gave a request it made of a server or of a page. */

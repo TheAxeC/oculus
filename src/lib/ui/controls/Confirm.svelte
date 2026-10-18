@@ -4,20 +4,21 @@
     // whether it is asked; a caller draws it while it has something to ask and stops drawing it
     // when the answer has come back.
     //
-    // DESIGN.md's decision on git writes is that every write sits behind the token and
-    // a confirm, and a confirm that is a second press of the same button is one the hand learns to
-    // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
-    // inside it. A press on the ground behind it cancels too, which is the way out for a pointer.
-    // A question raised by something other than the reader (an app's write or outside address)
-    // opens with the keyboard on Cancel (`focus`), so a key meant for that app never confirms it.
-    // A caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state
-    // the confirm hands to `onconfirm`, and further buttons (`others`) between Cancel and the
-    // confirm, each handing its place in the list to `onother`. A confirm that cannot succeed is
-    // drawn disabled (`refused`), with the caller's words for why as the detail, and the keyboard
-    // then starts on Cancel.
-    // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
-    // keyboard again when its tab shows; the keyboard comes back to the control it was raised from
-    // when it goes, as the ground says.
+    // DESIGN.md's decision on git writes is that every write sits behind the token and a confirm,
+    // and a confirm that is a second press of the same button is one the hand learns to press
+    // twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays inside
+    // it. A press on the ground behind it cancels too, which is the way out for a pointer. A
+    // question raised by something other than the reader (an app's write or outside address) opens
+    // with the keyboard on Cancel (`focus`), so a key meant for that app never confirms it. A
+    // caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state the
+    // confirm hands to `onconfirm`, further buttons (`others`) between Cancel and the confirm, each
+    // handing its place in the list to `onother`, and one button before Cancel (`discard`), the
+    // answer that goes ahead without what the confirm keeps, as Don't Save is in a close question
+    // over unsaved text, whose confirm is Save. A confirm that cannot succeed is drawn disabled
+    // (`refused`), with the caller's words for why as the detail, and the keyboard then starts on
+    // Cancel. Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes
+    // the keyboard again when its tab shows; the keyboard comes back to the control it was raised
+    // from when it goes, as the ground says.
 
     import Modal from '../frame/Modal.svelte';
 
@@ -36,6 +37,9 @@
         others?: readonly string[];
         /** The button of `others` that was pressed, by its place in the list. */
         onother?: (index: number) => void;
+        /** The words of a button drawn before Cancel, already translated; none draws none. */
+        discard?: string;
+        ondiscard?: () => void;
         /** The words of a box under the message; none draws no box. */
         option?: string;
         /**
@@ -58,6 +62,8 @@
         oncancel,
         others = [],
         onother,
+        discard = '',
+        ondiscard,
         detail = '',
         option = '',
         level = 'dialog',
@@ -86,6 +92,11 @@
                 <label class="option"><input type="checkbox" bind:checked />{option}</label>
             {/if}
             <div class="row">
+                {#if discard !== ''}
+                    <button type="button" class="discard" onclick={() => ondiscard?.()}
+                        >{discard}</button
+                    >
+                {/if}
                 <button type="button" class="cancel" bind:this={no} onclick={oncancel}
                     >{cancel}</button
                 >

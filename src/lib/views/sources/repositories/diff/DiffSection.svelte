@@ -24,10 +24,10 @@
     // from Changes, or, for a path in conflict, to resolve it in the merge editor. The bar draws
     // its buttons as glyphs while the editor leaves it too little width for their words. What the
     // actions do is the pane's: this reports presses. A diff against the original an app's source
-    // control gives (`source`) puts the actions of the app's `scm/change/title` menu in each bar,
-    // and pressing one runs its command in the app's host with the file, the diff's changes and the
-    // hunk's first change as the index. Bars sit after lines of either side: the hunk bars of the
-    // modified side, and the comment box.
+    // control gives (`source`) puts the actions of the app's `scm/change/title` menu in each bar
+    // (apps/change-offers.svelte.ts), and pressing one runs its command in the app's host with the
+    // file, the diff's changes and the hunk's first change as the index. Bars sit after lines of
+    // either side: the hunk bars of the modified side, and the comment box.
     //
     // A file's own diff opened for a session that the sessions payload still holds takes a comment
     // on a line of either side (the editor's `+` or Add Comment on Line): the box opens after that
@@ -48,6 +48,7 @@
     import { CommentDraft } from './comment-draft.svelte';
     import FileHeader from './FileHeader.svelte';
     import HunkBar from './HunkBar.svelte';
+    import { createChangeOffers } from '../apps/change-offers.svelte';
     import {
         createSourceOptions,
         diffOptions
@@ -192,7 +193,6 @@
     const {
         appShell,
         appTools,
-        fs: { fileText },
         selectors: { editorOptions, languages, paintLimit, repoSettings, sessionById },
         terminals: { steerTerminal, terminalOfSession }
     } = client;
@@ -239,7 +239,7 @@
         options: editorOptions,
         repoSettings,
         paintLimit,
-        fileText
+        fs: client.fs
     });
     const options = $derived(diffOptions(resolved, editorOptions()));
     /**
@@ -341,36 +341,15 @@
         return { rows, count: added + removed };
     }
 
-    /** The app source control the diff compares with, while it exists. */
-    const control = $derived(
-        source === undefined ? undefined : appTools.scm.stateOf(source.app, source.id)
-    );
-    /** The actions the control's app offers on a change. */
-    const offered = $derived(
-        control === undefined
-            ? null
-            : appShell.strip('scm/change/title', { keys: { scmProvider: control.id } })
-    );
-
-    /** Run the `scm/change/title` entry an action stands for on the hunk's changes. */
-    function offer(hunk: Hunk, pick: string, alt: boolean): void {
-        if (control === undefined || offered === null) return;
-        void appTools.scm.execute(
-            control,
-            offered.offers,
-            pick,
-            {
-                scope: 'change',
-                change: {
-                    root,
-                    path,
-                    changes: $state.snapshot(changes),
-                    index: Math.max(0, changes.indexOf(hunk.changes[0]))
-                }
-            },
-            alt
-        );
-    }
+    /** The actions of the app's `scm/change/title` menu, for a diff against its original. */
+    const offers = createChangeOffers({
+        appShell,
+        appTools,
+        source: () => source,
+        root: () => root,
+        path: () => path,
+        changes: () => changes
+    });
 
     function act(hunk: Hunk, doing: PatchMode): void {
         const picked = pickedIn(hunk);
@@ -408,8 +387,9 @@
                 {busy}
                 current={at === current}
                 onact={(doing: PatchMode) => act(hunk, doing)}
-                offered={offered?.actions}
-                onoffer={(pick: string, event: MouseEvent) => offer(hunk, pick, event.altKey)}
+                offered={offers.actions}
+                onoffer={(pick: string, event: MouseEvent) =>
+                    offers.offer(hunk, pick, event.altKey)}
             />
         {/if}
     {/if}

@@ -148,6 +148,7 @@ text:
         refused_texdoc_missing: texdoc is not installed. It comes with TeX Live and MacTeX.
         refused_texdoc_name: That is not a package name.
         refused_texdoc_timeout: texdoc did not finish in time.
+        unserved: '{0} is no longer a folder of this workspace; its LaTeX state is read again when it is added back.'
         retry: Try again
         root_gone: '{0} is not a root this workspace serves, so it has no LaTeX root to list.'
         show_problems: Show Problems

@@ -9,7 +9,13 @@
 // a popped-out window closed) while another pane of the page still reads the terminal is sent the
 // screen as a pane of a page load is. The channel leaves the subscription when its last pane stops
 // reading.
-// The terminals store (terminals.svelte.ts) builds one wire over its socket and the order in which
+//
+// A pane that tells its terminal a new size asks for the channel again right behind the resize, and
+// the server reads the screen after the resize has run. tmux and xterm.js each rewrap the lines
+// they hold to the new width in their own way, and a shell redraws its prompt over what it takes
+// the rewrapped lines to be, so a grid that only rewrapped can show other lines than tmux's pane
+// holds; the screen sent again is tmux's own. A size the window already has asks for nothing. The
+// terminals store (terminals.svelte.ts) builds one wire over its socket and the order in which
 // grids attach (pty-subscribe.ts).
 
 import type { SocketStore } from '../../../shared/stores/shapes.ts';
@@ -33,6 +39,11 @@ export function ptyChannel(id: string): string {
 export function createPtyWire(socket: SocketStore, order: PtyOrder) {
     /** How many panes read each terminal's output now. */
     const reading = new Map<string, number>();
+    /**
+     * The size each terminal's window was last asked for on the socket while it could write, as
+     * `cols x rows`; the server sizes nothing for a socket that cannot.
+     */
+    const sized = new Map<string, string>();
 
     /** Send keystrokes, which xterm.js's `onData` produced; held while a subscribe waits. */
     function sendInput(id: string, text: string): boolean {
@@ -46,17 +57,34 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
     }
 
     /**
-     * Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is the range
-     * server/machine/pty/channel.ts accepts.
+     * Send a terminal's new size on the socket. Whole numbers from 1 to 2000, which is the range
+     * server/machine/pty/channel.ts accepts. False when the socket is not open.
      */
-    function sendResize(id: string, cols: number, rows: number): boolean {
+    function resizeOnSocket(id: string, cols: number, rows: number): boolean {
         const resize: TerminalResize = {
             type: 'resize',
             channel: ptyChannel(id),
             cols: Math.round(cols),
             rows: Math.round(rows)
         };
-        return socket.send(resize);
+        if (!socket.send(resize)) return false;
+        if (socket.admitted()) sized.set(id, `${String(resize.cols)}x${String(resize.rows)}`);
+        return true;
+    }
+
+    /**
+     * Tell a terminal its pane's new size, and ask for its screen again when the size changed for a
+     * terminal a pane of this page reads on a socket that may write, once no subscribe of it waits
+     * for its resize. False when the socket is not open.
+     */
+    function sendResize(id: string, cols: number, rows: number): boolean {
+        const before = sized.get(id);
+        if (!resizeOnSocket(id, cols, rows)) return false;
+        const read = (reading.get(id) ?? 0) > 0 && !order.waits(id);
+        if (read && socket.admitted() && sized.get(id) !== before) {
+            socket.subscribe([ptyChannel(id)], true);
+        }
+        return true;
     }
 
     /**
@@ -76,7 +104,7 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
             size,
             () => socket.subscribe([channel], true),
             (message) => socket.send(message),
-            (now) => socket.admitted() && sendResize(id, now.cols, now.rows)
+            (now) => socket.admitted() && resizeOnSocket(id, now.cols, now.rows)
         );
         return () => {
             leave();
@@ -89,6 +117,7 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
                 return;
             }
             reading.delete(id);
+            sized.delete(id);
             socket.unsubscribe([channel]);
         };
     }

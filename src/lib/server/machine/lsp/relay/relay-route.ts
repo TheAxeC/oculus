@@ -115,6 +115,7 @@ function linksContext(state: RelayState): LinksContext {
         ...oculusContext(state),
         extensions: () => state.options.markdown?.() ?? ['md'],
         orphans: state.orphans,
+        ending: state.ending,
         make: (page, entry, root, key) => makeHeld(state, page, entry, root, key),
         mapper: (page, held) => mapperOf(state, page, held)
     };

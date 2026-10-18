@@ -48,6 +48,8 @@ import { failedAnswer } from '../../shared/answers/answers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import type { FsStore } from '../../sources/fs.svelte.ts';
 import { emptyTarget, targetKey, type LatexTarget } from '../terminal/latex-target.ts';
+import { servesRoot } from '../../sources/fs-transport.ts';
+import { t } from '../../shared/words/text.ts';
 import type { TerminalAnswer } from '../terminal/pty/pty-io.ts';
 import type { LatexBuildAsk, LatexStep, TerminalsStore } from '../terminals.svelte.ts';
 import { createBuilds, type BuildsStore } from './builds.ts';
@@ -191,7 +193,7 @@ export function createLatex(
     writes: WritesStore,
     hooks: LatexHooks
 ): LatexStore {
-    const calls = createCalls(writes);
+    const calls = createCalls(writes, (root) => served(root));
 
     /** The terminal each target is waiting on, by the target's key. */
     const waiting = new Map<string, { target: LatexTarget; terminal: string }>();
@@ -207,6 +209,18 @@ export function createLatex(
 
     /** The version of the last `files` message heard, or null before the first. */
     let filesHeard: number | null = null;
+
+    /** The targets answered as unserved without a request, by key, read again once served. */
+    const unservedTargets = new Map<string, LatexTarget>();
+
+    /** Whether the workspace serves a root; a workspace not read yet serves every root. */
+    const served = (root: string): boolean => servesRoot(fs.workspaces(), root);
+
+    /** The root of a held state, from the state or else from its key; '' for a project's. */
+    function rootOfHeld(key: readonly unknown[], data: LatexState | undefined): string {
+        const named = data?.root ?? '';
+        return named !== '' ? named : key[1] === 'folder' ? String(key[2]) : '';
+    }
 
     /** Moves whenever a state lands or goes, which is what makes the diagnostics redraw. */
     let landed = $state(0);
@@ -267,6 +281,7 @@ export function createLatex(
         if (waiting.size > 0) queries.mark([KIND], 'wait');
         // A build another page started ends in this list too, and the state it ended is read again.
         for (const one of queries.entries<LatexState>([KIND])) {
+            if (!served(rootOfHeld(one.key, one.data))) continue;
             if (one.data?.mains.some((main) => main.build === 'running') === true) {
                 queries.mark(one.key, 'again');
             }
@@ -278,7 +293,9 @@ export function createLatex(
      * Whether a `files` message can concern a folder: the folder, which is the directory of its
      * root joined with its own, is named by the message (or the message names no folders and its
      * root holds it), or a file the folder's main depends on is in a folder the message names. A
-     * folder of a root the page has no directory for yet cannot be placed, so it is concerned.
+     * folder of a root the page has no directory for yet cannot be placed, so it is concerned while
+     * the workspace is being read; a root the workspace read does not serve concerns nothing, so a
+     * tab of a root that left asks nothing of it.
      */
     function concerns(
         key: string,
@@ -288,7 +305,7 @@ export function createLatex(
         files: string[] = []
     ): boolean {
         const base = fs.roots().find((one) => one.key === key);
-        if (base === undefined) return true;
+        if (base === undefined) return served(key);
         if (folderNamed(root, folders, joinPath(base.dir, dir))) return true;
         return files.some((file) => filesNamed(root, folders, joinPath(base.dir, file)));
     }
@@ -307,6 +324,7 @@ export function createLatex(
         const folders = payload?.folders;
         if (root === '' && !gap) return;
         for (const one of queries.entries<LatexState>([KIND])) {
+            if (!served(rootOfHeld(one.key, one.data))) continue;
             if (
                 gap ||
                 one.data === undefined ||
@@ -315,7 +333,9 @@ export function createLatex(
                 queries.mark(one.key, 'again');
             }
         }
-        builds.filesMoved((key, dir, files) => gap || concerns(key, dir, root, folders, files));
+        builds.filesMoved(
+            (key, dir, files) => (gap && served(key)) || concerns(key, dir, root, folders, files)
+        );
     }
 
     /** Whether one terminal is in the last `sessions` payload's list, its line running. */
@@ -374,9 +394,16 @@ export function createLatex(
 
     function forgetOutside(roots: { key: string }[]): void {
         let any = false;
+        // A target answered as unserved is read again once its root is served again.
+        for (const [named, target] of unservedTargets) {
+            if (!('root' in target) || !roots.some((one) => one.key === target.root)) continue;
+            unservedTargets.delete(named);
+            queries.forget([KIND, ...targetKey(target)]);
+            queries.forget([OUTLINES, ...targetKey(target)]);
+            any = true;
+        }
         for (const { key, data } of queries.entries<LatexState>([KIND])) {
-            const named = data?.root ?? '';
-            const root = named !== '' ? named : key[1] === 'folder' ? String(key[2]) : '';
+            const root = rootOfHeld(key, data);
             if (root === '' || roots.some((one) => one.key === root)) continue;
             const target = key.slice(1).map(String);
             queries.forget([KIND, ...target]);
@@ -389,6 +416,10 @@ export function createLatex(
 
     async function load(target: LatexTarget, held: LatexState | undefined): Promise<LatexState> {
         try {
+            if ('root' in target && !served(target.root)) {
+                unservedTargets.set(targetKey(target).join('\n'), target);
+                return { ...PENDING, error: t('latex.unserved', target.root), loading: false };
+            }
             const response = await fetch(`/api/latex?${queryOf(target)}`);
             const raw = await readJson(response);
             if (raw === undefined || !response.ok) {
@@ -476,6 +507,10 @@ export function createLatex(
         target: LatexTarget,
         extra: string
     ): Promise<{ body: unknown } | { reason: string }> {
+        if ('root' in target && !served(target.root)) {
+            unservedTargets.set(targetKey(target).join('\n'), target);
+            return { reason: t('latex.unserved', target.root) };
+        }
         try {
             const response = await fetch(`/api/latex?${queryOf(target)}&${extra}`);
             const raw = await readJson(response);

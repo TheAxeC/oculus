@@ -350,7 +350,7 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'is started for a link rewrite with no Markdown tab open and ends 60 s after its answer, not at 59.999 s',
+        name: 'is started for a link rewrite with no Markdown tab open, is not ended while its page stays open, and ends 60 s after the page closes, not at 59.999 s',
         tab: {
             channel: 'lsp:markdown',
             file: 'a.md',
@@ -384,6 +384,9 @@ const ROWS: Row[] = [
             await page.arrival((payload) => payload.oculus === 'links_answer');
             const answer = page.frames.find((one) => one.payload.oculus === 'links_answer');
             expect(answer?.payload).toMatchObject({ oculus: 'links_answer', id: 5, edit: null });
+            await advance(MINUTE * 3);
+            expect(second.ended).toBe(false);
+            relay.remove(page.sink);
             await advance(MINUTE - 1);
             expect(second.ended).toBe(false);
             await advance(1);

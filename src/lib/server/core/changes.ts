@@ -9,7 +9,8 @@
 // write that removed a field also hands back the text it removed, where it stood and the text that
 // followed it (`RemovedText`), which the record of that field keeps for the undo. One that wrote a
 // bare note or a list of one note as a map hands back the text it replaced (`ReplacedText`), which
-// the undo puts back while the file still holds the lines the write left.
+// the undo puts back while the file still holds the lines the write left, and so does an add or a
+// delete of a collection entry.
 //
 // The log is this machine's and not the researcher's data: git already holds the hub's history, and
 // what this answers is what oculus did here. It lives beside the other files under ~/.oculus, or
@@ -77,8 +78,9 @@ export type RemovedText = {
  * The text a write replaced and the text it put in its place, which is what an undo puts back
  * while the file still holds what the write left: a manifest write that wrote a bare note or a
  * list of one note as the map it stands for, and a `config-value` write, whose two texts differ
- * from the common prefix and suffix of the file before and after. Putting `before` over `after` at
- * `offset` gives the earlier text.
+ * from the common prefix and suffix of the file before and after, and an add or a delete of a
+ * collection entry, whose two texts are widened to whole lines and one line around them. Putting
+ * `before` over `after` at `offset` gives the earlier text.
  */
 export type ReplacedText = {
     /** The index in the text the write left, counted in UTF-16 code units, where `after` begins. */
@@ -116,8 +118,10 @@ export type ChangeRecord = {
     /**
      * The text a write replaced: on the record of each manifest field whose edit rewrote a note as
      * a map and left the rewritten lines in the file, on the record of a `config-value` write, on
-     * the record of a config write that added a key (the added text, with an empty `before`), and
-     * on the record of an undo that put text back; on no other record.
+     * the record of a config write that added a key (the added text, with an empty `before`), on
+     * the record of a Lit Watch append and of a Save to Literature, on the record of an add or a
+     * delete of a collection entry (`new-entry`, `delete-entry`) and of the delete of a feed entry
+     * (`feed-delete`), and on the record of an undo that put text back; on no other record.
      */
     replaced?: ReplacedText;
     /**

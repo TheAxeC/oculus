@@ -17,12 +17,15 @@
     // click has replaced the tree with the file, so the second press lands on the tab, in an editor
     // or a frame. The layer takes that press, keeps the tab and stops the press, so the editor
     // selects no word and a frame gets no click. A tab a double click kept, on the layer or on the
-    // row when the file was read only after both presses, asks for the keyboard (`focusAsked`),
-    // and once the pane has drawn the tab's editor, frame or marked box the keyboard goes there,
-    // as a double click on a file of an editor's explorer puts it.
-    // The layer stays up until the pointer is released, so the release and the click land on it
-    // too. The keep ends when the double-click time (`KEEP_WINDOW_MS`) runs out, at any press
-    // outside the layer, at any key, and when another tab of the pane is the active one.
+    // row when the file was read only after both presses, asks for the keyboard (`focusAsked`), and
+    // once the pane has drawn the tab's editor, frame or marked box the keyboard goes there, as a
+    // double click on a file of an editor's explorer puts it. A box the view marks as drawn while
+    // it loads (`data-tab-loading`) takes the keyboard and holds the ask, so the editor that takes
+    // its place takes the keyboard from it: a file just made, or not read yet, opens with its
+    // editor holding the keyboard. The layer stays up until the pointer is released, so the release
+    // and the click land on it too. The keep ends when the double-click time (`KEEP_WINDOW_MS`)
+    // runs out, at any press outside the layer, at any key, and when another tab of the pane is the
+    // active one.
     //
     // A tab whose view holds a frame draws a slot here and not the frame: the frame is laid over
     // the slot by the frame layer (shell/frames/FrameLayer.svelte), so a pane drawn again never
@@ -203,8 +206,9 @@
      * Keep the keyboard in `input` through the end of the press that asked for it. The second press
      * of a double click on a tree row is still down when a view that draws at once (a picture)
      * takes the keyboard, and the row takes it back at that press's click, so the click that ends
-     * the press gives it back. A press that has already ended sends no click, and the next press
-     * drops the hold.
+     * the press gives it back. A press that has already ended sends no click, and the next press or
+     * key drops the hold: Enter and Space on a button send a click of their own, which is not the
+     * end of the press and must leave the keyboard on the button.
      */
     function keepThroughPress(input: HTMLElement): void {
         const back = (): void => {
@@ -214,9 +218,11 @@
         const drop = (): void => {
             window.removeEventListener('click', back);
             window.removeEventListener('pointerdown', drop, true);
+            window.removeEventListener('keydown', drop, true);
         };
         window.addEventListener('click', back);
         window.addEventListener('pointerdown', drop, true);
+        window.addEventListener('keydown', drop, true);
     }
 
     // A tab a double click kept takes the keyboard once this pane shows it. It waits for the keep's
@@ -237,23 +243,36 @@
         // The frame layer draws a frame after the view mounts, so the effect runs again when it
         // has.
         frames?.elementOf(asked);
+        let shown: HTMLElement | null = null;
         const give = (view: HTMLElement): boolean => {
             const input = inputOf(view, asked);
             if (input === null) return false;
-            input.focus();
+            if (document.activeElement !== input) input.focus();
+            if (input.hasAttribute('data-tab-loading')) return false;
             keepThroughPress(input);
             watch?.disconnect();
             focusGiven(asked);
             return true;
         };
-        const chosen = (): void => focusGiven(asked);
+        // A key or a press on the box the tab's view draws while it loads, as typing into a loading
+        // tab is, leaves the ask standing; one on any other control, a button of the tab's bar
+        // included, is the reader's choice.
+        const chosen = (event: Event): void => {
+            const at = event.target instanceof Element ? event.target : null;
+            if (at !== null && shown?.contains(at) === true && at.closest('[data-tab-loading]')) {
+                return;
+            }
+            focusGiven(asked);
+        };
         window.addEventListener('pointerdown', chosen, true);
         window.addEventListener('keydown', chosen, true);
         void tick().then(() => {
             const view = body?.querySelector<HTMLElement>(
                 `[data-tab-view=${JSON.stringify(asked)}]`
             );
-            if (ended || view === null || view === undefined || view.hidden || give(view)) return;
+            if (ended || view === null || view === undefined || view.hidden) return;
+            shown = view;
+            if (give(view)) return;
             watch = new MutationObserver(() => give(view));
             watch.observe(view, { childList: true, subtree: true });
         });

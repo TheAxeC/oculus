@@ -5,13 +5,16 @@
 //
 // Every served root whose folder holds both places of a move is asked, the innermost first, each
 // from its own Markdown server: the page's if it has one for the root, else one started for this
-// request, which ends 60 s after the last answer when no Markdown tab holds it. The server is told
-// the moves as watcher notices first, and each Markdown file inside a moved item as gone from its
-// old place, since it keeps its own view of the disk; a Markdown tab of a moved file is put on it
-// at its new place. Its answer is the edit for links; the edits for the backticked paths of every
-// Markdown file of the root are added (adapters/markdown/rewrite.ts). The edits of all the roots
-// are merged per file (data/prose/text-edits.ts). An edit for a file the page may not be given
-// is left out. A request whose page closed answers nothing. A root whose server ended or did not
+// request, which the page keeps while it stays open, so a second move finds it running, and which
+// ends 60 s after the page closes when no tab or page took it over. The server is told the moves as
+// watcher notices first, and each Markdown file inside a moved item as gone from its old place,
+// since it keeps its own view of the disk; a Markdown tab of a moved file is put on it at its new
+// place. Its answer is the edit for links; the edits for the backticked paths of the root's
+// Markdown files are added (adapters/markdown/rewrite.ts), looked for only in a file that moved or
+// whose text holds the name of a moved item, since a path that leads into a moved item names it: a
+// file a move does not touch is searched for the names and not parsed. The edits of all the roots
+// are merged per file (data/prose/text-edits.ts). An edit for a file the page may not be given is
+// left out. A request whose page closed answers nothing. A root whose server ended or did not
 // answer within 30 s, the wait for it to read the files changed on disk included, is named in the
 // answer beside the edits of the others, and a request no root's server answered is an error.
 //
@@ -25,7 +28,7 @@
 // it was asked.
 
 import { readFileSync, statSync } from 'node:fs';
-import { extname, join, relative, sep } from 'node:path';
+import { basename, extname, join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { LinksFailure, LspRpc, LspToServer } from '../../../../../data/model/index.ts';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
@@ -47,6 +50,8 @@ export type LinksContext = OculusContext & {
     extensions(): string[];
     /** The servers whose page closed and wait to be taken over. */
     orphans: Set<Held>;
+    /** The servers a link rewrite took while they were ending, until their last rewrite ends. */
+    ending: WeakSet<Held>;
     /** A server of the entry for a root, for a page that has none. */
     make(page: Page, entry: ServerEntry, root: ServedRoot, key: string): Held;
     mapper(page: Page, held: Held): Mapper;
@@ -94,6 +99,18 @@ function diskText(real: string): string | null {
     } catch {
         return null;
     }
+}
+
+/**
+ * Whether a move can change a backticked path of a file: the file is a moved item or lies in one,
+ * so its own folder moved, or its text holds the name of a moved item, which a path that leads into
+ * that item spells as one of its parts.
+ */
+function touches(text: string, real: string, moves: readonly Moved[]): boolean {
+    return moves.some(
+        (move) =>
+            real === move.to || real.startsWith(move.to + sep) || text.includes(basename(move.from))
+    );
 }
 
 /**
@@ -276,7 +293,7 @@ async function editOf(
     for (const real of files) {
         const open = held.docs.get(docKey(pathToFileURL(real).href));
         const text = open?.text ?? diskText(real);
-        if (text === null) continue;
+        if (text === null || !touches(text, real, moves)) continue;
         const changes = movedPathChanges(text, real, reach, moves);
         if (changes.length > 0) byFile.set(real, changes);
     }
@@ -346,6 +363,7 @@ async function collect(
                 page.helds.get(key) ??
                 adoptHeld(page, key, context.orphans) ??
                 context.make(page, entry, root, key);
+            if (held.waiting) context.ending.add(held);
             held.keep();
             held.asking += 1;
             used.push(held);
@@ -371,7 +389,11 @@ async function collect(
     } finally {
         for (const held of used) {
             held.asking -= 1;
-            if (held.asking === 0 && held.docs.size === 0) held.armEnd(LINGER_MS);
+            if (held.asking > 0) continue;
+            // A server whose last tab had closed goes on ending; one started for the request stays
+            // with the page.
+            if (held.docs.size === 0 && context.ending.has(held)) held.armEnd(LINGER_MS);
+            context.ending.delete(held);
         }
     }
     const { changes, overlaps } = merged.result();

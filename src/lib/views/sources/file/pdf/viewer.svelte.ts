@@ -33,11 +33,10 @@
 // and the scroll a new size forces (a maximised pane in which every page fits) is not reported
 // until the reader moves.
 //
-// The libraries load on the first `open`, as a chunk of their own, so a page that never shows a PDF
-// carries none of PDF.js. The worker is built by Vite from a URL import, and the character maps,
-// standard fonts and decoders PDF.js reads at run time come from /api/pdfjs
-// (server/content/latex/pdfjs-assets.ts). The scripting manager is not given, so a PDF's own
-// scripts do not run.
+// The libraries load on the first `open` (pdf-library.ts), as a chunk of their own, so a page that
+// never shows a PDF carries none of PDF.js. The character maps, standard fonts and decoders PDF.js
+// reads at run time come from /api/pdfjs (server/content/latex/pdfjs-assets.ts). The scripting
+// manager is not given, so a PDF's own scripts do not run.
 //
 // Internal links and outline entries go through PDF.js's link service. The window's history is
 // the router's, so PDF.js's own history component, which pushes entries onto it, is not used: the
@@ -57,6 +56,7 @@ import type { TipIds } from '$lib/ui/menu/tip-ids';
 import PdfControl from './PdfControl.svelte';
 import { SidePanel } from './side-panel';
 import { markPlace, pageViewOf, pointOn, type Mark } from './page-points';
+import { loadPdfLibrary, type Found } from './pdf-library';
 import {
     readPdfPlace,
     type PdfPlace,
@@ -93,15 +93,11 @@ export type ViewerHooks = {
 /** Where the viewer is in reading a document. */
 export type ViewerStatus = 'loading' | 'ready' | 'missing' | 'invalid' | 'failed';
 
-/** What a search found: the match shown, how many there are, and how the search stands. */
-export type Found = {
-    current: number;
-    total: number;
-    state: 'idle' | 'found' | 'wrapped' | 'notfound' | 'pending';
-};
-
 /** A place in the document a link or a back returns to. */
 type Position = Pick<PdfPlace, 'page' | 'left' | 'top' | 'scaleValue'>;
+
+/** PDF.js's one location of the viewer, the part of it the place is read from. */
+type PdfLocation = { pageNumber?: number; left?: number; top?: number };
 
 /** The longest a scroll's offset waits before it is reported. */
 const REPORT_EVERY_MS = 500;
@@ -451,64 +447,31 @@ export class PdfViewer {
     }
 
     async #library(): Promise<void> {
-        const pdfjs = await import('pdfjs-dist');
-        const lib = await import('pdfjs-dist/web/pdf_viewer.mjs');
-        const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
-        pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-        const eventBus = new lib.EventBus();
-        const links = new lib.PDFLinkService({
-            eventBus,
-            externalLinkTarget: lib.LinkTarget.BLANK,
-            externalLinkRel: 'noopener noreferrer'
-        });
-        const finder = new lib.PDFFindController({ linkService: links, eventBus });
-        const viewer = new lib.PDFViewer({
-            container: this.#container,
-            viewer: this.#viewerEl,
-            eventBus,
-            linkService: links,
-            findController: finder,
-            textLayerMode: 1,
-            annotationMode: pdfjs.AnnotationMode.ENABLE,
-            annotationEditorMode: pdfjs.AnnotationEditorType.DISABLE
-        });
-        links.setViewer(viewer);
-        const signal = this.#stop.signal;
-        eventBus.on('pagesinit', () => this.#initialised(), { signal });
-        eventBus.on(
-            'pagechanging',
-            (event: { pageNumber: number }) => this.#paged(event.pageNumber),
-            { signal }
-        );
-        eventBus.on(
-            'scalechanging',
-            (event: { scale: number; presetValue?: string }) => {
-                this.scale = event.scale;
-                this.scaleValue = event.presetValue ?? String(event.scale);
-                if (!this.#own) this.#changed(true);
+        const made = await loadPdfLibrary(
+            this.#container,
+            this.#viewerEl,
+            {
+                initialised: () => this.#initialised(),
+                paged: (page) => this.#paged(page),
+                scaled: (scale, preset) => {
+                    this.scale = scale;
+                    this.scaleValue = preset ?? String(scale);
+                    if (!this.#own) this.#changed(true);
+                },
+                located: () => this.#located(),
+                moded: () => this.#changed(true),
+                counted: (count) => {
+                    this.found = { ...this.found, ...count };
+                },
+                searched: (found) => {
+                    this.found = found;
+                }
             },
-            { signal }
+            this.#stop.signal
         );
-        eventBus.on('updateviewarea', () => this.#located(), { signal });
-        eventBus.on('scrollmodechanged', () => this.#changed(true), { signal });
-        eventBus.on('spreadmodechanged', () => this.#changed(true), { signal });
-        eventBus.on(
-            'updatefindmatchescount',
-            (event: { matchesCount: Found }) => {
-                this.found = { ...this.found, ...event.matchesCount };
-            },
-            { signal }
-        );
-        eventBus.on(
-            'updatefindcontrolstate',
-            (event: { state: number; matchesCount: Found }) => {
-                this.found = { ...event.matchesCount, state: stateOf(event.state, lib.FindState) };
-            },
-            { signal }
-        );
-        this.#viewer = viewer;
-        this.#links = links;
-        this.#bus = eventBus;
+        this.#viewer = made.viewer;
+        this.#links = made.links;
+        this.#bus = made.bus;
     }
 
     async #load(url: string, mine: number, keep: PdfPlace | null): Promise<void> {
@@ -636,16 +599,16 @@ export class PdfViewer {
     }
 
     /**
-     * Where the viewer is: the page, the offset in it in PDF units and the zoom. PDF.js holds no
-     * offset before it has first updated its view, and the viewer then has no place.
+     * Where the viewer is: the page and the offset in it in PDF units, both of PDF.js's one
+     * location, and the zoom. PDF.js holds no location before it has first updated its view.
      */
     #position(): Position | null {
         const viewer = this.#viewer;
         if (viewer === null) return null;
-        const at = viewer._location as { left?: number; top?: number } | null | undefined;
+        const at = viewer._location as PdfLocation | null | undefined;
         if (at === null || at === undefined) return null;
         return {
-            page: viewer.currentPageNumber,
+            page: at.pageNumber ?? viewer.currentPageNumber,
             left: at.left ?? 0,
             top: at.top ?? 0,
             scaleValue: viewer.currentScaleValue
@@ -861,17 +824,6 @@ export class PdfViewer {
         viewer.currentPageNumber = place.page;
         markPlace(this.#container, view, place);
     }
-}
-
-/** The word of a PDF.js find state. */
-function stateOf(
-    state: number,
-    find: { FOUND: number; NOT_FOUND: number; WRAPPED: number }
-): Found['state'] {
-    if (state === find.FOUND) return 'found';
-    if (state === find.WRAPPED) return 'wrapped';
-    if (state === find.NOT_FOUND) return 'notfound';
-    return 'pending';
 }
 
 /** Whether two places are the same place; no place is the same as no other. */

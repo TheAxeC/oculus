@@ -24,20 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:      # steps in flight, up to six (Z632)
-- step: O40
-  base: 06aaa0da4
-  worktree: .agents/worktrees/migration-O40
-  executor: agent
-  worker: claude:opus (ordo-high)
-  session_id: a9544cabcb0062b1d
-  launched: 2026-10-17
-  report: tools/oculus/.scratch/migration/agents/reviews/O40-report.md
-  builder_usage: 365,721 tokens, 1,232 tool uses, 234.6 min; round 1: 311,874 tokens, 337 tool uses, 78.0 min
-  round: 1
-  brief_check: agents/reviews/O40-brief-check.md (a720dd5aa206b347e, claude-opus-5-5, 238,481 tokens, 81 tool uses, 12.3 min)
-  reviewer_report: agents/reviews/O40-refuter.md (a03ea6cee5f5d717c, claude-opus-5-5, 179,623 tokens, 148 tool uses, 25.1 min); over round 1: ac2f1f4902dfa50d5, claude-opus-5-5, 336,123 tokens, 117 tool uses, 25.3 min
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -172,8 +159,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 
-
-
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - The Apps page shows no apps (booked 2026-10-13 from Axel's look, Axel: "this is a bug, (a) was the intended outcome of the step that built apps"): the rail's Apps button opens the page `apps`, one empty pane (`tools/oculus/config/layout.yml:107-108`), which shows only "Files and documents you open on this page appear here." (`config/text/ui.yml:51`). Fixed as E4 intended: the Apps page is an Apps view drawn as VS Code's Extensions view, every machine and root app with its glyph, title and state (approved, waiting for approval, changed, disabled, disabled for this workspace), Add app from folder in its title bar, a search box, and on each row the catalogue's actions (open the app's tab or its approval panel, Enable, Disable, Disable (Workspace), Enable (Workspace), Remove for a machine app), the app's tab opening beside the list; folded into D74, part 5.
@@ -195,6 +180,12 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports used nowhere (twelve, among them `holdTerminals`, `stubFetch` and the whole of `feeds-fixture.ts`): O37, defect 8.
 
 ## Closed items
+
+- Open item 146 (2026-10-18): (a), in O42 (Axel).
+- Open item 143 (2026-10-18): (c), a client test, written at O40's landing (Axel).
+- Open item 142 (2026-10-18): (a), then taken back; Axel took look 6 himself and it works (Axel).
+- Open item 144 (2026-10-18): (a), in O42 (Axel).
+- Open item 145 (2026-10-18): (a), then taken back; Axel takes D68's panel look himself (Axel).
 
 - One extra step (2026-10-18): O42 is the one step added after O40, holding 136, 137 (d) and 138 (b); open item 142 is settled by it (Axel).
 - Open item 136 (2026-10-18): the menu proposal is taken, in O42; Axel asked what else the menu should hold, answered 2026-10-18 (Axel).
@@ -300,6 +291,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-18 (O40 landed). O40 landed on main (booking in plan.md under O40, `agents/reviews/O40-landing.md`) after one repair round and the review over it; that review's findings fixed at landing or ruled (`agents/reviews/O40-refuter.md`, Closed); at landing the workspace-switch window and a root that left (G106), the folder panel's answer (G42), Cmd+S before the editor settings (G107, ruling 143 (c)), the map's finer search (ruling 139), G104's and G105's tests (rulings 140 and 141), the source tests' folder move; `npm run diagrams && npm run test:landing` in the gate with every command passing after the kill-arm fix and one `npm test` rerun (246 files, 2419 tests); one landing-list run made in main's checkout against Z492 changed no tracked file. Every look holds, Axel taking looks 6, 27, 37 and D68's panel. Open items: none. In flight (0 of 6): none. Next: /spec O42 (rulings 136, 137 (d), 138 (b), 144, 146), then O38, then O39.
 - 2026-10-18 (O40 round 1 reviewed). The builder a9544cabcb0062b1d reported round 1 (`agents/reviews/O40-report.md`, "Repair round 1"; 311,874 tokens, 337 tool uses, 78.0 min); the reviewer over the round ac2f1f4902dfa50d5 on claude-opus-5-5 wrote "Repair round 1, refuted" in `agents/reviews/O40-refuter.md`: items 17 and 28 violated in part (open items 138 and 139), eleven findings, none sent back. Fixes at landing: the finer placement search (finding 4), the clone question's button order restored (3), the `changeMenu` doc comment (7), `EVERYTHING` reused from `fs.svelte.ts` (10); the banned second form removed from the round brief's R3 (9); the builder's priorcopy and aftercopy runs and `shortlines.py` not used as proof (5, 8). Open items: 136 to 141. Next: Axel's rulings on 138 to 141, then /land O40 with its looks; then O38, O39.
 - 2026-10-18 (O40 round 1 sent). O40's review (`agents/reviews/O40-refuter.md`, a03ea6cee5f5d717c on claude-opus-5-5) ruled in `agents/briefs/O40-round1.md`: Axel's rulings 133 to 135 (a) as R1 to R3 (G36's text and row changed, G100 to G103 written into `agents/guarded.md`), the review's findings as F1 to F10; snapshot `.agents/worktrees/migration-O40-round-1` with `files.txt` (129 paths); the builder a9544cabcb0062b1d resumed with the round. Open items: 136, 137. In flight (1 of 6): O40 (round 1). Next: the review over the round, /land O40 with its looks; then O38, O39.
 - 2026-10-18 (O41 landed). O41 landed on main (booking in plan.md under O41, `agents/reviews/O41-landing.md`) after one repair round and the review over it; that review's findings fixed at landing or ruled (`agents/reviews/O41-refuter.md`, Closed), one look defect fixed at landing (the Literature line's words "Searching ..." to "Searching..."); `npm run test:landing` passed in the gate after one worker-start timeout rerun, `test:checks` again after the text fix, main's staged oculus tree equal to the gate's (6,463 lines). The look: the rail's sums, tones and hover words, the catalogue and tab counts, the Search and Literature lines and the Usage refresh on TEST; the git cases on a scratch oculus on 8796; clone, Submit Job, update tasks and reduce-motion not taken (`agents/reviews/owed-looks.md`). O40's reviewer a03ea6cee5f5d717c reported (`agents/reviews/O40-refuter.md`). Open items: 136, 137. In flight (1 of 6): O40 (reviewed). Next: O40's repair round 1 (rulings 133 to 135 (a) and the review's findings), the review over it, /land O40; then O38, O39.

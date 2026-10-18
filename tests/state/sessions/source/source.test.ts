@@ -4,12 +4,12 @@
 // reads and saves as the server does, and tells the tabs what the file's channel says.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { TEXT_LIMIT } from '../../../src/lib/data/file-ops.ts';
-import { LIFETIME, type SourceDraft } from '../../../src/lib/state/sessions/source/draft.ts';
-import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
-import { noop } from '../../fixtures/doubles.ts';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { TEXT_LIMIT } from '../../../../src/lib/data/file-ops.ts';
+import { LIFETIME, type SourceDraft } from '../../../../src/lib/state/sessions/source/draft.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import { noop } from '../../../fixtures/doubles.ts';
+import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { hashOf, server } from './source-server.ts';
 
 let client: ClientState;

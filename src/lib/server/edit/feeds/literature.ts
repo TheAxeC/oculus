@@ -61,7 +61,7 @@ export function engineLiteraturePath(engineConfig: Record<string, unknown>): str
  * The Literature file of a hub: the file its `collections:` list names, else the engine's path
  * when the hub holds a file there, and null when there is neither or the path leaves the hub.
  */
-function literatureFile(
+export function literatureFile(
     hub: string,
     config: PortfolioConfig,
     enginePath: string | undefined

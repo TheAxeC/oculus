@@ -17,7 +17,8 @@
 // `on_focus_change` close, and an `after_delay` close when the delay is one second or less); the
 // tabs it could not save are the ones the close still asks about. An app's `workspace.saveAll` asks
 // for every tab with unsaved text to be saved whatever the mode (`saveEvery`), as a press of Save
-// on each does, formatting where the language's record says so and the tab's editor is mounted.
+// on each does, formatting where the language's record says so and the tab's editor is mounted. The
+// Save of a close question saves one tab the same way (`saveAsked`).
 //
 // A note (a Markdown file of a hub's notes folder, `note` says which tab holds one and how long it
 // waits) saves itself `notes.autosave_ms` after its last edit whatever the mode, through the same
@@ -60,6 +61,11 @@ export type AutosaveStore = {
     pageBlurred: () => void;
     /** Save every tab with unsaved text; whether every one was written. */
     saveEvery: () => Promise<boolean>;
+    /**
+     * Save one tab as a press of Save does, for the Save of a close question; whether it was
+     * written. A tab that cannot be written (untitled, read-only, changed on disk) is not.
+     */
+    saveAsked: (id: string) => Promise<boolean>;
     /**
      * Save the tabs among these that the mode saves on a close, and every note among them; the
      * others are left alone.
@@ -214,5 +220,13 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         });
     }
 
-    return { blurred, pageBlurred, saveBeforeClose, saveEvery, followPage, drop: cancel };
+    return {
+        blurred,
+        pageBlurred,
+        saveBeforeClose,
+        saveEvery,
+        saveAsked: (id) => (eligible(id, true) ? save(id, true) : Promise.resolve(false)),
+        followPage,
+        drop: cancel
+    };
 }

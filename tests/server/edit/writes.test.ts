@@ -539,23 +539,32 @@ describe('adding an entry', () => {
             title: 'A new task',
             status: 'open'
         });
+        // The record keeps the text the add replaced, the file's last line, for its undo.
+        const last = '      - { do: read it }\n';
         expect(out).toEqual({
             found: true,
             id: 'A new task',
             changed: ['entries'],
             refused: [],
             records: [
-                record(
-                    tasksPath(root),
-                    'A new task',
-                    'entries',
-                    null,
-                    {
-                        title: 'A new task',
-                        status: 'open'
-                    },
-                    'create'
-                )
+                {
+                    ...(record(
+                        tasksPath(root),
+                        'A new task',
+                        'entries',
+                        null,
+                        {
+                            title: 'A new task',
+                            status: 'open'
+                        },
+                        'create'
+                    ) as Record<string, unknown>),
+                    replaced: {
+                        offset: TASKS.length - last.length,
+                        before: last,
+                        after: `${last}\n  - title: A new task\n    status: open\n`
+                    }
+                }
             ]
         });
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);

@@ -389,19 +389,39 @@ const SPOT_TURNS = 12;
 const SPOT_STEPS = [0, 0.5, 1, 1.5, 2, 3, 4];
 
 /**
+ * The spots tried on the rim of each placed circle, and the distance between the spots tried along
+ * the box's pad, in pixels, when the first spot leaves a link longer than the links stand.
+ */
+const RIM_TURNS = 360;
+const EDGE_STEP = 1;
+
+/** How far outside a rim a rim spot is put, so the clear test does not fail on a rounding. */
+const RIM_CLEAR = 0.01;
+
+/** The rounds that bring a point to the middle of the smallest circle holding every node given. */
+const CENTRE_ROUNDS = 200;
+
+/**
  * Where a node new to the simulation goes: around the middle of the placed nodes it is linked to,
  * or around the box's centre when it is linked to none, at the first spot inside the box less its
  * pad whose circle keeps `gap` clear of every placed circle. The spots are tried nearest first, at
  * steps of half a link's length, each ring starting from the direction that points away from the
  * box's centre, so a new node lands on the outside of the nodes it joins. A node no spot fits is
- * put at its anchor.
+ * put at its anchor. When that spot leaves one of its links longer than `length`, the length the
+ * Map's links stand at, the node goes instead to the clear spot within twice that length of the
+ * anchor whose farthest link is the shortest, so it lands next to its links. The farthest link is
+ * a convex function of the spot, so its least value over the clear spots lies at its least value
+ * overall, the middle of the smallest circle holding the linked nodes, when that spot is clear, and
+ * otherwise on the edge of the clear spots: the rim of a placed circle or the box's pad. Those are
+ * the spots tried, a degree apart on each rim and a pixel apart along the pad.
  */
 function spotFor(
     node: GraphNode,
     edges: GraphEdge[],
     placed: ForceNode[],
     bounds: Bounds,
-    params: Forces
+    params: Forces,
+    length: number
 ): { x: number; y: number } {
     const byId = new Map(placed.map((one) => [one.id, one]));
     const linked = edges.flatMap((edge) => {
@@ -419,25 +439,120 @@ function spotFor(
                   y: linked.reduce((sum, one) => sum + one.y, 0) / linked.length
               };
     const outward = Math.atan2(anchor.y - midY, anchor.x - midX);
-    const inside = (x: number, y: number): boolean =>
+    const fits = fitsAt(node, placed, bounds, params);
+    const ring = (step: number, turns: number) =>
+        Array.from({ length: step === 0 ? 1 : turns }, (_, turn) => {
+            const angle = outward + (turn * 2 * Math.PI) / turns;
+            return { x: anchor.x + Math.cos(angle) * step, y: anchor.y + Math.sin(angle) * step };
+        });
+    const first = SPOT_STEPS.flatMap((step) => ring(step * LINK_LENGTH, SPOT_TURNS)).find(fits);
+    const spot = first ?? anchor;
+    if (linked.length === 0 || farthest(spot, linked) <= length) return spot;
+    // The spot leaves a link longer than the links stand: the clear spot whose farthest link is the
+    // shortest, when it is shorter than the first spot's.
+    const reach = 2 * length;
+    const near = (one: { x: number; y: number }) =>
+        Math.hypot(one.x - anchor.x, one.y - anchor.y) <= reach;
+    // Only a circle whose rim reaches within `reach` of the anchor can overlap a spot tried.
+    const nearby = placed.filter(
+        (one) =>
+            Math.hypot(one.x - anchor.x, one.y - anchor.y) <=
+            reach + one.radius + node.radius + params.gap + RIM_CLEAR
+    );
+    const clear = fitsAt(node, nearby, bounds, params);
+    let best = { spot, far: farthest(spot, linked) };
+    const take = (one: { x: number; y: number }) => {
+        if (!near(one)) return;
+        const far = farthest(one, linked);
+        if (far < best.far && clear(one)) best = { spot: one, far };
+    };
+    take(centreOf(linked));
+    for (const one of nearby) {
+        const rim = one.radius + node.radius + params.gap + RIM_CLEAR;
+        for (let turn = 0; turn < RIM_TURNS; turn += 1) {
+            const angle = (turn * 2 * Math.PI) / RIM_TURNS;
+            take({ x: one.x + Math.cos(angle) * rim, y: one.y + Math.sin(angle) * rim });
+        }
+    }
+    const [left, right] = [bounds.pad, bounds.width - bounds.pad];
+    const [top, bottom] = [bounds.pad, bounds.height - bounds.pad];
+    for (
+        let x = Math.max(left, anchor.x - reach);
+        x <= Math.min(right, anchor.x + reach);
+        x += EDGE_STEP
+    ) {
+        take({ x, y: top });
+        take({ x, y: bottom });
+    }
+    for (
+        let y = Math.max(top, anchor.y - reach);
+        y <= Math.min(bottom, anchor.y + reach);
+        y += EDGE_STEP
+    ) {
+        take({ x: left, y });
+        take({ x: right, y });
+    }
+    return best.spot;
+}
+
+/**
+ * The middle of the smallest circle holding every node given, as Badoiu and Clarkson's rounds
+ * reach it: each round moves the point toward the node farthest from it by one over the round's
+ * number, which brings the farthest distance within a factor of one plus one over the rounds' root
+ * of its least value.
+ */
+function centreOf(nodes: ForceNode[]): { x: number; y: number } {
+    let point = { x: nodes[0].x, y: nodes[0].y };
+    for (let round = 1; round <= CENTRE_ROUNDS; round += 1) {
+        const far = nodes.reduce((most, one) =>
+            Math.hypot(one.x - point.x, one.y - point.y) >
+            Math.hypot(most.x - point.x, most.y - point.y)
+                ? one
+                : most
+        );
+        point = {
+            x: point.x + (far.x - point.x) / (round + 1),
+            y: point.y + (far.y - point.y) / (round + 1)
+        };
+    }
+    return point;
+}
+
+/** Whether a spot is inside the box less its pad and keeps `gap` clear of every placed circle. */
+function fitsAt(
+    node: GraphNode,
+    placed: ForceNode[],
+    bounds: Bounds,
+    params: Forces
+): (spot: { x: number; y: number }) => boolean {
+    return ({ x, y }) =>
         x >= bounds.pad &&
         x <= bounds.width - bounds.pad &&
         y >= bounds.pad &&
-        y <= bounds.height - bounds.pad;
-    const clear = (x: number, y: number): boolean =>
+        y <= bounds.height - bounds.pad &&
         placed.every(
             (one) => Math.hypot(one.x - x, one.y - y) >= one.radius + node.radius + params.gap
         );
-    for (const step of SPOT_STEPS) {
-        const turns = step === 0 ? 1 : SPOT_TURNS;
-        for (let turn = 0; turn < turns; turn += 1) {
-            const angle = outward + (turn * 2 * Math.PI) / SPOT_TURNS;
-            const x = anchor.x + Math.cos(angle) * step * LINK_LENGTH;
-            const y = anchor.y + Math.sin(angle) * step * LINK_LENGTH;
-            if (inside(x, y) && clear(x, y)) return { x, y };
-        }
-    }
-    return anchor;
+}
+
+/** How far a spot lies from the farthest of the nodes given. */
+function farthest(spot: { x: number; y: number }, nodes: ForceNode[]): number {
+    let most = 0;
+    for (const one of nodes) most = Math.max(most, Math.hypot(one.x - spot.x, one.y - spot.y));
+    return most;
+}
+
+/** The median of the lengths the held links stand at now, or a link's length when none is held. */
+function standingLength(simulation: MapForces): number {
+    const link = simulation.force<LinkForce>('link');
+    const lengths = (link?.links() ?? [])
+        .flatMap((one) =>
+            typeof one.source === 'object' && typeof one.target === 'object'
+                ? [standing(one.source, one.target)]
+                : []
+        )
+        .sort((a, b) => a - b);
+    return lengths.length === 0 ? LINK_LENGTH : lengths[Math.floor(lengths.length / 2)];
 }
 
 /**
@@ -472,9 +587,10 @@ export function renode(
             );
         })
     );
+    const length = standingLength(simulation);
     for (const node of graph.nodes) {
         if (held.has(node.id)) continue;
-        const spot = spotFor(node, graph.edges, nodes, bounds, params);
+        const spot = spotFor(node, graph.edges, nodes, bounds, params, length);
         nodes.push({ ...node, x: spot.x, y: spot.y, vx: 0, vy: 0 });
     }
     simulation.nodes(nodes);

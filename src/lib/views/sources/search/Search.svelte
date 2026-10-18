@@ -86,6 +86,7 @@
             searchRunning,
             runSearch,
             toggleMode,
+            rescope,
             replaceRunning,
             replaceSaid,
             replaceHits,
@@ -246,8 +247,8 @@
             queryWalk.reset();
             setSearchState(instance.id, { q });
         }}
-        onroot={(root: string) => setSearchState(instance.id, { root })}
-        onclearscope={() => setSearchState(instance.id, { under: '' })}
+        onroot={(root: string) => void rescope(instance.id, { root }, roots)}
+        onclearscope={() => void rescope(instance.id, { under: '' }, roots)}
         onword={() => toggle('word')}
         oncase={() => toggle('case')}
         onregex={() => toggle('regex')}

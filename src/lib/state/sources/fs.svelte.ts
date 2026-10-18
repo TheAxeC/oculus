@@ -53,7 +53,14 @@
 // forty. What a file opens as is read the same way and stops after the rule's window and the one
 // byte it tells a cut by, and the answer is held until it is marked, so the tree, the tab it opens
 // and a second click on the same row ask the server once.
+//
+// A root that leaves the workspace is asked for nothing more: what is held under it is dropped,
+// and a listing, a text or the local-history copies a view still reads under it answer empty with
+// no request, until the root joins the workspace again. While a workspace write is out, a `files`
+// message marks nothing held under a root, since the roots it leaves are not known until its answer
+// and `switched` marks every key held once they are.
 
+import { SvelteSet } from 'svelte/reactivity';
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
 import type {
     EntitiesStore,
@@ -80,6 +87,7 @@ import {
     listingKey as keyOfListing,
     listingUrl,
     readCappedBytes,
+    readRoots,
     readText,
     type BookmarksState,
     type FileText,
@@ -94,6 +102,7 @@ import { NOTES_FOLDER, inNotes } from '../../data/prose/markdown/note-names.ts';
 import { diskPlan } from './explorer/view/disk.ts';
 import {
     SHOWN_DEFAULT,
+    SHOWN_EVERYTHING,
     treeKey,
     typeOfFile,
     type FileType,
@@ -136,9 +145,6 @@ const NOTES = ['fs', 'notes'];
 /** What every key of this store opens with, and the marks the kinds of answer are found by. */
 const ALL = ['fs'];
 
-/** The pair of toggles that asks a folder for every entry it holds. */
-const EVERYTHING: ListingShown = { hidden: true, ignored: true };
-
 /** The status the file route answers for a file that is not there. */
 const NOT_FOUND = 404;
 
@@ -152,6 +158,11 @@ export type FsStore = {
      * read without reading the rest of the root.
      */
     heldEntries: (root: string, path: string, shown?: ListingShown) => FsEntry[] | null;
+    /**
+     * The entries of one folder as last read, and null for a folder never read and for one being
+     * read again after a write, whose held entries may lack an item the write placed in it.
+     */
+    settledEntries: (root: string, path: string, shown?: ListingShown) => FsEntry[] | null;
     /**
      * One directory once it is answered: what is held for the round without a request, or the
      * answer of the one request the round makes for it, shared with every other caller asking
@@ -171,6 +182,12 @@ export type FsStore = {
      * folder is not there. A folder not yet answered says the file is still there.
      */
     gone: (root: string, path: string) => boolean;
+    /**
+     * Whether git ignores one file, as the file browser's listing of its folder marks it: a held
+     * listing that leaves the ignored entries out and names the file answers no and asks nothing;
+     * otherwise the folder is read with everything shown. A tracked file is never marked ignored.
+     */
+    ignoredFile: (root: string, path: string) => Promise<boolean>;
     /** Ask again, on the next read of each, for every folder held under one pair of toggles. */
     relist: (shown: ListingShown) => void;
     /**
@@ -305,6 +322,19 @@ export function createFs(
     /** The version one root was last refreshed at, by root key. */
     const refreshed = new Map<string, number>();
 
+    /** The keys of the roots that left the workspace and have not joined it again. */
+    const left = new SvelteSet<string>();
+
+    /** How many workspace writes are out, from their send to the hold of the workspaces. */
+    let switching = 0;
+
+    /** Note the roots that left the workspace and the roots in it, from two reads of it. */
+    function noteLeft(before: readonly FsRoot[], after: readonly FsRoot[]): void {
+        const now = new Set(after.map((one) => one.key));
+        for (const one of before) if (!now.has(one.key)) left.add(one.key);
+        for (const key of now) left.delete(key);
+    }
+
     /**
      * How many times each file has been said to have been written, by root and path. A rune because
      * the address a view draws a file at is derived from it, so a bump has to redraw that view.
@@ -336,7 +366,8 @@ export function createFs(
      * bookmarks; `workspaces` and every `config` message mark the workspaces and the bookmarks. The
      * folders a message names are listed again with the texts and kinds of the files in them; a
      * message naming none reads each served root it concerns again, every root after a gap in the
-     * versions (messages merged or missed).
+     * versions (messages merged or missed). While a workspace write is out no root or folder is
+     * read again here, as `switched` marks everything held once the write's roots are known.
      */
     let heard: number | null = null;
     entities.afterReceive((message) => {
@@ -354,7 +385,7 @@ export function createFs(
             queries.mark(WORKSPACES, 'replace');
             queries.mark(BOOKMARKS, 'replace');
             queries.mark(NOTES, 'replace');
-            for (const one of heldRoots()) refresh(one.key, message.version);
+            if (switching === 0) for (const one of heldRoots()) refresh(one.key, message.version);
         }
         if (payload === null) return;
         if (payload.workspaces === true) {
@@ -364,6 +395,7 @@ export function createFs(
         if (payload.bookmarks === true || payload.workspaces === true) {
             queries.mark(BOOKMARKS, 'replace');
         }
+        if (switching > 0) return;
         const plan = diskPlan(payload, heldRoots());
         for (const key of plan.roots) refresh(key, message.version);
         for (const folder of plan.folders) relistFiles(folder.root, folder.path);
@@ -405,7 +437,7 @@ export function createFs(
      * A folder not yet answered under this pair of toggles draws another pair's answer meanwhile.
      */
     function listing(root: string, path: string, shown = SHOWN_DEFAULT): Listing {
-        if (root === '') return { entries: [], error: '', loading: false };
+        if (root === '' || left.has(root)) return { entries: [], error: '', loading: false };
         const { data } = queries.read(
             listingQuery(root, path, shown),
             listingFetcher(root, path, shown),
@@ -521,11 +553,25 @@ export function createFs(
         const named = (one: HeldListing): boolean =>
             !one.stale && one.data?.error === '' && one.data.entries.some((e) => e.name === name);
         if (heldListings(peekListing, root, folder).some(named)) return false;
-        const found = listing(root, folder, EVERYTHING);
-        if (found.loading || peekListing(listingQuery(root, folder, EVERYTHING)).stale)
+        const found = listing(root, folder, SHOWN_EVERYTHING);
+        if (found.loading || peekListing(listingQuery(root, folder, SHOWN_EVERYTHING)).stale)
             return false;
         if (found.refused === 'missing') return true;
         return found.error === '' && !found.entries.some((one) => one.name === name);
+    }
+
+    async function ignoredFile(root: string, path: string): Promise<boolean> {
+        if (root === '' || path === '') return false;
+        const at = path.lastIndexOf('/');
+        const folder = at < 0 ? '' : path.slice(0, at);
+        const name = path.slice(at + 1);
+        const kept = [false, true].some((hidden) => {
+            const held = peekListing(listingQuery(root, folder, { hidden, ignored: false }));
+            return !held.stale && held.data?.entries.some((one) => one.name === name) === true;
+        });
+        if (kept) return false;
+        const found = await readListing(root, folder, SHOWN_EVERYTHING);
+        return found.entries.find((one) => one.name === name)?.ignored === true;
     }
 
     /** The entries of one folder, which is what the tree walks. */
@@ -535,6 +581,11 @@ export function createFs(
 
     function heldEntries(root: string, path: string, shown = SHOWN_DEFAULT): FsEntry[] | null {
         return queries.peek<Listing>(listingQuery(root, path, shown)).data?.entries ?? null;
+    }
+
+    function settledEntries(root: string, path: string, shown = SHOWN_DEFAULT): FsEntry[] | null {
+        const held = queries.peek<Listing>(listingQuery(root, path, shown));
+        return held.stale ? null : (held.data?.entries ?? null);
     }
 
     /** The workspaces, asked for once and held until they are marked. */
@@ -579,13 +630,16 @@ export function createFs(
      */
     async function readWorkspaces(held?: WorkspacesState): Promise<WorkspacesState> {
         const read = await workspacesAnswer();
-        if (held !== undefined) markJoined(held.folders, read.folders);
+        if (held !== undefined && readRoots(read) !== null) {
+            noteLeft(held.folders, read.folders);
+            markJoined(held.folders, read.folders);
+        }
         return read;
     }
 
     /** One file's text, read through the file route and stopped at the window's limit. */
     function fileText(root: string, path: string): FileText {
-        if (root === '' || path === '') return { ...NO_TEXT, loading: false };
+        if (root === '' || path === '' || left.has(root)) return { ...NO_TEXT, loading: false };
         const { data } = queries.read(
             ['fs', 'text', root, treeKey(root, path)],
             () => readText(root, path),
@@ -657,7 +711,13 @@ export function createFs(
         }
     }
 
-    const history = createFileHistory(queries, entities, roots);
+    const history = createFileHistory(
+        queries,
+        entities,
+        roots,
+        (root) => left.has(root),
+        () => switching > 0
+    );
 
     /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
@@ -706,9 +766,6 @@ export function createFs(
      */
     const coded = (options: SendOptions): SendOptions => ({ ...options, words: refusal });
 
-    /** How many workspace writes are out, from their send to the hold of the workspaces. */
-    let switching = 0;
-
     /**
      * Send one write of the workspace or its folders. On its success the workspaces are held as
      * the server holds them now and everything else held is then marked, so the tree's rows and the
@@ -728,9 +785,16 @@ export function createFs(
             const answer = await writes.send(fields, path, coded(options));
             if (!answer.ok) return answer;
             landed(answer);
-            queries.hold(WORKSPACES, await workspacesAnswer());
+            const before = heldRoots();
+            const now = await workspacesAnswer();
+            if (readRoots(now) !== null) noteLeft(before, now.folders);
+            queries.hold(WORKSPACES, now);
             for (const one of queries.entries(ALL)) {
-                if (one.key[1] !== WORKSPACES[1]) queries.mark(one.key, 'replace');
+                if (one.key[1] === WORKSPACES[1]) continue;
+                // What is held under a root that left is dropped and not asked for again.
+                const root = one.key[2];
+                if (typeof root === 'string' && left.has(root)) queries.forget(one.key);
+                else queries.mark(one.key, 'replace');
             }
             return answer;
         } finally {
@@ -766,8 +830,10 @@ export function createFs(
         listing,
         entries,
         heldEntries,
+        settledEntries,
         readListing,
         gone,
+        ignoredFile,
         relist,
         relistFolder,
         dropListed,

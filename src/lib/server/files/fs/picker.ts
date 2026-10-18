@@ -95,7 +95,8 @@ export function pickerScript(options: PickOptions = {}): string {
         'panel.level = 8;',
         'panel.makeKeyAndOrderFront(null);',
         'const chosen = [];',
-        'if (panel.runModal === 1) {',
+        // JXA hands NSInteger results back as strings, so the answer is compared as a number.
+        'if (Number(panel.runModal) === 1) {',
         '    const urls = panel.URLs;',
         '    for (let at = 0; at < urls.count; at += 1) {',
         '        chosen.push(ObjC.unwrap(urls.objectAtIndex(at).path));',

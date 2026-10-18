@@ -7,7 +7,7 @@
     // close control under the pointer. A press on a row brings its tab forward. The head carries
     // Save All, which saves every dirty source tab, and Close All, which closes every tab listed
     // and asks the close question first (state/workbench/navigation/pages.ts's closeAsk) whenever
-    // one of them holds unsaved text.
+    // one of them holds unsaved text, with its Save, Don't Save and Cancel.
     //
     // A row drags onto another row, and the tab moves to the place of the target row's tab in that
     // row's pane (state/sources/explorer/sections/open-editors.ts's editorDrop), through
@@ -65,7 +65,7 @@
         fs: { gone },
         problems,
         selectors: { docPlaceFor },
-        ui: { saveBeforeClose, unsaved },
+        ui: { saveBeforeClose, saveForClose, unsaved },
         source: { saveSourceDraft }
     } = useState();
 
@@ -117,6 +117,7 @@
         confirming = await closingEditors(ids, {
             unsaved,
             saveBeforeClose,
+            saveForClose,
             nameOf,
             close: (id) => closeInstance(id, page),
             remember: rememberClosed
@@ -167,6 +168,12 @@
         const act = confirming?.act;
         confirming = null;
         act?.();
+    }
+
+    function saved(): void {
+        const save = confirming?.save;
+        confirming = null;
+        void save?.();
     }
 </script>
 
@@ -300,6 +307,7 @@
     message={confirming?.message ?? null}
     onconfirm={confirmed}
     oncancel={() => (confirming = null)}
+    onsave={(confirming?.save ?? null) === null ? undefined : saved}
 />
 
 <style>

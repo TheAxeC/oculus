@@ -130,14 +130,14 @@ export function createTabAsks(deps: TabAsksDeps): TabAsks {
     ]);
     // What the status bar draws for this tab, said again whenever any of it changes, and the asks
     // of the bar and the palette. A tab with no text yet says nothing, so the bar draws no source
-    // items over a tab still reading, and a tab whose indentation is not known yet (the
-    // configuration has not arrived) says nothing either.
+    // items over a tab still reading. A tab whose indentation is not known yet (the configuration
+    // has not arrived) says so with a null indentation, and still takes the save key.
     connectSourceStatus({
         store: deps.store,
         id: deps.id,
         status: () => {
             const facts = deps.facts;
-            if (!facts.read || facts.indent === null) return null;
+            if (!facts.read) return null;
             return {
                 caret: facts.drawn ? facts.caret : null,
                 lines: lineCount(facts.text),

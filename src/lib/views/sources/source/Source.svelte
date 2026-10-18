@@ -22,11 +22,12 @@
     // read whole is drawn by the code window; one this machine's mode locks is drawn by the editor
     // in its read-only form, which a mode change toggles (save/locked-words.ts).
     //
-    // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route,
-    // read again when HEAD's commit (a HEAD tab) or the file's staged or unstaged entry (an index
-    // tab) moves, and is never written: it is drawn as a locked file, has no gutter marks, carries
-    // the blame of that version (Toggle Blame is the one action it offers), and offers no preview,
-    // since its root is a repository's own directory and not a served root.
+    // A tab over the file at HEAD or in the index (Open File (HEAD) or Open File (Index)) is read
+    // from the git route, read again when HEAD's commit (a HEAD tab) or the file's staged or
+    // unstaged entry (an index tab) moves, and is never written: it is drawn as a locked file, has
+    // no gutter marks, carries the blame of that version (Toggle Blame is the one action it
+    // offers), and offers no preview, since its root is a repository's own directory and not a
+    // served root.
     //
     // A keystroke keeps a preview tab: typing into the tab a single click opened, which the next
     // single click replaces, says the reader is working in it.
@@ -117,7 +118,7 @@
         appShell,
         editorStatus,
         explorer,
-        fs: { fileText, roots: currentRoots, workspaces },
+        fs: { roots: currentRoots },
         hpc,
         layout: { keepPreview, openBeside, openView, restateInstance },
         repositories,
@@ -180,7 +181,7 @@
         options: editorOptions,
         repoSettings,
         paintLimit,
-        fileText
+        fs: client.fs
     });
     /** The language the tab paints in: the one chosen from the status bar, or the name's. */
     const language = $derived(options.language);
@@ -222,7 +223,7 @@
     const markdown = $derived(language === 'markdown');
     /** Where the file is on disk and in which repository, and what that allows the tab. */
     const file = createTabFile({
-        workspaces,
+        fs: client.fs,
         repositories: client.selectors.repositories,
         gitFor,
         root: () => root,
@@ -276,11 +277,12 @@
         openView
     });
     const gate = shownGate(useShown());
-    /** The quick diff marks and the blame, read for a file in a repository once its text is. */
+    /** The quick diff marks and the blame of a served file in a repository, once its text is. */
     const gutter = createSourceGutter({
-        file: () => (read ? file.inRepo : null),
+        file: () => (read && draft.disk !== 'unserved' ? file.inRepo : null),
         stage: () => head,
         repoState: () => file.repoState,
+        tracked: file.tracked,
         repositories,
         loaded: () => draft.loaded,
         text: () => draft.text,

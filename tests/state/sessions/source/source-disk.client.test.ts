@@ -7,9 +7,9 @@
 
 import { flushSync } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { SourceDraft } from '../../../src/lib/state/sessions/source/draft.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import type { SourceDraft } from '../../../../src/lib/state/sessions/source/draft.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { server } from './source-server.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));

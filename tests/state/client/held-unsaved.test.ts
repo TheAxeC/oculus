@@ -19,7 +19,7 @@
 // the undo of a recorded change, which names its file by absolute path, is refused the same way.
 //
 // What this does NOT cover: the disabled controls a view draws for the same file, and the source
-// store's own answer to which tab holds unsaved text (tests/state/sessions/source.test.ts).
+// store's own answer to which tab holds unsaved text (tests/state/sessions/source/source.test.ts).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -27,7 +27,7 @@ import { fileNamed } from '../../../src/lib/data/helpers/hub-names.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
 import { NO_LOOKUPS } from '../../../src/lib/state/sessions/source/write-files.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
-import { server } from '../sessions/source-server.ts';
+import { server } from '../sessions/source/source-server.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 

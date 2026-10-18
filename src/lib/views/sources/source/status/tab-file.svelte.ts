@@ -3,16 +3,23 @@
 // whether the star, Open in Program, a preview and the blame apply. A tab over the file at HEAD or
 // in the index names its repository's own folder as its root and shows no working file, and a tab
 // that lost its address names no file. The values are derived from the tab's address and the
-// workspace's served roots and repositories, so they follow both.
+// workspace's served roots and repositories, so they follow both. Whether git tracks the working
+// file, which is when it has a blame, is read from the repository's git state and from the file
+// browser's listing, which marks an ignored file.
 
 import type { HeadStage } from '$lib/state/sessions/source/draft';
-import { repoOfFile, wholePath, type RepoFile } from '$lib/state/sources/repositories/file-git';
+import {
+    gitTracks,
+    repoOfFile,
+    wholePath,
+    type RepoFile
+} from '$lib/state/sources/repositories/file-git';
 import { readableRepositoryRoots } from '$lib/state/sources/repositories/repositories';
 import type { ClientState } from '$lib/state/client/context';
 
 /** What the tab's file facts read of the tab. */
 export type TabFileDeps = {
-    workspaces: ClientState['fs']['workspaces'];
+    fs: Pick<ClientState['fs'], 'workspaces' | 'ignoredFile'>;
     repositories: ClientState['selectors']['repositories'];
     gitFor: ClientState['selectors']['gitFor'];
     root: () => string;
@@ -30,7 +37,7 @@ export type TabFileDeps = {
 /** The facts about the tab's file, each read where the tab draws or hands up an action. */
 export function createTabFile(deps: TabFileDeps) {
     /** The roots the file routes serve, which name a tab's file by a key and a path. */
-    const served = $derived(deps.workspaces().folders);
+    const served = $derived(deps.fs.workspaces().folders);
     /** The absolute path of the file on disk, empty for a tab that shows no file on disk. */
     const wholeFile = $derived(
         deps.blocked() || deps.head() !== undefined
@@ -85,6 +92,18 @@ export function createTabFile(deps: TabFileDeps) {
                 ...state.staged.filter((one) => one.path === path).map((one) => `s${one.status}`),
                 ...state.unstaged.filter((one) => one.path === path).map((one) => `u${one.status}`)
             ].join(',');
+        },
+        /**
+         * Whether git tracks the file the tab holds, so that it has a blame: true for a version at
+         * HEAD or in the index, and false for a file in no repository, one git's state does not
+         * track (gitTracks) and one git ignores.
+         */
+        tracked: async (): Promise<boolean> => {
+            if (inRepo === null) return false;
+            if (deps.head() !== undefined) return true;
+            const state = deps.gitFor(inRepo.root);
+            if (state === null || !gitTracks(state, inRepo.path)) return false;
+            return !(await deps.fs.ignoredFile(deps.root(), deps.path()));
         },
         /** The repository's state, whose every move is a new read of the gutter. */
         get repoState() {

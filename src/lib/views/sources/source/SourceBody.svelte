@@ -3,10 +3,12 @@
     // stands in for the editor when the file cannot be shown (with the control that reads it
     // again), an empty pane while the draft is read, and otherwise the line saying why a file may
     // not be written (save/LockedCode.svelte), the editor, and the row under them
-    // (save/SourceNote.svelte). Focus anywhere in it makes the tab the source a command run from
-    // another view reads. The pane's grid has a row for the line and the window when the tab draws
-    // them, and a row for the note when it has one. Source.svelte owns every value drawn here;
-    // this partial draws them and hands the editor's events back.
+    // (save/SourceNote.svelte). The empty pane is marked as loading (`data-tab-loading`), so the
+    // keyboard a kept tab asked for waits in it for the editor (shell/panes/PaneBody.svelte). Focus
+    // anywhere in it makes the tab the source a command run from another view reads. The pane's
+    // grid has a row for the line and the window when the tab draws them, and a row for the note
+    // when it has one. Source.svelte owns every value drawn here; this partial draws them and hands
+    // the editor's events back.
 
     import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -140,7 +142,7 @@
             <Empty error={errored} message={error} action={again} />
         </div>
     {:else if !loaded}
-        <div data-tab-focus tabindex="-1"></div>
+        <div data-tab-focus data-tab-loading tabindex="-1"></div>
     {:else}
         {#if lock.words !== ''}
             <LockedCode {lock} {text} {language} {path} gutter={margin} {onscrolled} />
