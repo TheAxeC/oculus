@@ -1,8 +1,9 @@
 In flight (1 of 6 slots in use):
-- O40 (O37's open look defects): repair round 1 and the review over it done; no second round (Axel); the landing waits on open items 139 and 142.
+- O40 (O37's open look defects): repair round 1 and the review over it done; no second round (Axel); the landing waits on open item 139.
 
-Queued, in order (2 steps):
-- O38 (cockpit retired, hub tools cleaned): once O40 has landed.
+Queued, in order (3 steps):
+- O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list): once O40 has landed.
+- O38 (cockpit retired, hub tools cleaned): once O42 has landed.
 - O39 (oculus in its own repository): once O38 has landed.
 
 Owed looks: 1, D68's folder panel from a browser tab, in O40.

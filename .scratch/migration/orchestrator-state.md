@@ -171,9 +171,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 136 (2026-10-18): File > Open in Browser and the app's menu; Axel asked for it now. Proposal given 2026-10-18: a step of its own after O40 and O42; every item runs a command the page already has, through one bridge message naming the command; an item shows the page's key and takes none (registerAccelerator: false), so ACCELERATORS is unchanged; Open in Browser opens the window's server origin + '/', and a browser tab loses its server when the app quits (app.ts:9) and reconnects when the app starts again. Waiting on Axel's yes to the step and the item list.
 - Open item 139 (2026-10-18, O40's review over round 1, finding 4, and the builder's F3): placing a new map node. The review found a clear spot within link distance in 4 of the 7 maps where the round places the node beyond it (the 72 x 24 ring search misses small pockets); that search is replaced by a finer one at landing. In 3 of 20 random 161-node maps (seeds 4, 13, 14) no clear spot within link distance exists without moving another node, which HELP.md:272 rules out. Options: (a) keep HELP.md:272, place at the closest clear spot (beyond the distance on such maps); (b) let neighbouring nodes give way for the new one, changing HELP.md:272. Recommendation: (a), since a map that moves under the reader when a project is added loses the reader's place, and the overshoot on those maps is 1.08 to 1.27 of the distance. The lazy option is (a) without the finer search, which the landing does not take.
-- Open item 142 (2026-10-18, rulings 138 (b) and the no-second-round ruling): ruling 138 (b) is a change to what the server sends and to three readers, too large for a fix at landing, and O40 has no repair round left. Options: (a) a step of its own, O42, right after O40 lands, with its own brief, builder and review, O40 landing with the round's lookup; (b) the orchestrator builds 138 (b) on main at O40's landing, unreviewed by a fresh agent. Recommendation: (a), since a wire change gets a builder and a review under the plan's rules and inline work is limited to small fixes at landing. The lazy option is (b), which costs less now and skips the review.
 
 
 
@@ -199,6 +197,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- One extra step (2026-10-18): O42 is the one step added after O40, holding 136, 137 (d) and 138 (b); open item 142 is settled by it (Axel).
+- Open item 136 (2026-10-18): the menu proposal is taken, in O42; Axel asked what else the menu should hold, answered 2026-10-18 (Axel).
 - Open item 137 (2026-10-18): (d), the details of the repository shown get a header row with its glyph, name and branch, and their moving line runs along that header's foot (Axel).
 - Open item 138 (2026-10-18): (b), the roots payload the server pushes carries each root's `.oculus/settings.yml` text or null, and the source list, the Settings `editor.languages` row and the save rules read it from there, with no request of their own and no 404 (Axel).
 - Open item 140 (2026-10-18): (a), a guarded entry and its test for the Repositories change menu's Open File (HEAD) and Open File (Index), written at O40's landing (Axel).
