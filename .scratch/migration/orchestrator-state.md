@@ -171,7 +171,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 139 (2026-10-18, O40's review over round 1, finding 4, and the builder's F3): placing a new map node. The review found a clear spot within link distance in 4 of the 7 maps where the round places the node beyond it (the 72 x 24 ring search misses small pockets); that search is replaced by a finer one at landing. In 3 of 20 random 161-node maps (seeds 4, 13, 14) no clear spot within link distance exists without moving another node, which HELP.md:272 rules out. Options: (a) keep HELP.md:272, place at the closest clear spot (beyond the distance on such maps); (b) let neighbouring nodes give way for the new one, changing HELP.md:272. Recommendation: (a), since a map that moves under the reader when a project is added loses the reader's place, and the overshoot on those maps is 1.08 to 1.27 of the distance. The lazy option is (a) without the finer search, which the landing does not take.
 
 
 
@@ -199,6 +198,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - One extra step (2026-10-18): O42 is the one step added after O40, holding 136, 137 (d) and 138 (b); open item 142 is settled by it (Axel).
 - Open item 136 (2026-10-18): the menu proposal is taken, in O42; Axel asked what else the menu should hold, answered 2026-10-18 (Axel).
+- Open item 139 (2026-10-18): (a), a new project never moves another node; it takes the closest clear spot beside its links, found by a finer search at O40's landing, and a reload or re-tune lays the map out again (Axel).
+- Open item 136, the further items (2026-10-18): O42's menu also holds Edit > Find (the app's find bar), Window > Next Tab and Previous Tab, File > Open Recent, Help > Keyboard Shortcuts and the oculus > Services submenu; no Check for Updates (Axel).
 - Open item 137 (2026-10-18): (d), the details of the repository shown get a header row with its glyph, name and branch, and their moving line runs along that header's foot (Axel).
 - Open item 138 (2026-10-18): (b), the roots payload the server pushes carries each root's `.oculus/settings.yml` text or null, and the source list, the Settings `editor.languages` row and the save rules read it from there, with no request of their own and no 404 (Axel).
 - Open item 140 (2026-10-18): (a), a guarded entry and its test for the Repositories change menu's Open File (HEAD) and Open File (Index), written at O40's landing (Axel).

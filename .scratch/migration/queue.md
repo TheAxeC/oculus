@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O40 (O37's open look defects): repair round 1 and the review over it done; no second round (Axel); the landing waits on open item 139.
+- O40 (O37's open look defects): repair round 1 and the review over it done; no second round (Axel); /land O40 in progress.
 
 Queued, in order (3 steps):
 - O42 (the app menu with Open in Browser, the repository details header, the settings file in the folder list): once O40 has landed.
