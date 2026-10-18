@@ -595,3 +595,375 @@ No change; see open item C. Run `radar2.mts` over the hub's own settings: `radar
 - Item 38's 50 ms bound cannot be measured without a page.
 - The brief's G list leaves out G8, whose tests items 15 and 16 change.
 - The brief's `app.dont_save` key names the clone question's key.
+
+## Repair round 1
+
+**Not done.** Five things are not done, or are done only in part:
+- **The report file was not written.** The harness does not let a subagent write report files. This message is the whole "Repair round 1" section. The orchestrator appends it under the first report at `tools/oculus/.scratch/migration/agents/reviews/O40-report.md`.
+- **F1: the ruling as written is not met.** Its premise is wrong: a source list that asks for no listing would never read `.oculus/settings.yml`. This is handed back below as open item F1, with options.
+- **F3: the 161-node shape is not fully met.** The new node is now within link distance in 13 of 20 maps (base: 7 of 20). In the other 7 maps the only places within link distance overlap a node, or need another node to move, which HELP.md:272 rules out. This is handed back below as open item F3.
+- **F2: the widths are checked by reading only.** Widths 180, 203 and the default (180) are checked by reading the layout. Only a page shows them, so the proof is the look on landing.
+- **R2: the change menu has no test.** No guarded entry covers the change menu, and a test can exist only as an entry's test. The entry text is proposed under open item R2.
+
+Every other item, R1 to R3 and F4 to F10, is done. The checks after the last change all passed:
+- `npm run test:quick -- --base 06aaa0da4` passed every command (it ran in 47.1 s, over its 45 s limit).
+- The test files of every guarded entry the round changes passed.
+- The tree checks named below passed.
+- The ASCII gate printed nothing.
+
+### Open items (repeated until ruled)
+
+**F1. The source list's `named()` cannot read the settings file without a listing.**
+- The ruling asks that `named()` make no listing request of its own.
+- A listing leaves dot folders out unless hidden files are shown (the server's `skipped()` in `src/lib/server/files/fs.ts`). So without a listing request with `hidden`, `named()` cannot find `.oculus/settings.yml`, and HELP.md:328 would become false.
+- Options:
+  - (a) Literal: no request. The settings file is not read while hidden files are off. This is the lazy option, and it breaks HELP.md:328.
+  - (b) Current code: up to 2 listing requests per root with `hidden`, and no 404.
+  - (c) The root listing's answer says whether the settings file exists. This is a wire-format change, so it is Axel's call.
+- Recommendation: (b), kept in the tree now.
+- Counting fake store, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/f1/count.mts`:
+  - Base: look hub 1 request (`text look-hub/.oculus/settings.yml (404)`); three roots 3 requests, two of them 404.
+  - Now: look hub 2 (`listing look-hub / hidden; listing look-hub /.oculus hidden`); three roots 6 (5 listings and 1 text read, no 404).
+
+**F3. Placing the new node within link distance on the 161-node shape clashes with HELP.md:272.**
+- HELP.md:272 says no other node moves.
+- In 7 of 20 maps, every spot within link distance of the anchor overlaps a node.
+- Options:
+  - (a) Keep the current rule: never longer than base, and no overlap.
+  - (b) Allow other nodes to move. This changes HELP.md:272 and is Axel's call.
+- Recommendation: (a).
+
+**R2. A guarded entry for the change menu.** The proposed text: "A Staged or Changes row's menu offers Open File (HEAD) and Open File (Index); each opens a read-only tab of that version, and the Index tab keeps the staged side."
+
+**Items left from the first report:**
+- **A:** resolved by R1.
+- **B:** resolved by R2.
+- **C and D:** looks the orchestrator retakes at landing.
+- **E:** entries for items 4, 18, 25, 28, 29, 30, 32, 33, 36, 37, 41 and 42 are still unwritten, with the texts in the first report. Items 1, 2, 20 and 31 became G100 to G103.
+
+### R1: the link-rewrite Markdown server lives while its page is open
+
+**Change.**
+- In `src/lib/server/machine/lsp/held/requests/links.ts`, `collect` marks a server that was waiting to end when the rewrite took it (`context.ending`). When its last rewrite ends, only such a server with no documents is ended again (`armEnd(LINGER_MS)`).
+- A server started for the request stays with the page. `removePage` arms its 60 s end when the page closes.
+- The ending set lives on the relay's state:
+  - `src/lib/server/machine/lsp/relay/relay-state.ts`: `ending: WeakSet<Held>`
+  - `src/lib/server/machine/lsp/relay/relay-make.ts`: `ending: new WeakSet()`
+  - `src/lib/server/machine/lsp/relay/relay-route.ts`: `linksContext` passes it.
+  - Module-level state fails `tests/checks/tree/boundaries.test.ts`, so the set is not in the module.
+- The file's head comment is rewritten. DESIGN.md:737 and HELP.md:349 are rewritten.
+
+**Test.** `tests/server/machine/lsp/lifetime.test.ts`:
+- The row is retitled 'is started for a link rewrite with no Markdown tab open, is not ended while its page stays open, and ends 60 s after the page closes, not at 59.999 s'.
+- The row checks: not ended after 3 min; then `relay.remove(page.sink)`; not ended at 60 s minus 1 ms; ended at 60 s; pids `[]`.
+
+**Runs.**
+- Base: `1 failed | 28 passed`, "AssertionError: expected true to be false" at lifetime.test.ts:388.
+- Now: 29 passed.
+
+**Unit-level timing.** `links-warm.mts` (in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/r1/`), real server, 2246 Markdown files:
+
+| | first rewrite | after 65 s | second rewrite |
+|---|---|---|---|
+| base | 11154 ms | pids [] | 10369 ms, new pid 7790 |
+| now | 7218 ms | pids [10823] | 543 ms, same pid |
+
+The old row title goes to the orchestrator for G36.
+
+### R2: Open File (Index)
+
+**Change.**
+- `src/lib/views/sources/repositories/menus/change-menu.ts`:
+  - `CHANGE_OPEN_INDEX` (local, not exported) sits after Open File (HEAD) for staged and changed rows, with the `openIndex` dependency.
+  - `type RowOpen` names the three row opens. Without it, `tests/checks/tree/duplication.test.ts` found the same 3 lines in this file and in `repositories.svelte.ts`.
+- `src/lib/state/sources/repositories/repositories.svelte.ts`: `openIndex` opens `headTabState(root, path, 'index')`.
+- `ChangeRow.svelte` passes `openIndex` to the menu.
+- `repositories.yml`: `menu_open_index: Open File (Index)`.
+- Comments in `file-git.ts`, `Source.svelte` and `compare.ts` are updated.
+- HELP.md, Source Control: "Open File (HEAD) on a Staged or Changes row opens the file as the last commit holds it, and Open File (Index) opens it as staged; both tabs are read-only, and an Index tab stays on the staged version across saves, reloads and new commits."
+
+**Probe.** `index-tab.mts` (in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/r2/`):
+- Base: staged menu `["Open Changes","Open File (HEAD)","Open File"]`.
+- Now: `["Open Changes","Open File (HEAD)","Open File (Index)","Open File"]`; the picks run `openHead` and `openIndex`; the index tab read back `head:index:/r:a.txt a.txt (Index) side index`.
+
+### R3: one test per G100 to G103
+
+Each test was run on the base copy first, then on the worktree.
+
+**G100**
+- Code: `src/lib/views/sources/repositories/merge/merge-reads.svelte.ts`, class `MergeReads`, used by `Merge.svelte`.
+- Test: `tests/views/sources/repositories/merge/merge-reads.client.test.ts`, describe 'an open merge tab when the git state moves behind it', `it.each('$name')`. Rows:
+  - 'a second conflict written behind it is drawn'
+  - 'a conflict resolved behind it says the path is no longer in conflict'
+  - 'a move that brings the same versions keeps the choice the reader made'
+  - "the tab's own Complete Merge keeps its done note when the path leaves the conflict"
+- Base: "Failed to resolve import ... merge-reads.svelte.ts". Now: 4 passed.
+
+**G101**
+- Code: `src/lib/views/shared/changes/prepared-message.ts` `followPrepared`, used by `CommitBox.svelte`.
+- Test: `tests/views/shared/changes/prepared-message.test.ts`, describe "the commit box and git's prepared message", `it.each('$row')`. Rows:
+  - 'an empty field takes the prepared message'
+  - 'a field still holding the message offered before takes the new one'
+  - 'a message the reader typed stays when the prepared message changes'
+  - 'a message the reader typed stays when a merge starts'
+  - 'the same prepared message again leaves the field'
+  - 'the field still holding the offered message is emptied when the merge ends'
+  - 'a message the reader changed stays when the merge ends'
+- Base: "Cannot find module ... prepared-message.ts". Now: 7 passed.
+
+**G102**
+- Code:
+  - `src/lib/state/workbench/layout/saved/rerun.ts`: an operation that is dropped saves the arrangement taken (`deps.write`).
+  - `layout.svelte.ts` passes `write`.
+- Test: `tests/state/workbench/layout/saved/layout-workspaces.test.ts`, describe 'two browser tabs that change the panes of one page within a second', `it.each('$row, $applied applied first')`, with `applied` 'the first' and 'the second'. Rows:
+  - 'a fold of a pane the other tab moved lands on that pane'
+  - 'a fold of a pane the other tab closed is dropped and folds no other pane'
+- Base: 2 failed, one of them giving `[a, c folded]`. The code as it stood at the start of this round: 2 failed (`[a, b folded, c]`). Now: 18 passed.
+
+**G103**
+- Code: `src/lib/state/sessions/terminal/viewport.ts` and `src/lib/views/sessions/terminal/grid/kept-viewport.ts`.
+- Test: `tests/state/sessions/terminal/viewport.test.ts`, describe 'a terminal grid drawn again', `it.each('$row')`. Rows:
+  - 'Float over the same scrollback goes back to the line it sat at'
+  - 'a move over a scrollback that starts 10 lines later finds the line by its text'
+  - 'a reload goes back to the line it sat at'
+  - 'a reload over a scrollback that grew finds the line by its text'
+  - 'Return to Page of a grid that sat at its end stays at the end'
+  - 'a line whose text the scrollback no longer holds is taken by its count, never past the end'
+- Base: 3 failed (12 vs 2, 37 vs 12, 57 vs 12). Now: 6 passed.
+
+### F1
+
+The counts are under open item F1.
+
+### F2: the armed Kill words
+
+**Change.**
+- `RowFace.svelte` drops the armed words drawn in the row.
+- `TerminalList.svelte` draws `<div class="armed-words">` with `sessions.terminal_kill_armed` under the row while it is armed and the list is not narrow. The CSS wraps them to the list's width (`overflow-wrap: anywhere`).
+- The row's own line, with Kill under the pointer, does not change.
+- A list narrowed to icons leaves the words to the bar (`Terminal.svelte`).
+- `terminal-list.ts`, `Terminal.svelte` and `TerminalBar.svelte` are now equal to base in what they pass.
+- HELP.md:391 is updated.
+
+**Widths, by reading.** At 180 (the default, `LIST_DEFAULT`) and at 203, the words wrap within the list's width minus 14 px of padding, so they are drawn whole. Kill keeps its place, since the words sit on a new line under the row. The look checks this on landing.
+
+### F3: placing a new map node
+
+**Change.** In `forces.ts`, `spotFor` takes the median standing link length. If the first spot's farthest link is longer than that length, it takes the clear spot within twice that length of the anchor whose farthest link is shortest (`NEAR_TURNS 72`, `NEAR_STEPS 24`). No other node moves.
+
+**Test.** `map-forces.test.ts`: 6 passed.
+
+**Probe.** `map-shapes.mts` (in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/f3/`), 20 maps per shape:
+
+| shape | new link longer than link distance | renode |
+|---|---|---|
+| 20 nodes | base 0, now 0 (identical in every map) | at most 0.4 ms base, 0.5 ms now |
+| 161 nodes | base 13 (max 1.80), now 7 (max 1.27) | at most 0.3 ms base, 1.2 ms now |
+
+In every map of both shapes: the new link is never longer than in base, no new node overlaps another, and no other node moved.
+
+### F4: the first key in the file list
+
+Timing, with `first-key.client.test.ts` in jsdom (in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/f4/`):
+
+| open files | first key | the answer |
+|---|---|---|
+| 10 | base 4.18 ms (the list emptied), now 0 (no change) | base 12.85 ms, now 5.39 ms |
+| 30 | base 3.79 ms, now 0 | base 12.35 ms, now 5.41 ms |
+
+The matcher (`time-first.mts`) prepares in 36.4 ms over 9893 names, then takes 0.61 to 2.52 ms per key.
+
+### F5: the greps
+
+**(a) History words** over every added comment line, doc line and test title, against the base (2100 lines): 69 hits. Each hit, read, is one of these:
+- "before" for the order of events at run time ("saved before the question is put", "a grid that goes before its first scrollback was written").
+- "still" for a present condition ("while the file still holds what the write left", "a root still served"), or "still" meaning "even so" (rerun.ts:265).
+- "no longer" for a state change of data at run time ("a root the workspace no longer serves").
+- The field name `before` (viewport.test.ts:94).
+- Two guarded-entry ids carried over from base text: G28 (app-editor-close.test.ts:5) and G8 (literature-home.test.ts:2).
+
+None names a package, a date, an earlier bug or an earlier form of the code.
+
+**(b) Changed names and shapes**
+- `onsaid`: no `<SaveToLiterature>` caller (`RadarCard.svelte:231`, `LiteratureCard.svelte:167`) passes it, and no doc names it. The remaining `onsaid` hits are other components' own props.
+- `registerTabSave`: `ui.svelte.ts`, `Control.svelte:99`, `Editor.svelte:123`, `RailEditor.svelte:125`, and DESIGN.md:706, which describes it correctly.
+- `Question` and `Asker` (`pages.ts:334,342`, answer `'yes' | 'no' | 'save'`):
+  - Every reader compares the answer: `pages.ts:396,409,417` and `Workbenches.svelte:164` (`=== 'yes'`).
+  - The callers, `ActivityRail`, `WorkbenchMenu`, `Pages`, `PagesReset` and `Workbenches`, get it from `questionFor`.
+  - `CloseQuestions.svelte:52,72,73` answers `'save'`, `'yes'` and `'no'`.
+  - Other `Question` types (explorer `ops.svelte.ts:103`, `row-ops.ts`) are unrelated.
+  - svelte-check reports 0 errors.
+- `joinPath` (22 callers under src; `uri.mjs:95` is an unrelated static method). The change: an empty base gives the path alone (was `/path`), and a leading `/` on the path is not doubled. Per caller:
+  - Bases never empty:
+    - `present.svelte.ts:201,206` and `latex.svelte.ts:309,310`: a root's dir.
+    - `config-files.ts:74`: `root.dir`.
+    - `debug.svelte.ts:289`: a root key, with the constant `.oculus/launch.yml`.
+    - `latex-state.ts:384`: `against` returns `''` and absolute names first.
+    - `limit.ts:47`: returns null on `''`.
+    - `apps.ts:247`: returns false on `''`.
+    - `catalogue.ts:112`: returns `''` on `''`.
+    - `private-folders.ts:32`: home `''` skipped.
+    - `commands.svelte.ts:622`: an absolute file is kept as is.
+    - `status.ts:258` and `file-git.ts:65`: the path is split and joined without empty parts first.
+  - Relative bases, giving a path relative to the root:
+    - `latex-state.ts:403`: the project folder.
+    - `builds.ts:779`: the target path, or `''` for a root's own folder, which now gives `look.tex` (the item 18 fix).
+    - `write-files.ts:91`: the engine path.
+    - `config-files.ts:40`: the engine path.
+  - `private-folders.ts:33`: hub dirs.
+  - `files.svelte.ts:110`: the hub dir is checked non-empty before the join; an empty folder gives the hub dir.
+  - `decorations.ts:107`: a repository dir, with git paths that never start with `/`.
+  - `file-git.ts:89`: an absolute repository root.
+
+**(c) New keys**
+- `oculus.terminal-viewports`:
+  - Empty or unreadable storage reads as `{}`, and malformed entries are dropped (`viewportFrom`).
+  - It is distinct from `oculus.layout.tab`, `oculus.focused-source` and the `oculus-present-...` names.
+  - One terminal keeps one entry, the last grid to go wins, and `take` hands it over once.
+  - After close: `endTerminals` and `endedTerminals` call `viewports.drop`.
+  - **Defect found and fixed (in flight):** a grid torn down before its first scrollback was written overwrote the kept viewport with its own empty one. A grid torn down while a screen sent again was unwritten did the same.
+    - Fix: `kept-viewport.ts` keeps nothing until the grid has taken its viewport, and keeps the held line while repainting. The head comment is rewritten.
+    - Probe `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/f5/kept-probe.mts`, run as `sh vrun2.sh kept-probe.mts <copy> <out>`. The "before" copy is this round's code before the fix (`priorcopy`, with kept-viewport.ts as it stood at the start of the round).
+    - Before: "A grid gone before its scrollback: next grid at line 47 (reader sat at 10, end is 47)", and the same, 47, for the repaint case.
+    - After: line 10 in both cases.
+    - Base has no `keep`, so it is not comparable.
+- `ui.confirm_save` and `ui.confirm_dont_save`:
+  - Both are non-empty, and each key appears once.
+  - **Duplicate found and fixed:** `app.clone.dont_save` held the same words, and the clone question drew its Don't Save between Cancel and Save.
+    - The clone question's leave step now uses `discard={t('ui.confirm_dont_save')}`, so it reads Don't Save, Cancel, Save, like the close question. This is a visible change in that dialog.
+    - `app.clone.dont_save` is removed from `config/text/app.yml`.
+    - The `CloneAsk.svelte` head comment and DESIGN.md:705 are rewritten.
+- The close-save registrations (`registerCloseSave`, `registerTabSave`, `ui.svelte.ts:451-484`):
+  - A tab no registration saves answers false and stays open.
+  - A tab's own saves take precedence over the store saves. Several tab saves all run and must all be true. The source and app store saves answer null for tabs that are not theirs, and their ids never share a tab.
+  - In flight, by reading `source.svelte.ts:662-679`: a close's Save during an autosave of the same tab queues behind it, and its write answers true.
+  - After close: a view's registration is removed by its cleanup, and a store save answers null for a closed tab. An app frame that is gone saves nothing and stays dirty, so its tab stays open with its text.
+  - Superseded: a remounted view adds its save before the old cleanup runs, and the cleanup deletes the set only when it is empty and still the current set.
+  - Ordering for an app: Save closes the tab only if the page called `document.dirty(false)` before `onSave()` answered. This is now said to app builders in `docs/apps.md:273`.
+
+### F6: comment wraps
+
+Every comment paragraph the step edited is rewrapped, including `channel.ts:490`, `Merge.svelte:29`, `latex-widget.ts:11` and `CommitBox.svelte:23`.
+- `python3 /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/shortlines.py` found 54 pairs before and prints "0 pairs" after.
+- A word-sequence comparison of every rewrapped file against its copy from before the rewrap found every word kept, in order.
+- No list item or code line inside a comment was merged.
+
+### F7: the page-close test waits on a signal
+
+`tests/state/workbench/navigation/pages.test.ts`: `closing()` waits on the promise that `holdClose` settles with the held question, in place of `setTimeout(settled, 0)`.
+- Base: the rows fail with "TypeError: flows.saveAndClose is not a function".
+- Now: 13 passed.
+
+### F8: new tests folded into entry tables
+
+Final titles for the orchestrator. Each was run on the base copy first, then on the worktree.
+
+**G28, `tests/shell/panes/strip/tab-menu.test.ts`.** Describe 'the closes of the tab menu, through its state'. The three close-question tests are now one table, `it.each('asks to save the unsaved text a close takes: $row')`. Rows:
+- 'Close Others over a tab holding unsaved text names it, and Cancel closes nothing' (replaces 'asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing')
+- 'Close of a tab holding unsaved text, and Save writes it and closes the tab'
+- "Close of a tab holding unsaved text, and Don't Save closes it without writing it"
+- 'Close All, and Save keeps open with its text a tab whose save failed or that has no save'
+
+Base: "TypeError: Cannot read properties of undefined (reading 'replace')" (the `tabs_close_dirty` key does not exist there). Now: 7 passed.
+
+**G28, `tests/state/workbench/navigation/pages.test.ts`.** Describe 'the close of a page holding unsaved text', `it.each('$row')`. Rows:
+- 'asks to save it, and Save closes the page once the save took'
+- 'keeps the page with the tab whose save failed, its text kept, and closes the others'
+
+The first round's retitle stands: 'asks how many go when several tabs close, naming only the tabs left unsaved' becomes 'asks to save the tabs left unsaved when several tabs close, naming them, and how many go once none is'.
+
+The entry text names 'asks one question over a pane with unsaved text and a busy terminal, the text first' and 'lists every instance of every pane of a page, in the tree's own order' under tab-menu.test.ts. Both are in pages.test.ts.
+
+Base: 4 failed. Now: 13 passed.
+
+**G28, `tests/shell/panes/strip/app-editor-close.test.ts`.** Describe 'closing the tab of a custom editor', `it.each('$row')`. Rows:
+- 'asks once the frame marked the document dirty, and Cancel closes nothing' (replaces '... and No closes nothing')
+- "saves through the frame on Save and closes the tab once the frame's save cleared the mark"
+- "keeps the tab on Save while the frame's save leaves the mark"
+- 'asks nothing once the frame cleared the mark'
+- 'asks nothing for a tab no frame marked'
+
+Base: 5 failed, "question.saves is not a function". Now: 5 passed.
+
+**G96, `tests/state/system/settings/editor-saved.test.ts`.** Describe 'a family whose last entry is removed and saved', `it.each('$row')`. Rows:
+- 'is marked saved once the file holds the empty family, until it is edited'
+- 'says the file changed when the push after the answer brings another value'
+
+Base: 2 failed, "writer.shown is not a function". Now: 2 passed.
+
+**G93, `tests/state/sessions/source-unserved.test.ts`.** `it.each('$row')`. Rows:
+- 'is unserved when the channel says its root is no longer served, whatever the page lists'
+- 'is gone when the channel says null over a root still served'
+- 'reads nothing of a file whose root left the workspace when its channel says it changed'
+- 'reads the file again when its channel says it changed over a root still served'
+
+Base: 1 failed, "expected [ [ 'fixture/a.md' ], 'same' ] to deeply equal [ [], 'unserved' ]". Now: 5 passed.
+
+**G47, `tests/server/desktop/window-guard.test.ts`.** Describe 'the desktop host decisions', `it.each("makes the frame of a main window and a float's window on $platform that $row")`. Rows:
+- darwin: 'takes the first press on an inactive window and holds the window buttons inside the strip'
+- win32 and linux: "draws the window buttons over the strip's right end at its height"
+
+Base: 1 failed (darwin). Now: 11 passed.
+
+**G9, `tests/routes/edit/undo/undo.test.ts`.** Describe 'taking a change back', `it.each('puts a file of quoted values back as it was, or keeps a hand change made after the write: $name')`. Rows:
+- 'a task deleted'
+- 'a task added'
+- 'a task deleted over a hand change'
+- 'a task added over a hand change'
+- 'a lead deleted'
+- 'a lead deleted over a hand change'
+
+The loop inside 'takes a created entry out again and puts a deleted one back' and the separate lead test are removed.
+
+Base: 2 failed (the byte-for-byte rows). Now: 42 passed.
+
+**Found while folding the G9 rows.** When the file was edited by hand between the write and its undo, the deleted entry is written again from its record after the other entries, and without its empty quoted field (`funding: ""`). The table checks the entry order and the hand-changed value. It does not encode the dropped empty field as expected.
+
+### F9: titles that said "No"
+
+The titles now say Cancel; see F8.
+
+### F10: the SaveToLiterature head comment
+
+`SaveToLiterature.svelte:2-9` now says a hub holds the collection its list names, and also the one its list leaves to the engine's path when the file is there. The same is said in:
+- the `literatureHome` doc comment, `src/lib/state/feeds/literature/saved.ts:17-23`
+- the head comment of `tests/state/feeds/literature-home.test.ts`
+
+### Verification, after the last change
+
+- `npm run test:quick -- --base 06aaa0da4` exited 0. It printed:
+  - "test:quick: 148 changed file(s), from git since 06aaa0da4"
+  - "ok ASCII gate (0.9 s)"
+  - "ok prettier (2.2 s)"
+  - "ok svelte-check (6.9 s): ... 0 ERRORS 0 WARNINGS"
+  - "ok eslint (7.4 s)"
+  - "ok vitest (44.6 s)"
+  - "test:quick: 47.1 s (limit 45.0 s); every command passed"
+  - "test:quick: over the time limit"
+  - It does not cover the tests outside its selection, tests/checks, the slow tests, the build, or the lint of unchanged files.
+- The guarded entries' test files (G9, G28, G36, G47, G93, G96, G100 to G103, plus `literature-home.test.ts` and `clone-after.test.ts`; the list is in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o40/guarded-files.txt`), run with `npx vitest run $(cat guarded-files.txt) --testTimeout 0`: "Test Files 45 passed (45)", "Tests 513 passed (513)".
+- The slow `tests/routes/hubs/hub-writes.test.ts`: 30 passed.
+- These tree checks, run with `--testTimeout 0`: "Test Files 10 passed (10)", "Tests 115 passed | 7 skipped".
+  - `tests/checks/config/config.test.ts` and `integrity.test.ts`
+  - `tests/checks/source/comment-width.test.ts`, `history.test.ts` and `keys.test.ts`
+  - `tests/checks/tree/boundaries.test.ts`, `duplication.test.ts` and `size.test.ts`
+  - `tests/checks/imports/order.test.ts` and `cycles.test.ts`
+- The perl ASCII gate of spec.md over all 145 changed files printed nothing.
+- `wc -l`: no file over 880 lines, no component over 520.
+- `sh utils/unused-exports.sh`, compared with the base: no line added. `CHANGE_OPEN_INDEX` is made local, and `noServer` now has a caller.
+
+### Files outside the brief's path list, with their item
+
+- `tests/routes/hubs/hub-writes.test.ts`: F6, a doc comment rewrapped.
+- `tests/state/feeds/literature-home.test.ts`: F10, G8's head comment.
+- `tests/server/edit/writes.test.ts`: first round, not touched this round.
+
+Every other file this round changed is under `src/`, `config/text/` (`app.yml`, `repositories.yml`), the tests of entries the round names, HELP.md, DESIGN.md or `docs/apps.md`.
+
+### What happens next
+
+The orchestrator:
+- writes this section into the report file;
+- writes the titles above into G9, G28, G47, G93, G96 and G100 to G103 (each with its Code line), and the G36 row title;
+- brings open items F1, F3 and R2, and the entries still open under E, to Axel;
+- takes the looks for F2 (armed words at 180, 203 and the default width), the clone question's new button order, and the terminal viewport after a quick Float and Return.

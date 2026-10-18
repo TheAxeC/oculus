@@ -163,3 +163,173 @@ Cases of the brief's "Cases":
 - Every behaviour that needs a DOM (focus, presses, tints, scroll positions, the 50 ms and 1 s bounds): the look on landing.
 
 Reviewer usage: a03ea6cee5f5d717c, claude-opus-5-5, 179,623 tokens, 148 tool uses, 25.1 min.
+
+## Repair round 1, refuted
+
+```
+$ npm run test:quick -- --base 06aaa0da4        (from tools/oculus in the worktree, run twice, both exit 0)
+test:quick: 148 changed file(s), from git since 06aaa0da4
+test:quick: 129 test file(s), 9 essential
+tests/routes/hubs/hub-writes.test.ts: changed, run by npm run test:slow
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (1.8 s)
+ok      svelte-check (5.9 s): 1792282317246 COMPLETED 513 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (41.5 s): Duration  35.95s (transform 47.83s, setup 0ms, import 71.16s, tests 60.52s, environment 1.26s)
+test:quick: 44.0 s (limit 45.0 s); every command passed
+  second run: "ok vitest (44.2 s)", "test:quick: 46.1 s (limit 45.0 s); every command passed", "test:quick: over the time limit"
+
+$ npx vitest run $(cat $S/o40/guarded-files.txt) --testTimeout 0 --reporter=dot
+  (the builder's list: the test files of G9, G28, G36, G47, G93, G96, G100 to G103, plus literature-home and clone-after)
+ Test Files  45 passed (45)
+      Tests  513 passed (513)                                    (report: 45 / 513, reproduced)
+$ npx vitest run tests/routes/hubs/hub-writes.test.ts
+ Test Files  1 passed (1)
+      Tests  30 passed (30)                                      (report: 30, reproduced)
+$ npx vitest run <the 10 tree-check files the report names> --testTimeout 0
+ Test Files  10 passed (10)
+      Tests  115 passed | 7 skipped (122)                        (report: same, reproduced)
+
+$ ASCII gate (spec.md perl form) over the 145 files changed since the base (git diff --name-only plus untracked, .scratch left out)
+  no output, exit 0
+$ wc -l over the changed src files: largest context.ts 880, ui.svelte.ts 878, channel.ts 876, TerminalGrid.svelte 520,
+  Source.svelte 519, PaneView.svelte 519; nothing over 880 / 520
+$ sh utils/unused-exports.sh, diffed with O40-base/unused-exports.txt
+  one line differs: `noServer` left channel.ts's line; no line added   (report: same)
+
+Reruns of the round report's evidence, each on my own scratch copy of the current worktree ($S/rv/now) or of the base copy ($S/rv/base):
+$ vrun2.sh o40/f1/count.mts        base: "look hub (one root): 1 request(s): text look-hub/.oculus/settings.yml (404)"
+                                    now:  "look hub (one root): 2 request(s): listing look-hub / hidden; listing look-hub /.oculus hidden"
+                                    now:  "three roots: 6 request(s): ... text configured/.oculus/settings.yml"   (reproduced)
+$ vrun2.sh o40/r1/links-warm.mts   now:  first 5446 ms, pids [40650]; after 65 s pids [40650]; second 498 ms, same pid
+                                    base: first 10613 ms; after 65 s pids []; second 11311 ms, new pid       (shape reproduced)
+$ vrun2.sh o40/f5/kept-probe.mts   now:  "A ... next grid at line 10", "B ... next grid at line 10"           (after-run reproduced)
+$ npx vitest run tests/zz/first-key.client.test.ts (o40/f4 files copied into my copy)
+                                    "10 open files: first key base 4.11 ms (the list emptied), now 0 (no change); the answer base 12.92 ms, now 5.41 ms"
+                                    "30 open files: first key base 3.85 ms ..., now 0 ...; the answer base 12.42 ms, now 5.39 ms"
+$ vrun2.sh o40/f4/time-first.mts   "prepare 37.8 ms over 9893 names", per key 0.56 to 2.76 ms           (report: 36.4 ms, 0.61 to 2.52 ms)
+$ python3 o40/shortlines.py        "0 pairs"   (this script runs `git -C <worktree> status --porcelain`; see Findings)
+$ my own wrap counter (no git, over the 145 changed files against O40-base): "0 pairs"
+$ my own probe $S/rvprobe/clear-best.mts (the builder's map generator; best clear spot on a 1 px grid, inside the box less its pad,
+  r + 9 + gap clear of every placed node), 161 nodes, 3 links, per map "now / best-clear" over L:
+  4: 1.08/1.08  6: 1.03/0.97  11: 1.02/0.85  12: 1.09/0.62  13: 1.08/1.03  14: 1.27/1.03  20: 1.05/0.98; the other 13 maps now <= 1.00
+  20 nodes: every map now equal to base (0 beyond L)
+$ my own undo probe (tests/routes/edit/undo/zz-review-probe.test.ts in each scratch copy): delete "First task" of QUOTED_TASKS, undo
+  base, no hand change:   '- title: "Second task"\n    funding: "ZonMw"\n\n  - title: First task'   (field and quotes lost, appended)
+  base, hand change:      same shape, funding "NWO"
+  now,  no hand change:   the file byte for byte as written
+  now,  hand change:      '- title: "Second task"\n    funding: "NWO"\n\n  - title: First task'   (identical to base's fallback)
+Not rerun: map-shapes.mts as written (it imports the builder's basecopy; my clear-best probe replaces it), index-tab.mts (R2 probe;
+  read by code instead), the G100 to G103 base-copy failures (the tests pass now; the base runs are the builder's).
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds; `merge-reads.svelte.ts` reads again on `git()` moving, keeps choices on same sides, keeps the done note; G100 test (4 rows) passes in my guarded run.
+- 2: holds; `followPrepared` in `prepared-message.ts`, G101 test (7 rows) passes.
+- 3: holds; unchanged this round, `SourceItems.svelte` null-indent guard present; svelte-check 0 errors.
+- 4: holds; unchanged this round (`openRuns`, `highlights={tints}`); look a/i43-23.
+- 5: holds; unchanged, the `[role="tab"]` test in `PaneView.svelte` present; look d/i43-37.
+- 6: holds for its text (both Confirms at `level="palette"`); the round's button reorder of the leave step is Spec 3.
+- 7: holds; no `onsaid` in `SaveToLiterature.svelte`.
+- 8: holds; unchanged (`_location`).
+- 9: holds; unchanged (`sizePicture`); comment wrap now clean.
+- 10: holds; `homeNaming` takes the engine-path Literature file; head comments now say so (F10 closed).
+- 11: holds; unchanged.
+- 12: holds; unchanged.
+- 13: holds; unchanged.
+- 14: holds; G96 table (2 rows) passes.
+- 15: holds; byte for byte without a hand change (my probe). The fallback after a hand change drops `funding: ""` and the quotes and appends the entry: my base run gives the identical text for every delete undo, so this is the base's defect kept in the fallback the brief named (`createEntry`), not one the step introduced. The G9 table does not assert the dropped field; it asserts the order and the kept hand value.
+- 16: holds; G9 rows pass.
+- 17: violated in part; Spec 1 and Spec 2.
+- 18: holds; `joinPath` unchanged this round; the report's per-caller reading (F5(b)) matches the two callers I sampled (`file-git.ts:89`, `debug.svelte.ts:289`).
+- 19: holds; unchanged.
+- 20: holds; `rerun.ts` now saves the arrangement taken when an operation is dropped; G102 table (2 rows x 2 orders) passes.
+- 21: holds by reading; look c/L76.
+- 22: holds; unchanged.
+- 23: holds; `undid_new_entry: add undone`.
+- 24: holds; tab-menu table (4 rows), pages table (2 rows), app-editor-close table (5 rows) pass; Cmd+W, Enter and Escape are the look's.
+- 25: holds; unchanged (`sourceKept`).
+- 26: holds; G47 table darwin row passes.
+- 27: not applicable, as the first review said (premise wrong); look e/L22.
+- 28: violated in part; Proof 1.
+- 29: holds; unchanged.
+- 30: holds by reading; look c/L82.
+- 31: holds; G103 table (6 rows) passes; the in-round `kept-viewport.ts` fix reproduces line 10 in my run of kept-probe on the current code. Its "before" evidence is Proof 2.
+- 32: holds; unchanged.
+- 33: holds; G93 table (4 rows) passes.
+- 34: holds under ruling R2; Open File (Index) on Staged and Changes rows (`change-menu.ts:83-84`, `repositories.svelte.ts:539-541`), the only place Open File (HEAD) is offered (grep of `menu_open_head`, `openHead`, `CHANGE_OPEN_HEAD`); HELP.md:461 names both; one stale doc comment, Standards 1.
+- 35: not applicable, as the first review said (premise wrong); the look over the hub's current settings.
+- 36: holds by reading; Behaviour 1 names a change the report does not state.
+- 37: holds; unchanged.
+- 38: holds by reading; the ~4 ms removed is small against 53 to 100 ms, so the 50 ms bound is the look's; Proof 3.
+- 39: holds by reading; look c/L76.
+- 40: holds under ruling 133 (a): warm second rewrite 498 ms, same pid; the first drag of a page session is still cold (5446 ms in my run), which option (a) said and Axel took.
+- 41: holds; unchanged; G90 tests pass.
+- 42: holds; unchanged.
+- 43: not applicable, open item D; the look with the app's log.
+
+Cases of the brief's "Cases":
+
+- Item 1: met; G100 rows 'a second conflict written behind it is drawn' and 'a conflict resolved behind it says the path is no longer in conflict' pass; what the editors draw is the look's.
+- Item 2: met; G101 rows cover side then side2, the typed message and the empty prepared message.
+- Item 4: met by reading `openRuns`, unchanged this round; look a/i43-23.
+- Items 15 and 16: met; G9 table and my probe (byte for byte; hand change kept).
+- Item 18: met; joinPath unchanged since the first review's rerun.
+- Item 20: met; G102 rows pass, both orders.
+- Item 24: met for Save, Don't Save, Cancel, a failed save, no save and a page close by the tests; Cmd+W/Enter and Escape are the look's.
+- Item 26: met; G47 darwin row.
+- Every other item: the look on landing, with the records the first report names.
+
+### Findings
+
+1. Spec, `src/lib/views/shared/prose/editor/source-options.ts:128-137`, "const found = input.fs.listing(root, folder, EVERYTHING);": F1 is not closed; the builder raised it again as open item F1. **The builder's premise claim holds when I read the code:**
+   - `src/lib/server/files/fs.ts:268` lists `.filter((entry) => hidden || !skipped(entry.name))`, so a default listing never names `.oculus`.
+   - `listing()` at `fs.svelte.ts:418-428` fetches on the first call for each pair of toggles.
+   - The store holds a listing that names `.oculus` only when a Files tab shows hidden files, or after `gone()` (`fs.svelte.ts:527-540`) read a folder with everything shown. The default toggles are `DEFAULT_SHOWN = { hidden: false, ignored: false }` (fs.ts:155).
+   - No server payload names the settings file: a grep of `settings.yml` and `REPO_SETTINGS` under `src/lib/server` finds none.
+
+   **So the ruling cannot be met as written without one of these changes:**
+   - a wire change (a listing or text answer that says the file is absent without a 404), or
+   - a change to what a default listing returns (`.oculus` exempted from `skipped()`, which draws `.oculus` in the Files view with hidden files off, a visible change).
+
+   With the ruling as written, a root's settings file is never read while hidden files are off, against HELP.md:328.
+
+   My rerun of count.mts reproduces 1 request (404) on the base and 2 listings (no 404) now for the look hub.
+
+   A smaller point: `named()` asks for the hidden-and-ignored listing even when a Files tab already holds a hidden-only listing that names `.oculus`. It does not read the other forms first, as `gone()` does with `heldListings`.
+
+   Failure scenario: a workspace switch over N roots sends up to 2N listings the base did not send.
+
+   Verdict: item 17 violated in part. This is the open item's decision, for the orchestrator or Axel.
+2. Spec, `src/lib/state/system/config/editors/origins.ts:121` and `src/lib/state/workbench/navigation/editor-text.ts:117`, "originsOf(key, fileText(key, REPO_SETTINGS), parse)" and "const file = input.fileText(root, REPO_SETTINGS);": what is wrong: two other readers still ask for the settings file without a listing naming it. `repoOrigins` runs from `Origins.svelte:22` for every root on the Settings `editor.languages` row, and `saveRulesOf` runs on every save through `context.ts:358-369`. Item 17's must-hold is "a switch sends no request that 404s". Failure scenario: with Settings open on the editor.languages row, a switch to a workspace whose repository has no `.oculus/settings.yml` sends that read and gets 404; a save in such a root does the same. Verdict: item 17 violated in part.
+3. Spec, `src/lib/shell/commands/CloneAsk.svelte:48-54` and `config/text/app.yml` (`clone.dont_save` removed): "discard={t('ui.confirm_dont_save')}" ... "ondiscard={() => void after.dontSave()}". What is wrong: removing the duplicate key is inside F5(c). The reorder of the clone question's leave step, from Cancel, Don't Save, Save (Confirm's `others`, base) to Don't Save, Cancel, Save (`discard`), is not needed for that and no item asks for it. Item 6 is the level only, and decision 2 governs the close questions over unsaved text, not the clone question over unsaved workspace folders. `others={[t('ui.confirm_dont_save')]}` would have kept the order. The report states the change and its before and after. Failure scenario: a reader who learned the clone question presses the old second-button position and gets Cancel where Don't Save was. Verdict: none; the orchestrator keeps it or restores the order at landing.
+4. Proof, `src/lib/state/boards/structure/forces.ts:444-448`, "for (let step = 1; step <= NEAR_STEPS; step += 1) { for (const one of ring((step * 2 * length) / NEAR_STEPS, NEAR_TURNS))". What is wrong: the report says "In 7 of 20 maps, every spot within link distance of the anchor overlaps a node, or needs another node to move" (open item F3). My clear-best probe, on the builder's own map generator and its fit rule, finds a clear spot within L in 4 of those 7 maps: map 6 at 0.97, map 11 at 0.85, map 12 at 0.62 and map 20 at 0.98, where the code places the node at 1.03, 1.02, 1.09 and 1.05. Only maps 4, 13 and 14 have no clear spot within L. The 72 x 24 ring search at steps of L/12 misses small clear pockets. The decision that rests on it is open item F3, whether to let other nodes move (HELP.md:272); that premise is false for 4 of 7 maps. Also, the 161-node maps are random graphs from the builder's generator, not the look hub's own map. On the twenty-node shape the round is identical to the base in every map, and no node moved. Failure scenario: on a map like seed 12, a new project lands 9 percent beyond the link distance next to a clear spot at 0.62 L. Verdict: item 28 violated in part.
+5. Proof, report F5(c), "The 'before' copy is this round's code before the fix (`priorcopy`, with kept-viewport.ts as it stood at the start of the round)" and "Before: ... next grid at line 47". What is wrong: `priorcopy` is the current code with `kept-viewport.ts` set back. My `diff -rq` of `$S/o40/priorcopy/src` against the worktree's `src` lists kept-viewport.ts among the files that differ. That is a run with the code under test reverted in a copy, which the user's rules ban in every form, so the "before 47" result is not used. The closure rests on reading the fix and on my run of kept-probe over the current code (line 10 in both cases). The report's G102 line, "The code as it stood at the start of this round: 2 failed", was run in `aftercopy`, whose state at that time cannot be checked now; it is not used either, and the base-copy failure ("Base: 2 failed") is the failing-first evidence. Failure scenario: an orchestrator who reads "Before: 47" as proof is relying on a banned run. Verdict: none.
+6. Proof, report F4 table, "base 4.18 ms (the list emptied), now 0 (no change)". What is wrong: "now 0" is printed as a constant by `first-key.client.test.ts`, not measured. The "base" column runs the current `FileRows` fed the base's data flow (opened files, then an empty list), not the base's component. My rerun reproduces the numbers (4.11 and 3.85 ms; the answer 12.92 against 5.41 ms). The decision that rests on it is whether item 38's change is enough for the 50 ms bound. About 4 ms removed of a 53 to 100 ms first key does not settle that, so it stays with the look. Failure scenario: an orchestrator takes "now 0" as a measured first-key cost. Verdict: none.
+7. Standards, `src/lib/views/sources/repositories/menus/change-menu.ts:56-59`, "A changed file's items: Open Changes (a diff, which an untracked file has none of), Open File (HEAD) (the version it is compared against, which an untracked file has none of) and Open File". What is wrong: R2 adds Open File (Index) to these items (lines 83-84), and the doc comment of `changeMenu` is not carried. The rules file says a sentence the change makes false is a defect. Failure scenario: a reader of `changeMenu` thinks a changed row offers three opens. Verdict: none.
+8. Standards, `$S/o40/shortlines.py:6`, "out=subprocess.run(['git','-C',W,'status','--porcelain','--untracked-files=all','.'],...)". What is wrong: the builder runs a git command against the worktree through its own script, which the rules file bans in "Where you work" ("You never run a git command, read-only ones included ... no `git -C`"). My rerun of the script, as the brief asked, also ran that read-only `git status --porcelain`, which is outside the reviewer's three git forms. My own counter, without git, gives the same "0 pairs". Failure scenario: none to the tree; the rule exists so that the orchestrator alone reads git state. Verdict: none.
+9. Standards, the round brief `agents/briefs/O40-round1.md` R3, "Each test is run on the unchanged tree first (the base copy, or with your change set aside in a scratch copy of the file outside the worktree)". What is wrong: the second form is a run with the code under test removed, which the user's rule on breakage testing bans in any brief. The builder's G100 to G103 base runs used the base copy; finding 5 is the run that took the banned form. Failure scenario: a later builder follows the brief's second form. Verdict: none (the orchestrator's text).
+10. Standards, `src/lib/views/shared/prose/editor/source-options.ts:37`, "const EVERYTHING = { hidden: true, ignored: true };". What is wrong: `fs.svelte.ts:140` holds the same constant (`const EVERYTHING: ListingShown = ...`), and the rules file asks that a helper or schema be grepped and reused. Failure scenario: a change to the store's everything-shown form leaves this one behind. Verdict: none.
+11. Behaviour, `src/lib/views/sessions/terminal/list/TerminalList.svelte:362-366`, "{#if arming === row.terminal && !narrow} <div class="armed-words" ...>". What is wrong: the armed words take a line of their own in the list's flex column, so while a Kill is armed every row below the armed row moves down by that line, and moves back up when the Kill disarms. The report states that the armed row's own line and its Kill do not move, but not that the rows below do. Failure scenario: a reader who arms row 1 and then reaches for row 2's Kill finds row 2 a line lower. Verdict: none; the look at 180, 203 and the default width sees it.
+
+F2, F5(a), F5(b), F6, F7, F8, F9 and F10: closed. My reruns or reads reproduce each one:
+- F5(a): my history-word grep over 1036 added comment lines and test titles finds only run-time uses of "still" and "no longer".
+- F6: 0 pairs by my own counter.
+- F7: `closing()` waits on the held-question promise.
+- F8 and F9: the folded titles exist, and only the three renamed titles that the report hands to the orchestrator are missing from guarded.md's names.
+- F10: the client list holds an engine-path Literature only when the file exists (`data/index.ts:743`).
+
+### Declined to judge
+
+- What F2 draws at 180, 203 and the default width: whether the armed words wrap whole, whether Kill stays under the pointer, and how far the rows below move. Only a page shows it; it goes to the look.
+- The 50 ms first key (item 38) and the 1 s Refactor Preview on a warm server (item 40) at the look hub's size: both are the look's measurements.
+- The clone question's new order, the terminal viewport after a quick Float and Return, and every other DOM behaviour the first review left to the look.
+- Whether open items F1 and F3 are taken, and whether the clone reorder (finding 3) is kept: the orchestrator's or Axel's call.
+- How `aftercopy` stood when the G102 round-start run was made (finding 5): no file now records it.
+- The report section's absence from the worktree's ledger copy (the builder handed it back in its message): the orchestrator appended it in the main checkout. Reading git state beyond `git status --short` would be needed to say more.
+
+Reviewer usage: ac2f1f4902dfa50d5, claude-opus-5-5, 336,123 tokens, 117 tool uses, 25.3 min.

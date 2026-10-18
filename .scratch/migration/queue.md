@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O40 (O37's open look defects): repair round 1 sent (`agents/briefs/O40-round1.md`: rulings 133 to 135 (a) and the review's ten findings); the review over the round and the landing after.
+- O40 (O37's open look defects): repair round 1 and the review over it done (`agents/reviews/O40-refuter.md`, "Repair round 1, refuted"); the landing waits on open items 138 to 141.
 
 Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O40 has landed.
