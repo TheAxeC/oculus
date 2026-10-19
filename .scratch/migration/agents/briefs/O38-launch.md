@@ -1,0 +1,30 @@
+# O38, the builder's prompt
+
+The orchestrator passes the text under "Prompt" to the builder word for word: the Agent tool, `subagent_type: ordo-high`, `model: opus`, `run_in_background: true`, description "Builder of step O38". Right after the launch it reads the served model from the agent's transcript (`claude-opus-5-5` is the only one accepted), writes the agent id into the O38 dispatch entry's `session_id`, and makes the launch commit.
+
+## Prompt
+
+You are the builder of step O38 of the oculus migration plan: the cockpit retired and the hub's tools deleted with every reference fixed, Recover built into oculus, the hub data files moved into `.oculus/data`, the spread data sets gathered in the code that reads them, the rice theme's Brackets and Monospace toggles, the make items of the Files view (Make Folder a Hub... with its new files, Make Folder a Git Repository, Add Repository Configuration...), and no secret of `local.yml` drawn in Settings.
+
+Where you work: only in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O38`. You never run a git command of any kind, read-only ones included; a scratch repository a test builds under `$TMPDIR` through the tree's own helpers is the test's. Files move with plain `mv`, and folders and files are deleted with `rm` (the landing records both). You never write in the main checkout (`/Users/axelfaes/workspace/research-hub` outside `.agents/worktrees/migration-O38`), never in the base copy `.agents/worktrees/O38-base`, and never outside the worktree in any user data: `~/.oculus`, `~/.claude`, `~/.claude-work`, `~/data`, `~/.netrc`, `~/.kaggle` and any `secrets` folder are neither read nor written. No `local.yml` is ever read, printed, grepped or hashed (`--exclude=local.yml` on every grep). Inside the worktree you write only the paths the brief's "Paths this step writes" lists. In the worktree's copy of the ledger (`tools/oculus/.scratch/migration/`) you write only your report, `agents/reviews/O38-report.md`. You never start the app, Electron, a dev server or a browser, never touch ports 8787 or 8790, never connect to the cluster (`ssh`, `rsync`, `scp`, `sbatch`), and never call a live web API: the recorded answers in `tools/oculus/.scratch/migration/agents/briefs/O38-fixtures/` are your fixtures. Scratch fixtures live under `$TMPDIR`.
+
+No script is written for this step other than the code the brief builds: no measuring script, no one-off in Perl, Python, Node or shell that edits files or computes a figure, in the tree or under `$TMPDIR`. Edit files with your editing tools; a figure the report gives comes from a command the brief or the tree already has, or from `grep`, `wc`, `ls`, `diff` and the like run as plain commands. The registry's 54 entries are rewritten by hand.
+
+Read, in this order, before changing anything:
+1. `tools/oculus/.scratch/migration/agents/spec.md`, the rules every step runs under.
+2. The brief, `tools/oculus/.scratch/migration/agents/briefs/O38.md`, whole: "What is on the tree", all nine parts of "What to build", every case of "Cases", "Paths this step writes", the decisions, "Libraries checked", "Verify before you report" and the report shape. Its line numbers are those of the base, which this worktree holds.
+3. `tools/oculus/.scratch/migration/agents/briefs/O38-recover.md` and `O38-paths.md` whole, and `tools/oculus/.scratch/migration/agents/reviews/O38-brief-check.md` whole with its "Closed" heading. Where they differ from the brief, the brief holds.
+4. `tools/oculus/.scratch/migration/agents/guarded.md`, the entries G1, G8, G9, G13, G14, G28, G30, G32, G35, G49, G79, G85 and G111 to G115, under which your tests sit.
+
+The worktree is at the base, the preparation commit db086e36d. `npm ci` and `svelte-kit sync` have run in `tools/oculus`. The base copy is `.agents/worktrees/O38-base/` (the tracked text files of the step's paths at the base; its `tools/oculus/node_modules` links to the worktree's), and the base's output of `sh utils/unused-exports.sh` is `.agents/worktrees/O38-base/unused-exports.txt`. The only dependency you add is `7z-wasm@1.2.0`, exact.
+
+What you deliver:
+- Your first task, before any change: the first run of every case on the unchanged tree, a run or a reading as the case says, each result noted. A case the brief's rules get wrong stops you there, before any code changes: hand back the first run and that case, with the rule and the result it gives.
+- Every part of the brief, every case with its result. A case the brief gives to the look or to the session is named in your report as theirs, with the unit-level runs that reach it.
+- A test only where the brief names one (the rows of G1, G9, G14 and G111 to G115, the `local.ts` row and the Settings row), run on the unchanged tree first (in a scratch folder under `$TMPDIR` built from the base copy, never by breaking code to watch it fail) and again after the change, both runs quoted.
+- No path outside "Paths this step writes"; a file the change needs outside it is named in the report with its reason.
+- A shortcut, a deferral, a narrower reading of a part, a loosened check or a test fitted to its result is a finding against you; work inside the brief is never handed back as a later item.
+
+Tests while you work (`agents/spec.md`): run only the test files that cover what you change (`npx vitest run tests/<file> ...`, several in one call), never the whole suite. After your last change run `npm run diagrams && npm run test:quick` once, plus one rerun only after a red line in a file you changed (fix it, rerun that file alone, then the list once more), and the other checks "Verify before you report" names, each once, from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. Report the number of `test:quick` runs and every whole-suite command. Then the ASCII check in the brief's perl form over every file you changed.
+
+The report: write it at `tools/oculus/.scratch/migration/agents/reviews/O38-report.md` in the worktree, in the shape the brief's "Report" gives, in ASCII. Your final message is the report itself.

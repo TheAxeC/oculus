@@ -26,7 +26,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
 - step: O38
-  landing: preparing
+  brief_check: agents/reviews/O38-brief-check.md (ab45d7f72335b6554, claude-opus-5-5, 307,354 tokens, 105 tool uses, 18.0 min)
+  base: db086e36d
+  worktree: .agents/worktrees/migration-O38
+  executor: agent
+  worker: claude:opus
+  session_id: abb312c8613a724c7 (claude-opus-5-5)
+  launched: 2026-10-19
+  report: agents/reviews/O38-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -312,6 +321,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-19 (O38 launched). Preparation commit db086e36d is the base; sparse worktree `.agents/worktrees/migration-O38` (widened to `.oculus`, `.agents`, `.claude`, `.codex`, `tools/data`, `tools/deposit`, `tools/skills` beside the configured paths) with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O38-base` (tracked text files) with `unused-exports.txt` (361 lines); the builder abb312c8613a724c7 launched on claude-opus-5-5 with `agents/briefs/O38-launch.md`. Open items: none. In flight (1 of 6): O38 (building). Next: the builder's report, /refute O38, /land O38 with the look, then the session's landing tasks and the four deposit pushes.
 - 2026-10-19 (open items 157 to 163 ruled). Axel ruled every open item; O38 carries the rulings and /spec O38 runs again, writing the brief from the brief check's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.
 - 2026-10-19 (open items 157 and 158 ruled). Axel ruled both; O38 is rewritten by the rulings and /spec O38 runs again, writing the brief from the report's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.
 - 2026-10-19 (O38's /spec stopped at its brief check, the step does not converge). The brief check (ab45d7f72335b6554) is saved at `agents/reviews/O38-brief-check.md` with its Closed heading; Z934 to Z936 taken in automode; open item 158 raised; the brief is deleted from the ledger (its text kept outside the ledger for the next /spec); no worktree, no dispatch entry. O38 is booked under plan.md's "Blocked, and by what". In flight (0 of 6): none. Next: Axel's rulings on open items 157 and 158, then /spec O38, which writes the brief with every closure and goes to the build without a second brief check.
