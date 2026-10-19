@@ -158,7 +158,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 159 (2026-10-19, O38, the new hub's local.yml out of git): Make Folder a Hub will write `.oculus/local.yml`, which holds secrets, into a folder that may be a git repository. (a) The make also writes `.oculus/.gitignore` holding `local.yml`, when no such file exists. Pros: works whether or not the folder is a repository and whatever its root `.gitignore` says; touches no file of the owner's. Cons: one more file in `.oculus/`. (b) The make appends `/.oculus/local.yml` to the folder's root `.gitignore`, creating it when missing. Pros: one ignore file, as this hub has (`.gitignore:155`). Cons: writes a file the owner keeps by hand; a folder with no repository gets a root file it does not need. (c) The make writes nothing for git and the template's comment says to keep the file out of git. Cons: a secret can be committed by the first `git add -A`; the lazy option. Recommended (a).
 
 
 
@@ -188,6 +187,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 159 (2026-10-19, O38, the new hub's local.yml out of git): (a), Make Folder a Hub also writes `.oculus/.gitignore` holding `local.yml` when no such file exists, and `docs/templates.md` gains that file's template and its row in "Where each file goes" (Axel).
 - Open item 158 (2026-10-19, O38's /spec, credentials and a skill file): (1) (b) and (2) (b) with Kaggle added: the PhysioNet user and password, the Kaggle user and key and the Synapse token live in one `downloads:` list of `local.yml` (rows `service` physionet, kaggle or synapse; `user`; `secret`), a Settings section "Download accounts", read by the server and sent to the target per run as a mode-600 curl config removed when the run ends and before each run; curl is never passed `--netrc` and oculus never opens `~/.netrc` or `kaggle.json`; (3) (a), the project-cleanup skill file brought whole to the character set (Axel).
 - Open item 157 (2026-10-19, O38's /spec, the mitdb folders): (a), at O38's landing the session moves the cluster's `~/data/mitdb/` to `~/data/mit-bih/` (Axel).
 - Open item 156 (2026-10-19, O38's /spec, the cluster and the guarded entries): (1) (b), Recover puts the official Node linux-x64 build, checked against its SHASUMS256, and the 7z-wasm package under `~/.oculus/recover/` in the cluster home, and the sbatch job runs 7z-wasm under it; (2) agreed, every item as recommended; (3) G111 to G115 as written, G1 and G35 changed; (4) yes, covert-applied and ecg-readable-substrate pushed too (Axel).
