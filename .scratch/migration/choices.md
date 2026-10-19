@@ -4,6 +4,34 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z934 (2026-10-19, O38's /spec, the orchestrator, automode): where Recover keeps a file check
+
+- Chosen: `~/.oculus/recover/<hub>/<key>.checks.json`, one row per file with its size, mtime and the checksum it matched; a row whose size or mtime differs from the file is stale, and the file reads present.
+- Not chosen: hashing every file on each view (isles24's `train.7z` is 99 GB), or showing no verified state at all, which is the lazy option.
+
+Where it applies: O38's brief, Part 2. Booked in `plan.md` Rulings.
+
+## Z935 (2026-10-19, O38's /spec, the orchestrator, automode): unpacking into the dataset folder
+
+- Chosen: a source may carry `strip: <n>`, the leading folders the unpack drops; ptb-xl has `strip: 1`, so `ptbxl_database.csv` sits at `~/data/ptb-xl/`; an `archive: true` zip that `SHA256SUMS.txt` does not list is checked by its size.
+- Not chosen: the readers changed to look one folder down, which moves the archive's layout into every reader; leaving such a zip never verified, which is the lazy option.
+
+Where it applies: O38's brief, Part 2. Booked in `plan.md` Rulings.
+
+## Z936 (2026-10-19, O38's /spec, the orchestrator, automode): a missing data file once `collections:` is dropped
+
+- Chosen: a hub that holds `.oculus/data/` reports a missing default collection file as a finding, as it does a named one.
+- Not chosen: keeping the hub's `collections:` block so the findings stay, which contradicts ruling 154's drop of the block; accepting the lost finding, which is the lazy option.
+
+Where it applies: O38's brief, Part 3. Booked in `plan.md` Rulings.
+
+## Z933 (2026-10-19, O38's /spec, the orchestrator, automode): the Hugging Face reader of Recover
+
+- Chosen: the reader written by hand, one paginated GET of `https://huggingface.co/api/datasets/<repo>/tree/main?recursive=true`, the next page from the `Link` header, the shape every other reader has.
+- Not chosen: `@huggingface/hub` 2.17.8 (MIT, Hugging Face, 2026-10-15), which lists the same files but covers one kind of eleven and depends on `@huggingface/xetchunk-wasm`, which Recover never uses. The library is the cheaper one to write now and the lazy option.
+
+Where it applies: O38's brief, Libraries checked. Booked in `plan.md` Rulings.
+
 ## Z932 (2026-10-17, O40's /spec, the orchestrator, automode): the words and bounds O40's brief sets
 
 - Chosen: the close question over unsaved text reads "Do you want to save the changes to this tab before it closes?" (for several tabs, "to <n> tabs before they close?") with Don't Save, Cancel and Save in that order and the keyboard on Save, as VS Code's question on macOS; the add's undo row in History reads "add undone"; the Refactor Preview after a drag is held to 1 s. Row 81 names VS Code's question as the standard, and row 80 needs words that differ from the delete's "entry removed".

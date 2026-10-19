@@ -3,6 +3,10 @@
 Read `orchestrator-state.md` first. This file holds what was raised and closed, the earlier positions, and the measurements kept for the record.
 
 ## Closed items (the log of what was raised and how it ended, newest first)
+- Z936 (2026-10-19, O38's /spec, the orchestrator, automode): a hub with `.oculus/data/` reports a missing default collection file as a finding. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z935 (2026-10-19, O38's /spec, the orchestrator, automode): a Recover source may carry `strip: <n>`; ptb-xl has `strip: 1`; an unlisted `archive: true` zip is checked by size. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z934 (2026-10-19, O38's /spec, the orchestrator, automode): Recover's file checks are kept in `~/.oculus/recover/<hub>/<key>.checks.json`, stale on a size or mtime change. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z933 (2026-10-19, O38's /spec, the orchestrator, automode): Recover's Hugging Face file list is read by hand with a paginated GET of the tree API, like every other source reader; `@huggingface/hub` 2.17.8 not chosen, since it covers one kind of eleven and brings a chunker Recover never uses. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 
 - Open item 131 (2026-10-17): diagnosis banned, standing, for the orchestrator and every agent, never suggested; O40 runs with every open row in its brief. Axel's word.
 - Open item 132 (2026-10-17): Axel's three asks (motion for actions, the rail's summed number, the clone finding over worktrees) discussed and ruled: booked as O41, run beside O40.
