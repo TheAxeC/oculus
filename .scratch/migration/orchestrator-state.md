@@ -158,7 +158,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 163 (2026-10-19, O38, the repository items' names): (a) One item, Make Folder a Repository..., the git row shown only without `.git`. Cons: on a folder that is a git repository already, which all seven of the workspace's code roots are (`test -e .git`) and none holds any of the four files, the name says something already true. (b) Two items: Make Folder a Git Repository, offered only on a folder with no `.git`, which runs `git init` at once (no dialog, so no "..."); and Add Repository Configuration..., offered on a repository (a served root or a folder holding `.git`) that lacks one of the four files, opening the dialog of checkboxes. Pros: each name says what it does; the common case, an existing repository, gets an item whose name fits; a folder that is not a repository is never offered files oculus would not read. Cons: a new folder takes two picks to get both. (c) As (b), the second named Configure Repository.... Cons: "configure" suggests editing values, while the dialog writes commented files. Recommended (b).
 
 
 
@@ -188,6 +187,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 163 (2026-10-19, O38, the repository items' names): (b), two items: Make Folder a Git Repository, offered only on a folder with no `.git`, runs `git init` at once; Add Repository Configuration..., offered on a repository (a served root or a folder holding `.git`) that lacks one of the four files, opens the dialog of checkboxes (Axel).
 - Open item 162 (2026-10-19, O38, the two make dialogs): (a), every file a make writes is listed; and both dialogs are reorganised: each group opens with a sentence saying what it is for, each row is a checkbox, the name and one short line of what it holds, with the file's path under it in small text or in its tooltip rather than at the row's far right, and the Collections group gets the same treatment (Axel).
 - Open item 161 (2026-10-19, O38, Make Folder a Repository): (a), one item Make Folder a Repository..., `git init` when the folder holds no `.git`, then the four repository files, with a dialog like Make Folder a Hub's whose checkboxes choose what is written; that dialog and the hub's are made cleaner, each choice with a line saying what it is for (Axel).
 - Open item 160 (2026-10-19, O38, the other files Make Folder a Hub writes): yes, schedules.yml as a comments-only file from templates.md's block; no bookmarks.yml, workspace, update tasks or repository files (Axel).
@@ -310,6 +310,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-19 (open items 157 to 163 ruled). Axel ruled every open item; O38 carries the rulings and /spec O38 runs again, writing the brief from the brief check's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.
 - 2026-10-19 (open items 157 and 158 ruled). Axel ruled both; O38 is rewritten by the rulings and /spec O38 runs again, writing the brief from the report's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.
 - 2026-10-19 (O38's /spec stopped at its brief check, the step does not converge). The brief check (ab45d7f72335b6554) is saved at `agents/reviews/O38-brief-check.md` with its Closed heading; Z934 to Z936 taken in automode; open item 158 raised; the brief is deleted from the ledger (its text kept outside the ledger for the next /spec); no worktree, no dispatch entry. O38 is booked under plan.md's "Blocked, and by what". In flight (0 of 6): none. Next: Axel's rulings on open items 157 and 158, then /spec O38, which writes the brief with every closure and goes to the build without a second brief check.
 - 2026-10-19 (open item 156 ruled). Axel ruled open item 156 and the rest of open item 155; O38 is rewritten by the ruling and /spec O38 runs again. In flight (0 of 6): none.
