@@ -4583,3 +4583,80 @@ Where it applies: D72. Booked in `plan.md` Rulings; the entries are written into
 - Not chosen: folding them into D72, whose builder is mid-build; keeping the two steps, the lazy option, which breaks Z468.
 
 Where it applies: D73. Booked in `plan.md` Rulings.
+
+## Z937 (2026-10-19, O38's review, the orchestrator, automode): a server push on a `recover` channel; the Login node sessions ride the Live HPC watcher's one batched ssh; access checked once per open
+
+- Chosen: the Recover view and the Login node section follow a run by a server push on a `recover` channel, the cluster's sessions read in the Live HPC watcher's batched command, the access login requests made once per open; the page polls nothing, as DESIGN.md "Live data" says (the brief's polling corrected).
+- Not chosen: the page polling every 3 s with an exception written into DESIGN.md, which keeps a login request per credentialed source and up to four ssh commands per open view every 3 s; that is the lazy option.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z938 (2026-10-19, O38's review, the orchestrator, automode): keep `vocab.<key>.<field>` as built
+
+- Chosen: a `from:` source written `vocab.<key>.<field>` offers the keys of the map whose row carries that field as true (`from: vocab.statuses.chip`), as ruling 175 (b) built it.
+- Not chosen: a separate list key for the chip picker, which duplicates the `chip` flags.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z939 (2026-10-19, O38's review, the orchestrator, automode): keep `name` on a `url` row
+
+- Chosen: a `url` source's `urls` row takes an optional `name`, the file name it is saved as, used by the nine cellxgene sets and pdebench.
+- Not chosen: files saved under the address's last segment, which breaks the readers of the cellxgene sets and pdebench.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z940 (2026-10-19, O38's review, the orchestrator, automode): an optional `md5` on a `url` row; the pdebench and pbc rows written
+
+- Chosen: a `url` row takes `md5` beside `sha256`, at most one; pdebench gets its five DaRUS rows with their md5 from PDEBench's `pdebench_data_urls.csv`, and pbc-cirrhosis a `url` source of the UCI 878 zip with its sha256 and `path: ~/data/pbc-cirrhosis`.
+- Not chosen: pdebench left with `retrieval: []` and pbc as a library call, which leaves two sets with no Recover; that is the lazy option. Hashing the pdebench files with sha256 needs downloading them first.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z941 (2026-10-19, O38's review, the orchestrator, automode): remove the shape and its form
+
+- Chosen: the options catalog's `holds: lists` shape of record fields is removed with the code that serves it alone, since no shipped entry uses it after `boards` replaced `tab_rollup`.
+- Not chosen: keep it with no entry, which keeps about 111 lines of `Rollup.svelte` and its branches serving nothing; that is the lazy option.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z942 (2026-10-19, O38's review, the orchestrator, automode): keep the names as built
+
+- Chosen: the vocabulary names the step found beyond the brief's list stay as built: `submit_ready`, `new_idea`, `default_task`, `lead_declined`, `default_application`, `lead_applied`; the tiers flags `main`, `backlog`, `personal`, `type_folders`, `outcome_folders`; the hub's `career_host_status` flags `in_flight`, `waiting` and `default`; the venue tier `fallback`.
+- Not chosen: renaming any of them, which no reader asked for.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z943 (2026-10-19, O38's review, the orchestrator, automode): the help in the editor schema of vocab.yml
+
+- Chosen: the help of each flag of `statuses`, `types` and `tiers` and of `publication_kinds` is the description of its key in vocab.yml's editor schema (hover and the suggest panel), with no Settings row and no Settings write of a catalog file, since rulings 166 and 167 change no behaviour.
+- Not chosen: Settings listing and writing vocab.yml (new behaviour no ruling asked for); the help in the header comment alone, the lazy option.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z944 (2026-10-19, O38's review, the orchestrator, automode): `dead: <place>`
+
+- Chosen: the `dead` flag of `types` is the type's place in the Archival band, a whole number from 1, so the band keeps the base's order nogo, dropped, disproved, abandoned, paused.
+- Not chosen: a second list naming the Archival order (membership written twice, which can drift); paused first as built (an order changed against rulings 166 and 167).
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z945 (2026-10-19, O38's review, the orchestrator, automode): the map's order
+
+- Chosen: the Settings choices of `focus.applications_open`, `education_open`, `applications_sent` and `counts.*.match` list the statuses in the order of the one `statuses` map (the legend's order), and a project type picker the order of `types` (`type_order`'s), since one map holds one order.
+- Not chosen: a second order list for the Settings choices, which duplicates the vocabulary that ruling 166 made one map.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z946 (2026-10-19, O38's review, the orchestrator, automode): keep them as bare hints
+
+- Chosen: `cmd_theme_hint` and `cmd_file_icons_hint` stay as the bare argument hints `<theme>` and `<file icon theme>`, as `cmd_language_hint` reads `<language>`; the inline list of names they held is gone.
+- Not chosen: deleting the keys, which leaves the two list modes the only ones with no argument hint.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z947 (2026-10-19, O38's review, the orchestrator, automode): book G116 and remove the constant assertion
+
+- Chosen: the tests of the `boards` and `counts` config readers (`boards.test.ts`'s malformed-row table, `counts.test.ts`, `count-row.test.ts`) are booked as guarded entry G116; the describe 'the shipped boards', an assertion over shipped constants, is removed.
+- Not chosen: fold the rows into another file, which moves tests without changing what they guard.
+
+Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.

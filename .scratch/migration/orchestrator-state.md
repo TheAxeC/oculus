@@ -34,9 +34,11 @@ dispatch:         # steps in flight, up to six (Z632)
   session_id: abb312c8613a724c7 (claude-opus-5-5)
   launched: 2026-10-19
   report: agents/reviews/O38-report.md
-  builder_usage: round 0 hand-back on case 16, 298,198 tokens, 54 tool uses, 8.7 min
+  builder_usage: round 0 hand-back on case 16, 298,198 tokens, 54 tool uses, 8.7 min; build, 280,827 tokens, 4,814 tool uses, 536.5 min
   cases_ruling: agents/briefs/O38-cases.md
-  round: 0
+  reviewer_report: agents/reviews/O38-refuter.md (ac403e5a86a3d6757, claude-opus-5-5, 190,477 tokens, 165 tool uses, 28.8 min)
+  round: 1
+  round_brief: agents/briefs/O38-round1.md
   landing: not-started
 ```
 
@@ -350,6 +352,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-19 (O38 round 1 sent). The builder abb312c8613a724c7 reported (`agents/reviews/O38-report.md`, usage in `builder_usage`); the reviewer ac403e5a86a3d6757 on claude-opus-5-5 wrote `agents/reviews/O38-refuter.md`: items 2.1, 13.2 and 13.5 violated, the Part 14 options-catalog bullet unmet, cases 16, 24 and 31 partial, the brief's Recover polling against DESIGN.md "Live data". The builder's open items A to H and the review's choices closed in automode as Z937 to Z947 (`choices.md`); G116 booked in `agents/guarded.md`. Round 1 (`agents/briefs/O38-round1.md`, 13 items) sent to the builder; snapshot `.agents/worktrees/migration-O38-round-1` with `files.txt` (811 paths). Open items: none. In flight (1 of 6): O38 (round 1). Next: the review over the round, /land O38 with its look and the three-way merge of main's yml files, then O39.
 - 2026-10-19 (O38 launched). Preparation commit db086e36d is the base; sparse worktree `.agents/worktrees/migration-O38` (widened to `.oculus`, `.agents`, `.claude`, `.codex`, `tools/data`, `tools/deposit`, `tools/skills` beside the configured paths) with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O38-base` (tracked text files) with `unused-exports.txt` (361 lines); the builder abb312c8613a724c7 launched on claude-opus-5-5 with `agents/briefs/O38-launch.md`. Open items: none. In flight (1 of 6): O38 (building). Next: the builder's report, /refute O38, /land O38 with the look, then the session's landing tasks and the four deposit pushes.
 - 2026-10-19 (open items 157 to 163 ruled). Axel ruled every open item; O38 carries the rulings and /spec O38 runs again, writing the brief from the brief check's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.
 - 2026-10-19 (open items 157 and 158 ruled). Axel ruled both; O38 is rewritten by the rulings and /spec O38 runs again, writing the brief from the report's Closed heading and the rulings without a second brief check. In flight (0 of 6): none.

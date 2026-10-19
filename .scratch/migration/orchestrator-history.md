@@ -3,6 +3,17 @@
 Read `orchestrator-state.md` first. This file holds what was raised and closed, the earlier positions, and the measurements kept for the record.
 
 ## Closed items (the log of what was raised and how it ended, newest first)
+- Z947 (2026-10-19, O38's review, the orchestrator, automode): book G116 and remove the constant assertion. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z946 (2026-10-19, O38's review, the orchestrator, automode): keep them as bare hints. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z945 (2026-10-19, O38's review, the orchestrator, automode): the map's order. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z944 (2026-10-19, O38's review, the orchestrator, automode): `dead: <place>`. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z943 (2026-10-19, O38's review, the orchestrator, automode): the help in the editor schema of vocab.yml. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z942 (2026-10-19, O38's review, the orchestrator, automode): keep the names as built. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z941 (2026-10-19, O38's review, the orchestrator, automode): remove the shape and its form. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z940 (2026-10-19, O38's review, the orchestrator, automode): an optional `md5` on a `url` row; the pdebench and pbc rows written. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z939 (2026-10-19, O38's review, the orchestrator, automode): keep `name` on a `url` row. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z938 (2026-10-19, O38's review, the orchestrator, automode): keep `vocab.<key>.<field>` as built. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z937 (2026-10-19, O38's review, the orchestrator, automode): a server push on a `recover` channel; the Login node sessions ride the Live HPC watcher's one batched ssh; access checked once per open. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z936 (2026-10-19, O38's /spec, the orchestrator, automode): a hub with `.oculus/data/` reports a missing default collection file as a finding. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z935 (2026-10-19, O38's /spec, the orchestrator, automode): a Recover source may carry `strip: <n>`; ptb-xl has `strip: 1`; an unlisted `archive: true` zip is checked by size. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z934 (2026-10-19, O38's /spec, the orchestrator, automode): Recover's file checks are kept in `~/.oculus/recover/<hub>/<key>.checks.json`, stale on a size or mtime change. Closed by the orchestrator in automode; in `choices.md` for Axel's review.

@@ -323,6 +323,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G115. A Recover run belongs to the server and Stop ends only its own dataset's run: on this Mac a run is found again by its pid after a restart, on the cluster by its session on the socket `oculus-recover`.
   Code: `src/lib/server/machine/runs/recover/local.ts`, `cluster.ts`.
   Test: `tests/server/machine/runs/recover/runs.test.ts`, one table, a row per run state and per Stop.
+- G116. The `boards` and `counts` keys of `config/layout.yml` are read as written, and a row of a malformed form (a field the reader does not name, a `tab` or `rail` that is not true or false, a `days` on a row other than `leads`, a board whose tier or column is unknown) is a finding of the config check, never a row read as empty.
+  Code: `boardsFindings` in `src/lib/data/sources/config/sections/boards.ts`; `countsFindings` in `src/lib/data/sources/config/sections/counts.ts`; `countRow` in `src/lib/state/workbench/rail-badges/rail-badges.ts`.
+  Test: `tests/data/sources/config/boards.test.ts`, describe 'boardsFindings', every row; `tests/data/sources/config/counts.test.ts`, describe 'countsFindings', every row; `tests/state/workbench/count-row.test.ts`, every row.
 
 ## The repository's rules, checked by a machine
 
