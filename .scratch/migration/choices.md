@@ -4660,3 +4660,17 @@ Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in
 - Not chosen: fold the rows into another file, which moves tests without changing what they guard.
 
 Where it applies: O38's repair round 1, `agents/briefs/O38-round1.md`. Booked in `plan.md` Rulings.
+
+## Z948 (2026-10-19, O38's review over round 1, the orchestrator, automode): the Fetch POST keeps its access check
+
+- Chosen: the access login requests of a dataset run in the route's GET and in the Fetch POST, which needs the credential to download, and never on a push; round 1's clause "in that GET alone" is read as "never on a push or a timer".
+- Not chosen: remove the check from the Fetch POST, which would start a download with a credential no service accepted and fail inside curl.
+
+Where it applies: O38's landing, finding Spec R1-a of `agents/reviews/O38-refuter.md`, "Repair round 1, refuted". Booked in `plan.md` Rulings.
+
+## Z949 (2026-10-19, O38's review over round 1, the orchestrator, automode): keep the slow tag and the end signal
+
+- Chosen: the unpack rows of `safety.test.ts`, which run the real 7z-wasm program, wait on the run's end signal in place of `vi.waitFor` and are tagged slow, so they run in `npm run test:slow` and `npm run test:landing` and not in `npm test`.
+- Not chosen: put back the 60 s `vi.waitFor` margin so the rows run in `npm test`, which the round's rule against a wall-clock margin rules out.
+
+Where it applies: O38's landing, finding Spec R-2 of `agents/reviews/O38-refuter.md`, "Repair round 1, refuted". Booked in `plan.md` Rulings.

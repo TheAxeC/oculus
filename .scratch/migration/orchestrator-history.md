@@ -3,6 +3,8 @@
 Read `orchestrator-state.md` first. This file holds what was raised and closed, the earlier positions, and the measurements kept for the record.
 
 ## Closed items (the log of what was raised and how it ended, newest first)
+- Z949 (2026-10-19, O38's review over round 1, the orchestrator, automode): keep the slow tag and the end signal. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
+- Z948 (2026-10-19, O38's review over round 1, the orchestrator, automode): the Fetch POST keeps its access check. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z947 (2026-10-19, O38's review, the orchestrator, automode): book G116 and remove the constant assertion. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z946 (2026-10-19, O38's review, the orchestrator, automode): keep them as bare hints. Closed by the orchestrator in automode; in `choices.md` for Axel's review.
 - Z945 (2026-10-19, O38's review, the orchestrator, automode): the map's order. Closed by the orchestrator in automode; in `choices.md` for Axel's review.

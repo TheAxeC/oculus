@@ -261,3 +261,176 @@ Cases of the brief's "Cases":
 - The open items A, D, G and H: Axel's rulings.
 
 Reviewer usage: ac403e5a86a3d6757, claude-opus-5-5, 190,477 tokens, 165 tool uses, 28.8 min.
+
+## Repair round 1, refuted
+
+Reviewer over O38 repair round 1. Worktree `.agents/worktrees/migration-O38`, base db086e36d, snapshot `.agents/worktrees/migration-O38-round-1` (files.txt 811 paths). The round's delta (68 modified paths of files.txt, `src/lib/server/machine/runs/recover/log.ts` moved to `live/log.ts`, and 21 paths changed outside files.txt, the untracked `live/batch.ts`, `live/log.ts` and `live/watch.ts` whole) was read in full against the whole diff since the base. No file was changed by the reviewer.
+
+```
+cd tools/oculus; PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH HOME=<fresh $TMPDIR folder> npm run test:quick -- --base db086e36d
+  487 changed file(s), from git since db086e36d
+  250 test file(s), 9 essential
+  ok prettier (1.0 s) | ok ASCII gate (1.0 s) | ok svelte-kit sync (2.7 s) | ok eslint (2.2 s)
+  ok svelte-check (7.0 s): 524 FILES 0 ERRORS 0 WARNINGS
+  ok vitest (70.4 s)
+  test:quick: 73.2 s (limit 45.0 s); every command passed
+  test:quick: over the time limit
+  exit 0
+(npm run diagrams not run; its staleness checked by tests/checks/tree/diagrams.test.ts, in the guarded run below, passed)
+
+npx vitest run <the 34 files of the Test lines of G1, G111 to G116> + config-folder, config.test, normalise, career, catalog/options, diagrams.test
+  Test Files 40 passed (40)
+  Tests 451 passed | 2 skipped (453)
+  (the 2 skips are config-folder's real-hub rows, OCULUS_TEST_HUB unset)
+OCULUS_TEST_HUB=<worktree root> npx vitest run tests/checks/config/config-folder.test.ts <integrity test>
+  Test Files 2 passed (2)
+  Tests 46 passed (46)
+
+npx vitest run tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts tests/checks/source/history.test.ts --testTimeout 0 --hookTimeout 0
+  Test Files 3 passed (3)
+  Tests 27 passed (27)
+
+sh utils/unused-exports.sh (fresh HOME, no workspace) compared with O38-base/unused-exports.txt
+  no new name. Lines gone against the base: DISMISSED, LEAD_CLOSED, IN_FLIGHT, NOT_APPLIED, removedChords, RemovedChord, BrowserValues; the tab-out entry under its moved path; one type line reordered in ui.svelte.ts.
+
+grep -rn "setInterval\|POLL_MS" src/lib/state/system/machine/recover.svelte.ts src/lib/views/sources/data/recover src/lib/views/system/machine/hpc/Login.svelte
+  (nothing), exit 1
+
+LC_ALL=C grep -n '[^ -~]' over the 83 non-svg files the round changes
+  one line: .oculus/data/research/data.yml:691, the name Hjortkj<ae>r, base content
+
+python3 -c "import yaml; yaml.safe_load(open('.oculus/data/research/data.yml'))"   (worktree root)
+  exit 0
+
+Verify item 5 of the first brief (the perl character check) over the 104 changed hub files outside tools/oculus
+  165 lines in 18 files. Moved files: 0 added non-ASCII lines against their base copy. Edited files: the only added non-ASCII line is the accented name Fabian G<u umlaut>iza in funding/2026-fwo-senior-stopped-meyfroidt.
+
+sh utils/folder-check.sh
+  exit 0 (src/lib/server/machine/runs/recover holds 10 entries)
+
+Tree checks outside test:quick, run because the landing runs them:
+npx vitest run tests/checks/source/keys.test.ts
+  FAILED: orphaned settings.editor_add_group, settings.editor_group_down, settings.editor_group_key, settings.editor_group_up, settings.editor_remove_group (config/text/views/system/workbench.yml:37,42,43,44,51)
+npx vitest run tests/checks/source/comment-width.test.ts
+  FAILED: src/lib/data/model/model-entities.ts:707 (101 columns) and src/lib/server/root/watch/pollers.ts:2 (138 columns)
+npx vitest run <imports cycles, imports order, templates, config.test, duplication>
+  Test Files 5 passed, Tests 82 passed
+npx vitest run tests/server/machine/runs/recover/runs.test.ts tests/server/machine/runs/recover/safety.test.ts (verbose, slow rows included)
+  46 passed
+
+grep for the old Jakel file names in projects/archive/disproved/ms-lipid-handshake/code: 0 lines
+grep archive_order docs/figures/project-lifecycle.svg: the label "archive_order: published, submitted, ..." is drawn
+```
+
+### Verdicts
+
+Items of the round brief O38-round1.md:
+
+- R1 (push, no polling): holds. The grep above gives nothing; live/watch.ts publishes `recover` through Hub.publish; the Live HPC batch carries Recover's section (SEC_RECOVER, live/batch.ts); payloads.ts holds the shape beside hpc; Login.svelte draws the channel's sessions; DESIGN.md "Live data" and HELP.md name the channel; runs.test.ts and history.test.ts rows cover a start push with bytes and an end push with its state, waiting on fs.watch and a channel subscription. The clause "accessOf ... in that GET alone" is not met literally (Spec R1-a) and three host-visible changes are unreported (Behaviour R-1, R-2, R-3).
+- R2 (Jakel names): holds. config.py now names the two GEO files; grep of the old names gives 0.
+- R3 (url sources for pdebench and pbc-cirrhosis, md5 rows): holds. The five DaRUS rows and the UCI row in .oculus/data/research/data.yml match the brief byte for byte; retrieval.ts refuses a row with both sha256 and md5; url.ts checksumOf, verify.ts createHash(kind) and the cluster's "$1"sum check md5; docs/templates.md and docs/apps.md state the row shape.
+- R4 (describe help in catalog-files.ts): holds. Every flag key of statuses, types and tiers and publication_kinds carries .describe; vocab.yml's header now says wordFlag compares trimmed and lower case, anyWord/hasWord as written. public, negative and dead_end share one header line (a note, no finding).
+- R5 (remove the holds: lists record-field shape): violated, Standards R-2. Code removed as listed (Rollup.svelte deleted, slots.ts, draft.ts rollup form, schemas/options.ts, config-fit.ts branches, references walk, Editor.svelte branch), catalogOf refuses the shape; but the five catalog strings that served only Rollup.svelte stay and keys.test.ts is red.
+- R6 (dead as an Archival order number): holds. vocab.yml dead: nogo 1, dropped 2, disproved 3, abandoned 4, paused 5; lines.ts:106 wordsNumbered, collection.ts:763 and venues.ts:38 read membership as wordNumber(...) !== null / === null; docs/figures/project-lifecycle.svg redrawn.
+- R7 (career host default status): holds. src/lib/data/snapshot/normalise-parts/career.ts:122 reads `const unset = wordsWith(config, 'career_host_status', 'default').at(0) ?? ''`; the career.test.ts row is in the guarded run and the first run on the unchanged tree is quoted in the round report. hostStatusOf keeps a duplicate fallback (Standards R-4).
+- R8 (unexport five names): holds. unused-exports rerun above shows no new line.
+- R9 (runs.test real-process row slow, signal wait): holds. runs.test.ts:224 `{ tags: ['slow'], timeout: 30000 }`, waits on fs.watch `called()` and a `pushed()` subscription, no vi.waitFor and no sleep. The safety.test.ts rows were changed beyond the item (Spec R-2).
+- R10 (history exemption by path): holds. history.test.ts `ANSWERS = 'tests/server/machine/runs/recover/answers/'`, with rows for paths outside it; the round report lists the CR and trailing-space changes per file.
+- R11 (boards.test shipped-values describe removed): holds. The describe is gone; the malformed-row table, counts.test.ts and count-row.test.ts stay (G116 is in the main checkout's guarded.md, the orchestrator's booking).
+- R12 (gen_figures label): holds. gen_figures.py labels the line archive_order:, and the svg shows it.
+- R13 (quote verify item 5): violated, Proof R-1. The round report quotes the round-files grep, not the perl check over the changed hub files. The rerun above shows the content is fine (moved bytes and one accented name).
+
+Items of O38.md "What to build", again over the whole diff since the base:
+
+- 1.1, 1.2, 1.3: holds, as the first report gives; the round touches none of them.
+- 1.4: not applicable (the session's at landing).
+- 2.1: holds. pdebench has one url source with the five rows and pbc-cirrhosis one url source with unpack: true (R3); the first report's Spec 3 is closed.
+- 2.2, 2.3: holds, as the first report gives; 2.2's parse also takes md5 rows (R3).
+- 2.4: holds for the code. The per-poll login request of the first report's Behaviour 1 is gone: accessOf runs in the route's GET and the POST fetch, never on a push.
+- 2.5: holds for the guarded rows. The GET's no-key `target=cluster` sessions answer is removed and the sessions come by the channel, as Z937 and R1 rule; the brief's 2.5 sentence on that answer is superseded by that ruling.
+- 2.6, 2.8: holds as ruled by Z937 (server push in place of the brief's polling); the first report's Spec 1 is closed.
+- 2.7: holds by reading; the look is at landing.
+- 2.9 to 2.11, 2.12: holds, as the first report gives.
+- 3.1 to 3.7: holds, as the first report gives.
+- 4.1 to 4.5, 5: holds (5 by 2.1).
+- 6.1 to 6.5: holds; the look is at landing.
+- 7: not applicable (the session's).
+- 8.1 to 8.6: holds, as the first report gives (case 21's probe, see Cases).
+- 9: holds.
+- 10.1 to 10.7: holds, as the first report gives.
+- 11: holds.
+- 12: holds.
+- 13.1: holds.
+- 13.2: holds. The Archival band orders nogo, dropped, disproved, abandoned, paused by the dead numbers (R6); the first report's Behaviour 2 is closed.
+- 13.3, 13.4, 13.6: holds.
+- 13.5: holds. A status-less host holds the default word in the snapshot (R7); the first report's Behaviour 4 is closed.
+- 14 (statuses, types, tiers, ticker, Focus columns): holds.
+- 14 (compared trimmed, lower case): holds; the vocab.yml header now says so (R4).
+- 14 (sweep listed): holds, by the report.
+- 14 (options catalog gets each new flag and list with its help): holds through Z943, the help carried by the schema's .describe (R4).
+- 14 (HELP.md and DESIGN.md): holds.
+- 15.1 to 15.3, 16.1 to 16.4: holds.
+- 17.1 to 17.3: holds, as the first report gives.
+- Landing note across items: two tree checks the landing runs are red, keys.test.ts (Standards R-2) and comment-width.test.ts (Standards R-1).
+
+Cases of O38.md "Cases":
+
+- 1 to 8, 10: met. Guarded and test:quick runs above.
+- 9: met. The real-process row waits on signals (R9) and passed in the verbose run.
+- 11, 12, 13: met (12 by reading retrieval.ts with the md5 rows; 13 by the integrity run with OCULUS_TEST_HUB set).
+- 14: not verifiable by the reviewer, as in the first report (the probe).
+- 15: met.
+- 16: partial, unchanged: 43 lines, not only 34, as the cases file rules; the first report's Proof 2 stands as ruled.
+- 17: not verifiable (the look's).
+- 18: met by the report's reading.
+- 19, 20, 22, 25, 27, 29, 30, 35: met, as the first report gives.
+- 21: met by the builder's removed probe, not reproducible here.
+- 23: met by reading.
+- 24: met for the 2.1 entries (pdebench and pbc now typed url sources); the map form half stays met by reading only.
+- 26: met by reading html.ts.
+- 28: met. The Archival order holds for a hub with a paused project by the dead numbers (R6).
+- 31: partial, unchanged: menu, palette and persistence by reading only, the rest the look's.
+- 32, 33: met by rows and the builder's probes.
+- 34: met for the key and catalog entry; the rest the look's.
+
+### Findings
+
+- Spec R1-a, src/lib/server/machine/runs/recover/routes.ts:318: "const access = await accessOf(entry.retrieval, {"; what is wrong: R1 says the access login requests "run in that GET alone, never on a push"; the POST fetch still calls accessOf (a line from round 0, not changed in the round; the builder's report discloses it). The "never on a push" half holds. failure scenario: a reader of the brief who checks the clause literally finds a second caller; a Fetch press makes a login request outside the GET, which is needed to download but is outside the clause's words. verdict: none; the orchestrator rules whether the clause covers the POST fetch.
+- Spec R-2, tests/server/machine/runs/recover/safety.test.ts:538: "])('$name', { tags: ['slow'], timeout: 90000 }, async (one) => {"; what is wrong: the unpack rows of safety.test.ts are newly tagged slow and rewritten to wait on an ended promise; R9 asks this only of runs.test.ts's real-process row, and the round report does not name the change; no item. failure scenario: npm test (which skips slow rows) no longer runs these guarded unpack rows, so a regression in unpack safety passes the everyday run and is caught only by a run that includes slow tags. verdict: none.
+- Proof R-1, O38-report.md section "Repair round 1", item 13: the report quotes the round-files grep in place of verify item 5's perl check over the changed hub files; what is wrong: the item asked for that run and a name for each non-ASCII line; my rerun gives 165 lines in 18 files, of which the only added non-ASCII line is the accented name G<u umlaut>iza and the rest moved byte for byte. No decision rests on the wrong quote, since the content is clean. failure scenario: the orchestrator reading the report has no evidence for item 13 and would accept the hub files on a check that did not read them. verdict: R13 violated.
+- Standards R-1, src/lib/server/root/watch/pollers.ts:2 (138 columns) and src/lib/data/model/model-entities.ts:707 (101 columns): "/** The listed files whose bytes changed since the reading before, with their rate (this Mac). */"; what is wrong: the repository's comment width rule (tests/checks/source/comment-width.test.ts, 100 columns) fails on both lines; the check is not in test:quick. Other comments of the round were left with short unrewrapped lines (Cards.svelte "place. The keyboard's cursor names one of them (the instance's card", Editor.svelte "with the control its catalog spec gives it, the problems of the", references/model.ts), a prettier-width standard the check does not flag. failure scenario: the landing's verify list runs comment-width.test.ts and goes red. verdict: none (landing).
+- Standards R-2, config/text/views/system/workbench.yml:37,42,43,44,51: "editor_add_group: Add a key", "editor_group_down: 'Move key {0} down'"; what is wrong: R5 removes every part that served the holds: lists record shape alone; these five strings were read only by the deleted Rollup.svelte and are now orphaned, and tests/checks/source/keys.test.ts fails on them. The round report claims R5 DONE without this check. failure scenario: the landing's verify list runs keys.test.ts and goes red; the catalog keeps dead strings a translator would maintain. verdict: R5 violated.
+- Standards R-3, tests/data/sources/config/catalog/options.test.ts:80: "it('refuses holds: lists on a family of record fields and keeps it on a key/value family', () => {"; what is wrong: a new row for a refusal of a config shape (a wrong configuration accepted is a cost the rules file names), in a file G-listed in guarded.md line 188 by row titles, and this title is not among them; guarded.md is the orchestrator's to book. failure scenario: a later step edits or drops the row without a guarded-test review, since guarded.md does not name it. verdict: none (booking).
+- Standards R-4, src/lib/state/boards/career.ts:83-85: "if (host.status !== '') return host.status; ... return wordsWith(config, 'career_host_status', 'default')[0] ?? '';"; what is wrong: R7 moves the default into normalise-parts/career.ts:122 and says hostStatusOf "keeps reading the snapshot's word"; hostStatusOf still carries its own copy of the default rule, a fallback for an input normalise no longer gives (spec.md's rule against code larger than its job). failure scenario: a later change to the default rule in normalise leaves a second copy in the board that disagrees for a host built outside normalise, such as a test fixture. verdict: none.
+- Standards R-5, test:quick: "test:quick: 73.2 s (limit 45.0 s); every command passed / test:quick: over the time limit"; what is wrong: the run exceeds the time limit test:quick states; 487 changed files since the base select 250 test files. failure scenario: a builder of a later step treats the limit as already broken and stops reading the warning. verdict: none (the size of the step's diff since the base; the round's own share not measured).
+- Behaviour R-1, live/batch.ts and config/behavior.yml:85 ("poll_min: 20"): the cluster Recover progress and the Login node section now refresh once per Live HPC poll (20 min by default), where round 0 refreshed every 3 s; the round report says "at each Live HPC poll" without the interval or the before and after. failure scenario: a user starting a cluster fetch sees bytes and sessions unchanged for up to 20 minutes and reads the run as stalled. verdict: none.
+- Behaviour R-2, src/lib/views/system/machine/hpc/Login.svelte:100: "<Empty message={t('hpc.login_loading')} />"; the Login node section's error and refused (no host) states are removed: with no Live HPC answer it shows "Waiting for the next Live HPC answer from the login node..." and after a failed poll it keeps the last sessions; the report does not state this before and after. failure scenario: a hub with no hpc_host, or an ssh failure, shows "Waiting..." indefinitely, or stale sessions, in place of the reason. verdict: none.
+- Behaviour R-3, src/lib/server/machine/runs/recover/live/batch.ts:19: "\"$(du -sb ${pathWord(folder)} 2>/dev/null | cut -f 1)\""; what is wrong: a du -sb per session folder now runs inside the one Live HPC batch, whose timeout is 40000 ms (src/lib/server/machine/hpc/poll.ts:114); the report does not say the Live HPC poll's cost grows with the Recover folders. failure scenario: a large dataset folder on NFS makes du exceed the remaining time and the whole Live HPC poll (queue, accounting, nodes) times out. Not verified (no cluster).
+
+### Declined to judge
+
+- Case 14's probe and the builder's other removed probes (cases 21, 32, 33): the probes are not on the tree, and a rerun needs the builder's copies.
+- The look of cases 17, 26, 31 to 35 and items 2.7 and 6: at landing, in a browser the reviewer may not open.
+- The du -sb timing on the cluster and the Live HPC behaviour on a real host: no cluster access is allowed.
+- The builder's first runs on the unchanged tree for R1 and R7: quoted in the round report, not rerun (they need the unchanged tree, which git stash or a checkout would make, outside the three git commands allowed).
+- Whether guarded.md should gain Code lines for live/watch.ts and live/batch.ts beside G1 and G115: the orchestrator's booking.
+- Whether R1's accessOf clause covers the POST fetch (Spec R1-a): the orchestrator's or Axel's ruling.
+
+Reviewer usage: a75fec14c07a3891c, claude-opus-5-5, 94,722 tokens, 89 tool uses, 15.8 min.
+
+### Closed
+
+Dispositions of the findings of the review over round 1, by the orchestrator at landing.
+
+- Spec R1-a: closed by Z948 (automode); the Fetch POST keeps its access check, and no access request runs on a push or a timer.
+- Spec R-2: closed by Z949 (automode); the unpack rows stay tagged slow and wait on the run's end signal; they run in `npm run test:landing`.
+- Proof R-1: closed; the reviewer's rerun of verify item 5 above is the evidence (165 lines in 18 files, the one added line the accented name G<u umlaut>iza, the rest moved byte for byte).
+- Standards R-1: fixed at landing; the two comment lines rewrapped to 100 columns, and the short unrewrapped comment lines of `Cards.svelte`, `Editor.svelte` and `references/model.ts` rewrapped.
+- Standards R-2: fixed at landing; the five strings `settings.editor_add_group`, `editor_group_down`, `editor_group_key`, `editor_group_up` and `editor_remove_group` removed from `config/text/views/system/workbench.yml`.
+- Standards R-3: booked at landing; the row title of `options.test.ts:80` added to the guarded entry of `agents/guarded.md` that lists that file, and `live/watch.ts` and `live/batch.ts` added to the Code lines of G1 and G115.
+- Standards R-4: fixed at landing; `hostStatusOf` in `src/lib/state/boards/career.ts` reads the snapshot's word alone.
+- Standards R-5: closed; the time is the size of the step's diff since the base (487 changed files), and `test:quick` passed.
+- Behaviour R-1: raised to Axel as open item 170 (the cadence of the cluster reading); the landing report states the before and after.
+- Behaviour R-2: fixed at landing; the Login node section shows Live HPC's reason when Live HPC has no answer, in place of the waiting words.
+- Behaviour R-3: fixed at landing; each `du -sb` of Recover's section runs under `timeout 5`, so a slow folder leaves its bytes out and never holds the Live HPC poll past its timeout.
+- Found by the orchestrator at landing: `Lanes.svelte:103` decides by the chip word `blocked`; fixed at landing through the `blocked` flag of `statuses`, a place of item 14.
