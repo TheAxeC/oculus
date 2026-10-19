@@ -171,8 +171,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 173 (2026-10-19, a setting for the suggest panel): with 172 (a) the panel starts shown and the reader's last choice is kept, with no setting, as VS Code has none. (a) A toggle `editor.suggest_details` in `config/behavior.yml`, default true, listed in Settings under the editor heading: the value the panel starts at and the one Reset gives, the reader's choice kept over it, as the theme starts from `config/appearance.yml` and keeps the reader's pick (`ui.svelte.ts:8-12`). (b) No setting: the start value is a constant in code (the lazy option, and a behaviour value outside config). Recommendation (a).
-
 
 
 
@@ -217,6 +215,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Open item 170 (2026-10-19, one list of every shortcut): (a), in O38 Part 16: a generated Keyboard Shortcuts view opened by `?`, `:keys` and the desktop menu, `:help` working (Axel). (c) was the lazy option.
 - Open item 171 (2026-10-19, palette arguments complete): (a) with (a1), in O38 Part 17: `:theme`, `:file-icons`, `:tab` and `:goto` list their choices, the first two previewing as the selection moves (Axel). (c) was the lazy option.
 - Open item 172 (2026-10-19, the suggest list's descriptions): (a), in O38 Part 15 item 3: the panel opens shown and the reader's choice is kept across reloads (Axel). (c) was the lazy option.
+- Open item 173 (2026-10-19, a setting for the suggest panel): (a), in O38 Part 15 item 3: a toggle `editor.suggest_details` in `config/behavior.yml`, default true, in Settings under the editor heading, the reader's choice kept over it (Axel). (b) was the lazy option.
 
 - Open item 166 (2026-10-19, oculus config consolidation): (1) to (6) yes, in O38: `statuses`, `types`, the rail entries carrying their catalogue group, `boards`, the hub's own career words moved to the hub, `focus` in `behavior.yml`; no behaviour changed (Axel).
 
