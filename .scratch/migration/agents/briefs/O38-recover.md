@@ -8,7 +8,7 @@ Today Recover runs `python3 tools/data/redownload.py <key>` in a terminal. The s
 
 ## 1. The registry: every dataset gets a recipe
 
-`retrieval` becomes a list of sources. Each source has a `kind`, the fields that kind needs, `into:` (a folder below the dataset's folder, default the folder itself) and `unpack: true` when its archives are to be unpacked after the check. The dataset's folder is `path:`, one folder under `~/data/<key>`, the same on the Mac and on the cluster; it replaces `hpc_path`, whose free text (several paths, notes in brackets) moves to `notes`.
+`retrieval` becomes a list of sources. Each source has a `kind`, the fields that kind needs, `into:` (a folder below the dataset's folder, default the folder itself) and `unpack: true` when its archives are to be unpacked after the check. The dataset's folder is `path:`, one folder per dataset, the same on the Mac and on the cluster, under `~/data` for every set the hub holds and on the shared store for hccnet-mri (`/deepstore/datasets/bms/hcc_study`); it replaces `hpc_path`, whose free text (several paths, notes in brackets) moves to `notes`. The key is not the folder's name: no folder is renamed to its key, and `path:` names the folder each set has (open item 154). The help text of the `key` field (`registries/data.yml:25`) drops "and as its folder name under ~/data".
 
 | Kind | Fields | File list and checksums come from |
 |---|---|---|
@@ -27,7 +27,7 @@ Today Recover runs `python3 tools/data/redownload.py <key>` in a terminal. The s
 | `request` | `contact` (who grants access) | none: Recover is not offered; the card shows whom to ask |
 | `derived` | `from` (the source dataset), `script` (the project script that builds it) | none: Recover is not offered; the card links the source and the script |
 
-Each of the 54 entries, rewritten:
+Each of the 54 entries, rewritten, and the four new ones:
 
 | Datasets | Kind | Checked against the source |
 |---|---|---|
@@ -58,11 +58,17 @@ Each of the 54 entries, rewritten:
 | wisconsin-breast-cancer | `library`: `sklearn.datasets.load_breast_cancer()`, which ships inside scikit-learn and downloads nothing | |
 | pdebench | `url`, the five files btfno uses from PDEBench's `pdebench_data_urls.csv` (DaRUS addresses with md5): `2D_diff-react_NA_NA.h5`, `2D_rdb_NA_NA.h5`, `2D_CFD_Rand_M0.1_Eta0.1_Zeta0.1_periodic_128_Train.hdf5`, `2D_CFD_Rand_M1.0_Eta0.01_Zeta0.01_periodic_128_Train.hdf5`, `2D_CFD_Rand_M1.0_Eta0.1_Zeta0.1_periodic_128_Train.hdf5` | listed with md5 |
 | ddsm | `tcia` collection CBIS-DDSM | the collection is listed; no project names ddsm |
+| fed-faithful-ecg-cache (new entry, `~/data/fed-faithful-ecg-cache`) | `derived` from ptb-xl and mimic-iv-ecg, `code/build_caches.py` of ecg-readable-substrate | four npz, 612 MB |
+| ecg-readable-substrate (new entry, `~/data/ecg-readable-substrate`) | `derived` from ptb-xl, mimic-iv-ecg and code15, `code/embed/extract.py` of ecg-readable-substrate | `emb/`, two npz |
+| ms-lipid-handshake (new entry, `~/data/ms-lipid-handshake`) | `derived` from absinta-gse180759, jakel-gse118257 and macnair2024, `code/paper.py` of ms-lipid-handshake | its `cache/` |
+| fed-immune-tensor (new entry, `~/data/fed-immune-tensor`) | `derived` from the 9 cellxgene sets, `code/paper.py` of fed-multicellular-immune | its `cache/` |
 
 Registry defects this fixes:
 
 - jakel-gse118257's notes name two files GEO does not hold.
-- absinta, jakel and macnair2024 put their files in `$MSLH_SCRATCH/data/...`, and the 9 cellxgene sets share `~/data/fed-immune-tensor/data/`; both break the hub's rule of one folder per dataset under `~/data/<key>`. Each gets `path: ~/data/<key>`, and the project code that reads them follows.
+- absinta, jakel and macnair2024 put their files in `$MSLH_SCRATCH/data/...`, and the 9 cellxgene sets share `~/data/fed-immune-tensor/data/`; both break the hub's rule of one subfolder per dataset (`CLAUDE.md:72`). Each moves into a new folder `~/data/<key>` (open item 153), and the project code that reads them follows; the two old folders keep only the projects' caches, registered as `derived` sets.
+- Three sets sit in more than one folder, and each is gathered into one of its existing folders (open item 154): the MIMIC-IV-ECG zip moves from `~/data/archive/` into `~/data/mimic-ecg/` on the cluster; the PTB-XL zip and its extracted files move into `~/data/ptb-xl/`, where every reader already expects `ptbxl_database.csv` and the records, and `bttn-incident-af/code/run_all.sh:55-69` extracts there directly, without the `ptb-xl-raw/` folder, the symlink and its `rm -rf "$DATA/ptb-xl"`; `PED_unzip/` and `BraTS-PED/` move into `~/data/BraTS-METS/`. `~/data/archive/` is then empty and goes. The files that read them change with them: bttn-incident-af `code/core/config.py:32-35`, `code/run_all.sh:40,55-69` and README; covert-applied `code/experiments/extract_mimic_features.py:34` and README; glassbox `code/pipeline/core/config.py` (`mimic_zip()`), `code/pipeline/cohort/mimic_cohort.py`, six hpc scripts, `code/README.md` and README; ecg-readable-substrate `code/core/config.py` (`mimic_zip()`), five hpc scripts, `code/tier0/gate.py`, `code/README.md` and README; raw-pls `code/attic/external_validation/ped_probe.slurm:14-17` and `build_ped.py:11`; the registry entries' `path:` and notes.
+- mne-sample and mne-fsaverage keep `~/data/mne/MNE-sample-data` and `~/data/mne/MNE-fsaverage-data`, one subfolder each, and bttd-source-eeg is not changed.
 - picai has no recipe, and mimic-iv's `throttle` is honoured.
 
 ## 2. The Recover view
@@ -78,8 +84,10 @@ Recover on a card opens the dataset's Recover view, a view opened for one thing 
 
 The run belongs to the server, not to the view: closing the view or the window leaves it running; opening the view again shows where it is.
 
-- **On this Mac,** the oculus server downloads with HTTP range requests and computes each checksum while the file streams in, so no `wget` is needed.
-- **On the cluster,** the download runs with `wget -c` on the login node (`hpc-head1`, the one host the `utwente` alias reaches), where the cluster's guide (`docs/HPC-UTwente-howto.md:92`) says downloads belong, inside a tmux session on the socket `oculus-recover`, one session per dataset, with `wget` writing its log to a file in the dataset's folder. A dropped connection leaves the session running; oculus reconnects by asking `tmux -L oculus-recover ls` and reading the log and the file sizes. Checking and unpacking are compute, so they go to a compute node as one `sbatch` job whose output the view reads.
+- **The download, on both targets,** is `curl --fail -L -C - --retry 5 -o <file> <url>` run as a process of its own (open item 154, part 1), so it outlives the oculus server and the view reattaches. A token (Kaggle, Synapse) reaches curl through a header file written with mode 600 or through stdin, never on the command line; oculus never passes `--netrc` and never opens `~/.netrc`. Progress is the file's size on disk against the size the source lists.
+- **On this Mac,** the server starts curl detached and keeps its pid and its log in `~/.oculus/recover/<hub>/<key>.*`; after a restart it finds the run by the pid. The checksum is computed after the download, by the server streaming the file through the hash.
+- **On the cluster,** curl runs on the login node (`hpc-head1`, the one host the `utwente` alias reaches), where the cluster's guide (`docs/HPC-UTwente-howto.md:92`) says downloads belong, inside a tmux session on the socket `oculus-recover`, one session per dataset, writing its log to a file in the dataset's folder. A dropped connection leaves the session running; oculus reconnects by asking `tmux -L oculus-recover ls` and reading the log and the file sizes. Checking and unpacking are compute, so they go to a compute node as one `sbatch` job whose output the view reads, its work under `/local/$SLURM_JOB_ID` as `scratch.ts` enforces.
+- **Unpacking, on both targets,** is `7z-wasm` 1.2.0 (7-Zip 24.09 in WebAssembly, LGPL-2.1 with the unRAR restriction; open item 154, part 2), run under Node with the dataset's folder mounted through NODEFS. It reads the zip and 7z archives the sources hold, files over 4 GiB included, in flat memory. On the cluster the sbatch job runs it under the cluster's Node; that a compute node has Node is not verified while the cluster is unreachable, and the landing checks it.
 - **Live HPC** gains a section "Login node" beside the queue: each Recover session on the socket `oculus-recover`, with its dataset, bytes done, rate and state, and Stop. It lists only oculus's own sessions, since they are not jobs and `squeue` does not show them.
 - A dataset whose kind is `library`, `request` or `derived` has no Recover control; its card states the call, the contact, or the source and the script.
 
@@ -96,7 +104,7 @@ New and rewritten:
 - The server module that reads a source's file list, compares it with the target folder, runs the fetch, the checks and the unpack, and writes the log; its routes.
 - The Recover view, its state and its text catalogue; the card's Recover control opening it (`DatasetCard.svelte`).
 - `recover` in `src/lib/data/model/model-entities.ts:515-518`: true when every source of the entry is of a kind Recover runs.
-- The registry's schema in `registries/data.yml:22-50` (`path`, the `retrieval` sources and their fields), its header `:1-20`, and all 54 entries as in section 1.
+- The registry's schema in `registries/data.yml:22-50` (`path`, the `retrieval` sources and their fields), its header `:1-20`, all 54 entries and the four new ones as in section 1.
 - `docs/templates.md`'s `data.yml` block: the kinds and their fields.
 - `DESIGN.md:696` (recovery is oculus's own, from the entry's sources, which replaces the decision that it is the hub's command) and `HELP.md:284`; `DESIGN.md:738`, whose example path names `tools/data/redownload.py`.
 - The hub `README.md:10,18`.
@@ -111,6 +119,9 @@ New and rewritten:
 5. bci-iv-4 is `request`.
 6. Nothing is written back to the registry after a recovery; the log holds the record.
 
-## Option (b)
+## Decisions, ruled (open item 154)
 
-The same work as a step of its own landing before O38. The lazy option: it splits O38's own work out of O38.
+1. Downloads by curl as a process of its own on both targets.
+2. Unpacking by `7z-wasm` 1.2.0 on both targets.
+3. No folder renamed to its key; `path:` names each set's folder; the three spread sets gathered into one existing folder each.
+4. The four unregistered folders registered as `derived` sets; `ecgfounder_net1d.py`, `hubert_dataset.py` and `hubert_ecg_inspect.py` deleted from `~/data`.
