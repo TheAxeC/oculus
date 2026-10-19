@@ -1,0 +1,22 @@
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+content-length: 10428
+date: Mon, 19 Oct 2026 08:23:43 GMT
+etag: W/"28bc-jEtGGuWDz0LXjR+2/v6fiS9NoPk"
+x-powered-by: huggingface-moon
+x-request-id: Root=1-6ad5d38f-136ceabd26fc1075383ae522
+ratelimit: "api";r=499;t=273
+ratelimit-policy: "fixed window";"api";q=500;w=300
+cross-origin-opener-policy: same-origin
+referrer-policy: strict-origin-when-cross-origin
+access-control-max-age: 86400
+access-control-allow-origin: https://huggingface.co
+vary: Origin
+access-control-expose-headers: X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+link: <https://huggingface.co/api/datasets/mathpluscode/ACDC/tree/main?expand=false&recursive=true&limit=100&cursor=ZXlKbWFXeGxYMjVoYldVaU9pSjBjbUZwYmk5d1lYUnBaVzUwTURRNElpd2lkSEpsWlY5dmFXUWlPaUkxTmpKaFltWmtOMlkyTmpKbE5XWTBPVEZsTVRKbE5EVmpaVGc0WWprMk16ZGtNRFU1T0dKaUluMD06MTAw>; rel="next"
+x-cache: Miss from cloudfront
+via: 1.1 3ab47e7bb911be04b665845f18319950.cloudfront.net (CloudFront)
+x-amz-cf-pop: AMS58-P3
+alt-svc: h3=":443"; ma=86400
+strict-transport-security: max-age=31536000
+

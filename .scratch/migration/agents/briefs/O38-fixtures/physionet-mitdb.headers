@@ -1,0 +1,11 @@
+HTTP/2 200 
+server: nginx/1.22.1
+date: Mon, 19 Oct 2026 08:23:34 GMT
+content-type: text/plain; charset=utf-8
+content-length: 60849
+last-modified: Fri, 09 Aug 2019 17:42:01 GMT
+content-disposition: inline; filename=SHA256SUMS.txt
+etag: "5d4db069-edb1"
+content-security-policy: sandbox; default-src 'self'
+accept-ranges: bytes
+

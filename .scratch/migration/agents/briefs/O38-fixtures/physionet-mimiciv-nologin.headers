@@ -1,0 +1,11 @@
+HTTP/2 403 
+server: nginx/1.22.1
+date: Mon, 19 Oct 2026 08:23:41 GMT
+content-type: text/html; charset=utf-8
+content-length: 11795
+x-frame-options: DENY
+vary: Authorization, Origin, Cookie
+x-content-type-options: nosniff
+referrer-policy: same-origin
+cross-origin-opener-policy: same-origin
+

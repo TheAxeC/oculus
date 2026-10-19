@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Date: Mon, 19 Oct 2026 08:23:44 GMT
+Server: Apache/2.4.52 (Ubuntu)
+cache-control: max-age=0, private, must-revalidate
+strict-transport-security: max-age=31536000; includeSubDomains
+referrer-policy: strict-origin-when-cross-origin
+x-permitted-cross-domain-policies: none
+x-xss-protection: 0
+x-request-id: 1c3f97cb-f043-4b0c-b49a-1ec85cbe8538
+x-frame-options: SAMEORIGIN
+x-runtime: 0.023623
+x-content-type-options: nosniff
+Last-Modified: Mon, 07 Jul 2025 13:19:42 GMT
+etag: W/"9bd828443a8ad1d746e5954dfa7a3712"
+Status: 200 OK
+Vary: Accept-Encoding
+Access-Control-Allow-Origin: *
+Transfer-Encoding: chunked
+Content-Type: application/json; charset=utf-8
+

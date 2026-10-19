@@ -19,10 +19,10 @@ Today Recover runs `python3 tools/data/redownload.py <key>` in a terminal. The s
 | `huggingface` | `repo`, `patterns` (optional) | the Hugging Face tree API (sha256 per large file, size for the rest) |
 | `stanford` | `druid`, `files` (optional) | the Stanford purl record (sha1 per file) |
 | `geo` | `accession`, `files` | the GEO supplementary listing (size only; GEO publishes no checksum) |
-| `kaggle` | `dataset` (owner/slug) | the Kaggle API, with your Kaggle token in `~/.kaggle/kaggle.json` (size only) |
+| `kaggle` | `dataset` (owner/slug) | the Kaggle API, with the Kaggle user and key of the `downloads` row `kaggle` in `local.yml` (size only) |
 | `tcia` | `collection`, `series` (optional) | the TCIA NBIA API (the series list; checksums not verified) |
-| `synapse` | `ids` | the Synapse API, with a Synapse token (md5 per file) |
-| `url` | `urls`, `sha256` per URL (optional) | the response's length, and the checksum when the entry gives one |
+| `synapse` | `ids` | the Synapse API, with the token of the `downloads` row `synapse` in `local.yml` (md5 per file) |
+| `url` | `urls`, a list of `{ url, sha256 }` with `sha256` optional | the response's length, and the checksum when the entry gives one |
 | `library` | `call` (the library function that fetches it) | none: Recover is not offered; the card shows the call |
 | `request` | `contact` (who grants access) | none: Recover is not offered; the card shows whom to ask |
 | `derived` | `from` (the source dataset), `script` (the project script that builds it) | none: Recover is not offered; the card links the source and the script |
@@ -77,17 +77,17 @@ Recover on a card opens the dataset's Recover view, a view opened for one thing 
 
 1. **Target.** This Mac or the cluster (the host Live HPC uses), and the folder `path:` names there, with the free space on that disk.
 2. **The plan.** One row per file every source lists: its name, its size, its checksum, and its state on the target: verified, present but not yet checked, partial (smaller than the source says), different (checksum does not match), or missing. Totals: files, bytes to fetch, bytes missing against the free space.
-3. **Access.** For a credentialed or a Synapse source, whether access is set up. PhysioNet: `~/.netrc` on the target has a `machine physionet.org` line, checked by `grep -q` on the target, so oculus never reads the file. Synapse: a token among the accounts in `local.yml`, entered by you in Settings like the other accounts. Missing access shows the setup steps and disables Fetch.
+3. **Access.** For a credentialed, a Kaggle or a Synapse source, whether access is set up: the `downloads` row of its service in the primary hub's `local.yml` (`service` physionet, kaggle or synapse, `user`, `secret`), checked by the server with one login request to the service (for PhysioNet, the set's `SHA256SUMS.txt` answering 200). Missing access shows the setup steps and disables Fetch.
 4. **Actions.** Fetch (every file that is missing, partial or different), Fetch on a selected row, Verify, Unpack, Stop. Fetch resumes a partial file from where it stopped.
 5. **Progress.** Per file and in total: bytes done, rate and time left; then the checksum result of each file.
 6. **Log.** Every request, command and result with its time, kept in `~/.oculus/recover/<hub>/<key>.log`, like the deposit mirrors in `~/.oculus/deposits`, shown in the view.
 
 The run belongs to the server, not to the view: closing the view or the window leaves it running; opening the view again shows where it is.
 
-- **The download, on both targets,** is `curl --fail -L -C - --retry 5 -o <file> <url>` run as a process of its own (open item 154, part 1), so it outlives the oculus server and the view reattaches. A token (Kaggle, Synapse) reaches curl through a header file written with mode 600 or through stdin, never on the command line; oculus never passes `--netrc` and never opens `~/.netrc`. Progress is the file's size on disk against the size the source lists.
+- **The download, on both targets,** is `curl --fail -L -C - --retry 5 -o <file> <url>` run as a process of its own (open item 154, part 1), so it outlives the oculus server and the view reattaches. A credential (PhysioNet, Kaggle, Synapse) reaches curl through a curl config file written with mode 600 on the target, sent to the cluster with the copier, deleted when the run ends and before each run; never on the command line or in the log. Oculus never passes `--netrc` and never opens `~/.netrc` or `~/.kaggle/kaggle.json`. Progress is the file's size on disk against the size the source lists.
 - **On this Mac,** the server starts curl detached and keeps its pid and its log in `~/.oculus/recover/<hub>/<key>.*`; after a restart it finds the run by the pid. The checksum is computed after the download, by the server streaming the file through the hash.
 - **On the cluster,** curl runs on the login node (`hpc-head1`, the one host the `utwente` alias reaches), where the cluster's guide (`docs/HPC-UTwente-howto.md:92`) says downloads belong, inside a tmux session on the socket `oculus-recover`, one session per dataset, writing its log to a file in the dataset's folder. A dropped connection leaves the session running; oculus reconnects by asking `tmux -L oculus-recover ls` and reading the log and the file sizes. Checking and unpacking are compute, so they go to a compute node as one `sbatch` job whose output the view reads, its work under `/local/$SLURM_JOB_ID` as `scratch.ts` enforces.
-- **Unpacking, on both targets,** is `7z-wasm` 1.2.0 (7-Zip 24.09 in WebAssembly, LGPL-2.1 with the unRAR restriction; open item 154, part 2), run under Node with the dataset's folder mounted through NODEFS. It reads the zip and 7z archives the sources hold, files over 4 GiB included, in flat memory. On the cluster the sbatch job runs it under the cluster's Node; that a compute node has Node is not verified while the cluster is unreachable, and the landing checks it.
+- **Unpacking, on both targets,** is `7z-wasm` 1.2.0 (7-Zip 24.09 in WebAssembly, LGPL-2.1 with the unRAR restriction; open item 154, part 2), run under Node with the dataset's folder mounted through NODEFS. It reads the zip and 7z archives the sources hold, files over 4 GiB included, in flat memory. On the cluster the sbatch job runs it under the official Node linux-x64 build that Recover places in `~/.oculus/recover/node/`, checked against its `SHASUMS256.txt` (open item 156).
 - **Live HPC** gains a section "Login node" beside the queue: each Recover session on the socket `oculus-recover`, with its dataset, bytes done, rate and state, and Stop. It lists only oculus's own sessions, since they are not jobs and `squeue` does not show them.
 - A dataset whose kind is `library`, `request` or `derived` has no Recover control; its card states the call, the contact, or the source and the script.
 
