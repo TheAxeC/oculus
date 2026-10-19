@@ -34,6 +34,8 @@ dispatch:         # steps in flight, up to six (Z632)
   session_id: abb312c8613a724c7 (claude-opus-5-5)
   launched: 2026-10-19
   report: agents/reviews/O38-report.md
+  builder_usage: round 0 hand-back on case 16, 298,198 tokens, 54 tool uses, 8.7 min
+  cases_ruling: agents/briefs/O38-cases.md
   round: 0
   landing: not-started
 ```
