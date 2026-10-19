@@ -1,7 +1,8 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (2 steps):
+Queued, in order (3 steps):
 - O38 (cockpit retired, hub tools cleaned, Recover built into oculus): next; /spec stopped on open item 154 (download and unpack libraries, folder names, unregistered data).
+- O43 (the rice theme's Brackets and Monospace toggles): once O38 has landed.
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.
