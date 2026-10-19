@@ -171,6 +171,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 174 (2026-10-19, a Kaggle token row in `local.yml`). Axel's `local.yml` holds two Kaggle rows under `downloads:`: `service: kaggle` with the legacy key of `kaggle.json`, and `service: kaggle-token` with Kaggle's new API token. O38 Part 1 item 3 knows three services (physionet, kaggle, synapse), and its case 19 reports an unknown service as a problem, so the `kaggle-token` row would show as a problem in Settings and the Audit. Kaggle's docs say a legacy `kaggle.json` "will continue to work"; how the new token is sent on an API request is not documented in what was read, and no authenticated answer can be recorded as a fixture. (a) `kaggle-token` becomes a fourth known service, `secret` only, shown in Settings as set, not used by Recover, which logs in with the `kaggle` row; pro: the file reads clean and no unproven login is built; con: a stored credential Recover does not use. (b) `kaggle-token` is known and Recover prefers it, sending the token as a bearer header and falling back to the `kaggle` row; pro: Recover keeps working if Kaggle retires the legacy key; con: the bearer login is not verified and would land with no recorded answer behind it. (c) Three services stay; the `kaggle-token` row is reported as a problem and Axel removes it; the lazy option. Recommendation: (a).
+
 
 
 
