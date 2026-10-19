@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, config consolidated, the Keyboard Shortcuts view and palette lists): building.
 
-Queued, in order (2 steps):
-- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, the rice toggles): next; open items 157 and 158 ruled, /spec runs again.
+Queued, in order (1 step):
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.
