@@ -158,6 +158,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 160 (2026-10-19, O38, the other files Make Folder a Hub writes): of bookmarks.yml, schedules.yml, a workspace file, the four update tasks and the repository files settings.yml, commands.yml, launch.yml and cpp.yml, only schedules.yml is recommended: a comments-only file from templates.md's block, which the reader and the tray's first write handle (`server/machine/runs/schedules/file.ts:9-10,25-26`) and which shows the shape for writing a schedule by hand. Not recommended: bookmarks.yml (made by its first write by design, `server/files/fs/bookmarks.ts:15-16`); a workspace (the hub is already a folder of the workspace it is made in); the update tasks (a held task file is offered in the tray, `server/machine/runs/schedules/task.ts:53,62`, so four placeholder tasks could be run); the repository files (they belong to a repository, which a hub need not be).
 
 
 
