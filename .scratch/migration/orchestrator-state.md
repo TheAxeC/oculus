@@ -171,7 +171,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 164 (2026-10-19, O38, which views the rail sums): today each view's code decides whether its count joins its rail button's sum (a `railPart` hook in 8 files, `RAIL_COLLECTIONS` of `rail-part.ts:9` among them). Options: (a) a new `config/layout.yml` key listing the view ids whose tab count the rail sums, edited in Settings under Tab badges beside `nav_live`, its default today's 14 views plus `events`; every view that draws a count (the five that count on their tab only included) keeps a count hook in code, and a listed id with no count is a finding; (b) a `rail: true` field on `nav_live` rows, which reaches only the collections and leaves Inbox, Problems and the others in code; (c) keep it in code. Recommendation (a). (b) and (c) are the lazy options. Part 10's rail half waits on this ruling.
+- Open item 165 (2026-10-19, O38, the shape of the counts key): 164 (a) puts in `config/layout.yml` which views the rail sums; whether a tab draws its count at all stays in code for every view outside the collections. Options: (i) a list key of the view ids the rail sums, tab counts left always on; (ii) one key holding, per view id, `{ tab, rail }`: `tab` whether the tab draws its count, `rail` whether the count joins the rail sum, its default today's behaviour plus `events` on both, every count-drawing view listed (Projects, Coauthor, Personal, Archive, Software, Inbox, Leads, Calendar, Repositories, Problems, Findings, Audit, Processes, Live HPC, the Session list, and each collection with a `nav_live` row), a view with no count named in it a finding, `nav_live` staying the rule for what a collection counts. Recommendation (ii), with the key named `counts`. (i) is the lazy option. Live HPC's rail count is its running plus pending jobs, the two numbers its tab draws.
+
 
 
 
@@ -201,6 +202,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports used nowhere (twelve, among them `holdTerminals`, `stubFetch` and the whole of `feeds-fixture.ts`): O37, defect 8.
 
 ## Closed items
+
+- Open item 164 (2026-10-19, O38, which views the rail sums): (a), a `config/layout.yml` key chooses the views whose count the rail sums, edited in Settings under Tab badges; every view that draws a count keeps a count hook in code; a listed view with no count is a finding (Axel). Its shape is open item 165.
 
 - Open item 163 (2026-10-19, O38, the repository items' names): (b), two items: Make Folder a Git Repository, offered only on a folder with no `.git`, runs `git init` at once; Add Repository Configuration..., offered on a repository (a served root or a folder holding `.git`) that lacks one of the four files, opens the dialog of checkboxes (Axel).
 - Open item 162 (2026-10-19, O38, the two make dialogs): (a), every file a make writes is listed; and both dialogs are reorganised: each group opens with a sentence saying what it is for, each row is a checkbox, the name and one short line of what it holds, with the file's path under it in small text or in its tooltip rather than at the row's far right, and the Collections group gets the same treatment (Axel).
