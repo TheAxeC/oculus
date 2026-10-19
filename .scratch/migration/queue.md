@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (2 steps):
-- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, the rice toggles): blocked on open item 158 (and 157 for the cluster move at landing); /spec runs again after the ruling.
+- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, the rice toggles): next; open items 157 and 158 ruled, /spec runs again.
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.
