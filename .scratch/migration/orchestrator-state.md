@@ -171,6 +171,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 164 (2026-10-19, O38, which views the rail sums): today each view's code decides whether its count joins its rail button's sum (`railPart` in 13 registrations, `RAIL_COLLECTIONS` in `rail-part.ts:9`). Options: (a) a new `config/layout.yml` key listing the view ids whose tab count the rail sums, edited in Settings under Tab badges beside `nav_live`, its default today's 14 views plus `events`; every view that draws a count (the five that count on their tab only included) keeps a count hook in code, and a listed id with no count is a finding; (b) a `rail: true` field on `nav_live` rows, which reaches only the collections and leaves Inbox, Problems and the others in code; (c) keep it in code. Recommendation (a). (b) and (c) are the lazy options. Part 10's rail half waits on this ruling.
+
 
 
 
