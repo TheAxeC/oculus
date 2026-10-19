@@ -9,7 +9,7 @@
 # Every entry outside local.yml holds `help`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `help` and `section`, is listed under This machine with the value in force, and holds `control` where the key takes a number or a choice, and `fields` for a list of records, so the editor checks the file's keys and values by the entry.
 # The controls are toggle, number, text, long (a text area), choice, multi (several words of a list), list (one text box per item), glyph (a name of catalogs/glyphs.yml), hue (a palette hue name), colour (a palette hex, drawn as its hue), folder and file (a path inside the hub, offered from the files there), path (an absolute or ~/ path), parked (a list whose items can only be removed) and, in a family field, records (a nested list of records described by its own `fields`).
 # A choice or multi names its words in `options`, or the list they come from in `from` (one source, or a list of sources offered together; SOURCES in options.ts), or for a field in `from: { field, sources }` the source another field of the record names. On a text, `from` names the source a text box suggests from and the value is not held to it; `empty: true` adds the empty value to a choice or path, and `empty: <words>` does the same and gives the words the choice draws for its empty item; `min` and `max` bound a number; `slots` names the fixed items of a list; `items: number` makes a list's items numbers; `whole: true` holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or each item of a list, to one of the forms of FORMS in options.ts: `program` (no slash or white space), `extension` (a dot and one segment) or `bundle_id` (two or more dot-separated segments of letters, digits and dashes); `joined: true` writes a multi as one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of the record is true.
-# A family's entry holds `help` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its help line alone (a text box) or a map of `help`, `control` and the keys above.
+# A family's entry holds `help` and `fields`, and, for a key/value family (fields `key` and `value`) whose every key holds a list of values (`languages`), `holds: lists`; the reader refuses `holds: lists` on any other entry, and a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its help line alone (a text box) or a map of `help`, `control` and the keys above.
 # A value outside its control, `min`, `max` or `options` is wrong by one rule, src/lib/data/sources/config/catalog/value-rule.ts: the Settings view refuses it before the write, the server's write refuses it, and one written by hand is a finding naming the file and the key while the reader uses the `default`.
 options:
     appearance.yml:
@@ -167,20 +167,13 @@ options:
                 value:
                     help: the most characters the field may hold before it earns a finding
                     control: number
-        waiting_status:
-            heading: boards
-            section: Audit checks
-            help: Collection-entry statuses that wait on someone else, compared without regard to case. The audit asks for a date on an entry in one of them, so that it can be tracked.
-            default: [submitted, pending, under review, under-review]
-            control: multi
-            from: entry_statuses
         audit_ignore:
             heading: boards
             section: Audit checks
             help: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
             default: []
             control: parked
-        stale_lag_days:
+        focus.stale_lag_days:
             heading: boards
             section: Audit checks
             help: How many days a project's manifest `updated` date may trail the newest content of the project before the audit and the Focus board call the manifest behind.
@@ -217,60 +210,95 @@ options:
             default: haiku
             control: choice
             from: models
-        refresh_stale_days.litwatch:
+        focus.refresh_stale_days.litwatch:
             heading: boards
             section: Thresholds and horizons
             help: Days after which the Focus refresh strip prompts to refresh the literature radar, counted from meta.last_run of the radar file. A radar that has never run is prompted for while this key is present. Removing the key stops the prompt for this feed.
             default: 14
             control: number
-        refresh_stale_days.inbox:
+        focus.refresh_stale_days.inbox:
             heading: boards
             section: Thresholds and horizons
             help: Days after which the Focus refresh strip prompts to triage the inbox again, counted from the run date the triage skill writes at the top of triage.json under mail_dir. A note that the page's triage action writes keeps that date, so it does not reset the count, and with no run date there is no prompt. Removing the key stops the prompt for this feed.
             default: 2
             control: number
-        refresh_stale_days.scout:
+        focus.refresh_stale_days.scout:
             heading: boards
             section: Thresholds and horizons
-            help: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the position-leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
+            help: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
             default: 7
             control: number
-        deadline_horizon_days:
+        focus.deadline_horizon_days:
             heading: boards
             section: Thresholds and horizons
             help: How many days ahead the week's ticker lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, tasks, positions and joint work.
             default: 90
             control: number
-        leads_horizon_days:
+        focus.leads_horizon_days:
             heading: boards
             section: Thresholds and horizons
-            help: How many days ahead the week's ticker lists the deadline of an open position lead from the position-leads file.
+            help: How many days ahead the week's ticker lists the deadline of an open position lead from the leads file.
             default: 21
             control: number
-        conf_horizon_months:
+        focus.conf_horizon_months:
             heading: boards
             section: Thresholds and horizons
             help: How many whole months ahead the week's ticker lists a conference call that has a usual month but no exact date. 1 lists this month and the next.
             default: 1
             control: number
-        leads_badge_days:
-            heading: boards
-            section: Thresholds and horizons
-            help: Position Leads counts an open lead whose deadline falls from today through this many days ahead in the count badge of its rail entry.
-            default: 14
-            control: number
-        venue_conc_warn:
+        focus.venue_conc_warn:
             heading: boards
             section: Thresholds and horizons
             help: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and the board statistics flag the venue.
             default: 4
             control: number
-        linkedin_cadence_days:
+        focus.linkedin_cadence_days:
             heading: boards
             section: Thresholds and horizons
             help: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
             default: 30
             control: number
+        focus.ticker_categories:
+            heading: boards
+            section: Command center
+            help: The command center's deadline groups, in the order it lists them. A category no row of `focus.ticker_sources` gives draws no group, and a dated line whose category this list does not hold is not listed.
+            default: [paper, funding, event, teaching, position, collab, task, conference]
+            control: list
+        focus.ticker_sources:
+            heading: boards
+            section: Command center
+            help: "Where the command center's dated lines come from, in the order they are read: each row a source and the category its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub. A source no row names is not read."
+            fields:
+                collection:
+                    help: the source, projects, funding, leads, venues or the key of a collection of the hub
+                    control: text
+                category:
+                    help: the category of `focus.ticker_categories` the source's lines carry
+                    control: text
+                undated:
+                    help: true when an undated entry of the collection is open work, listed among the tasks; an undated entry of any other source is left out
+                    control: toggle
+        focus.applications_open:
+            heading: boards
+            section: Command center
+            help: The statuses of an Applications entry that is open, compared without regard to case. The Focus board's positions column shows those entries and the Applications tab counts them.
+            default: [active]
+            control: multi
+            from: entry_statuses
+        focus.education_open:
+            heading: boards
+            section: Command center
+            help: The statuses of an education entry that is running, compared without regard to case. The Focus board's teaching column shows those entries.
+            default: [ongoing]
+            control: multi
+            from: entry_statuses
+        focus.applications_sent:
+            heading: boards
+            section: Command center
+            help: The statuses of an Applications entry that is out for a decision, compared without regard to case. The Focus board's Awaiting box lists those entries under Applications.
+            default: [applied]
+            control: multi
+            from: entry_statuses
         file_index.enabled:
             heading: boards
             section: File finder
@@ -313,7 +341,7 @@ options:
         slurm.resource:
             heading: cluster
             section: Slurm
-            help: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. This is a setting of the hub, kept in the hub's .oculus/config.yml. The machine's own hpc_host in local.yml takes precedence. Empty sets no cluster, and the HPC view says so and polls nothing. A key that names no cluster with a host shows why in the HPC view."
+            help: "The cluster the Live HPC poller queries: the key of a cluster entry of the resources registry, whose host is the ssh alias. This is a setting of the hub, kept in the hub's .oculus/config.yml. The machine's own hpc_host in local.yml takes precedence. Empty sets no cluster, and the HPC view says so and polls nothing. A key that names no cluster with a host shows why in the HPC view."
             default: ''
             control: choice
             empty: no cluster
@@ -453,6 +481,12 @@ options:
             heading: editor
             section: Source editor
             help: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, from the symbols pyright, clangd and yaml-language-server answer for a Python, C, C++ or YAML file they serve, and from the braces of Java, Dart, R and Rite, and of C and C++ while no language server serves the file.
+            default: true
+            control: toggle
+        editor.suggest_details:
+            heading: editor
+            section: Source editor
+            help: Whether the suggest list opens with its side panel of descriptions shown. Ctrl+Space or Cmd+I while the list shows closes or opens the panel, and this browser keeps that choice over this setting from then on, in every editor of the page.
             default: true
             control: toggle
         editor.autosave:
@@ -958,15 +992,50 @@ options:
                     help: a key of arrangements, which is what the page is first made from and what the saved page stays tied to
                     control: choice
                     from: arrangements
+                chord:
+                    help: the one-letter keyboard prefix of the page's group in the view catalogue, then a digit for the entry's place in the group; empty counts the group under direct_chord
+                    control: choice
+                    options:
+                        [
+                            a,
+                            b,
+                            c,
+                            d,
+                            e,
+                            f,
+                            g,
+                            h,
+                            i,
+                            j,
+                            k,
+                            l,
+                            m,
+                            n,
+                            o,
+                            p,
+                            q,
+                            r,
+                            s,
+                            t,
+                            u,
+                            v,
+                            w,
+                            x,
+                            y,
+                            z
+                        ]
+                    empty: no chord
+                group_glyph:
+                    help: the glyph of the page's group heading in the view catalogue, one that no view of the group carries; without it the heading takes the glyph of the group's first view
+                    control: glyph
         nav_groups:
             heading: rail
             section: View catalogue
-            help: The view catalogue's groups, in the order the Views view lists them. A group with no registered views is not listed.
+            help: The view catalogue's groups that are no rail page, listed after the groups of the rail pages, which take their heading, chord and glyph from their rail entry. The shipped one is the float. A group with no registered views is not listed.
             fields:
                 key:
-                    help: the page key of a rail entry, which is the key of the group
-                    control: choice
-                    from: rail_pages
+                    help: the key of the group, which a view registration and a document of docs name
+                    control: text
                 label: the words of the group heading
                 glyph:
                     help: the heading's glyph name, one that no view of the group carries
@@ -1073,126 +1142,91 @@ options:
                     control: file
                     allow_missing: true
                 group:
-                    help: a key of nav_groups
+                    help: the group of the view catalogue, a rail page or the float of nav_groups
                     control: choice
-                    from: nav_groups
-        board.cols_project:
+                    from: catalogue_groups
+        boards:
             heading: boards
-            section: Board columns and search
-            help: The list-view column headings of the Projects and Personal boards, written in the order of the fixed columns title, authors, venue, status, focus and next. A column with no heading here shows its cell name.
-            default: [Project, Authors, Venue, Status, Focus, Next]
-            control: list
-            slots: [title, authors, venue, status, focus, next]
-        board.cols_archive:
-            heading: boards
-            section: Board columns and search
-            help: The list-view column headings of the Archive and Coauthor boards, written in the order of the fixed columns title, authors, venue, domain, pillar and funding. A column with no heading here shows its cell name.
-            default: [Paper, Authors, Venue, Domain, Pillar, Funding]
-            control: list
-            slots: [title, authors, venue, domain, pillar, funding]
-        board.cols_software:
-            heading: boards
-            section: Board columns and search
-            help: The list-view column headings of the Software board, written in the order of the fixed columns title, authors, venue, domain, pillar and funding. A column with no heading here shows its cell name.
-            default: [Software, Authors, Venue, Domain, Pillar, Funding]
-            control: list
-            slots: [title, authors, venue, domain, pillar, funding]
-        board.search.projects:
-            heading: boards
-            section: Board columns and search
-            help: The placeholder of the Projects board's search box.
-            default: Search title | eli5 | results | ideas | doc text ...
-            control: text
-        board.search.personal:
-            heading: boards
-            section: Board columns and search
-            help: The placeholder of the Personal board's search box.
-            default: Search personal | title | eli5 | next | doc text ...
-            control: text
-        board.search.archive:
-            heading: boards
-            section: Board columns and search
-            help: The placeholder of the Archive board's search box.
-            default: Search archive | title | eli5 | outcome | doc text ...
-            control: text
-        board.search.coauthor:
-            heading: boards
-            section: Board columns and search
-            help: The placeholder of the Coauthor board's search box.
-            default: Search coauthor | title | eli5 | outcome | doc text ...
-            control: text
-        board.search.software:
-            heading: boards
-            section: Board columns and search
-            help: The placeholder of the Software board's search box.
-            default: Search software | title | eli5 | tags | doc text ...
-            control: text
-        tab_split:
-            heading: boards
-            section: Tab badges
-            help: The colours of the count split on the Projects tab button, one cell per project type. A type with no colour here, or one that is not a lowercase hue name, draws in the unknown tone.
+            section: Boards
+            help: The project boards, by view id. A project opened from anywhere lands on the first board whose tier is its own, and on the first board when none is. A key that is no board view is never shown.
             fields:
                 key:
-                    help: a project type, active or idea
+                    help: the view id of the board, projects, coauthor, archive, personal or software
                     control: choice
-                    options: [active, idea]
-                value:
-                    help: the palette hue name the type's count wears
-                    control: hue
-        tab_rollup:
+                    options: [projects, coauthor, archive, personal, software]
+                tier:
+                    help: the tier whose projects the board shows
+                    control: choice
+                    from: tiers
+                columns:
+                    help: the columns of the board's list mode, in order
+                    control: records
+                    fields:
+                        cell:
+                            help: the cell the column draws
+                            control: choice
+                            options:
+                                [
+                                    title,
+                                    authors,
+                                    venue,
+                                    status,
+                                    focus,
+                                    next,
+                                    domain,
+                                    pillar,
+                                    funding
+                                ]
+                        label: the column's heading, the cell's name when it has none
+                search: the placeholder of the board's search box
+                label_mode:
+                    help: how the board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title; any other value counts as short. The board's Aa toggle overrides it for the viewer
+                    control: choice
+                    options: [short, full]
+                groups:
+                    help: the board's groups of cards, used by its filter (the category facet, its dot in the group's colour), a card's group and its tab count. A card lands in the first group whose keys hold its type or one of its status chips
+                    control: records
+                    fields:
+                        label: the words of the group, which also give its id
+                        keys:
+                            help: the project types and status chips the group catches
+                            control: multi
+                            from: [status_chips, project_types]
+                        color:
+                            help: the colour of the group's count and of its dot in the filter
+                            control: colour
+        counts:
             heading: boards
             section: Tab badges
-            help: The count buckets of each board. The Personal, Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
-            holds: lists
+            help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts by its groups and gives the rail its first group's count; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
             fields:
                 key:
-                    help: a board id, projects, personal, archive, coauthor or software
-                    control: choice
-                    options: [projects, personal, archive, coauthor, software]
-                label: the words of the bucket, which also give its id
-                keys:
-                    help: the project types and status chips the bucket counts
-                    control: multi
-                    from: [status_chips, project_types]
-                color:
-                    help: the colour of the bucket's count
-                    control: colour
-        nav_live:
-            heading: boards
-            section: Tab badges
-            help: The live count badges on collection tabs. The badge counts the entries whose status matches, in the colour of that status unless a tone forces an urgency class.
-            fields:
-                key:
-                    help: a collection key
-                    control: choice
-                    from: collections
+                    help: the view id of a view that draws a count
+                    control: text
+                tab:
+                    help: whether the view's tabs and its catalogue entry draw its count
+                    control: toggle
+                rail:
+                    help: whether the rail button of the page the view is on adds the count to its badge and names it in its tooltip
+                    control: toggle
                 match:
-                    help: the entry statuses that count, compared without regard to case
+                    help: for a collection, the entry statuses that count, compared without regard to case
                     control: multi
                     from: entry_statuses
-                label: the tooltip word for the count
+                label: for a collection, the tooltip word for the count
                 tone:
-                    help: an urgency class, red, amber or green, used where a count means act
+                    help: for a collection, an urgency class, red, amber or green, used where a count means act; without it the count wears the colour of its first status
                     control: choice
                     options: [red, amber, green]
+                days:
+                    help: for Position Leads, how many days ahead an open lead's deadline is counted
+                    control: number
+                    min: 0
+                    whole: true
         focus_label_mode:
             heading: boards
             section: Project labels
             help: How the Focus board's lane cards and the week's ticker lines name a project. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The project tab opened from a card and the quick-add picker keep the short name. A lane card shows the full title on hover; a ticker line has no hover title.
-            default: short
-            control: choice
-            options: [short, full]
-        project_label_mode:
-            heading: boards
-            section: Project labels
-            help: How the Projects, Personal and Software boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
-            default: short
-            control: choice
-            options: [short, full]
-        archive_label_mode:
-            heading: boards
-            section: Project labels
-            help: How the Archive and Coauthor boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
             default: short
             control: choice
             options: [short, full]
@@ -1289,7 +1323,7 @@ options:
             heading: sources
             section: Registry and feed files
             help: The career strategy file, whose order of work, hosts, eligibility and dropped routes surface on the Focus board's Career strategy panel. The per-scheme statements surface on the Funding tab.
-            default: registries/career.yml
+            default: .oculus/data/academic/career.yml
             control: file
         memories_dir:
             heading: sources
@@ -1305,13 +1339,6 @@ options:
             default: .oculus/wallpaper
             control: folder
             allow_missing: true
-        recover_command:
-            heading: sources
-            section: Registry and feed files
-            help: The command the Data view's Recover control runs for one dataset, in a terminal in the dataset's own hub folder, with {key} replaced by the dataset's key as one shell word. Empty gives no Recover control, and a command without {key} is a finding and gives none either. This is a setting of the hub, kept in its .oculus/config.yml.
-            default: ''
-            control: text
-            empty: true
         repository_scan_depth:
             heading: sources
             section: Folders
@@ -1424,6 +1451,16 @@ options:
         literature.mailto:
             section: Literature search
             help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. A change is read again at the next search.
+        downloads:
+            section: Download accounts
+            help: The accounts the Data view's Recover downloads with, a list of service (physionet, kaggle, kaggle-token or synapse), user and secret, one row per service. A physionet row holds the PhysioNet user name and password, a kaggle row the Kaggle user name and API key, a kaggle-token row Kaggle's API token and no user, and a synapse row a Synapse personal access token and no user. Recover sends the secret to curl through a file only it can read, deleted when the download ends, and never shows it. Recover signs in to Kaggle with the kaggle row alone; the kaggle-token row is kept for Kaggle's token and Recover does not use it. Without its row a credentialed PhysioNet set, a Kaggle set or a Synapse set cannot be fetched, and for a Kaggle set that row is the kaggle row. It is read from the primary hub's file only. A change is read again at the next Recover.
+            fields:
+                service:
+                    help: physionet, kaggle, kaggle-token or synapse, the service the row signs in to
+                    control: choice
+                    options: [physionet, kaggle, kaggle-token, synapse]
+                user: the user name at PhysioNet or Kaggle; absent for kaggle-token and synapse
+                secret: the PhysioNet password, the Kaggle API key, Kaggle's API token or the Synapse token, shown as set
         apps_dir:
             section: Apps
             help: Where the machine's apps live, one folder of web files per app. Without it the folder is .oculus/apps in the primary hub, which the hub's owner writes and a git pull into the hub writes too; an app kept approved stays approved through a change to any of its files but app.yml, a pulled change included, while the server runs. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.

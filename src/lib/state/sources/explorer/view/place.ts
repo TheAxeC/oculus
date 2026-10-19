@@ -8,7 +8,11 @@
 // the set survives a reload and a tab switch, and the rows drawn are computed from it.
 
 import { z } from 'zod';
-import { offerAlong, type FolderMarks } from '../../../../data/helpers/hub-names.ts';
+import {
+    offerAlong,
+    type FolderMarks,
+    type MakeItems
+} from '../../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs } from '../../../../data/shapes/shapes.ts';
 
 /**
@@ -92,7 +96,7 @@ export function heldOffer(
     root: FsRoot,
     path: string,
     listed: (path: string) => FsEntry[] | null
-): { hub: boolean; project: boolean } | null {
+): MakeItems | null {
     const below: FolderMarks[] = [];
     const names = path === '' ? [] : path.split('/');
     for (let at = 0; at < names.length; at += 1) {

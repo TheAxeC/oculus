@@ -345,7 +345,7 @@ export type Project = Rooted & {
      */
     tier?: Tier;
     category?: string;
-    /** The manifest's `type`, a stage word of `type_order`. */
+    /** The manifest's `type`, a key of the vocabulary's `types`. */
     type?: string;
     title: string;
     short?: string;
@@ -359,7 +359,7 @@ export type Project = Rooted & {
      * Whole days the newest of the project's documents is ahead of its own project.yml, so the
      * manifest is behind what the folder says. Absent when the manifest is the newer of the two,
      * which is a project with nothing to report. The threshold a badge is drawn at is
-     * `stale_lag_days` of config/behavior.yml and is applied by the board, not here.
+     * `stale_lag_days` under `focus:` of config/behavior.yml and is applied by the board.
      */
     staleDays?: number;
     chips: Chip[];
@@ -458,7 +458,7 @@ export type Project = Rooted & {
     tags?: string[];
 };
 
-/** A venue from registries/venues.yml. Its id field in the file is `id`, not `key`. */
+/** A venue from the venues registry. Its id field in the file is `id`, not `key`. */
 export type Venue = Rooted & {
     id: Id;
     name: string;
@@ -497,7 +497,66 @@ export type Venue = Rooted & {
     themes: string[];
 };
 
-/** A dataset from registries/data.yml, whose entry list is under `datasets`. */
+/** The kinds of a dataset's sources whose files Recover lists, fetches, checks and unpacks. */
+export const FETCHED_KINDS = [
+    'physionet',
+    'zenodo',
+    'figshare',
+    'dandi',
+    'huggingface',
+    'stanford',
+    'geo',
+    'kaggle',
+    'tcia',
+    'synapse',
+    'url'
+] as const;
+
+/**
+ * Where a source's files land and what follows their check: `into` a folder below the dataset's
+ * folder (the folder itself when absent), `unpack` its archives after the check, dropping `strip`
+ * leading folders of every path an archive holds.
+ */
+type SourcePlace = { into?: string; unpack?: true; strip?: number };
+
+/**
+ * One file of a `url` source: its address, the sha256 or the md5 the entry gives for it when it
+ * gives one (never both), and the name the file is saved under when the address's last part is not
+ * that name.
+ */
+type SourceUrl = { url: string; sha256?: string; md5?: string; name?: string };
+
+/**
+ * One source of a dataset's `retrieval` list: the kind and the fields that kind needs, as the
+ * registry's schema states them.
+ */
+export type RecoverSource = SourcePlace &
+    (
+        | {
+              kind: 'physionet';
+              project: string;
+              version: string;
+              files?: string[];
+              archive?: true;
+              /** The rate curl's `--limit-rate` holds the download to, such as `2M`. */
+              throttle?: string;
+          }
+        | { kind: 'zenodo'; record: string; files?: string[] }
+        | { kind: 'figshare'; collection?: string; article?: string; files?: string[] }
+        | { kind: 'dandi'; dandiset: string; version: string; assets?: string[] }
+        | { kind: 'huggingface'; repo: string; patterns?: string[] }
+        | { kind: 'stanford'; druid: string; files?: string[] }
+        | { kind: 'geo'; accession: string; files: string[] }
+        | { kind: 'kaggle'; dataset: string }
+        | { kind: 'tcia'; collection: string; series?: string[] }
+        | { kind: 'synapse'; ids: string[] }
+        | { kind: 'url'; urls: SourceUrl[] }
+        | { kind: 'library'; call: string }
+        | { kind: 'request'; contact: string }
+        | { kind: 'derived'; from: string[]; script: string }
+    );
+
+/** A dataset from the dataset registry, whose entry list is under `datasets`. */
 export type Dataset = Rooted & {
     id: Id;
     name: string;
@@ -506,16 +565,17 @@ export type Dataset = Rooted & {
     size?: string;
     access?: string;
     source?: string;
+    /** How the dataset comes back: its sources, each parsed by its kind, in the file's order. */
+    retrieval: RecoverSource[];
+    /** The dataset's folder, the same on this Mac and on the cluster (`~/data/<folder>`). */
+    path?: string;
+    /** Free text about where the set lives and how it is used, the entry's `notes:`. */
+    notes?: string;
     /**
-     * How the dataset is fetched: a map of `method`, `notes` and per-dataset keys, carried as read.
+     * True when the set has sources and every one is of a kind Recover runs (`FETCHED_KINDS`),
+     * which gives its card the Recover control.
      */
-    retrieval?: Record<string, unknown>;
-    hpcPath?: string;
-    /**
-     * True when its own hub's `recover_command` gives it a Recover control; absent when that hub
-     * sets none.
-     */
-    recover?: true;
+    recover: boolean;
     /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
     themes: string[];
     /**
@@ -525,7 +585,140 @@ export type Dataset = Rooted & {
     projectIds: Id[];
 };
 
-/** A pillar from registries/pillars.yml. */
+// The shapes GET /api/recover answers (server/machine/runs/recover/routes.ts) and the Recover
+// view's store reads (state/system/machine/recover.svelte.ts), declared once here.
+
+/** The checksum a source publishes for a file. */
+export type RecoverChecksum = { kind: 'sha256' | 'md5' | 'sha1'; value: string };
+
+/** The service whose `downloads` row a source needs. */
+export type RecoverService = 'physionet' | 'kaggle' | 'synapse';
+
+/** One file as a source lists it, named below the dataset's folder. */
+export type RecoverFile = {
+    name: string;
+    /** Bytes, or null when the source states no size. */
+    size: number | null;
+    checksum: RecoverChecksum | null;
+    url: string;
+    /** The position of its source in the entry's `retrieval` list. */
+    source: number;
+    service?: RecoverService;
+    /** Set when its source unpacks: how many leading folders each path loses. */
+    unpack?: { strip: number };
+    throttle?: string;
+};
+
+/** What a file of the plan is on the target. */
+export type RecoverFileState = 'verified' | 'present' | 'partial' | 'different' | 'missing';
+
+/** One row of a plan: the file, its state and the bytes the target holds of it. */
+export type RecoverRow = RecoverFile & { state: RecoverFileState; have: number };
+
+/** A plan's totals: files, their bytes, the bytes a Fetch needs, and the free space. */
+export type RecoverTotals = {
+    files: number;
+    bytes: number;
+    /** Bytes a Fetch of every missing, partial and different file still needs, where known. */
+    missing: number;
+    /** Files of those whose size the source does not state. */
+    unsized: number;
+    /** Bytes free on the target's disk, or null when it could not be read. */
+    free: number | null;
+};
+
+/** The access of one service a dataset's sources need. */
+export type RecoverAccess = {
+    service: RecoverService;
+    /** `ok` with a row the service accepts, `missing` without one, `unreachable` with no answer. */
+    state: 'ok' | 'missing' | 'unreachable';
+    /** Whether the primary hub's `local.yml` holds a row of the service. */
+    row: boolean;
+    status?: number;
+};
+
+/**
+ * Why a source gives no file list: `access` (401 or 403), `status` (another answer that is no
+ * success), `answer` (a body that is not the kind's answer), `name` (a file name that is absolute,
+ * climbs out or is given twice), `missing` (a file the entry names that the source does not hold),
+ * `network` (no answer).
+ */
+export type RecoverRefusal = {
+    refused: 'access' | 'status' | 'answer' | 'name' | 'missing' | 'network';
+    /** The kind of the source, or for a `url` source its host. */
+    source: string;
+    status?: number;
+    name?: string;
+};
+
+/** A dataset's run: what it does and, where it is counted, how far it is. */
+export type RecoverRun = {
+    action: 'fetch' | 'verify' | 'unpack';
+    done?: number;
+    total?: number;
+    /** The cluster's job id of a check or an unpack. */
+    job?: string;
+};
+
+/** One dataset on one target, as the Recover view is told it. */
+export type RecoverState = {
+    target: 'mac' | 'cluster';
+    /** The dataset's folder as `path:` names it. */
+    folder: string;
+    access: RecoverAccess[];
+    /** Whether every service the sources need accepts its row, so Fetch may start. */
+    granted: boolean;
+    plan: { rows: RecoverRow[]; totals: RecoverTotals } | null;
+    refusal: RecoverRefusal | null;
+    run: RecoverRun | null;
+    log: string[];
+    /** The `recover` channel's version when this was answered: a run row pushed later is newer. */
+    live: number;
+};
+
+/**
+ * One of oculus's sessions on the cluster's socket `oculus-recover`, as Live HPC lists it: the
+ * bytes of its dataset's folder, the bytes the kept listing names, and the bytes per second
+ * between the last two Live HPC answers.
+ */
+export type RecoverSession = {
+    hub: string;
+    key: string;
+    done: number;
+    total: number | null;
+    rate: number | null;
+};
+
+/** One dataset's run as the `recover` channel pushes it. */
+export type RecoverLiveRun = {
+    hub: string;
+    key: string;
+    target: 'mac' | 'cluster';
+    /** `running` while the run goes, `ended` from the push after it stopped. */
+    state: 'running' | 'ended';
+    /** What the run does; null once it has ended. */
+    run: RecoverRun | null;
+    /** The bytes the folder holds: of the listed files on this Mac, in all on the cluster. */
+    bytes: number;
+    /** The bytes the kept listing names, or null when none is kept. */
+    size: number | null;
+    /** Bytes per second between the last two readings, or null after the first. */
+    rate: number | null;
+    /** On this Mac, the listed files whose bytes changed since the reading before, with rates. */
+    growing: { name: string; have: number; rate: number }[];
+    log: string[];
+    /** The channel's version of the push that last read this run. */
+    version: number;
+};
+
+/** The payload of the `recover` channel. */
+export type RecoverLive = {
+    runs: RecoverLiveRun[];
+    /** The login node's sessions as the last Live HPC answer read them, or null before one. */
+    sessions: RecoverSession[] | null;
+};
+
+/** A pillar from the pillars registry. */
 export type Pillar = Rooted & {
     id: Id;
     title: string;
@@ -554,7 +747,7 @@ export function domainColorOf(entry: Record<string, unknown>): string | undefine
         : undefined;
 }
 
-/** A domain from registries/domains.yml. */
+/** A domain from the domains registry. */
 export type Domain = Rooted & {
     id: Id;
     title: string;
@@ -567,7 +760,7 @@ export type Domain = Rooted & {
 };
 
 /**
- * One human, from registries/people.yml. It is the entity a manifest's `collaborators:`, a joint
+ * One human, from the people registry. It is the entity a manifest's `collaborators:`, a joint
  * work's `person:` and a `waiting-on:` value name, so a person's name is written once and every
  * surface that draws one reads it here.
  *
@@ -606,7 +799,7 @@ export type Person = Rooted & {
 };
 
 /**
- * One organisation, from registries/organisations.yml. A person's `affiliations:` and a funding
+ * One organisation, from the organisations registry. A person's `affiliations:` and a funding
  * scheme's `funder:` are keys into it, so a university, a hospital or a funder is named once and
  * spelled the same way wherever it is drawn.
  */
@@ -624,7 +817,7 @@ export type Organisation = Rooted & {
 };
 
 /**
- * One resource, from registries/resources.yml: a cluster, a machine or a storage a project runs on.
+ * One resource, from the resources registry: a cluster, a machine or a storage a project runs on.
  * A manifest's `compute:` and `slurm.resource` of behavior.yml are keys into it. `host` is the ssh
  * alias of a cluster or a remote machine.
  */
@@ -641,7 +834,7 @@ export type Resource = Rooted & {
 };
 
 /**
- * A funding scheme from funding/funding.yml. Its `key` is optional in that file by design, where
+ * A funding scheme from the funding registry. Its `key` is optional in that file by design, where
  * it is the cross-link anchor manifests name; an entry without one has no relations to resolve.
  */
 export type Funding = Rooted & {

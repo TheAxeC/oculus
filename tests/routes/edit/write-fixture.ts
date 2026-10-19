@@ -26,7 +26,7 @@ import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/wr
 import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
-import { withHubCollections } from '../../fixtures/hubs/collections.ts';
+import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
@@ -74,12 +74,12 @@ export function target(): PrimaryTarget {
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
     for (const [path, body] of [
-        ['tasks/tasks.yml', TASKS],
-        ['registries/venues.yml', VENUES],
-        ['registries/data.yml', DATA],
-        ['registries/career.yml', CAREER],
-        ['feeds/literature-radar.yml', RADAR],
-        ['feeds/position-leads.yml', LEADS]
+        ['.oculus/data/academic/tasks.yml', TASKS],
+        ['.oculus/data/research/venues.yml', VENUES],
+        ['.oculus/data/research/data.yml', DATA],
+        ['.oculus/data/academic/career.yml', CAREER],
+        ['.oculus/data/literature/radar.yml', RADAR],
+        ['.oculus/data/academic/leads.yml', LEADS]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -127,7 +127,7 @@ export function targetOver(
     files: { overrides: string; bookmarks: string; changes: string },
     keep = 500
 ): PrimaryTarget {
-    const merged = withHubCollections(loadConfig(engineDir()).config);
+    const merged = loadConfig(engineDir()).config;
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
@@ -139,7 +139,7 @@ export function targetOver(
         },
         engine: engineDir(),
         engineConfig: () => loadConfig(engineDir()).config,
-        career: careerRules(merged),
+        career: careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
         overrides: files.overrides,
         projects: () => [],
         bookmarks: files.bookmarks,
@@ -192,7 +192,7 @@ export const AREA = '/hub/projects/manuscripts/alpha';
 
 /** The tasks collection file of a target, which the undo cases read back. */
 export function tasksOf(into: PrimaryTarget): string {
-    return readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8');
+    return readFileSync(join(into.hub, '.oculus', 'data', 'academic', 'tasks.yml'), 'utf8');
 }
 
 /** The manifest of a target, which the manifest cases read back and replace. */
@@ -299,7 +299,7 @@ export function deckTarget(): PrimaryTarget {
         writeFileSync(join(folder, 'present.yml'), 'order: [main.md]\n');
         writeFileSync(join(folder, 'main.md'), `# ${project.id}\n`);
     }
-    const real = portfolioConfigFrom(withHubCollections(loadConfig(engineDir()).config));
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {
@@ -308,7 +308,7 @@ export function deckTarget(): PrimaryTarget {
         config: { ...real, portfolioDeck: DECK_FOLDER },
         engine: engineDir(),
         engineConfig: () => loadConfig(engineDir()).config,
-        career: careerRules(loadConfig(engineDir()).config),
+        career: careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
         projects: () => projects,
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),

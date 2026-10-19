@@ -26,7 +26,7 @@ import {
 import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import { rootOf } from '../../data/helpers/hub-names.ts';
-import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
+import { vocabKeys, vocabSource } from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
     filledTextShape,
@@ -200,13 +200,24 @@ const VOCAB_PREFIX = 'vocab.';
 /** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
 const vocabChoicesShape = rowsShape(choiceShape);
 
+/** A map row's `label`, when it holds a filled one. */
+const rowLabelShape = z.object({ label: filledTextShape }).transform((row) => row.label);
+
 /**
  * The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices, or the keys of
- * one held as a map (`data_access`), read as the schema check reads them.
+ * one held as a map (`data_access`), read as the schema check reads them. A source that names a
+ * field (`vocab.statuses.chip`) offers the keys of the map whose row carries it as `true`, each
+ * under its row's `label` when it has one.
  */
-function vocabChoices(raw: unknown): Choice[] {
-    if (readAs(mapShape, raw) !== null) return vocabKeys(raw).map((id) => ({ id, label: id }));
-    return readAs(vocabChoicesShape, raw) ?? [];
+function vocabChoices(config: Record<string, unknown>, name: string): Choice[] {
+    const { key, field } = vocabSource(name);
+    const raw = byKey(config, key);
+    const map = readAs(mapShape, raw);
+    if (map === null) return readAs(vocabChoicesShape, raw) ?? [];
+    return vocabKeys(raw, field).map((id) => {
+        const label = field === undefined ? undefined : readAs(rowLabelShape, map[id]);
+        return { id, label: label ?? id };
+    });
 }
 
 /**
@@ -299,7 +310,7 @@ function sourceChoices(
         return entityChoices(entities?.organisations, ['name'], root, primary);
     if (from === 'resources') return resourceChoices(entities?.resources, root, primary);
     return from.startsWith(VOCAB_PREFIX)
-        ? vocabChoices(byKey(config, from.slice(VOCAB_PREFIX.length)))
+        ? vocabChoices(config, from.slice(VOCAB_PREFIX.length))
         : [];
 }
 

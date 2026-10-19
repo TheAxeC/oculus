@@ -2,13 +2,14 @@
     // Layer 3, shared view. Expanded manifest fields and related documents live here because the
     // expanded card section changes independently of its collapsed frame. The subtasks block is the
     // card's own, drawn under this section, since adding a first subtask is a control of the closed
-    // card too. Every prose field is drawn through CodeText, so a backticked word is code. The
+    // card too. Every prose field is drawn through CodeText, so a backticked word is code and a
+    // web address in the other words is a link. The
     // follow-up field has one line per note, and a note dated after today says when it is held
     // until, by the same rule the ticker uses to leave it out.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
     import { dueFollowups } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
@@ -41,7 +42,7 @@
 {#snippet field(name: string, value: string)}
     <div class="field">
         <span class="label">{name}</span>
-        <p class="value"><CodeText text={value} /></p>
+        <p class="value"><CodeText text={value} linked /></p>
     </div>
 {/snippet}
 
@@ -50,7 +51,7 @@
         <span class="label">{name}</span>
         <ul class="value">
             {#each values as value, at (`${at}:${value}`)}
-                <li><CodeText text={value} /></li>
+                <li><CodeText text={value} linked /></li>
             {/each}
         </ul>
     </div>
@@ -83,7 +84,7 @@
             <ul class="value">
                 {#each item.project.followups as note, at (`${at}:${note.do}`)}
                     <li>
-                        <CodeText text={note.do} />
+                        <CodeText text={note.do} linked />
                         {#if !due.includes(note)}
                             <span class="until"
                                 >{t('project.card.not_until', note.after ?? '')}</span

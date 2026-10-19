@@ -13,15 +13,14 @@
     // text that did not read as YAML is drawn too, and Save names it.
     //
     // The partial holds nothing: every keystroke and press goes out as an edit (state/system/
-    // config/editors/draft.ts), and the entries come in as they are. A roll-up draws one of these
-    // per key, with `group` naming the key's place, and a nested list draws one with `path` naming
-    // the cards above it.
+    // config/editors/draft.ts), and the entries come in as they are. A nested list draws one of
+    // these with `path` naming the cards above it.
     //
     // Every card has a card id that is its own within the pane, which holds many lists: the file
-    // and key of the setting (`base`), the roll-up group, and the steps down through the nested
-    // lists to the card's place. The keyboard's cursor names one of them (the instance's card
-    // cursor), the card it names draws `data-cursor`, and Enter on it moves the focus to the first
-    // control inside the card's field area, marked `data-card-focus`, without changing a value.
+    // and key of the setting (`base`) and the steps down through the nested lists to the card's
+    // place. The keyboard's cursor names one of them (the instance's card cursor), the card it
+    // names draws `data-cursor`, and Enter on it moves the focus to the first control inside the
+    // card's field area, marked `data-card-focus`, without changing a value.
     //
     // Add puts the focus on the first control of the entry it adds once the entry is drawn, as VS
     // Code's Add Item opens its box focused, so what is typed next goes into the new entry.
@@ -57,8 +56,6 @@
         instance: string;
         /** The file and key of the setting the cards belong to: the start of every card id. */
         base: string;
-        /** The place of the key of a roll-up these entries are under. */
-        group?: number;
         /** The cards above a nested list: each one's place in its list and the field holding it. */
         path?: Step[];
         /** The words that name the nested list in the label of a control. */
@@ -80,7 +77,6 @@
         lists,
         instance,
         base,
-        group,
         path = [],
         scope = '',
         title = '',
@@ -123,16 +119,12 @@
         const steps = [...path, { index: at, field: '' }]
             .map((step) => `${step.index}.${step.field}`)
             .join('/');
-        return `${base}|${group === undefined ? '' : String(group)}|${steps}`;
+        return `${base}|${steps}`;
     }
 
-    /** The edits that address one entry of a list. */
-    type Aimed = Extract<Edit, { do: 'add' | 'remove' | 'move' | 'set' }>;
-
-    /** An edit addressed to this list's entries: with the group's place and the cards above. */
-    function aimed(edit: Aimed): Edit {
-        const where = group === undefined ? { path } : { group, path };
-        return { ...edit, ...where };
+    /** An edit addressed to this list's entries: with the cards above it. */
+    function aimed(edit: Edit): Edit {
+        return { ...edit, path };
     }
 
     const inline = $derived(form === 'items' || form === 'pairs');
@@ -200,7 +192,6 @@
                                 {lists}
                                 {instance}
                                 {base}
-                                {group}
                                 path={[...path, { index: at, field: name }]}
                                 scope={`${scope}${name} ${at + 1}, `}
                                 {onedit}

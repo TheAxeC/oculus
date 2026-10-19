@@ -5,12 +5,15 @@
     // and so does that page (views/boards/entry/Entry.svelte), handing it `page`, where the title
     // is words. It receives the feed entry and project map and keeps only the optional idea form
     // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
-    // card ends, and its whole text is the line's tooltip; on the paper's page it is drawn whole.
+    // card ends, and its whole text is the line's tooltip; on the paper's page it is drawn whole. A
+    // web address in it is a link (ui/display/text/LinkedText.svelte); the note and the threat are
+    // inline Markdown, which links its addresses itself.
     // A project link ends in an ellipsis where the card ends, with the whole title as its tooltip.
     // Save to Literature writes the paper to the Literature collection (SaveToLiterature.svelte).
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
@@ -179,7 +182,7 @@
 
     {#if sub !== ''}
         <p class="sub" class:whole={onPage} title={sub}>
-            {sub}
+            <LinkedText text={sub} />
         </p>
     {/if}
     {#if motif !== ''}

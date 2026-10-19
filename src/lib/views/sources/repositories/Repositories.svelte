@@ -1,8 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Repositories follows the file browser in the Explorer page's
-    // group: the same roots, read as repositories rather than as folders. Its badge, which it also
-    // gives its rail button, is the number of changes over every repository of its list, each
-    // counted once.
+    // group: the same roots, read as repositories rather than as folders. Its badge, its count, is
+    // the number of changes over every repository of its list, each counted once; its row of
+    // `counts` says where it is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -12,7 +12,7 @@
         group: 'explorer',
         order: 1,
         badge: (client) => client.railBadges.repositoriesBadge(),
-        railPart: (client) => ({ count: client.railBadges.repositoriesCount() })
+        countPart: (client) => ({ count: client.railBadges.repositoriesCount() })
     };
 </script>
 

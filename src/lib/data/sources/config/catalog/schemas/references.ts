@@ -1,9 +1,9 @@
 // Layer 1, data. The options catalog as the places that name a hub key, for the reference index
 // (data/snapshot/references/): an option or a field of an options family whose `from` names a list
 // of the hub (`domains`, `clusters`) or a vocabulary list the catalog reads from vocab.yml
-// (`project_types`, `status_chips`, `entry_statuses`) is a place a key is written. A file of
-// oculus's own configuration that has such an option is read as a record of those places; a file
-// with none is not read.
+// (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is written. A file
+// of oculus's own configuration that has such an option is read as a record of those places; a
+// file with none is not read.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -17,14 +17,17 @@ import { isPairs, withoutKey } from './options.ts';
 /**
  * The options catalog's words for a list, as the sources the index follows. A word outside this
  * table (`models`, `rail_pages`, `slide_tags`, which has no list of keys) names no source the index
- * holds, so the places that use it are no references.
+ * holds, so the places that use it are no references. `entry_statuses`, the words of `statuses`
+ * with a colour, is followed as every word of `statuses`, since a field after the dot names a flag
+ * and a colour is none; the check holds its values to the coloured words.
  */
 const OPTION_SOURCES: Record<string, string | undefined> = {
     domains: 'domains',
     clusters: 'clusters',
-    project_types: `${VOCAB_SOURCE}type_color`,
-    status_chips: `${VOCAB_SOURCE}status_legend`,
-    entry_statuses: `${VOCAB_SOURCE}status_palette`
+    project_types: `${VOCAB_SOURCE}types`,
+    tiers: `${VOCAB_SOURCE}tiers`,
+    status_chips: `${VOCAB_SOURCE}statuses.chip`,
+    entry_statuses: `${VOCAB_SOURCE}statuses`
 };
 
 /** The leaf an options field or option makes, or null when its `from` names no source held. */
@@ -69,15 +72,14 @@ function familyNode(entry: CatalogEntry): FieldNode | null {
     }
     const key = optionLeaf(fields.key) ?? undefined;
     const rest = withoutKey(fields);
-    const lists = entry.holds === 'lists';
     if (isPairs(fields)) {
         const value = optionLeaf(fields.value) ?? undefined;
         if (key === undefined && value === undefined) return null;
-        return { kind: 'family', key, record: null, value, lists };
+        return { kind: 'family', key, record: null, value };
     }
     const record = optionRecord(rest);
     if (key === undefined && record === null) return null;
-    return { kind: 'family', key, record, lists };
+    return { kind: 'family', key, record };
 }
 
 /** Put a node at a dotted option path inside a record's fields, the maps on the way made. */

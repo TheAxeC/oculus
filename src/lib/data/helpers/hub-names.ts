@@ -192,8 +192,11 @@ export function diskRelation(
     return roots.length === 0 ? 'unread' : 'other';
 }
 
-/** The career file's path in the hub, which the config falls back to when it names none. */
-export const CAREER_FILE = 'registries/career.yml';
+/**
+ * The folder, relative to a hub, that holds the hub's collection files at oculus's default paths
+ * (config/sources.yml), one subfolder per kind.
+ */
+export const DATA_FOLDER = '.oculus/data';
 
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
@@ -216,44 +219,95 @@ export const ROOT_FOLDER = '.oculus';
 export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
 
 /**
- * What a folder holds that Make Folder a Hub and Make Folder a Project of the Files view are
- * offered by: `hub` a `.oculus/config.yml`, `project` a project manifest (`.oculus/project.yml`
- * or `project.yml`), and `home` that it is the home folder, whose `.oculus` is oculus's own state
- * folder and never a hub. The file server reads them (server/files/project/make.ts), and the page
- * holds them in its listings, so a menu knows what a folder offers as it opens.
+ * The configuration files a repository keeps in its `.oculus` folder, by the name Add Repository
+ * Configuration... and its request call each, in the order its dialog lists them.
  */
-export type FolderMarks = { hub?: true; project?: true; home?: true };
+export const REPOSITORY_FILES = [
+    ['settings', `${ROOT_FOLDER}/settings.yml`],
+    ['commands', `${ROOT_FOLDER}/commands.yml`],
+    ['launch', `${ROOT_FOLDER}/launch.yml`],
+    ['cpp', `${ROOT_FOLDER}/cpp.yml`]
+] as const;
+
+/** The machine's own file of a hub, which holds its secrets and stays out of git. */
+export const LOCAL_FILE = `${ROOT_FOLDER}/local.yml`;
 
 /**
- * Which of the two controls a folder offers, from its marks and whether a folder above it, up to
- * the home folder and not including it, holds a `.oculus/config.yml` (`above`): neither on the
- * home folder or a project; Make Folder a Hub when neither it nor a folder above it is a hub, so
- * a folder inside a hub is never made a hub of its own; Make Folder a Project when it is no hub,
- * since a hub is never a project.
+ * The hub files Make Folder a Hub... may write besides `config.yml`, by the name its request and
+ * its dialog give each choice, with the files each choice writes: `local.yml` with the
+ * `.gitignore` that keeps it out of git, and `schedules.yml`.
  */
-export function makeOffer(marks: FolderMarks, above: boolean): { hub: boolean; project: boolean } {
-    const closed = marks.home === true || marks.project === true;
-    return { hub: !closed && !above && marks.hub !== true, project: !closed && marks.hub !== true };
+export const HUB_CHOICES = [
+    ['local', [LOCAL_FILE, `${ROOT_FOLDER}/.gitignore`]],
+    ['schedules', [`${ROOT_FOLDER}/schedules.yml`]]
+] as const;
+
+/**
+ * What a folder holds that the make items of the Files view are offered by: `hub` a
+ * `.oculus/config.yml`, `project` a project manifest (`.oculus/project.yml` or `project.yml`),
+ * `home` that it is the home folder, `state` that it is the home folder's `.oculus`, oculus's own
+ * state folder, or a folder under it, `git` a `.git` file or folder of its own, `inGit` that it
+ * lies inside a `.git` folder, and `configured` that it holds all four repository configuration
+ * files (REPOSITORY_FILES). The file server reads them (server/files/project/make.ts), and the page
+ * holds them in its listings, so a menu knows what a folder offers as it opens.
+ */
+export type FolderMarks = {
+    hub?: true;
+    project?: true;
+    home?: true;
+    state?: true;
+    git?: true;
+    inGit?: true;
+    configured?: true;
+};
+
+/**
+ * Which of the four make items a folder offers: Make Folder a Hub..., Make Folder a Project, Make
+ * Folder a Git Repository and Add Repository Configuration....
+ */
+export type MakeItems = { hub: boolean; project: boolean; git: boolean; repository: boolean };
+
+/**
+ * Which make items a folder offers, from its marks, whether a folder above it, up to the home
+ * folder and not including it, holds a `.oculus/config.yml` (`above`), and whether it is a served
+ * root (`root`). The home folder, the state folder and every folder under the state folder offer
+ * none. Make Folder a Hub... is offered when neither the folder nor a folder above it is a hub and
+ * it is no project, so a folder inside a hub is never made a hub of its own; Make Folder a Project
+ * when it is no hub and no project, since a hub is never a project; Make Folder a Git Repository
+ * when it has no `.git` of its own and lies inside no `.git` folder; Add Repository
+ * Configuration... on a repository (a served root, or a folder holding `.git`) that lacks one of
+ * the four configuration files.
+ */
+export function makeOffer(marks: FolderMarks, above: boolean, root: boolean): MakeItems {
+    const closed = marks.home === true || marks.state === true;
+    const made = closed || marks.project === true;
+    return {
+        hub: !made && !above && marks.hub !== true,
+        project: !made && marks.hub !== true,
+        git: !closed && marks.git !== true && marks.inGit !== true,
+        repository: !closed && (root || marks.git === true) && marks.configured !== true
+    };
 }
 
 /**
  * What a folder offers, read down a tree: the marks of the folder of the workspace it lies in and
  * whether a hub is above that folder (`above`), then the marks of each folder on the way down to
- * it, its own last. A folder has a hub above it when the folder over it is a hub or has one above
- * it, except below the home folder, where the walk up stops.
+ * it, its own last; the folder of the workspace itself, with nothing below, is a served root. A
+ * folder has a hub above it when the folder over it is a hub or has one above it, except below
+ * the home folder, where the walk up stops.
  */
 export function offerAlong(
     top: FolderMarks,
     above: boolean,
     below: readonly FolderMarks[]
-): { hub: boolean; project: boolean } {
+): MakeItems {
     let marks = top;
     let over = above;
     for (const next of below) {
         over = marks.home !== true && (over || marks.hub === true);
         marks = next;
     }
-    return makeOffer(marks, over);
+    return makeOffer(marks, over, below.length === 0);
 }
 
 /**
@@ -261,10 +315,11 @@ export function offerAlong(
  * (named relative to config/), which is the group the Settings view draws it in. Each key is a
  * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's
  * value whole, and a key outside the list is a finding and is not applied. They are the keys that
- * describe this hub rather than the engine: its folders and the files of its records, the command
- * that recovers its datasets, the cluster its jobs run on, the files its writing rules skip or let
- * draw arrows, and the values its apps' settings hold. Its domains and theme words are its own
- * registry files'.
+ * describe this hub rather than the engine: its folders and the files of its records, the cluster
+ * its jobs run on, the files its writing rules skip or let draw arrows, the values its apps'
+ * settings hold, the counts its tabs draw, its status words, and its own words, which oculus ships
+ * none of: the career card's host statuses, score axes and score hues, and the fit colours of its
+ * Position Leads. Its domains and theme words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -276,9 +331,14 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'career_file', file: 'sources.yml' },
     { key: 'memories_dir', file: 'sources.yml' },
     { key: 'wallpaper_dir', file: 'sources.yml' },
-    { key: 'recover_command', file: 'sources.yml' },
     { key: 'wallpaper.image', file: 'appearance.yml' },
     { key: 'docs', file: 'layout.yml' },
+    { key: 'counts', file: 'layout.yml' },
+    { key: 'statuses', file: 'catalogs/vocab.yml' },
+    { key: 'career_host_status', file: 'catalogs/vocab.yml' },
+    { key: 'career_score_dims', file: 'catalogs/vocab.yml' },
+    { key: 'career_score_tones', file: 'catalogs/vocab.yml' },
+    { key: 'leads_fit', file: 'catalogs/vocab.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },
     { key: 'lint.writing_glyphs', file: 'behavior.yml' },
@@ -293,9 +353,6 @@ export function wallpaperValue(config: Record<string, unknown> | undefined): str
     const block = config !== undefined && isMap(config.wallpaper) ? config.wallpaper : {};
     return typeof block.image === 'string' ? block.image.trim() : '';
 }
-
-/** The placeholder of `recover_command` that the dataset's key, as one shell word, replaces. */
-export const RECOVER_KEY = '{key}';
 
 /** Every dotted key the hub list names, in the list's order. */
 export function hubKeys(): string[] {
@@ -337,13 +394,6 @@ export const REGISTRY_SHAPES: Record<
     organisations: { list: 'entries', idField: 'key', idRequired: true },
     resources: { list: 'entries', idField: 'key', idRequired: true }
 };
-
-/**
- * A manifest key that has been renamed, and the name it is written under now. One word for a thing
- * means the reader takes the new key alone, so a manifest still carrying the old one is a finding
- * that names both rather than a value quietly read under two names.
- */
-export const RENAMED_FIELDS: Record<string, string> = { program: 'pillar' };
 
 /** The folder name no walk enters besides the dot folders: a package tree holds no project. */
 const PACKAGES = 'node_modules';

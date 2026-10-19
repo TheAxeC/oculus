@@ -175,7 +175,7 @@ const ROWS: Row[] = [
             return {
                 status: response.status,
                 feed: readFileSync(
-                    join(into.hub, 'feeds', 'literature-radar.yml'),
+                    join(into.hub, '.oculus', 'data', 'literature', 'radar.yml'),
                     'utf8'
                 ).includes('A paper found by the search'),
                 recorded: [changesOf(into)[0].kind, changesOf(into)[0].app]

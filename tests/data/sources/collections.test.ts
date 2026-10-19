@@ -14,11 +14,11 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const FILES: CollectionFile[] = [
-    { key: 'data', file: 'registries/data.yml' },
-    { key: 'events', file: 'network/events.yml' },
-    { key: 'joint-work', file: 'network/joint-work.yml' },
-    { key: 'tasks', file: 'tasks/tasks.yml' },
-    { key: 'tools', file: 'registries/tools.yml' },
+    { key: 'data', file: '.oculus/data/research/data.yml' },
+    { key: 'events', file: '.oculus/data/academic/events.yml' },
+    { key: 'joint-work', file: '.oculus/data/academic/joint-work.yml' },
+    { key: 'tasks', file: '.oculus/data/academic/tasks.yml' },
+    { key: 'tools', file: '.oculus/data/research/tools.yml' },
     { key: 'missing', file: 'nowhere/gone.yml' },
     { key: 'listless', file: 'odd/listless.yml' }
 ];
@@ -43,7 +43,7 @@ function buildHub(): string {
     const hub = scratch();
     write(
         hub,
-        'registries/data.yml',
+        '.oculus/data/research/data.yml',
         [
             'intro: dataset registry',
             'schema:',
@@ -55,7 +55,7 @@ function buildHub(): string {
     );
     write(
         hub,
-        'network/events.yml',
+        '.oculus/data/academic/events.yml',
         [
             'title: Talks & Events',
             'intro: where the work was shown',
@@ -69,7 +69,7 @@ function buildHub(): string {
     );
     write(
         hub,
-        'network/joint-work.yml',
+        '.oculus/data/academic/joint-work.yml',
         [
             'title: Collaborations',
             'intro: who the work is with',
@@ -79,16 +79,17 @@ function buildHub(): string {
             ''
         ].join('\n')
     );
-    // No title and no intro: meta is the schema alone, as tasks/tasks.yml is on the hub.
+    // No title and no intro: meta is the schema alone, as the hub's
+    // .oculus/data/academic/tasks.yml has it.
     write(
         hub,
-        'tasks/tasks.yml',
+        '.oculus/data/academic/tasks.yml',
         ['schema: []', 'entries:', '  - { title: Review AAIM submission }', ''].join('\n')
     );
     // One entry is a bare string rather than a map: a finding, and the others still come back.
     write(
         hub,
-        'registries/tools.yml',
+        '.oculus/data/research/tools.yml',
         [
             'title: Tools',
             'entries:',
@@ -111,7 +112,7 @@ describe('readCollections', () => {
         const events = collections.events;
 
         expect(events.key).toBe('events');
-        expect(events.file).toBe(join(hub, 'network/events.yml'));
+        expect(events.file).toBe(join(hub, '.oculus/data/academic/events.yml'));
         expect(events.entries.map((e) => e.title)).toEqual(['ISBI keynote', 'Tensor workshop']);
         expect(events.entries[1].year).toBe(2025);
     });
@@ -119,16 +120,16 @@ describe('readCollections', () => {
 
 describe('the registries that are collections of their own', () => {
     const REGISTRIES: CollectionFile[] = [
-        { key: 'people', file: 'registries/people.yml' },
-        { key: 'organisations', file: 'registries/organisations.yml' },
-        { key: 'resources', file: 'registries/resources.yml' }
+        { key: 'people', file: '.oculus/data/people/people.yml' },
+        { key: 'organisations', file: '.oculus/data/people/organisations.yml' },
+        { key: 'resources', file: '.oculus/data/research/resources.yml' }
     ];
 
     function registriesHub(): string {
         const hub = scratch();
         write(
             hub,
-            'registries/people.yml',
+            '.oculus/data/people/people.yml',
             [
                 'schema:',
                 '  - { field: key, type: text }',
@@ -141,7 +142,7 @@ describe('the registries that are collections of their own', () => {
         );
         write(
             hub,
-            'registries/organisations.yml',
+            '.oculus/data/people/organisations.yml',
             [
                 'schema:',
                 '  - { field: key, type: text }',
@@ -152,7 +153,7 @@ describe('the registries that are collections of their own', () => {
         );
         write(
             hub,
-            'registries/resources.yml',
+            '.oculus/data/research/resources.yml',
             [
                 'schema:',
                 '  - { field: key, type: text }',
@@ -192,7 +193,7 @@ describe('the registries that are collections of their own', () => {
         const hub = scratch();
         write(
             hub,
-            'registries/people.yml',
+            '.oculus/data/people/people.yml',
             'schema:\n  - { field: key, type: text }\nentries:\n  # none yet\n'
         );
         const { collections, findings } = readCollections(hub, [REGISTRIES[0]], CATALOG);

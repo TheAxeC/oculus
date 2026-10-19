@@ -235,7 +235,7 @@ Set your own keys with `executeCommand('setContext', key, value)`; the key start
 ### Keybindings
 
 - VS Code's key syntax: `ctrl+shift+p`, `cmd+k`, a chord `ctrl+k ctrl+c`. `mac`, `linux` and `win` replace `key` on that platform.
-- oculus's own keys come first: a key oculus takes is not bound, with a finding. The key sheet lists app keys under Apps.
+- oculus's own keys come first: a key oculus takes is not bound, with a finding. The Keyboard Shortcuts view lists app keys under Apps.
 
 ### Menus
 
@@ -374,7 +374,7 @@ Payloads are plain JSON. `X?` may be absent. A `Finding` is `{ file, key, messag
 |-----|---------------|
 | `projects` | `id`, `title`, `folder`, `file`, `workspaceFolder?`, `repository?` (with `clones`), `chips`, `results`, `ideas`, `docs`, `waitingOn`, `resourceIds`, `relatedIds`, `fundingIds`, `datasetIds`, `pillarIds`, `domainIds`, `collaborators`, `followups`, `subtasks`, `tier?`, `category?`, `type?`, `short?`, `lead?`, `statusLine?`, `focus?`, `priority?`, `eli5?`, `next?`, `latest?`, `deadline?`, `snooze?`, `doi?`, `outcome?`, `venue?`, `deck?`, `venueId?`, `authors?`, `year?`, `staleDays?`, `pin?`, `deckTags?`, `codeAvailability?`, `reproduced?`, `links?`, `tags?`, `codeFolder?` |
 | `venues` | `id`, `name`, `themes`, `short?`, `tier?`, `category?`, `jif?`, `quartile?`, `wos?`, `scopus?`, `free?`, `format?`, `wants?`, `link?`, `deadline?`, `deadlineMonth?`, `heldMonth?`, `timing?`, `call?`, `email?`, `wosMark?`, `scopusMark?` |
-| `datasets` | `id`, `name`, `themes`, `projectIds`, `modality?`, `description?`, `size?`, `access?`, `source?`, `hpcPath?`, `retrieval?` |
+| `datasets` | `id`, `name`, `themes`, `projectIds`, `retrieval` (the sources, each `{ kind, ... }` with the fields its kind takes, and `into?`, `unpack?`, `strip?`; a `url` source's `urls` are `{ url, name?, sha256?, md5? }` rows with at most one of `sha256` and `md5`), `recover` (true when every source is a download), `modality?`, `description?`, `size?`, `access?`, `source?`, `path?`, `notes?` |
 | `pillars`, `domains` | `id`, `title`, `projectIds`, `blurb?`; a pillar also `fundingIds`, `color?`, `kind?`, `goal?`; a domain also `color?` (`#rrggbb`) and `expectsDatasets?` |
 | `funding` | `id`, `title`, `followups`, `subtasks`, `tags`, `projectIds`, `pillarIds`, `sub?`, `status?`, `date?`, `deadline?`, `note?`, `statement?`, `link?`, `url?`, `snooze?`, `funder?` |
 | `people` | `id`, `name`, `affiliations`, `links`, `projectIds`, `jointWorkIds`, `role?`, `orcid?`, `email?`, `folder?`, `file?`, `self?` |

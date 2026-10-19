@@ -11,14 +11,16 @@ import {
     searchRevealShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
+import { hasWord, wordsNumbered } from '../../../data/shapes/vocab-keys.ts';
 import { realProjects } from '../../sources/registries/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
 
-const LIVE = ['active', 'idea'];
-const FLIGHT = ['active'];
-
-export type TierRow = { key: string; label: string; color?: string };
+/**
+ * One venue tier of `venue_tiers`: its key, label and colour, and whether it is the fallback a
+ * project with no venue or no rated venue counts under (the row marked `assignable: false`).
+ */
+export type TierRow = { key: string; label: string; color?: string; fallback?: boolean };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { type: string; count: number; projects: Project[] };
 export type PillarsState = { reveal?: string };
@@ -44,23 +46,35 @@ export function parseDomainsState(raw: unknown): DomainsState {
 }
 
 /** Real projects that name one pillar, preserving project order. */
-export function lineMembers(line: Pillar, projects: Project[], dead: string[] = []): Project[] {
-    return realProjects(projects, dead).filter((project) => project.pillarIds.includes(line.id));
+export function lineMembers(
+    line: Pillar,
+    projects: Project[],
+    config: Record<string, unknown>
+): Project[] {
+    return realProjects(projects, config).filter((project) => project.pillarIds.includes(line.id));
 }
 
-/** Active projects, the type counted as currently in flight. */
-export function inFlight(projects: Project[]): Project[] {
-    return projects.filter((project) => FLIGHT.includes(project.type ?? ''));
+/** The projects of a type carrying `live`, the work counted as currently in flight. */
+export function inFlight(projects: Project[], config: Record<string, unknown>): Project[] {
+    return projects.filter((project) => hasWord(config, 'types', 'live', project.type));
 }
 
-/** One non-empty chip per configured venue tier, with unrated as the fallback. */
-export function tierStrip(members: Project[], venues: Venue[], tiers: TierRow[]): TierCount[] {
+/**
+ * One non-empty chip per configured venue tier, a project with no venue or no rated venue counted
+ * under the fallback row, or the last row when none is the fallback.
+ */
+export function tierStrip(
+    members: Project[],
+    venues: Venue[],
+    tiers: TierRow[],
+    config: Record<string, unknown>
+): TierCount[] {
     if (tiers.length === 0) return [];
     const known = new Set(tiers.map((tier) => tier.key));
-    const fallback = known.has('unrated') ? 'unrated' : tiers[tiers.length - 1].key;
+    const fallback = (tiers.find((tier) => tier.fallback === true) ?? tiers[tiers.length - 1]).key;
     const venueTier = new Map(venues.map((venue) => [venue.id, venue.tier]));
     const counts = new Map<string, number>();
-    for (const project of inFlight(members)) {
+    for (const project of inFlight(members, config)) {
         const held = project.venueId === undefined ? undefined : venueTier.get(project.venueId);
         const key = held !== undefined && known.has(held) ? held : fallback;
         counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -71,17 +85,25 @@ export function tierStrip(members: Project[], venues: Venue[], tiers: TierRow[])
 }
 
 /** Real projects whose pillar tags name no entry in the registry. */
-export function orphans(lines: Pillar[], projects: Project[], dead: string[] = []): Project[] {
+export function orphans(
+    lines: Pillar[],
+    projects: Project[],
+    config: Record<string, unknown>
+): Project[] {
     const known = new Set(lines.map((line) => line.id));
-    return realProjects(projects, dead).filter(
+    return realProjects(projects, config).filter(
         (project) => !project.pillarIds.some((id) => known.has(id))
     );
 }
 
-/** Non-real projects grouped in the configured dead-status order. */
-export function archival(projects: Project[], dead: string[]): ArchiveGroup[] {
-    const unreal = projects.filter((project) => !realProjects([project], dead).includes(project));
-    return dead
+/**
+ * Non-real projects grouped by type, in the order of the numbers the types of `types` carry as
+ * `dead` (nogo, dropped, disproved, abandoned, paused in oculus's own vocab.yml).
+ */
+export function archival(projects: Project[], config: Record<string, unknown>): ArchiveGroup[] {
+    const real = new Set(realProjects(projects, config));
+    const unreal = projects.filter((project) => !real.has(project));
+    return wordsNumbered(config, 'types', 'dead')
         .map((type) => {
             const grouped = unreal.filter((project) => project.type === type);
             return { type, count: grouped.length, projects: grouped };
@@ -89,14 +111,20 @@ export function archival(projects: Project[], dead: string[]): ArchiveGroup[] {
         .filter((group) => group.count > 0);
 }
 
-/** A card is dormant when it has no active or idea member. */
-export function isDormant(members: Project[]): boolean {
-    return !members.some((project) => LIVE.includes(project.type ?? ''));
+/** A card is dormant when it has no member of a type carrying `on_map`. */
+export function isDormant(members: Project[], config: Record<string, unknown>): boolean {
+    return !members.some((project) => hasWord(config, 'types', 'on_map', project.type));
 }
 
 /** Real projects that name one domain, preserving project order. */
-export function domainMembers(domain: Domain, projects: Project[], dead: string[] = []): Project[] {
-    return realProjects(projects, dead).filter((project) => project.domainIds.includes(domain.id));
+export function domainMembers(
+    domain: Domain,
+    projects: Project[],
+    config: Record<string, unknown>
+): Project[] {
+    return realProjects(projects, config).filter((project) =>
+        project.domainIds.includes(domain.id)
+    );
 }
 
 /**
@@ -140,10 +168,10 @@ export function registryLines(
 export function domainsWithMembers(
     domains: Domain[],
     projects: Project[],
-    dead: string[] = []
+    config: Record<string, unknown>
 ): { domain: Domain; projects: Project[] }[] {
     return domains
-        .map((domain) => ({ domain, projects: domainMembers(domain, projects, dead) }))
+        .map((domain) => ({ domain, projects: domainMembers(domain, projects, config) }))
         .filter((item) => item.projects.length > 0);
 }
 
@@ -160,17 +188,22 @@ export function lineKinds(lines: Pillar[]): {
     };
 }
 
-/** One row of `venue_tiers`: a map with a key, a label that is a string and a string colour. */
+/**
+ * One row of `venue_tiers`: a map with a key, a label that is a string and a string colour; a row
+ * with `assignable: false` is the fallback tier.
+ */
 const tierRowShape = z
     .object({
         key: wordShape.refine((key) => key !== ''),
         label: optionalTextShape,
-        color: optionalTextShape
+        color: optionalTextShape,
+        assignable: z.unknown()
     })
     .transform((row): TierRow => ({
         key: row.key,
         label: row.label ?? row.key,
-        ...(row.color === undefined ? {} : { color: row.color })
+        ...(row.color === undefined ? {} : { color: row.color }),
+        ...(row.assignable === false ? { fallback: true } : {})
     }));
 
 const tierRowsShape = rowsShape(tierRowShape);

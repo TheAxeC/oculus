@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import { anyWord, hasWord, wordNumber } from '../../data/shapes/vocab-keys.ts';
 import { hubId, inHubOf, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
@@ -726,7 +727,7 @@ export function crossLinks(
     entry: Entry,
     collectionKey: string,
     projects: Project[],
-    archiveDead: string[]
+    config: Record<string, unknown>
 ): CrossGroup[] {
     let named: Project[];
     if (collectionKey === FUNDING) {
@@ -740,11 +741,17 @@ export function crossLinks(
             .map((id) => projects.find((project) => project.id === inHubOf(entry, id, null)))
             .filter((project): project is Project => project !== undefined);
     }
-    return groupProjects(named, archiveDead);
+    return groupProjects(named, config);
 }
 
-/** Projects in work, published and ideas groups, in that order and by project id within each. */
-export function groupProjects(projects: Project[], archiveDead: string[]): CrossGroup[] {
+/**
+ * Projects in work, published and ideas groups, in that order and by project id within each. A
+ * project of a tier carrying `finished` is published work, left out when its type carries a `dead`
+ * number;
+ * a project of a type carrying `idea` is an idea; any other project with a type is work, flagged
+ * when one of its chips carries `blocked`.
+ */
+export function groupProjects(projects: Project[], config: Record<string, unknown>): CrossGroup[] {
     const grouped: Record<CrossGroup['type'], CrossMember[]> = {
         work: [],
         published: [],
@@ -752,20 +759,15 @@ export function groupProjects(projects: Project[], archiveDead: string[]): Cross
     };
     for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
         const type = typeOf(project);
-        if (
-            (project.tier === 'archive' || project.tier === 'coauthor') &&
-            archiveDead.includes(type)
-        ) {
-            continue;
-        }
-        const group =
-            project.tier === 'archive' || project.tier === 'coauthor'
-                ? 'published'
-                : type === 'idea'
-                  ? 'ideas'
-                  : type === ''
-                    ? null
-                    : 'work';
+        const finished = hasWord(config, 'tiers', 'finished', project.tier);
+        if (finished && wordNumber(config, 'types', 'dead', type) !== null) continue;
+        const group = finished
+            ? 'published'
+            : hasWord(config, 'types', 'idea', type)
+              ? 'ideas'
+              : type === ''
+                ? null
+                : 'work';
         if (group === null) continue;
         const short = project.short?.trim() ?? '';
         grouped[group].push({
@@ -785,32 +787,39 @@ export function groupProjects(projects: Project[], archiveDead: string[]): Cross
                 projects.some(
                     (project) =>
                         grouped.work.some((member) => member.id === project.id) &&
-                        project.chips.includes('blocked')
+                        anyWord(config, 'statuses', 'blocked', project.chips)
                 )
         }));
 }
 
-/** The project types the Funding view's synthetic card counts: the work that is still running. */
-const LIVE_TYPES = ['active'];
-
 /**
- * The active projects no funding scheme of the file covers, which is the Funding
- * tab's one synthetic card. A project naming a scheme the file does not hold is not covered by it,
- * so the schemes are the file's own keys rather than whatever a manifest happens to name.
+ * The projects of a type carrying `live` (the work that is still running) no funding scheme of
+ * the file covers, which is the Funding tab's one synthetic card. A project naming a scheme the
+ * file does not hold is not covered by it, so the schemes are the file's own keys rather than
+ * whatever a manifest happens to name.
  */
-export function noFunding(projects: Project[], schemes: string[]): Project[] {
+export function noFunding(
+    projects: Project[],
+    schemes: string[],
+    config: Record<string, unknown>
+): Project[] {
     return projects.filter(
         (project) =>
-            LIVE_TYPES.includes(project.type ?? '') &&
+            hasWord(config, 'types', 'live', project.type) &&
             !project.fundingIds.some((id) => schemes.includes(id))
     );
 }
 
 /** The live projects no entry of the funding file covers, the file's entries handed in whole. */
-export function unfundedBy(projects: Project[], entries: readonly Entry[]): Project[] {
+export function unfundedBy(
+    projects: Project[],
+    entries: readonly Entry[],
+    config: Record<string, unknown>
+): Project[] {
     return noFunding(
         projects,
-        entries.map((entry) => entry.id)
+        entries.map((entry) => entry.id),
+        config
     );
 }
 

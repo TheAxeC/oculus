@@ -183,17 +183,16 @@ function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): J
     const keyed = 'key' in fields;
     if (loose && !keyed) return recordSchema(fields, lists, true);
     const rows = recordSchema(fields, lists, loose);
-    let member: JsonSchema;
-    if (isPairs(fields)) {
-        // A table holds one value a key, or a list of such values where it holds lists; a value
-        // that is a list already is the list.
-        const value = fieldSchema(fields.value, lists);
-        const wrapped = entry.holds === 'lists' && fields.value.control !== 'list';
-        member = wrapped ? { anyOf: [value, { type: 'array', items: value }] } : value;
-    } else {
-        member = recordSchema(withoutKey(fields), lists, loose);
-        if (entry.holds === 'lists') member = { type: 'array', items: member };
-    }
+    // A table holds one value a key, or a list of such values where it holds lists; a value that
+    // is a list already is the list. Any other keyed family holds one record a key.
+    const value = isPairs(fields) ? fieldSchema(fields.value, lists) : null;
+    const wrapped = value !== null && entry.holds === 'lists' && fields.value.control !== 'list';
+    const member: JsonSchema =
+        value === null
+            ? recordSchema(withoutKey(fields), lists, loose)
+            : wrapped
+              ? { anyOf: [value, { type: 'array', items: value }] }
+              : value;
     const schema: JsonSchema = { type: keyed ? ['array', 'object'] : 'array', items: rows };
     if (keyed) schema.additionalProperties = member;
     return schema;

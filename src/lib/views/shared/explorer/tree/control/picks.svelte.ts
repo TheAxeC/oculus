@@ -1,7 +1,7 @@
 // Layer 3, view partial of tree/Tree.svelte. What a pick on a row runs: the right-click menu of a
 // row (menu/row-menu.ts), the file operations the menu and the keys start (menu/row-ops.ts), the
 // name being typed (menu/row-ops.ts's rowNaming) and the drops (menu/row-drop.ts), all over the
-// explorer store, and the hub and project controls (making.svelte.ts).
+// explorer store, and the four make items (making.svelte.ts).
 //
 // The entries apps add to `explorer/context` end the menu of a row, run with the row's root and
 // path.
@@ -30,8 +30,10 @@ import type { MenuItem } from '$lib/ui/menu/menu-items';
 import { targetOf } from '../drag';
 import { rowDropper } from '../menu/row-drop';
 import {
+    ROW_MAKE_GIT,
     ROW_MAKE_HUB,
     ROW_MAKE_PROJECT,
+    ROW_MAKE_REPOSITORY,
     ROW_WRITING_FIX,
     rootNameIn,
     rowFacts,
@@ -231,6 +233,8 @@ export function createPicks(deps: PicksDeps) {
         const label = row.path === '' ? rootNameIn(deps.rows(), row.root) : nameOf(row.path);
         if (pick === ROW_MAKE_HUB) void making.startHub(row, label);
         if (pick === ROW_MAKE_PROJECT) void making.project(row);
+        if (pick === ROW_MAKE_GIT) void making.git(row);
+        if (pick === ROW_MAKE_REPOSITORY) void making.startRepository(row, label);
         menuPicked(row, pick);
         opsPicked(row, pick);
     }
@@ -245,8 +249,8 @@ export function createPicks(deps: PicksDeps) {
      * is a repository has its list of commands read when its menu opens, not before, and a folder
      * or root whose listing is not held has its listing read then too, which says whether Open
      * Presentation or New Presentation is offered. A folder or root alone in the selection offers
-     * Make Folder a Hub... and Make Folder a Project by the marks the page holds of it
-     * (making.svelte.ts), so those two items are in the menu as it opens, with no request. The
+     * the make items by the marks the page holds of it (making.svelte.ts), so those items are in
+     * the menu as it opens, with no request. The
      * menu is returned at once, as reactive items that the Run Command submenu and the
      * presentation items join when their answers arrive, whichever lands first. A read that fails
      * leaves the menu as it was.

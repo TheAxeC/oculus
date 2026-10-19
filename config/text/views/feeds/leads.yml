@@ -22,7 +22,7 @@ text:
         hide_declined: Hide declined ({0})
         intro: Academic openings - auto-scouted (BE/NL/LU). {0} live{1} | fit chip = strong / moderate / reach.
         no_deadline: no deadline
-        no_file: No position-leads file configured.
+        no_file: No leads file configured.
         posting: posting
         log_all: show all {0} lines
         log_fewer: show fewer lines

@@ -90,6 +90,8 @@ export function createEntities(): EntitiesStore {
         git: () => payload('git'),
         /** The latest Live HPC state, or null before the server's starting message. */
         hpc: () => payload('hpc'),
+        /** The Recover runs and the login node's sessions, or null before the first push. */
+        recover: () => payload('recover'),
         /** The latest read of the Processes view, or null before the first one. */
         processes: () => payload('processes'),
         /** The latest read of the schedules file, or null before the first one. */

@@ -431,7 +431,7 @@
     }
 
     /* The terminal shape: the catalog follows the folder line, as every list does. */
-    :global(body.rice) .slides {
+    :global(body.rice:where(:not(.rice-sans))) .slides {
         font-family: var(--font-mono);
     }
 </style>

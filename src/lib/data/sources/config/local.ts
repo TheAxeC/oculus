@@ -136,11 +136,33 @@ export type LocalConfig = {
     mailDir?: string;
     /**
      * The literature sources' keys and contact address, `literature` in the file. Absent unless
-     * the machine sets at least one of them. The Settings view shows their values, and the file
-     * opens in a source tab like any file of the workspace; no log holds a value.
+     * the machine sets at least one of them. The Settings view shows the contact address and, for
+     * each key, that it is set, and the file opens in a source tab like any file of the workspace;
+     * no log holds a value.
      */
     literature?: LiteratureKeys;
+    /**
+     * The accounts the Data view's Recover downloads with, `downloads` in the file: one row per
+     * service. Empty unless the machine names any. No value of a row reaches a page, a log or a
+     * command line.
+     */
+    downloads: DownloadAccount[];
 };
+
+/** The services a `downloads` row names. */
+const DOWNLOAD_SERVICES = ['physionet', 'kaggle', 'kaggle-token', 'synapse'] as const;
+
+export type DownloadService = (typeof DOWNLOAD_SERVICES)[number];
+
+/** The services whose row names a user: PhysioNet and Kaggle sign in with a user and a secret. */
+const USER_SERVICES: readonly DownloadService[] = ['physionet', 'kaggle'];
+
+/**
+ * One row of `downloads:`: the service, the user name a PhysioNet or Kaggle row needs, and the
+ * secret (a PhysioNet password, a Kaggle key, Kaggle's API token, a Synapse token). Recover signs
+ * in to Kaggle with the `kaggle` row; the `kaggle-token` row is held and never used by it.
+ */
+export type DownloadAccount = { service: DownloadService; user?: string; secret: string };
 
 /** The default development port. */
 export const DEFAULT_PORT = 8790;
@@ -171,7 +193,8 @@ export const LOCAL_KEYS = [
     'apps_dir',
     'mail',
     'mail_dir',
-    'literature'
+    'literature',
+    'downloads'
 ];
 
 /** The keys under `literature:`, with the field of LiteratureKeys each sets. */
@@ -196,7 +219,8 @@ export function localDefaults(): LocalConfig {
             { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
         ],
         calendars: [],
-        mail: []
+        mail: [],
+        downloads: []
     };
 }
 
@@ -388,6 +412,66 @@ function literatureKeys(
     return Object.keys(keys).length === 0 ? null : keys;
 }
 
+/** Whether a value is one of the services a `downloads` row names. */
+function isService(value: unknown): value is DownloadService {
+    return DOWNLOAD_SERVICES.some((one) => one === value);
+}
+
+/**
+ * The rows of `downloads:` that read: a service, the user a PhysioNet or Kaggle row needs, and the
+ * secret. A row that fails, or names a service an earlier row names, is left out with a problem
+ * naming the row and what it must be; no problem holds a value of the file. A list that is not a
+ * list is null.
+ */
+function downloadAccounts(value: unknown, problems: LocalProblem[]): DownloadAccount[] | null {
+    const rows = readAs(itemsShape, value);
+    if (rows === null) {
+        problems.push(wrong('downloads', 'a list'));
+        return null;
+    }
+    const seen = new Set<DownloadService>();
+    const read: DownloadAccount[] = [];
+    rows.forEach((item, index) => {
+        const at = `downloads[${index}]`;
+        const row = readAs(mapShape, item);
+        if (row === null) {
+            problems.push(wrong(at, 'a map', 'row'));
+            return;
+        }
+        const service = row.service;
+        if (!isService(service)) {
+            problems.push(wrong(`${at}.service`, DOWNLOAD_SERVICES.join(', '), 'row'));
+            return;
+        }
+        const user = filledText(row.user);
+        const named = USER_SERVICES.includes(service);
+        if (named && user === undefined) {
+            problems.push(wrong(`${at}.user`, 'a user name', 'row'));
+            return;
+        }
+        if (!named && row.user !== undefined) {
+            problems.push(wrong(`${at}.user`, `absent for ${service}`, 'row'));
+            return;
+        }
+        const secret = filledText(row.secret);
+        if (secret === undefined) {
+            problems.push(wrong(`${at}.secret`, 'a non-empty string', 'row'));
+            return;
+        }
+        if (seen.has(service)) {
+            problems.push({
+                key: `${at}.service`,
+                kind: 'repeat',
+                sentence: `${at}.service repeats the service of an earlier row`
+            });
+            return;
+        }
+        seen.add(service);
+        read.push(user === undefined ? { service, secret } : { service, user, secret });
+    });
+    return read;
+}
+
 /**
  * The keys under `literature:` the config sets, as `literature.<key>` names; none of the values.
  */
@@ -522,6 +606,10 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
     if (record.literature !== undefined) {
         const literature = literatureKeys(record.literature, problems, unknown);
         if (literature !== null) config.literature = literature;
+    }
+    if (record.downloads !== undefined) {
+        const rows = downloadAccounts(record.downloads, problems);
+        if (rows !== null) config.downloads = rows;
     }
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.

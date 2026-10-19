@@ -1,27 +1,46 @@
 // Layer 1, data. The keys each `from:` source offers, as they are on disk: the identity field of
 // each registry (`SHAPES` of sources/registries.ts), the resources `keptResources` keeps, the
-// project folders' ids, and the keyed lists of config/catalogs/vocab.yml as `vocab.<key>`. A
-// funding entry with no `key` adds nothing. A key that stands twice in one registry file is
-// reported with the file and the key, since a reference to it could mean either entry.
+// project folders' ids, and the keyed lists of config/catalogs/vocab.yml as `vocab.<key>`, or as
+// `vocab.<key>.<field>` for the keys of a map whose row carries the field as `true`, a field no
+// row carries as `true` naming no list. A funding entry with no `key` adds nothing. A key that
+// stands twice in one registry file is reported with the file and the key, since a reference to
+// it could mean either entry.
 
 import { basename, join } from 'node:path';
 import { LineCounter, isSeq, parseDocument } from 'yaml';
 import type { Finding, RawPortfolio, RegistryName } from '../../model/index.ts';
 import { itemWith } from '../../helpers/files/yaml/collection-text.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { mapShape, readAs } from '../../shapes/shapes.ts';
 import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { MANIFEST, REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
 import { keptResources } from '../normalise.ts';
 import type { Lists } from './record.ts';
 
-/** The lists `vocab.<key>` reads, one for each of the vocabulary file's top-level keys. */
+/**
+ * The lists `vocab.<key>` reads, one for each of the vocabulary file's top-level keys, and the
+ * lists `vocab.<key>.<field>` reads, one for each field a row of a map carries as `true`.
+ */
 export function vocabLists(
     merged: Record<string, unknown>,
     keys: readonly string[]
 ): Record<string, string[]> {
     const lists: Record<string, string[]> = {};
-    for (const key of keys) if (merged[key] !== undefined) lists[key] = vocabKeys(merged[key]);
+    for (const key of keys) {
+        const value = merged[key];
+        if (value === undefined) continue;
+        lists[key] = vocabKeys(value);
+        const rows = readAs(mapShape, value) ?? {};
+        const fields = new Set(Object.values(rows).flatMap((row) => flagKeys(row)));
+        for (const field of fields) lists[`${key}.${field}`] = vocabKeys(value, field);
+    }
     return lists;
+}
+
+/** The keys a row that is a map carries as `true`, none for anything else. */
+function flagKeys(row: unknown): string[] {
+    const map = readAs(mapShape, row) ?? {};
+    return Object.keys(map).filter((field) => map[field] === true);
 }
 
 /** The prefix of a source that names a keyed list of config/catalogs/vocab.yml. */

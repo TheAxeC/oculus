@@ -27,7 +27,7 @@ const HUB = {
     'projects/a/README.md': 'hello',
     'projects/.env': 'secret=1',
     'projects/sub/b.txt': 'b',
-    'feeds/x.yml': 'x: 1',
+    'notes/x.yml': 'x: 1',
     'secrets/k': 'key',
     'a.txt': 'a',
     '.env': 'e'
@@ -129,7 +129,7 @@ const ROWS: Row[] = [
             [
                 'a file outside the declared folders',
                 'files: [hub/projects]\n',
-                '.fs/hub/feeds/x.yml',
+                '.fs/hub/notes/x.yml',
                 [403, 'not_declared']
             ],
             [
@@ -222,7 +222,7 @@ const ROWS: Row[] = [
             'application/json',
             [
                 ['a.txt', 1],
-                ['feeds', 2],
+                ['notes', 2],
                 ['projects', 2]
             ]
         ]

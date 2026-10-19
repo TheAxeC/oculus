@@ -12,17 +12,18 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 
 | File | Place | Who writes it |
 |---|---|---|
-| `config.yml` | `<hub>/.oculus/config.yml` | you; a folder holding it is a hub |
-| `local.yml` | `<hub>/.oculus/local.yml` | you; this machine only, keep it out of git |
+| `config.yml` | `<hub>/.oculus/config.yml` | Make Folder a Hub..., or you; a folder holding it is a hub |
+| `local.yml` | `<hub>/.oculus/local.yml` | Make Folder a Hub..., or you; this machine only, keep it out of git |
+| `.gitignore` | `<hub>/.oculus/.gitignore` | Make Folder a Hub..., with `local.yml`, or you |
 | `bookmarks.yml` | `<hub>/.oculus/bookmarks.yml` | the Files view's star, or you |
 | `workspaces/<name>.yml` | `<hub>/.oculus/workspaces/` | Save Workspace As, or you |
-| `schedules.yml` | `<hub>/.oculus/schedules.yml` | the update tray, or you |
+| `schedules.yml` | `<hub>/.oculus/schedules.yml` | Make Folder a Hub..., the update tray, or you |
 | `tasks/<task>.md` | `<hub>/.oculus/tasks/` | you |
-| `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | you |
-| `settings.yml` | `<repository>/.oculus/settings.yml` | you |
-| `commands.yml` | `<repository>/.oculus/commands.yml` | you |
-| `launch.yml` | `<repository>/.oculus/launch.yml` | Add Configuration, or you |
-| `cpp.yml` | `<repository>/.oculus/cpp.yml` | you |
+| `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | Make Folder a Project, or you |
+| `settings.yml` | `<repository>/.oculus/settings.yml` | Add Repository Configuration..., or you |
+| `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., or you |
+| `launch.yml` | `<repository>/.oculus/launch.yml` | Add Repository Configuration..., Add Configuration, or you |
+| `cpp.yml` | `<repository>/.oculus/cpp.yml` | Add Repository Configuration..., or you |
 | `app.yml` | `<apps folder>/<name>/app.yml` | you |
 | the hub's data files | the paths `collections:` names | oculus's views, or you |
 | `present.yml` | a deck folder | you |
@@ -64,23 +65,23 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # theme words as the options of their `themes` field. A key the list leaves out has no view, and
 # Make Folder a Hub writes the ticked keys with these paths.
 # collections:
-#   - { key: data,           file: ".oculus/data/data.yml" }
-#   - { key: venues,         file: ".oculus/data/venues.yml" }
-#   - { key: pillars,        file: ".oculus/data/pillars.yml" }
-#   - { key: domains,        file: ".oculus/data/domains.yml" }
-#   - { key: statements,     file: ".oculus/data/statements.yml" }
-#   - { key: people,         file: ".oculus/data/people.yml" }
-#   - { key: organisations,  file: ".oculus/data/organisations.yml" }
-#   - { key: resources,      file: ".oculus/data/resources.yml" }
-#   - { key: funding,        file: ".oculus/data/funding.yml" }
-#   - { key: events,         file: ".oculus/data/events.yml" }
-#   - { key: education,      file: ".oculus/data/education.yml" }
-#   - { key: applications,   file: ".oculus/data/applications.yml" }
-#   - { key: joint-work,     file: ".oculus/data/joint-work.yml" }
-#   - { key: tasks,          file: ".oculus/data/tasks.yml" }
-#   - { key: literature,     file: ".oculus/data/literature.yml" }
-#   - { key: leads,          file: ".oculus/data/leads.yml" }
-#   - { key: radar,          file: ".oculus/data/radar.yml" }
+#   - { key: data,           file: ".oculus/data/research/data.yml" }
+#   - { key: venues,         file: ".oculus/data/research/venues.yml" }
+#   - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
+#   - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
+#   - { key: statements,     file: ".oculus/data/research/statements.yml" }
+#   - { key: people,         file: ".oculus/data/people/people.yml" }
+#   - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
+#   - { key: resources,      file: ".oculus/data/research/resources.yml" }
+#   - { key: funding,        file: ".oculus/data/academic/funding.yml" }
+#   - { key: events,         file: ".oculus/data/academic/events.yml" }
+#   - { key: education,      file: ".oculus/data/academic/education.yml" }
+#   - { key: applications,   file: ".oculus/data/academic/applications.yml" }
+#   - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
+#   - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
+#   - { key: literature,     file: ".oculus/data/literature/literature.yml" }
+#   - { key: leads,          file: ".oculus/data/academic/leads.yml" }
+#   - { key: radar,          file: ".oculus/data/literature/radar.yml" }
 
 # A website's publication list, compared with the manifests by the Audit view. None by default.
 # publications_file: path/to/publications.yml
@@ -89,7 +90,7 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # linkedin_dir: path/to/_linkedin
 
 # The career file, drawn by Focus's Career strategy panel.
-# career_file: registries/career.yml
+# career_file: .oculus/data/academic/career.yml
 
 # The photo wall's folder, inside the hub.
 # memories_dir: .oculus/memories
@@ -106,11 +107,6 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #   example:
 #   - { label: "Lab handbook", path: docs/handbook.md, group: help }
 
-# The command the Data view's Recover control runs for one dataset, in a terminal in the hub's
-# folder. `{key}` is replaced by the dataset's key as one shell word. Empty gives no Recover control.
-# recover_command: ""
-#   example: python3 scripts/redownload.py {key}
-
 # The cluster Live HPC polls: the key of a `kind: cluster` entry of the resources registry.
 # Empty is no cluster.
 # slurm:
@@ -126,6 +122,47 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
+
+# The status words of this hub's projects and entries, each with its label, icon, colour and the
+# flags that say what it does, in the form of `statuses` in oculus's config/catalogs/vocab.yml.
+# Set here, it replaces oculus's whole map for this hub.
+# statuses: {}
+#   example:
+#   statuses:
+#     on-hold: { label: on hold, icon: black, color: "#9ca3af", blocked: true }
+
+# The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
+# config/layout.yml. Set here, it replaces oculus's whole map for this hub.
+# counts: {}
+
+# The host pipeline of the Focus board's career card: each status a host of the career file takes,
+# with its glyph name, its words and its colour, in the order the card offers them. `in_flight`
+# marks outreach in progress, `waiting` a status listed in the Awaiting box, and `default` the
+# status of a host the career file gives none. oculus ships none, so a hub without it draws no
+# host status.
+# career_host_status: {}
+#   example:
+#   career_host_status:
+#     awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2", in_flight: true, waiting: true }
+#     candidate: { icon: white, label: candidate, color: "#64748b", default: true }
+
+# The scored axes of a career host: the host key scored, the chip's letters and its hover words.
+# oculus ships none, so a hub without it draws no score chip.
+# career_score_dims: []
+#   example:
+#   career_score_dims:
+#     - { field: proposal, badge: "P", label: proposal }
+
+# The hue of a host's score chip by the tier its score falls in (strong, good, mid or weak); a tier
+# with no hue draws muted.
+# career_score_tones: {}
+#   example:
+#   career_score_tones: { strong: green, good: cyan, weak: red }
+
+# The colour of a Position Lead's fit chip, by its fit.
+# leads_fit: {}
+#   example:
+#   leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
 ```
 
 ## local.yml
@@ -172,6 +209,13 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 #   ncbi_key: ""
 #   mailto: you@example.org
 
+# Download accounts for the Data view's Recover. One row per service.
+# downloads:
+#   - { service: physionet, user: <user name>, secret: <password> }
+#   - { service: kaggle, user: <user name>, secret: <key> }
+#   - { service: kaggle-token, secret: <token> }
+#   - { service: synapse, secret: <token> }
+
 # Where oculus keeps its files.
 # bookmarks: .oculus/bookmarks.yml
 # schedules: .oculus/schedules.yml
@@ -183,6 +227,15 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 # schedule_record: ~/.oculus/schedule.json
 # sessions_cache: ~/.oculus/transcript-cache.json
 # sessions_overrides: ~/.oculus/sessions.json
+```
+
+## .gitignore
+
+Keeps `local.yml` out of git. Make Folder a Hub... writes it beside `local.yml`.
+
+```gitignore
+# local.yml holds this machine's own values and its secrets: keys, tokens and passwords.
+local.yml
 ```
 
 ## bookmarks.yml
@@ -248,7 +301,7 @@ Lit Watch adds new papers to the radar file, which the Lit Watch view draws.
 ```markdown
 # Lit Watch: the literature radar
 
-This file is the whole instruction for one run of the Lit Watch update task. The radar is the file the `radar` key of `.oculus/config.yml` names (`.oculus/data/radar.yml` by default); oculus's Lit Watch view draws it.
+This file is the whole instruction for one run of the Lit Watch update task. The radar is the file the `radar` key of `.oculus/config.yml` names (`.oculus/data/literature/radar.yml` by default); oculus's Lit Watch view draws it.
 
 ## What it does
 
@@ -286,7 +339,7 @@ Scout adds open positions to the leads file, which the Position Leads view draws
 ```markdown
 # Scout: open positions
 
-This file is the whole instruction for one run of the Scout update task, and it is the search spec: edit it to tune what the scout looks for. The leads are the file the `leads` key of `.oculus/config.yml` names (`.oculus/data/leads.yml` by default); oculus's Position Leads view draws it.
+This file is the whole instruction for one run of the Scout update task, and it is the search spec: edit it to tune what the scout looks for. The leads are the file the `leads` key of `.oculus/config.yml` names (`.oculus/data/academic/leads.yml` by default); oculus's Position Leads view draws it.
 
 ## Profile
 
@@ -366,7 +419,7 @@ This file is the whole instruction for one run of the LinkedIn update task. The 
 
 ## Steps
 
-1. Count the days since the `date:` of the newest posted file, against `linkedin_cadence_days` (30 by default), and say whether a post is due.
+1. Count the days since the `date:` of the newest posted file, against `linkedin_cadence_days` of `focus:` in oculus's `behavior.yml` (30 by default), and say whether a post is due.
 2. Pick a topic: the most timely `xx-` idea, or a real milestone of a project (read its `project.yml` and `README.md`).
 3. Draft the post in <the voice and the length to write in>, and show it for review.
 4. On request, save the draft as `xx-<slug>.md` with `publish: False`.
@@ -584,7 +637,7 @@ A schema line takes these keys:
   # records only: fields (the inner schema), open (more keys allowed), map (a map, not a list)
 ```
 
-### .oculus/data/venues.yml
+### .oculus/data/research/venues.yml
 
 ```yaml
 title: Venues
@@ -632,7 +685,7 @@ entries:
 #    email: editor@example.org
 ```
 
-### .oculus/data/data.yml
+### .oculus/data/research/data.yml
 
 The datasets are listed under `datasets:`, not `entries:`.
 
@@ -645,15 +698,49 @@ schema:
   - { field: themes,      type: tags,     options: [{ key: eeg, label: "EEG" }, { key: ecg, label: "ECG" }], help: "Theme words: eeg or ecg." }
   - { field: description, type: textarea, help: "What it holds and why it is used." }
   - { field: size,        type: text,     help: "How large it is." }
-  - { field: hpc_path,    type: text,     help: "Where it lives." }
+  - { field: path,        type: text,     label: "Folder", help: "The dataset's folder under ~/data, the same on this Mac and on the cluster; Recover fetches into it." }
   - { field: access,      type: select,   from: vocab.data_access, help: "open, registration, credentialed or private." }
   - { field: source,      type: text,     help: "Source address." }
+  - { field: notes,       type: textarea, help: "What a reader of the set should know, and the steps a person follows that no source states." }
   - field: retrieval
     type: records
-    help: "How the set is fetched again."
+    help: "How the set comes back: its sources, each with a kind and the fields that kind takes, fetched in the order written."
     fields:
-      - { field: method, type: select, options: [direct, library, manual, physionet, physionet_zip, private, script, url, zenodo], required: true, help: "The recipe." }
-      - { field: notes, type: textarea, help: "Steps for a person." }
+      - { field: kind,       type: select, options: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url, library, request, derived], required: true, help: "Where the files come from. physionet to url are downloads Recover runs; library, request and derived are stated on the card." }
+      - { field: project,    type: text,   when: { kind: physionet }, required: { when: { kind: physionet } }, help: "The PhysioNet project's slug, as in physionet.org/content/<project>/." }
+      - { field: version,    type: text,   when: { kind: [physionet, dandi] }, required: { when: { kind: [physionet, dandi] } }, help: "The project's or dandiset's version, written as text." }
+      - { field: archive,    type: checkbox, when: { kind: physionet }, help: "Whether the set comes as PhysioNet's one zip of the whole project; it is checked by its size." }
+      - { field: throttle,   type: text,   when: { kind: physionet }, help: "The rate the download is held to, as curl's --limit-rate takes it (5M is five megabytes a second)." }
+      - { field: record,     type: text,   when: { kind: zenodo }, required: { when: { kind: zenodo } }, help: "The Zenodo record number." }
+      - { field: collection, type: text,   when: { kind: [figshare, tcia] }, required: { when: { kind: tcia } }, help: "The figshare collection id, or the TCIA collection name." }
+      - { field: article,    type: text,   when: { kind: figshare }, help: "The figshare article id, for a set that is one article." }
+      - { field: files,      type: tags,   when: { kind: [physionet, zenodo, figshare, stanford, geo] }, required: { when: { kind: geo } }, help: "The file names to fetch; every file of the source when absent." }
+      - { field: dandiset,   type: text,   when: { kind: dandi }, required: { when: { kind: dandi } }, help: "The DANDI dandiset number." }
+      - { field: assets,     type: tags,   when: { kind: dandi }, help: "The asset paths to fetch; every asset when absent." }
+      - { field: repo,       type: text,   when: { kind: huggingface }, required: { when: { kind: huggingface } }, help: "The Hugging Face dataset, as owner/name." }
+      - { field: patterns,   type: tags,   when: { kind: huggingface }, help: "The file patterns to fetch (* matches within a folder, ** across folders); every file when absent." }
+      - { field: druid,      type: text,   when: { kind: stanford }, required: { when: { kind: stanford } }, help: "The Stanford Digital Repository druid." }
+      - { field: accession,  type: text,   when: { kind: geo }, required: { when: { kind: geo } }, help: "The GEO series accession, such as GSE180759." }
+      - { field: dataset,    type: text,   when: { kind: kaggle }, required: { when: { kind: kaggle } }, help: "The Kaggle dataset, as owner/slug." }
+      - { field: series,     type: tags,   when: { kind: tcia }, help: "The series instance UIDs to fetch; every series of the collection when absent." }
+      - { field: ids,        type: tags,   when: { kind: synapse }, required: { when: { kind: synapse } }, help: "The Synapse entity ids (syn...) whose files are fetched." }
+      - field: urls
+        type: records
+        when: { kind: url }
+        required: { when: { kind: url } }
+        help: "The files of a url source, each an address with its sha256 or its md5 when the entry knows one; a row gives at most one of the two."
+        fields:
+          - { field: url,    type: text, required: true, help: "The file's web address." }
+          - { field: sha256, type: text, help: "The file's sha256, checked after the download; not beside md5." }
+          - { field: md5,    type: text, help: "The file's md5, checked after the download, for a source that publishes no sha256; not beside sha256." }
+          - { field: name,   type: text, help: "The name the file is saved under; the address's last part when absent." }
+      - { field: call,       type: text,   when: { kind: library }, required: { when: { kind: library } }, help: "The library call that fetches the set." }
+      - { field: contact,    type: text,   when: { kind: request }, required: { when: { kind: request } }, help: "Who grants access to the set." }
+      - { field: from,       type: tags,   from: datasets, when: { kind: derived }, required: { when: { kind: derived } }, help: "The datasets the set is built from." }
+      - { field: script,     type: text,   when: { kind: derived }, required: { when: { kind: derived } }, help: "The project script that builds the set, as its path in the hub." }
+      - { field: into,       type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "A folder below the dataset's folder that the source's files land in; the folder itself when absent." }
+      - { field: unpack,     type: checkbox, when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "Whether the source's archives are unpacked into their folder after the check." }
+      - { field: strip,      type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "How many leading folders of every path an archive holds the unpack drops." }
 datasets:
 #  - key: my-eeg                  # required; what a project's datasets names
 #    name: "My EEG set"           # required
@@ -661,16 +748,23 @@ datasets:
 #    themes: [eeg]                # keys of the themes field's options
 #    description: ""
 #    size: "12 GB"
-#    hpc_path: ~/data/my-eeg
+#    path: ~/data/my-eeg          # the folder under ~/data on this Mac and on the cluster
 #    access: open                 # open, registration, credentialed or private
 #    source: https://example.org
-#    retrieval:
-#      method: url                # direct, library, manual, physionet, physionet_zip,
-#                                 # private, script, url or zenodo
-#      notes: ""
+#    notes: ""
+#    retrieval:                   # one row per source; the kinds and their fields are the schema's
+#      - kind: zenodo
+#        record: "1234567"
+#        unpack: true             # unpack the source's archives after the check
+#      - kind: url
+#        urls:
+#          - { url: https://example.org/labels.csv, sha256: "" }   # or md5:, never both
+#      - kind: derived
+#        from: [my-raw-eeg]
+#        script: projects/my-eeg/code/build.py
 ```
 
-### .oculus/data/pillars.yml
+### .oculus/data/pillars/pillars.yml
 
 ```yaml
 title: Pillars
@@ -692,7 +786,7 @@ entries:
 #    blurb: ""
 ```
 
-### .oculus/data/domains.yml
+### .oculus/data/pillars/domains.yml
 
 ```yaml
 title: Domains
@@ -710,7 +804,7 @@ entries:
 #    expects_datasets: true       # the Audit reports an active project with no dataset
 ```
 
-### .oculus/data/people.yml
+### .oculus/data/people/people.yml
 
 Exactly one entry carries `self: true`: you.
 
@@ -738,7 +832,7 @@ entries:
 #    self: true                   # on your own entry only
 ```
 
-### .oculus/data/organisations.yml
+### .oculus/data/people/organisations.yml
 
 ```yaml
 title: Organisations
@@ -756,7 +850,7 @@ entries:
 #    links: []
 ```
 
-### .oculus/data/resources.yml
+### .oculus/data/research/resources.yml
 
 ```yaml
 title: Resources
@@ -776,7 +870,7 @@ entries:
 #    links: []
 ```
 
-### .oculus/data/statements.yml
+### .oculus/data/research/statements.yml
 
 ```yaml
 title: Statements
@@ -796,7 +890,7 @@ entries:
 #    statement: ""                # the verbatim text
 ```
 
-### .oculus/data/funding.yml
+### .oculus/data/academic/funding.yml
 
 ```yaml
 title: Funding
@@ -834,7 +928,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/events.yml
+### .oculus/data/academic/events.yml
 
 ```yaml
 title: Talks & Events
@@ -869,7 +963,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/joint-work.yml
+### .oculus/data/academic/joint-work.yml
 
 ```yaml
 title: Joint work
@@ -895,7 +989,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/education.yml
+### .oculus/data/academic/education.yml
 
 ```yaml
 title: Education & Service
@@ -927,7 +1021,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/applications.yml
+### .oculus/data/academic/applications.yml
 
 ```yaml
 title: Applications
@@ -962,7 +1056,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/tasks.yml
+### .oculus/data/academic/tasks.yml
 
 ```yaml
 title: Tasks
@@ -986,7 +1080,7 @@ entries:
 #    followup: ""
 ```
 
-### .oculus/data/literature.yml
+### .oculus/data/literature/literature.yml
 
 The papers kept for reading and citing. Save to Literature on a card of the Literature search or Lit Watch writes an entry, and so does Add on the Literature view, which takes a DOI, an arXiv or PubMed id, or an address. Oculus makes the key, the citation key: the first author's surname, the year and the first word of the title.
 
@@ -1023,7 +1117,7 @@ entries:
 #    note: ""
 ```
 
-### .oculus/data/leads.yml
+### .oculus/data/academic/leads.yml
 
 Written by the scout. `meta.log` holds one dated line per pass.
 
@@ -1054,7 +1148,7 @@ entries:
 #    url: https://example.org/job
 ```
 
-### .oculus/data/radar.yml
+### .oculus/data/literature/radar.yml
 
 Written by the literature scout. `meta.last_run` is the day of its last pass.
 
@@ -1095,7 +1189,7 @@ entries:
 #    dismissed: true              # set by Lit Watch
 ```
 
-### registries/career.yml
+### .oculus/data/academic/career.yml
 
 One record of sections, drawn by Focus's Career strategy panel.
 

@@ -21,9 +21,11 @@
 // own, before `sanitise` puts it back, so `PROFILE` allows no style for any other text. The slots
 // are marked by a mark only the render of the document knows, so no text of it can stand for one.
 //
-// One reading here draws no HTML at all: codeSpans cuts a catalog line into its plain words and
-// its backticked code, which ui/display/CodeText.svelte draws as Svelte markup, so a line keeps its
-// code look on the server and in the browser alike.
+// Two readings here draw no HTML at all: codeSpans cuts a catalog line into its plain words and
+// its backticked code, which ui/display/text/CodeText.svelte draws as Svelte markup, so a line
+// keeps its code look on the server and in the browser alike, and linkRuns cuts a text of the
+// hub's data into its plain runs and its web addresses, which ui/display/text/LinkedText.svelte
+// draws as links.
 //
 // The purifier is this module's instance, built from the document once, so the hooks are ours and
 // the package's shared default instance is left as it is for anything else that imports it.
@@ -660,4 +662,50 @@ export function codeSpans(text: string): CodeSpan[] {
         else pieces.push({ code, text: words });
     }
     return pieces;
+}
+
+/** One run of a text: plain words, or a web address with the address it links to. */
+export type LinkRun = { text: string; href?: string };
+
+/** An address as written: `https://` or `http://` and everything to the next whitespace. */
+const ADDRESS = /https?:\/\/\S+/g;
+
+/** The marks a sentence puts after an address, which the address leaves out. */
+const CLOSING = '.,;:!?';
+
+/**
+ * An address with the marks a sentence put after it taken off its end: a full stop, a comma, a
+ * semicolon, a colon, an exclamation or question mark, and a `)` while the address holds no `(`,
+ * so "(https://a.b/)" links `https://a.b/` and a Wikipedia address ending `_(x)` keeps its `)`.
+ */
+function trimmed(address: string): string {
+    let end = address.length;
+    for (;;) {
+        const last = address[end - 1];
+        if (CLOSING.includes(last)) end -= 1;
+        else if (last === ')' && !address.slice(0, end).includes('(')) end -= 1;
+        else return address.slice(0, end);
+    }
+}
+
+/**
+ * The runs of a text, in order: each web address a run with its `href`, and the words between
+ * them plain runs. An address starts with `https://` or `http://` and runs to the next whitespace,
+ * less the marks `trimmed` takes off; nothing else is an address, so a bare host or a file name
+ * stays text. The runs put together give the text again.
+ */
+export function linkRuns(text: string): LinkRun[] {
+    const runs: LinkRun[] = [];
+    let at = 0;
+    for (const found of text.matchAll(ADDRESS)) {
+        const href = trimmed(found[0]);
+        const start = found.index;
+        // An address with nothing after its `//` once trimmed names no place and stays text.
+        if (!/^https?:\/\/./.test(href)) continue;
+        if (start > at) runs.push({ text: text.slice(at, start) });
+        runs.push({ text: href, href });
+        at = start + href.length;
+    }
+    if (at < text.length) runs.push({ text: text.slice(at) });
+    return runs;
 }

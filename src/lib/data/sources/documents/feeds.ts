@@ -63,6 +63,7 @@ function lead(entry: Record<string, unknown>): Lead {
 function leads(
     file: string,
     catalog: TextCatalog,
+    merged: Record<string, unknown>,
     findings: Finding[],
     named: boolean
 ): { leads: Feeds['leads']; scout: Feeds['scout'] } {
@@ -72,7 +73,7 @@ function leads(
     // Every lead of the file is checked for its identity, the closed ones too, since a write
     // addresses a lead by its title whether it is live or not.
     findings.push(...identityFindings(file, identityFieldOf(data.schema), entries, catalog));
-    const live = entries.filter((entry) => !isLeadClosed(entry.status)).map(lead);
+    const live = entries.filter((entry) => !isLeadClosed(merged, entry.status)).map(lead);
     const runs = readOr(itemsShape, metaOf(data).log, [])
         .map((line) => SCOUT_RUN.exec(str(line)))
         .filter((found): found is RegExpExecArray => found !== null)
@@ -142,10 +143,12 @@ export function readFeeds(
     hub: string,
     files: FeedFiles,
     catalog: TextCatalog,
+    merged: Record<string, unknown>,
     unnamed: readonly ('leads' | 'radar')[] = []
 ): { feeds: RawFeeds; findings: Finding[] } {
     const findings: Finding[] = [];
-    const both = leads(join(hub, files.leads), catalog, findings, !unnamed.includes('leads'));
+    const named = !unnamed.includes('leads');
+    const both = leads(join(hub, files.leads), catalog, merged, findings, named);
     const feeds: RawFeeds = {
         leads: both.leads,
         radar: radar(join(hub, files.radar), catalog, findings, !unnamed.includes('radar')),

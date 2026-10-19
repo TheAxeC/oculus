@@ -1,21 +1,134 @@
-# Oculus text owned by the data view.
+# Oculus text owned by the data view and the Recover view.
 text:
     data:
         empty: No datasets yet; add some to the hub's data file.
         fetch: Fetch
         filters: Dataset filters
-        hpc: HPC
-        intro: "{0} datasets ({1}). Provenance + recovery recipe per set, from the file the <code>data</code> entry of the hub's collections list names."
-        intro_one: "1 dataset ({0}). Provenance + recovery recipe per set, from the file the <code>data</code> entry of the hub's collections list names."
-        intro_no_recover: No hub of the workspace sets <code>recover_command</code> in its <code>.oculus/config.yml</code>, so no set has a Recover control.
-        intro_recover: Recover a set with its Recover control, which runs its hub's <code>recover_command</code> in a terminal in that hub.
+        intro: "{0} datasets ({1}). Provenance and the sources each set comes back from, from the file the <code>data</code> entry of the hub's collections list names. A set whose sources are all downloads has a Recover control."
+        intro_one: "1 dataset ({0}). Provenance and the sources the set comes back from, from the file the <code>data</code> entry of the hub's collections list names. A set whose sources are all downloads has a Recover control."
         modality_facet: Modality
+        path: Folder
         recover: Recover
-        recover_failed: 'Recovery did not start: {0}'
-        recover_tip: Open a terminal and recover this dataset
+        recover_tab: Recover {0}
+        recover_title: Open the Recover view of this dataset beside this one
         search: Search datasets | name | modality | project ...
         size: Size
         source: source
+        stated_derived: Built from {0} by {1}
+        stated_library: 'Fetched by the library call: {0}'
+        stated_request: 'Asked of: {0}'
+    recover:
+        access: Access
+        access_missing: '{0}: no row in the downloads list of local.yml'
+        access_ok: '{0}: access set up'
+        access_refused: '{0}: the service refused the row of local.yml ({1})'
+        access_unreachable: '{0}: the service did not answer the login request'
+        at_rate: '{0}, {1}/s'
+        bytes: '{0} B'
+        checked: 'Checked: {0} verified, {1} different, of {2} files'
+        checked_one: 'Checked: {0} verified, {1} different, of 1 file'
+        checksum_none: no checksum
+        col_actions: Actions
+        col_checksum: Checksum
+        col_have: On disk
+        col_name: File
+        col_size: Size
+        col_state: State
+        fetch: Fetch
+        fetch_one: Fetch
+        fetch_one_title: Fetch {0} alone
+        fetch_title: Fetch every file that is missing, partial or different; a partial file resumes where it stopped
+        free: '{0} free'
+        free_short: '{0} free, less than a Fetch needs'
+        free_unknown: free space not known
+        gb: '{0} GB'
+        have_label: Bytes on disk of {0}
+        hours: '{0} h {1} min'
+        kb: '{0} KB'
+        listing_access: '{0} refused the file list ({1}); check the access above.'
+        listing_answer: '{0} answered with something that is not its file list.'
+        listing_missing: '{0} does not hold {1}, which the entry names.'
+        listing_name: '{0} lists a file name that is absolute, climbs out of the folder or is given twice: {1}'
+        listing_network: '{0} did not answer.'
+        listing_status: '{0} answered the file list with {1}.'
+        loading: Reading the sources and the folder of {0}...
+        log: Log
+        log_empty: Nothing logged yet.
+        mb: '{0} MB'
+        minutes: '{0} min {1} s'
+        missing: '{0} to fetch.'
+        missing_unsized: '{0} to fetch, and {1} files whose size the source does not state.'
+        missing_unsized_one: '{0} to fetch, and 1 file whose size the source does not state.'
+        none: No dataset chosen. Open Recover from a dataset card.
+        of: '{0} of {1}'
+        plan: Files
+        progress: Progress
+        rate: '{0}/s'
+        rate_left: '{0}/s, {1} left'
+        refused_access: A service the sources need has no row in local.yml that it accepts.
+        refused_credential: A downloads row holds a line break, which no curl config line can carry.
+        refused_dataset: This dataset is not in the hub's data file.
+        refused_host: The settings of this hub name no cluster host.
+        refused_kind: Recover runs only a set whose sources are all downloads.
+        refused_listing: A source gave no file list; see the line below the actions.
+        refused_nothing: No file is in the state this action takes.
+        refused_place: The dataset's path is not a folder under ~/data.
+        refused_request: The request was not one Recover answers.
+        refused_running: A run of this dataset goes; it can be stopped.
+        refused_scratch: The job script does not keep its work under /local/$SLURM_JOB_ID.
+        refused_send: The files of the run could not be copied to the cluster.
+        refused_start: The fetch did not start on this Mac.
+        refused_submit: sbatch did not accept the job.
+        refused_target: The target is neither this Mac nor the cluster.
+        refused_unreachable: The cluster did not answer over ssh.
+        relist: Read the sources again
+        relist_title: Ask every source for its file list again instead of the list kept for this recipe
+        retry: Retry
+        run_count: '{0}: {1} of {2}'
+        run_fetch: Fetching
+        run_job: '{0}, job {1}'
+        run_none: No run goes.
+        run_unpack: Unpacking
+        run_verify: Checking
+        service_kaggle: Kaggle
+        service_physionet: PhysioNet
+        service_synapse: Synapse
+        setup_add: 'Add this row under `downloads:` there: `{0}`'
+        setup_again: Open this view again, or Read the sources again, to check the row.
+        setup_file: Open the `local.yml` of the primary hub's `.oculus` folder.
+        setup_row_kaggle: '- { service: kaggle, user: <user name>, secret: <key> }'
+        setup_row_physionet: '- { service: physionet, user: <user name>, secret: <password> }'
+        setup_row_synapse: '- { service: synapse, secret: <token> }'
+        setup_secret_kaggle: The `secret` is the key of an API token made under Settings on kaggle.com.
+        setup_secret_physionet: The `user` and `secret` are your PhysioNet login, on an account with access to this set.
+        setup_secret_synapse: The `secret` is a personal access token made under Account Settings on synapse.org.
+        size_unknown: not stated
+        state_different: different
+        state_missing: missing
+        state_partial: partial
+        state_present: present
+        state_verified: verified
+        stop: Stop
+        stop_none: No run of this dataset goes
+        stop_title: End this dataset's run
+        target: Target
+        target_cluster: Cluster
+        target_mac: This Mac
+        tb: '{0} TB'
+        title: Recover {0}
+        totals: '{0} files, {1}.'
+        totals_one: '1 file, {0}.'
+        totals_unsized: '{0} files.'
+        totals_unsized_one: '1 file.'
+        unsized_only: '{0} files to fetch, whose size the source does not state.'
+        unsized_only_one: '1 file to fetch, whose size the source does not state.'
+        unpack: Unpack
+        unpack_title: Unpack the archives of every source marked unpack
+        verify: Verify
+        verify_title: Check every file against the checksum its source publishes
+        why_busy: An action is being sent.
     views:
         data: Data
         data_glyph: data
+        recover: Recover
+        recover_glyph: refresh

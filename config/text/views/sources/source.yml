@@ -188,6 +188,7 @@ text:
         saved: saved
         saved_without_copy: 'saved, but the local history could not keep a copy: {0}'
         saving: saving...
+        show_suggestions: Show Suggestions
         submit: Submit Job
         submit_ask: 'Copy the code of {0} to {1} and submit {2}?'
         submit_bad_cluster: 'The cluster folder of this project is not valid: {0}'

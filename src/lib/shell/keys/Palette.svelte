@@ -48,7 +48,10 @@
     // with a query lists its workspace's symbols (rows/SymbolRows.svelte; Cmd+T in the app).
     // `:eslint-config` lists the ESLint configuration of the tab's file
     // (rows/approve/LintConfigRows.svelte), and `:clone` the repositories of the reader's GitHub
-    // account, each cloned into a folder the reader picks (rows/CloneRows.svelte).
+    // account, each cloned into a folder the reader picks (rows/CloneRows.svelte). `:theme`,
+    // `:file-icons`, `:tab` and `:goto` list what their argument picks from, `:theme` and
+    // `:file-icons` drawing the choice under the selection until the list is left
+    // (rows/ArgumentRows.svelte); Enter with no row says why in the palette.
     //
     // The file mode asks the search route for the names of every file under the served roots when
     // it opens (file-names.svelte.ts) and a worker matches them (file-match.worker.ts); the rows
@@ -68,7 +71,12 @@
     import ChoiceRows from '$lib/shell/keys/rows/approve/ChoiceRows.svelte';
     import LintConfigRows from '$lib/shell/keys/rows/approve/LintConfigRows.svelte';
     import CloneRows from '$lib/shell/keys/rows/CloneRows.svelte';
-    import { createCloneList } from '$lib/shell/keys/rows/clone-list.svelte';
+    import ArgumentRows from '$lib/shell/keys/rows/ArgumentRows.svelte';
+    import { createCloneList } from '$lib/shell/keys/lists/clone-list.svelte';
+    import {
+        argumentChoices,
+        createArgumentList
+    } from '$lib/shell/keys/lists/argument-list.svelte';
     import { createLanguageList } from '$lib/shell/keys/lists/language-list.svelte';
     import { createLintConfigList } from '$lib/shell/keys/lists/lint-config.svelte';
     import { createWorkspaceList } from '$lib/shell/keys/lists/workspace-list.svelte';
@@ -229,32 +237,36 @@
         config: lint.config
     });
     const cloneList = createCloneList({ parsed: () => parsed, repos: clone.githubRepos });
+    const listedCommands = $derived(
+        commands(
+            current.config,
+            appShell.offers(),
+            source !== null,
+            served?.language ?? '',
+            explorer.panelOpen(),
+            closedCount() > 0,
+            dockedEdges(floats())
+        )
+    );
+    const argumentList = createArgumentList({
+        parsed: () => parsed,
+        choices: () =>
+            argumentChoices(client, knownViews, tab, current.snapshot?.entities.projects),
+        hint: (name) => listedCommands.find((one) => one.name === name)?.hint ?? ''
+    });
     /** Whether the query is a mode whose rows are drawn by a partial of its own. */
     const listsRows = $derived(
         languageMode ||
             workspaceList.active ||
             choiceMode !== null ||
             lintConfig.active ||
-            cloneList.active
+            cloneList.active ||
+            argumentList.active
     );
-    /** The edges a float is docked at, whose dock toggles can run. */
-    const docked = $derived(dockedEdges(floats()));
     const commandList = $derived(
         parsed === null || line !== null || listsRows
             ? []
-            : commandRows(
-                  commands(
-                      current.config,
-                      appShell.offers(),
-                      source !== null,
-                      served?.language ?? '',
-                      explorer.panelOpen(),
-                      closedCount() > 0,
-                      docked
-                  ),
-                  knownViews,
-                  parsed
-              )
+            : commandRows(listedCommands, knownViews, parsed)
     );
     const matches = $derived(
         parsed === null && mode === 'search' ? ranked(index, query).slice(0, 30) : []
@@ -287,7 +299,7 @@
             choiceMode,
             commandList,
             choiceList,
-            modeList: lintConfig.active ? lintConfig.rows : cloneList.active ? cloneList.rows : null
+            modeList: [lintConfig, cloneList, argumentList].find((one) => one.active)?.rows ?? null
         })
     );
     const count = $derived(listed.count);
@@ -318,12 +330,19 @@
         });
     });
 
-    /** A new query, the selection on its first row. */
+    /** A new query, the selection on its first row, or on the one in force of an argument list. */
     function typed(next: string): void {
         query = next;
         said = '';
-        const first = values.at(0);
+        const first = argumentList.start ?? values.at(0);
         if (first !== undefined) chosen = first;
+    }
+
+    /** Enter on an argument list with no row says why, in the words a typed argument is refused. */
+    function refused(event: KeyboardEvent): boolean {
+        if (event.key !== 'Enter' || argumentList.refusal === '') return false;
+        said = argumentList.refusal;
+        return true;
     }
 
     /**
@@ -362,6 +381,7 @@
                                             : t('app.palette.cmdk_placeholder')}
                                         field={{ ...input, 'aria-controls': LIST }}
                                         oninput={typed}
+                                        onkey={refused}
                                     />
                                 {/snippet}
                             </Command.Input>
@@ -430,6 +450,12 @@
                                                     />
                                                 {:else if cloneList.active}
                                                     <CloneRows list={cloneList} {onclose} />
+                                                {:else if argumentList.active}
+                                                    <ArgumentRows
+                                                        list={argumentList}
+                                                        selected={chosen}
+                                                        {onclose}
+                                                    />
                                                 {:else}
                                                     <CommandRows
                                                         {parsed}

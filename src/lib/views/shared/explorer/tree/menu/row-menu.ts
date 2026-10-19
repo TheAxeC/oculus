@@ -11,7 +11,9 @@
 // (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
 // view's link saves them, the Search view opened on the folder, the view's add-root form, and its
 // removal behind its question. Fix All Writing Problems in Folder... is picked in
-// tree/control/picks.svelte.ts, which opens the dialog of fixing.svelte.ts. The items that write
+// tree/control/picks.svelte.ts, which opens the dialog of fixing.svelte.ts, and so are the four
+// make items (Make Folder a Hub..., Make Folder a Project, Make Folder a Git Repository and Add
+// Repository Configuration...), which making.svelte.ts runs. The items that write
 // (New File..., Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and
 // picked in row-ops.ts.
 //
@@ -31,6 +33,7 @@ import {
     typeOfFile,
     type FsEntry,
     type LanguageMap,
+    type MakeItems,
     type RowRef,
     type TreeRow
 } from '$lib/state/sources/fs';
@@ -89,6 +92,8 @@ export const ROW_DECK = 'present';
 const ROW_ADD_APP = 'add-app';
 export const ROW_MAKE_HUB = 'make-hub';
 export const ROW_MAKE_PROJECT = 'make-project';
+export const ROW_MAKE_GIT = 'make-git';
+export const ROW_MAKE_REPOSITORY = 'make-repository';
 
 /** The file a folder holds to be a deck, and the name that file is shown under. */
 const DECK_FILE = 'present.yml';
@@ -156,11 +161,14 @@ export type RowMenuFacts = {
     /** Whether `lint.writing` is on, which Fix All Writing Problems in Folder needs. */
     writing?: boolean;
     /**
-     * Whether the folder or root offers Make Folder a Hub... and Make Folder a Project, as the
-     * server answered when the menu opened (control/making.svelte.ts); neither while unread.
+     * Whether the folder or root offers Make Folder a Hub..., Make Folder a Project, Make Folder a
+     * Git Repository and Add Repository Configuration..., by the marks the page holds of it as the
+     * menu opens (control/making.svelte.ts); none while a listing on the way is unread.
      */
     makeHub?: boolean;
     makeProject?: boolean;
+    makeGit?: boolean;
+    makeRepository?: boolean;
 };
 
 /**
@@ -244,7 +252,7 @@ export function rowFacts(
     writing = false,
     workbench = false,
     editors = false,
-    made: { hub: boolean; project: boolean } | null = null
+    made: MakeItems | null = null
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -289,7 +297,9 @@ export function rowFacts(
         writing,
         workbench: kind !== 'file' && row.up !== true && workbench,
         makeHub: kind !== 'file' && row.up !== true && made?.hub === true,
-        makeProject: kind !== 'file' && row.up !== true && made?.project === true
+        makeProject: kind !== 'file' && row.up !== true && made?.project === true,
+        makeGit: kind !== 'file' && row.up !== true && made?.git === true,
+        makeRepository: kind !== 'file' && row.up !== true && made?.repository === true
     };
 }
 
@@ -345,6 +355,10 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         ...(facts.makeHub === true ? [item(ROW_MAKE_HUB, t('files.menu_make_hub'))] : []),
         ...(facts.makeProject === true
             ? [item(ROW_MAKE_PROJECT, t('files.menu_make_project'))]
+            : []),
+        ...(facts.makeGit === true ? [item(ROW_MAKE_GIT, t('files.menu_make_git'))] : []),
+        ...(facts.makeRepository === true
+            ? [item(ROW_MAKE_REPOSITORY, t('files.menu_make_repository'))]
             : [])
     ];
     const bookmark =

@@ -33,7 +33,7 @@ const projects = [
 const jointWork: Collection = {
     id: 'joint-work',
     title: 'Joint work',
-    file: '/hub/network/joint-work.yml',
+    file: '/hub/.oculus/data/academic/joint-work.yml',
     entries: [
         { id: 'paper-a', title: 'Paper A', fields: {}, file: '', index: 0 },
         { id: 'paper-b', title: '', fields: {}, file: '', index: 1 }

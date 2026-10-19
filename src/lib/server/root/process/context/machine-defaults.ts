@@ -29,6 +29,11 @@ const LITERATURE_NAMES = [
     'literature.mailto'
 ];
 
+/** The word the Settings view shows for a secret that holds a value, in place of the value. */
+export function secretWord(text: Record<string, string>): string {
+    return words(text, 'server.machine_default.secret_set');
+}
+
 /** A per-oculus path as the primary hub's folder holds it, relative to that folder. */
 const inPrimary = (name: string): string => join(ROOT_FOLDER, name);
 
@@ -63,6 +68,7 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
         calendar_dir: defaultConnectDir('calendar'),
         mail_dir: defaultConnectDir('mail'),
         apps_dir: inPrimary(PER_OCULUS_NAMES.appsDir),
+        downloads: noAccounts,
         ...Object.fromEntries(LITERATURE_NAMES.map((name) => [name, noKey]))
     };
 }

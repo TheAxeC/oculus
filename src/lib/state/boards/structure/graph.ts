@@ -7,8 +7,9 @@
 
 import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
-import { byKey, strings } from '../../../data/helpers/guards.ts';
+import { byKey } from '../../../data/helpers/guards.ts';
 import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
+import { hasWord, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
 import { typeTone } from '../../shared/words/tones.ts';
 
@@ -82,17 +83,22 @@ export function labelModeOf(config: Record<string, unknown>): string {
     return wordShape.parse(config.map_label_mode);
 }
 
-function archived(project: Project): string | undefined {
-    return project.tier === 'archive' || project.tier === 'coauthor' ? project.type : undefined;
+/** The type of a project of a tier carrying `finished`, which a Map toggle shows; else none. */
+function archived(project: Project, config: Record<string, unknown>): string | undefined {
+    return hasWord(config, 'tiers', 'finished', project.tier) ? project.type : undefined;
 }
 
 /** Build only nodes reached by visible projects and only edges whose two ends are visible. */
-export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Graph {
+export function buildGraph(
+    snapshot: Snapshot,
+    config: Record<string, unknown>,
+    options: GraphOptions = {}
+): Graph {
     const enabled = new Set(options.archived ?? []);
     const projects = Object.values(snapshot.entities.projects);
     const all = new Map(projects.map((project) => [project.id, project]));
     const visible = projects.filter((project) => {
-        const status = archived(project);
+        const status = archived(project, config);
         return status === undefined || enabled.has(status);
     });
     const visibleIds = new Set(visible.map((project) => project.id));
@@ -105,7 +111,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
                 : (project.short ?? project.title),
         kind: 'project',
         type: project.type,
-        ...(archived(project) === undefined ? {} : { archived: archived(project) }),
+        ...(archived(project, config) === undefined ? {} : { archived: archived(project, config) }),
         degree: 0,
         radius: 7
     }));
@@ -122,7 +128,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
                 target: `line::${line}`,
                 kind: 'membership',
                 direction: 'none',
-                archived: archived(project) !== undefined
+                archived: archived(project, config) !== undefined
             });
         }
         if (options.collaborators === true) {
@@ -134,7 +140,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
                     target: `collaborator::${person}`,
                     kind: 'collaborator',
                     direction: 'none',
-                    archived: archived(project) !== undefined
+                    archived: archived(project, config) !== undefined
                 });
             }
         }
@@ -164,7 +170,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
             target: `project::${target}`,
             kind: 'related',
             direction: mutual ? 'mutual' : 'one',
-            archived: archived(from) !== undefined || archived(to) !== undefined
+            archived: archived(from, config) !== undefined || archived(to, config) !== undefined
         });
     }
 
@@ -315,32 +321,34 @@ export function lineCounts(graph: Graph): Record<string, number> {
 }
 
 /**
- * The archive statuses the Map offers a toggle for: every type of an archived or coauthor project,
- * each with the tone `type_color` of the merged config gives that type, the tone its board card and
- * its node are drawn in.
+ * The archive statuses the Map offers a toggle for: every type of a project of a tier carrying
+ * `finished` (the archived and coauthor projects), each with the tone the `color` of its row of
+ * `types` gives, the tone its board card and its node are drawn in.
  */
-export function archiveStatuses(snapshot: Snapshot | null): { status: string; tone: string }[] {
+export function archiveStatuses(
+    snapshot: Snapshot | null,
+    config: Record<string, unknown>
+): { status: string; tone: string }[] {
     const found = new Set<string>();
     for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-        if ((project.tier === 'archive' || project.tier === 'coauthor') && project.type) {
-            found.add(project.type);
-        }
+        const type = archived(project, config);
+        if (type) found.add(type);
     }
     return [...found].map((status) => ({ status, tone: typeTone(status) }));
 }
 
 /**
- * One chip per project type the base graph holds: the types `type_order` of the merged config names
- * first, in its order, then the rest by name, each with how many the drawn graph holds and whether
- * the filter shows it (an empty filter shows every type).
+ * One chip per project type the base graph holds: the keys of `types` of the merged config first,
+ * in its order, then the rest by name, each with how many the drawn graph holds and whether the
+ * filter shows it (an empty filter shows every type).
  */
 export function typeFilters(
     base: Graph,
     drawn: Graph,
-    order: unknown,
+    config: Record<string, unknown>,
     types: string[]
 ): { type: string; count: number; shown: boolean }[] {
-    const ordered = strings(order);
+    const ordered = vocabKeys(config.types);
     const counted = typeCounts(drawn);
     const names = Object.keys(typeCounts(base));
     const rest = names.filter((type) => !ordered.includes(type)).sort();

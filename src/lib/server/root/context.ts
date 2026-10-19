@@ -75,7 +75,7 @@ import { LintRuns } from '../machine/runs/lint/runs.ts';
 import { runEntry } from '../machine/runs/schedules/run.ts';
 import type { SchedulesWatcher } from '../machine/runs/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
-import { HookStore } from '../sessions/stores/hooks.ts';
+import { HookStore, recoverPlaces } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
 import type { OpenWorkspace } from '../files/workspace/open.ts';
@@ -431,12 +431,22 @@ export function createServerContext(
     const bookmarks = startBookmarks();
     const schedules = startSchedules();
     const hostWords = hostWordsOf(config);
+    // Recover's watcher comes first: its cluster section rides on Live HPC's batch, and a press on
+    // the cluster asks Live HPC for a poll, which a request reaches only once `polled` is built.
+    const recover = make.watchRecover(hub, {
+        home: homedir(),
+        places: () => recoverPlaces(hub, open().primary),
+        hubs: () => open().hubs.map((one) => one.name),
+        pollCluster: () => void polled.hpc.refresh(),
+        readCluster: () => void polled.hpc.recover()
+    });
     const polled = startPollers(
         make,
         hub,
         local,
         {
             hpc: hpcSettingsOf(slurm, local.hpcHost, latestResources(hub), hostWords),
+            recover: recover.section,
             calendar: calendarConfig,
             mail: mailConfig,
             processes: processesConfig,
@@ -560,6 +570,7 @@ export function createServerContext(
         opener: machineOpener(local),
         openPath: pathOpener(),
         depositPlans: new Map(),
+        recover,
         rescan: () => owned().portfolio.rescan(),
         wallpaper: wallpaperMemory(),
         icons,
@@ -578,6 +589,7 @@ export function createServerContext(
             polled.calendar.close();
             polled.hpc.close();
             hpcSubmits.close();
+            recover.close();
             polled.processes.close();
             current.schedules.close();
             current.bookmarks.close();

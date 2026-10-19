@@ -10,10 +10,11 @@
 // through the catalogs under config/text/.
 
 import type { Snapshot } from '../../data/model/index.ts';
-import { numericSetting } from '../../data/helpers/guards.ts';
+import { focusBlock, focusSetting, numericSetting } from '../../data/helpers/guards.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
+import { hasWord } from '../../data/shapes/vocab-keys.ts';
 import { daysUntil } from '../boards/board/index.ts';
-import { venueLoad } from '../boards/ticker.ts';
+import { venueLoad, venueWarn } from '../boards/ticker.ts';
 
 /** The three feeds a nudge can be about, in the order the group lists them. */
 export const FEEDS = ['litwatch', 'inbox', 'scout'];
@@ -38,9 +39,9 @@ export type RefreshItem = {
     days: number | null;
 };
 
-/** A number out of the merged config, and the fallback when it holds none. */
+/** A number under `focus:` of the merged config, and the fallback when it holds none. */
 function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    return numericSetting(config, key) ?? fallback;
+    return focusSetting(config, key) ?? fallback;
 }
 
 /** Whole days since an ISO date, and null when there is no date to count from. */
@@ -51,12 +52,13 @@ export function daysSince(date: string | null, now: number): number | null {
 }
 
 /**
- * How many days old a feed may be before it is nudged: its number under `refresh_stale_days`. A
- * feed that key does not name, or names with a value that is not a finite number, is never nudged,
- * so the answer is `Infinity`; the config file is the only place a threshold comes from.
+ * How many days old a feed may be before it is nudged: its number under `refresh_stale_days` of
+ * `focus:`. A feed that key does not name, or names with a value that is not a finite number, is
+ * never nudged, so the answer is `Infinity`; the config file is the only place a threshold comes
+ * from.
  */
 export function staleAfter(config: Record<string, unknown>, feed: string): number {
-    const held = readAs(mapShape, config.refresh_stale_days);
+    const held = readAs(mapShape, focusBlock(config).refresh_stale_days);
     return (held === null ? null : numericSetting(held, feed)) ?? Infinity;
 }
 
@@ -83,9 +85,9 @@ export function attention(
     const since = daysSince(feeds.linkedin?.lastPost ?? null, now);
     if (since !== null && since > cadence) out.push({ kind: 'linkedin', count: since });
 
-    const warn = setting(config, 'venue_conc_warn', 4);
-    const projects = Object.values(snapshot.entities.projects).filter(
-        (project) => project.tier === 'projects'
+    const warn = venueWarn(config);
+    const projects = Object.values(snapshot.entities.projects).filter((project) =>
+        hasWord(config, 'tiers', 'main', project.tier)
     );
     for (const one of venueLoad(projects, snapshot.entities.venues, warn)) {
         out.push({ kind: 'venue', id: one.id, count: one.count, label: one.label });

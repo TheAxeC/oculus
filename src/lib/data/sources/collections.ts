@@ -9,9 +9,19 @@
 // every other collection lists them under `entries:`.
 
 import { join } from 'node:path';
+import { z } from 'zod';
 import { byKey } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import { itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
+import { engineDir } from '../places/engine-dir.ts';
+import {
+    filledTextShape,
+    itemsShape,
+    mapShape,
+    readAs,
+    readOr,
+    rowsShape
+} from '../shapes/shapes.ts';
+import { configDir } from './config/folder.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type {
     CollectionFile,
@@ -25,14 +35,42 @@ import type {
 export type { CollectionFile } from '../model/index.ts';
 
 /**
- * The engine's Literature collection, read from a hub whose own list names no Literature file when
- * the hub holds the file, since Save to Literature writes there then
- * (server/edit/feeds/literature.ts), so the collection the cards read is the file the save wrote.
+ * The key of the Literature collection, which a hub whose own list names no Literature file reads
+ * from oculus's default path when the hub holds the file there, since Save to Literature writes
+ * there then (server/edit/feeds/literature.ts), so the collection the cards read is the file the
+ * save wrote.
  */
-export const LITERATURE_FILE: CollectionFile = {
-    key: 'literature',
-    file: '.oculus/data/literature.yml'
-};
+export const LITERATURE_KEY = 'literature';
+
+/** One entry of the `collections:` list: a key and a hub-relative file, both texts. */
+const collectionFileShape = z.object({
+    key: z.string(),
+    file: z.string()
+}) satisfies z.ZodType<CollectionFile>;
+
+/** The `collections:` list, each entry a key and a hub-relative file. */
+const collectionFilesShape = rowsShape(collectionFileShape);
+
+/** A `collections:` list as the files it names; anything that is no such list names none. */
+export function collectionFiles(value: unknown): CollectionFile[] {
+    return readOr(collectionFilesShape, value, []);
+}
+
+/** Oculus's own default paths: each collection's file and the career file. */
+export type EngineDefaults = { collections: CollectionFile[]; career: string | null };
+
+/**
+ * Oculus's own default paths, from the `collections:` list and `career_file` of the engine's
+ * config/sources.yml, the one table of those paths. A hub whose list leaves a key out reads that
+ * key's file from here. A sources file that cannot be read gives no path.
+ */
+export function engineDefaults(engine: string = engineDir()): EngineDefaults {
+    const held = readYamlMap(join(configDir(engine), 'sources.yml'), {}, [], () => null);
+    return {
+        collections: collectionFiles(held?.collections),
+        career: readAs(filledTextShape, held?.career_file) ?? null
+    };
+}
 
 /**
  * Whether the collection `key` of a hub is one its own settings do not name (`unnamed` of
@@ -42,8 +80,7 @@ export const LITERATURE_FILE: CollectionFile = {
  */
 export function unnamedCollection(unnamed: PortfolioConfig['unnamed'], key: string): boolean {
     return (
-        unnamed?.collections === true ||
-        (unnamed?.literature === true && key === LITERATURE_FILE.key)
+        unnamed?.collections === true || (unnamed?.literature === true && key === LITERATURE_KEY)
     );
 }
 

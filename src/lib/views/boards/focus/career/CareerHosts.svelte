@@ -2,14 +2,16 @@
     // Layer 3, view partial of views/boards/focus/career/CareerPanel.svelte. The host pipeline: one
     // row per host in the file's order, with its rank, tag, institution, scores and own status, and
     // under it the status buttons that move the host along the pipeline and its note. A move is one
-    // `host` write; the answer is said through `onsaid`.
+    // `host` write; the answer is said through `onsaid`. A web address written in the note is a
+    // link (ui/display/text/LinkedText.svelte); the tag and the institution are names.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         hostStatuses,
         scoreDims,
-        scoreTier,
+        scoreTone,
         type Career,
         type Host
     } from '$lib/state/boards/career';
@@ -17,6 +19,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        selectors: { configMap },
         writes: { writeHost }
     } = useState();
 
@@ -29,14 +32,6 @@
     };
 
     let { career, statuses, dims, onsaid }: Props = $props();
-
-    /** The tone each score tier is drawn in. A middling score is muted, which is no tone at all. */
-    const TIER_TONE: Record<string, string | undefined> = {
-        strong: 'green',
-        good: 'cyan',
-        weak: 'red',
-        mid: undefined
-    };
 
     /** The words and tone of one host's own status, and nothing for a status the config omits. */
     function statusOf(host: Host): { label: string; glyph: string; tone: string } | null {
@@ -76,7 +71,7 @@
                         <span class="score" title={t('focus.career_score_tip', dim.label, value)}>
                             <Tag
                                 label={`${dim.badge} ${value}`}
-                                tone={TIER_TONE[scoreTier(value)]}
+                                tone={scoreTone(configMap(), value)}
                             />
                         </span>
                     {/if}
@@ -101,7 +96,7 @@
                     {/each}
                 </div>
                 {#if host.note !== undefined}
-                    <p class="note">{host.note}</p>
+                    <p class="note"><LinkedText text={host.note} /></p>
                 {/if}
             </div>
         </details>

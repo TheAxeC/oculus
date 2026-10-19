@@ -22,6 +22,32 @@ export type PageCommandDeps = {
     openProject: (id: string, label: string) => void;
 };
 
+/** The page's stores the commands act through, as the client object (state/client) holds them. */
+export type PageStores = {
+    ui: { setTheme: (name: string) => void; crt: () => boolean; setCrt: (on: boolean) => void };
+    themeNamed: (text: string) => string | null;
+    views: () => { id: string }[];
+    openView: (view: string, state?: Record<string, string>) => unknown;
+    projectOf: (id: string) => { title: string; short?: string } | null;
+};
+
+/** What the commands change, over the page's stores. */
+export function pageCommandDeps(stores: PageStores): PageCommandDeps {
+    return {
+        themeNamed: stores.themeNamed,
+        setTheme: stores.ui.setTheme,
+        crt: stores.ui.crt,
+        setCrt: stores.ui.setCrt,
+        hasView: (view) => stores.views().some((one) => one.id === view),
+        openView: (view) => void stores.openView(view),
+        projectLabel: (id) => {
+            const project = stores.projectOf(id);
+            return project === null ? null : (project.short ?? project.title);
+        },
+        openProject: (id, label) => void stores.openView('project', { id, label })
+    };
+}
+
 const OK: CommandResult = { ok: true, value: null };
 const BAD: CommandResult = { ok: false, word: 'refused:argument' };
 

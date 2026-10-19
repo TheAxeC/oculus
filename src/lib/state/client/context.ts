@@ -35,13 +35,14 @@ import { endingOf } from '../sessions/terminal/terminal-lists.ts';
 import { createAppTools } from '../system/apps/tools/tools.svelte.ts';
 import { themeNamed } from '../shared/words/appearance.ts';
 import { createAppShell } from '../system/apps/shell/shell.svelte.ts';
-import { runPageCommand } from '../system/apps/shell/page-commands.ts';
+import { pageCommandDeps, runPageCommand } from '../system/apps/shell/page-commands.ts';
 import { appCommands } from '../system/apps/commands.ts';
 import { createAudit } from '../system/audit.svelte.ts';
 import { createAccounts } from '../life/accounts.svelte.ts';
 import { createCalendar } from '../life/calendar.svelte.ts';
 import { createClock } from './clock.svelte.ts';
 import { createDeposit } from '../system/deposit.svelte.ts';
+import { createRecover } from '../system/machine/recover.svelte.ts';
 import { createDocs } from '../system/docs.svelte.ts';
 import { createDrag } from '../workbench/drag.svelte.ts';
 import {
@@ -349,6 +350,7 @@ export function createClientState(
         focus: () => (desktop === undefined ? window.focus() : desktop.bridge.focusMain())
     });
     const deposit = withQueries('deposit', createDeposit(queries));
+    const recover = withQueries('recover', createRecover(queries, writes, entities.recover));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
     // The linters run on the files of the source tabs this page has mounted, and again when one of
     // them is saved.
@@ -759,19 +761,13 @@ export function createClientState(
         pageCommand: (id, args) =>
             Promise.resolve(
                 runPageCommand(
-                    {
+                    pageCommandDeps({
+                        ui,
                         themeNamed: (text) => themeNamed(text, appShell.offers()),
-                        setTheme: ui.setTheme,
-                        crt: ui.crt,
-                        setCrt: ui.setCrt,
-                        hasView: (view) => registry.views().some((one) => one.id === view),
-                        openView: (view) => void layout.openView(view),
-                        projectLabel: (id) => {
-                            const project = selectors.projectOf(id);
-                            return project === null ? null : (project.short ?? project.title);
-                        },
-                        openProject: (id, label) => void layout.openView('project', { id, label })
-                    },
+                        views: registry.views,
+                        openView: layout.openView,
+                        projectOf: selectors.projectOf
+                    }),
                     id,
                     args
                 )
@@ -831,6 +827,7 @@ export function createClientState(
         latex,
         latexActions,
         deposit,
+        recover,
         transcripts,
         source,
         autosave,

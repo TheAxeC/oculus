@@ -1,9 +1,11 @@
 <script lang="ts">
     // Layer 3, shared view. The `links:` of a project's manifest, one line each. An entry is
     // an address only when views/shared/card/feed/posting.ts says it names a web page; every other
-    // entry is drawn as the words it is.
+    // entry is drawn as the words it is, with a web address written among them a link
+    // (ui/display/text/LinkedText.svelte).
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import { posting } from '../feed/posting';
     import type { BoardItem } from '$lib/state/boards/board';
 
@@ -28,7 +30,7 @@
                         <span>{link}</span>
                     </a>
                 {:else}
-                    <span>{link}</span>
+                    <span><LinkedText text={link} /></span>
                 {/if}
             </li>
         {/each}

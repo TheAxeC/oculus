@@ -1,10 +1,3 @@
-<script module lang="ts">
-    import { anyNumberShape } from '$lib/data/shapes/shapes';
-
-    /** The venue-load threshold of the configuration: any number, and 4 for anything else. */
-    const warnAtShape = anyNumberShape.catch(4);
-</script>
-
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The command center: the urgency
     // ticker, in two columns under one heading, with the buttons each line can be acted on by.
@@ -23,9 +16,10 @@
 
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import {
-        CATEGORIES,
         deadlinesByCategory,
         runsByKind,
+        tickerCategories,
+        venueWarn,
         type TickerItem
     } from '$lib/state/boards/ticker';
     import { attention, refresh } from '$lib/state/feeds/feeds';
@@ -57,8 +51,8 @@
             : refresh(snapshot, config, now, inboxState()?.notesRun ?? null, offered())
     );
 
-    /** The threshold the venue-load line quotes, the `venue_conc_warn` of behavior.yml. */
-    const warnAt = $derived(warnAtShape.parse(config.venue_conc_warn));
+    /** The threshold the venue-load line quotes: `venue_conc_warn` under `focus:`, behavior.yml. */
+    const warnAt = $derived(venueWarn(config));
 
     /**
      * The word a collection's own dates are named by. The keys are literal so keys.test.ts sees
@@ -124,7 +118,8 @@
                 kind: run.kind,
                 rows: run.lines.map((line) => row(line, dateTail(line)))
             }));
-        const categories = deadlinesByCategory(week?.deadlines ?? [], CATEGORIES).map((one) => ({
+        const order = tickerCategories(config);
+        const categories = deadlinesByCategory(week?.deadlines ?? [], order).map((one) => ({
             category: one.category,
             rows: one.lines.map((line) => row(line, deadlineTail(line)))
         }));

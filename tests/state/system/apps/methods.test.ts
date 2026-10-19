@@ -208,7 +208,7 @@ const FS_ROWS: Row[] = (
         [
             'a file outside the declared folders',
             READER,
-            ['read', 'hub', 'feeds/x.yml'],
+            ['read', 'hub', 'notes/x.yml'],
             'rejected:not_declared'
         ],
         [

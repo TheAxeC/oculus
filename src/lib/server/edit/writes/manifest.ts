@@ -37,6 +37,7 @@ import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
+import { hasWord, wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import { noteMapOf, setFields } from '../yaml/yaml-edit.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { insertRemoved, insertReplaced } from './restore.ts';
@@ -624,11 +625,13 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 
 /**
  * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
- * the project's `id`, its `tier` and `type: idea`; its status line, its `next` and its README are
- * the words of config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a
- * tier with no `next` word gets no `next`). `fields.tier` is the tier of the board that sent the
- * form and `fields.folder` the folder it was made in; a write that names neither is made in the
- * tier `projects` under that tier's `new_project_dir`. A bad id, an id a project already holds, a
+ * the project's `id`, its `tier`, the first type of `types` carrying `idea` and, as its one chip,
+ * the first status carrying `new_idea`; a tier carrying `backlog` starts it in the Focus backlog
+ * (`focus: holding`). Its status line, its `next` and its README are the words of
+ * config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no
+ * `next` word gets no `next`). `fields.tier` is the tier of the board that sent the form and
+ * `fields.folder` the folder it was made in; a write that names neither is made in the first tier
+ * carrying `main` under that tier's `new_project_dir`. A bad id, an id a project already holds, a
  * tier with no words, a hub that names no folder for the tier, an empty folder, a folder outside
  * every scan folder, a folder inside a project and a folder that is already there are all refused,
  * so nothing existing is ever written over.
@@ -647,7 +650,9 @@ export function createIdea(
     if (hubManifests(hub, config).some((one) => one.id === id)) {
         return ideaRefusal('id', words(catalog, 'server.manifest_write.idea_id_taken', id));
     }
-    const tier: Tier | undefined = tierOf(fields.tier === undefined ? 'projects' : form.tier);
+    const vocab = config.merged;
+    const main = wordsWith(vocab, 'tiers', 'main')[0] ?? '';
+    const tier: Tier | undefined = tierOf(fields.tier === undefined ? main : form.tier);
     const statusText =
         tier === undefined
             ? undefined
@@ -701,15 +706,18 @@ export function createIdea(
     const nextText = byKey(catalog, `server.manifest_write.idea_next_${tier}`);
     const title = form.title || id;
     const eli5 = form.eli5 || title;
-    const lines = [`id: ${id}`, `tier: ${tier}`, 'type: idea'];
+    const type = wordsWith(vocab, 'types', 'idea').at(0);
+    const chip = wordsWith(vocab, 'statuses', 'new_idea').at(0);
+    const lines = [`id: ${id}`, `tier: ${tier}`];
+    if (type !== undefined) lines.push(`type: ${renderScalar(type)}`);
     const { short, domain } = form;
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
     lines.push(`title: ${renderScalar(title)}`);
-    if (tier === 'projects' || tier === 'personal') lines.push('focus: holding');
+    if (hasWord(vocab, 'tiers', 'backlog', tier)) lines.push('focus: holding');
     lines.push(
         'status:',
-        '  chips: [nascent]',
+        `  chips: [${chip === undefined ? '' : renderScalar(chip)}]`,
         `  line: ${renderScalar(statusText)}`,
         `eli5: ${renderScalar(eli5)}`
     );

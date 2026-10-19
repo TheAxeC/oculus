@@ -11,12 +11,16 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import type { FeedFiles } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch, test } from '../../fixtures/scratch.ts';
 
-/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
-const CATALOG = textCatalog(loadConfig(engineDir()).config);
+/**
+ * The config oculus ships, whose `statuses` say which lead statuses are closed, and the catalog the
+ * findings are worded from, read out of it as the server reads it.
+ */
+const ENGINE = loadConfig(engineDir()).config;
+const CATALOG = textCatalog(ENGINE);
 
 const FILES: FeedFiles = {
-    leads: 'feeds/position-leads.yml',
-    radar: 'feeds/literature-radar.yml',
+    leads: '.oculus/data/academic/leads.yml',
+    radar: '.oculus/data/literature/radar.yml',
     linkedin: 'site/_linkedin'
 };
 
@@ -33,7 +37,7 @@ function hub(files: Record<string, string>): string {
 function readHub(files: Record<string, string>): ReturnType<typeof readFeeds> {
     const read = {} as ReturnType<typeof readFeeds>;
     test.beforeAll(() => {
-        Object.assign(read, readFeeds(hub(files), FILES, CATALOG));
+        Object.assign(read, readFeeds(hub(files), FILES, CATALOG, ENGINE));
     });
     return read;
 }
@@ -78,8 +82,8 @@ body
 
 describe('the three feeds, all present', () => {
     const read = readHub({
-        'feeds/position-leads.yml': LEADS,
-        'feeds/literature-radar.yml': RADAR,
+        '.oculus/data/academic/leads.yml': LEADS,
+        '.oculus/data/literature/radar.yml': RADAR,
         'site/_linkedin/01-a.md': POST,
         'site/_linkedin/02-b.md': NEWER,
         'site/_linkedin/xx-idea.md': IDEA

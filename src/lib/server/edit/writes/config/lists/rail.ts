@@ -39,7 +39,7 @@ export type RailOutcome =
     | { error: 'invalid' | 'unwritable' };
 
 /**
- * The list one text of the file holds, every entry as three strings whether or not the rule keeps
+ * The list one text of the file holds, every entry as five strings whether or not the rule keeps
  * it, which is what the change log records and what an undo compares against.
  */
 export function railLists(source: string): RailEntry[] {
@@ -63,10 +63,17 @@ export function railNow(file: string): RailEntry[] | null {
     }
 }
 
-/** One entry as the line the file carries: a flow map, its label always quoted. */
+/**
+ * One entry as the line the file carries: a flow map, its label always quoted, and its chord and
+ * group glyph only when it has them.
+ */
 function itemText(entry: RailEntry): string {
     const label = JSON.stringify(entry.label);
-    return `{ label: ${label}, glyph: ${entryText(entry.glyph)}, page: ${entryText(entry.page)} }`;
+    const group = [
+        entry.chord === '' ? '' : `, chord: ${entryText(entry.chord)}`,
+        entry.group_glyph === '' ? '' : `, group_glyph: ${entryText(entry.group_glyph)}`
+    ].join('');
+    return `{ label: ${label}, glyph: ${entryText(entry.glyph)}, page: ${entryText(entry.page)}${group} }`;
 }
 
 /**
@@ -78,7 +85,7 @@ function kept(source: string, edited: string, wanted: RailEntry[]): boolean {
     const read = readBack(source, edited);
     if (read === null) return false;
     if (othersThan(read.before, [RAIL]) !== othersThan(read.after, [RAIL])) return false;
-    return isDeepStrictEqual(read.after[RAIL] ?? [], wanted);
+    return isDeepStrictEqual(railRows(read.after[RAIL] ?? []), wanted);
 }
 
 /**

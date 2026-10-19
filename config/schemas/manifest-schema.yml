@@ -14,10 +14,11 @@
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.type_order, vocab.status_legend, vocab.focus_lanes, vocab.priority_levels). A
-# list of sources offers their keys together (`waiting-on` takes people and projects). Each value
-# of a `from` field is a link in the YAML editor: it opens the entry it names, lists the other
-# files that name it and renames it everywhere.
+# `vocab.<key>` (vocab.types, vocab.focus_lanes, vocab.priority_levels), or `vocab.<key>.<field>`
+# for the keys of a map whose row carries that field as true (vocab.statuses.chip, the words of the
+# status legend). A list of sources offers their keys together (`waiting-on` takes people and
+# projects). Each value of a `from` field is a link in the YAML editor: it opens the entry it names,
+# lists the other files that name it and renames it everywhere.
 # `options:` is a literal list, and a select takes both. Every field has a `help:` line: the form
 # shows it and the YAML editor shows it on hover. oculus turns this file into the JSON Schema
 # of every project.yml, so a key not named here is marked in the editor and is a finding.
@@ -33,12 +34,12 @@ manifest_schema:
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
     tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive, personal or software. The project is shown with a finding when the key is missing or is not one of these five." }
-    type:          { label: "Type / outcome", type: select, from: vocab.type_order, required: true, section: Core, help: "The project's stage on the Projects board (active or idea) and the Personal board (idea, active or finished); how it ended (published, nogo, dropped and so on) on Archive and Coauthor; software on a software project. The folder the project is in decides neither the tier nor the type." }
+    type:          { label: "Type / outcome", type: select, from: vocab.types, required: true, section: Core, help: "The project's stage on the Projects board (active or idea) and the Personal board (idea, active or finished); how it ended (published, nogo, dropped and so on) on Archive and Coauthor; software on a software project. The folder the project is in decides neither the tier nor the type." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
     lead:          { label: "Lead (first author)", type: text, section: Core, help: "The first author or the person who leads the project." }
     authors:       { label: "Authors", type: tags, section: Core, help: "Everyone on the author list, in order, one name per entry. Type the names as they are written; they are not picked from the people list." }
-    "status.chips": { label: "Status chips", type: chips, from: vocab.status_legend, section: Core, help: "The chips shown on the card, picked from the status legend." }
+    "status.chips": { label: "Status chips", type: chips, from: vocab.statuses.chip, section: Core, help: "The chips shown on the card, picked from the status legend." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
     focus:         { label: "Focus lane", type: select, options: [holding], from: vocab.focus_lanes, section: Core, help: "The lane of the Focus board the project sits in; holding keeps an idea in the backlog." }
     priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }

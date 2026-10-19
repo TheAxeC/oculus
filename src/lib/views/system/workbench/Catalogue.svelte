@@ -13,8 +13,9 @@
 
 <script lang="ts">
     // Layer 3, view. Every view there is, every hub document of `docs:` and every document of
-    // oculus's own folder a rail page's arrangement shows, under the `nav_groups` heading each
-    // belongs to (a rail page's, or Float for the views of the shipped float), with the key that
+    // oculus's own folder a rail page's arrangement shows, under the heading of the group each
+    // belongs to (a rail page's, headed by its rail button's label, or Float, the group of
+    // `nav_groups`, for the views of the shipped float), with the key that
     // opens it and its live badge. A press opens the entry on the page the reader was on before
     // this one, where a view lands there, and shows that page; a shift-press opens it in a pane
     // beside, on that same page. With no page before this one, which is a load straight onto it,
@@ -63,12 +64,10 @@
         railOrder,
         readChord,
         listedViews,
-        readDocs,
         readGroups,
         type DocEntry
     } from '$lib/state/workbench/navigation/catalogue';
-    import { railPages } from '$lib/state/workbench/navigation/rail';
-    import { arrangedDocs } from '$lib/state/workbench/navigation/arrangement';
+    import { chordDocs, railPages } from '$lib/state/workbench/navigation/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -106,12 +105,9 @@
     const DOC_VIEW = 'doc';
 
     const merged = $derived(config()?.config);
-    const groups = $derived(readGroups(merged?.nav_groups));
+    const groups = $derived(readGroups(merged));
     /** The engine documents the rail pages' arrangements show, then the `docs:` entries. */
-    const docs = $derived([
-        ...railPages(merged).flatMap((one) => arrangedDocs(one.page, one.node)),
-        ...readDocs(merged?.docs)
-    ]);
+    const docs = $derived(chordDocs(merged));
     const listed = $derived(listedViews(views()));
     const sections = $derived(arrange(listed, groups, docs));
     const order = $derived(railOrder(listed, groups, readChord(merged?.direct_chord), docs));

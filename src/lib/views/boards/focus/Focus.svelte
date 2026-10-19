@@ -83,12 +83,8 @@
      */
     const week = $derived(snapshot === null ? null : ticker(snapshot, config, now));
 
-    /**
-     * The projects quick add may write to: the three live tiers, the ones the ideas backlog reads.
-     * The awaiting box's people and venue tallies read them and every project of another tier
-     * drawn on a lane, since a lane draws a project of any tier whose `focus:` names it.
-     */
-    const live = $derived(liveProjects(projects));
+    /** The projects quick add may write to: those of the research board's tier. */
+    const live = $derived(liveProjects(projects, config));
 
     const strip = $derived(
         snapshot === null ? null : waiting(snapshot, config, personNames(snapshot))

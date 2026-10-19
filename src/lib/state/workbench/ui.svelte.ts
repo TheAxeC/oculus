@@ -5,14 +5,21 @@
 // under a fixed id of its own that no instance has, as the file view keeps the places of the PDFs
 // it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts).
 //
-// The seven appearance values save together under the one key, so what a browser was left looking
+// The nine appearance values save together under the one key, so what a browser was left looking
 // like comes back whole, and so do the status bar's own three: the items the reader hid from it,
 // whether its notifications are kept quiet and the repository the reader last chose in its
-// repository item (a root of the `git` channel, or none). What the seven start as is
-// config/appearance.yml's, read through state/shared/words/appearance.ts, and never a literal here.
+// repository item (a root of the `git` channel, or none), and so does whether the editors' suggest
+// list shows its description panel, once the reader has toggled it; until then
+// `editor.suggest_details` of config/behavior.yml says, as the source view reads it. What the
+// theme, the overlay and the code theme start as is config/appearance.yml's, read through
+// state/shared/words/appearance.ts, and never a literal here; the rice toggles (Brackets and
+// Monospace) start on, which is the rice themes' own look.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
-// of Storage, so a test hands it a plain object and no test touches localStorage.
+// of Storage, so a test hands it a plain object and no test touches localStorage. A theme or a file
+// icon theme the palette's `:theme` and `:file-icons` lists preview is held beside the saved values
+// and never saved (`preview`), so moving through a list draws each choice and leaving it draws the
+// chosen one again.
 //
 // Every browser tab of one server writes the one key, and the appearance is each tab's own while
 // the instance records are the views' state that belongs with the arrangement the layout store
@@ -23,10 +30,17 @@
 
 import { z } from 'zod';
 import type { BusyTerminal } from '../sessions/terminal/pty/pty-io.ts';
+import {
+    createCloseHooks,
+    type CloseHooks,
+    type OwnedInstance,
+    type TerminalOwner
+} from './layout/tabs/close-hooks.ts';
 import { mapOfShape, mapShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { NO_OFFERS, type AppOffers } from '../../data/helpers/files/apps/choices.ts';
 import { followKey } from '../shared/stores/storage-events.ts';
+import type { BrowserValues } from '../system/config/other-rows/browser.ts';
 import {
     codeThemeDefault,
     crtDefault,
@@ -38,15 +52,8 @@ import {
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';
 
-/** The envelope version saveUi writes. */
+/** The envelope version saveUi writes, and the one loadUi reads; any other reads as nothing. */
 export const UI_VERSION = 2;
-
-/**
- * The one earlier envelope loadUi still reads. It differs in a single field: its `wallpaper` was
- * written by every save rather than by the toggle alone, so a value there is not the viewer's
- * choice and is read as none.
- */
-const UI_VERSION_UNCHOSEN = 1;
 
 /**
  * The saved envelope, a field at a time. A field of the wrong type reads as the value the viewer
@@ -56,12 +63,13 @@ const UI_VERSION_UNCHOSEN = 1;
  * `__proto__` key included.
  */
 const savedUiShape = z.object({
-    version: z.union([z.literal(UI_VERSION), z.literal(UI_VERSION_UNCHOSEN)]),
+    version: z.literal(UI_VERSION),
     theme: z.unknown().optional(),
     crt: z.boolean().optional().catch(undefined),
     wallpaper: z.boolean().optional().catch(undefined),
     icons: z.boolean().optional().catch(undefined),
-    unicode: z.boolean().optional().catch(undefined),
+    brackets: z.boolean().optional().catch(undefined),
+    monospace: z.boolean().optional().catch(undefined),
     textScale: z.unknown().optional(),
     terminalFont: z.number().optional().catch(undefined),
     codeTheme: z.unknown().optional(),
@@ -70,6 +78,7 @@ const savedUiShape = z.object({
         .catch(() => []),
     statusQuiet: z.boolean().catch(false),
     statusRepository: z.string().min(1).nullable().catch(null),
+    suggestDetails: z.boolean().nullable().catch(null),
     instances: mapShape.transform((records) => ({ ...records })).catch(() => ({}))
 });
 
@@ -95,6 +104,10 @@ type Ui = {
     wallpaper: boolean | null;
     /** Whether a terminal theme keeps the icons rather than drawing the ASCII stand-ins. */
     icons: boolean;
+    /** Whether a rice theme draws its buttons, chips and tags in brackets. */
+    brackets: boolean;
+    /** Whether a rice theme draws its interface in the monospace font. */
+    monospace: boolean;
     textScale: number | null;
     terminalFont: number | null;
     /**
@@ -110,6 +123,11 @@ type Ui = {
     /** The repository last chosen in the status bar's repository item, by its root, or none. */
     statusRepository: string | null;
     /**
+     * Whether the editors' suggest list shows its description panel, as the reader last left it,
+     * or null until they toggle it, when `editor.suggest_details` of config/behavior.yml holds.
+     */
+    suggestDetails: boolean | null;
+    /**
      * One entry per view instance, by instance id, and one for each fixed id a view keeps a record
      * under. The shape of the value is the view's own.
      */
@@ -123,44 +141,41 @@ type Ui = {
  */
 export type CardMove = { instance: string; card: string; step: -1 | 1; seq: number };
 
-export type { BusyTerminal };
+export type { BusyTerminal, OwnedInstance, TerminalOwner };
 
 /**
- * The seven appearance values as this browser holds them of its own: a value that is null is one
+ * The nine appearance values as this browser holds them of its own: a value that is null is one
  * this browser has not chosen, which the config's answer stands in for. `initial()` gives what a
  * browser that saved nothing holds, so a value that differs from it is one this browser chose.
+ * The Settings rows of This browser read them in this shape.
  */
-export type Chosen = {
-    theme: string;
-    codeTheme: string | null;
-    textScale: number | null;
-    terminalFont: number | null;
-    crt: boolean;
-    wallpaper: boolean | null;
-    icons: boolean;
-};
-
-/** An instance as a terminal owner reads it: its identity, its view and the state it holds. */
-export type OwnedInstance = { id: string; view: string; state?: unknown };
+export type Chosen = BrowserValues;
 
 /**
- * What the store owning terminals registers with the ui store, in the shape of `registerUnsaved`:
- * which running terminals a set of instances owns, a fresh read of which of them run a program, and
- * ending them. The shell asks the instance list and never the terminals store, which it may not
- * read.
+ * The theme and the file icon theme a palette list draws while its selection rests on one, before
+ * Enter keeps it; null for one it does not preview.
  */
-export type TerminalOwner = {
-    running: (instances: readonly OwnedInstance[]) => string[];
-    busy: (ids: string[]) => Promise<BusyTerminal[]>;
-    end: (ids: string[]) => void;
-};
+export type Preview = { theme: string | null; fileIcons: string | null };
 
-/** What the page looks like and what each open view remembers, for one client. */
-export type UiStore = {
+/** No preview: the chosen theme and file icon theme are drawn. */
+export const NO_PREVIEW: Preview = { theme: null, fileIcons: null };
+
+/**
+ * What the page looks like and what each open view remembers, for one client, and the
+ * registrations a close asks about a tab (layout/tabs/close-hooks.ts).
+ */
+export type UiStore = CloseHooks & {
+    /** The theme drawn: the one a palette list previews, else the one this browser chose. */
     theme: () => string;
+    /** What a palette list previews: a theme and a file icon theme, each null for none. */
+    preview: () => Preview;
+    /** Draw a theme or a file icon theme without saving it; NO_PREVIEW draws the chosen ones. */
+    setPreview: (next: Preview) => void;
     crt: () => boolean;
     wallpaper: () => boolean;
     icons: () => boolean;
+    brackets: () => boolean;
+    monospace: () => boolean;
     textScale: () => number | null;
     terminalFont: () => number | null;
     codeTheme: () => string;
@@ -174,47 +189,11 @@ export type UiStore = {
     statusQuiet: () => boolean;
     /** The repository last chosen in the status bar's repository item, by its root, or null. */
     statusRepository: () => string | null;
+    /** The reader's own choice of the suggest list's description panel, or null with none. */
+    suggestDetails: () => boolean | null;
     chosen: () => Chosen;
     initial: () => Chosen;
     instanceState: (id: string) => unknown;
-    registerUnsaved: (reports: (id: string) => boolean) => void;
-    unsaved: (id: string) => boolean;
-    /** Register what answers whether a file is deleted on disk under a tab that holds it. */
-    registerGone: (reports: (root: string, path: string) => boolean) => void;
-    /** Whether a tab over this file holds it as deleted on disk. */
-    fileGone: (root: string, path: string) => boolean;
-    /** Register what saves the tabs a close may save instead of asking about them. */
-    registerSaveBeforeClose: (save: (ids: string[]) => Promise<void>) => void;
-    /**
-     * Save the tabs among these that the autosave mode saves on a close, and answer the ids that
-     * hold unsaved text afterwards, which are the ones the close asks about.
-     */
-    saveBeforeClose: (ids: string[]) => Promise<string[]>;
-    /**
-     * Register what the save key does on one tab, which the view drawing the tab hands in while it
-     * holds work a save takes (a Settings tab's rail list, an editor draft or a typed field text);
-     * the answer takes it out again. The save answers whether the work was written, true when it
-     * held nothing to write.
-     */
-    registerTabSave: (id: string, save: () => Promise<boolean>) => () => void;
-    /** Run what the tab's views registered for the save key; false when none registered any. */
-    saveTab: (id: string) => boolean;
-    /**
-     * Register what saves a tab a store holds the text of (a source tab, an app's custom editor),
-     * for the Save of a close question: null for a tab it does not hold, else whether the save
-     * wrote it.
-     */
-    registerCloseSave: (save: (id: string) => Promise<boolean> | null) => void;
-    /**
-     * Save each of these tabs that holds unsaved text, as the Save of a close question does: what
-     * the tab's views registered for the save key, else the store that holds its text. Answers the
-     * tabs left holding unsaved text: those whose save failed and those with no save at all (an
-     * untitled tab, a typed line no save takes).
-     */
-    saveForClose: (ids: string[]) => Promise<string[]>;
-    registerTerminalOwner: (owner: TerminalOwner) => void;
-    busyTerminals: (instances: readonly OwnedInstance[]) => Promise<BusyTerminal[]>;
-    endTerminals: (instances: readonly OwnedInstance[]) => void;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
     /** Ask the shell to open the palette with this text typed in it. */
@@ -229,6 +208,8 @@ export type UiStore = {
     setCrt: (on: boolean) => void;
     setWallpaper: (on: boolean | null) => void;
     setIcons: (on: boolean) => void;
+    setBrackets: (on: boolean) => void;
+    setMonospace: (on: boolean) => void;
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
@@ -237,6 +218,8 @@ export type UiStore = {
     setStatusQuiet: (on: boolean) => void;
     /** Keep the repository chosen in the status bar's repository item; null forgets it. */
     setStatusRepository: (root: string | null) => void;
+    /** Keep the reader's choice of the suggest list's description panel. */
+    setSuggestDetails: (shown: boolean) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     /** Write the file icon theme to `file_icons` of config/appearance.yml, for every page. */
     setFileIcons: (name: string) => Promise<boolean>;
@@ -269,14 +252,14 @@ export function createUi(
     offers: () => AppOffers = () => NO_OFFERS
 ): UiStore {
     /**
-     * What a browser that has saved nothing starts on. Two of the seven come from
+     * What a browser that has saved nothing starts on. Two of the nine come from
      * config/appearance.yml rather than from a literal here: the theme is the first of its list
      * (the app's dark theme in the desktop app) and the overlay is its `crt.default`. The wallpaper
      * starts on none, which wallpaper() answers from the theme in force, so it shows wherever one
      * is configured until the toggle says otherwise, and the code theme starts on none the same
      * way, answered by codeTheme() from the config's `code_theme:` until a pick is made. The glyphs
      * start as the theme's own, which is the ASCII stand-ins on a terminal palette; `icons` is what
-     * turns that off and keeps the icons.
+     * turns that off and keeps the icons. Brackets and Monospace start on, the rice look.
      */
     function defaultUi(): Ui {
         const theme = themeFor(null, inApp, NO_OFFERS);
@@ -285,12 +268,15 @@ export function createUi(
             crt: crtDefault(),
             wallpaper: null,
             icons: false,
+            brackets: true,
+            monospace: true,
             textScale: null,
             terminalFont: null,
             codeTheme: null,
             statusHidden: [],
             statusQuiet: false,
             statusRepository: null,
+            suggestDetails: null,
             instances: {}
         };
     }
@@ -305,6 +291,9 @@ export function createUi(
 
     const cardMove = $state<{ held: CardMove | null }>({ held: null });
 
+    /** What a palette list shows while its selection rests on it, which nothing saves. */
+    let previewing = $state<Preview>(NO_PREVIEW);
+
     /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
     let backing: Storable | null = null;
 
@@ -317,27 +306,28 @@ export function createUi(
     /** Stops listening for another browser tab's save, once loadUi was given a window. */
     let unfollow: () => void = () => undefined;
 
-    /** What the stores holding unsaved text registered, asked in turn by unsaved(). */
-    const unsavedReports: ((id: string) => boolean)[] = [];
+    /** What the stores holding a tab's work registered, which a close asks about the tab. */
+    const hooks = createCloseHooks();
 
-    /** What the stores that know a file's state on disk registered, asked in turn by fileGone(). */
-    const goneReports: ((root: string, path: string) => boolean)[] = [];
-
-    /** What saves tabs on a close, registered by the autosave store. */
-    const closeSavers: ((ids: string[]) => Promise<void>)[] = [];
-
-    /** What the views of each tab registered for the save key, by the tab's instance id. */
-    const tabSaves = new Map<string, Set<() => Promise<boolean>>>();
-
-    /** What the stores holding a tab's text registered for the Save of a close question. */
-    const closeSaves: ((id: string) => Promise<boolean> | null)[] = [];
-
-    /** The stores owning terminals that registered, asked by busyTerminals() and endTerminals(). */
-    const terminalOwners: TerminalOwner[] = [];
-
-    /** The theme's name, one of the names config/appearance.yml lists. */
+    /**
+     * The name of the theme drawn: the one a palette list previews, else the one this browser
+     * chose, one of the names config/appearance.yml lists.
+     */
     function theme(): string {
-        return store.current.theme;
+        return previewing.theme ?? store.current.theme;
+    }
+
+    /** What a palette list previews. */
+    function preview(): Preview {
+        return previewing;
+    }
+
+    /** Draw a theme or a file icon theme without saving it; NO_PREVIEW draws the chosen ones. */
+    function setPreview(next: Preview): void {
+        previewing = {
+            theme: next.theme === null ? null : known(next.theme),
+            fileIcons: next.fileIcons
+        };
     }
 
     /** Whether the CRT overlay is on. */
@@ -360,6 +350,16 @@ export function createUi(
     /** Whether the icons are kept on a terminal theme instead of their ASCII stand-ins. */
     function icons(): boolean {
         return store.current.icons;
+    }
+
+    /** Whether a rice theme draws its buttons, chips and tags in brackets. */
+    function brackets(): boolean {
+        return store.current.brackets;
+    }
+
+    /** Whether a rice theme draws its interface in the monospace font. */
+    function monospace(): boolean {
+        return store.current.monospace;
     }
 
     /** The app-wide multiplier, or null when the default multiplier of one is in force. */
@@ -396,118 +396,41 @@ export function createUi(
         return store.current.statusRepository;
     }
 
-    /** The seven appearance values as this browser holds them of its own. */
-    function chosen(): Chosen {
-        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = store.current;
-        return { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons };
+    /** The reader's own choice of the suggest list's description panel, or null with none. */
+    function suggestDetails(): boolean | null {
+        return store.current.suggestDetails;
     }
 
-    /** The seven appearance values of a browser that saved nothing, given the config. */
+    /** The nine appearance values of one record. */
+    function appearanceOf(held: Ui): Chosen {
+        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = held;
+        const { brackets, monospace } = held;
+        return {
+            theme,
+            codeTheme,
+            textScale,
+            terminalFont,
+            crt,
+            wallpaper,
+            icons,
+            brackets,
+            monospace
+        };
+    }
+
+    /** The nine appearance values as this browser holds them of its own. */
+    function chosen(): Chosen {
+        return appearanceOf(store.current);
+    }
+
+    /** The nine appearance values of a browser that saved nothing, given the config. */
     function initial(): Chosen {
-        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = defaultUi();
-        return { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons };
+        return appearanceOf(defaultUi());
     }
 
     /** What a view instance saved, or undefined when it has saved nothing yet. */
     function instanceState(id: string): unknown {
         return store.current.instances[id];
-    }
-
-    /**
-     * What answers whether one instance holds text no save has taken. A store that keeps such text
-     * registers one at the point the client is wired, so the shell asks the instance id and never a
-     * view's own store: a view that gains unsaved state later registers the same way and the pane
-     * that closes tabs is not edited for it.
-     */
-    function registerUnsaved(reports: (id: string) => boolean): void {
-        unsavedReports.push(reports);
-    }
-
-    /** Whether the instance holds unsaved text, which is what a close asks a confirmation about. */
-    function unsaved(id: string): boolean {
-        return unsavedReports.some((reports) => reports(id));
-    }
-
-    /** Register what answers whether a file under an open tab is deleted on disk. */
-    function registerGone(reports: (root: string, path: string) => boolean): void {
-        goneReports.push(reports);
-    }
-
-    /** Whether a tab over the file holds it as deleted on disk. */
-    function fileGone(root: string, path: string): boolean {
-        return goneReports.some((reports) => reports(root, path));
-    }
-
-    /** Register what saves tabs before a close asks about them. */
-    function registerSaveBeforeClose(save: (ids: string[]) => Promise<void>): void {
-        closeSavers.push(save);
-    }
-
-    async function saveBeforeClose(ids: string[]): Promise<string[]> {
-        for (const save of closeSavers) await save(ids);
-        return ids.filter(unsaved);
-    }
-
-    function registerTabSave(id: string, save: () => Promise<boolean>): () => void {
-        const saves = tabSaves.get(id) ?? new Set<() => Promise<boolean>>();
-        saves.add(save);
-        tabSaves.set(id, saves);
-        return () => {
-            saves.delete(save);
-            if (saves.size === 0 && tabSaves.get(id) === saves) tabSaves.delete(id);
-        };
-    }
-
-    function saveTab(id: string): boolean {
-        const saves = [...(tabSaves.get(id) ?? [])];
-        for (const save of saves) void save();
-        return saves.length > 0;
-    }
-
-    /** Whether the save of one tab wrote its work; false for a tab nothing saves. */
-    function savedForClose(id: string): Promise<boolean> {
-        const registered = [...(tabSaves.get(id) ?? [])];
-        let saving: Promise<boolean> | null = null;
-        if (registered.length > 0) {
-            saving = Promise.all(registered.map((save) => save())).then((all) =>
-                all.every(Boolean)
-            );
-        }
-        for (const save of closeSaves) saving ??= save(id);
-        return (saving ?? Promise.resolve(false)).catch(() => false);
-    }
-
-    async function saveForClose(ids: string[]): Promise<string[]> {
-        const dirty = ids.filter(unsaved);
-        const saved = await Promise.all(dirty.map(savedForClose));
-        return dirty.filter((_, at) => !saved[at]);
-    }
-
-    /** Register a store that owns terminals, at the point the client is wired. */
-    function registerTerminalOwner(owner: TerminalOwner): void {
-        terminalOwners.push(owner);
-    }
-
-    /**
-     * A fresh read of which running terminals the instances own are running a program other than
-     * their shell. Nothing is read for instances owning no running terminal.
-     */
-    async function busyTerminals(instances: readonly OwnedInstance[]): Promise<BusyTerminal[]> {
-        const found = await Promise.all(
-            terminalOwners.map((owner) => {
-                const ids = owner.running(instances);
-                return ids.length === 0 ? Promise.resolve([]) : owner.busy(ids);
-            })
-        );
-        return found.flat();
-    }
-
-    /** End the running terminals the instances own. The instances are the ones being removed. */
-    function endTerminals(instances: readonly OwnedInstance[]): void {
-        for (const owner of terminalOwners) {
-            const ids = owner.running(instances);
-            if (ids.length > 0) owner.end(ids);
-        }
     }
 
     /** Ask the shell to open the Update tray. Every request changes the observed value. */
@@ -568,8 +491,10 @@ export function createUi(
         store.current = {
             theme: known(held.theme),
             crt: held.crt ?? started.crt,
-            wallpaper: held.version === UI_VERSION ? (held.wallpaper ?? null) : null,
-            icons: held.icons ?? held.unicode === true,
+            wallpaper: held.wallpaper ?? null,
+            icons: held.icons ?? started.icons,
+            brackets: held.brackets ?? started.brackets,
+            monospace: held.monospace ?? started.monospace,
             textScale: boundedTextScale(held.textScale),
             terminalFont:
                 held.terminalFont === undefined
@@ -579,12 +504,10 @@ export function createUi(
             statusHidden: held.statusHidden,
             statusQuiet: held.statusQuiet,
             statusRepository: held.statusRepository,
+            suggestDetails: held.suggestDetails,
             instances
         };
         synced = textsOf(instances);
-        // A value saved under the field's older name, `unicode`, and not under `icons` is read
-        // above and written back here under `icons`, so a browser keeps the choice it made.
-        if (held.icons === undefined && held.unicode !== undefined) save(store.current);
         return true;
     }
 
@@ -696,6 +619,16 @@ export function createUi(
         save({ ...store.current, icons: on });
     }
 
+    /** Draw a rice theme's buttons, chips and tags in brackets, or without them. */
+    function setBrackets(on: boolean): void {
+        save({ ...store.current, brackets: on });
+    }
+
+    /** Draw a rice theme's interface in the monospace font, or in the default sans font. */
+    function setMonospace(on: boolean): void {
+        save({ ...store.current, monospace: on });
+    }
+
     /** A tenth-step app-wide multiplier from 0.7 to 1.6, or the null default at one. */
     function setTextScale(scale: number | null): void {
         save({ ...store.current, textScale: boundedTextScale(scale) });
@@ -750,6 +683,15 @@ export function createUi(
         const next = root === '' ? null : root;
         if (next === store.current.statusRepository) return;
         save({ ...store.current, statusRepository: next });
+    }
+
+    /**
+     * Keep the reader's choice of the suggest list's description panel; every editor of the page
+     * tells it, so a choice already kept saves nothing.
+     */
+    function setSuggestDetails(shown: boolean): void {
+        if (shown === store.current.suggestDetails) return;
+        save({ ...store.current, suggestDetails: shown });
     }
 
     /** Stop taking another browser tab's saved records, which `loadUi` given a window started. */
@@ -820,9 +762,13 @@ export function createUi(
 
     return {
         theme,
+        preview,
+        setPreview,
         crt,
         wallpaper,
         icons,
+        brackets,
+        monospace,
         textScale,
         terminalFont,
         codeTheme,
@@ -830,24 +776,11 @@ export function createUi(
         statusHidden,
         statusQuiet,
         statusRepository,
+        suggestDetails,
         chosen,
         initial,
         instanceState,
-        registerUnsaved,
-        unsaved,
-        registerGone,
-        fileGone,
-        registerSaveBeforeClose,
-        saveBeforeClose,
-        registerTabSave,
-        saveTab,
-        registerCloseSave: (save) => {
-            closeSaves.push(save);
-        },
-        saveForClose,
-        registerTerminalOwner,
-        busyTerminals,
-        endTerminals,
+        ...hooks,
         requestUpdateTray,
         updateTrayRequested,
         requestPalette,
@@ -860,6 +793,8 @@ export function createUi(
         setCrt,
         setWallpaper,
         setIcons,
+        setBrackets,
+        setMonospace,
         setTextScale,
         stepTextScale,
         setTerminalFont,
@@ -867,6 +802,7 @@ export function createUi(
         setStatusHidden,
         setStatusQuiet,
         setStatusRepository,
+        setSuggestDetails,
         setPaneStrip,
         setFileIcons,
         setInstanceState,

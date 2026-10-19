@@ -203,6 +203,25 @@ export function dataset(hub: HubLike, id: string): Dataset | null {
 }
 
 /**
+ * Every dataset of the last portfolio payload that Recover runs, as its hub, key and `path:`: an
+ * id of the primary hub is the key, an id of another hub is `<hub>:<key>`.
+ */
+export function recoverPlaces(
+    hub: HubLike,
+    primary: string | null
+): { hub: string; key: string; path: string | undefined }[] {
+    const datasets = entityMap(hub, 'datasets') ?? {};
+    return Object.entries(datasets).flatMap(([id, found]) => {
+        // The payload is the server's own snapshot, so what sits under a dataset id is a dataset.
+        const entry = isMap(found) ? (found as Dataset) : null;
+        if (entry?.recover !== true) return [];
+        const at = id.indexOf(':');
+        if (at === -1) return primary === null ? [] : [{ hub: primary, key: id, path: entry.path }];
+        return [{ hub: id.slice(0, at), key: id.slice(at + 1), path: entry.path }];
+    });
+}
+
+/**
  * What routes/api/(sessions)/hook/+server.ts needs of the real Hub, without importing its class
  * identity.
  */

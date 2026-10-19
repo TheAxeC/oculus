@@ -210,7 +210,7 @@
         padding-bottom: 2px;
         margin-bottom: 4px;
     }
-    :global(body.rice) .repository {
+    :global(body.rice:where(:not(.rice-sans))) .repository {
         font-family: var(--font-mono);
     }
 </style>

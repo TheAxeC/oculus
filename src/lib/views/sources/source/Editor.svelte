@@ -11,7 +11,9 @@
     // The word wrap and the rulers are the tab's, resolved in Source.svelte; the minimap, the
     // whitespace and sticky scroll are the configured ones, which every source editor takes alike.
     // The actions the tab owns (Alt+Z's toggle of word wrap among them) are handed to the editor,
-    // which binds their keys and lists them to the palette.
+    // which binds their keys and lists them to the palette. Show Suggestions, Monaco's own action,
+    // takes its label from the view's words, and the suggest list's description panel is the ui
+    // store's: the reader's own choice, else `editor.suggest_details` of config/behavior.yml.
     //
     // The editor holds the theme and the font as values, so it is handed a look that changes with
     // the theme, the text size and every pick of a code theme (the ui store's editorLook()), and
@@ -68,7 +70,7 @@
     const {
         fs: { notes },
         selectors: { editorOptions, languages, paintLimit },
-        ui: { codeTheme, editorLook }
+        ui: { codeTheme, editorLook, suggestDetails, setSuggestDetails }
     } = client;
 
     type Props = {
@@ -337,6 +339,11 @@
                     next: t('source.next_change'),
                     previous: t('source.previous_change'),
                     open: t('source.open_change')
+                }}
+                suggest={{
+                    label: t('source.show_suggestions'),
+                    details: suggestDetails() ?? configured?.suggestDetails ?? true,
+                    ondetails: setSuggestDetails
                 }}
                 language={shown}
                 model={instance}

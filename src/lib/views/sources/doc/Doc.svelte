@@ -314,7 +314,7 @@
     }
 
     /* The terminal shape: the whole tab follows the folder line, as the boards do. */
-    :global(body.rice) .view {
+    :global(body.rice:where(:not(.rice-sans))) .view {
         font-family: var(--font-mono);
     }
 </style>

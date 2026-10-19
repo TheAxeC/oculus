@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Inbox opens the Incoming page's group. The view's badge is how
-    // many threads of the live plate are still waiting on an answer or an action, in red, and the
-    // view gives that count to its rail button.
+    // many threads of the live plate are still waiting on an answer or an action, in red; its row
+    // of `counts` in config/layout.yml says where the count is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
@@ -12,7 +12,7 @@
         order: 0,
         badge: (client) => client.railBadges.inboxBadge(),
         badgeTone: () => 'red',
-        railPart: (client) => ({ count: client.railBadges.inboxCount(), tone: 'red' })
+        countPart: (client) => ({ count: client.railBadges.inboxCount(), tone: 'red' })
     };
 </script>
 

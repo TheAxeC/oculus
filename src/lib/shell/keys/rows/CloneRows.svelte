@@ -7,7 +7,7 @@
     // under the rows.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
-    import type { CloneList } from '$lib/shell/keys/rows/clone-list.svelte';
+    import type { CloneList } from '$lib/shell/keys/lists/clone-list.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

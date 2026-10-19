@@ -197,7 +197,7 @@
     }
 
     /* The terminal shape: one face for the whole view, so the columns of every section line up. */
-    :global(body.rice) .session {
+    :global(body.rice:where(:not(.rice-sans))) .session {
         font-family: var(--font-mono);
     }
 </style>

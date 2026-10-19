@@ -27,8 +27,9 @@ const MERGED = loadConfig(engineDir()).config;
 
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */
 const HUB_FILES: Record<string, string> = {
-    '.oculus/data/venues.yml': 'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
-    '.oculus/data/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
+    '.oculus/data/research/venues.yml':
+        'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
+    '.oculus/data/people/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
     'projects/ideas/tensor-spark/project.yml': 'title: Tensor spark\ntier: projects\ntype: idea\n',
     'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\ntype: idea\n',
     'projects/active/loewner/project.yml': 'title: Loewner layers\ntier: projects\ntype: active\n'
@@ -644,7 +645,7 @@ describe('a hub reports only the files its own configuration names', () => {
 
     it('raises the finding for a registry its own collections list names and does not hold', () => {
         const { snapshot, lab } = joinedWith(
-            'scan:\n  - { dir: . }\ncollections:\n  - { key: venues, file: registries/venues.yml }\n',
+            'scan:\n  - { dir: . }\ncollections:\n  - { key: venues, file: lists/venues.yml }\n',
             PROJECTS
         );
         expect(
@@ -652,8 +653,8 @@ describe('a hub reports only the files its own configuration names', () => {
                 .filter((one) => one.file.startsWith(lab))
                 .map((one) => [one.file.slice(lab.length), one.message])
         ).toEqual([
-            ['/registries/venues.yml', 'registry file does not exist'],
-            ['/registries/venues.yml', 'collection file does not exist']
+            ['/lists/venues.yml', 'registry file does not exist'],
+            ['/lists/venues.yml', 'collection file does not exist']
         ]);
     });
 
@@ -700,11 +701,13 @@ describe('a hub reports only the files its own configuration names', () => {
         "reads Literature from the engine's path when its list names none and it %s",
         (_name, held) => {
             const hub = plantScratch('oculus-collections-literature-', {
-                '.oculus/config.yml':
-                    'collections:\n  - { key: venues, file: registries/venues.yml }\n',
-                'registries/venues.yml': 'entries: []\n',
+                '.oculus/config.yml': 'collections:\n  - { key: venues, file: lists/venues.yml }\n',
+                'lists/venues.yml': 'entries: []\n',
                 ...(held
-                    ? { '.oculus/data/literature.yml': 'entries:\n  - { key: a24, title: A }\n' }
+                    ? {
+                          '.oculus/data/literature/literature.yml':
+                              'entries:\n  - { key: a24, title: A }\n'
+                      }
                     : {})
             });
             const { config, from } = loadConfig(engineDir(), { hub });
@@ -722,7 +725,7 @@ describe('a hub reports only the files its own configuration names', () => {
             }).toEqual(
                 held
                     ? {
-                          file: join(hub, '.oculus/data/literature.yml'),
+                          file: join(hub, '.oculus/data/literature/literature.yml'),
                           titles: ['A'],
                           listed: true,
                           findings: []

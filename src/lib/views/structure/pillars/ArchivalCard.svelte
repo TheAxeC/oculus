@@ -1,6 +1,7 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. Non-real work grouped in archive_dead order, with one collapsible
-    // category at a time and project links inside it.
+    // Layer 3, Pillars partial. Non-real work grouped by the types of `types` that carry a `dead`
+    // number, in the order of those numbers, with one collapsible category at a time and project
+    // links inside it.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';

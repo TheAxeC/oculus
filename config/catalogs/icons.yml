@@ -86,6 +86,7 @@ icons:
     info: info
     # tab / section icons
     focus: target
+    keyboard: keyboard
     data: database
     venue: diamond
     funding: banknote

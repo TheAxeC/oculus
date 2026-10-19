@@ -19,7 +19,7 @@ text:
         email: Email
         link: Link
         joint_work: Joint work
-        no_joint_work: No entry of network/joint-work.yml names this person yet.
+        no_joint_work: No entry of the joint-work file names this person yet.
         open_joint_work: Joint work
         open_joint_work_tip: Open the Joint work view, where these entries are edited.
         editor: Edit

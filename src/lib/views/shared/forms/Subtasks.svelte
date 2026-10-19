@@ -19,8 +19,11 @@
     //
     // A card whose file has unsaved text in a source tab hands `blocked`, the words saying so:
     // every button that writes the file is drawn disabled with them as its title.
+    //
+    // A web address written in a line is a link (ui/display/text/LinkedText.svelte).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -147,7 +150,7 @@
                             : t('project.action.box_off_glyph')}
                     />
                 </span>
-                <span class="do">{line.do}</span>
+                <span class="do"><LinkedText text={line.do} /></span>
                 {#if line.deadline}
                     <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
                 {/if}

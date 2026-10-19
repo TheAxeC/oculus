@@ -60,7 +60,10 @@
 // there (`gitDiffs`).
 //
 // Format Document is answered by one provider per language (`createFormatting`), which hands the
-// model it is asked about to the formatter the model's owner gave.
+// model it is asked about to the formatter the model's owner gave. Show Suggestions and the suggest
+// list's description panel are keys/suggest.ts's, loaded once the services have started, since the
+// panel's value lives in the page's storage service. Monaco's own keys, which the Keyboard
+// Shortcuts view lists, are read from its registries by keys/monaco-keys.ts, loaded the same way.
 //
 // The languages whose blocks are braces and that Monaco has no language service for are folded by
 // their braces, by the providers `registerFolding` registers (languages/folding.ts), which leave a
@@ -90,6 +93,8 @@ import { appKit, appKitVersion, onAppKit, servedLanguages } from './languages/ap
 import { grammarsOf, hasGrammar, injectionsOf } from './languages/app-grammars';
 import { applyAppLanguages, type Applied } from './languages/register';
 import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
+import { loadSuggest, type SuggestKit } from '../keys/suggest';
+import { loadShortcuts, type EditorShortcut } from '../keys/monaco-keys';
 import { pageWidgets, type PageWidgets } from '../options';
 import type { GitDiffs } from '../diff/git-provider';
 import { RITE_GRAMMAR } from './rite/rite';
@@ -220,6 +225,10 @@ export type EditorKit = {
     widgets: PageWidgets;
     /** Git's line changes of the files the page's diff editors draw (diff/git-provider.ts). */
     gitDiffs: GitDiffs;
+    /** Show Suggestions and the suggest list's description panel (keys/suggest.ts). */
+    suggest: SuggestKit;
+    /** Monaco's own keys, as the Keyboard Shortcuts view lists them (keys/monaco-keys.ts). */
+    shortcuts: () => EditorShortcut[];
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -331,7 +340,9 @@ async function start(): Promise<EditorKit> {
             }
         )
         .dispose();
+    const suggest = await loadSuggest();
     const mac = onMac();
+    const shortcuts = await loadShortcuts(monaco, mac);
     monaco.editor.addKeybindingRules(
         freedKeys(mac).map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
     );
@@ -405,7 +416,9 @@ async function start(): Promise<EditorKit> {
         formatting: createFormatting(monaco),
         lsp,
         widgets,
-        gitDiffs
+        gitDiffs,
+        suggest,
+        shortcuts
     };
 }
 

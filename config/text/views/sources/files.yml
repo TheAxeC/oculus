@@ -84,14 +84,51 @@ text:
         key_up: Up
         listing_failed: '{0} could not be read: {1}'
         loading: Reading...
+        make_always: always written
+        make_collection_line_applications: Applications for positions, with their status and deadline.
+        make_collection_line_data: 'The datasets: where each one lives, who may use it and how it is fetched.'
+        make_collection_line_domains: The domains, with their colour and whether a project in one needs a dataset.
+        make_collection_line_education: Courses taught and service given.
+        make_collection_line_events: Talks and events, given or attended.
+        make_collection_line_funding: Grants and calls, from planned to awarded.
+        make_collection_line_joint_work: Work with a person outside the projects.
+        make_collection_line_leads: Open positions, written by the scout task.
+        make_collection_line_literature: Papers kept for reading and citing.
+        make_collection_line_organisations: The universities, hospitals, funders and companies people belong to.
+        make_collection_line_people: The people of the hub's projects, you among them.
+        make_collection_line_pillars: The research pillars the projects are grouped under.
+        make_collection_line_radar: Papers found by Lit Watch, the literature radar.
+        make_collection_line_resources: The clusters, machines and storage the projects compute on.
+        make_collection_line_statements: Statements kept word for word for manuscripts, such as data availability.
+        make_collection_line_tasks: Tasks with a status and a deadline.
+        make_collection_line_venues: The journals and conferences a project may aim at.
+        make_group_collections: Collections
+        make_group_collections_about: The data files the hub keeps, each with its view. A collection left unticked has no view until config.yml lists it.
+        make_group_hub_files: Hub files
+        make_group_hub_files_about: The hub's own settings, and this machine's files beside them.
+        make_group_repository: Configuration files
+        make_group_repository_about: The files oculus reads for this repository's editor, commands, debugging and C++ compiling. A file that is there already is left as it is.
         make_hub_button: Make
-        make_hub_collections: The collections the hub keeps
-        make_hub_detail: 'Oculus writes .oculus/config.yml in {0}, listing the ticked collections, and for each of them its data file under .oculus/data/, from the templates of its docs/templates.md. A collection left unticked has no view until a hub lists it.'
+        make_hub_detail: 'Oculus writes the ticked files into .oculus/ in {0}, each from its template in its docs/templates.md with every key commented out at its default. A file that is there already stops the make, and nothing is written.'
+        make_hub_line_config: "The hub's own settings: where projects are found, the collections it keeps and the values it sets for oculus."
+        make_hub_line_local: "This machine's own values: the port, the programs, the accounts and the keys, with the .gitignore that keeps it out of git."
+        make_hub_line_schedules: 'The schedules of the update tray: an update task, a saved command or a prompt, each run at its time.'
         make_hub_title: Make {0} a Hub
         make_refused_exists: '{0} is there already, so nothing was written.'
         make_refused_failed: 'The files could not all be written. Written: {0}.'
-        make_refused_offer: This folder is in a hub or already a project, so it cannot be made one.
+        make_refused_git: 'git init failed: {0}'
+        make_refused_offer: This folder is in a hub, is a project already, or is your home folder or oculus's own folder, so it cannot be made one.
+        make_refused_offer_git: This folder is a git repository already, lies inside a .git folder, or is your home folder or oculus's own folder, so it cannot be made one.
+        make_refused_offer_repository: This folder is no repository, holds every configuration file already, or is your home folder or oculus's own folder, so nothing was written.
         make_refused_template: Oculus's docs/templates.md holds no template for it, so nothing was written.
+        make_repo_button: Add
+        make_repo_detail: 'Oculus writes the ticked files into .oculus/ in {0}, each from its template in its docs/templates.md with every entry commented out, so the repository reads as before until you fill one in.'
+        make_repo_line_commands: Named commands, run from the Repositories view, a project card or Run Command.
+        make_repo_line_cpp: Compile configurations clangd can use.
+        make_repo_line_launch: Debug configurations.
+        make_repo_line_settings: Editor settings for the files of this repository, per language.
+        make_repo_title: Add Repository Configuration to {0}
+        make_there: there already
         memory: Memory Usage
         memory_close: Close
         memory_close_title: Close the memory usage
@@ -112,8 +149,10 @@ text:
         menu_delete: Delete
         menu_download: Download...
         menu_find: Find in Folder...
+        menu_make_git: Make Folder a Git Repository
         menu_make_hub: Make Folder a Hub...
         menu_make_project: Make Folder a Project
+        menu_make_repository: Add Repository Configuration...
         menu_nesting: File Nesting
         menu_new_file: New File...
         menu_new_folder: New Folder...

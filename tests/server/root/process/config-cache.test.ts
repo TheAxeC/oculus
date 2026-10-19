@@ -41,7 +41,8 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         riteDapBin: 'rite_dap',
         accounts: [],
         calendars: [],
-        mail: []
+        mail: [],
+        downloads: []
     };
     const state = plantState([{ name: 'hub', dir: hub }], 'hub');
     const context = contextFixture({

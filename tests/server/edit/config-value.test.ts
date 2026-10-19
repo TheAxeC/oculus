@@ -61,28 +61,28 @@ function write(engine: string, file: string, key: string, value: unknown) {
     return writeConfigValue(engine, file, key, value, valueOf(engine, file, key));
 }
 
-const WAITING = 'behavior.yml:waiting_status';
+const PATTERNS = 'behavior.yml:processes.patterns';
 
 describe('a list written in place', () => {
     it('adds one item, removes one and swaps two, and keeps every other line', () => {
         const engine = scratchEngine();
         const before = held(engine, 'behavior.yml');
-        const next = ['pending', 'submitted', 'under-review', 'queued'];
-        const outcome = write(engine, 'behavior.yml', 'waiting_status', next);
+        const next = ['codex', 'python3', 'claude', 'node', 'pytest'];
+        const outcome = write(engine, 'behavior.yml', 'processes.patterns', next);
         expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([WAITING]);
+        expect(outcome.changed).toEqual([PATTERNS]);
         expect(held(engine, 'behavior.yml')).toBe(
             before.replace(
-                '[submitted, pending, under review, under-review]',
-                '[pending, submitted, under-review, queued]'
+                '[python3, codex, claude, node, latexmk]',
+                '[codex, python3, claude, node, pytest]'
             )
         );
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(next);
+        expect(valueOf(engine, 'behavior.yml', 'processes.patterns')).toEqual(next);
         expect(outcome.records).toHaveLength(1);
         expect(outcome.records?.[0]).toMatchObject({
             key: 'behavior.yml',
-            field: 'waiting_status',
-            before: ['submitted', 'pending', 'under review', 'under-review'],
+            field: 'processes.patterns',
+            before: ['python3', 'codex', 'claude', 'node', 'latexmk'],
             after: next,
             undo: 'field'
         });
@@ -137,9 +137,15 @@ describe('a write refused with nothing written', () => {
     it('refuses a base the file no longer holds, with the sentence that it changed since it was read', () => {
         const engine = scratchEngine();
         const before = held(engine, 'behavior.yml');
-        const stale = ['submitted', 'pending'];
-        const outcome = writeConfigValue(engine, 'behavior.yml', 'waiting_status', ['x'], stale);
-        expect(refusalOf(outcome, WAITING)).toBe(why('changed'));
+        const stale = ['python3', 'codex'];
+        const outcome = writeConfigValue(
+            engine,
+            'behavior.yml',
+            'processes.patterns',
+            ['x'],
+            stale
+        );
+        expect(refusalOf(outcome, PATTERNS)).toBe(why('changed'));
         expect(held(engine, 'behavior.yml')).toBe(before);
     });
 });

@@ -1,8 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. The session list opens the Sessions page's group, as it opens the
     // page. Its badge is how many sessions the list draws as needing input, an archived one left
-    // out, the count it also gives its rail button; a list limited to a folder carries the same
-    // count, the view's.
+    // out, its count, drawn where its row of `counts` says; a list limited to a folder carries the
+    // same count, the view's.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
 
@@ -13,7 +13,7 @@
         group: 'sessions',
         order: 0,
         badge: (client) => countText(client.railBadges.sessionInputCount()),
-        railPart: (client) => ({ count: client.railBadges.sessionInputCount() })
+        countPart: (client) => ({ count: client.railBadges.sessionInputCount() })
     };
 </script>
 
@@ -447,7 +447,7 @@
         display: inline-flex;
     }
 
-    :global(body.rice) .list {
+    :global(body.rice:where(:not(.rice-sans))) .list {
         font-family: var(--font-mono);
     }
 </style>

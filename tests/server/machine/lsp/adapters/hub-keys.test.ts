@@ -93,17 +93,17 @@ describe('the answer to prepareRename and rename of a hub key', () => {
     });
 
     it('refuses a person key that a reference also names as a project, from its definition', () => {
-        const people = HUB_FILES['registries/people.yml'].replace(
+        const people = HUB_FILES['.oculus/data/people/people.yml'].replace(
             '  - key: ann\n',
             '  - key: beta\n    name: Beta\n  - key: ann\n'
         );
-        const hub = plantHub({ 'registries/people.yml': people });
+        const hub = plantHub({ '.oculus/data/people/people.yml': people });
         const answer = ask(
             hub,
             'textDocument/prepareRename',
             { line: 8, character: 10 },
             {},
-            'registries/people.yml'
+            '.oculus/data/people/people.yml'
         );
         expect(messageOf(answer)).toBe(
             words(TEXT, 'source.rename_sources', 'beta', 'people, projects')
@@ -129,18 +129,18 @@ describe('the answer to prepareRename and rename of a hub key', () => {
         const named = messageOf(answer);
         expect(named).toBe(
             key === 'rename_large'
-                ? words(TEXT, `source.${key}`, 'registries/venues.yml', 5)
-                : words(TEXT, `source.${key}`, 'registries/venues.yml')
+                ? words(TEXT, `source.${key}`, '.oculus/data/research/venues.yml', 5)
+                : words(TEXT, `source.${key}`, '.oculus/data/research/venues.yml')
         );
     });
 
     it('refuses a rename when a file is open in a tab of another window, at prepareRename', () => {
         const hub = plantHub();
         const answer = ask(hub, 'textDocument/prepareRename', VENUE_AT, {
-            elsewhere: (real) => real.endsWith('registries/venues.yml')
+            elsewhere: (real) => real.endsWith('.oculus/data/research/venues.yml')
         });
         expect(messageOf(answer)).toBe(
-            words(TEXT, 'source.lsp_edit_elsewhere', 'registries/venues.yml')
+            words(TEXT, 'source.lsp_edit_elsewhere', '.oculus/data/research/venues.yml')
         );
     });
 
@@ -159,9 +159,11 @@ describe('the answer to prepareRename and rename of a hub key', () => {
 
     it('makes the checks of prepareRename again at rename', () => {
         const hub = plantHub();
-        const page = { elsewhere: (real: string) => real.endsWith('registries/venues.yml') };
+        const page = {
+            elsewhere: (real: string) => real.endsWith('.oculus/data/research/venues.yml')
+        };
         expect(messageOf(ask(hub, 'textDocument/rename', VENUE_AT, page))).toBe(
-            words(TEXT, 'source.lsp_edit_elsewhere', 'registries/venues.yml')
+            words(TEXT, 'source.lsp_edit_elsewhere', '.oculus/data/research/venues.yml')
         );
     });
 

@@ -203,7 +203,7 @@
     }
 
     /* The terminal shape: the whole tab follows the folder line, as the board does. */
-    :global(body.rice) .project {
+    :global(body.rice:where(:not(.rice-sans))) .project {
         font-family: var(--font-mono);
     }
 </style>

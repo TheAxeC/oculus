@@ -393,8 +393,9 @@
         opacity: 0.4;
     }
 
-    /* A terminal palette draws the button as a bracketed word, and no separator. */
-    :global(body.rice) .tool.primary.joined::after {
+    /* A terminal palette draws the button as a bracketed word, and no separator, while the
+       Brackets toggle is on. */
+    :global(body.rice:where(:not(.rice-plain))) .tool.primary.joined::after {
         display: none;
     }
 
@@ -459,15 +460,17 @@
         outline-offset: -1px;
     }
 
-    /* The terminal shape: a bracketed word, and the one in force is the only one in ink. */
-    :global(body.rice) .tool {
+    /* The terminal shape: a bracketed word, and the one in force is the only one in ink. It is
+       the Brackets toggle's (Settings, This browser): with the toggle off, the body carries
+       `rice-plain` and the button keeps its box in the rice palette and shape. */
+    :global(body.rice:where(:not(.rice-plain))) .tool {
         border: 0;
         border-radius: 0;
         background: none;
         padding: 3px 4px;
     }
 
-    :global(body.rice) .tool.active {
+    :global(body.rice:where(:not(.rice-plain))) .tool.active {
         background: none;
         color: var(--accent-txt, var(--accent));
     }
@@ -477,13 +480,13 @@
        its own brackets already. A bare button is a strip's icon and draws none, as a bare menu
        opener beside it draws none, and a status bar item is a word in a bar of words. A cell and a
        plain button draw nothing of their own, so the box around them keeps its own shape. */
-    :global(body.rice)
+    :global(body.rice:where(:not(.rice-plain)))
         .tool:not(.rail-control):not(.bare):not(.status):not(.cell):not(.plain)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice)
+    :global(body.rice:where(:not(.rice-plain)))
         .tool:not(.rail-control):not(.bare):not(.status):not(.cell):not(.plain)::after {
         content: ']';
         opacity: 0.5;

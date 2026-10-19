@@ -5,6 +5,7 @@ import type { HpcJob, HpcPartition, HpcQuotaItem, HpcRecent } from '../../../dat
 export const SEC_SACCT = '@@oculus:sacct@@';
 export const SEC_SINFO = '@@oculus:sinfo@@';
 export const SEC_RC = '@@oculus:squeue_rc=';
+export const SEC_RECOVER = '@@oculus:recover@@';
 
 /**
  * The day an accounting query starts from, as many days back as asked, which sacct reads as a date.
@@ -170,13 +171,15 @@ export function parseQuota(raw: string): HpcQuotaItem[] {
     return quota.length ? quota : disk;
 }
 
+/** The sections of one batch answer; `recover` is Recover's part (runs/recover/live/batch.ts). */
 export function splitSections(raw: string): {
     squeue: string;
     sacct: string;
     sinfo: string;
+    recover: string;
     squeueCode: number;
 } {
-    const parts: string[][] = [[], [], []];
+    const parts: string[][] = [[], [], [], []];
     let at = 0;
     let squeueCode = 0;
     for (const line of raw.split('\n')) {
@@ -184,12 +187,14 @@ export function splitSections(raw: string): {
             squeueCode = Number(line.slice(SEC_RC.length).replace(/@+$/, '').trim()) || 0;
         else if (line.startsWith(SEC_SACCT)) at = 1;
         else if (line.startsWith(SEC_SINFO)) at = 2;
+        else if (line.startsWith(SEC_RECOVER)) at = 3;
         else parts[at].push(line);
     }
     return {
         squeue: parts[0].join('\n'),
         sacct: parts[1].join('\n'),
         sinfo: parts[2].join('\n'),
+        recover: parts[3].join('\n'),
         squeueCode
     };
 }

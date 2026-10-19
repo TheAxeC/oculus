@@ -55,15 +55,6 @@ const FOLDERS: [string, string][] = [
     ['pipeline', 'code/']
 ];
 
-/** The project types a live project is, which are the ones asked for results and a dataset. */
-const LIVE = ['active'];
-
-/** The project types that should carry a venue once they are out of the author's hands. */
-const PLACED = ['published', 'submitted'];
-
-/** The types whose work the one-README standard covers. */
-const STANDARD = ['idea', 'active'];
-
 /**
  * Every folder-relative path and folder name the scan reads off the disk. The portfolio watcher
  * imports it so that an event on one of them under a scan tier rebuilds: a marker added to a
@@ -150,7 +141,7 @@ function hasDataSection(folder: string): boolean {
 /** The open markers of one project's documents and of every collection entry. */
 export function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, input.rules)) continue;
         const folder = folderOnDisk(input.hub, project);
         for (const name of [...SCANNED, ...deckDocuments(folder)]) {
             const path = join(folder, name);
@@ -209,12 +200,12 @@ function relative(hub: string, path: string): string {
 export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
             project.type !== undefined &&
-            PLACED.includes(project.type) &&
+            rules.placedTypes.has(project.type) &&
             project.venueId === undefined
         ) {
             add({
@@ -225,7 +216,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_no_venue')
             });
         }
-        if (project.type !== undefined && LIVE.includes(project.type)) {
+        if (project.type !== undefined && rules.liveTypes.has(project.type)) {
             const wanted = project.domainIds.some((id) => rules.dataDomains.has(id))
                 ? ['datasets', 'results']
                 : ['results'];
@@ -295,29 +286,30 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
 }
 
 /**
- * The type a project's filing folder says it has, and none when the folder says nothing: the
- * outcome folder of an archived project and `abandoned` for a coauthor project filed under
- * `abandoned`.
+ * The type a project's filing folder says it has, and none when the folder says nothing: for a
+ * tier carrying `outcome_folders` (the archive), a folder named by a type carrying
+ * `archive_outcome`; for a tier listing `type_folders` (the coauthor tier lists `abandoned`), a
+ * folder that list holds.
  */
 function folderType(project: Project, rules: AuditRules): string | undefined {
-    if (project.tier === 'archive') {
-        const outcome = project.category;
-        return outcome !== undefined && rules.archiveOutcomes.has(outcome) ? outcome : undefined;
+    const tier = project.tier;
+    const folder = project.category;
+    if (tier === undefined || folder === undefined) return undefined;
+    if (rules.outcomeTiers.has(tier)) {
+        return rules.archiveOutcomes.has(folder) ? folder : undefined;
     }
-    return project.tier === 'coauthor' && project.category === 'abandoned'
-        ? 'abandoned'
-        : undefined;
+    return (rules.typeFolders.get(tier) ?? []).includes(folder) ? folder : undefined;
 }
 
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
 export function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
             project.type !== undefined &&
-            STANDARD.includes(project.type) &&
+            input.rules.standardTypes.has(project.type) &&
             !existsSync(join(folder, 'README.md'))
         ) {
             add({
@@ -378,10 +370,10 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
 export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
         const chips = new Set(project.chips);
-        const finished = project.tier === 'archive' || project.tier === 'coauthor';
+        const finished = project.tier !== undefined && rules.finishedTiers.has(project.tier);
         const named = rules.authorChips.some((chip) => chips.has(chip));
         if (finished && rules.authorChips.length > 0 && !named) {
             add({
@@ -406,9 +398,9 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 });
             }
         }
-        // A project on the Projects board that has been accepted belongs under
-        // archive/published/ rather than on the board it was written on.
-        if (!finished && chips.has('published')) {
+        // A project on a board of unfinished work that carries a chip marked `published` belongs
+        // under archive/published/ rather than on the board it was written on.
+        if (!finished && [...chips].some((chip) => rules.publishedChips.has(chip))) {
             add({
                 scope,
                 where: 'status.chips',
@@ -429,7 +421,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
         }
         if (
             project.type !== undefined &&
-            LIVE.includes(project.type) &&
+            rules.liveTypes.has(project.type) &&
             (project.eli5 ?? '') === ''
         ) {
             add({
@@ -447,7 +439,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
 export function readability(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
         const fields: [string, string | undefined][] = [
             ['status.line', project.statusLine],

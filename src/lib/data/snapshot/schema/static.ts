@@ -12,6 +12,7 @@ import { fieldsOf } from './field.ts';
 import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
+import { vocabSource } from '../../shapes/vocab-keys.ts';
 import { REGISTRIES, VOCAB_PREFIX } from './lists.ts';
 import { manifestSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
@@ -45,7 +46,8 @@ export function schemaFileProblems(
 ): { file: string; problems: SchemaProblem[] }[] {
     const lists: Lists = (source) => {
         if (source === 'projects' || REGISTRIES.includes(source as RegistryName)) return [];
-        const key = source.startsWith(VOCAB_PREFIX) ? source.slice(VOCAB_PREFIX.length) : '';
+        const name = source.startsWith(VOCAB_PREFIX) ? source.slice(VOCAB_PREFIX.length) : '';
+        const { key } = vocabSource(name);
         return VOCAB_FILE_KEYS.includes(key) && merged[key] !== undefined ? [] : undefined;
     };
     return SCHEMA_FILES.map(({ key, file }) => {

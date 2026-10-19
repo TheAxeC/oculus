@@ -322,11 +322,12 @@ describe('where a command and Open in Browser go', () => {
     const reader = { origin: 'http://127.0.0.1:8797' };
     const main = { origin: 'http://127.0.0.1:8790' };
 
-    it("sends a command to the reader's entry, Settings and Help to the main window", () => {
+    it("sends a command to the reader's entry, Settings, Help and Keyboard Shortcuts to the main window", () => {
         const inReader = { kind: 'entry', entry: reader } as const;
         expect(commandWindow('close-tab', inReader, main)).toBe(reader);
         expect(commandWindow('settings', inReader, main)).toBe(main);
         expect(commandWindow('help', inReader, main)).toBe(main);
+        expect(commandWindow('keyboard-shortcuts', inReader, main)).toBe(main);
     });
 
     it('sends a command to the main window focused last while no window is focused', () => {

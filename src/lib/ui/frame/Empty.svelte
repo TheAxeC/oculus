@@ -12,7 +12,7 @@
     // and the message on one line, left aligned, and the action on the line under it.
 
     import type { Snippet } from 'svelte';
-    import CodeText from '../display/CodeText.svelte';
+    import CodeText from '../display/text/CodeText.svelte';
     import Glyph from '../display/Glyph.svelte';
 
     type Props = {
@@ -77,11 +77,14 @@
     /*
      * The terminal shape: a shell comment, left aligned. The `# ` mark, the glyph and the message
      * run as one line of text, which wraps in a narrow pane, and the action sits on the line under
-     * it. The error box keeps its flex row.
+     * it. The error box keeps its flex row. The monospace face is the Monospace toggle's.
      */
     :global(body.rice) .empty {
         padding: 10px 0;
         text-align: left;
+    }
+
+    :global(body.rice:where(:not(.rice-sans))) .empty {
         font-family: var(--font-mono);
     }
 

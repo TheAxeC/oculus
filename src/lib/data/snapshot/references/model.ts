@@ -53,15 +53,18 @@ type Defines =
     | { kind: 'registry'; source: string; list: string; field: string }
     /** The manifest of the project `id`, with its `id:` line. */
     | { kind: 'manifest'; id: string }
-    /** The lists of vocab.yml that are sources, by the top-level key of each. */
+    /**
+     * The lists of vocab.yml that are sources, by the top-level key of each, or by the key and a
+     * field (`statuses.chip`) for the keys of a map whose row carries that field as `true`.
+     */
     | { kind: 'vocab'; lists: string[] };
 
 /**
  * Where the values that name keys stand inside a document. A `leaf` is a scalar or a list of
  * scalars; a `record` is a map of fields; `records` is a list of records or one record; a `family`
- * is an options family (a list of records with a key, or a map from the key to a record, a list of
- * records or a value); a `named` is a map from a name to one record, whose names are keys of the
- * sources in `keys` when it has them and no keys otherwise.
+ * is an options family (a list of records with a key, or a map from the key to a record or a
+ * value); a `named` is a map from a name to one record, whose names are keys of the sources in
+ * `keys` when it has them and no keys otherwise.
  */
 export type FieldNode =
     | { kind: 'leaf'; sources: string[]; picked?: Picked }
@@ -72,7 +75,6 @@ export type FieldNode =
           key?: FieldNode;
           record: FieldNode | null;
           value?: FieldNode;
-          lists: boolean;
       }
     | { kind: 'named'; record: FieldNode | null; keys?: string[] };
 

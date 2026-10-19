@@ -4,7 +4,8 @@
     // title, its next milestone and how many hosts are in flight. Unfolded, it is the whole panel:
     // the situation, one fact a row, the next milestone, the order of work, the host pipeline with
     // its status buttons (CareerHosts.svelte), the criteria, the eligibility rules and what was
-    // dropped.
+    // dropped. A web address written in a fact, the milestone, a task, a note, a criterion or the
+    // caveat is a link (ui/display/text/LinkedText.svelte).
     //
     // Its Edit control opens the editor of the career file's sections, built from the file's own
     // `schema:` (views/shared/forms/entry/edit/EntryEditor.svelte), in place of the read-only
@@ -20,6 +21,7 @@
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import CareerHosts from './CareerHosts.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
@@ -84,7 +86,7 @@
      */
     const summary = $derived.by(() => {
         if (career === null) return '';
-        const flight = inFlight(career.hosts);
+        const flight = inFlight(career.hosts, config);
         const milestone = summaryOf(career);
         return [
             career.title,
@@ -128,7 +130,7 @@
                     <div class="facts">
                         {#each career.situation as fact (fact.label)}
                             <b>{fact.label}</b>
-                            <span>{fact.value}</span>
+                            <span><LinkedText text={fact.value} /></span>
                         {/each}
                     </div>
                 {/if}
@@ -137,7 +139,7 @@
                     <p class="milestone">
                         <Glyph name={t('project.card.deadline_glyph')} />
                         <b>{t('focus.next')}</b>
-                        {career.milestone}
+                        <LinkedText text={career.milestone} />
                     </p>
                 {/if}
 
@@ -147,9 +149,9 @@
                     <ol class="order">
                         {#each career.order as row, at (`${at}:${row.task}`)}
                             <li>
-                                <span class="task">{row.task}</span>
+                                <span class="task"><LinkedText text={row.task} /></span>
                                 {#if row.note !== undefined}
-                                    <span class="ordernote">{row.note}</span>
+                                    <span class="ordernote"><LinkedText text={row.note} /></span>
                                 {/if}
                                 {#if row.when !== undefined}
                                     <span class="when">{row.when}</span>
@@ -158,7 +160,7 @@
                         {/each}
                     </ol>
                     {#if career.orderNote !== undefined}
-                        <p class="note">{career.orderNote}</p>
+                        <p class="note"><LinkedText text={career.orderNote} /></p>
                     {/if}
                 {/if}
 
@@ -169,7 +171,7 @@
                     {#if career.hostCriteria.length > 0}
                         <ul class="crit">
                             {#each career.hostCriteria as one, at (`${at}:${one}`)}
-                                <li>{one}</li>
+                                <li><LinkedText text={one} /></li>
                             {/each}
                         </ul>
                     {/if}
@@ -215,7 +217,7 @@
                         <p class="caveat">
                             <Glyph name={t('focus.warn_glyph')} />
                             <b>{t('focus.career_caveat')}</b>
-                            {career.eligibility.caveat}
+                            <LinkedText text={career.eligibility.caveat} />
                         </p>
                     {/if}
                 {/if}

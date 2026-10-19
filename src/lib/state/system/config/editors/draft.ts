@@ -1,12 +1,12 @@
 // Layer 2, client state, pure. The draft a list or family editor holds: the value the file holds at
 // a key read into typed fields, the edits a press makes to it, and the value it reads back as.
 //
-// Every list, multi and family the Settings view edits has one of five forms. A list or parked
+// Every list, multi and family the Settings view edits has one of four forms. A list or parked
 // option is `items`, one text per item. A multi option is `multi`, one card holding the picked
 // words. A family whose fields are `key` and `value` is `pairs`, a key and a value per entry. Any
 // other family is `records`: one card per record with a field per catalog field, the map's key
-// being the card's `key` field when the file holds a map. The one family that is a map of lists of
-// records (`tab_rollup`) is `rollup`: one group per key, each holding cards.
+// being the card's `key` field when the file holds a map, a nested list of records (a board's
+// `columns` and `groups` in `boards`) drawn as cards of its own.
 //
 // A field is held as its typed value (fields.ts): a toggle as a boolean, a number as the box's
 // text, a choice as its word, a multi as its words, a nested list of records as cards of its own.
@@ -46,35 +46,25 @@ import { readFlow } from './flow.ts';
 import type { Lists } from './sources.ts';
 
 /** The draft of one row. */
-export type Draft =
-    | {
-          form: 'items' | 'pairs' | 'records' | 'multi';
-          keyed: boolean;
-          fields: string[];
-          cards: Card[];
-      }
-    | {
-          form: 'rollup';
-          fields: string[];
-          groups: { key: string; cards: Card[] }[];
-      };
+export type Draft = {
+    form: 'items' | 'pairs' | 'records' | 'multi';
+    keyed: boolean;
+    fields: string[];
+    cards: Card[];
+};
 
 /** One step down into a nested list: the card of the list above, and the field holding the list. */
 export type Step = { index: number; field: string };
 
-/** Where an edit lands: a roll-up's group and the nested lists below the card it starts from. */
-type Where = { group?: number; path?: Step[] };
+/** Where an edit lands: the nested lists below the card it starts from. */
+type Where = { path?: Step[] };
 
 /** What a press does to a draft. */
 export type Edit =
     | ({ do: 'add' } & Where)
     | ({ do: 'remove'; index: number } & Where)
     | ({ do: 'move'; index: number; by: number } & Where)
-    | ({ do: 'set'; index: number; field: string; value: FieldValue | undefined } & Where)
-    | { do: 'addGroup' }
-    | { do: 'removeGroup'; group: number }
-    | { do: 'moveGroup'; group: number; by: number }
-    | { do: 'setGroup'; group: number; key: string };
+    | ({ do: 'set'; index: number; field: string; value: FieldValue | undefined } & Where);
 
 /**
  * One thing the draft has to mend before it is sent. `index` counts from 0. `where` names the
@@ -82,7 +72,6 @@ export type Edit =
  */
 export type Problem = {
     index: number;
-    group?: number;
     field?: string;
     said: Message;
     where?: Message;
@@ -127,7 +116,6 @@ export function specsOf(row: ConfigRow, form: Draft['form']): Record<string, Fie
         return { item: { help: '', control, ...own } };
     }
     if (form === 'multi') return { value: { ...row.entry, control: 'multi' } };
-    if (form === 'rollup') return withoutKey(row.fields);
     return row.fields;
 }
 
@@ -182,17 +170,6 @@ export function draftOf(row: ConfigRow): Draft | null {
         }
         return { form: 'pairs', keyed: true, fields: ['key', 'value'], cards };
     }
-    if (row.holds === 'lists') {
-        const inner = withoutKey(row.fields);
-        const groups: { key: string; cards: Card[] }[] = [];
-        for (const [key, held] of entries) {
-            if (!Array.isArray(held)) return null;
-            const cards = cardsFrom(held, inner);
-            if (cards === null) return null;
-            groups.push({ key, cards });
-        }
-        return { form: 'rollup', fields: Object.keys(inner), groups };
-    }
     const cards: Card[] = [];
     for (const [key, held] of entries) {
         if (!isMap(held)) return null;
@@ -201,23 +178,6 @@ export function draftOf(row: ConfigRow): Draft | null {
         cards.push(card);
     }
     return { form: 'records', keyed: true, fields: cardFields(row, true), cards };
-}
-
-/** The cards of a draft or of one group of a roll-up, or null when `group` names none. */
-function topCards(draft: Draft, group: number | undefined): Card[] | null {
-    if (draft.form === 'rollup') {
-        return group === undefined ? null : (draft.groups[group]?.cards ?? null);
-    }
-    return group === undefined ? draft.cards : null;
-}
-
-/** The draft with the cards of one place replaced. */
-function withCards(draft: Draft, group: number | undefined, cards: Card[]): Draft {
-    if (draft.form === 'rollup') {
-        const groups = draft.groups.map((one, at) => (at === group ? { ...one, cards } : one));
-        return { ...draft, groups };
-    }
-    return { ...draft, cards };
 }
 
 /** A list with one place changed by `change`, or the list itself when the place is not in it. */
@@ -266,55 +226,28 @@ function withField(card: Card, field: string, value: FieldValue | undefined): Ca
  * The draft after one edit. The draft given is not changed; an edit of a place it lacks is none.
  */
 export function applyEdit(draft: Draft, edit: Edit): Draft {
-    if (edit.do === 'addGroup') {
-        return draft.form === 'rollup'
-            ? { ...draft, groups: [...draft.groups, { key: '', cards: [] }] }
-            : draft;
-    }
-    if (edit.do === 'removeGroup' || edit.do === 'moveGroup' || edit.do === 'setGroup') {
-        if (draft.form !== 'rollup') return draft;
-        if (edit.do === 'removeGroup')
-            return { ...draft, groups: without(draft.groups, edit.group) };
-        if (edit.do === 'moveGroup') {
-            return { ...draft, groups: moved(draft.groups, edit.group, edit.by) };
-        }
-        const key = edit.key;
-        return { ...draft, groups: atIndex(draft.groups, edit.group, (one) => ({ ...one, key })) };
-    }
-    const cards = topCards(draft, edit.group);
-    if (cards === null) return draft;
+    const cards = draft.cards;
     const path = edit.path ?? [];
     if (edit.do === 'add') {
-        if (draft.form === 'rollup' && edit.group === undefined) return draft;
-        return withCards(
-            draft,
-            edit.group,
-            inList(cards, path, (list) => [...list, emptyCard()])
-        );
+        return { ...draft, cards: inList(cards, path, (list) => [...list, emptyCard()]) };
     }
     if (edit.do === 'remove') {
-        return withCards(
-            draft,
-            edit.group,
-            inList(cards, path, (list) => without(list, edit.index))
-        );
+        return { ...draft, cards: inList(cards, path, (list) => without(list, edit.index)) };
     }
     if (edit.do === 'move') {
-        return withCards(
-            draft,
-            edit.group,
-            inList(cards, path, (list) => moved(list, edit.index, edit.by))
-        );
+        return {
+            ...draft,
+            cards: inList(cards, path, (list) => moved(list, edit.index, edit.by))
+        };
     }
     if (path.length === 0 && !draft.fields.includes(edit.field)) return draft;
     const { field, value } = edit;
-    return withCards(
-        draft,
-        edit.group,
-        inList(cards, path, (list) =>
+    return {
+        ...draft,
+        cards: inList(cards, path, (list) =>
             atIndex(list, edit.index, (card) => withField(card, field, value))
         )
-    );
+    };
 }
 
 // ---- reading a draft back ---------------------------------------------------------------------
@@ -327,22 +260,17 @@ type Base = {
     same: Plain[];
 };
 
-/** The records of a held value: a list's, or every record of a map's lists. */
+/** The records of a held value that is a list; any other value holds none. */
 function recordsIn(held: unknown): Plain[] {
-    if (Array.isArray(held)) return held.filter(isMap);
-    if (!isMap(held)) return [];
-    return Object.values(held).flatMap((one) => (Array.isArray(one) ? one.filter(isMap) : []));
+    return Array.isArray(held) ? held.filter(isMap) : [];
 }
 
-/** The position of a problem in a draft: the entry, the group of a roll-up and the field. */
-type Place = { index: number; group?: number; label: string };
+/** The position of a problem in a draft: the entry and its label. */
+type Place = { index: number; label: string };
 
 /** A problem for a trouble found in a field of an entry. */
 function problemOf(place: Place, name: string, trouble: Trouble): Problem {
-    const at =
-        place.group === undefined
-            ? { index: place.index }
-            : { index: place.index, group: place.group };
+    const at = { index: place.index };
     if (trouble.is === 'type') {
         return { ...at, field: name, said: message('notYaml', place.label, name) };
     }
@@ -436,26 +364,22 @@ function childOf(
 }
 
 /** The base of one card: the record at its key when the file holds a map, else every record. */
-function baseOf(row: ConfigRow, key: string | undefined, groupKey?: string): Base {
+function baseOf(row: ConfigRow, key: string | undefined): Base {
     const any = recordsIn(row.value);
     if (key !== undefined && isMap(row.value)) {
         const held = row.value[key];
         return { any, same: isMap(held) ? [held] : [] };
     }
-    if (groupKey !== undefined && isMap(row.value)) {
-        const held = row.value[groupKey];
-        return { any, same: Array.isArray(held) ? held.filter(isMap) : [] };
-    }
     return { any, same: any };
 }
 
 /** The names of the keys of a list of cards, with the problems of an empty or a repeated one. */
-function keysOf(cards: Card[], group: number | undefined, problems: Problem[]): string[] {
+function keysOf(cards: Card[], problems: Problem[]): string[] {
     const seen = new Set<string>();
     return cards.map((card, index) => {
         const raw = card.fields.key;
         const key = (typeof raw === 'string' ? raw : '').trim();
-        const at = group === undefined ? { index } : { index, group };
+        const at = { index };
         if (key === '') {
             problems.push({ ...at, field: 'key', said: message('emptyKey', index + 1) });
         } else if (seen.has(key)) {
@@ -475,17 +399,14 @@ function keyForms(
     keys: string[],
     spec: FieldSpec | undefined,
     lists: Lists,
-    problems: Problem[],
-    group?: number
+    problems: Problem[]
 ): void {
     if (spec === undefined) return;
     keys.forEach((key, index) => {
         if (key === '') return;
         const written = writtenField(spec, key, { lists, record: {}, held: [] });
         if (!written.ok) {
-            problems.push(
-                problemOf({ index, group, label: String(index + 1) }, 'key', written.trouble)
-            );
+            problems.push(problemOf({ index, label: String(index + 1) }, 'key', written.trouble));
         }
     });
 }
@@ -496,43 +417,6 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
     const specs = specsOf(row, draft.form);
     const result = (value: unknown): Made =>
         problems.length > 0 ? { ok: false, problems } : { ok: true, value };
-    if (draft.form === 'rollup') {
-        const seen = new Set<string>();
-        const value: Plain = {};
-        const keyed = Object.hasOwn(row.fields, 'key') ? row.fields.key : undefined;
-        keyForms(
-            draft.groups.map((group) => group.key.trim()),
-            keyed,
-            lists,
-            problems
-        );
-        draft.groups.forEach((group, at) => {
-            const key = group.key.trim();
-            if (key === '') {
-                problems.push({ index: at, field: 'key', said: message('emptyKey', at + 1) });
-            } else if (seen.has(key)) {
-                problems.push({ index: at, field: 'key', said: message('duplicateKey', key) });
-            }
-            seen.add(key);
-            const base = baseOf(row, undefined, key);
-            put(
-                value,
-                key,
-                group.cards.map((card, index) =>
-                    childOf(
-                        card,
-                        specs,
-                        { index, group: at, label: String(index + 1) },
-                        base,
-                        lists,
-                        false,
-                        problems
-                    )
-                )
-            );
-        });
-        return result(value);
-    }
     if (draft.form === 'items') {
         const numbers = row.entry.items === 'number';
         const items: (string | number)[] = [];
@@ -560,7 +444,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
         return result(written.ok ? written.value : undefined);
     }
     if (draft.form === 'pairs') {
-        const keys = keysOf(draft.cards, undefined, problems);
+        const keys = keysOf(draft.cards, problems);
         keyForms(keys, specs.key, lists, problems);
         const value: Plain = {};
         draft.cards.forEach((card, index) => {
@@ -597,7 +481,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
         );
         return result(list);
     }
-    const keys = keysOf(draft.cards, undefined, problems);
+    const keys = keysOf(draft.cards, problems);
     keyForms(keys, specs.key, lists, problems);
     const listed = withoutKey(specs);
     const value: Plain = {};
@@ -643,18 +527,12 @@ type TextCard = {
 };
 
 /** A draft saved in flow text, which `typedDraft` reads into a typed draft. */
-export type TextDraft =
-    | {
-          form: 'items' | 'pairs' | 'records';
-          keyed: boolean;
-          fields: string[];
-          cards: TextCard[];
-      }
-    | {
-          form: 'rollup';
-          fields: string[];
-          groups: { key: string; cards: TextCard[] }[];
-      };
+export type TextDraft = {
+    form: 'items' | 'pairs' | 'records';
+    keyed: boolean;
+    fields: string[];
+    cards: TextCard[];
+};
 
 /** Whether a field's text is read as it is and not as flow text. */
 function raw(name: string): boolean {
@@ -713,12 +591,5 @@ function typedCard(from: TextCard, specs: Record<string, FieldSpec>): Card {
  */
 export function typedDraft(held: TextDraft, row: ConfigRow): Draft {
     const specs = specsOf(row, held.form);
-    const read = (cards: TextCard[]): Card[] => cards.map((card) => typedCard(card, specs));
-    if (held.form === 'rollup') {
-        return {
-            ...held,
-            groups: held.groups.map((group) => ({ ...group, cards: read(group.cards) }))
-        };
-    }
-    return { ...held, cards: read(held.cards) };
+    return { ...held, cards: held.cards.map((card) => typedCard(card, specs)) };
 }

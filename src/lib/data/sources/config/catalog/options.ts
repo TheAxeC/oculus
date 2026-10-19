@@ -38,6 +38,8 @@ import {
     type Source
 } from '../../../shapes/catalog-words.ts';
 import { mapShape, readOr } from '../../../shapes/shapes.ts';
+import { coloredWords, vocabKeys } from '../../../shapes/vocab-keys.ts';
+import { catalogueGroupIds } from '../../../helpers/keys/oculus/rail-letters.ts';
 
 export { CONTROLS, HEADINGS };
 export type { Control, Form, Heading, Source };
@@ -103,9 +105,9 @@ export type FieldSpec = {
  * writes and its Modified filter compares with and, for a setting settings.ts reads, the value used
  * when the key is missing or wrong, and a `control`; a family carries `fields` and no control. A
  * `local.yml` key has a help line, and a `control` only where it takes a number or a choice. A
- * family that is a map may carry `holds: lists`, meaning each key of the map holds a list: of
- * records, or of values for a key/value family (fields `key` and `value`); a family without it
- * takes no list at a key.
+ * key/value family (fields `key` and `value`) may carry `holds: lists`, meaning each key of the map
+ * holds a list of values; the reader refuses it on any other entry, and a family without it takes
+ * no list at a key.
  * `heading` is the subject the option is listed under (`unheaded` when it names none a HEADINGS
  * word is), and `section` the group inside that heading, the first segment of the key path when
  * absent.
@@ -152,6 +154,7 @@ export type OptionProblem = {
         | 'whole'
         | 'form'
         | 'slots'
+        | 'holds'
         | 'heading_missing'
         | 'heading_unknown';
     file: string;
@@ -293,7 +296,13 @@ function readSpec(
         if (Object.hasOwn(map, 'default')) entry.default = map.default;
         const section = str(map.section);
         if (section !== undefined) entry.section = section;
-        if (map.holds === 'lists') entry.holds = 'lists';
+        // Only a key/value family takes `holds: lists`: a map of lists of records is no shape.
+        if (map.holds === 'lists') {
+            const names = Object.keys(entry.fields ?? {});
+            const table = names.length === 2 && names.includes('key') && names.includes('value');
+            if (table) entry.holds = 'lists';
+            else flag('holds');
+        }
         if (!local) {
             const heading = str(map.heading);
             if (heading === undefined) flag('heading_missing');
@@ -384,9 +393,10 @@ const FROM_CONFIG: readonly Source[] = [
     'models',
     'arrangements',
     'rail_pages',
-    'nav_groups',
+    'catalogue_groups',
     'collections',
     'project_types',
+    'tiers',
     'status_chips',
     'entry_statuses',
     'bundle_ids'
@@ -425,22 +435,40 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return Array.isArray(config.rail)
                 ? config.rail.flatMap((row) => (isMap(row) ? strings([row.page]) : []))
                 : [];
-        case 'nav_groups':
-            return keysAt(config.nav_groups);
+        case 'catalogue_groups':
+            return catalogueGroupIds(config);
         case 'collections':
             return keysOfRows(config.collections);
         case 'project_types':
-            return keysAt(config.type_color);
+            return vocabKeys(config.types);
+        case 'tiers':
+            return vocabKeys(config.tiers);
         case 'status_chips':
-            return keysOfRows(config.status_legend);
+            return vocabKeys(config.statuses, 'chip');
         case 'entry_statuses':
-            return keysAt(config.status_palette);
+            return coloredWords(config.statuses);
         default: {
             const open = isMap(config.open) ? config.open : {};
             const programs = isMap(open.program_ext) ? Object.values(open.program_ext) : [];
             return [...new Set(strings(programs))];
         }
     }
+}
+
+/**
+ * The items of every source a spec's `from` lists, together, from the merged config; null while
+ * one of them is a source the config alone does not hold, so a word is not checked against it.
+ */
+export function sourcedItems(
+    spec: Pick<FieldSpec, 'from'>,
+    config: Record<string, unknown>
+): string[] | null {
+    let sourced: string[] | null = [];
+    for (const source of listedSources(spec)) {
+        const items = configItems(source, config);
+        sourced = items === null || sourced === null ? null : [...sourced, ...items];
+    }
+    return sourced;
 }
 
 /**

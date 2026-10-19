@@ -65,7 +65,7 @@ describe('the relation fields of a manifest', () => {
             {
                 'projects/active/alpha/project.yml': `id: alpha\ntier: projects\ntype: active\ntitle: alpha\n${written}\n`
             },
-            ['registries']
+            ['.oculus/data/people']
         );
         const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
             one.file.endsWith('/alpha/project.yml')
@@ -82,7 +82,7 @@ describe('the relation fields of a manifest', () => {
                 'projects/active/alpha/project.yml':
                     'id: alpha\ntier: projects\ntype: active\ntitle: alpha\nvenue_id:\nfunding:\ncompute:\n'
             },
-            ['registries']
+            ['.oculus/data/people']
         );
         const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
             one.file.endsWith('/alpha/project.yml')
@@ -94,14 +94,14 @@ describe('the relation fields of a manifest', () => {
         const hub = plantScratch(
             'oculus-relation-shapes-',
             {
-                'registries/people.yml':
+                '.oculus/data/people/people.yml':
                     'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
                     'id: alpha\ntier: projects\ntype: active\ntitle: alpha\nwaiting-on: ada\n',
                 'projects/active/beta/project.yml':
                     'id: beta\ntier: projects\ntype: active\ntitle: beta\nwaiting-on: [ada, alpha]\n'
             },
-            ['registries']
+            ['.oculus/data/people']
         );
         const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
         const of = (name: string) =>

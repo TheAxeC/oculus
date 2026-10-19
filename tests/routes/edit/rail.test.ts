@@ -91,4 +91,18 @@ describe('the rail write', () => {
         expect(undo.status).toBe(200);
         expect(railOf(into)).toEqual([FOCUS]);
     });
+
+    it("writes a button's group chord and group glyph, and refuses a chord that is no letter", async () => {
+        const into = railTarget();
+        const grouped = { ...INBOX, chord: 'e', group_glyph: 'compass' };
+        expect((await send(into, [FOCUS, grouped])).status).toBe(200);
+        expect(railOf(into)).toEqual([FOCUS, grouped]);
+        expect(layoutOf(into)).toContain(
+            '  - { label: "Mail: in", glyph: inbox, page: inbox, chord: e, group_glyph: compass }\n'
+        );
+        const before = layoutOf(into);
+        const refused = await send(into, [FOCUS, { ...INBOX, chord: 'EE' }]);
+        expect(refused.status).not.toBe(200);
+        expect(layoutOf(into)).toBe(before);
+    });
 });

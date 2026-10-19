@@ -70,7 +70,7 @@ const ROWS: Row[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
         kind: 'reference',
         key: 'jbhi',
-        targets: ['hub:registries/venues.yml:4'],
+        targets: ['hub:.oculus/data/research/venues.yml:4'],
         references: [
             'hub:projects/active/alpha/project.yml:3:10',
             'hub:projects/active/beta/project.yml:3:11'
@@ -81,7 +81,7 @@ const ROWS: Row[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 4, 17],
         kind: 'reference',
         key: 'federated',
-        targets: ['hub:registries/pillars.yml:4'],
+        targets: ['hub:.oculus/data/pillars/pillars.yml:4'],
         references: ['hub:projects/active/alpha/project.yml:4:17']
     },
     {
@@ -91,7 +91,7 @@ const ROWS: Row[] = [
         key: 'beta',
         targets: ['hub:projects/active/beta/project.yml:0'],
         references: [
-            'hub:feeds/literature-radar.yml:7:57',
+            'hub:.oculus/data/literature/radar.yml:7:57',
             'hub:projects/active/alpha/present/present.yml:4:13',
             'hub:projects/active/alpha/project.yml:5:10',
             'hub:projects/active/alpha/project.yml:6:19'
@@ -102,9 +102,9 @@ const ROWS: Row[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 6, 13],
         kind: 'reference',
         key: 'amir',
-        targets: ['hub:registries/people.yml:5'],
+        targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:network/joint-work.yml:5:13',
+            'hub:.oculus/data/academic/joint-work.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
@@ -126,9 +126,9 @@ const ROWS: Row[] = [
         },
         kind: 'reference',
         key: 'amir',
-        targets: ['hub:registries/people.yml:5'],
+        targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:network/joint-work.yml:5:13',
+            'hub:.oculus/data/academic/joint-work.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16',
             'hub:side-projects/idea/project.yml:3:16'
@@ -141,7 +141,7 @@ const ROWS: Row[] = [
         key: 'beta',
         targets: ['hub:projects/active/beta/project.yml:0'],
         references: [
-            'hub:feeds/literature-radar.yml:7:57',
+            'hub:.oculus/data/literature/radar.yml:7:57',
             'hub:projects/active/alpha/present/present.yml:4:13',
             'hub:projects/active/alpha/project.yml:5:10',
             'hub:projects/active/alpha/project.yml:6:19'
@@ -149,84 +149,84 @@ const ROWS: Row[] = [
     },
     {
         name: 'a registry tags field, affiliations',
-        at: ['hub', 'registries/people.yml', 7, 19],
+        at: ['hub', '.oculus/data/people/people.yml', 7, 19],
         kind: 'reference',
         key: 'utwente',
-        targets: ['hub:registries/organisations.yml:4'],
-        references: ['hub:registries/people.yml:7:19']
+        targets: ['hub:.oculus/data/people/organisations.yml:4'],
+        references: ['hub:.oculus/data/people/people.yml:7:19']
     },
     {
         name: 'a double-quoted select, the person of a joint-work entry',
-        at: ['hub', 'network/joint-work.yml', 5, 13],
+        at: ['hub', '.oculus/data/academic/joint-work.yml', 5, 13],
         kind: 'reference',
         key: 'amir',
-        targets: ['hub:registries/people.yml:5'],
+        targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:network/joint-work.yml:5:13',
+            'hub:.oculus/data/academic/joint-work.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
     },
     {
         name: 'the related field of a collection',
-        at: ['hub', 'tasks/tasks.yml', 5, 14],
+        at: ['hub', '.oculus/data/academic/tasks.yml', 5, 14],
         kind: 'reference',
         key: 'alpha',
         targets: ['hub:projects/active/alpha/project.yml:0'],
         references: [
-            'hub:feeds/literature-radar.yml:6:57',
-            'hub:feeds/literature-radar.yml:7:72',
-            'hub:projects/active/beta/project.yml:5:4',
-            'hub:tasks/tasks.yml:5:14'
+            'hub:.oculus/data/academic/tasks.yml:5:14',
+            'hub:.oculus/data/literature/radar.yml:6:57',
+            'hub:.oculus/data/literature/radar.yml:7:72',
+            'hub:projects/active/beta/project.yml:5:4'
         ]
     },
     {
         name: 'the maps_to text field of the radar, which names a project',
-        at: ['hub', 'feeds/literature-radar.yml', 7, 72],
+        at: ['hub', '.oculus/data/literature/radar.yml', 7, 72],
         kind: 'reference',
         key: 'alpha',
         targets: ['hub:projects/active/alpha/project.yml:0'],
         references: [
-            'hub:feeds/literature-radar.yml:6:57',
-            'hub:feeds/literature-radar.yml:7:72',
-            'hub:projects/active/beta/project.yml:5:4',
-            'hub:tasks/tasks.yml:5:14'
+            'hub:.oculus/data/academic/tasks.yml:5:14',
+            'hub:.oculus/data/literature/radar.yml:6:57',
+            'hub:.oculus/data/literature/radar.yml:7:72',
+            'hub:projects/active/beta/project.yml:5:4'
         ]
     },
     {
         name: 'a field nested in a records field',
-        at: ['hub', 'applications/applications.yml', 10, 15],
+        at: ['hub', '.oculus/data/academic/applications.yml', 10, 15],
         kind: 'reference',
         key: 'bspc',
-        targets: ['hub:registries/venues.yml:5'],
-        references: ['hub:applications/applications.yml:10:15']
+        targets: ['hub:.oculus/data/research/venues.yml:5'],
+        references: ['hub:.oculus/data/academic/applications.yml:10:15']
     },
     {
         name: 'a dataset, defined by the key under datasets:',
         at: ['hub', 'projects/active/alpha/project.yml', 8, 11],
         kind: 'reference',
         key: 'ds1',
-        targets: ['hub:registries/data.yml:4'],
+        targets: ['hub:.oculus/data/research/data.yml:4'],
         references: ['hub:projects/active/alpha/project.yml:8:11']
     },
     {
         name: 'a theme word of a dataset, defined by its option row in the schema of its registry',
-        at: ['hub', 'registries/data.yml', 5, 13],
+        at: ['hub', '.oculus/data/research/data.yml', 5, 13],
         kind: 'reference',
         key: 'eeg',
-        targets: ['hub:registries/data.yml:2'],
-        references: ['hub:registries/data.yml:5:13']
+        targets: ['hub:.oculus/data/research/data.yml:2'],
+        references: ['hub:.oculus/data/research/data.yml:5:13']
     },
     {
         name: 'the clusters of the options catalog, the resources of kind cluster',
         at: ['engine', 'behavior.yml', 2, 12],
         kind: 'reference',
         key: 'hpc',
-        targets: ['hub:registries/resources.yml:4'],
+        targets: ['hub:.oculus/data/research/resources.yml:4'],
         references: ['engine:behavior.yml:2:12']
     },
     {
-        name: 'a vocabulary value, defined as an item of its list in vocab.yml',
+        name: 'a vocabulary value, defined as a key of its map in vocab.yml',
         at: ['hub', 'projects/active/alpha/project.yml', 1, 6],
         kind: 'reference',
         key: 'active',
@@ -238,27 +238,28 @@ const ROWS: Row[] = [
     },
     {
         name: 'a vocabulary value at its definition',
-        at: ['engine', 'catalogs/vocab.yml', 4, 21],
+        at: ['engine', 'catalogs/vocab.yml', 5, 2],
         kind: 'definition',
         key: 'manuscript',
-        targets: ['engine:catalogs/vocab.yml:4'],
+        targets: ['engine:catalogs/vocab.yml:5'],
         references: []
     },
     {
         name: 'a vocabulary key of a map in vocab.yml, listed by the options file that names its list',
-        at: ['engine', 'catalogs/vocab.yml', 3, 34],
+        at: ['engine', 'catalogs/vocab.yml', 5, 4],
         engine: {
             'layout.yml': [
-                'tab_rollup:',
+                'boards:',
                 '  projects:',
-                '    - { label: in progress, keys: [manuscript], color: "#16a34a" }',
+                '    groups:',
+                '      - { label: in progress, keys: [manuscript], color: "#16a34a" }',
                 ''
             ].join('\n')
         },
         kind: 'definition',
         key: 'manuscript',
-        targets: ['engine:catalogs/vocab.yml:3'],
-        references: ['engine:layout.yml:2:35']
+        targets: ['engine:catalogs/vocab.yml:5'],
+        references: ['engine:layout.yml:3:37']
     },
     {
         name: "a deck group's slide, a project id",
@@ -267,7 +268,7 @@ const ROWS: Row[] = [
         key: 'beta',
         targets: ['hub:projects/active/beta/project.yml:0'],
         references: [
-            'hub:feeds/literature-radar.yml:7:57',
+            'hub:.oculus/data/literature/radar.yml:7:57',
             'hub:projects/active/alpha/present/present.yml:4:13',
             'hub:projects/active/alpha/project.yml:5:10',
             'hub:projects/active/alpha/project.yml:6:19'
@@ -275,9 +276,9 @@ const ROWS: Row[] = [
     },
     {
         name: 'a key defined twice in its source, two definitions',
-        at: ['hub', 'registries/venues.yml', 4, 10],
+        at: ['hub', '.oculus/data/research/venues.yml', 4, 10],
         hub: {
-            'registries/venues.yml': [
+            '.oculus/data/research/venues.yml': [
                 'schema:',
                 '  - { field: id, type: text, required: true, help: The venue key. }',
                 'entries:',
@@ -289,7 +290,10 @@ const ROWS: Row[] = [
         },
         kind: 'definition',
         key: 'jbhi',
-        targets: ['hub:registries/venues.yml:3', 'hub:registries/venues.yml:4'],
+        targets: [
+            'hub:.oculus/data/research/venues.yml:3',
+            'hub:.oculus/data/research/venues.yml:4'
+        ],
         references: [
             'hub:projects/active/alpha/project.yml:3:10',
             'hub:projects/active/beta/project.yml:3:11'
@@ -309,17 +313,17 @@ const ROWS: Row[] = [
         },
         kind: 'reference',
         key: 'bspc',
-        targets: ['hub:registries/venues.yml:5'],
+        targets: ['hub:.oculus/data/research/venues.yml:5'],
         references: [
-            'hub:applications/applications.yml:10:15',
+            'hub:.oculus/data/academic/applications.yml:10:15',
             'hub:projects/active/alpha/project.yml:3:10'
         ]
     },
     {
         name: 'a file with a byte order mark, CRLF line ends and an astral character before the key',
-        at: ['hub', 'registries/people.yml', 8, 45],
+        at: ['hub', '.oculus/data/people/people.yml', 8, 45],
         hub: {
-            'registries/people.yml': [
+            '.oculus/data/people/people.yml': [
                 '\uFEFFschema:',
                 '  - { field: key, type: text, required: true, help: The person key. }',
                 '  - { field: name, type: text, required: true, help: The name. }',
@@ -334,8 +338,8 @@ const ROWS: Row[] = [
         },
         kind: 'reference',
         key: 'tue',
-        targets: ['hub:registries/organisations.yml:5'],
-        references: ['hub:registries/people.yml:8:45']
+        targets: ['hub:.oculus/data/people/organisations.yml:5'],
+        references: ['hub:.oculus/data/people/people.yml:8:45']
     },
     {
         name: 'an anchored key used through an alias, one reference at the anchor',
@@ -348,7 +352,7 @@ const ROWS: Row[] = [
         },
         kind: 'reference',
         key: 'tensor',
-        targets: ['hub:registries/pillars.yml:3'],
+        targets: ['hub:.oculus/data/pillars/pillars.yml:3'],
         references: ['hub:projects/active/alpha/project.yml:4:12']
     },
     {
@@ -358,7 +362,7 @@ const ROWS: Row[] = [
         open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
-        targets: ['hub:registries/resources.yml:4'],
+        targets: ['hub:.oculus/data/research/resources.yml:4'],
         references: ['hub:tools/oculus/config/behavior.yml:3:12']
     },
     {
@@ -367,30 +371,33 @@ const ROWS: Row[] = [
         open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
-        targets: ['hub:registries/resources.yml:4'],
+        targets: ['hub:.oculus/data/research/resources.yml:4'],
         references: ['engine:behavior.yml:2:12']
     },
     {
         name: 'a from picked by another field of the record, the person source',
-        at: ['hub', 'network/joint-work.yml', 5, 36],
-        hub: { 'network/joint-work.yml': PICKED },
+        at: ['hub', '.oculus/data/academic/joint-work.yml', 5, 36],
+        hub: { '.oculus/data/academic/joint-work.yml': PICKED },
         kind: 'reference',
         key: 'amir',
-        targets: ['hub:registries/people.yml:5'],
+        targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:network/joint-work.yml:5:36',
+            'hub:.oculus/data/academic/joint-work.yml:5:36',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
     },
     {
         name: 'a from picked by another field of the record, the organisation source',
-        at: ['hub', 'network/joint-work.yml', 6, 33],
-        hub: { 'network/joint-work.yml': PICKED },
+        at: ['hub', '.oculus/data/academic/joint-work.yml', 6, 33],
+        hub: { '.oculus/data/academic/joint-work.yml': PICKED },
         kind: 'reference',
         key: 'utwente',
-        targets: ['hub:registries/organisations.yml:4'],
-        references: ['hub:network/joint-work.yml:6:33', 'hub:registries/people.yml:7:19']
+        targets: ['hub:.oculus/data/people/organisations.yml:4'],
+        references: [
+            'hub:.oculus/data/academic/joint-work.yml:6:33',
+            'hub:.oculus/data/people/people.yml:7:19'
+        ]
     },
     {
         name: 'the portfolio deck, read from the folder portfolio_deck names',
@@ -404,11 +411,11 @@ const ROWS: Row[] = [
         key: 'alpha',
         targets: ['hub:projects/active/alpha/project.yml:0'],
         references: [
+            'hub:.oculus/data/academic/tasks.yml:5:14',
+            'hub:.oculus/data/literature/radar.yml:6:57',
+            'hub:.oculus/data/literature/radar.yml:7:72',
             'hub:decks/present.yml:4:13',
-            'hub:feeds/literature-radar.yml:6:57',
-            'hub:feeds/literature-radar.yml:7:72',
-            'hub:projects/active/beta/project.yml:5:4',
-            'hub:tasks/tasks.yml:5:14'
+            'hub:projects/active/beta/project.yml:5:4'
         ]
     }
 ];
@@ -436,10 +443,12 @@ describe('the reference index', () => {
     it('gives no hit for a value that names no key, and no reference for an empty value', () => {
         const planted = plantHub();
         expect(
-            planted.hit('hub', 'feeds/literature-radar.yml', { line: 6, character: 73 }).hit
+            planted.hit('hub', '.oculus/data/literature/radar.yml', { line: 6, character: 73 }).hit
         ).toBeNull();
-        expect(planted.hit('hub', 'tasks/tasks.yml', { line: 5, character: 21 }).hit).toBeNull();
-        const tasks = planted.file('hub', 'tasks/tasks.yml');
+        expect(
+            planted.hit('hub', '.oculus/data/academic/tasks.yml', { line: 5, character: 21 }).hit
+        ).toBeNull();
+        const tasks = planted.file('hub', '.oculus/data/academic/tasks.yml');
         // The empty list and the bare key of the other two entries name nothing.
         expect(tasks.references.map((one) => one.value)).toEqual([
             'alpha',
@@ -487,7 +496,7 @@ describe('the reference index', () => {
     });
 
     it('defines nothing for a funding entry that has no key', () => {
-        const funding = plantHub().file('hub', 'funding/funding.yml');
+        const funding = plantHub().file('hub', '.oculus/data/academic/funding.yml');
         expect(funding.definitions.map((one) => one.value)).toEqual(['grant-a']);
     });
 

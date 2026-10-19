@@ -8,7 +8,7 @@ verify:                      # the quick list (Z351, Z421): from tools/oculus in
 verify_landing:              # the landing list (Z351, Z366): from tools/oculus on main, by the orchestrator at each landing.
 - npm run test:landing
 worktree_root: .agents/worktrees
-worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks, side-projects, tools/present, deck, docs]   # as `.agents/plan.yaml` names them
+worktree_paths: [tools/oculus, .oculus, projects, funding, network, education, applications, side-projects, deck, docs]   # as `.agents/plan.yaml` names them
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
 executor: agent
 refute_after_repair: yes     # plan.yaml: /refute runs again over each repair round on a fresh reviewer; its findings are fixed at landing or booked, never sent back.
@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
-- step: O38
-  brief_check: agents/reviews/O38-brief-check.md (ab45d7f72335b6554, claude-opus-5-5, 307,354 tokens, 105 tool uses, 18.0 min)
-  base: db086e36d
-  worktree: .agents/worktrees/migration-O38
-  executor: agent
-  worker: claude:opus
-  session_id: abb312c8613a724c7 (claude-opus-5-5)
-  launched: 2026-10-19
-  report: agents/reviews/O38-report.md
-  builder_usage: round 0 hand-back on case 16, 298,198 tokens, 54 tool uses, 8.7 min; build, 280,827 tokens, 4,814 tool uses, 536.5 min; round 1 after the pause, 219,171 tokens, 230 tool uses, 32.3 min (the leg before the pause was stopped and its notice gave no usage)
-  cases_ruling: agents/briefs/O38-cases.md
-  reviewer_report: agents/reviews/O38-refuter.md (ac403e5a86a3d6757, claude-opus-5-5, 190,477 tokens, 165 tool uses, 28.8 min); over round 1: a75fec14c07a3891c, claude-opus-5-5, 94,722 tokens, 89 tool uses, 15.8 min
-  round: 1
-  round_brief: agents/briefs/O38-round1.md
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -173,7 +158,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 170 (2026-10-19, raised at O38's landing, finding Behaviour R-1 of the review over round 1): how often a Recover download on the cluster is read. Now the Recover view and the Login node section show a cluster run's bytes and sessions as Live HPC's poll reads them, every `slurm.poll_min` minutes (20 on the hub), and at once after a press (Fetch, Stop and the others ask Live HPC for a poll) or the view's refresh control; a cluster fetch can look stalled for up to 20 minutes between reads. On this Mac a run is read every 3 s. (a) Recommended: while a Recover run on the cluster is followed, the Recover watcher runs its own section (`tmux -L oculus-recover ls` and one `du -sb` per followed folder) over ssh once a minute, and stops when no cluster run is followed; for: the run reads live, the Live HPC poll keeps its cadence and its sacct load; against: one light ssh command a minute on the login node while a download runs, and it reverses the sentence of Z937 and DESIGN.md "Recover" that no other ssh command runs on a timer for Recover. A new step after O38. (b) Live HPC polls at a short cadence while a cluster run is followed; against: squeue, sacct and sinfo once a minute, a load the Slurm database is not meant for. (c) Keep it as landed; the lazy option if the 20-minute gap is a defect, and the policy-safe one if the login node is to see no extra command.
+
 
 
 
@@ -354,7 +339,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-10-19 (O38's landing refused before main was touched, "Main not clean"). The review over round 1 (a75fec14c07a3891c) is saved in `agents/reviews/O38-refuter.md` with its Closed heading; Z948 and Z949 taken in automode; open item 170 raised (the cluster reading's cadence). `/land O38` stopped at its check of main: `applications/applications.yml`, which O38 moves to `.oculus/data/academic/applications.yml`, holds an uncommitted change on main from the UGent application work (the `followup:` line of `ugent-bioml-doctor-assistent`), not the session's to commit or carry. Nothing was cherry-picked; the dispatch entry stays `landing: not-started`. Resumes when that change is committed on main; the landing then merges it into the moved file with main's other yml changes since the base. Fixes at landing waiting: Standards R-1, R-2, R-4, Behaviour R-2, R-3, `Lanes.svelte:103`, and the guarded.md bookings of Standards R-3.
+- 2026-10-20 (O38 landed). O38 is on main with its booking in `plan.md` and `agents/reviews/O38-landing.md`: the cockpit retired, the four hub tools deleted, Recover in oculus, the hub data files in `.oculus/data/`. Fixes at landing and the session's Part 7 work are in the booking. O38's own work left, in Axel's order: the cluster moves on his HPC access after this commit, then the four deposit pushes, each booked under O38. Open items: none. In flight: none. Next: the cluster moves, the deposit pushes, the academic-researcher deletion commit, then O44, then O39.
+- 2026-10-19 (open item 177 ruled). Axel ruled (a): O44, every text over a wallpaper on a surface, a step of its own after O38, booked in `plan.md` and `queue.md`.
+- 2026-10-19 (open item 176 ruled, the UGent change committed). Axel ruled (a), done at O38's landing with no new step; the UGent `applications.yml` change is committed on main (b3f67639f). /land O38 resumes.
+- 2026-10-19 (O38's landing refused before main was touched, "Main not clean"). The review over round 1 (a75fec14c07a3891c) is saved in `agents/reviews/O38-refuter.md` with its Closed heading; Z948 and Z949 taken in automode; open item 176 raised (the cluster reading's cadence). `/land O38` stopped at its check of main: `applications/applications.yml`, which O38 moves to `.oculus/data/academic/applications.yml`, holds an uncommitted change on main from the UGent application work (the `followup:` line of `ugent-bioml-doctor-assistent`), not the session's to commit or carry. Nothing was cherry-picked; the dispatch entry stays `landing: not-started`. Resumes when that change is committed on main; the landing then merges it into the moved file with main's other yml changes since the base. Fixes at landing waiting: Standards R-1, R-2, R-4, Behaviour R-2, R-3, `Lanes.svelte:103`, and the guarded.md bookings of Standards R-3.
 - 2026-10-19 (O38 round 1 read). The orchestrator read the round's delta (90 files): the `recover` channel (`runs/recover/live/watch.ts`, `batch.ts`, the Live HPC batch in `hpc/poll.ts`, `pollers.ts`, `context.ts`), the store and the two views, the career default, the `dead` numbers and their three readers, the `md5` rows and the two registry entries, the Jakel names and the two new test rows. Two points for landing: the head comment of `src/lib/server/root/watch/pollers.ts` lines 1 to 2 has one line past the file's wrap; `Login.svelte` shows its loading words for as long as the Live HPC poll has no answer (the cluster unreachable), where the base showed the GET's refusal or error. Both wait for the reviewer's report over the round and are closed at landing.
 - 2026-10-19 (O38 round 1 reported). The builder reported all 13 items DONE (`agents/reviews/O38-report.md`, "Repair round 1", saved into the main ledger; usage in `builder_usage`); the reviewer over the round a75fec14c07a3891c on claude-opus-5-5 runs against `.agents/worktrees/migration-O38-round-1`. Found while reading the report: `Lanes.svelte:103` still decides by the chip word `blocked`, a Part 14 place, fixed at landing.
 - 2026-10-19 (O38 round 1 resumed). At Axel's word the builder abb312c8613a724c7 was resumed by SendMessage from its transcript, to finish item 3 and the rest of the round.

@@ -12,7 +12,7 @@ text:
     settings:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
-        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash) and `files.file_icon_at_arrow` (true sets a file's icon where its sibling folders' arrows sit), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, the `focus:` settings (the Focus horizons, the `refresh_stale_days` thresholds of the refresh strip, the Command Center's categories and sources, the statuses the Focus columns count as open), the context window, the Live HPC settings, the audit's mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash) and `files.file_icon_at_arrow` (true sets a file's icon where its sibling folders' arrows sit), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
         desc_config: "The settings of this hub, kept in its .oculus/config.yml: the scan folders, the files of its records, collections and feeds, the picture folders, the cluster its jobs run on and the values of its apps' settings. A value there replaces the engine's value of the same key whole. The domains and theme words are kept in the hub's registry files."
         desc_cpp_schema: "The keys a repository's .oculus/cpp.yml may hold, each with its words and the values it takes, which the editor completes and checks."
         desc_deck_schema: "The keys a deck's present.yml may hold, each with its words, which the editor completes and checks."
@@ -28,27 +28,22 @@ text:
         desc_present: 'What every deck the Present view draws starts from: the hue each tag class of a project slide wears.'
         desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
         desc_unimath: 'The Unicode math symbols the LaTeX completion offers after a backslash while latex.unimath_symbols is true: per command, its glyph (and the package that defines it) and its words.'
-        desc_vocab: "Words and their colours: the palette, the status legend, the focus lanes, the venue tiers and the radar buckets. The research domains and the venue and dataset theme words are each hub's own, in its registry files."
+        desc_vocab: "Words and their colours: the palette, the statuses, types and tiers with the flags that say what each word does, the publication kinds, the focus lanes, the venue tiers and the radar buckets. The research domains and the venue and dataset theme words are each hub's own, in its registry files."
         catalogs_about: The catalog files the configuration is merged from, in config/catalogs/.
         catalogs_title: Catalogs
         contents_hide: Hide the table of contents
         contents_show: Show the table of contents
         editor_add: Add
-        editor_add_group: Add a key
         editor_discard: Discard
         editor_down: 'Move entry {0} down'
         editor_empty: This setting holds no entry.
         editor_field: 'Entry {0}, {1}'
-        editor_group_down: 'Move key {0} down'
-        editor_group_key: 'Key {0}'
-        editor_group_up: 'Move key {0} up'
         editor_item: 'Item {0} of {1}'
         editor_item_down: 'Move item {0} of {1} down'
         editor_item_remove: 'Remove item {0} of {1}'
         editor_item_up: 'Move item {0} of {1} up'
         editor_kept: 'Kept as the file has it:'
         editor_remove: 'Remove entry {0}'
-        editor_remove_group: 'Remove key {0}'
         editor_save: Save
         editor_saved: Saved.
         editor_stuck: 'The control cannot show these values, so they are kept as the file has them:'
@@ -77,7 +72,15 @@ text:
         pages_rename_label: Name of {0}
         pages_toolbar: Pages actions
         pages_unsaved: unsaved
-        rail_about: 'Each row is a button on the rail: its words, its icon, and the page it shows.'
+        rail_about: "Each row is a button on the rail: its words, its icon, the page it shows, and the chord and heading icon of the page's group in the view catalogue, which is headed by the button's words."
+        rail_chord: Chord of button {0}
+        rail_chord_empty: No chord
+        rail_group_glyph: Group icon of button {0}
+        rail_group_glyph_empty: "The first view's icon"
+        rail_word_chord: Chord
+        rail_word_group_glyph: Group icon
+        rail_why_chord: 'button {0} names a chord that is not one lowercase letter'
+        rail_why_group_glyph_unknown: 'button {0} names a group icon glyphs.yml does not hold'
         rail_add: Add a button
         rail_down: Move button {0} down
         rail_empty: The rail has no button.
@@ -115,12 +118,16 @@ text:
         reset_rebuilt: 'Rebuilt: {0}.'
         reset_tab: 'Tab: {0}, on {1}.'
         reset_removed: 'Removed: {0}.'
+        settings_browser_brackets: Brackets
+        settings_browser_brackets_about: 'Draws the buttons, chips and tags of a terminal theme in brackets. Off draws them in the same colours and shape without brackets. Other themes are not changed. The choice applies to this browser alone.'
         settings_browser_code_theme: Code theme
         settings_browser_code_theme_about: "How the editors colour code in this browser. From the theme takes the syntax colours of the UI theme, and the other choices are Shiki's bundled themes. Only the source tab, the diff and the merge editor follow it."
         settings_browser_crt: CRT overlay
         settings_browser_crt_about: 'Scanlines and a vignette over the page, cosmetic only. The choice applies to this browser alone.'
         settings_browser_icons: Icons
         settings_browser_icons_about: Keeps the icons on a terminal theme instead of their ASCII stand-ins.
+        settings_browser_monospace: Monospace
+        settings_browser_monospace_about: 'Draws the interface of a terminal theme in the monospace font. Off draws it in the default sans font; editors, code and terminals stay monospace. Other themes are not changed. The choice applies to this browser alone.'
         settings_browser_terminal_font: Terminal text size
         settings_browser_terminal_font_about: 'Text size of the terminal grid in CSS pixels in this browser, from 6 to 40. Empty follows the size the config gives.'
         settings_browser_text_size: Text size

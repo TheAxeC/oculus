@@ -15,9 +15,8 @@ import {
 import type { ClientState } from '$lib/state/client/context';
 import type { ViewSource } from '$lib/state/sessions/view-source';
 import { t } from '$lib/state/shared/words/text';
-import { editAction } from '../../card/card';
+import { editAction, type CardAction } from '../../card/card';
 import { fileNameOf, openEntry } from '../entry-file';
-import type { CardAction } from '../../card/CardActions.svelte';
 
 /** What the card's controls are made from. */
 export type EntryActionInput = {

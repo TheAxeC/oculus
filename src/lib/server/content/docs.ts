@@ -69,6 +69,7 @@ import { configDir } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/documents/docs.ts';
 import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
+import { catalogueGroupIds } from '../../data/helpers/keys/oculus/rail-letters.ts';
 import type { HubTarget } from '../files/roots.ts';
 import type {
     Finding,
@@ -716,14 +717,9 @@ const docEntryShape = z.looseObject({
 const docListShape = z.array(z.unknown());
 
 /**
- * The `nav_groups:` value, whose keys name the groups: any object, a list included, since a list's
- * indexes are its keys.
- */
-const groupsShape = z.custom<object>((held) => typeof held === 'object' && held !== null);
-
-/**
  * The ways the `docs:` list of config/layout.yml fails to draw, as findings: an entry that is not a
- * map of three strings, a group `nav_groups` does not name, a path that leaves the hub, a path with
+ * map of three strings, a group that is neither a rail page nor a group of `nav_groups`
+ * (`catalogueGroupIds`), a path that leaves the hub, a path with
  * no file at it, a directory, and a file that is not Markdown, which is all this route renders. It
  * is the same rule readRoots applies to a root whose directory is not on this machine: what the
  * config names and what is on the disk are checked where the disk is, and a finding is reported and
@@ -739,8 +735,8 @@ export function docFindings(
     // The list is the primary hub's, so a workspace with no primary hub has none to check.
     if (hub === null) return findings;
     // The groups are checked only against a config that names some, which every real one does.
-    const groups = groupsShape.safeParse(config.nav_groups);
-    const known = groups.success ? Object.keys(groups.data) : null;
+    const named = catalogueGroupIds(config);
+    const known = named.length > 0 ? named : null;
     if (config.docs === undefined) return findings;
     const list = docListShape.safeParse(config.docs);
     if (!list.success) {
@@ -776,7 +772,7 @@ export function docFindings(
             findings.push({
                 file,
                 key: label.data,
-                message: `nav_groups names no group ${group.data}; this document trails the groups`
+                message: `no rail page or nav_groups group is ${group.data}; this document trails the groups`
             });
         }
         const full = join(hub, path.data);

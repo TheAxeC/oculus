@@ -1,7 +1,9 @@
-// Layer 1, data. The templates of oculus's docs/templates.md that Make Folder a Hub and Make
-// Folder a Project write: the YAML block under a heading of the page, the collections the page's
-// config.yml block lists with the template of each one's data file, the config.yml a new hub gets
-// with the collections the reader ticked, and the project.yml a new project gets.
+// Layer 1, data. The templates of oculus's docs/templates.md that the make items of the Files view
+// write: the fenced block under a heading of the page, the collections the page's config.yml block
+// lists with the template of each one's data file, the config.yml a new hub gets with the
+// collections the reader ticked, the project.yml a new project gets, and the block of any other
+// file by its heading (`fileText`): the hub's `local.yml`, `.gitignore` and `schedules.yml`, and a
+// repository's `settings.yml`, `commands.yml`, `launch.yml` and `cpp.yml`.
 //
 // The page is the one source of these files, so the template a reader copies by hand and the file
 // a control writes are the same text. A collection is one line of the commented `collections:`
@@ -28,14 +30,15 @@ const COLLECTIONS_OPEN = '# collections:';
 export type CollectionTemplate = { key: string; file: string; body: string };
 
 /**
- * The first YAML block under the line of the page that reads exactly `heading`, with its final
- * newline, or null when the page has no such heading or no block under it.
+ * The first fenced block under the line of the page that reads exactly `heading`, whatever its
+ * fence names (`yaml`, `gitignore`), with its final newline, or null when the page has no such
+ * heading or no block under it.
  */
 function templateBlock(page: string, heading: string): string | null {
     const lines = page.split('\n');
     const at = lines.indexOf(heading);
     if (at < 0) return null;
-    const open = lines.indexOf('```yaml', at);
+    const open = lines.findIndex((line, index) => index > at && line.startsWith('```'));
     const close = open < 0 ? -1 : lines.indexOf('```', open + 1);
     if (open < 0 || close < 0) return null;
     return `${lines.slice(open + 1, close).join('\n')}\n`;
@@ -76,4 +79,12 @@ export function hubConfigText(page: string, chosen: readonly CollectionTemplate[
 /** The project.yml of a new project, the page's template, or null when the page has none. */
 export function projectText(page: string): string | null {
     return templateBlock(page, PROJECT_HEADING);
+}
+
+/**
+ * The template of the file whose heading is `## <name>` (`local.yml`, `.gitignore`), or null when
+ * the page has none.
+ */
+export function fileText(page: string, name: string): string | null {
+    return templateBlock(page, `## ${name}`);
 }

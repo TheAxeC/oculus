@@ -103,10 +103,7 @@
                     lines={[
                         allDatasets.length === 1
                             ? t('data.intro_one', accessSummary(allDatasets))
-                            : t('data.intro', allDatasets.length, accessSummary(allDatasets)),
-                        allDatasets.some((one) => one.recover === true)
-                            ? t('data.intro_recover')
-                            : t('data.intro_no_recover')
+                            : t('data.intro', allDatasets.length, accessSummary(allDatasets))
                     ]}
                 />
             {/snippet}

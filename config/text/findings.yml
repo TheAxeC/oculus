@@ -47,6 +47,8 @@ text:
             page: a rail button names no page; it is not drawn
             page_unknown: the rail button for {0} names a page arrangements does not hold; it is not drawn
             repeated: a second rail button names the page {0}; only the first is drawn
+            chord: the rail button for {0} names a chord that is not one lowercase letter; its group has no chord
+            group_glyph_unknown: the rail button for {0} names a group glyph glyphs.yml does not hold; its group heading takes the glyph of its first view
         appearance:
             glyph: the theme {0} names no glyph; it is offered with its words alone
             glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
@@ -69,7 +71,6 @@ text:
             new_project_dir_outside: 'the folder {1} of new_project_dir for {0} is not a scan folder and lies under none; the entry is not used'
             picture_folder_text: '{0} is no folder name; the folder {1} is used'
             picture_folder_outside: 'the folder {1} of {0} lies outside the hub; the folder {2} is used'
-            recover_command_key: 'recover_command holds no {0} for the dataset key; no dataset of this hub has a Recover control'
         wallpaper:
             form: 'wallpaper.image is {0}, which is neither random nor a hub name and a file name joined by a slash; no wallpaper is shown'
             name: 'wallpaper.image is {0}, whose file part is a path and not a file name; no wallpaper is shown'
@@ -127,8 +128,20 @@ text:
             setting_repeat: '{0} holds the name {1} more than once; the first is read and the others are not'
             setting_unnamed: '{0} has no name; the row is not read'
             setting_field: '{0} must be {1}; the field is not read'
+            focus_block: 'focus must be a map; none of its keys is read'
+            focus_value: '{0} must be {1}; it is not read'
+            focus_row: '{0} must be {1}; the row is not read'
+            counts_block: 'counts must be a map; no view draws a count'
+            counts_view: '{0} names no view that draws a count; the row is not read'
+            counts_field: '{0} is not a field this row takes; it is not read'
+            counts_value: '{0} must be {1}; it is not read'
+            boards_block: 'boards must be a map; no board is read'
+            boards_row: "{0} must be a map of the board's fields; the board is not read"
+            boards_field: '{0} is not a field a board takes; it is not read'
+            boards_value: '{0} must be {1}; it is not read'
+            boards_record: '{0} must be a map holding its cell or its words; it is not read'
             local_row: '{0} must be {1}; the row is not read'
-            local_repeat: '{0} repeats the label of an earlier row; the row is not read'
+            local_repeat: '{0} repeats the value of an earlier row; the row is not read'
             local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"
             local_unparsed: does not parse; every key takes its default
             local_not_a_map: is not a map of keys; every key takes its default
@@ -157,6 +170,7 @@ text:
             no_fields: a records field names no fields; it is drawn as a text box
             range: min is above max; the option is drawn as a text box
             slots: slots is not a list of words; the option is drawn as a text box
+            holds: 'holds: lists is taken only by a family whose fields are key and value; the entry is read without it'
             heading_missing: the option names no heading; it is listed under Without a heading
             heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
             whole: whole is not true; the option is drawn as a text box
@@ -229,7 +243,6 @@ text:
             snooze_help: A day, or true, until which the entry is kept off the ticker; oculus writes it when an entry is snoozed.
             subtasks_help: A checklist of lines, each with what to do, a deadline, whether it is done and a snooze day; oculus writes it from the card.
         validate:
-            key_renamed: 'key {0} is now {1}: write the tags under {1}:'
             bad_cluster: 'paths.cluster must be ~/ or / followed by folder names of letters, digits, . _ and -, not {0}'
             related_itself: 'related names the project itself: {0}'
             folder_shared: '{0} projects share the folder name {1}, so their ids collide'
@@ -238,11 +251,9 @@ text:
             schema_malformed: schema {0} is not a list of maps naming a field and a type
             identity_empty: has no {0}
             identity_shared: two entries share the {0} {1}
-            affiliation_retired: 'affiliation is read as a one-entry affiliations list; write affiliations'
             self_not_one: '{0} people entries carry self: true, and exactly one may'
             resource_reserved: 'key {0} is reserved, so the entry is left out'
             funding_no_statement: funding entry {0} is {1} and has no statement
-            theme_labels_retired: 'theme_labels is not read; the labels are the options of the themes field in the schema of this file'
             domain_color: 'the domain {0} has the color {1}, which is not a colour written #rrggbb, so it is drawn in the neutral tone'
         apps:
             name_empty: the name is missing or empty, so the folder is not an app

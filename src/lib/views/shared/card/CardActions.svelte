@@ -1,23 +1,9 @@
 <script module lang="ts">
-    /**
-     * One control a card carries: its words, its hover words, its glyph and what pressing it does.
-     */
-    export type CardAction = {
-        /** Stable within one card, so a control keeps its measured width when it moves. */
-        id: string;
-        label: string;
-        title?: string;
-        /** A glyph name; a control with one is drawn as its icon, one without as its words. */
-        glyph?: string;
-        /** Turn the glyph round and round while the action it started is under way. */
-        turning?: boolean;
-        active?: boolean;
-        /** Drawn disabled, with `title` saying why; pressing it does nothing. */
-        disabled?: boolean;
-        /** The control that opens and closes the card, which the keyboard's Enter reaches. */
-        toggle?: boolean;
-        onclick: () => void | Promise<void>;
-    };
+    // The type lives in card.ts, a TypeScript module, so a `.svelte.ts` helper that returns
+    // controls reads its fields; a component takes it from here with the component itself.
+    import type { CardAction } from './card';
+
+    export type { CardAction };
 </script>
 
 <script lang="ts">

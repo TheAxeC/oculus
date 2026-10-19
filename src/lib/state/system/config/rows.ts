@@ -75,8 +75,6 @@ export type ConfigRow = RowBase & {
     entry: CatalogEntry;
     /** A family's fields, each with its help line and control. */
     fields: Record<string, FieldSpec>;
-    /** `lists` when each key of a family that is a map holds a list of records. */
-    holds: 'lists' | undefined;
     default: unknown;
     /** The value the file holds, `undefined` for a missing row. */
     value: unknown;
@@ -265,7 +263,6 @@ function rowOf(
         control,
         entry,
         fields: entry.fields ?? {},
-        holds: entry.holds,
         default: entry.default,
         hub: hubbed === null ? null : { path: hubbed.path, present: hubbed.present }
     };

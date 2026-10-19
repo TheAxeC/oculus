@@ -207,7 +207,7 @@
     }
 
     /* The terminal shape: a log, in the face a log is read in. */
-    :global(body.rice) .timeline {
+    :global(body.rice:where(:not(.rice-sans))) .timeline {
         font-family: var(--font-mono);
     }
 </style>

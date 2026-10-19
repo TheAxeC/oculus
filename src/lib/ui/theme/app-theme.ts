@@ -22,7 +22,7 @@ import {
 import themesCss from '$lib/themes/themes.css?raw';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import { setAppRules } from './app-rules';
-import { THEME_SHEETS, applyTheme, type Themeable } from './theme';
+import { THEME_SHEETS, applyTheme, type BodyLooks, type Themeable } from './theme';
 
 /** The id of the style element that holds the app theme's block. */
 const STYLE_ID = 'oculus-app-theme';
@@ -106,8 +106,11 @@ function paintAppTheme(document: AppThemeDocument, sheet: AppThemeSheet | null):
     return sheet.css;
 }
 
-/** What a page draws its theme from. */
-export type ThemeDraw = {
+/**
+ * What a page draws its theme from: the theme, and the per-browser looks beside it (the CRT
+ * overlay, and whether a rice theme draws brackets and the monospace font).
+ */
+export type ThemeDraw = BodyLooks & {
     /** The saved name of the theme. */
     choice: string;
     /** Whether the name is an app's theme, which the page loads. */
@@ -118,7 +121,6 @@ export type ThemeDraw = {
     classes: string;
     /** Classes put beside an app theme's own, such as the wallpaper's. */
     extra?: string;
-    crt: boolean;
 };
 
 /**
@@ -134,26 +136,27 @@ export async function drawTheme(
 ): Promise<boolean> {
     if (!draw.app) {
         paintAppTheme(document, null);
-        applyTheme(document, draw.classes, draw.crt);
+        applyTheme(document, draw.classes, draw);
         return true;
     }
     const load = await loadAppTheme(draw.choice);
     if (!current()) return load !== null;
     if (load === null) {
         paintAppTheme(document, null);
-        applyTheme(document, draw.classes, draw.crt);
+        applyTheme(document, draw.classes, draw);
         return false;
     }
     const css = paintAppTheme(document, load.sheet);
     const classes = [APP_THEME_CLASS, draw.extra ?? ''].join(' ');
-    applyTheme(document, classes, draw.crt, undefined, `${THEME_SHEETS}\n${css}`);
+    applyTheme(document, classes, draw, undefined, `${THEME_SHEETS}\n${css}`);
     return true;
 }
 
 /**
  * Draw the theme a saved record names on a page that holds no `apps` channel (the find page and
  * the presenter's pages): an app's theme is loaded from the server, which answers for the saved
- * name alone.
+ * name alone. Such a page holds no per-browser values, so it draws no overlay and a rice theme
+ * whole, brackets and monospace font included.
  */
 export function drawSavedTheme(
     document: Themeable & AppThemeDocument,
@@ -163,6 +166,8 @@ export function drawSavedTheme(
         choice,
         app: appThemeState(choice, NO_OFFERS) !== 'none',
         classes: themeClass(choice, NO_OFFERS),
-        crt: false
+        crt: false,
+        brackets: true,
+        monospace: true
     });
 }

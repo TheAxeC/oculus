@@ -1,4 +1,4 @@
-// Layer 1, data. A venue's indexing fields as the Venues card draws them. registries/venues.yml
+// Layer 1, data. A venue's indexing fields as the Venues card draws them. The venues registry
 // writes an indexing field as prose that may open with a check or a cross mark, `wos: "<check>
 // SCIE"` or `wos: "<cross>"`; the mark is a yes or a no, which the card draws as the `check` or
 // `cross` glyph beside the rest of the words, so no emoji of the hub file reaches the page. The

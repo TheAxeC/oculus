@@ -17,21 +17,21 @@ describe('the file of a History row', () => {
     it.each([
         [
             'a file of the primary',
-            '/work/research-hub/tasks/tasks.yml',
+            '/work/research-hub/.oculus/data/academic/tasks.yml',
             'research-hub',
-            'tasks/tasks.yml'
+            '.oculus/data/academic/tasks.yml'
         ],
         [
             'a file of another served folder',
-            '/work/lab/tasks/tasks.yml',
+            '/work/lab/.oculus/data/academic/tasks.yml',
             'research-hub',
-            'lab/tasks/tasks.yml'
+            'lab/.oculus/data/academic/tasks.yml'
         ],
         [
             'the same file after the primary moved',
-            '/work/research-hub/tasks/tasks.yml',
+            '/work/research-hub/.oculus/data/academic/tasks.yml',
             'lab',
-            'research-hub/tasks/tasks.yml'
+            'research-hub/.oculus/data/academic/tasks.yml'
         ],
         [
             'a file outside the served folders',

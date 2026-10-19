@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The audit follows Findings in the System page's group. Its badge
-    // is the open findings of the audit, the count it also gives its rail button.
+    // is the open findings of the audit, its count; its row of `counts` says where it is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -11,7 +11,7 @@
         order: 6,
         unique: true,
         badge: (client) => client.railBadges.auditBadge(),
-        railPart: (client) => ({ count: client.railBadges.auditCount() })
+        countPart: (client) => ({ count: client.railBadges.auditCount() })
     };
 </script>
 
@@ -40,7 +40,7 @@
     // The errors in the files themselves, a bad id or an unknown chip, are the Findings view's and
     // are not repeated here.
 
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -341,7 +341,7 @@
     }
 
     /* The terminal shape: the sections follow the folder line, as every list does there. */
-    :global(body.rice) .audit {
+    :global(body.rice:where(:not(.rice-sans))) .audit {
         font-family: var(--font-mono);
     }
 </style>

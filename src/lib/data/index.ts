@@ -8,27 +8,27 @@
 import { existsSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
-import { isMap, str, strings } from './helpers/guards.ts';
+import { focusBlock, isMap, str, strings } from './helpers/guards.ts';
 import { MEMORIES_DIR, WALLPAPER_DIR, hubFolderIn } from './helpers/files/paths.ts';
-import {
-    filledTextShape,
-    keysOfShape,
-    mapShape,
-    readAs,
-    readOr,
-    rowsShape
-} from './shapes/shapes.ts';
+import { filledTextShape, mapShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
+import { coloredWords, wordsWith } from './shapes/vocab-keys.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
-import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
-import { LITERATURE_FILE, readCollections, unnamedCollection } from './sources/collections.ts';
+import { REGISTRY_LIST_KEYS, readRegistries, registryFiles } from './sources/registries.ts';
+import {
+    LITERATURE_KEY,
+    collectionFiles,
+    engineDefaults,
+    readCollections,
+    unnamedCollection,
+    type EngineDefaults
+} from './sources/collections.ts';
 import { readCareer } from './sources/documents/career.ts';
 import { feedItems, readFeeds } from './sources/documents/feeds.ts';
 import { projectDocs } from './sources/documents/docs.ts';
 import { findingText, type TextCatalog } from './helpers/finding-text.ts';
 import {
-    CAREER_FILE,
+    DATA_FOLDER,
     HUB_FILE,
-    RECOVER_KEY,
     TIERS,
     folderOf,
     fromHubFile,
@@ -75,7 +75,6 @@ import type {
     RawDeck,
     RawManifest,
     RawPortfolio,
-    RegistryFiles,
     RegistryName,
     RepositoryRoot,
     ScanRule,
@@ -147,16 +146,7 @@ export type SourcesFiles = {
     newProjectDir: string;
     memoriesDir: string;
     wallpaperDir: string;
-    recoverCommand: string;
 };
-
-/** A `recover_command` that names no `{key}`: no dataset of the hub gets a Recover control. */
-function recoverFindings(merged: Record<string, unknown>, file: string, text: TextCatalog) {
-    const command = readAs(filledTextShape, merged.recover_command) ?? undefined;
-    if (command === undefined || command.includes(RECOVER_KEY)) return [];
-    const message = findingText(text, 'findings.manifests.recover_command_key', RECOVER_KEY);
-    return [{ file, key: 'recover_command', message }];
-}
 
 /** What is wrong with a picture folder key of a hub: no text, or a folder outside the hub. */
 function pictureFolderFindings(
@@ -183,9 +173,9 @@ function pictureFolderFindings(
 }
 
 /**
- * What is wrong with the values `scan:`, `new_project_dir:`, `wallpaper_dir:`, `memories_dir:` and
- * `recover_command:` hold in a merged config of the hub folder `hub`, each finding filed on the
- * sources file its value was read from.
+ * What is wrong with the values `scan:`, `new_project_dir:`, `wallpaper_dir:` and `memories_dir:`
+ * hold in a merged config of the hub folder `hub`, each finding filed on the sources file its value
+ * was read from.
  */
 export function sourcesFindings(
     merged: Record<string, unknown>,
@@ -205,15 +195,7 @@ export function sourcesFindings(
             files.wallpaperDir,
             text
         ),
-        ...pictureFolderFindings(
-            merged,
-            hub,
-            'memories_dir',
-            MEMORIES_DIR,
-            files.memoriesDir,
-            text
-        ),
-        ...recoverFindings(merged, files.recoverCommand, text)
+        ...pictureFolderFindings(merged, hub, 'memories_dir', MEMORIES_DIR, files.memoriesDir, text)
     ];
 }
 
@@ -258,32 +240,8 @@ function newProjectDirs(
     return { dirs, findings };
 }
 
-/** One entry of the `collections:` list: a key and a hub-relative file, both texts. */
-const collectionFileShape = z.object({
-    key: z.string(),
-    file: z.string()
-}) satisfies z.ZodType<CollectionFile>;
-
-/** The `collections:` list, each entry a key and a hub-relative file. */
-const collectionFilesShape = rowsShape(collectionFileShape);
-
-/** The `collections:` list as the files it names. */
-function collectionFiles(value: unknown): CollectionFile[] {
-    return readOr(collectionFilesShape, value, []);
-}
-
 /** A key of the `collections:` list that names a YAML feed's file. */
 type FeedKey = (typeof FEED_COLLECTION_KEYS)[number];
-
-/**
- * The engine's path of each YAML feed, the file of its entry in config/sources.yml, which a hub
- * whose own `collections:` list does not name the key reads, as a registry it does not name is
- * read from REGISTRY_FILES: the merged config holds the hub's list in place of the engine's.
- */
-const FEED_PATHS: Record<FeedKey, string> = {
-    leads: '.oculus/data/leads.yml',
-    radar: '.oculus/data/radar.yml'
-};
 
 /** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */
 function tagTones(defaults: unknown): Record<string, string> {
@@ -300,9 +258,10 @@ const pathShape = z.string();
 
 /**
  * The portfolio's half of the merged config. The `collections:` list gives the eight registry
- * paths, each registry being the first entry of the list under its fixed key (`REGISTRY_KEYS`),
- * and the two YAML feeds' paths, under the keys `leads` and `radar`, which are no collection. A
- * registry or feed the list does not name falls back to the engine's path, so a config that has
+ * paths, each registry being the first entry of the list under its fixed key
+ * (`REGISTRY_LIST_KEYS`), and the two YAML feeds' paths, under the keys `leads` and `radar`, which
+ * are no collection. A registry, feed or career file the merged config does not name is read from
+ * oculus's own path in config/sources.yml (`engineDefaults`, read only then), so a config that has
  * moved on in one place still builds. The text catalog travels with it, since every reader words
  * its findings from config/text/findings.yml.
  */
@@ -314,27 +273,24 @@ export function portfolioConfigFrom(
         readOr(pathShape, merged[key], fallback);
     const listed = collectionFiles(merged.collections);
     const unnamed = from === undefined ? undefined : unnamedBy(from, listed);
+    let engine: EngineDefaults | undefined;
+    const defaults = (): EngineDefaults => (engine ??= engineDefaults());
+    const engineFile = (key: string): CollectionFile[] =>
+        defaults()
+            .collections.filter((file) => file.key === key)
+            .slice(0, 1);
     const collections = [
         ...listed.filter((file) => !isFeedCollection(file.key)),
-        ...(unnamed?.literature === true ? [LITERATURE_FILE] : [])
+        ...(unnamed?.literature === true ? engineFile(LITERATURE_KEY) : [])
     ];
-    const registryFile = (name: RegistryName): string =>
-        collections.find((file) => file.key === REGISTRY_KEYS[name])?.file ?? REGISTRY_FILES[name];
+    const registries = registryFiles(collections, () => defaults().collections);
     const feedFile = (key: FeedKey): string =>
-        listed.find((file) => file.key === key)?.file ?? FEED_PATHS[key];
+        listed.find((file) => file.key === key)?.file ?? engineFile(key).at(0)?.file ?? '';
 
-    const registries: RegistryFiles = {
-        venues: registryFile('venues'),
-        datasets: registryFile('datasets'),
-        pillars: registryFile('pillars'),
-        domains: registryFile('domains'),
-        funding: registryFile('funding'),
-        people: registryFile('people'),
-        organisations: registryFile('organisations'),
-        resources: registryFile('resources')
+    const vocab: Vocabulary = {
+        statuses: coloredWords(merged.statuses),
+        acknowledged: wordsWith(merged, 'statuses', 'acknowledged')
     };
-
-    const vocab: Vocabulary = { statuses: readOr(keysOfShape, merged.status_palette, []) };
 
     // The LinkedIn folder is the hub's own, so a config that names none has no LinkedIn feed.
     const feeds: FeedFiles = {
@@ -353,9 +309,8 @@ export function portfolioConfigFrom(
         registries,
         collections,
         feeds,
-        linkedinCadenceDays: Number(merged.linkedin_cadence_days),
-        recoverCommand: recoverCommandOf(merged.recover_command),
-        career: path('career_file', CAREER_FILE),
+        linkedinCadenceDays: Number(focusBlock(merged).linkedin_cadence_days),
+        career: readAs(pathShape, merged.career_file) ?? defaults().career,
         schema: merged.manifest_schema,
         vocab,
         merged,
@@ -364,28 +319,6 @@ export function portfolioConfigFrom(
         text
     };
 }
-
-/**
- * The hub's `recover_command` when it gives a Recover control: a text holding `{key}`, where the
- * dataset's key goes. An empty or absent value gives none, and so does a text without `{key}`,
- * which sourcesFindings reports.
- */
-function recoverCommandOf(value: unknown): string | null {
-    const command = readAs(filledTextShape, value) ?? undefined;
-    return command?.includes(RECOVER_KEY) === true ? command : null;
-}
-
-/** The key of the `collections:` list each registry's file is named under. */
-const REGISTRY_KEYS: Record<RegistryName, string> = {
-    venues: 'venues',
-    datasets: 'data',
-    pillars: 'pillars',
-    domains: 'domains',
-    funding: 'funding',
-    people: 'people',
-    organisations: 'organisations',
-    resources: 'resources'
-};
 
 /** Whether the hub's own settings file holds a key, by the `from` that loadConfig returned. */
 function named(from: Readonly<Partial<Record<string, string>>>, key: string): boolean {
@@ -402,13 +335,13 @@ function unnamedBy(
     collections: readonly CollectionFile[]
 ): NonNullable<PortfolioConfig['unnamed']> {
     const listed = named(from, 'collections');
-    const registries = (Object.keys(REGISTRY_KEYS) as RegistryName[]).filter(
-        (name) => !listed || !collections.some((file) => file.key === REGISTRY_KEYS[name])
+    const registries = (Object.keys(REGISTRY_LIST_KEYS) as RegistryName[]).filter(
+        (name) => !listed || !collections.some((file) => file.key === REGISTRY_LIST_KEYS[name])
     );
     const feeds = FEED_COLLECTION_KEYS.filter(
         (key) => !listed || !collections.some((file) => file.key === key)
     );
-    const literature = listed && !collections.some((file) => file.key === LITERATURE_FILE.key);
+    const literature = listed && !collections.some((file) => file.key === LITERATURE_KEY);
     return {
         registries,
         feeds,
@@ -416,6 +349,17 @@ function unnamedBy(
         literature,
         deck: !named(from, 'portfolio_deck')
     };
+}
+
+/**
+ * What a hub leaves unnamed, read against its folder `hub`: a hub that names no `collections:`
+ * list and holds the `.oculus/data/` folder keeps its collection files at oculus's paths there, so
+ * every registry, feed and collection of the list counts as named and a missing file of it is a
+ * finding, as it is for a hub that names its list.
+ */
+function heldUnnamed(hub: string, unnamed: PortfolioConfig['unnamed']): PortfolioConfig['unnamed'] {
+    if (unnamed?.collections !== true || !existsSync(join(hub, DATA_FOLDER))) return unnamed;
+    return { ...unnamed, registries: [], feeds: [], collections: false };
 }
 
 /**
@@ -524,20 +468,19 @@ export function buildPortfolioWithSchemas(
     root: string = basename(hub)
 ): PortfolioBuild {
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
-    const registries = readRegistries(
-        hub,
-        config.registries,
-        config.text,
-        config.unnamed?.registries
-    );
+    const unnamed = heldUnnamed(hub, config.unnamed);
+    const registries = readRegistries(hub, config.registries, config.text, unnamed?.registries);
     // The engine's Literature, which the hub's list does not name, is read once the hub holds it.
     const read = config.collections.filter(
-        (file) => file !== LITERATURE_FILE || existsSync(join(hub, file.file))
+        (file) =>
+            file.key !== LITERATURE_KEY ||
+            unnamed?.literature !== true ||
+            existsSync(join(hub, file.file))
     );
     const collections = readCollections(hub, read, config.text, (key) =>
-        unnamedCollection(config.unnamed, key)
+        unnamedCollection(unnamed, key)
     );
-    const feeds = readFeeds(hub, config.feeds, config.text, config.unnamed?.feeds);
+    const feeds = readFeeds(hub, config.feeds, config.text, config.merged, unnamed?.feeds);
     const career =
         config.career === null
             ? { career: null, findings: [] }
@@ -568,7 +511,6 @@ export function buildPortfolioWithSchemas(
     const findings = sortFindings([
         ...validate(raw, {
             vocab: config.vocab,
-            datasetsFile: join(hub, config.registries.datasets),
             listed: listedFields(config.schema, unread),
             text: config.text
         }),
@@ -586,7 +528,7 @@ export function buildPortfolioWithSchemas(
         deckFile: DECK_FILE
     });
     return {
-        snapshot: recoverable(normalise(raw, findings, version), config.recoverCommand !== null),
+        snapshot: normalise(raw, findings, config.merged, version),
         schemas: resolvedSchemas(
             withSchemas(run.set, engineSchemas(raw, config)),
             root,
@@ -594,21 +536,6 @@ export function buildPortfolioWithSchemas(
         ),
         references
     };
-}
-
-/**
- * The snapshot with each dataset marked `recover` when the hub it was built from gives its datasets
- * a Recover control; a merge keeps the mark of each hub's own build.
- */
-function recoverable(snapshot: Snapshot, recover: boolean): Snapshot {
-    if (!recover) return snapshot;
-    const datasets = Object.fromEntries(
-        Object.entries(snapshot.entities.datasets).map(([id, one]) => [
-            id,
-            { ...one, recover: true as const }
-        ])
-    );
-    return { ...snapshot, entities: { ...snapshot.entities, datasets } };
 }
 
 /**
@@ -638,7 +565,7 @@ export function buildFolderProjects(
     };
     const findings = sortFindings(manifests.findings);
     return {
-        snapshot: normalise(raw, findings, version),
+        snapshot: normalise(raw, findings, config.merged, version),
         schemas: resolvedSchemas(
             withSchemas(emptySchemaSet(), engineSchemas(raw, config)),
             '',
@@ -687,8 +614,7 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
                     scan: sources,
                     newProjectDir: sources,
                     memoriesDir: sources,
-                    wallpaperDir: sources,
-                    recoverCommand: sources
+                    wallpaperDir: sources
                 },
                 root.dir
             )
@@ -698,7 +624,6 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
 
 /** The maps of a registry file's `entries:` list. */
 const entryMapsShape = rowsShape(mapShape);
-
 /** A hub file read as a map, or null when it cannot be read or holds no map. */
 function hubMap(hub: string, file: string, catalog: TextCatalog): Record<string, unknown> | null {
     return readYamlMap(join(hub, file), catalog, [], () => null);
@@ -736,11 +661,13 @@ export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['do
  * The words one hub gives its own records, read from its own files: its domains (`hubDomainsOf`)
  * and the `themes` options of its venue and dataset registries. A file that does not read gives
  * none; its reader reports why. Its collections are the keys its own `collections:` names; a hub
- * whose settings name no list has the engine's list, and lists the keys whose file it holds.
+ * whose settings name no list has the engine's list, and lists every key of it when it holds the
+ * `.oculus/data/` folder, else the keys whose file it holds.
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
+    const unnamed = heldUnnamed(hub, config.unnamed);
     const held = config.collections.filter(
-        (file) => !unnamedCollection(config.unnamed, file.key) || existsSync(join(hub, file.file))
+        (file) => !unnamedCollection(unnamed, file.key) || existsSync(join(hub, file.file))
     );
     return {
         domains: hubDomainsOf(hub, config),
@@ -751,13 +678,14 @@ export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
 }
 
 /**
- * The files `hubVocabOf` reads for one hub, absolute, with the collection files whose presence
- * says what a hub that names no `collections:` list lists.
+ * The files `hubVocabOf` reads for one hub, absolute, with the `.oculus/data/` folder and the
+ * collection files whose presence says what a hub that names no `collections:` list lists.
  */
 function hubVocabFiles(hub: string, config: PortfolioConfig): string[] {
     const { domains, venues, datasets } = config.registries;
     const looked = config.collections.filter((file) => unnamedCollection(config.unnamed, file.key));
-    return [domains, venues, datasets, ...looked.map((one) => one.file)].map((file) =>
+    const folder = config.unnamed?.collections === true ? [DATA_FOLDER] : [];
+    return [domains, venues, datasets, ...folder, ...looked.map((one) => one.file)].map((file) =>
         join(hub, file)
     );
 }

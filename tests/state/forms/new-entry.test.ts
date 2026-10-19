@@ -9,7 +9,10 @@ import { addTask, askFields } from '../../../src/lib/state/forms/new-entry.ts';
 import type { WriteAnswer } from '../../../src/lib/state/shared/stores/shapes.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 
-setCatalog(textCatalog(loadConfig(engineDir()).config));
+/** The config oculus ships, whose `statuses` give a new task its status. */
+const ENGINE = loadConfig(engineDir()).config;
+
+setCatalog(textCatalog(ENGINE));
 
 const TASK_SCHEMA: SchemaField[] = [
     { field: 'key', type: 'text' },
@@ -22,7 +25,7 @@ function entry(key: string, root?: string): Entry {
         id: key,
         title: key,
         fields: { key },
-        file: '/hub/tasks/tasks.yml',
+        file: '/hub/.oculus/data/academic/tasks.yml',
         index: 0,
         ...(root === undefined ? {} : { root })
     };
@@ -32,7 +35,7 @@ function tasks(keys: string[], root?: string): Collection {
     return {
         id: 'tasks',
         title: 'Tasks',
-        file: '/hub/tasks/tasks.yml',
+        file: '/hub/.oculus/data/academic/tasks.yml',
         schema: TASK_SCHEMA,
         entries: keys.map((one) => entry(one, root)),
         ...(root === undefined ? {} : { root })
@@ -61,7 +64,7 @@ async function made(
     primary: string | null = null
 ): Promise<Record<string, unknown> | string> {
     const written: Record<string, unknown>[] = [];
-    const added = await addTask(title, collections, primary, (_collection, one) => {
+    const added = await addTask(title, collections, primary, ENGINE, (_collection, one) => {
         written.push(one);
         return Promise.resolve({ ok: true, changed: [], refused: [], id: String(one.key) });
     });
@@ -131,10 +134,16 @@ describe('addTask', () => {
 
     it('writes the task to the tasks collection and gives back its id and title', async () => {
         const calls: [string, Record<string, unknown>][] = [];
-        const added = await addTask('Review it', [tasks([])], null, (collection, fields) => {
-            calls.push([collection, fields]);
-            return Promise.resolve(answered({ id: 'review-it' }));
-        });
+        const added = await addTask(
+            'Review it',
+            [tasks([])],
+            null,
+            ENGINE,
+            (collection, fields) => {
+                calls.push([collection, fields]);
+                return Promise.resolve(answered({ id: 'review-it' }));
+            }
+        );
         expect(calls).toEqual([
             ['tasks', { key: 'review-it', title: 'Review it', status: 'todo' }]
         ]);
@@ -147,7 +156,7 @@ describe('addTask', () => {
         ['no tasks collection', 'Review', [], 'app.palette.task_add_collection']
     ])('says why it writes nothing for %s', async (_name, title, collections, words) => {
         const calls: string[] = [];
-        const added = await addTask(title, collections, null, (collection) => {
+        const added = await addTask(title, collections, null, ENGINE, (collection) => {
             calls.push(collection);
             return Promise.resolve(answered({}));
         });
@@ -156,14 +165,14 @@ describe('addTask', () => {
     });
 
     it('says the refusal of the write', async () => {
-        const added = await addTask('Review it', [tasks([])], null, () =>
+        const added = await addTask('Review it', [tasks([])], null, ENGINE, () =>
             Promise.resolve(answered({ ok: false, error: 'the file does not parse' }))
         );
         expect(added).toEqual({ id: '', label: '', said: 'the file does not parse' });
     });
 
     it('says the reason of a refused field', async () => {
-        const added = await addTask('Review it', [tasks([])], null, () =>
+        const added = await addTask('Review it', [tasks([])], null, ENGINE, () =>
             Promise.resolve(
                 answered({
                     refused: [{ field: 'key', reason: 'an entry with that key is in the file' }]

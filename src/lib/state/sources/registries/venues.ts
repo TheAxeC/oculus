@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import type { Project, Venue } from '../../../data/model/index.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
+import { hasWord, wordNumber } from '../../../data/shapes/vocab-keys.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
@@ -26,23 +27,32 @@ export type VenuesState = {
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const LIVE_TYPES = ['active'];
-
-/** The projects included in venue use and concentration counts. */
-export function realProjects(projects: Project[], dead: string[]): Project[] {
+/**
+ * The projects included in venue use and concentration counts: every project but one of a tier
+ * carrying `finished` whose type carries a `dead` number.
+ */
+export function realProjects(projects: Project[], config: Record<string, unknown>): Project[] {
     return projects.filter(
         (project) =>
-            (project.tier !== 'archive' && project.tier !== 'coauthor') ||
-            !dead.includes(project.type ?? '')
+            !hasWord(config, 'tiers', 'finished', project.tier) ||
+            wordNumber(config, 'types', 'dead', project.type) === null
     );
 }
 
-/** Projects targeting one venue, with the active concentration marker. */
-export function venueUsers(venue: Venue, projects: Project[]): VenueUse {
+/**
+ * Projects targeting one venue, with the concentration marker: two or more of them of a type
+ * carrying `live`.
+ */
+export function venueUsers(
+    venue: Venue,
+    projects: Project[],
+    config: Record<string, unknown>
+): VenueUse {
     const users = projects.filter((project) => project.venueId === venue.id);
     return {
         projects: users,
-        concentrated: users.filter((project) => LIVE_TYPES.includes(project.type ?? '')).length >= 2
+        concentrated:
+            users.filter((project) => hasWord(config, 'types', 'live', project.type)).length >= 2
     };
 }
 

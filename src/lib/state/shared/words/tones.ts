@@ -18,7 +18,7 @@
 import { z } from 'zod';
 import type { HubVocabs } from '../../../data/model/index.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
-import { mapOfShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
+import { mapOfShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { configGeneration } from './generation.svelte.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
@@ -27,7 +27,7 @@ export const UNKNOWN_TONE = 'grey';
 /** A tone is a CSS custom-property name fragment, so it may hold nothing else. */
 const TONE = /^[a-z][a-z0-9-]*$/;
 
-/** One row of `status_legend`: the chip's key, glyph name and words. */
+/** One status chip, a word of `statuses` with a `label`: the word, its glyph name and its words. */
 type Legend = { key: string; icon: string; label: string };
 
 /** The palette hex is written in either case in the config, and matched in lower case here. */
@@ -50,9 +50,9 @@ const labelShape = z.object({ label: z.string() }).transform((row) => row.label)
 
 /**
  * A map of lower-cased name to string, from a map whose values `value` reads: the string itself, or
- * the string a record holds. It reads the hexes of `palette` and `type_color`, and the `color` and
- * the `label` of a `domains` entry, which are the same shape read twice. A value `value` refuses
- * leaves its name out.
+ * the string a record holds. It reads the hexes of `palette` and `data_access`, the `color` of a
+ * word of `statuses` and `types`, and the `color` and the `label` of a `domains` entry. A value
+ * `value` refuses leaves its name out.
  */
 function stringMap(node: unknown, value: z.ZodType<string>): Record<string, string> {
     const held = readAs(mapOfShape(value), node) ?? {};
@@ -63,24 +63,32 @@ function stringMap(node: unknown, value: z.ZodType<string>): Record<string, stri
     );
 }
 
-/** One row of `status_legend`: the key, and the icon and label the row may leave out. */
-const legendRowShape = z
-    .object({
-        key: z.string(),
-        icon: z.string().catch(''),
-        label: z.string().optional().catch(undefined)
-    })
-    .transform((row): Legend => ({ key: row.key, icon: row.icon, label: row.label ?? row.key }));
+/** A word of `statuses` that is a chip: `chip: true`, and the icon and label it may leave out. */
+const legendRowShape = z.object({
+    chip: z.literal(true),
+    icon: z.string().catch(''),
+    label: z.string().optional().catch(undefined)
+});
 
-/** The rows of `status_legend` that are rows, in order. */
-const legendRowsShape = rowsShape(legendRowShape);
+/**
+ * The status chips of `statuses`, in order: each word whose row carries `chip: true`, drawn with
+ * its `label`, or the word itself when the row holds no label as text.
+ */
+function legendRows(value: unknown): Legend[] {
+    const map = readAs(mapShape, value) ?? {};
+    return Object.entries(map).flatMap(([key, row]) => {
+        const held = readAs(legendRowShape, row);
+        return held === null ? [] : [{ key, icon: held.icon, label: held.label ?? key }];
+    });
+}
 
 /** The hub name a domain of the primary hub is filed under, since its records carry no hub name. */
 const PRIMARY = '';
 
 /**
- * Install the vocabulary from the merged config: `palette` (hex to token name), `status_palette`
- * and `type_color` (a name to a hex) and `status_legend` (the chips), and from `hubs` the research
+ * Install the vocabulary from the merged config: `palette` (hex to token name), the `color` of the
+ * words of `statuses` and `types`, the chips of `statuses` (its words carrying `chip: true`), and
+ * from `hubs` the research
  * `domains` of every hub of the workspace, read from each hub's domains registry, each under its
  * hub's name and the primary's under the empty name; a domain with no colour wears the neutral
  * tone. A key the config does not hold installs as empty, so every lookup answers with its
@@ -88,8 +96,8 @@ const PRIMARY = '';
  */
 export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
     palette = stringMap(config.palette, hexShape);
-    statusPalette = stringMap(config.status_palette, colorShape);
-    typeColor = stringMap(config.type_color, hexShape);
+    statusPalette = stringMap(config.statuses, colorShape);
+    typeColor = stringMap(config.types, colorShape);
     domainColor = {};
     domainText = {};
     for (const [name, vocab] of Object.entries(hubs.lists)) {
@@ -100,7 +108,7 @@ export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void
     }
     dataAccess = stringMap(config.data_access, hexShape);
     legend = Object.fromEntries(
-        (readAs(legendRowsShape, config.status_legend) ?? [])
+        legendRows(config.statuses)
             .filter((row) => row.key !== '__proto__')
             .map((row) => [row.key, row])
     );
@@ -143,14 +151,14 @@ export function dataAccessTone(access: unknown): string {
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
-/** The tone of a collection entry's status, through `status_palette`. */
+/** The tone of a collection entry's status, through the `color` of its word of `statuses`. */
 export function statusTone(status: unknown): string {
     configGeneration();
     const hex = byKey(statusPalette, scalar(status).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
-/** The tone of a project type, through `type_color`. */
+/** The tone of a project type, through the `color` of its word of `types`. */
 export function typeTone(type: unknown): string {
     configGeneration();
     const hex = byKey(typeColor, scalar(type).toLowerCase());
@@ -219,8 +227,8 @@ const ICON_HUES: Record<string, string> = {
 };
 
 /**
- * The hue a status mark is drawn in: the status palette's tone when the palette names the status,
- * and otherwise the colour its legend icon is named by, so a mark drawn as a line icon keeps the
+ * The hue a status mark is drawn in: the tone of its word's `color` when the word has one, and
+ * otherwise the colour its legend icon is named by, so a mark drawn as a line icon keeps the
  * colour its dot had. The unknown tone for a status the legend does not list.
  */
 export function statusMarkTone(chip: string): string {

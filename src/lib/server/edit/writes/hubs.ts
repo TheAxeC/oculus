@@ -18,7 +18,7 @@ import { inside } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import { engineLiteraturePath, literatureFile } from '../feeds/literature.ts';
-import { LITERATURE_FILE } from '../../../data/sources/collections.ts';
+import { LITERATURE_KEY } from '../../../data/sources/collections.ts';
 import type { PrimaryTarget, WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 
@@ -179,7 +179,7 @@ export function homeOf(into: WriteTarget): PrimaryTarget | null {
  * holds the file there (`literatureFile`, the file Save to Literature writes).
  */
 export function homeNaming(into: WriteTarget, collection: string): PrimaryTarget | null {
-    const literature = collection === LITERATURE_FILE.key;
+    const literature = collection === LITERATURE_KEY;
     const enginePath = literature ? engineLiteraturePath(into.engineConfig()) : undefined;
     const holds = (hub: string, config: WriteTarget['config']): boolean =>
         config.collections.some((one) => one.key === collection) ||

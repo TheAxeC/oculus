@@ -1,6 +1,9 @@
 // Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
-// on its slower independent cadence.
-import type { HpcPayload } from '../../../data/model/index.ts';
+// on its slower independent cadence. Its one ssh command per poll also carries Recover's section
+// (the sessions on the socket `oculus-recover`, their folders' bytes and the logs Recover follows),
+// which it hands back to Recover's watcher; Recover asks for that section alone, with the queue,
+// once a minute while a run on the cluster is followed (`recover`).
+import type { HpcJob, HpcPayload } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {
@@ -10,6 +13,7 @@ import {
     parseSinfo,
     parseSqueue,
     SEC_RC,
+    SEC_RECOVER,
     SEC_SACCT,
     SEC_SINFO,
     splitSections
@@ -32,14 +36,30 @@ export type HpcSettings = {
     prewarm: boolean;
 };
 
+/**
+ * Recover's part of the batch (runs/recover/live/batch.ts): the commands of its section, read when
+ * each poll starts, and the section and the queue of a poll the cluster answered.
+ */
+export type HpcSection = {
+    command: () => string;
+    take: (section: string, jobs: HpcJob[]) => void;
+};
+
 export type HpcOptions = HpcSettings & {
     /** The log path per job id the log action reads, which the prewarm fills in behind the page. */
     logPaths?: LogPaths;
+    recover?: HpcSection;
     runner?: Runner;
     timeoutMs?: number;
 };
 export type HpcWatcher = {
     refresh(): Promise<void>;
+    /**
+     * Run Recover's section alone, with the queue, on the host the polls ask, and hand the answer
+     * to Recover as a poll does. It runs only while the last poll had the cluster's answer, so a
+     * cluster that does not answer gets no command but the polls' own.
+     */
+    recover(): Promise<void>;
     /**
      * Take new settings. A period moves the next run to the sooner of the one waiting and the new
      * period from now; a changed host, a changed sentence for having none, or a changed window
@@ -50,14 +70,26 @@ export type HpcWatcher = {
     close(): void;
 };
 
-export function batchCommand(days: number): string {
+/** The one command of a poll; `recover` is the commands of Recover's section, last. */
+export function batchCommand(days: number, recover = ''): string {
     return [
         `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`,
         `echo "${SEC_RC}$?"`,
         `echo "${SEC_SACCT}"`,
         `sacct -u "$USER" -S ${dateFrom(days)} -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn`,
         `echo "${SEC_SINFO}"`,
-        `sinfo -h -o '%P|%a|%D|%t|%G'`
+        `sinfo -h -o '%P|%a|%D|%t|%G'`,
+        ...(recover === '' ? [] : [`echo "${SEC_RECOVER}"`, recover])
+    ].join('\n');
+}
+
+/** Recover's section alone, after the queue it reads a job's state from. */
+export function recoverCommand(recover: string): string {
+    return [
+        `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`,
+        `echo "${SEC_RC}$?"`,
+        `echo "${SEC_RECOVER}"`,
+        recover
     ].join('\n');
 }
 
@@ -191,7 +223,8 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 console.log('hpc publish: unreachable');
                 return;
             }
-            const result = await runner(current.host, batchCommand(current.days), timeout);
+            const command = batchCommand(current.days, options.recover?.command() ?? '');
+            const result = await runner(current.host, command, timeout);
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
             if (!result.stdout.includes(SEC_SACCT) || parts.squeueCode !== 0) {
@@ -213,6 +246,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 recent: parseSacct(parts.sacct),
                 sinfo: parseSinfo(parts.sinfo)
             };
+            options.recover?.take(parts.recover, jobs);
             lastOk = new Date().toISOString();
             good = true;
             prewarmDue = current.prewarm;
@@ -337,8 +371,25 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     void publishQuota();
     void refresh();
     armQuota(Date.now() + current.quotaMin * 60000);
+    const recover = async (): Promise<void> => {
+        const section = options.recover;
+        if (stopped() || section === undefined || current.host === '') return;
+        const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
+        if (held?.status !== 'ok') return;
+        const began = asking;
+        try {
+            const result = await runner(current.host, recoverCommand(section.command()), timeout);
+            if (stopped() || began !== asking) return;
+            const parts = splitSections(result.stdout);
+            if (result.code !== 0 || parts.squeueCode !== 0) return;
+            section.take(parts.recover, parseSqueue(parts.squeue));
+        } catch {
+            // A failed reading leaves the last one; the next poll reads the section again.
+        }
+    };
     return {
         refresh,
+        recover,
         set(next): void {
             if (stopped()) return;
             const before = current;

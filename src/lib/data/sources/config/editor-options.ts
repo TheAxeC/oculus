@@ -159,6 +159,7 @@ export function readEditorOptions(config: Record<string, unknown>): {
             'editor.render_whitespace'
         ) as EditorOptions['renderWhitespace'],
         stickyScroll: read.flag('editor.sticky_scroll'),
+        suggestDetails: read.flag('editor.suggest_details'),
         // The rule has checked the word against the entry's values, which are the three modes.
         autosave: read.text('editor.autosave') as Autosave,
         autosaveDelay: read.number('editor.autosave_delay_ms'),

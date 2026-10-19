@@ -87,6 +87,7 @@ glyphs:
   info: "i"
   # tab / section icons
   focus: "[@]"
+  keyboard: "[k]"
   data: "<#>"
   venue: "<>"
   funding: "<*>"

@@ -8,7 +8,7 @@
     // heading; a folder that is not listed says so under its group. Each heading and each section
     // carries the id the table of contents scrolls to.
 
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';

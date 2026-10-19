@@ -142,7 +142,7 @@ describe('the portfolio of several hubs', () => {
 
     it('resolves a reference of the second hub in the second hub only', { tags: ['slow'] }, () => {
         const from = copies();
-        const venues = join(from.hub, 'registries', 'venues.yml');
+        const venues = join(from.hub, '.oculus', 'data', 'research', 'venues.yml');
         writeFileSync(
             venues,
             readFileSync(venues, 'utf8').replace(
@@ -177,7 +177,7 @@ describe('the portfolio of several hubs', () => {
         { tags: ['slow'] },
         () => {
             const from = copies();
-            const events = join(from.lab, 'network', 'events.yml');
+            const events = join(from.lab, '.oculus', 'data', 'academic', 'events.yml');
             const schema = readFileSync(events, 'utf8');
             const declared = schema.replace(
                 'type: tags,     help: "Project ids"',
@@ -209,7 +209,7 @@ describe('the portfolio of several hubs', () => {
         { tags: ['slow'] },
         () => {
             const from = copies();
-            const people = join(from.hub, 'registries', 'people.yml');
+            const people = join(from.hub, '.oculus', 'data', 'people', 'people.yml');
             writeFileSync(
                 people,
                 readFileSync(people, 'utf8').replace(
@@ -217,7 +217,7 @@ describe('the portfolio of several hubs', () => {
                     '\nentries:\n  - key: ghost\n    name: Ghost\n'
                 )
             );
-            const work = join(from.lab, 'network', 'joint-work.yml');
+            const work = join(from.lab, '.oculus', 'data', 'academic', 'joint-work.yml');
             const text = readFileSync(work, 'utf8');
             const named = text.replace('person: "rivera-lab"', 'person: "ghost"');
             expect(named).not.toBe(text);
@@ -241,7 +241,7 @@ describe('the portfolio of several hubs', () => {
         { tags: ['slow'] },
         () => {
             const from = copies();
-            const leads = join(from.hub, 'feeds', 'position-leads.yml');
+            const leads = join(from.hub, '.oculus', 'data', 'academic', 'leads.yml');
             writeFileSync(
                 leads,
                 readFileSync(leads, 'utf8').replace(

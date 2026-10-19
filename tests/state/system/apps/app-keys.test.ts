@@ -170,7 +170,7 @@ describe('a binding equal to a key oculus takes', () => {
         ['Ctrl+1, the first tab', 'linux', 'ctrl+1', 'workbench'],
         ['F8, the next problem', 'win', 'f8', 'workbench'],
         ['the bare j, a cursor key', 'linux', 'j', 'workbench'],
-        ['the bare question mark, the key sheet', 'linux', 'shift+/', 'workbench'],
+        ['the bare question mark, the Keyboard Shortcuts view', 'linux', 'shift+/', 'workbench'],
         ['Cmd+P', 'mac', 'cmd+p', 'palette'],
         ['Cmd+Shift+P', 'mac', 'cmd+shift+p', 'palette'],
         ['Cmd+K', 'mac', 'cmd+k', 'palette'],

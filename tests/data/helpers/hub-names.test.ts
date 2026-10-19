@@ -128,8 +128,8 @@ describe('two names while the roots are not yet read', () => {
         expect(diskRelation(HUB_COPY, CONFIG_FILE, [])).toBe('unread');
         expect(
             diskRelation(
-                { root: 'hub', path: 'registries/venues.yml' },
-                { root: 'hub', path: 'registries/people.yml' },
+                { root: 'hub', path: '.oculus/data/research/venues.yml' },
+                { root: 'hub', path: '.oculus/data/people/people.yml' },
                 []
             )
         ).toBe('unread');
@@ -140,8 +140,8 @@ describe('two names while the roots are not yet read', () => {
         const roots = [{ key: 'hub', dir: HUB, real: HUB }];
         expect(
             diskRelation(
-                { root: 'hub', path: 'registries/venues.yml' },
-                { root: 'hub', path: 'registries/people.yml' },
+                { root: 'hub', path: '.oculus/data/research/venues.yml' },
+                { root: 'hub', path: '.oculus/data/people/people.yml' },
                 roots
             )
         ).toBe('other');
@@ -151,18 +151,18 @@ describe('two names while the roots are not yet read', () => {
 describe('the name of a recorded absolute path', () => {
     it('is its name under the root that holds it, and null for a path no root holds', () => {
         const roots = [{ key: 'hub', dir: HUB, real: HUB }];
-        expect(fileNamed(`${HUB}/tasks/tasks.yml`, roots, 'hub')).toEqual({
+        expect(fileNamed(`${HUB}/.oculus/data/academic/tasks.yml`, roots, 'hub')).toEqual({
             root: 'hub',
-            path: 'tasks/tasks.yml'
+            path: '.oculus/data/academic/tasks.yml'
         });
         expect(fileNamed('/elsewhere/x.yml', roots, 'hub')).toBeNull();
     });
 
     it('is a name under no root while the roots are not read, which no tab name equals', () => {
-        const file = `${HUB}/tasks/tasks.yml`;
+        const file = `${HUB}/.oculus/data/academic/tasks.yml`;
         const named = fileNamed(file, [], 'hub');
         expect(named).toEqual({ root: '', path: file });
-        const tab: FileName = { root: 'hub', path: 'tasks/tasks.yml' };
+        const tab: FileName = { root: 'hub', path: '.oculus/data/academic/tasks.yml' };
         expect(diskRelation(tab, { root: '', path: file }, [])).toBe('unread');
     });
 });

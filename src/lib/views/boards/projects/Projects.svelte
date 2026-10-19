@@ -1,36 +1,22 @@
 <script module lang="ts">
     // Layer 3, view registration. One board component owns the five portfolio board registrations,
-    // the Projects page's group. Three boards give their rail button the count of one cell of their
-    // tab, the cards in work, with that cell's tone: Projects the cell of its `active` type, a key
-    // of `tab_split`, and Coauthor and Personal the cell of the first bucket of their `tab_rollup`
-    // list in config/layout.yml, whatever that bucket is labelled. Archive and Software give the
-    // rail nothing.
+    // the Projects page's group. A board's tab counts its cards and each of its `groups` in
+    // `boards` of config/layout.yml, and its count, the count of its first group (the cards in
+    // work) in that group's tone, or its cards when it has no groups, goes to the rail where the
+    // board's row of `counts` says `rail: true`.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-    import type { RailCell } from '$lib/state/workbench/rail-badges/rail-badges.svelte';
 
-    /** The cell of a board's tab whose count the board gives its rail button. */
-    const RAIL_CELLS: Partial<Record<string, RailCell>> = {
-        projects: { type: 'active' },
-        coauthor: { bucket: 0 },
-        personal: { bucket: 0 }
-    };
-
-    const boardRegistration = (id: string, order: number): ViewRegistration => {
-        const cell = RAIL_CELLS[id];
-        return {
-            id,
-            label: `views.${id}`,
-            glyph: `views.${id}_glyph`,
-            group: 'projects',
-            order,
-            badge: (client) => client.railBadges.boardBadge(id),
-            badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
-            badgeCells: (client) => client.railBadges.boardCells(id),
-            ...(cell === undefined
-                ? {}
-                : { railPart: (client) => client.railBadges.boardPart(id, cell) })
-        };
-    };
+    const boardRegistration = (id: string, order: number): ViewRegistration => ({
+        id,
+        label: `views.${id}`,
+        glyph: `views.${id}_glyph`,
+        group: 'projects',
+        order,
+        badge: (client) => client.railBadges.boardBadge(id),
+        badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
+        badgeCells: (client) => client.railBadges.boardCells(id),
+        countPart: (client) => client.railBadges.boardPart(id)
+    });
 
     export const registration: ViewRegistration[] = [
         boardRegistration('projects', 1),
@@ -55,10 +41,12 @@
     // and the new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of
     // DESIGN.md's boundary table: a view too large for one file is split into its own folder. The
     // card is views/shared/card/project/ProjectCard.svelte, since
-    // views/boards/project/Project.svelte draws the same one.
+    // views/boards/project/Project.svelte draws the same one. A web address written in a cell of
+    // the table, the next line's among them, is a link (ui/display/text/LinkedText.svelte).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
@@ -125,8 +113,11 @@
 
     /** True while the new-project form is open under the toolbar. */
     let adding = $state(false);
-    /** The Software board makes no project: the form only offers the tiers a person fills in. */
-    const offersNew = $derived(!preset.tiers.includes('software'));
+    /**
+     * A board of a tier carrying `software` makes no project: the form only offers the tiers a
+     * person fills in.
+     */
+    const offersNew = $derived(!preset.tiers.some((tier) => preset.softwareTiers.includes(tier)));
 
     /**
      * Today, for the deadline badge. It is read when the board is opened and not again, so a page
@@ -252,7 +243,7 @@
             </span>
         {/each}
     {:else}
-        {cellText(row[column.key])}
+        <LinkedText text={cellText(row[column.key])} />
     {/if}
 {/snippet}
 
@@ -403,7 +394,7 @@
 
     /* The terminal shape: the folder is the only monospace line in a card by default, so under the
        rice themes the whole card follows it rather than mixing two faces. */
-    :global(body.rice) .board {
+    :global(body.rice:where(:not(.rice-sans))) .board {
         font-family: var(--font-mono);
     }
 </style>

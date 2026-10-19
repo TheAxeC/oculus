@@ -95,9 +95,12 @@ schema:
 entries: []
 `;
 
-/** Plant the Literature file in a hub's folder, the path checked to lie inside it. */
-function plantLiterature(hub: string): void {
-    const file = join(hub, 'registries', 'literature.yml');
+/**
+ * Plant the Literature file in a hub's folder, at oculus's own path unless another is given, the
+ * path checked to lie inside it.
+ */
+function plantLiterature(hub: string, path = '.oculus/data/literature/literature.yml'): void {
+    const file = join(hub, path);
     expect(heldBy(hub, file)).toBe(true);
     mkdirSync(join(file, '..'), { recursive: true });
     writeFileSync(file, LITERATURE);
@@ -143,7 +146,7 @@ const ROWS: {
             id: 'lab:Review the draft',
             fields: { status: 'done' }
         },
-        files: ['tasks/tasks.yml']
+        files: ['.oculus/data/academic/tasks.yml']
     },
     {
         name: 'a subtask ticked',
@@ -153,7 +156,7 @@ const ROWS: {
             key: '0',
             action: 'done'
         },
-        files: ['tasks/tasks.yml']
+        files: ['.oculus/data/academic/tasks.yml']
     },
     {
         name: 'a subtask added to an entry',
@@ -162,7 +165,7 @@ const ROWS: {
             target: { collection: 'tasks', id: 'lab:Review the draft' },
             fields: { do: 'write it up' }
         },
-        files: ['tasks/tasks.yml']
+        files: ['.oculus/data/academic/tasks.yml']
     },
     {
         name: 'a subtask added to a manifest',
@@ -176,12 +179,12 @@ const ROWS: {
             collection: 'tasks',
             order: ['lab:Another task', 'lab:Review the draft']
         },
-        files: ['tasks/tasks.yml']
+        files: ['.oculus/data/academic/tasks.yml']
     },
     {
         name: 'a deletion',
         body: { kind: 'delete-entry', collection: 'tasks', id: 'lab:Another task' },
-        files: ['tasks/tasks.yml']
+        files: ['.oculus/data/academic/tasks.yml']
     },
     {
         name: 'a Lit Watch field',
@@ -193,7 +196,7 @@ const ROWS: {
             field: 'dismissed',
             value: true
         },
-        files: ['feeds/literature-radar.yml']
+        files: ['.oculus/data/literature/radar.yml']
     },
     {
         name: 'a lead field',
@@ -205,7 +208,7 @@ const ROWS: {
             field: 'status',
             value: 'applied'
         },
-        files: ['feeds/position-leads.yml']
+        files: ['.oculus/data/academic/leads.yml']
     },
     {
         name: 'a lead field the file schema names beyond its status',
@@ -217,17 +220,17 @@ const ROWS: {
             field: 'fit',
             value: 'a close fit'
         },
-        files: ['feeds/position-leads.yml']
+        files: ['.oculus/data/academic/leads.yml']
     },
     {
         name: 'a Lit Watch deletion',
         body: { kind: 'feed-delete', feed: 'radar', id: 'Paper', root: 'lab' },
-        files: ['feeds/literature-radar.yml']
+        files: ['.oculus/data/literature/radar.yml']
     },
     {
         name: 'a lead deletion',
         body: { kind: 'feed-delete', feed: 'leads', id: 'Lead', root: 'lab' },
-        files: ['feeds/position-leads.yml']
+        files: ['.oculus/data/academic/leads.yml']
     },
     {
         name: 'a LinkedIn idea posted',
@@ -276,10 +279,12 @@ describe('a write to a record of the second hub', () => {
             into
         );
         expect(response.status).toBe(200);
-        expect(differing(before.first, filesOf(first))).toEqual(['tasks/tasks.yml']);
+        expect(differing(before.first, filesOf(first))).toEqual([
+            '.oculus/data/academic/tasks.yml'
+        ]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         const [change] = changesOf(into);
-        expect(change.file).toBe(join(first, 'tasks', 'tasks.yml'));
+        expect(change.file).toBe(join(first, '.oculus', 'data', 'academic', 'tasks.yml'));
     });
 
     it('writes a new entry into the file of the hub its root names, and no byte of the other (G8)', async () => {
@@ -297,9 +302,9 @@ describe('a write to a record of the second hub', () => {
         );
         expect(response.status).toBe(200);
         expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual(['tasks/tasks.yml']);
+        expect(differing(before.lab, filesOf(lab))).toEqual(['.oculus/data/academic/tasks.yml']);
         const [change] = changesOf(into);
-        expect(change.file).toBe(join(lab, 'tasks', 'tasks.yml'));
+        expect(change.file).toBe(join(lab, '.oculus', 'data', 'academic', 'tasks.yml'));
     });
 
     it('refuses a new entry for a hub whose collections list names no such collection, or no hub, and writes nothing (G8)', async () => {
@@ -341,14 +346,18 @@ describe('a write to a record of the second hub', () => {
         const response = await handleWrite(request({ ...PAPER, root: 'lab' }), TOKEN, into);
         expect(response.status).toBe(200);
         expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual(['registries/literature.yml']);
+        expect(differing(before.lab, filesOf(lab))).toEqual([
+            '.oculus/data/literature/literature.yml'
+        ]);
         const [change] = changesOf(into);
-        expect(change.file).toBe(join(lab, 'registries', 'literature.yml'));
+        expect(change.file).toBe(join(lab, '.oculus', 'data', 'literature', 'literature.yml'));
     });
 
     it('saves a paper that names no hub into the one hub whose collections list names Literature, primary or not (G8)', async () => {
         const { into, first, lab } = twoHubs();
-        plantLiterature(first);
+        // The primary hub holds a Literature file at a path its list does not name and that is not
+        // oculus's own, so it is no hub whose list names Literature.
+        plantLiterature(first, '.oculus/data/research/literature.yml');
         plantLiterature(lab);
         const collections = into.config.collections.filter((one) => one.key !== 'literature');
         const narrowed: PrimaryTarget = { ...into, config: { ...into.config, collections } };
@@ -356,7 +365,9 @@ describe('a write to a record of the second hub', () => {
         const response = await handleWrite(request(PAPER), TOKEN, narrowed);
         expect(response.status).toBe(200);
         expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual(['registries/literature.yml']);
+        expect(differing(before.lab, filesOf(lab))).toEqual([
+            '.oculus/data/literature/literature.yml'
+        ]);
     });
 
     it('refuses a paper for a hub whose collections list names no Literature, or no hub, and writes nothing (G8)', async () => {
@@ -411,8 +422,8 @@ describe('a write to a record of the second hub', () => {
     it('writes a field that names a record of the second hub without the hub key (G8)', async () => {
         const { into, first, lab } = twoHubs();
         for (const hub of [first, lab]) {
-            mkdirSync(join(hub, 'network'), { recursive: true });
-            writeFileSync(join(hub, 'network', 'joint-work.yml'), JOINT_WORK);
+            mkdirSync(join(hub, '.oculus', 'data', 'academic'), { recursive: true });
+            writeFileSync(join(hub, '.oculus', 'data', 'academic', 'joint-work.yml'), JOINT_WORK);
         }
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
@@ -427,7 +438,7 @@ describe('a write to a record of the second hub', () => {
         );
         expect(response.status).toBe(200);
         expect(differing(before.first, filesOf(first))).toEqual([]);
-        const file = 'network/joint-work.yml';
+        const file = '.oculus/data/academic/joint-work.yml';
         expect(differing(before.lab, filesOf(lab))).toEqual([file]);
         const written = filesOf(lab).get(file) ?? '';
         const entries = (parse(written) as { entries: { key: string; person: string }[] }).entries;
@@ -458,7 +469,7 @@ describe('a write to a record of the second hub', () => {
 
     it('sends the status of a primary-hub lead titled like a lab id to the primary hub (G8)', async () => {
         const { into, first, lab } = twoHubs();
-        const leads = join(first, 'feeds', 'position-leads.yml');
+        const leads = join(first, '.oculus', 'data', 'academic', 'leads.yml');
         const title = 'lab: Postdoc in graph learning';
         writeFileSync(
             leads,
@@ -477,7 +488,9 @@ describe('a write to a record of the second hub', () => {
             into
         );
         expect(response.status).toBe(200);
-        expect(differing(before.first, filesOf(first))).toEqual(['feeds/position-leads.yml']);
+        expect(differing(before.first, filesOf(first))).toEqual([
+            '.oculus/data/academic/leads.yml'
+        ]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         expect(readFileSync(leads, 'utf8')).toContain('status: applied');
     });

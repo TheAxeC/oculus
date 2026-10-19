@@ -1,0 +1,167 @@
+// Layer 2, client state. The words and the figures the Recover view and Live HPC's Login node
+// section draw from the state GET /api/recover answers and the `recover` channel pushes: a size in
+// the unit that suits it, the reason an action or a listing was refused, the setup row of a
+// service, the state of a file a pushed reading changed, and the time left of a fetch. Every
+// sentence is a literal catalog key, so the catalog gate sees each one. The types of the answers
+// are passed on from here, so the views read them through the state layer.
+//
+// The rate is the server's: the bytes at one reading of the run against the reading before, over
+// the time between them (runs/recover/live/watch.ts).
+
+import type {
+    RecoverAccess,
+    RecoverFileState,
+    RecoverRefusal,
+    RecoverRow,
+    RecoverService
+} from '../../../data/model/index.ts';
+import { t } from '../../shared/words/text.ts';
+
+export type {
+    RecoverAccess,
+    RecoverFileState,
+    RecoverRow,
+    RecoverRun,
+    RecoverSession,
+    RecoverState,
+    RecoverTotals
+} from '../../../data/model/index.ts';
+
+const KB = 1024;
+const MB = KB * 1024;
+const GB = MB * 1024;
+const TB = GB * 1024;
+
+/** A size in bytes in the largest unit it fills, to one decimal above a kilobyte. */
+export function sizeWords(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes < KB) return t('recover.bytes', Math.max(0, bytes));
+    if (bytes >= TB) return t('recover.tb', (bytes / TB).toFixed(1));
+    if (bytes >= GB) return t('recover.gb', (bytes / GB).toFixed(1));
+    if (bytes >= MB) return t('recover.mb', (bytes / MB).toFixed(1));
+    return t('recover.kb', (bytes / KB).toFixed(1));
+}
+
+/** A time in seconds as hours and minutes, or minutes and seconds under an hour. */
+export function timeWords(seconds: number): string {
+    const whole = Math.max(0, Math.round(seconds));
+    const hours = Math.floor(whole / 3600);
+    const minutes = Math.floor((whole % 3600) / 60);
+    if (hours > 0) return t('recover.hours', hours, minutes);
+    return t('recover.minutes', minutes, whole % 60);
+}
+
+/** The sentence of each reason the route refuses an action or a GET with. */
+const REFUSALS: Record<string, () => string> = {
+    dataset: () => t('recover.refused_dataset'),
+    kind: () => t('recover.refused_kind'),
+    place: () => t('recover.refused_place'),
+    target: () => t('recover.refused_target'),
+    request: () => t('recover.refused_request'),
+    access: () => t('recover.refused_access'),
+    listing: () => t('recover.refused_listing'),
+    running: () => t('recover.refused_running'),
+    credential: () => t('recover.refused_credential'),
+    nothing: () => t('recover.refused_nothing'),
+    start: () => t('recover.refused_start'),
+    send: () => t('recover.refused_send'),
+    scratch: () => t('recover.refused_scratch'),
+    submit: () => t('recover.refused_submit'),
+    unreachable: () => t('recover.refused_unreachable')
+};
+
+/**
+ * The sentence for a refusal of the route; `host` is worded by the sentence the route gives with
+ * it, and a reason the catalog does not word is shown as it came.
+ */
+export function refusalWords(reason: string, hint = ''): string {
+    if (reason === 'host') return hint === '' ? t('recover.refused_host') : hint;
+    const words = REFUSALS[reason] as (() => string) | undefined;
+    return words === undefined ? reason : words();
+}
+
+/** The sentence for a source that gave no file list, with its kind or host, status and name. */
+export function listingWords(refusal: RecoverRefusal): string {
+    const status = refusal.status ?? '';
+    const name = refusal.name ?? '';
+    switch (refusal.refused) {
+        case 'access':
+            return t('recover.listing_access', refusal.source, status);
+        case 'status':
+            return t('recover.listing_status', refusal.source, status);
+        case 'answer':
+            return t('recover.listing_answer', refusal.source);
+        case 'name':
+            return t('recover.listing_name', refusal.source, name);
+        case 'missing':
+            return t('recover.listing_missing', refusal.source, name);
+        case 'network':
+            return t('recover.listing_network', refusal.source);
+    }
+}
+
+/** The name of a service as the service writes it. */
+export function serviceWords(service: RecoverService): string {
+    if (service === 'physionet') return t('recover.service_physionet');
+    return service === 'kaggle' ? t('recover.service_kaggle') : t('recover.service_synapse');
+}
+
+/** The row of `downloads:` the setup of a service adds, as the template writes it. */
+export function setupRow(service: RecoverService): string {
+    if (service === 'physionet') return t('recover.setup_row_physionet');
+    return service === 'kaggle' ? t('recover.setup_row_kaggle') : t('recover.setup_row_synapse');
+}
+
+/** Where the secret of a service's row comes from. */
+export function setupSecret(service: RecoverService): string {
+    if (service === 'physionet') return t('recover.setup_secret_physionet');
+    return service === 'kaggle'
+        ? t('recover.setup_secret_kaggle')
+        : t('recover.setup_secret_synapse');
+}
+
+/** What the access of one service says: set up, refused, missing or not reached. */
+export function accessWords(access: RecoverAccess): string {
+    const service = serviceWords(access.service);
+    if (access.state === 'ok') return t('recover.access_ok', service);
+    if (access.state === 'unreachable') return t('recover.access_unreachable', service);
+    return access.row
+        ? t('recover.access_refused', service, access.status ?? '')
+        : t('recover.access_missing', service);
+}
+
+/** The word and the tone of a file's state: done, there, under way, wrong, absent. */
+export function stateLook(state: RecoverFileState): { words: string; tone: string } {
+    switch (state) {
+        case 'verified':
+            return { words: t('recover.state_verified'), tone: 'green' };
+        case 'present':
+            return { words: t('recover.state_present'), tone: 'teal' };
+        case 'partial':
+            return { words: t('recover.state_partial'), tone: 'amber' };
+        case 'different':
+            return { words: t('recover.state_different'), tone: 'red' };
+        case 'missing':
+            return { words: t('recover.state_missing'), tone: 'muted' };
+    }
+}
+
+/** Bytes per second of each file that grew at the server's last reading, and of all together. */
+export type Rates = { files: Map<string, number>; total: number };
+
+export const NO_RATES: Rates = { files: new Map(), total: 0 };
+
+/**
+ * The state of a file of the plan whose bytes a pushed reading changed, as the server's plan states
+ * a changed file: partial below its size, different above it, and present at it, since a check row
+ * of the earlier bytes no longer matches.
+ */
+export function grownState(row: RecoverRow, have: number): RecoverFileState {
+    if (have === row.have) return row.state;
+    if (row.size === null || have === row.size) return 'present';
+    return have < row.size ? 'partial' : 'different';
+}
+
+/** The seconds left at a rate for the bytes still to come, or null when either is unknown. */
+export function secondsLeft(bytes: number, rate: number): number | null {
+    return rate > 0 && bytes > 0 ? bytes / rate : null;
+}

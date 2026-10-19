@@ -8,7 +8,7 @@
     // control on the right, so the line covers one row of the tree.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { t } from '$lib/state/shared/words/text';
 

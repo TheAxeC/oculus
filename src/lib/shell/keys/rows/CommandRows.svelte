@@ -5,34 +5,32 @@
     // unavailable one drawn and not run; and the views, by their label, a press opening the view in
     // a tab. Above them, a bare colon opened as Go to Line (the status bar's caret item) says which
     // line the caret of the source tab on screen is on and how many the file has. A press runs the
-    // command: the commands that list choices type their name and a space, which opens their list,
-    // as does a command that takes an argument when the row was matched rather than typed by its
-    // name; the others change the theme, the file icon theme, the CRT overlay, the tabs or the
-    // folder shown, add folders to the workspace, reopen the tabs closed last, walk the navigation
-    // history back or forward (shell/titlebar/history-walk.ts), or hide or show the floats docked
-    // at an edge, and close the palette. A tab a command showed takes the keyboard on its head once
-    // the page has drawn it, since the tab chosen is where the reader went. Open Folder and Add
-    // Folder to Workspace close the palette as the folder panel opens, and what is left to say of
-    // them (a panel that did not open, a folder refused or a root already) is a notice; pressed
-    // while the panel is open, they say so in the palette, which stays open. A refusal of Close
-    // Workspace or of Add Task is said in the palette, which stays open, as is an argument of
-    // `:tab`, `:goto`, `:theme` or `:file-icons` that is empty or names nothing. Add Task writes
-    // the task and posts a notice with an Open action; Shift+Enter, or a press with Shift held,
-    // opens the task's page as well. The commands that run at once, and the words of an
-    // unavailable one, are shell/window/colon-effects.ts's, which the app menu's answer runs too.
+    // command: the commands that list choices (`:theme`, `:file-icons`, `:tab` and `:goto` among
+    // them) type their name and a space, which opens their list, as does a command that takes an
+    // argument when the row was matched rather than typed by its name; the others change the CRT
+    // overlay or the folder shown, open the Help or Keyboard Shortcuts view, add folders to the
+    // workspace, reopen the tabs closed last, walk the navigation history back or forward
+    // (shell/titlebar/history-walk.ts), or hide or show the floats docked at an edge, and close
+    // the palette. A tab a command showed takes the keyboard on its head once the page has drawn
+    // it, since the tab chosen is where the reader went. Open Folder and Add Folder to Workspace
+    // close the palette as the folder panel opens, and what is left to say of them (a panel that
+    // did not open, a folder refused or a root already) is a notice; pressed while the panel is
+    // open, they say so in the palette, which stays open. A refusal of Close Workspace or of Add
+    // Task is said in the palette, which stays open. Add Task writes the task and posts a notice
+    // with an Open action; Shift+Enter, or a press with Shift held, opens the task's page as well.
+    // The commands that run at once, and the words of an unavailable one, are
+    // shell/window/colon-effects.ts's, which the app menu's answer runs too.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { landOn } from '$lib/shell/keys/palette-open';
     import { addTask } from '$lib/state/forms/new-entry';
     import { pageView } from '$lib/state/forms/page-entry';
-    import { fileIconThemeNamed, themeNamed } from '$lib/state/shared/words/appearance';
     import { commandRowValue, type CommandRow } from '$lib/shell/keys/palette-modes';
-    import {
-        argumentRefusal,
-        type CommandOutcome,
-        type PaletteCommand,
-        type ParsedCommand
+    import type {
+        CommandOutcome,
+        PaletteCommand,
+        ParsedCommand
     } from '$lib/state/workbench/palette';
     import {
         colonEffects,
@@ -41,7 +39,6 @@
         opensAsMode,
         pressRefusal
     } from '$lib/shell/window/colon-effects';
-    import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { useWalk } from '$lib/shell/titlebar/history-walk';
@@ -51,12 +48,8 @@
         fs: { primary },
         layout: { openView, reopenClosed },
         notices,
-        selectors: { collectionsOfKey },
+        selectors: { collectionsOfKey, configMap },
         writes: { newEntry },
-        paletteSource: { paletteSource },
-        ui: { setFileIcons, setTheme },
-        registry: { views },
-        appShell: { offers },
         float
     } = client;
     const effects = colonEffects(client);
@@ -83,11 +76,6 @@
     /** Whether Shift is held, which the press of Add Task is read against. */
     let shifted = false;
 
-    const current = $derived(paletteSource());
-    const knownViews = $derived(
-        views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
-    );
-
     /**
      * A command that opens the folder panel: the palette closes as the panel opens, since the panel
      * takes the keyboard, and what is left to say once it answers is a notice.
@@ -108,7 +96,13 @@
 
     /** Add Task: the task written, a notice that opens it, and its page when Shift is held. */
     async function addTaskTitled(title: string, open: boolean): Promise<void> {
-        const added = await addTask(title, collectionsOfKey('tasks'), primary(), newEntry);
+        const added = await addTask(
+            title,
+            collectionsOfKey('tasks'),
+            primary(),
+            configMap(),
+            newEntry
+        );
         if (added.said !== '') {
             onsaid(added.said);
             return;
@@ -144,8 +138,6 @@
             return;
         }
         const argument = named ? parsed.argument : '';
-        // The instance a command showed, when it showed a tab.
-        let shown = '';
         if (opensAsMode(command.name) || (!named && command.hint !== '')) {
             ontype(`:${command.name} `);
             return;
@@ -166,29 +158,11 @@
             void settled(effects.workspaceClose());
             return;
         }
-        const project = current.snapshot?.entities.projects[argument];
-        const refused = argumentRefusal(command, argument, {
-            view: (id) => knownViews.some((view) => view.id === id),
-            project: () => project !== undefined,
-            theme: (name) => themeNamed(name, offers()) !== null,
-            fileIcons: (name) => fileIconThemeNamed(name, offers()) !== null
-        });
-        if (refused !== '') {
-            onsaid(refused);
-            return;
-        }
-        if (command.name === 'theme') {
-            setTheme(themeNamed(argument, offers()) ?? argument);
-        } else if (command.name === 'crt') {
+        if (command.name === 'crt') {
             effects.crt();
-        } else if (command.name === 'file-icons') {
-            void setFileIcons(fileIconThemeNamed(argument, offers()) ?? argument);
-        } else if (command.name === 'tab') {
-            openTab(argument);
+        } else if (command.name === 'help' || command.name === 'keys') {
+            openTab(command.name);
             return;
-        } else if (command.name === 'goto' && project !== undefined) {
-            const state = { id: project.id, label: project.short ?? project.title };
-            shown = openView('project', state, into);
         } else if (command.name === 'update') {
             onupdate();
         } else if (command.name === 'reopen-closed-tab') {
@@ -202,7 +176,6 @@
             if (edge !== null) effects.dock(edge);
         }
         onclose();
-        if (shown !== '') void landOn(shown);
     }
 </script>
 

@@ -42,7 +42,7 @@ describe('the Port row of a server whose move was refused', () => {
 
         const read: LocalConfig = { ...localDefaults(), port: 8790 };
         const defaults = { port: '8790' };
-        const { values, hubs } = machineValues(read, local.port, ['port'], defaults, {});
+        const { values, hubs } = machineValues(read, local.port, ['port'], defaults, {}, 'set');
         expect(values.port).toBe('8798');
         const rows = localRows(shipped['local.yml'], {
             primary: 'lab',

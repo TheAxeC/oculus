@@ -360,7 +360,7 @@ describe("loadConfig with the hub's settings file", () => {
         expect(findings.map((one) => [one.file, one.key])).toEqual([[file, '']]);
         expect((config.slurm as Record<string, unknown>).resource).toBe('');
         const engineCareer = loadConfig(engine).config.career_file;
-        expect(engineCareer).toBe('registries/career.yml');
+        expect(engineCareer).toBe('.oculus/data/academic/career.yml');
         expect(config.career_file).toBe(engineCareer);
     });
 
@@ -408,6 +408,46 @@ describe('behaviorFindings', () => {
             ]);
         }
     );
+
+    // A `focus:` block in a malformed form, over the shipped configuration, gives one finding for
+    // each value, row or field the page does not read, against behavior.yml.
+    it.each([
+        [3, [['focus', 'focus must be a map; none of its keys is read']]],
+        [
+            { venue_conc_warn: 'x', ticker_categories: 5 },
+            [
+                ['focus.venue_conc_warn', 'focus.venue_conc_warn must be a number; it is not read'],
+                ['focus.ticker_categories', 'focus.ticker_categories must be']
+            ]
+        ],
+        [{ ticker_sources: 5 }, [['focus.ticker_sources', 'focus.ticker_sources must be']]],
+        [
+            {
+                ticker_sources: [
+                    'tasks',
+                    { collection: 'tasks' },
+                    { collection: 'tasks', category: 'task', undated: 'yes' },
+                    { collection: 'events', category: 'event' }
+                ]
+            },
+            [
+                ['focus.ticker_sources[0]', 'the row is not read'],
+                ['focus.ticker_sources[1].category', 'the row is not read'],
+                ['focus.ticker_sources[2].undated', 'the field is not read']
+            ]
+        ]
+    ])('words a focus block of the form %j', (focus, expected) => {
+        const engine = scratch();
+        const shipped = loadConfig(engineDir()).config;
+        const found = behaviorFindings(engine, { ...shipped, focus }).filter((one) =>
+            one.key.startsWith('focus')
+        );
+        expect(found.map((one) => one.key)).toEqual(expected.map(([key]) => key));
+        found.forEach((one, at) => {
+            expect(one.file).toBe(join(engine, 'config', 'behavior.yml'));
+            expect(one.message).toContain(expected[at][1]);
+        });
+    });
 
     it('says nothing about a configuration whose keys are all under their own names', () => {
         const engine = scratch();

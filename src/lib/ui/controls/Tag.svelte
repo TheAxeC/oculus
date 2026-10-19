@@ -81,13 +81,15 @@
     }
 
     /* The terminal shape: a bracketed run of text, the same delimiter a chip is given there, so a
-       tag beside a chip is still one mark rather than a word loose in the row. */
-    :global(body.rice) .tag:not(.bracketed)::before {
+       tag beside a chip is still one mark rather than a word loose in the row. It is the Brackets
+       toggle's (Settings, This browser): with the toggle off, the body carries `rice-plain` and
+       the tag is its text alone, as under every other theme. */
+    :global(body.rice:where(:not(.rice-plain))) .tag:not(.bracketed)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tag:not(.bracketed)::after {
+    :global(body.rice:where(:not(.rice-plain))) .tag:not(.bracketed)::after {
         content: ']';
         opacity: 0.5;
     }

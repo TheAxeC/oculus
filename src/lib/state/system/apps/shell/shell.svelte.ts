@@ -185,7 +185,10 @@ export function createAppShell(deps: AppShellDeps) {
             : keyLabel(keybindingText(found.binding, platform), platform);
     }
 
-    /** The key sheet's rows for the apps: each bound key with its command's title and its app. */
+    /**
+     * The Keyboard Shortcuts view's rows for the apps: each bound key with its command's title and
+     * its app.
+     */
     function keyRows(): { key: string; meaning: string }[] {
         return bound.map((one) => {
             const command = acting

@@ -1,6 +1,7 @@
 // Layer 2, client state. The view catalogue: every listed registration and every configured hub
-// document under the `nav_groups` heading it belongs to, which is the rail page it sits on, the
-// Help page's included, or the float, and the key order the chords count into. A document of
+// document under the heading of the group it belongs to, which is the rail page it sits on (headed
+// by the page's rail button), the Help page's included, or the float of `nav_groups`, and the key
+// order the chords count into. A document of
 // oculus's own folder that a rail page's arrangement shows is listed in that page's group too.
 // The Views view on the System page draws the sections and the shell's keyboard counts
 // the chords over the same sections, so a key and the entry it opens are read from one fold.
@@ -17,6 +18,7 @@
 import { z } from 'zod';
 import { registrationGlyph, type Registration } from './registry.ts';
 import { chordShape } from '../../../data/helpers/keys/oculus/rail-letters.ts';
+import { arrangementKeys, glyphNames, readRail } from '../../../data/sources/config/rail.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { hasHiddenSegment, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { optionalTextShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
@@ -270,13 +272,26 @@ const navGroupShape = z.object({
     chord: chordShape.optional().catch(undefined)
 });
 
-/** The `nav_groups` map of config/layout.yml in order. Registrations name each group by id. */
-export function readGroups(raw: unknown): NavGroup[] {
-    if (!isMap(raw)) return [];
-    const found: NavGroup[] = [];
+/**
+ * The view catalogue's groups of a merged config, in the order the Views view lists them: one per
+ * rail page the rail rule keeps, in rail order, keyed by the page, headed by the button's label and
+ * carrying the entry's `chord` and `group_glyph`, then each group of `nav_groups` of
+ * config/layout.yml (the float), which is no rail page. Registrations name each group by id.
+ */
+export function readGroups(config: Record<string, unknown> | undefined): NavGroup[] {
+    if (config === undefined) return [];
+    const rail = readRail(config.rail, arrangementKeys(config.arrangements), glyphNames(config));
+    const found: NavGroup[] = rail.entries.map((entry) => ({
+        id: entry.page,
+        label: entry.label,
+        ...(entry.group_glyph === '' ? {} : { glyph: entry.group_glyph }),
+        ...(entry.chord === '' ? {} : { chord: entry.chord })
+    }));
+    const raw = config.nav_groups;
+    if (!isMap(raw)) return found;
     for (const [id, entry] of Object.entries(raw)) {
         const group = readAs(navGroupShape, entry);
-        if (group === null) continue;
+        if (group === null || found.some((one) => one.id === id)) continue;
         const read: NavGroup = { id, label: group.label };
         if (group.glyph !== undefined) read.glyph = group.glyph;
         if (group.chord !== undefined) read.chord = group.chord;

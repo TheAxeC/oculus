@@ -74,7 +74,7 @@ function applied(hub: PlantedHub, plan: ReturnType<typeof planRename>): Texts {
     return out;
 }
 
-const VENUE = HUB_FILES['registries/venues.yml'];
+const VENUE = HUB_FILES['.oculus/data/research/venues.yml'];
 const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
 const BETA = HUB_FILES['projects/active/beta/project.yml'];
 
@@ -84,7 +84,7 @@ const EDITED: Edited[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
         newKey: 'jama',
         after: {
-            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'venue_id: jbhi',
                 'venue_id: jama'
@@ -97,13 +97,13 @@ const EDITED: Edited[] = [
     },
     {
         name: 'a single-quoted reference, which keeps its quotes',
-        at: ['hub', 'registries/venues.yml', 4, 10],
+        at: ['hub', '.oculus/data/research/venues.yml', 4, 10],
         newKey: 'jama',
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace('venue_id: jbhi', "venue_id: 'jbhi'")
         },
         after: {
-            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'venue_id: jbhi',
                 "venue_id: 'jama'"
@@ -125,7 +125,7 @@ const EDITED: Edited[] = [
             )
         },
         after: {
-            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'venue_id: jbhi',
                 'venue_id: jama # the target'
@@ -138,7 +138,7 @@ const EDITED: Edited[] = [
     },
     {
         name: 'a flow sequence, a block sequence and a double-quoted scalar',
-        at: ['hub', 'registries/people.yml', 5, 10],
+        at: ['hub', '.oculus/data/people/people.yml', 5, 10],
         newKey: 'amir-2',
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace(
@@ -147,14 +147,12 @@ const EDITED: Edited[] = [
             )
         },
         after: {
-            'hub:registries/people.yml': HUB_FILES['registries/people.yml'].replace(
-                'key: amir',
-                'key: amir-2'
-            ),
-            'hub:network/joint-work.yml': HUB_FILES['network/joint-work.yml'].replace(
-                '"amir"',
-                '"amir-2"'
-            ),
+            'hub:.oculus/data/people/people.yml': HUB_FILES[
+                '.oculus/data/people/people.yml'
+            ].replace('key: amir', 'key: amir-2'),
+            'hub:.oculus/data/academic/joint-work.yml': HUB_FILES[
+                '.oculus/data/academic/joint-work.yml'
+            ].replace('"amir"', '"amir-2"'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'waiting-on: [amir, beta]',
                 'waiting-on: [amir-2, beta]'
@@ -163,7 +161,7 @@ const EDITED: Edited[] = [
     },
     {
         name: 'an anchored key used through an alias, edited once at the anchor',
-        at: ['hub', 'registries/pillars.yml', 3, 9],
+        at: ['hub', '.oculus/data/pillars/pillars.yml', 3, 9],
         newKey: 'tens',
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace(
@@ -172,10 +170,9 @@ const EDITED: Edited[] = [
             )
         },
         after: {
-            'hub:registries/pillars.yml': HUB_FILES['registries/pillars.yml'].replace(
-                'key: tensor',
-                'key: tens'
-            ),
+            'hub:.oculus/data/pillars/pillars.yml': HUB_FILES[
+                '.oculus/data/pillars/pillars.yml'
+            ].replace('key: tensor', 'key: tens'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'pillar: [tensor, federated]',
                 'pillar: [&p tens, *p, federated]'
@@ -184,7 +181,7 @@ const EDITED: Edited[] = [
     },
     {
         name: 'a domain key, the domains registry entry and the domain of each manifest',
-        at: ['hub', 'registries/domains.yml', 3, 9],
+        at: ['hub', '.oculus/data/pillars/domains.yml', 3, 9],
         newKey: 'cardio',
         hub: { 'projects/active/beta/project.yml': `${BETA}domain: heart\n` },
         // Config files that name the domain by keys oculus does not read stay as they are.
@@ -193,10 +190,9 @@ const EDITED: Edited[] = [
             'catalogs/vocab.yml': 'domains:\n  heart: { color: "#e2374d", label: Heart }\n'
         },
         after: {
-            'hub:registries/domains.yml': HUB_FILES['registries/domains.yml'].replace(
-                'key: heart',
-                'key: cardio'
-            ),
+            'hub:.oculus/data/pillars/domains.yml': HUB_FILES[
+                '.oculus/data/pillars/domains.yml'
+            ].replace('key: heart', 'key: cardio'),
             'hub:projects/active/beta/project.yml': `${BETA}domain: cardio\n`
         }
     }
@@ -267,7 +263,7 @@ const REFUSED: Refused[] = [
         when: 'prepare',
         at: ['hub', 'projects/active/alpha/project.yml', 6, 19],
         hub: {
-            'registries/people.yml': HUB_FILES['registries/people.yml'].replace(
+            '.oculus/data/people/people.yml': HUB_FILES['.oculus/data/people/people.yml'].replace(
                 '  - key: ann\n',
                 '  - key: beta\n    name: Beta\n  - key: ann\n'
             )
@@ -278,9 +274,9 @@ const REFUSED: Refused[] = [
     {
         name: 'a person key that a reference also names as a project, started at its definition',
         when: 'prepare',
-        at: ['hub', 'registries/people.yml', 8, 10],
+        at: ['hub', '.oculus/data/people/people.yml', 8, 10],
         hub: {
-            'registries/people.yml': HUB_FILES['registries/people.yml'].replace(
+            '.oculus/data/people/people.yml': HUB_FILES['.oculus/data/people/people.yml'].replace(
                 '  - key: ann\n',
                 '  - key: beta\n    name: Beta\n  - key: ann\n'
             )
@@ -298,16 +294,16 @@ const REFUSED: Refused[] = [
     {
         name: 'a vocabulary value',
         when: 'prepare',
-        at: ['engine', 'catalogs/vocab.yml', 4, 21],
+        at: ['engine', 'catalogs/vocab.yml', 5, 2],
         newKey: 'paper',
         refusal: { code: 'vocab', key: 'manuscript' }
     },
     {
         name: 'a key that stands twice in its source',
         when: 'prepare',
-        at: ['hub', 'registries/venues.yml', 4, 10],
+        at: ['hub', '.oculus/data/research/venues.yml', 4, 10],
         hub: {
-            'registries/venues.yml': VENUE.replace(
+            '.oculus/data/research/venues.yml': VENUE.replace(
                 '  - { id: bspc, name: Journal Two }',
                 '  - { id: jbhi }'
             )
@@ -318,7 +314,7 @@ const REFUSED: Refused[] = [
     {
         name: 'a new key with a comma, which a flow list would read as two',
         when: 'rename',
-        at: ['hub', 'registries/pillars.yml', 3, 9],
+        at: ['hub', '.oculus/data/pillars/pillars.yml', 3, 9],
         newKey: 'a, b',
         refusal: { code: 'readback', key: 'a, b', file: 'projects/active/alpha/project.yml' }
     },
@@ -328,7 +324,7 @@ const REFUSED: Refused[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
         newKey: 'jama',
         read: () => ({ large: true }),
-        refusal: { code: 'large', file: 'registries/venues.yml' }
+        refusal: { code: 'large', file: '.oculus/data/research/venues.yml' }
     },
     {
         name: 'a file that cannot be read',
@@ -336,7 +332,7 @@ const REFUSED: Refused[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
         newKey: 'jama',
         read: () => null,
-        refusal: { code: 'unread', file: 'registries/venues.yml' }
+        refusal: { code: 'unread', file: '.oculus/data/research/venues.yml' }
     },
     {
         name: 'a file whose text is no longer the text the index was built from, so the edit does not read back',
@@ -344,7 +340,7 @@ const REFUSED: Refused[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
         newKey: 'jama',
         read: () => NOTHING_SAVED,
-        refusal: { code: 'readback', key: 'jama', file: 'registries/venues.yml' }
+        refusal: { code: 'readback', key: 'jama', file: '.oculus/data/research/venues.yml' }
     }
 ];
 
@@ -364,12 +360,15 @@ describe('the rename of a hub key', () => {
 
     it.each(QUOTED)('writes a new key %s that would not read back plain as %s', (key, written) => {
         const hub = plantHub();
-        const { hit, graph } = hub.hit('hub', 'registries/pillars.yml', { line: 3, character: 9 });
+        const { hit, graph } = hub.hit('hub', '.oculus/data/pillars/pillars.yml', {
+            line: 3,
+            character: 9
+        });
         expect(hit?.key).toBe('tensor');
         if (hit === null) return;
         const edited = applied(hub, planRename(graph, hit, key, disk(hub)));
-        expect(edited['hub:registries/pillars.yml']).toBe(
-            HUB_FILES['registries/pillars.yml'].replace('key: tensor', `key: ${written}`)
+        expect(edited['hub:.oculus/data/pillars/pillars.yml']).toBe(
+            HUB_FILES['.oculus/data/pillars/pillars.yml'].replace('key: tensor', `key: ${written}`)
         );
         expect(edited['hub:projects/active/alpha/project.yml']).toBe(
             ALPHA.replace('pillar: [tensor,', `pillar: [${written},`)
@@ -377,13 +376,16 @@ describe('the rename of a hub key', () => {
     });
 
     it('edits a file with CRLF line ends at the exact columns', () => {
-        const crlf = HUB_FILES['registries/venues.yml'].replace(/\n/g, '\r\n');
-        const hub = plantHub({ 'registries/venues.yml': crlf });
-        const { hit, graph } = hub.hit('hub', 'registries/venues.yml', { line: 4, character: 10 });
+        const crlf = HUB_FILES['.oculus/data/research/venues.yml'].replace(/\n/g, '\r\n');
+        const hub = plantHub({ '.oculus/data/research/venues.yml': crlf });
+        const { hit, graph } = hub.hit('hub', '.oculus/data/research/venues.yml', {
+            line: 4,
+            character: 10
+        });
         expect(hit?.key).toBe('jbhi');
         if (hit === null) return;
         const edited = applied(hub, planRename(graph, hit, 'jama', disk(hub)));
-        expect(edited['hub:registries/venues.yml']).toBe(
+        expect(edited['hub:.oculus/data/research/venues.yml']).toBe(
             crlf.replace('{ id: jbhi,', '{ id: jama,')
         );
     });

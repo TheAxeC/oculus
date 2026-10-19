@@ -7,11 +7,11 @@
 // opens the palette typed with its name and a space, as a press of its row does; one that runs at
 // once runs its effect (shell/window/colon-effects.ts). Save and Revert File ask the source tab
 // on screen, as the palette's editor actions do; Save on any other tab saves what the tab's views
-// registered, as the save key does. Settings and Help open as views of the page; the host sends
-// them to a main window alone (desktop/windows/menu-template.ts). A command that is unavailable
-// says why as a notice, in the words its palette row carries. Under an overlay (the palette, the
-// update tray, a confirm or the key sheet) nothing runs, as no key runs there; nor does a name not
-// in the list or an argument a command does not take.
+// registered, as the save key does. Settings, Help and Keyboard Shortcuts open as views of the
+// page; the host sends them to a main window alone (desktop/windows/menu-template.ts). A command
+// that is unavailable says why as a notice, in the words its palette row carries. Under an overlay
+// (the palette, the update tray or a confirm) nothing runs, as no key runs there; nor does a name
+// not in the list or an argument a command does not take.
 
 import type { KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
 import { isMenuCommand, type MenuCommand } from '$lib/data/helpers/keys/oculus/menu-commands';
@@ -101,7 +101,7 @@ const RUNS: Record<Exclude<MenuCommand, 'open-recent'>, (page: MenuPage) => void
     'next-tab': (page) => page.act({ kind: 'cycle-tab', by: 1 }),
     'previous-tab': (page) => page.act({ kind: 'cycle-tab', by: -1 }),
     help: (page) => page.openView('help'),
-    'keyboard-shortcuts': (page) => page.act({ kind: 'sheet' }),
+    'keyboard-shortcuts': (page) => page.openView('keys'),
     'update-tasks': (page) => page.colon('update')
 };
 

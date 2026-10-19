@@ -71,6 +71,8 @@ import { docFindings, layoutFile } from '../../content/docs.ts';
 import { picturesOf } from '../../content/images.ts';
 import { wallpaperFindings } from '../../content/wallpaper.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
+import { countsFindings } from '../../../data/sources/config/sections/counts.ts';
+import { boardsFindings } from '../../../data/sources/config/sections/boards.ts';
 import { placeClones } from '../../../data/sources/clones.ts';
 import { allHubs, primaryConfig, repositoriesOf } from '../../files/roots.ts';
 import { engineConfigIn } from '../../files/workspace/folders.ts';
@@ -276,10 +278,10 @@ function namedByRoots(roots: RepositoryRoot[]): (path: string) => boolean {
  * are watched too, since the Focus board reads them and a refreshed feed has to reach the page the
  * way a changed manifest does.
  *
- * The career file is not here: it sits wherever `career_file` names it (configured as
- * `registries/career.yml`), and a name in the hub root would make a recursive watch of its folder
- * cover the whole hub a second time, so watchPortfolio watches that one file on its own, through a
- * flat watch of its folder filtered on its name (`watchFile`).
+ * The career file is not here: it sits wherever `career_file` names it (by default
+ * `.oculus/data/academic/career.yml`), and a name in the hub root would make a recursive watch
+ * of its folder cover the whole hub a second time, so watchPortfolio watches that one file on its
+ * own, through a flat watch of its folder filtered on its name (`watchFile`).
  */
 export function watchedDirectories(
     hub: string,
@@ -436,9 +438,10 @@ export function watchPortfolio(
      * a hub's settings file, `<hub>/.oculus/config.yml`, whose change is a config change
      * (`isConfig`) for every hub, since each hub's settings ride on the `config` channel; a name
      * in the hub root would make a recursive watch of its folder cover the whole hub a second time,
-     * and where its folder is already watched recursively (the configured `registries/career.yml`),
-     * the debounce makes the two one rebuild. It is watched through its folder (`watchFile`), so an
-     * atomic write over it keeps reaching the rebuild and a career file made after the server
+     * and where its folder is already watched recursively (the default career file, beside the
+     * collections in `.oculus/data/academic/`), the debounce makes the two one rebuild. It is
+     * watched through its folder (`watchFile`), so an atomic write over it keeps reaching the
+     * rebuild and a career file made after the server
      * started is heard as it appears. A folder that is not there is not watched and not refused, so
      * one made later is picked up at the next rebuild.
      */
@@ -684,12 +687,6 @@ export function watchPortfolio(
                                           primaryDir,
                                           from,
                                           'wallpaper_dir'
-                                      ),
-                                      recoverCommand: sourceFile(
-                                          paths.engine,
-                                          primaryDir,
-                                          from,
-                                          'recover_command'
                                       )
                                   },
                                   primaryDir
@@ -699,7 +696,13 @@ export function watchPortfolio(
                             primaryDir,
                             sourceFile(paths.engine, primaryDir, from, 'docs')
                         ),
-                        ...railFindings(config, layoutFile(paths.engine), textCatalog(config))
+                        ...railFindings(config, layoutFile(paths.engine), textCatalog(config)),
+                        ...boardsFindings(config, layoutFile(paths.engine), textCatalog(config)),
+                        ...countsFindings(
+                            config,
+                            sourceFile(paths.engine, primaryDir, from, 'counts'),
+                            textCatalog(config)
+                        )
                     ]
                 };
                 hub.publish('config', payload);

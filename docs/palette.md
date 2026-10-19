@@ -45,6 +45,7 @@ Every registered view is listed by its words.
 | Timeline | timeline |
 | Transcript | transcript |
 | Data | data |
+| Recover | recover |
 | Document | doc |
 | Markdown preview | markdown-preview |
 | Document | document |
@@ -67,6 +68,7 @@ Every registered view is listed by its words.
 | Findings | findings |
 | Gallery | gallery |
 | Help | help |
+| Keyboard Shortcuts | keys |
 | History | history |
 | Debug Console | debug-console |
 | Debug | debug |
@@ -97,9 +99,9 @@ A colon starts a command. The commands that list choices type their name and a s
 
 | Command | Argument | What it does |
 | --- | --- | --- |
-| `:theme` | `<light / dark / vscode-dark-modern / vscode-light-modern / vscode-light-2026 / vscode-light-plus / vscode-light-visual-studio / vscode-quiet-light / vscode-solarized-light / vscode-abyss / vscode-dark-2026 / vscode-dark-plus / vscode-dark-visual-studio / vscode-kimbie-dark / vscode-monokai / vscode-monokai-dimmed / vscode-red / vscode-solarized-dark / vscode-tomorrow-night-blue / vscode-dark-high-contrast / vscode-light-high-contrast / mocha / macchiato / frappe / gruvbox / nord / synthwave / tokyoneon / tokyonight / tokyostorm / rosepine / rosepinemoon / everforest / dracula / onedark / oxocarbon / flexoki / phosphor / phosphoramber / kanagawa / kanagawadragon / solarized / latte / gruvboxlight / rosepinedawn / tokyolight / kanagawalotus / everforestlight / flexokilight>` | Switch the theme |
+| `:theme` | `<theme>` | Switch the theme |
 | `:crt` | - | Turn the CRT overlay on or off |
-| `:file-icons` | `<Seti>` | Switch the file icon theme |
+| `:file-icons` | `<file icon theme>` | Switch the file icon theme |
 | `:tab` | `<view id>` | Open a view in a tab |
 | `:reopen-closed-tab` | - | Reopen the tabs closed last |
 | `:go-back` | - | Go Back |
@@ -116,6 +118,7 @@ A colon starts a command. The commands that list choices type their name and a s
 | `:clone` | `<name / url>` | Clone a GitHub repository |
 | `:task-add` | `<title>` | Add a task to the tasks collection |
 | `:help` | - | Show the help |
+| `:keys` | - | Show the keyboard shortcuts |
 | `:update` | - | Open the update tasks |
 | `:workspace` | `<hub/name>` | Switch Workspace |
 | `:workspace-save` | `<name>` | Save Workspace As |

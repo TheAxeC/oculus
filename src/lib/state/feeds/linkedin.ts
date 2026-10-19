@@ -80,10 +80,19 @@ export function pickIdea(ideas: LinkedinEntry[], today: string): LinkedinEntry |
     return ideas[day % ideas.length];
 }
 
-/** Collapse body whitespace and keep its first 160 characters with an ASCII ellipsis. */
+/**
+ * Collapse body whitespace and keep its first 160 characters with an ASCII ellipsis. A cut that
+ * falls inside a web address moves to the space before it, since the card draws an address as a
+ * link and a cut one names no page.
+ */
 export function snippet(body: unknown): string {
-    const collapsed = scalar(body).replace(/\s+/g, ' ').trim();
-    return `${Array.from(collapsed).slice(0, 160).join('')}...`;
+    const chars = Array.from(scalar(body).replace(/\s+/g, ' ').trim());
+    let end = Math.min(chars.length, 160);
+    const word = chars.slice(0, end).join('').split(' ').at(-1) ?? '';
+    if (end < chars.length && chars[end] !== ' ' && /^https?:\/\//.test(word)) {
+        end -= Array.from(word).length;
+    }
+    return `${chars.slice(0, end).join('')}...`;
 }
 
 /** Coerce the folder feed and split it into filename-ordered ideas and newest-first posts. */

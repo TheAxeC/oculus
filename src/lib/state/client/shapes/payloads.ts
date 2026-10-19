@@ -67,6 +67,10 @@ const hpcShape = unchangedAs<Payloads['hpc']>(
     })
 );
 
+const recoverShape = unchangedAs<Payloads['recover']>(
+    z.object({ runs: listShape, sessions: listShape.nullable() })
+);
+
 const processesShape = unchangedAs<Payloads['processes']>(
     z.object({
         status: z.enum(['ok', 'failed']),
@@ -266,6 +270,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     feeds: feedsShape,
     git: gitShape,
     hpc: hpcShape,
+    recover: recoverShape,
     processes: processesShape,
     schedule: scheduleShape,
     calendar: calendarShape,

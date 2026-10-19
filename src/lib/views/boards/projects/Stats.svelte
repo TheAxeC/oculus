@@ -6,8 +6,8 @@
     // It counts nothing itself. state/boards/board/'s stats() is the counting, over the board's own
     // projects before any filter, so the strip says what the board is rather than what a search has
     // left on screen; while a filter or a search shows fewer cards than that, the first count says
-    // how many of them are shown (`shown`). A venue at or over `venue_conc_warn` is marked: that is
-    // the config's own threshold for too much of one board on one venue.
+    // how many of them are shown (`shown`). A venue at or over `venue_conc_warn` of `focus:` is
+    // marked: that is the config's own threshold for too much of one board on one venue.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';

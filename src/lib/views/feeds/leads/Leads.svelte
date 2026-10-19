@@ -8,7 +8,8 @@
         group: 'incoming',
         order: 2,
         badge: (client) => client.railBadges.leadsBadge(),
-        badgeTone: () => 'amber'
+        badgeTone: () => 'amber',
+        countPart: (client) => ({ count: client.railBadges.leadsCount(), tone: 'amber' })
     };
 </script>
 
@@ -84,8 +85,10 @@
     const entries = $derived(data?.entries ?? []);
     const identOf = $derived(feedIdents('leads', entries));
     const leadOf = $derived(leadIdents(entries));
-    const declined = $derived(declinedCount(entries));
-    const split = $derived(splitLeads(visibleLeads(entries, held.showDeclined), today));
+    const declined = $derived(declinedCount(vocab, entries));
+    const split = $derived(
+        splitLeads(vocab, visibleLeads(vocab, entries, held.showDeclined), today)
+    );
     /** What pressing the declined toggle does, said in its tooltip: its own words are fixed. */
     const declinedToggleTip = $derived(
         held.showDeclined ? t('leads.hide_declined', declined) : t('leads.show_declined', declined)

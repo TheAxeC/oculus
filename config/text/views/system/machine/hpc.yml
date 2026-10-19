@@ -54,6 +54,20 @@ text:
         loading: loading...
         log: log
         log_job: log | job {0}
+        login_col_dataset: Dataset
+        login_col_done: On disk
+        login_col_hub: Hub
+        login_col_rate: Rate
+        login_loading: Waiting for the next Live HPC answer from the login node...
+        login_none: No Recover session runs on the login node.
+        login_of: '{0} of {1}'
+        login_rate: '{0}/s'
+        login_state_complete: complete
+        login_state_fetching: fetching
+        login_stop: Stop
+        login_stop_confirm: Stop the Recover fetch of {0} in {1}? A partial file resumes at the next Fetch.
+        login_stop_title: End the Recover session of {0}
+        login_title: Login node
         memory_efficiency: '{0} of {1} ({2}%)'
         no_jobs: No jobs in the queue for you right now.
         no_output: (no output)
@@ -73,7 +87,7 @@ text:
         unconfigured: no cluster
         unreachable: unreachable
         unreachable_detail: '{0} `{1}`'
-        unreachable_msg: Cluster unreachable - on UT network / EduVPN?
+        unreachable_msg: The cluster did not answer over ssh. Is this Mac on the UT network or on EduVPN?
         used_of: '{0} of {1} ({2}%)'
         walltime: fraction of walltime used
     views:

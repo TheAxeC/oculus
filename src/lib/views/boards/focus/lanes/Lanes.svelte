@@ -23,10 +23,12 @@
         focusLabel,
         holdingTone,
         laneItems,
+        isBlocked,
         lanes,
         lanesIn,
         movable,
         nextPriority,
+        pausesCountdown,
         portfolioProjects,
         priorities,
         type Id,
@@ -59,7 +61,7 @@
     const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(config));
     const items = $derived(laneItems(projects, board));
-    const ideas = $derived(backlog(projects, board));
+    const ideas = $derived(backlog(projects, board, config));
     const levels = $derived(priorities(config));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
@@ -73,7 +75,7 @@
         const date = project.deadline;
         if (date === undefined || date === '') return null;
         const days = daysUntil(date, now);
-        if (days === null || project.chips.includes('submitted')) return { label: date };
+        if (days === null || pausesCountdown(project, config)) return { label: date };
         if (days < 0) return { label: t('project.card.overdue', -days), tone: 'red' };
         if (days <= DEADLINE_SOON)
             return { label: t('project.card.due_days', days), tone: 'amber' };
@@ -91,7 +93,7 @@
             const who = project.waitingOn.map((key) => waitingLabel(key, names, held)).join(', ');
             return `${t('focus.wait_people')} ${who}`;
         }
-        if (project.chips.includes('submitted')) {
+        if (pausesCountdown(project, config)) {
             const venue: Venue | undefined =
                 project.venueId === undefined
                     ? undefined
@@ -99,7 +101,7 @@
             const name = venue === undefined ? '' : (venue.short ?? venue.name);
             return `${t('focus.wait_review')} ${name === '' ? t('focus.venue_unset') : name}`;
         }
-        if (project.chips.includes('blocked')) return t('focus.wait_blocked');
+        if (isBlocked(project, config)) return t('focus.wait_blocked');
         return '';
     }
 
@@ -165,7 +167,7 @@
      * tiers, leaves the event alone, so the browser refuses the drop and the lane does not light.
      */
     function draggedOver(lane: string, event: DragEvent): void {
-        if (dragging === null || !movable(dragging.project, lane)) return;
+        if (dragging === null || !movable(dragging.project, lane, config)) return;
         event.preventDefault();
         if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
         over = lane;
@@ -173,7 +175,7 @@
 
     /** Dropping a card on a lane writes its `focus:`, which is what puts it on that lane. */
     async function dropped(lane: string, event: DragEvent): Promise<void> {
-        if (dragging === null || !movable(dragging.project, lane)) return;
+        if (dragging === null || !movable(dragging.project, lane, config)) return;
         event.preventDefault();
         const held = dragging;
         ended();

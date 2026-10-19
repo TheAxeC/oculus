@@ -4,8 +4,9 @@
 
 import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
-import { numericSetting, text as str } from '../../data/helpers/guards.ts';
+import { focusSetting, text as str } from '../../data/helpers/guards.ts';
 import { joinedEntries } from '../../data/helpers/hub-names.ts';
+import { hasWord } from '../../data/shapes/vocab-keys.ts';
 import {
     anyValueShape,
     fieldItemsShape,
@@ -13,7 +14,7 @@ import {
     rowsShape,
     wordShape
 } from '../../data/shapes/shapes.ts';
-import { labelOf } from './focus.ts';
+import { focusWords, labelOf } from './focus.ts';
 
 /** How many project links an attention row of projects draws before its "(+N more)". */
 const ROW_LINKS = 4;
@@ -84,17 +85,20 @@ export type Band = {
     education: BandItem[];
 };
 
-/** Active projects whose manifest lags their documents past the configured grace. */
+/**
+ * The projects of a type carrying `live` whose manifest lags their documents past the grace of
+ * `stale_lag_days` under `focus:`.
+ */
 export function manifestsBehind(
     projects: Project[],
     config: Record<string, unknown>
 ): ManifestBehind | null {
-    const grace = numericSetting(config, 'stale_lag_days');
+    const grace = focusSetting(config, 'stale_lag_days');
     if (grace === null) return null;
     const stale = projects
         .filter(
             (project) =>
-                project.type === 'active' &&
+                hasWord(config, 'types', 'live', project.type) &&
                 project.staleDays !== undefined &&
                 project.staleDays >= grace
         )
@@ -157,8 +161,8 @@ function bandItem(entry: Entry, key: string): BandItem {
 
 /**
  * The band above the lanes: the durable work that is not a project. Grants stack by the stage their
- * status names, positions are the applications still out for an answer, and teaching is what the
- * education file marks as running this academic year.
+ * status names, positions are the applications whose status is in `applications_open` under
+ * `focus:`, and teaching the education entries whose status is in `education_open` there.
  */
 export function collectionLanes(snapshot: Snapshot, config: Record<string, unknown>): Band {
     const collections = snapshot.entities.collections;
@@ -173,12 +177,14 @@ export function collectionLanes(snapshot: Snapshot, config: Record<string, unkno
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
     }
+    const open = focusWords(config, 'applications_open');
     const applications = joinedEntries(collections, 'applications')
-        .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'active')
+        .filter((entry) => open.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => bandItem(entry, 'applications'))
         .sort(bandOrder);
+    const running = focusWords(config, 'education_open');
     const education = joinedEntries(collections, 'education')
-        .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'ongoing')
+        .filter((entry) => running.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => bandItem(entry, 'education'))
         .sort(bandOrder);
     const tones = readAs(tonesShape, config.focus_lane_tones) ?? {

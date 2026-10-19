@@ -5,6 +5,11 @@
 // own config folder, below the path of that folder in it; `local.yml` is governed in the `.oculus`
 // folder of each hub and in the config folder.
 //
+// A hub's own settings file, `.oculus/config.yml`, is governed in the hub: its keys are those of
+// the hub list (data/helpers/hub-names.ts), each as its options-catalog entry gives it, or, for a
+// key of a catalog file such as the career words of catalogs/vocab.yml, as that file's whole-file
+// shape gives it; any other key is not declared.
+//
 // These schemas serve the editor. The readers of their files report their own findings.
 
 import type { z } from 'zod';
@@ -18,8 +23,14 @@ import {
     textFileShape
 } from '../../../../shapes/catalog-files.ts';
 import { LOCAL_NAME } from '../../local.ts';
-import { catalogOf, configItems, type Source } from '../options.ts';
-import { ROOT_FOLDER } from '../../../../helpers/hub-names.ts';
+import {
+    catalogOf,
+    configItems,
+    type Catalog,
+    type CatalogEntry,
+    type Source
+} from '../options.ts';
+import { HUB_FILE, ROOT_FOLDER, hubFileOf, hubKeys } from '../../../../helpers/hub-names.ts';
 import { shapeSchema, type JsonSchema } from '../../../../snapshot/schema/json.ts';
 import { SCHEMA_BLOCK, SCHEMA_DEFINITIONS } from '../../../../snapshot/schema/record.ts';
 import { APP_SETTINGS_KEY } from '../../../../helpers/files/apps/settings.ts';
@@ -83,6 +94,36 @@ function optionSource(
     };
 }
 
+/** The schema a catalog file's whole-file shape gives one of its top-level keys, or none. */
+function catalogKeySchema(file: string, key: string): JsonSchema | undefined {
+    const shape = CATALOG_FILES.find((one) => one.file === file)?.shape;
+    const schema = shape === undefined ? null : shapeSchema(shape);
+    const properties = schema?.properties as Record<string, JsonSchema> | undefined;
+    return properties !== undefined && Object.hasOwn(properties, key) ? properties[key] : undefined;
+}
+
+/**
+ * The schema of a hub's `.oculus/config.yml`: each key of the hub list as the options catalog
+ * describes it in its config file, `app_settings` as config/behavior.yml's, and a key of a catalog
+ * file as that file's shape gives it.
+ */
+function hubConfigSchema(catalog: Catalog, lists: OptionLists): JsonSchema {
+    const entries: Record<string, CatalogEntry> = {};
+    const extra: Record<string, JsonSchema> = {};
+    for (const key of hubKeys()) {
+        const file = hubFileOf(key) ?? '';
+        const ofFile: Partial<Record<string, CatalogEntry>> = catalog[file] ?? {};
+        const entry = ofFile[key];
+        if (key === APP_SETTINGS_KEY) extra[key] = appSettingsSchema();
+        else if (entry !== undefined) entries[key] = entry;
+        else {
+            const schema = catalogKeySchema(file, key);
+            if (schema !== undefined) extra[key] = schema;
+        }
+    }
+    return optionsSchema(entries, lists, extra);
+}
+
 /** The schemas of the config folder's files and of the repository settings file. */
 export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): NamedSchema[] {
     const merged = config.merged;
@@ -116,6 +157,11 @@ export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): Named
             rule: configRule(`schemas/${file}`)
         });
     }
+    found.push({
+        name: 'hub-config',
+        schema: hubConfigSchema(catalog, lists),
+        rule: { hub: [HUB_FILE] }
+    });
     const settings = settingsSchema(catalog['behavior.yml'], lists);
     if (settings !== null) {
         found.push({

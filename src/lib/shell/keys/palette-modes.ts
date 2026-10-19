@@ -9,7 +9,9 @@
 // approves them or, once approved, takes the approval back. `:eslint-config` lists the same for the
 // ESLint configuration file of the source tab's file, whether or not a server serves it. `:clone`
 // is a list mode too, its rows state/workbench/palette.ts's `cloneRows`; so is `:folder-remove`,
-// whose rows are the folders of the open workspace, made here (`folderRemovals`). The rows of the
+// whose rows are the folders of the open workspace, made here (`folderRemovals`); and so are
+// `:theme`, `:file-icons`, `:tab` and `:goto`, whose rows are the themes, the file icon themes, the
+// views and the hub's projects their argument picks from (`argumentRows`). The rows of the
 // command mode itself are here too (`commandRows`): the commands and the views that match what is
 // typed.
 
@@ -19,6 +21,7 @@ import {
     fuzzyMatches,
     textParts,
     wordsHold,
+    type ArgumentCommand,
     type PaletteCommand,
     type PaletteMatch,
     type PaletteView,
@@ -143,6 +146,93 @@ export function folderRemovals(
     return roots
         .filter((root) => wordsHold(`${root.key} ${root.dir}`, argument))
         .map((root) => ({ value: `folder:${root.key}`, key: root.key, dir: root.dir }));
+}
+
+/** One choice of an argument list: the argument a press runs the list's command with. */
+export type ArgumentRow = {
+    value: string;
+    kind: string;
+    label: string;
+    hint: string;
+    active: boolean;
+    argument: string;
+};
+
+/**
+ * What the argument lists are made of: the themes and the file icon themes the pickers offer and
+ * the one of each in force, the views a tab opens and the view of the tab on screen, the hub's
+ * projects and the project on screen.
+ */
+export type ArgumentChoices = {
+    themes: { name: string; label: string }[];
+    theme: string;
+    fileIcons: { name: string; label: string }[];
+    fileIcon: string;
+    views: PaletteView[];
+    view: string | null;
+    projects: { id: string; title: string }[];
+    project: string | null;
+};
+
+/**
+ * The rows of an argument list for what is typed after the command: every choice whose words hold
+ * every word typed, the one in force marked. A theme and a file icon theme are listed by their
+ * words with the name beside them, a view by its label with its id, and a project by its id with
+ * its short title. A choice the typed text names whole comes first, so Enter after a whole name
+ * runs the command with that choice.
+ */
+export function argumentRows(
+    command: ArgumentCommand,
+    choices: ArgumentChoices,
+    argument: string
+): ArgumentRow[] {
+    const named = (row: Omit<ArgumentRow, 'value'>): boolean =>
+        [row.label, row.hint].some((word) => word.toLowerCase() === argument.trim().toLowerCase());
+    const rows = everyChoice(command, choices)
+        .filter((row) => wordsHold(`${row.label} ${row.hint}`, argument))
+        .map((row) => ({ ...row, value: `${command}:${row.argument}` }));
+    return [...rows.filter(named), ...rows.filter((row) => !named(row))];
+}
+
+/** Every choice of an argument list, before what is typed narrows it. */
+function everyChoice(
+    command: ArgumentCommand,
+    choices: ArgumentChoices
+): Omit<ArgumentRow, 'value'>[] {
+    switch (command) {
+        case 'theme':
+            return choices.themes.map((one) => ({
+                kind: t('app.palette.kind_theme'),
+                label: one.label,
+                hint: one.name,
+                active: one.name === choices.theme,
+                argument: one.name
+            }));
+        case 'file-icons':
+            return choices.fileIcons.map((one) => ({
+                kind: t('app.palette.kind_file_icons'),
+                label: one.label,
+                hint: one.name,
+                active: one.name === choices.fileIcon,
+                argument: one.name
+            }));
+        case 'tab':
+            return choices.views.map((one) => ({
+                kind: t('app.palette.kind_view'),
+                label: one.label,
+                hint: one.id,
+                active: one.id === choices.view,
+                argument: one.id
+            }));
+        case 'goto':
+            return choices.projects.map((one) => ({
+                kind: t('app.palette.kind_project'),
+                label: one.id,
+                hint: one.title,
+                active: one.id === choices.project,
+                argument: one.id
+            }));
+    }
 }
 
 /** The file whose ESLint configuration the query lists, when it is `:eslint-config`. */

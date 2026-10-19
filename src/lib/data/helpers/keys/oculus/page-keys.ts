@@ -1,10 +1,10 @@
 // Layer 1, data. The page's own keys as tables, one press per key: the save key, the keys the
 // desktop app hands the page, Find in Files and Replace in Files, Next Tab and Previous Tab, Go
-// Back and Go Forward, the debugger's keys and the key sheet's character. The workbench resolves a
-// press against these rows (resolve.ts, debug-keys.ts), a Save control's tooltip shows the save
-// key (ui/controls/editor/chords.ts), and the desktop app's menu shows each row on the item that
-// runs the same command (desktop-keys.ts), so no key is written twice. The module imports nothing,
-// so the desktop host reads it as the page does.
+// Back and Go Forward, the debugger's keys and the Keyboard Shortcuts view's character. The
+// workbench resolves a press against these rows (resolve.ts, debug-keys.ts), a Save control's
+// tooltip shows the save key (ui/controls/editor/chords.ts), and the desktop app's menu shows each
+// row on the item that runs the same command (desktop-keys.ts), so no key is written twice. The
+// module imports nothing, so the desktop host reads it as the page does.
 
 /**
  * One key press: the physical key's name (`KeyB`, `BracketLeft`, `F8`, `Tab`), which is also
@@ -73,8 +73,11 @@ export const DEBUG_PRESSES = {
     out: { code: 'F11', shift: true }
 } as const satisfies Record<string, Press>;
 
-/** The key sheet's key: the `?` typed, read from the character whatever key types it. */
-export const SHEET_CHARACTER = '?';
+/**
+ * The key of the Keyboard Shortcuts view: the `?` typed, read from the character whatever key
+ * types it.
+ */
+export const SHORTCUTS_CHARACTER = '?';
 
 /** The modifiers of a key event a press is held against. */
 type Held = { metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };

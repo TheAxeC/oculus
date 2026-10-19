@@ -66,12 +66,12 @@ function target(keep = 500): PrimaryTarget {
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
     for (const [path, body] of [
-        ['tasks/tasks.yml', TASKS],
-        ['registries/venues.yml', VENUES],
-        ['registries/career.yml', CAREER],
-        ['feeds/literature-radar.yml', RADAR],
-        ['feeds/position-leads.yml', LEADS],
-        ['registries/literature.yml', LITERATURE]
+        ['.oculus/data/academic/tasks.yml', TASKS],
+        ['.oculus/data/research/venues.yml', VENUES],
+        ['.oculus/data/academic/career.yml', CAREER],
+        ['.oculus/data/literature/radar.yml', RADAR],
+        ['.oculus/data/academic/leads.yml', LEADS],
+        ['.oculus/data/literature/literature.yml', LITERATURE]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -159,7 +159,8 @@ const SUBTASK_ROWS = [
         name: 'a collection entry',
         host: { collection: 'tasks', id: 'Review the draft' },
         key: 'Review the draft',
-        file: (_: Files, hub: string): string => join(hub, 'tasks', 'tasks.yml')
+        file: (_: Files, hub: string): string =>
+            join(hub, '.oculus', 'data', 'academic', 'tasks.yml')
     },
     {
         name: 'a personal project of the hub',
@@ -322,7 +323,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const host = await written(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
         expect(host[0]).toMatchObject({
             kind: 'host',
-            file: join(into.hub, 'registries', 'career.yml'),
+            file: join(into.hub, '.oculus', 'data', 'academic', 'career.yml'),
             key: 'Naesens',
             field: 'status',
             before: 'warm',
@@ -356,7 +357,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
 
     it('records a paper saved to Literature, and its undo leaves the file as it was', async () => {
         const into = target();
-        const file = join(into.hub, 'registries', 'literature.yml');
+        const file = join(into.hub, '.oculus', 'data', 'literature', 'literature.yml');
         const before = readFileSync(file, 'utf8');
         const rows = await written(into, {
             kind: 'literature-save',

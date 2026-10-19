@@ -55,7 +55,6 @@
     import FrameLayer from './frames/FrameLayer.svelte';
     import { bodyTracks } from './panes/floats/float-geometry';
     import UpdateTray from './rail/UpdateTray.svelte';
-    import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
     import { provideTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { useAppearance } from './window/appearance.svelte';
@@ -86,7 +85,6 @@
     } from '$lib/state/workbench/navigation/status';
     import Bell from './status/notices/Bell.svelte';
     import StatusBar from './status/StatusBar.svelte';
-    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -104,7 +102,7 @@
     } = client;
 
     type Props = {
-        /** The `nav_groups` of the merged config, which the chords count into. */
+        /** The view catalogue's groups of the merged config, which the chords count into. */
         groups?: NavGroup[];
         /** The `docs` list of the merged config: the hub documents a chord counts after views. */
         docs?: DocEntry[];
@@ -185,7 +183,6 @@
     let paletteStart = $state<PaletteStart>({ text: '', files: false, line: false });
     let paletteQuery = $state('');
     let updateOpen = $state(false);
-    let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
     let handledPaletteRequest = $state(paletteRequested().seq);
 
@@ -218,10 +215,8 @@
         paletteOpen: () => paletteOpen,
         paletteMode: () => (paletteOpen ? modeOf(paletteQuery, paletteStart.files) : null),
         updateOpen: () => updateOpen,
-        sheetOpen: () => sheetOpen,
         setPaletteOpen: (open) => (paletteOpen = open),
         setUpdateOpen: (open) => (updateOpen = open),
-        setSheetOpen: (open) => (sheetOpen = open),
         openDoc: (id, at) => {
             const entry = listedDocs.find((one) => docState(one).id === id);
             if (entry === undefined) return;
@@ -294,7 +289,6 @@
 
     function openPalette(prefill: string, files = false, line = false): void {
         keyboard.clearCursor();
-        sheetOpen = false;
         updateOpen = false;
         paletteStart = { text: prefill, files, line };
         paletteOpen = true;
@@ -313,7 +307,6 @@
 
     function openUpdate(): void {
         keyboard.clearCursor();
-        sheetOpen = false;
         paletteOpen = false;
         updateOpen = true;
     }
@@ -333,13 +326,6 @@
         handledPaletteRequest = asked.seq;
         openPalette(asked.text);
     });
-
-    /** The key sheet's rows: the app's own after the page's, in the desktop app. */
-    const keyRows = $derived(
-        client.desktop === undefined
-            ? t('app.keys.rows')
-            : `${t('app.keys.rows')};;${t('desktop.keys.rows')}`
-    );
 
     const appearance = useAppearance(client);
     useAppLanguages(client);
@@ -408,15 +394,6 @@
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
 <Asks />
 <DebugToolbar />
-{#if sheetOpen}
-    <KeySheet
-        title={t('app.keys.title')}
-        hint={t('app.keys.hint')}
-        rows={keyRows}
-        apps={{ heading: t('app.keys.apps'), rows: client.appShell.keyRows() }}
-        onclose={() => (sheetOpen = false)}
-    />
-{/if}
 
 <style>
     /* The title bar strip over the rail and the column beside it over the status bar, the strip

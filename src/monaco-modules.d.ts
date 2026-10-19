@@ -5,8 +5,13 @@
 // the diff editor's ranges and its own diff provider, through which
 // ui/controls/editor/diff/git-provider.ts draws git's line changes and kit/load.ts makes Monaco's
 // own provider for every other diff; and the diff editor's character diff, which the worker
-// diff/inner-changes.worker.ts runs inside git's changes. Each subpath is declared here as the part
-// of it that the tree uses.
+// diff/inner-changes.worker.ts runs inside git's changes; and the menu registry, the registry of
+// editor actions and the storage service, through which ui/controls/editor/keys/suggest.ts puts
+// Show Suggestions in the right-click menu and keeps the suggest list's description panel; the
+// default keybindings, which ui/controls/editor/keys/monaco-keys.ts lists in the Keyboard
+// Shortcuts view; and the key codes, which data/helpers/keys/oculus/bindings.ts walks to find
+// every key the workbench answers. Each subpath is declared here as the part of it that the tree
+// uses.
 
 declare module 'monaco-editor/platform/contextkey/common/contextkey' {
     /**
@@ -28,6 +33,66 @@ declare module 'monaco-editor/platform/contextkey/common/contextkey' {
     export const ContextKeyExpr: {
         /** The clause a text spells, or undefined when the text is not a clause. */
         deserialize(serialized: string | null | undefined): ContextKeyExpression | undefined;
+        /** The clause that holds where the key has the value. */
+        equals(key: string, value: string): ContextKeyExpression;
+    };
+}
+
+declare module 'monaco-editor/platform/actions/common/actions' {
+    import type { IDisposable } from 'monaco-editor';
+    import type { ContextKeyExpression } from 'monaco-editor/platform/contextkey/common/contextkey';
+
+    /** A menu of Monaco's, the editor's right-click menu among them. */
+    export type MenuId = { readonly id: string };
+    /** The menus by name: `EditorContext` is the editor's right-click menu. */
+    export const MenuId: { readonly EditorContext: MenuId };
+
+    /**
+     * The menus' items: a command under a title, shown where `when` holds and greyed where its
+     * precondition does not.
+     */
+    export const MenuRegistry: {
+        appendMenuItem(
+            menu: MenuId,
+            item: {
+                command: { id: string; title: string; precondition?: ContextKeyExpression };
+                when?: ContextKeyExpression;
+                group?: string;
+                order?: number;
+            }
+        ): IDisposable;
+    };
+}
+
+declare module 'monaco-editor/editor/browser/editorExtensions' {
+    import type { ContextKeyExpression } from 'monaco-editor/platform/contextkey/common/contextkey';
+
+    /** The editor actions Monaco registers, each with the precondition it runs under. */
+    export const EditorExtensionsRegistry: {
+        getEditorActions(): readonly {
+            id: string;
+            label: string;
+            precondition: ContextKeyExpression | undefined;
+        }[];
+    };
+}
+
+declare module 'monaco-editor/platform/storage/common/storage' {
+    import type { IDisposable } from 'monaco-editor';
+
+    /** The key of the storage service, which StandaloneServices answers the service for. */
+    export const IStorageService: { readonly storage: true };
+
+    /** The page's storage of the editors' own values, in memory in the standalone editor. */
+    export type StorageService = {
+        getBoolean(key: string, scope: number, fallback: boolean): boolean;
+        store(key: string, value: boolean, scope: number, target: number): void;
+        /** The event of a change of the key in the scope. */
+        onDidChangeValue(
+            scope: number,
+            key: string,
+            disposable: undefined
+        ): (listener: () => void) => IDisposable;
     };
 }
 
@@ -37,6 +102,33 @@ declare module 'monaco-editor/base/common/keyCodes' {
         fromUserSettings(key: string): number;
         /** The name of a key code. */
         toString(code: number): string;
+    };
+}
+
+declare module 'monaco-editor/editor/common/standalone/standaloneEnums' {
+    /** The key codes, the enum the public entry exports as `KeyCode`. */
+    export { KeyCode } from 'monaco-editor';
+}
+
+declare module 'monaco-editor/platform/keybinding/common/keybindingsRegistry' {
+    /** One press of a default keybinding: the modifiers held and the key code. */
+    export type KeyCodeChord = {
+        ctrlKey: boolean;
+        shiftKey: boolean;
+        altKey: boolean;
+        metaKey: boolean;
+        keyCode: number;
+    };
+
+    /**
+     * The keybindings Monaco registers for the platform it runs on, each with the command it runs;
+     * a press of a scan code holds `scanCode` in place of `keyCode`.
+     */
+    export const KeybindingsRegistry: {
+        getDefaultKeybindings(): readonly {
+            keybinding: { chords: readonly (KeyCodeChord | { scanCode: number })[] } | null;
+            command: string | null;
+        }[];
     };
 }
 
@@ -153,9 +245,14 @@ declare module 'monaco-editor/platform/instantiation/common/instantiation' {
 
 declare module 'monaco-editor/editor/standalone/browser/standaloneServices' {
     import type { InstantiationService } from 'monaco-editor/platform/instantiation/common/instantiation';
+    import type {
+        IStorageService,
+        StorageService
+    } from 'monaco-editor/platform/storage/common/storage';
 
     /** The services of the page's editors, read after the first editor was made. */
     export const StandaloneServices: {
+        get(id: typeof IStorageService): StorageService;
         get(id: object): InstantiationService;
     };
 }

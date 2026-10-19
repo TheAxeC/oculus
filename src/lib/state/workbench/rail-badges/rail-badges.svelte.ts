@@ -2,11 +2,14 @@
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 //
-// Beside the words a tab draws, the store answers the counts themselves, as numbers: the parts the
-// views give their rail button (a registration's `railPart`, which the rail sums), read from the
-// same state the tab reads, so a tab and the rail never count one thing two ways.
+// Beside the words a tab draws, the store answers the counts themselves, as numbers: the count
+// each view draws (a registration's `countPart`), read from the same state the tab reads, so a
+// tab and the rail never count one thing two ways. Whether a view's tabs draw its count and
+// whether the rail sums it is the view's row of `counts` in config/layout.yml (`countFlags`): the
+// rail sums the views whose row says `rail: true`, Talks & Events among them, and no list of
+// views in code decides it.
 
-import { scalar, isMap, numericSetting } from '../../../data/helpers/guards.ts';
+import { focusSetting, scalar } from '../../../data/helpers/guards.ts';
 import type { EntitiesStore } from '../../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../../system/audit.svelte.ts';
@@ -18,45 +21,36 @@ import { splitPosts } from '../../feeds/linkedin.ts';
 import { needsInput, sessionRows } from '../../sessions/folds.ts';
 import { findingsCount as listedFindings } from '../navigation/status.ts';
 import { t } from '../../shared/words/text.ts';
-import { statusTone, toneOf, UNKNOWN_TONE } from '../../shared/words/tones.ts';
+import { statusTone, toneOf } from '../../shared/words/tones.ts';
 import {
+    countRow,
     countText,
     leadsDue,
     linkedinOverdue,
-    liveEntries,
-    liveRule,
-    rollup,
-    typeSplit
+    matchedEntries,
+    rollup
 } from './rail-badges.ts';
 import type { BoardItem, BoardPreset } from '../../boards/board/index.ts';
+import { focusWords } from '../../boards/focus.ts';
 import type { Collection, GitState } from '../../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
 
 /**
- * What one view gives its rail button: a count and the tone its tab's badge has, a hue name from
- * state/shared/words/tones.ts: an urgency tone (red, amber, green) where the view or `nav_live`'s
- * `tone:` sets one, else the hue of the statuses or the cell it counts, as the Funding count's
- * violet, or none.
+ * The count one view draws, as a number, and the tone its tab's badge has, a hue name from
+ * state/shared/words/tones.ts: an urgency tone (red, amber, green) where the view or its `counts`
+ * row's `tone:` sets one, else the hue of the statuses or the cell it counts, as the Funding
+ * count's violet, or none. The rail sums it when the view's row says so.
  */
 export type RailPart = { count: number; tone?: string };
 
-/**
- * The cell of a board's tab whose count the board gives its rail button: for the Projects board,
- * whose cells are its types, the cell of a type key of `tab_split`; for a board split by
- * `tab_rollup`, the cell at a bucket's place in the board's list, counted from 0.
- */
-export type RailCell = { type: string } | { bucket: number };
+/** Where a view's count is drawn: on its tabs and catalogue entry, and in the rail's sum. */
+type CountFlags = { tab: boolean; rail: boolean };
 
 /** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
     return feed?.ok === true && feed.error === undefined && feed.missing !== true;
-}
-
-/** A configured tone is a CSS custom-property fragment; missing or invalid values stay neutral. */
-function splitTone(value: unknown): string {
-    return typeof value === 'string' && /^[a-z][a-z0-9-]*$/.test(value) ? value : UNKNOWN_TONE;
 }
 
 /** The glyph of the red mark a view badge draws when something it watches is past due. */
@@ -69,11 +63,27 @@ function cellsTitle(cells: BadgeCell[]): string {
         .join(t('views.badge_separator'));
 }
 
+/**
+ * The cells of a tab summed into one part, in the tone of the first cell that counts anything, so
+ * Live HPC's part takes the running tone while a job runs and the pending tone while jobs only
+ * wait.
+ */
+function cellsPart(cells: BadgeCell[]): RailPart {
+    const count = cells.reduce((sum, cell) => sum + cell.count, 0);
+    const first = cells.find((cell) => cell.count > 0);
+    return first === undefined ? { count } : { count, tone: first.color };
+}
+
 /** The reactive view badges of one client. */
 export type RailBadgesStore = {
+    /** Where one view's count is drawn, from its row of `counts`; nowhere for a view with none. */
+    countFlags: (view: string) => CountFlags;
     boardBadge: (view: string) => string;
-    /** The count of one cell of a board's tab, found by `RailCell`, with the cell's tone. */
-    boardPart: (view: string, cell: RailCell) => RailPart;
+    /**
+     * The count of a board's first group with the group's tone, or its cards when it has no
+     * groups.
+     */
+    boardPart: (view: string) => RailPart;
     collectionCount: (key: string) => number;
     inboxCount: () => number;
     applicationsCount: () => number;
@@ -84,6 +94,12 @@ export type RailBadgesStore = {
     findingsCount: () => number;
     /** The sessions the Session list draws as needing input, an archived one left out. */
     sessionInputCount: () => number;
+    /** The Position Leads due inside the `days` of their `counts` row, the Leads tab's count. */
+    leadsCount: () => number;
+    /** Today's events that have not ended, in the tone of the Calendar tab's cell. */
+    calendarPart: () => RailPart;
+    /** The running and pending jobs Live HPC's tab draws, summed, by `cellsPart`. */
+    queuePart: () => RailPart;
     collectionBadge: (key: string) => string;
     collectionBadgeTone: (key: string) => string;
     collectionBadgeTitle: (key: string) => string;
@@ -130,46 +146,50 @@ export function createRailBadges(
     problems: Pick<ProblemsStore, 'total'>,
     selectors: BadgeSelectors
 ): RailBadgesStore {
-    /** The number of cards on one of the four project boards. */
-    function boardBadge(view: string): string {
-        return String(selectors.board(selectors.boardPreset(view)).length);
+    /** Where one view's count is drawn: its `counts` row's `tab` and `rail`, false without one. */
+    function countFlags(view: string): CountFlags {
+        const row = countRow(selectors.configMap(), view);
+        return { tab: row?.tab ?? false, rail: row?.rail ?? false };
+    }
+
+    /** The number of cards on one of the project boards. */
+    function boardCount(view: string): number {
+        return selectors.board(selectors.boardPreset(view)).length;
     }
 
     /**
-     * The count of the cell of a board's tab that `cell` names, 0 when the tab draws none: the
-     * cell at the bucket's place for a rollup board, the cell whose label is the type key for the
-     * Projects board, whose cells are labelled by their types.
+     * The count of a board's first group, in the group's tone, which is the cards in work on the
+     * boards that have them; the board's cards, toneless, for a board with no groups.
      */
-    function boardPart(view: string, cell: RailCell): RailPart {
-        const cells = boardCells(view);
-        const found =
-            'bucket' in cell ? cells.at(cell.bucket) : cells.find((one) => one.label === cell.type);
-        return found === undefined ? { count: 0 } : { count: found.count, tone: found.color };
+    function boardPart(view: string): RailPart {
+        const first = boardCells(view).at(0);
+        return first === undefined
+            ? { count: boardCount(view) }
+            : { count: first.count, tone: first.color };
     }
 
-    /** The number of entries in one collection's configured `nav_live` status set. */
+    /** The number of entries of one collection whose status is one of its `counts` row's match. */
     function collectionCount(key: string): number {
         const collection = selectors.collectionOf(key);
-        return liveEntries(collection?.entries ?? [], liveRule(selectors.configMap(), key));
+        const match = countRow(selectors.configMap(), key)?.match ?? [];
+        return matchedEntries(collection?.entries ?? [], match);
     }
 
     function collectionBadge(key: string): string {
         return countText(collectionCount(key));
     }
 
-    /** The configured urgency tone, or the first counted status's vocabulary tone. */
+    /** The row's urgency tone, or the vocabulary tone of the first status the row counts. */
     function collectionBadgeTone(key: string): string {
-        const rule = liveRule(selectors.configMap(), key);
-        return rule?.tone ?? statusTone(rule?.match[0] ?? '');
+        const row = countRow(selectors.configMap(), key);
+        if (row !== null && row.tone !== '') return row.tone;
+        return statusTone(row?.match[0] ?? '');
     }
 
-    /** A collection's live count followed by the label configured in `nav_live`. */
+    /** A collection's count followed by the label its `counts` row gives. */
     function collectionBadgeTitle(key: string): string {
-        return t(
-            'views.badge_title',
-            collectionBadge(key),
-            liveRule(selectors.configMap(), key)?.label ?? ''
-        );
+        const label = countRow(selectors.configMap(), key)?.label ?? '';
+        return t('views.badge_title', collectionBadge(key), label);
     }
 
     /** Threads of the live plate awaiting an answer or an action, from the `inbox` channel. */
@@ -199,20 +219,19 @@ export function createRailBadges(
     }
 
     /**
-     * Position Leads due inside `leads_badge_days`, from the socket feed with the summary as
-     * fallback.
+     * Position Leads due inside the `days` of the `leads` row of `counts`, from the socket feed
+     * with the summary as fallback; none without the row or its days.
      */
-    function leadsBadge(): string {
+    function leadsCount(): number {
         const fetched = feeds.feed('leads');
         const entries = available(fetched)
             ? fetched.entries
             : (entities.portfolio()?.entities.feeds.leads ?? []);
-        return countText(
-            leadsDue(
-                entries as Record<string, unknown>[],
-                numericSetting(selectors.configMap(), 'leads_badge_days'),
-                Date.now()
-            )
+        return leadsDue(
+            selectors.configMap(),
+            entries as Record<string, unknown>[],
+            countRow(selectors.configMap(), 'leads')?.days ?? null,
+            Date.now()
         );
     }
 
@@ -226,18 +245,22 @@ export function createRailBadges(
             : (entities.portfolio()?.entities.feeds.linkedin?.lastPost ?? null);
         return linkedinOverdue(
             lastPost,
-            numericSetting(selectors.configMap(), 'linkedin_cadence_days'),
+            focusSetting(selectors.configMap(), 'linkedin_cadence_days'),
             Date.now()
         )
             ? OVERDUE_GLYPH
             : '';
     }
 
-    /** Active applications, which are urgent rather than a general `nav_live` rollup. */
+    /**
+     * The applications whose status is in `applications_open` under `focus:`, the ones the Focus
+     * band shows, which are urgent rather than a count of a `counts` row's `match`.
+     */
     function applicationsCount(): number {
         const entries = selectors.collectionOf('applications')?.entries ?? [];
-        return entries.filter(
-            (entry) => scalar(entry.fields.status).trim().toLowerCase() === 'active'
+        const open = focusWords(selectors.configMap(), 'applications_open');
+        return entries.filter((entry) =>
+            open.includes(scalar(entry.fields.status).trim().toLowerCase())
         ).length;
     }
 
@@ -278,24 +301,10 @@ export function createRailBadges(
         return total;
     }
 
-    /** The types the Projects board's projects hold, in the vocabulary's configured type order. */
-    function projectTypeOrder(): string[] {
-        const preset = selectors.boardPreset('projects');
-        const types = new Set(selectors.board(preset).map((item) => item.project.type));
-        return preset.typeOrder.filter((type) => types.has(type));
-    }
-
-    /** The configured split cells for a board registration. */
+    /** The cells of a board's tab: the count of each of its `groups`, in the group's tone. */
     function boardCells(view: string): BadgeCell[] {
         const preset = selectors.boardPreset(view);
         const projects = selectors.board(preset).map((item) => item.project);
-        if (view === 'projects') {
-            const split = selectors.configMap().tab_split;
-            return typeSplit(projects, projectTypeOrder()).map((cell) => ({
-                ...cell,
-                color: splitTone(isMap(split) ? split[cell.label] : undefined)
-            }));
-        }
         return rollup(projects, preset.rollup).map((cell) => ({
             ...cell,
             color: toneOf(cell.color)
@@ -346,7 +355,8 @@ export function createRailBadges(
     }
 
     return {
-        boardBadge,
+        countFlags,
+        boardBadge: (view) => String(boardCount(view)),
         boardPart,
         collectionCount,
         inboxCount: () => inbox.actionable(),
@@ -356,11 +366,14 @@ export function createRailBadges(
         repositoriesCount,
         findingsCount,
         sessionInputCount,
+        leadsCount,
+        calendarPart: () => cellsPart(calendarCells()),
+        queuePart: () => cellsPart(queueCells()),
         collectionBadge,
         collectionBadgeTone,
         collectionBadgeTitle,
         inboxBadge,
-        leadsBadge,
+        leadsBadge: () => countText(leadsCount()),
         linkedinBadgeGlyph,
         applicationsBadge: () => countText(applicationsCount()),
         auditBadge,

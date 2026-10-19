@@ -74,6 +74,23 @@ describe('optionFindings', () => {
             expect(read.heading).toBe(heading);
         }
     });
+
+    // Fails when catalogOf keeps `holds: lists` on a family of record fields, a shape no editor
+    // draws and no write fits, or drops it from a key/value family.
+    it('refuses holds: lists on a family of record fields and keeps it on a key/value family', () => {
+        const family = { help: 'A family.', heading: 'editor', holds: 'lists' };
+        const records = holding({ ...family, fields: { name: 'a name', size: 'a size' } });
+        expect(optionFindings(ENGINE, records).map((one) => [one.key, one.message])).toEqual([
+            [
+                'behavior.yml:probe',
+                'holds: lists is taken only by a family whose fields are key and value; the entry is read without it'
+            ]
+        ]);
+        expect(catalogOf(records)['behavior.yml'].probe.holds).toBeUndefined();
+        const table = holding({ ...family, fields: { key: 'a key', value: 'a value' } });
+        expect(optionFindings(ENGINE, table)).toEqual([]);
+        expect(catalogOf(table)['behavior.yml'].probe.holds).toBe('lists');
+    });
 });
 
 describe('the options file shape in loadConfig', () => {

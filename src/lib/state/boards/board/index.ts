@@ -2,8 +2,8 @@
 // modules keep their implementation constants private to the folder.
 
 export {
-    BOARDS,
     DEADLINE_SOON,
+    boardIds,
     FACETS,
     NONE,
     SESSIONS_LIVE,
@@ -15,6 +15,7 @@ export {
     firstSentence,
     presetFor,
     setting,
+    softwareTiers,
     venueText
 } from './presets.ts';
 export type {
@@ -45,6 +46,6 @@ export {
     valueLabel
 } from './filter-menu.ts';
 export type { FilterChoice, FilterGroup } from './filter-menu.ts';
-export { disseminated, humanSize, stats, typeCounts, waitingLine } from './stats.ts';
+export { VENUE_WARN, disseminated, humanSize, stats, typeCounts, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';
 export { STALE_LAG, applyFilters, emptyBoardState, isStale, parseBoardState } from './state.ts';

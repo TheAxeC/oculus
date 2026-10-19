@@ -28,7 +28,9 @@
     // `.docx`, an `.xlsx`) is `shared/links/ProgramButton.svelte`, which hands the file to that
     // application, since a link to it would only download it, and everything else is a link. A
     // refused or failed open is said through `onsaid`, the line the collection view shows every
-    // write's answer on.
+    // write's answer on. A web address written inside the subtitle, a meta row's value or a plain
+    // field's value is a link (ui/display/text/LinkedText.svelte); a body field is inline
+    // Markdown, which links its addresses itself.
     //
     // The controls are views/shared/card/CardActions.svelte, shown under the pointer and kept on
     // one line, and a hub path the entry's `link`, `url` or `folder` names is one of them: a path
@@ -42,7 +44,9 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import CardActions, { type CardAction } from '../../card/CardActions.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
+    import CardActions from '../../card/CardActions.svelte';
+    import type { CardAction } from '../../card/card';
     import { entryActions, showActions } from './entry-actions';
     import DeleteAsk from './DeleteAsk.svelte';
     import { blockedBy, fileNameOf, openEntry } from '../entry-file';
@@ -83,7 +87,7 @@
         folders,
         fs: { listing, primary },
         layout: { openView, showFolderInFiles, showInFiles },
-        selectors: { archiveDead, venues },
+        selectors: { configMap, venues },
         source: { unsavedFile },
         writes: { writeEntry }
     } = client;
@@ -146,7 +150,7 @@
     const cardMath = createCardMath();
     const status = $derived(entryStatus(entry));
     const pinned = $derived(isPinned(entry));
-    const groups = $derived(crossLinks(entry, collection, projects, archiveDead()));
+    const groups = $derived(crossLinks(entry, collection, projects, configMap()));
     const lines = $derived(entrySubtasks(entry));
     const value = $derived(identityValue(entry, schema));
 
@@ -325,7 +329,7 @@
         <div class="entry">
             {#each drawnFields(entry, schema) as drawn (drawn.field)}
                 {#if drawn.kind === 'sub'}
-                    <p class="sub">{drawn.values[0]}</p>
+                    <p class="sub"><LinkedText text={drawn.values[0]} /></p>
                 {:else if drawn.kind === 'status'}
                     <!-- The status is the chip in the meta row; it is not drawn twice. -->
                 {:else if drawn.kind === 'meta'}
@@ -333,7 +337,7 @@
                          rather than a chip, which would clip it at the card's edge. -->
                     <div class="metas">
                         {#each drawn.values as one, at (`${at}:${one}`)}
-                            <span class="meta">{one}</span>
+                            <span class="meta"><LinkedText text={one} /></span>
                         {/each}
                     </div>
                 {:else if drawn.kind === 'pairs'}
@@ -398,7 +402,7 @@
                 {:else}
                     <div class="field">
                         <span class="label">{drawn.label}</span>
-                        <span class="value">{drawn.values[0]}</span>
+                        <span class="value"><LinkedText text={drawn.values[0]} /></span>
                     </div>
                 {/if}
             {/each}

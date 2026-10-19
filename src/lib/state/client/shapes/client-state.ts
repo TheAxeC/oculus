@@ -13,6 +13,7 @@ import type { AccountsStore } from '../../life/accounts.svelte.ts';
 import type { CalendarStore } from '../../life/calendar.svelte.ts';
 import type { ClockStore } from '../clock.svelte.ts';
 import type { DepositStore } from '../../system/deposit.svelte.ts';
+import type { RecoverStore } from '../../system/machine/recover.svelte.ts';
 import type { DocsStore } from '../../system/docs.svelte.ts';
 import type { DragStore } from '../../workbench/drag.svelte.ts';
 import type { EditorStatusStore } from '../../workbench/navigation/editor-status.svelte.ts';
@@ -118,6 +119,8 @@ export type ClientState = {
     /** What a reader does with a LaTeX file or its PDF: build, view the PDF, SyncTeX. */
     latexActions: LatexActions;
     deposit: DepositStore;
+    /** What the Recover view knows of each dataset it shows, on this Mac or the cluster. */
+    recover: RecoverStore;
     transcripts: TranscriptsStore;
     source: SourceStore;
     /** Saving a source tab by `editor.autosave`: the editor's blur reaches it here. */

@@ -1,6 +1,6 @@
 // Layer 1, data. The rules of the integrity gate of DESIGN.md that a schema cannot state: ids that
-// refer to each other across files, identities that must be unique, a status in its vocabulary and
-// the retired spellings a reader still takes. What a file's own `schema:` states (the keys, the
+// refer to each other across files, identities that must be unique and a status in its vocabulary.
+// What a file's own `schema:` states (the keys, the
 // types, the allowed values, the references and the conditions) is checked by schema/check.ts over
 // the schemas schema/run.ts generates, and its findings are merged with these by `sortFindings`.
 // Pure, so it can run anywhere: it reads no file, calls no clock, throws nothing, and repairs
@@ -296,22 +296,13 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
 
 /**
  * Exactly one people entry carries `self: true`, which is how the hub knows which entry is its
- * owner: two of them or none leaves that question unanswered. The entry key `affiliation`, which
- * the list `affiliations` replaced, is still read as a list of that one, so the entry keeps
- * drawing its organisation; the finding is what asks for it to be written the new way.
+ * owner: two of them or none leaves that question unanswered.
  */
 function checkPeople(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     const entries = raw.registries.people.entries;
     const selves: number[] = [];
     entries.forEach((entry, index) => {
         if (entry.self === true) selves.push(index);
-        if (entry.affiliation !== undefined && entry.affiliation !== null) {
-            findings.push({
-                file: entry.file,
-                key: `entries[${index}].affiliation`,
-                message: findingText(catalog, 'findings.validate.affiliation_retired')
-            });
-        }
     });
     if (entries.length === 0 || selves.length === 1) return;
     const file = entries[0]?.file ?? '';
@@ -325,22 +316,20 @@ function checkPeople(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[
 /** The two texts of a funding entry the acknowledgment check reads, the empty text when wrong. */
 const fundingRowShape = z.object({ status: wordShape, title: wordShape });
 
-/** The statuses of a funding entry that a manuscript may have to acknowledge. */
-const ACKNOWLEDGED = new Set(['awarded', 'contributing']);
-
 /**
- * An awarded or contributing funding entry is one a manuscript acknowledges, so it needs a
- * `statement` the manuscript pastes. An application gets one when it is granted; until then none is
- * asked for.
+ * A funding entry whose status carries `acknowledged` (awarded or contributing) is one a manuscript
+ * acknowledges, so it needs a `statement` the manuscript pastes. An application gets one when it is
+ * granted; until then none is asked for. The status is compared as written.
  */
 function checkFundingStatements(
     raw: RawPortfolio,
+    acknowledged: readonly string[],
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
     raw.registries.funding.entries.forEach((entry, index) => {
         const { status, title } = readOr(fundingRowShape, entry, { status: '', title: '' });
-        if (!ACKNOWLEDGED.has(status)) return;
+        if (!acknowledged.includes(status)) return;
         const name = entry.key.length > 0 ? entry.key : title;
         const statement = entry.statement;
         if (typeof statement !== 'string' || statement.trim().length === 0) {
@@ -364,19 +353,6 @@ export function sortFindings(findings: Finding[]): Finding[] {
         if (a.file !== b.file) return a.file < b.file ? -1 : 1;
         if (a.key !== b.key) return a.key < b.key ? -1 : 1;
         return 0;
-    });
-}
-
-/** The dataset registry's own label map, which the options of its `themes` field replace. */
-const RETIRED_LABELS = 'theme_labels';
-
-/** A dataset registry that still holds `theme_labels:` is one finding: nothing reads that map. */
-function checkRetiredLabels(raw: RawPortfolio, rules: ValidationRules, findings: Finding[]): void {
-    if (!Object.hasOwn(raw.registries.datasets.meta, RETIRED_LABELS)) return;
-    findings.push({
-        file: rules.datasetsFile ?? '',
-        key: RETIRED_LABELS,
-        message: findingText(rules.text, 'findings.validate.theme_labels_retired')
     });
 }
 
@@ -417,10 +393,9 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkFolderNames(raw, catalog, findings);
     checkPeople(raw, catalog, findings);
     checkResources(raw, catalog, findings);
-    checkFundingStatements(raw, catalog, findings);
+    checkFundingStatements(raw, rules.vocab.acknowledged, catalog, findings);
     checkEntryStatus(raw, rules.vocab.statuses, catalog, findings);
     checkEntryIdentity(raw, catalog, findings);
-    checkRetiredLabels(raw, rules, findings);
     checkDomainColors(raw, catalog, findings);
 
     return sortFindings(findings);

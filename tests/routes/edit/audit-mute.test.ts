@@ -47,7 +47,8 @@ read_limits: { status.line: 220, next: 300 }
 audit_ignore: []
 
 
-stale_lag_days: 1
+focus:
+  stale_lag_days: 1
 `;
 
 const SIGNATURE = '0123456789ab';
@@ -107,7 +108,7 @@ describe('the audit mute write', () => {
         expect(parked(into)).toEqual([SIGNATURE]);
         expect(written).toContain('# The thresholds and horizons.\n');
         expect(written).toContain('# The parked audit findings, by signature.\n');
-        expect(written).toContain('stale_lag_days: 1\n');
+        expect(written).toContain('focus:\n  stale_lag_days: 1\n');
         expect((parse(written) as { read_limits: unknown }).read_limits).toEqual({
             'status.line': 220,
             next: 300

@@ -32,15 +32,18 @@ function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
  * Every project is read backwards, over the snapshot's related pairs, for the software whose
  * `related:` names it, so a paper carries no key of its own for the software that implements it;
  * a software project is read forwards as well, through its own `related:`, since that is where the
- * link is written. A project never links to itself, and one named from both sides is one tag.
+ * link is written. A project never links to itself, and one named from both sides is one tag. The
+ * software tier is any tier of `tiers` carrying `software`.
  */
-function softwareTags(project: Project, snapshot: Snapshot): BoardTag[] {
+function softwareTags(project: Project, snapshot: Snapshot, software: string[]): BoardTag[] {
     const projects = snapshot.entities.projects;
+    const isSoftware = (one: Project | undefined): boolean =>
+        one?.tier !== undefined && software.includes(one.tier);
     const backwards = snapshot.relations.projectRelated
         .filter((pair) => pair[1] === project.id)
         .map((pair) => pair[0])
-        .filter((id) => byKey(projects, id)?.tier === 'software');
-    const forwards = project.tier === 'software' ? project.relatedIds : [];
+        .filter((id) => isSoftware(byKey(projects, id)));
+    const forwards = isSoftware(project) ? project.relatedIds : [];
     const ids = [...new Set([...forwards, ...backwards])];
     const tags: BoardTag[] = [];
     for (const id of ids) {
@@ -125,7 +128,7 @@ function itemOf(
         funding: project.fundingIds.map((id) => tag(id, own(id))),
         datasets: project.datasetIds.map((id) => tag(id, own(id))),
         collaborators: project.collaborators.map((id) => tag(id, names[id] ?? own(id))),
-        software: softwareTags(project, snapshot),
+        software: softwareTags(project, snapshot, preset.softwareTiers),
         authors: authorLine(project),
         bucket: bucketOf(project, preset.rollup),
         code: project.codeAvailability?.status ?? '',

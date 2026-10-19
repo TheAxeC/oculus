@@ -416,7 +416,7 @@
     }
 
     /* The terminal shape: one face for the whole block, so the two columns line up. */
-    :global(body.rice) .detail {
+    :global(body.rice:where(:not(.rice-sans))) .detail {
         font-family: var(--font-mono);
     }
 </style>

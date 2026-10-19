@@ -7,7 +7,8 @@ import { readFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
-import { isMap, scalar } from '../../../data/helpers/guards.ts';
+import { focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import type { AuditFinding, Collection, Domain, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
 
@@ -22,21 +23,57 @@ export type AuditRules = {
      * registry marked `expects_datasets: true`.
      */
     dataDomains: Set<string>;
-    /** The collection-entry statuses that wait on someone else, so a date is asked for. */
+    /**
+     * The collection-entry statuses that wait on someone else, so a date is asked for: the words
+     * of `statuses` carrying `waiting`.
+     */
     waitingStatus: Set<string>;
     /** The website's publication feed, hub-relative; the empty string means there is none. */
     publicationsFile: string;
     /** In-flight chips a finished project must not still carry, `lifecycle.live_chips`. */
     liveChips: Set<string>;
-    /** The types an archived project is filed under, `lifecycle.archive_outcomes`. */
+    /** The types an archived project is filed under, the types carrying `archive_outcome`. */
     archiveOutcomes: Set<string>;
-    /** The types that are a closed outcome, `lifecycle.terminal_types`. */
+    /** The types that are a closed outcome, the types carrying `terminal`. */
     terminalTypes: Set<string>;
+    /** The types of work in flight, asked for results and a dataset: the types carrying `live`. */
+    liveTypes: Set<string>;
+    /** The types that should carry a venue, the types carrying `placed`. */
+    placedTypes: Set<string>;
+    /** The types the one-README standard covers, the types carrying `standard`. */
+    standardTypes: Set<string>;
+    /** The tiers of finished or contributed work, the tiers carrying `finished`. */
+    finishedTiers: Set<string>;
+    /** The tiers the research rules leave alone, the tiers carrying `personal`. */
+    personalTiers: Set<string>;
+    /**
+     * The tiers whose category folder is the project's outcome, the tiers carrying
+     * `outcome_folders`: a folder named by a type carrying `archive_outcome` gives that type.
+     */
+    outcomeTiers: Set<string>;
+    /** The category folders that name a project's type, by tier: the `type_folders` of `tiers`. */
+    typeFolders: Map<string, string[]>;
+    /** The chips that say a project is published, the statuses carrying `published`. */
+    publishedChips: Set<string>;
+    /** The types that should have a public entry on the website, the types carrying `public`. */
+    publicTypes: Set<string>;
+    /** The types of private negative results, the types carrying `negative`. */
+    negativeTypes: Set<string>;
+    /** The types of dead ends, the types carrying `dead_end`. */
+    deadEndTypes: Set<string>;
+    /** The rows of `publication_kinds`, in the config's order. */
+    publicationKinds: PublicationKind[];
     /** The chips one of which marks the author role, `lifecycle.author_chips`. */
     authorChips: string[];
     /** Chip pairs that cannot both be true, `lifecycle.contradictory_chips`. */
     contradictory: [string, string][];
 };
+
+/**
+ * One row of `publication_kinds`: the sections of the website's feed a project is expected in,
+ * and the types and chips the row holds to; a side the row leaves out holds to nothing.
+ */
+export type PublicationKind = { kind: string[]; types?: string[]; chips?: string[] };
 
 /** A list written `['a', 'b']`, the form an audit message quotes a list in. */
 export function printed(items: string[]): string {
@@ -67,19 +104,12 @@ export const namesShape = z
     .union([wordListShape, wordShape.transform((one) => [one])])
     .catch(() => []);
 
-/** The strings of a configured list, lowercased and trimmed, as a set. */
-const wordSetShape = keeping(z.string()).transform(
-    (all) => new Set(all.map((item) => item.trim().toLowerCase()))
-);
-
 /** A pair of chips: a list holding exactly two words, any other item of it left out. */
 const chipPairShape = wordListShape.pipe(z.tuple([z.string(), z.string()]));
 
 /** The part of the configuration that names the chips a project's lifecycle reads. */
 const lifecycleShape = z.object({
     live_chips: wordListShape.catch(() => []),
-    archive_outcomes: wordListShape.catch(() => []),
-    terminal_types: wordListShape.catch(() => []),
     author_chips: wordListShape.catch(() => []),
     contradictory_chips: keeping(chipPairShape).catch(() => [])
 });
@@ -96,8 +126,36 @@ export const scalarShape = z
 /** A soft limit of `read_limits`: a number. */
 const readLimitShape = z.number();
 
-/** `stale_lag_days`: a number. */
-const staleLagShape = z.number();
+/** One row of `publication_kinds`; a row with no section in its `kind` is left out. */
+const publicationKindShape = z
+    .object({
+        kind: wordListShape.refine((kind) => kind.length > 0),
+        types: wordListShape.optional(),
+        chips: wordListShape.optional()
+    })
+    .transform((row): PublicationKind => ({
+        kind: row.kind,
+        ...(row.types === undefined ? {} : { types: row.types }),
+        ...(row.chips === undefined ? {} : { chips: row.chips })
+    }));
+
+/** The rows of `publication_kinds` a shape accepts, in the order the file writes them. */
+const publicationKindsShape = keeping(publicationKindShape).catch(() => []);
+
+/** One row of `tiers`, for the folders its `type_folders` lists; any other row lists none. */
+const typeFoldersRowShape = z
+    .object({ type_folders: wordListShape.catch(() => []) })
+    .catch({ type_folders: [] });
+
+/** The `type_folders` of each tier of `tiers`, the tiers that list none left out. */
+function typeFoldersOf(tiers: unknown): Map<string, string[]> {
+    const out = new Map<string, string[]>();
+    for (const [tier, row] of Object.entries(isMap(tiers) ? tiers : {})) {
+        const folders = typeFoldersRowShape.parse(row).type_folders;
+        if (folders.length > 0) out.set(tier, folders);
+    }
+    return out;
+}
 
 /** `publications_file`: text. */
 const publicationsFileShape = z.string();
@@ -118,20 +176,32 @@ export function auditRules(
     }
     const lifecycle = lifecycleShape.safeParse(config.lifecycle);
     const chips = lifecycle.success ? lifecycle.data : lifecycleShape.parse({});
-    const lag = staleLagShape.safeParse(config.stale_lag_days);
-    const waiting = wordSetShape.safeParse(config.waiting_status);
     const publications = publicationsFileShape.safeParse(config.publications_file);
+    const flagged = (key: string, flag: string): Set<string> =>
+        new Set(wordsWith(config, key, flag));
     return {
         readLimits,
-        staleLagDays: lag.success ? lag.data : 1,
+        staleLagDays: focusSetting(config, 'stale_lag_days') ?? 1,
         dataDomains: new Set(
             domains.filter((one) => one.expectsDatasets === true).map((one) => one.id)
         ),
-        waitingStatus: waiting.success ? waiting.data : new Set(),
+        waitingStatus: flagged('statuses', 'waiting'),
         publicationsFile: publications.success ? publications.data : '',
         liveChips: new Set(chips.live_chips),
-        archiveOutcomes: new Set(chips.archive_outcomes),
-        terminalTypes: new Set(chips.terminal_types),
+        archiveOutcomes: flagged('types', 'archive_outcome'),
+        terminalTypes: flagged('types', 'terminal'),
+        liveTypes: flagged('types', 'live'),
+        placedTypes: flagged('types', 'placed'),
+        standardTypes: flagged('types', 'standard'),
+        finishedTiers: flagged('tiers', 'finished'),
+        personalTiers: flagged('tiers', 'personal'),
+        outcomeTiers: flagged('tiers', 'outcome_folders'),
+        typeFolders: typeFoldersOf(config.tiers),
+        publishedChips: flagged('statuses', 'published'),
+        publicTypes: flagged('types', 'public'),
+        negativeTypes: flagged('types', 'negative'),
+        deadEndTypes: flagged('types', 'dead_end'),
+        publicationKinds: publicationKindsShape.parse(config.publication_kinds),
         authorChips: chips.author_chips,
         contradictory: chips.contradictory_chips
     };
@@ -234,9 +304,12 @@ export function scopeOf(project: Pick<Project, 'folder' | 'workspaceFolder'>): s
     return project.workspaceFolder?.root ?? project.folder;
 }
 
-/** Whether a project is on the Personal board, which the research rules do not cover. */
-export function isPersonal(project: Pick<Project, 'tier'>): boolean {
-    return project.tier === 'personal';
+/**
+ * Whether a project is of a tier carrying `personal` (the Personal board), which the research
+ * rules do not cover.
+ */
+export function isPersonal(project: Pick<Project, 'tier'>, rules: AuditRules): boolean {
+    return project.tier !== undefined && rules.personalTiers.has(project.tier);
 }
 
 /**

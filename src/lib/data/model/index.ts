@@ -55,7 +55,7 @@ export type RawPortfolio = {
     collections: Record<string, RawCollection>;
     /** What the four feed files hold, from sources/documents/feeds.ts. */
     feeds: RawFeeds;
-    /** registries/career.yml as it was parsed, and null when the hub holds no such file. */
+    /** The career file as it was parsed, and null when the hub holds no such file. */
     career: Record<string, unknown> | null;
     /**
      * Which documents each project folder holds, by project id, from sources/documents/docs.ts. It
@@ -73,24 +73,21 @@ export type RawPortfolio = {
 };
 
 /**
- * The controlled vocabularies validate checks values against, each a list of the allowed words.
- * `statuses` is a collection entry's `status`.
+ * The controlled vocabularies validate checks values against, each a list of words. `statuses` is
+ * the statuses a collection entry's `status` may take (the words of `statuses` with a colour), and
+ * `acknowledged` the funding statuses a manuscript acknowledges (the words carrying the flag).
  */
 export type Vocabulary = {
     statuses: string[];
+    acknowledged: string[];
 };
 
 /**
- * What validate needs and nothing more: the vocabularies, the text its sentences are read from,
- * and the paths of the two files it names a finding on when the raw record carries none.
+ * What validate needs and nothing more: the vocabularies, the manifest fields the schema checks,
+ * and the text its sentences are read from.
  */
 export type ValidationRules = {
     vocab: Vocabulary;
-    /**
-     * Absolute path of the dataset registry, so a finding about the file's own top-level keys names
-     * it even when the file lists no dataset.
-     */
-    datasetsFile?: string;
     /**
      * The manifest fields the generated schema holds to the keys of their `from` sources, all of
      * which were read: the schema reports a value of the wrong shape there, so validate does not.
@@ -118,11 +115,6 @@ export type PortfolioConfig = {
     feeds: FeedFiles;
     /** The configured interval between LinkedIn posts. */
     linkedinCadenceDays: number;
-    /**
-     * The hub's `recover_command` when it holds `{key}`, so its datasets have a Recover control;
-     * null when it is empty, absent or names no `{key}`.
-     */
-    recoverCommand: string | null;
     /** The career file, hub-relative, or null for a hub whose career is not read. */
     career: string | null;
     /** The merged `manifest_schema`, the form the manifest's JSON Schema is made from. */
@@ -141,8 +133,11 @@ export type PortfolioConfig = {
      * What the hub's own `.oculus/config.yml` does not name, so that its value came from the
      * engine's defaults: the registries and the YAML feeds (`leads`, `radar`) whose key is absent
      * from its `collections:` list, whether the list is, and whether `portfolio_deck:` is. A hub
-     * reports only what it names, so a file in this list that is missing is no finding. Absent for
-     * a config read without knowing where each key came from, where every file counts as named.
+     * reports only what it names, so a file in this list that is missing is no finding, except
+     * that a hub naming no list which holds the `.oculus/data/` folder reports a missing file of
+     * the list as it reports a named one (the build reads it so, `heldUnnamed` of data/index.ts).
+     * Absent for a config read without knowing where each key came from, where every file counts
+     * as named.
      */
     unnamed?: {
         registries: RegistryName[];
@@ -491,6 +486,20 @@ export type {
     RegistryName,
     RepositoryBlock,
     RepositoryRoot,
+    RecoverAccess,
+    RecoverChecksum,
+    RecoverFile,
+    RecoverFileState,
+    RecoverLive,
+    RecoverLiveRun,
+    RecoverRefusal,
+    RecoverRow,
+    RecoverRun,
+    RecoverService,
+    RecoverSession,
+    RecoverSource,
+    RecoverState,
+    RecoverTotals,
     Reproduced,
     Resource,
     Rooted,

@@ -1,28 +1,28 @@
 # ===========================================================================
 # .oculus/config.yml
-# The demo hub's settings: the files of its records and feeds, and the cluster its jobs run on. Its domains, with their colours and labels, are registries/domains.yml's, and the theme words of its venues and datasets are the options of the `themes` field of registries/venues.yml and registries/data.yml.
+# The demo hub's settings: the files of its records and feeds, and the cluster its jobs run on. Its domains, with their colours and labels, are .oculus/data/pillars/domains.yml's, and the theme words of its venues and datasets are the options of the `themes` field of .oculus/data/research/venues.yml and .oculus/data/research/data.yml.
 # ===========================================================================
 
 
-# The hub's data files, one entry per key: the registries under registries/, the card lists under records/ and network/, and the Position Leads (`leads`) and Lit Watch (`radar`) feeds under feeds/.
+# The hub's data files, one entry per key, each at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/.
 collections:
-  - { key: data,           file: "registries/data.yml" }
-  - { key: venues,         file: "registries/venues.yml" }
-  - { key: pillars,        file: "registries/pillars.yml" }
-  - { key: domains,        file: "registries/domains.yml" }
-  - { key: statements,     file: "registries/boilerplate.yml" }
-  - { key: people,         file: "registries/people.yml" }
-  - { key: organisations,  file: "registries/organisations.yml" }
-  - { key: resources,      file: "registries/resources.yml" }
-  - { key: funding,        file: "records/funding.yml" }
-  - { key: events,         file: "network/events.yml" }
-  - { key: education,      file: "records/education.yml" }
-  - { key: applications,   file: "records/applications.yml" }
-  - { key: joint-work,     file: "network/joint-work.yml" }
-  - { key: tasks,          file: "records/tasks.yml" }
-  - { key: literature,     file: "registries/literature.yml" }
-  - { key: leads,          file: "feeds/position-leads.yml" }
-  - { key: radar,          file: "feeds/literature-radar.yml" }
+  - { key: data,           file: ".oculus/data/research/data.yml" }
+  - { key: venues,         file: ".oculus/data/research/venues.yml" }
+  - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
+  - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
+  - { key: statements,     file: ".oculus/data/research/statements.yml" }
+  - { key: people,         file: ".oculus/data/people/people.yml" }
+  - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
+  - { key: resources,      file: ".oculus/data/research/resources.yml" }
+  - { key: funding,        file: ".oculus/data/academic/funding.yml" }
+  - { key: events,         file: ".oculus/data/academic/events.yml" }
+  - { key: education,      file: ".oculus/data/academic/education.yml" }
+  - { key: applications,   file: ".oculus/data/academic/applications.yml" }
+  - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
+  - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
+  - { key: literature,     file: ".oculus/data/literature/literature.yml" }
+  - { key: leads,          file: ".oculus/data/academic/leads.yml" }
+  - { key: radar,          file: ".oculus/data/literature/radar.yml" }
 
 
 # The hub's documents, each a tab of the page its group names.
@@ -30,6 +30,28 @@ docs:
   - { label: "About the demo hub", path: README.md, group: help }
 
 
-# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
+# `resource` is the key of a cluster entry of .oculus/data/research/resources.yml, whose `host` is the ssh alias the poller uses.
 slurm:
   resource: utwente
+
+
+# The host pipeline of the Focus board's career card: each status a host of the career file takes, with its glyph name, its words and its colour, in the order the card offers them. `in_flight: true` marks a status counted as outreach in progress, the count of the card's summary; `waiting: true` marks a status listed in the Focus board's awaiting-a-response box; `default: true` marks the status of a host the career file gives no status.
+career_host_status:
+  awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2", in_flight: true, waiting: true }
+  warm:      { icon: fire, label: "warm",            color: "#ea580c", in_flight: true }
+  candidate: { icon: white, label: "candidate",      color: "#64748b", default: true }
+  drafted:   { icon: writing, label: "drafted",      color: "#b45309" }
+  dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
+
+# The scored axes of a host on the career card: `field` is the career file's host key scored, `badge` the chip's letters and `label` its hover words.
+career_score_dims:
+  - { field: proposal,     badge: "P",  label: "proposal" }
+  - { field: ai_fl_clinic, badge: "AF", label: "AI+FL+clinic" }
+  - { field: backing,      badge: "B",  label: "backing" }
+  - { field: after,        badge: "Z",  label: "after / ZAP" }
+
+# The hue a host's score chip is drawn in, by the tier its score falls in (strong, good, mid or weak); a tier with no hue here draws muted.
+career_score_tones: { strong: green, good: cyan, weak: red }
+
+# The colour of a Position Lead's fit chip, by its fit.
+leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }

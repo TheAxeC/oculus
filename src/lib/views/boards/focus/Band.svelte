@@ -5,9 +5,11 @@
     //
     // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
     // entry scrolls into view and flashes after the view opens. A card of an entry of a hub but the
-    // primary carries the hub's chip after its title, as the Command center's rows do.
+    // primary carries the hub's chip after its title, as the Command center's rows do. A web
+    // address written in a card's note is a link (ui/display/text/LinkedText.svelte).
 
     import LaneHead from './lanes/LaneHead.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
@@ -99,7 +101,7 @@
             {/if}
         </div>
         {#if item.note !== undefined}
-            <p class="note">{firstSentence(item.note, NOTE)}</p>
+            <p class="note"><LinkedText text={firstSentence(item.note, NOTE)} /></p>
         {/if}
     </div>
 {/snippet}

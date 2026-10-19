@@ -20,7 +20,7 @@ import {
     type QuickFilters
 } from './presets.ts';
 
-/** The `stale_lag_days` the config names when it names none. */
+/** The `stale_lag_days` of `focus:` when the config names none. */
 export const STALE_LAG = 1;
 
 /** Whether a project's manifest trails its documents by at least the configured lag. */

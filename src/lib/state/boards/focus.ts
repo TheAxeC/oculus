@@ -10,8 +10,9 @@ import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
-import { byKey, text as str } from '../../data/helpers/guards.ts';
+import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
 import { joinedEntries } from '../../data/helpers/hub-names.ts';
+import { anyWord, hasWord, wordFlag } from '../../data/shapes/vocab-keys.ts';
 import {
     fieldItemsShape,
     mapShape,
@@ -67,16 +68,36 @@ export type Waiting = {
     hosts: string[];
 };
 
-/** One flag of a `status_palette` row, over the status as the data writes it. */
+/** One flag of a word of `statuses`, over the status as the data writes it. */
 export function statusFlag(config: Record<string, unknown>, status: string, flag: string): boolean {
-    const palette = readAs(mapShape, config.status_palette);
-    if (palette === null) return false;
-    return readAs(mapShape, palette[status.trim().toLowerCase()])?.[flag] === true;
+    return wordFlag(config, 'statuses', status, flag);
 }
 
 /** Whether a status takes its entry off the deadline radar. */
 export function terminal(config: Record<string, unknown>, status: string): boolean {
     return statusFlag(config, status, 'terminal');
+}
+
+/**
+ * Whether a project carries a chip whose word of `statuses` carries `pauses_countdown` (submitted):
+ * its card and its lane stop counting the days to its deadline, compared as the chip is written.
+ */
+export function pausesCountdown(
+    project: Pick<Project, 'chips'>,
+    config: Record<string, unknown>
+): boolean {
+    return anyWord(config, 'statuses', 'pauses_countdown', project.chips);
+}
+
+/**
+ * Whether a project carries a chip whose word of `statuses` carries `blocked`, compared as the
+ * chip is written: the Focus board counts it as blocked, and its lane card's wait line says so.
+ */
+export function isBlocked(
+    project: Pick<Project, 'chips'>,
+    config: Record<string, unknown>
+): boolean {
+    return anyWord(config, 'statuses', 'blocked', project.chips);
 }
 
 /** Whether a status is still live but its own deadline is met, so nagging it is noise. */
@@ -85,10 +106,10 @@ export function deadlineMet(config: Record<string, unknown>, status: string): bo
 }
 
 /**
- * Whether a project's own deadline has stopped being yours to act on: a chip the palette marks
- * `deadline_met` (which is what `submitted` and `under-review` carry). A terminal chip alone does
- * not end it. Reading the palette is what keeps the rule in config/catalogs/vocab.yml rather than
- * in a list of chip names here.
+ * Whether a project's own deadline has stopped being yours to act on: a chip whose word of
+ * `statuses` carries `deadline_met` (which is what `submitted` and `under-review` carry). A
+ * terminal chip alone does not end it. Reading the flag is what keeps the rule in
+ * config/catalogs/vocab.yml rather than in a list of chip names here.
  */
 export function settled(project: Project, config: Record<string, unknown>): boolean {
     return project.chips.some((chip) => deadlineMet(config, chip));
@@ -177,9 +198,12 @@ function laneOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-/** Whether a project is of a tier whose projects may sit in the backlog: Projects or Personal. */
-function backlogTier(project: Project): boolean {
-    return project.tier === 'projects' || project.tier === 'personal';
+/**
+ * Whether a project is of a tier whose projects may sit in the backlog: a tier of `tiers`
+ * (config/catalogs/vocab.yml) carrying `backlog`, which are Projects and Personal.
+ */
+function backlogTier(project: Project, config: Record<string, unknown>): boolean {
+    return hasWord(config, 'tiers', 'backlog', project.tier);
 }
 
 /**
@@ -205,36 +229,43 @@ export function laneItems(projects: Project[], all: Lane[]): Record<string, Proj
 
 /**
  * Whether the board may move a project to a `focus:` value. Any project may go to a lane, and only
- * a project of the Projects or Personal board may go to `holding`: the backlog draws those two
+ * a project of a backlog tier (Projects or Personal) may go to `holding`: the backlog draws those
  * alone, so a project of another tier sent there would leave the board.
  */
-export function movable(project: Project, focus: string): boolean {
-    return focus !== 'holding' || backlogTier(project);
+export function movable(project: Project, focus: string, config: Record<string, unknown>): boolean {
+    return focus !== 'holding' || backlogTier(project, config);
 }
 
 /**
- * The ideas backlog: any project of the Projects or Personal board parked in `holding`, and any
- * idea of those boards whose `focus:` names no lane, which covers an idea that has none at all.
+ * The ideas backlog: any project of a backlog tier parked in `holding`, and any project of those
+ * tiers whose type carries `idea` and whose `focus:` names no lane, which covers an idea that has
+ * none at all.
  */
-export function backlog(projects: Project[], all: Lane[]): Project[] {
+export function backlog(
+    projects: Project[],
+    all: Lane[],
+    config: Record<string, unknown>
+): Project[] {
     const keys = all.map((lane) => lane.key);
     const out = projects.filter((project) => {
-        if (!backlogTier(project)) return false;
+        if (!backlogTier(project, config)) return false;
         const focus = project.focus ?? '';
         if (focus === 'holding') return true;
-        return project.type === 'idea' && !keys.includes(focus);
+        return hasWord(config, 'types', 'idea', project.type) && !keys.includes(focus);
     });
     return out.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }
 
 /**
- * Active projects of the Projects or Personal board that name no lane, so the board is not showing
- * them.
+ * The projects of a backlog tier whose type carries `live` (active) that name no lane, so the board
+ * is not showing them.
  */
-export function unplaced(projects: Project[]): Project[] {
+export function unplaced(projects: Project[], config: Record<string, unknown>): Project[] {
     return projects.filter(
         (project) =>
-            backlogTier(project) && project.type === 'active' && (project.focus ?? '') === ''
+            backlogTier(project, config) &&
+            hasWord(config, 'types', 'live', project.type) &&
+            (project.focus ?? '') === ''
     );
 }
 
@@ -255,9 +286,12 @@ export function venueLabel(venue: Venue | undefined): string {
 /**
  * The awaiting-a-response box. Every tally follows `focus:` alone: only a project laneItems draws
  * on a lane is counted, so a project with no `focus:` or in `holding` is in none. For each, the
- * people named in `waiting-on:` first, then the venue holding it when it is `submitted`. The
- * blocked tally counts the projects on a lane that carry the chip, whatever else the project is
- * waiting for. A `waiting-on:` value is a people key or another project's id, drawn by waiting.ts.
+ * people named in `waiting-on:` first, then the venue holding it when it carries a chip with
+ * `pauses_countdown` (submitted). The blocked tally counts the projects on a lane that carry a chip
+ * with `blocked`, whatever else the project is waiting for. A `waiting-on:` value is a people key
+ * or another project's id, drawn by waiting.ts. The applications are the entries whose status is in
+ * `applications_sent` under `focus:` of config/behavior.yml, and the hosts those whose status
+ * carries `waiting` in the hub's `career_host_status`.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -277,7 +311,7 @@ export function waiting(
     for (const project of Object.values(projects)) {
         // A blocked project that is also waiting on somebody is blocked as well as waited on.
         if (!onLanes.has(project.id)) continue;
-        if (project.chips.includes('blocked')) blocked += 1;
+        if (isBlocked(project, config)) blocked += 1;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
                 const name = waitingLabel(key, names, projects);
@@ -285,7 +319,7 @@ export function waiting(
             }
             continue;
         }
-        if (project.chips.includes('submitted')) {
+        if (anyWord(config, 'statuses', 'pauses_countdown', project.chips)) {
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
             const name = venueLabel(venue);
             held[name] = (held[name] ?? 0) + 1;
@@ -295,12 +329,13 @@ export function waiting(
         .filter((scheme) => deadlineMet(config, scheme.status ?? ''))
         .map((scheme) => scheme.title)
         .sort();
+    const sent = focusWords(config, 'applications_sent');
     const applications = entriesOf(snapshot.entities.collections, 'applications')
-        .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'applied')
+        .filter((entry) => sent.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => entry.title)
         .sort();
     const hosts = (snapshot.entities.career?.hosts ?? [])
-        .filter((host) => host.status.trim().toLowerCase() === 'awaiting')
+        .filter((host) => wordFlag(config, 'career_host_status', host.status, 'waiting'))
         .map((host) => host.name);
     return { people: tallies(people), venues: tallies(held), blocked, grants, applications, hosts };
 }
@@ -324,9 +359,20 @@ export function focusLabel(project: Pick<Project, 'title' | 'short'>, mode: unkn
     return mode === 'full' ? project.title : labelOf(project);
 }
 
-/** The projects quick add may write to: those of the Projects board, in the order given. */
-export function liveProjects(projects: Project[]): Project[] {
-    return projects.filter((one) => one.tier === 'projects');
+/**
+ * The projects quick add may write to: those of the research board's tier (the tier of `tiers`
+ * carrying `main`, Projects), in the order given.
+ */
+export function liveProjects(projects: Project[], config: Record<string, unknown>): Project[] {
+    return projects.filter((one) => hasWord(config, 'tiers', 'main', one.tier));
+}
+
+/**
+ * The list of status words under `focus:` of config/behavior.yml at a key, trimmed and in lower
+ * case, which is how an entry's status is compared with them; none if absent.
+ */
+export function focusWords(config: Record<string, unknown>, key: string): string[] {
+    return strings(focusBlock(config)[key]).map((word) => word.trim().toLowerCase());
 }
 
 /**

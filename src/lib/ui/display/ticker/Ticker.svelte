@@ -9,9 +9,13 @@
     // words of a cut name, are reveal.svelte.ts's. A row's button the caller marks `disabled` is
     // drawn and answers no press, with the caller's `title` as the reason. A row's `mark` is drawn
     // by the caller's `marked` snippet, since this folder imports nothing of ui/controls.
+    //
+    // A web address written in the name of a row that is plain text is a link
+    // (ui/display/text/LinkedText.svelte); a row that is picked draws its name as its button.
 
     import type { Snippet } from 'svelte';
     import Glyph from '../Glyph.svelte';
+    import LinkedText from '../text/LinkedText.svelte';
     import { createReveal, short } from './reveal.svelte';
     import type { TickerRow } from './ticker-rows';
 
@@ -88,7 +92,7 @@
                     {/if}
                 </button>
             {:else}
-                <span class="name plain">{row.label}</span>
+                <span class="name plain"><LinkedText text={row.label} /></span>
                 {#if row.tail !== undefined && row.tail !== ''}
                     <span
                         class="tail"

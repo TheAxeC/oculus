@@ -1,7 +1,7 @@
 # ===========================================================================
 # sources.yml
 # oculus's own configuration of what the portfolio reads: where the projects are, which registry, collection, document and feed file each surface is built from, and where a hub keeps its pictures. The folders files are served from are the folders of the open workspace. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. Merged with the other config/*.yml by loadConfig(); every key here is a top-level key of the merged map.
-# The keys from scan to recover_command are the hub list: a hub's own .oculus/config.yml replaces any of them whole, and the values here are oculus's defaults: the scan folders of a research hub's usual layout and each collection's file at `.oculus/data/<key>.yml` (a hub's own folders, its website among them, are set in its own settings file).
+# The keys from scan to wallpaper_dir are the hub list: a hub's own .oculus/config.yml replaces any of them whole, and the values here are oculus's defaults: the scan folders of a research hub's usual layout, and each collection's file and the career file under `.oculus/data/`, in the folder of its kind (research, pillars, literature, people, academic). This file is the one table of those default paths: oculus reads a registry or feed a hub's own list leaves out, and the Literature file, from here (a hub's own folders, its website among them, are set in its own settings file).
 # It also holds the map from a file name to the language the editor colours it in (languages).
 # ===========================================================================
 
@@ -25,29 +25,29 @@ new_project_dir: {}
 portfolio_deck: deck
 
 
-# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list, and the keys leads and radar, which name the files of Position Leads and Lit Watch and are no collection. This list is also where each registry and feed names its file: the file of the entry keyed `data` is the dataset registry (the Data view, provenance and a recovery recipe per dataset; the projects that use a dataset come from the manifests' `datasets:`), `venues` the venue catalogue, `pillars` the pillars registry (membership computed from the manifests' `pillar:`), `domains` the domains registry (projects grouped by the manifests' `domain:`), `funding` the funding registry, `people` the people registry (one entry per human the hub names, exactly one with `self: true`, whose `affiliations:` are keys of the organisations file), `organisations` the organisations registry (what a person's `affiliations:` and a funding entry's `funder:` point at), `resources` the resources registry (the clusters, machines and storage that a project's `compute:` and the `slurm.resource` key name by key), `leads` the position scout's leads and `radar` the literature scout's accumulated radar, which its refresh deduplicates by URL. A hub that lists none of these keys has no such registry or feed: it is read from its engine path and reported as unnamed, and a key it lists whose file is not there is a finding. The domains registry gives each domain its card colour (`color`) and label (`title`) and says which domains expect a dataset (`expects_datasets`); the `themes` field of the venues and data registries lists the theme words as its options. A key listed twice uses its first entry and is a finding. The schema is the file's own `schema:` block, and the links between files are in docs/data-map.md, the Data map tab of the Help page. Oculus's own path of each key is `.oculus/data/<key>.yml`, and Make Folder a Hub writes the ticked keys with these paths. Every entry has a page with an editor built from the schema, where it is edited and deleted, Add asks the new entry's name and opens that page, and an entry's status, deadline and date are also changed on its card. Edit in File opens the file at the entry.
+# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list, and the keys leads and radar, which name the files of Position Leads and Lit Watch and are no collection. This list is also where each registry and feed names its file: the file of the entry keyed `data` is the dataset registry (the Data view, provenance and a recovery recipe per dataset; the projects that use a dataset come from the manifests' `datasets:`), `venues` the venue catalogue, `pillars` the pillars registry (membership computed from the manifests' `pillar:`), `domains` the domains registry (projects grouped by the manifests' `domain:`), `funding` the funding registry, `people` the people registry (one entry per human the hub names, exactly one with `self: true`, whose `affiliations:` are keys of the organisations file), `organisations` the organisations registry (what a person's `affiliations:` and a funding entry's `funder:` point at), `resources` the resources registry (the clusters, machines and storage that a project's `compute:` and the `slurm.resource` key name by key), `leads` the position scout's leads and `radar` the literature scout's accumulated radar, which its refresh deduplicates by URL. A hub that lists none of these keys has no such registry or feed: it is read from its engine path and reported as unnamed, and a key it lists whose file is not there is a finding. A hub that names no list and holds a `.oculus/data/` folder reports a missing file of this list as a finding, as it does a file it names. The domains registry gives each domain its card colour (`color`) and label (`title`) and says which domains expect a dataset (`expects_datasets`); the `themes` field of the venues and data registries lists the theme words as its options. A key listed twice uses its first entry and is a finding. The schema is the file's own `schema:` block, and the links between files are in docs/data-map.md, the Data map tab of the Help page. Oculus's own path of each key is the one below, and Make Folder a Hub writes the ticked keys with these paths. Every entry has a page with an editor built from the schema, where it is edited and deleted, Add asks the new entry's name and opens that page, and an entry's status, deadline and date are also changed on its card. Edit in File opens the file at the entry.
 collections:
-  - { key: data,           file: ".oculus/data/data.yml" }
-  - { key: venues,         file: ".oculus/data/venues.yml" }
-  - { key: pillars,        file: ".oculus/data/pillars.yml" }
-  - { key: domains,        file: ".oculus/data/domains.yml" }
-  - { key: statements,     file: ".oculus/data/statements.yml" }
-  - { key: people,         file: ".oculus/data/people.yml" }
-  - { key: organisations,  file: ".oculus/data/organisations.yml" }
-  - { key: resources,      file: ".oculus/data/resources.yml" }
-  - { key: funding,        file: ".oculus/data/funding.yml" }
-  - { key: events,         file: ".oculus/data/events.yml" }
-  - { key: education,      file: ".oculus/data/education.yml" }
-  - { key: applications,   file: ".oculus/data/applications.yml" }
-  - { key: joint-work,     file: ".oculus/data/joint-work.yml" }
-  - { key: tasks,          file: ".oculus/data/tasks.yml" }
-  - { key: literature,     file: ".oculus/data/literature.yml" }
-  - { key: leads,          file: ".oculus/data/leads.yml" }
-  - { key: radar,          file: ".oculus/data/radar.yml" }
+  - { key: data,           file: ".oculus/data/research/data.yml" }
+  - { key: venues,         file: ".oculus/data/research/venues.yml" }
+  - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
+  - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
+  - { key: statements,     file: ".oculus/data/research/statements.yml" }
+  - { key: people,         file: ".oculus/data/people/people.yml" }
+  - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
+  - { key: resources,      file: ".oculus/data/research/resources.yml" }
+  - { key: funding,        file: ".oculus/data/academic/funding.yml" }
+  - { key: events,         file: ".oculus/data/academic/events.yml" }
+  - { key: education,      file: ".oculus/data/academic/education.yml" }
+  - { key: applications,   file: ".oculus/data/academic/applications.yml" }
+  - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
+  - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
+  - { key: literature,     file: ".oculus/data/literature/literature.yml" }
+  - { key: leads,          file: ".oculus/data/academic/leads.yml" }
+  - { key: radar,          file: ".oculus/data/literature/radar.yml" }
 
 
-# Career strategy: the order of work, hosts, eligibility and dropped options live in registries/career.yml and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
-career_file: registries/career.yml
+# Career strategy: the order of work, hosts, eligibility and dropped options live in the career file and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
+career_file: .oculus/data/academic/career.yml
 
 
 # The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
@@ -55,9 +55,6 @@ memories_dir: .oculus/memories
 
 # The folder of this hub's wallpaper images, relative to the hub and inside it. The `wallpaper.image` key of the primary hub's .oculus/config.yml names one of them as `<hub name>/<file name>`, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
 wallpaper_dir: .oculus/wallpaper
-
-# The command the Data view's Recover control runs for one dataset, in a terminal in the dataset's own hub folder: `{key}` is replaced by the dataset's key as one shell word (`python3 scripts/redownload.py {key}`). Empty gives no Recover control, and the Data view says so; a command without `{key}` is a finding and gives none either.
-recover_command: ''
 
 # How many folder levels below each folder of the open workspace the Repositories view looks for repositories, 0 to 3.
 repository_scan_depth: 1

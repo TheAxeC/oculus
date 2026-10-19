@@ -163,31 +163,33 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    /* The terminal shape: a bracketed text tag in its own colour, no pill and no fill. */
-    :global(body.rice) .chip {
+    /* The terminal shape: a bracketed text tag in its own colour, no pill and no fill. It is the
+       Brackets toggle's (Settings, This browser): with the toggle off, the body carries
+       `rice-plain` and the chip keeps its capsule in the rice palette and shape. */
+    :global(body.rice:where(:not(.rice-plain))) .chip {
         min-height: 0;
         padding: 1px 0;
         border: 0;
         background: none;
     }
 
-    :global(body.rice) .chip .mark {
+    :global(body.rice:where(:not(.rice-plain))) .chip .mark {
         margin: 0;
     }
 
-    :global(body.rice) .chip.filled {
+    :global(body.rice:where(:not(.rice-plain))) .chip.filled {
         background: none;
         color: var(--tone-txt, var(--muted-txt));
     }
 
     /* The terminal stand-in of a glyph carries its own brackets, so the chip draws none of its
        own around it and the reader is not given two pairs. */
-    :global(body.rice) .chip:not(.bracketed)::before {
+    :global(body.rice:where(:not(.rice-plain))) .chip:not(.bracketed)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .chip:not(.bracketed)::after {
+    :global(body.rice:where(:not(.rice-plain))) .chip:not(.bracketed)::after {
         content: ']';
         opacity: 0.5;
     }

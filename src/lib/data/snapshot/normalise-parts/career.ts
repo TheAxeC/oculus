@@ -13,14 +13,12 @@ import {
     readOr,
     stringItemsShape
 } from '../../shapes/shapes.ts';
+import { wordsWith } from '../../shapes/vocab-keys.ts';
 import { compact } from '../compact.ts';
 import { fieldsOf } from '../schema/field.ts';
 
 /** The keys of a host row that are the host itself; every other string key is one of its scores. */
 const HOST_KEYS = ['name', 'inst', 'tag', 'status', 'note'];
-
-/** The status a host row carries no `status:` of its own for. */
-const HOST_DEFAULT = 'candidate';
 
 /** A text, which a row of a list may be in place of a map. */
 const plainShape = z.string();
@@ -49,7 +47,7 @@ function hostNote(value: unknown): string | undefined {
     return trimmed.trim() === '' ? undefined : trimmed;
 }
 
-function host(value: unknown): Host | null {
+function host(value: unknown, unset: string): Host | null {
     const row = readAs(mapShape, value);
     if (row === null) return null;
     const name = str(row.name);
@@ -64,7 +62,8 @@ function host(value: unknown): Host | null {
         name,
         inst: str(row.inst),
         tag: str(row.tag),
-        status: str(row.status) ?? HOST_DEFAULT,
+        // A row with no `status:` is at the hub's `career_host_status` word carrying `default`.
+        status: str(row.status) ?? unset,
         scores,
         note: hostNote(row.note)
     });
@@ -112,10 +111,15 @@ function rowsOf(value: unknown): unknown[] {
 /**
  * The career strategy as the panel reads it. Every section is optional and every list tolerates the
  * plain-string form the file is allowed to write, so a half-filled career file draws the half it
- * has rather than nothing.
+ * has rather than nothing. `config` is the hub's merged config, whose `career_host_status` word
+ * carrying `default` is the status of a host row that writes none.
  */
-export function career(raw: Record<string, unknown> | null): Career | null {
+export function career(
+    raw: Record<string, unknown> | null,
+    config: Record<string, unknown>
+): Career | null {
     if (raw === null) return null;
+    const unset = wordsWith(config, 'career_host_status', 'default').at(0) ?? '';
     const situation: { label: string; value: string }[] = [];
     const written = readAs(mapShape, raw.situation);
     if (written !== null) {
@@ -126,7 +130,7 @@ export function career(raw: Record<string, unknown> | null): Career | null {
     }
     const hosts: Host[] = [];
     for (const row of rowsOf(raw.hosts)) {
-        const one = host(row);
+        const one = host(row, unset);
         if (one !== null) hosts.push(one);
     }
     const order: { task: string; when?: string; note?: string }[] = [];

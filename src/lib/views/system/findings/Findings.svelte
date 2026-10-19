@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Findings follows Status in the System page's group. Its badge is
-    // how many findings it lists, the count it also gives its rail button.
+    // how many findings it lists, its count; its row of `counts` says where it is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
     export const registration: ViewRegistration = {
@@ -11,7 +11,7 @@
         order: 5,
         unique: true,
         badge: (client) => countText(client.railBadges.findingsCount()),
-        railPart: (client) => ({ count: client.railBadges.findingsCount() })
+        countPart: (client) => ({ count: client.railBadges.findingsCount() })
     };
 </script>
 

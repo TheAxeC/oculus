@@ -1,6 +1,6 @@
 // Layer 2, server. The subtask half of the write path, and the two career writes beside it: a line
 // ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, one
-// host of registries/career.yml moved along its pipeline, and the sections of that file set from
+// host of the career file moved along its pipeline, and the sections of that file set from
 // the career editor.
 //
 // A subtask hangs under one of two hosts, which is the whole of the difference between the two
@@ -17,7 +17,7 @@ import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { CAREER_FILE } from '../../../data/helpers/hub-names.ts';
+import { engineDefaults } from '../../../data/sources/collections.ts';
 import {
     addSubtask,
     deleteSubtask,
@@ -165,12 +165,12 @@ export type CareerRules = { file: string; statuses: string[] };
 
 /**
  * The career file and the host statuses of the merged config. A `career_file` that is not text is
- * the default path, and the statuses are the own keys of a `career_host_status` map in the order
- * written, none for anything else.
+ * oculus's own path of config/sources.yml, and the statuses are the own keys of a
+ * `career_host_status` map in the order written, none for anything else.
  */
 const careerRulesShape = z
     .object({
-        career_file: z.string().catch(CAREER_FILE),
+        career_file: z.string().catch(() => engineDefaults().career ?? ''),
         career_host_status: z
             .pipe(
                 mapShape,
@@ -188,7 +188,7 @@ export function careerRules(merged: Record<string, unknown>): CareerRules {
     return careerRulesShape.parse(merged);
 }
 
-/** The hosts of registries/career.yml that are maps, and none for a file that holds no list. */
+/** The hosts of the career file that are maps, and none for a file that holds no list. */
 const careerHostsShape = z
     .looseObject({ hosts: z.array(z.unknown()).transform((all) => all.filter(isMap)) })
     .transform((file) => file.hosts)
@@ -212,7 +212,7 @@ export function subtaskValue(
     return { found: true, value: key in values ? values[key] : null };
 }
 
-/** The status one career host holds now, or nothing when registries/career.yml names it no more. */
+/** The status one career host holds now, or nothing when the career file names it no more. */
 export function hostStatus(
     hub: string,
     name: string,
@@ -232,7 +232,7 @@ export function hostStatus(
 }
 
 /**
- * Set one host's status in registries/career.yml. A status outside the vocabulary is refused,
+ * Set one host's status in the career file. A status outside the vocabulary is refused,
  * never written.
  */
 export function writeHost(
@@ -291,7 +291,7 @@ export function writeHost(
 /** What a read answers for an address that is not there. */
 const ABSENT = { found: false, value: null } as const;
 
-/** The section of registries/career.yml the file holds now, or nothing when the file is gone. */
+/** The section of the career file the file holds now, or nothing when the file is gone. */
 export function careerSection(
     hub: string,
     section: string,
@@ -332,7 +332,7 @@ function careerKeyRefusals(
 }
 
 /**
- * Set sections of registries/career.yml, each to the value given: the changed sections are written
+ * Set sections of the career file, each to the value given: the changed sections are written
  * in the bytes of their own values and every other line and comment of the file stays. A key that
  * is no field of the file's own `schema:` is refused with nothing written for it, and a value is
  * held to the type its section has there.

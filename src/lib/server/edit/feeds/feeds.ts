@@ -11,6 +11,7 @@ import { basename, join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
+import { openWord } from '../../../data/accounts/leads.ts';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
@@ -336,7 +337,10 @@ export function markLinkedinPosted(
     };
 }
 
-/** Append one position lead in the order of the feed file's own schema. */
+/**
+ * Append one position lead in the order of the feed file's own schema. A lead given no status gets
+ * the word of `statuses` carrying `default_lead`, and none when no word carries it.
+ */
 export function addLead(
     hub: string,
     config: PortfolioConfig,
@@ -385,7 +389,9 @@ export function addLead(
         if (field === 'date' && (typeof raw !== 'string' || raw.trim() === '')) {
             raw = localDate(Date.now());
         }
-        if (field === 'status' && (typeof raw !== 'string' || raw.trim() === '')) raw = 'open';
+        if (field === 'status' && (typeof raw !== 'string' || raw.trim() === '')) {
+            raw = openWord(config.merged) || undefined;
+        }
         const value = asFieldValue(raw);
         if (value === undefined) {
             if (raw !== undefined) {

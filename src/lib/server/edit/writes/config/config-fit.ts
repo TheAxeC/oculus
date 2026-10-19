@@ -337,21 +337,6 @@ function itemsOf(entry: CatalogEntry, value: unknown): Item[] {
     const table = isTable(entry);
     return Object.entries(value).flatMap(([name, held]) => {
         if (table) return [{ key: name, record: { key: name, value: held }, label: name }];
-        if (entry.holds === 'lists') {
-            return Array.isArray(held)
-                ? held.flatMap((record, at) =>
-                      isMap(record)
-                          ? [
-                                {
-                                    key: name,
-                                    record: { key: name, ...record },
-                                    label: `${name} ${at + 1}`
-                                }
-                            ]
-                          : []
-                  )
-                : [];
-        }
         return isMap(held) ? [{ key: name, record: { key: name, ...held }, label: name }] : [];
     });
 }
@@ -363,15 +348,10 @@ function allowedFields(
 ): { listed: Set<string>; keyed: Set<string> } {
     const names = Object.keys(entry.fields ?? {});
     const extra = new Set<string>();
-    const records: unknown[] = [];
-    const collect = (value: unknown): void => {
-        if (Array.isArray(value)) value.forEach(collect);
-        else if (isMap(value)) records.push(value);
-    };
-    if (Array.isArray(held)) collect(held);
-    else if (isMap(held)) Object.values(held).forEach(collect);
+    const values: unknown[] = Array.isArray(held) ? held : isMap(held) ? Object.values(held) : [];
+    const records = values.filter(isMap);
     for (const record of records) {
-        for (const name of Object.keys(record as Plain)) extra.add(name);
+        for (const name of Object.keys(record)) extra.add(name);
     }
     return {
         listed: new Set([...names, ...extra]),
@@ -399,7 +379,7 @@ function shapeOfRecord(
  * The sentence for a family value that is not the collection kind the file holds: a list of
  * records, a map of entries (a key/value table when its fields are `key` and `value`, which takes
  * a list of values only where the catalog entry says `holds: lists`, whatever the file holds now,
- * so an emptied table keeps its kind), a map of records, or a map of lists of records.
+ * so an emptied table keeps its kind), or a map of records.
  */
 function shapeProblem(
     entry: CatalogEntry,
@@ -425,12 +405,6 @@ function shapeProblem(
                 return lists
                     ? words(text, 'server.config_value.wants_scalar', name)
                     : words(text, 'server.config_value.wants_value', name);
-            }
-        } else if (lists) {
-            if (!Array.isArray(item)) return words(text, 'server.config_value.wants_list', name);
-            for (const [at, record] of item.entries()) {
-                const problem = shapeOfRecord(record, `${name} ${at + 1}`, allowed.keyed, text);
-                if (problem !== null) return problem;
             }
         } else {
             if (Array.isArray(item)) return words(text, 'server.config_value.wants_record', name);

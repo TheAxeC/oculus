@@ -25,19 +25,12 @@ const fieldShape: z.ZodType<FieldValue> = z.lazy(() =>
 );
 
 /** A draft as the state holds it. */
-const draftShape = z.union([
-    z.object({
-        form: z.enum(['items', 'pairs', 'records', 'multi']),
-        keyed: z.boolean(),
-        fields: z.array(z.string()),
-        cards: z.array(cardShape)
-    }),
-    z.object({
-        form: z.literal('rollup'),
-        fields: z.array(z.string()),
-        groups: z.array(z.object({ key: z.string(), cards: z.array(cardShape) }))
-    })
-]) satisfies z.ZodType<Draft>;
+const draftShape = z.object({
+    form: z.enum(['items', 'pairs', 'records', 'multi']),
+    keyed: z.boolean(),
+    fields: z.array(z.string()),
+    cards: z.array(cardShape)
+}) satisfies z.ZodType<Draft>;
 
 /** One field set of a draft held as text. */
 const textCardShape = z.object({
@@ -47,19 +40,12 @@ const textCardShape = z.object({
 });
 
 /** A draft held as text, which a page that kept every field as one line of YAML wrote. */
-const textDraftShape = z.union([
-    z.object({
-        form: z.enum(['items', 'pairs', 'records']),
-        keyed: z.boolean(),
-        fields: z.array(z.string()),
-        cards: z.array(textCardShape)
-    }),
-    z.object({
-        form: z.literal('rollup'),
-        fields: z.array(z.string()),
-        groups: z.array(z.object({ key: z.string(), cards: z.array(textCardShape) }))
-    })
-]) satisfies z.ZodType<TextDraft>;
+const textDraftShape = z.object({
+    form: z.enum(['items', 'pairs', 'records']),
+    keyed: z.boolean(),
+    fields: z.array(z.string()),
+    cards: z.array(textCardShape)
+}) satisfies z.ZodType<TextDraft>;
 
 /**
  * One held draft: the file and key it is for, the draft itself, whether its fields are typed

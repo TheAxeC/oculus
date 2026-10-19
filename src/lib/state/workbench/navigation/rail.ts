@@ -14,7 +14,7 @@ import {
     type RailRead
 } from '../../../data/sources/config/rail.ts';
 import { fields, isMap } from '../../../data/helpers/guards.ts';
-import { withDocs } from './arrangement.ts';
+import { arrangedDocs, withDocs } from './arrangement.ts';
 import { readDocs, type DocEntry } from './catalogue.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -45,6 +45,17 @@ export function railPages(config: Record<string, unknown> | undefined): RailPage
         const docs = listed.filter((one) => one.group === entry.page);
         return { ...entry, node: withDocs(arrangements[entry.page], docs), docs };
     });
+}
+
+/**
+ * The documents the catalogue lists and a chord counts after the views: those of oculus's own
+ * folder the rail pages' arrangements show as tabs, then the `docs:` entries.
+ */
+export function chordDocs(config: Record<string, unknown> | undefined): DocEntry[] {
+    return [
+        ...railPages(config).flatMap((one) => arrangedDocs(one.page, one.node)),
+        ...readDocs(config?.docs)
+    ];
 }
 
 /** The view the rail list is edited in, whose instance state holds the list being typed. */
@@ -78,7 +89,9 @@ export function sameRail(left: readonly RailEntry[], right: readonly RailEntry[]
             (entry, at) =>
                 entry.label === right[at].label &&
                 entry.glyph === right[at].glyph &&
-                entry.page === right[at].page
+                entry.page === right[at].page &&
+                entry.chord === right[at].chord &&
+                entry.group_glyph === right[at].group_glyph
         )
     );
 }
@@ -107,7 +120,7 @@ export function moveRailEntry(rail: readonly RailEntry[], at: number, by: -1 | 1
 }
 
 /**
- * The `rail:` list as the config writes it, every entry as three strings whether or not the rule
+ * The `rail:` list as the config writes it, every entry as five strings whether or not the rule
  * keeps it, so the Settings view lists an entry a hand edit broke for the reader to mend.
  */
 export function configRail(config: Record<string, unknown> | undefined): RailEntry[] {

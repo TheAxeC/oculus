@@ -13,9 +13,8 @@ import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 
-const LOADED = withHubCollections(loadConfig(engineDir()).config);
+const LOADED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(LOADED);
 const CONFIG = portfolioConfigFrom(LOADED);
 
@@ -172,9 +171,9 @@ describe('the rules of a hub schema', () => {
         const hub = plantScratch(
             'oculus-schema-rules-',
             {
-                'registries/venues.yml': venues(['  - { id: v1, name: One }']),
-                'registries/data.yml': datasets(['  - key: d1']),
-                [`registries/${row.file}`]: row.text
+                '.oculus/data/research/venues.yml': venues(['  - { id: v1, name: One }']),
+                '.oculus/data/research/data.yml': datasets(['  - key: d1']),
+                [`.oculus/data/research/${row.file}`]: row.text
             },
             ['projects/active']
         );
@@ -186,12 +185,68 @@ describe('the rules of a hub schema', () => {
         ]);
     });
 
+    it.each([
+        {
+            name: "a person's affiliation",
+            file: '.oculus/data/people/people.yml',
+            text: [
+                'schema:',
+                '  - { field: key, type: text, required: true, help: The person key. }',
+                '  - { field: name, type: text, required: true, help: The name. }',
+                '  - { field: affiliations, type: tags, help: The organisations. }',
+                '  - { field: self, type: checkbox, help: The owner. }',
+                'entries:',
+                '  - { key: ada, name: Ada, self: true, affiliation: x }',
+                ''
+            ].join('\n'),
+            key: 'entries[0].affiliation'
+        },
+        {
+            name: "a dataset registry's theme_labels",
+            file: '.oculus/data/research/data.yml',
+            text: datasets(['  - key: d1']).replace('datasets:\n', 'theme_labels: {}\ndatasets:\n'),
+            key: 'theme_labels'
+        },
+        {
+            name: "a manifest's program",
+            file: 'projects/active/alpha/project.yml',
+            text: 'id: alpha\ntier: projects\ntype: active\ntitle: Alpha\nprogram: y\n',
+            key: 'program'
+        }
+    ])('gives the one finding of a key no schema declares for $name', (row) => {
+        const hub = plantScratch(
+            'oculus-schema-old-key-',
+            { '.oculus/data/research/venues.yml': venues([]), [row.file]: row.text },
+            ['projects/active']
+        );
+        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
+            one.file.endsWith(`/${row.file}`)
+        );
+        expect(found.map((one) => [one.key, one.message])).toEqual([
+            [row.key, sentence('findings.schema.not_declared', row.key)]
+        ]);
+    });
+
+    it('takes any word in a select with no options and no source, as the write path does', () => {
+        const text = venues(['  - { id: v1, name: One, root: anything }']).replace(
+            'entries:\n',
+            '  - { field: root, type: select, help: The root. }\nentries:\n'
+        );
+        const hub = plantScratch(
+            'oculus-schema-open-select-',
+            { '.oculus/data/research/venues.yml': text },
+            ['projects/active']
+        );
+        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+        expect(found.filter((one) => one.file.endsWith('/venues.yml'))).toEqual([]);
+    });
+
     it('puts no finding on a reference to a file that does not parse', () => {
         const hub = plantScratch(
             'oculus-schema-unread-',
             {
-                'registries/venues.yml': 'entries: [\n  - id: v1\n',
-                'registries/data.yml': datasets(['  - key: d1', '    venue: nowhere'])
+                '.oculus/data/research/venues.yml': 'entries: [\n  - id: v1\n',
+                '.oculus/data/research/data.yml': datasets(['  - key: d1', '    venue: nowhere'])
             },
             ['projects/active']
         );

@@ -1,6 +1,8 @@
-// Layer 2, route tests. POST /api/folders/make (server/files/project/make.ts), Make Folder a Hub
-// and Make Folder a Project of the Files view: the token (G1), a folder outside the served roots
-// (G2), what a folder offers, and the files a make writes, refuses and records in the change log.
+// Layer 2, route tests. POST /api/folders/make (server/files/project/make.ts), the make items of
+// the Files view (Make Folder a Hub..., Make Folder a Project, Make Folder a Git Repository and
+// Add Repository Configuration...): the token (G1), a folder outside the served roots (G2), what a
+// folder offers, and the files a make writes, refuses and records in the change log (G9). The git
+// make runs the real git in a planted folder.
 //
 // Each case plants its folders under the system temporary directory and a home folder of its own,
 // so the walk up for a hub above a folder never reaches the machine's home folder. The templates
@@ -18,6 +20,7 @@ import {
     readdirSync,
     readlinkSync,
     realpathSync,
+    statSync,
     symlinkSync
 } from 'node:fs';
 import { join } from 'node:path';
@@ -32,12 +35,22 @@ import {
     type MakeTarget
 } from '../../../src/lib/server/files/project/make.ts';
 import { listShown, workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { cloneGit, LOCAL_TIMEOUT_MS } from '../../../src/lib/server/git/clone/clone-git.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
-import { offerAlong, type FolderMarks } from '../../../src/lib/data/helpers/hub-names.ts';
+import {
+    offerAlong,
+    type FolderMarks,
+    type MakeItems
+} from '../../../src/lib/data/helpers/hub-names.ts';
 import { pageWorkspaces, plantState } from '../../fixtures/hubs/workspace.ts';
 import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 
 const TOKEN = 'a-make-token';
+
+/** `git init -q` in a folder by the real git, as the route hands it in. */
+function initGit(folder: string) {
+    return cloneGit(['-C', folder, 'init', '-q'], LOCAL_TIMEOUT_MS);
+}
 
 /** A planted folder by its real path, so the paths the route answers compare with it. */
 function planted(files: Record<string, string> = {}, folders: string[] = []): string {
@@ -57,7 +70,8 @@ function world(files: Record<string, string> = {}, folders: string[] = []) {
         engine: engineDir(),
         writes: fsWrites(),
         changes: log,
-        home: planted()
+        home: planted(),
+        initGit
     };
     return { ws, log, target };
 }
@@ -180,7 +194,8 @@ describe('what a folder offers', () => {
             roots: [{ key: 'home', dir: home }],
             engine: engineDir(),
             writes: fsWrites(),
-            home
+            home,
+            initGit
         };
         const under = await post(target, { action: 'offer', root: 'home', path: 'work/f' });
         expect({ hub: under.body.hub, project: under.body.project }).toEqual({
@@ -210,8 +225,8 @@ describe('a make', () => {
                 ok: true,
                 written: [
                     '.oculus/config.yml',
-                    '.oculus/data/venues.yml',
-                    '.oculus/data/literature.yml'
+                    '.oculus/data/research/venues.yml',
+                    '.oculus/data/literature/literature.yml'
                 ]
             }
         });
@@ -220,10 +235,13 @@ describe('a make', () => {
             collections: { key: string; file: string }[];
         };
         expect(config.collections).toEqual([
-            { key: 'venues', file: '.oculus/data/venues.yml' },
-            { key: 'literature', file: '.oculus/data/literature.yml' }
+            { key: 'venues', file: '.oculus/data/research/venues.yml' },
+            { key: 'literature', file: '.oculus/data/literature/literature.yml' }
         ]);
-        for (const file of ['.oculus/data/venues.yml', '.oculus/data/literature.yml']) {
+        for (const file of [
+            '.oculus/data/research/venues.yml',
+            '.oculus/data/literature/literature.yml'
+        ]) {
             expect(parse(readFileSync(join(folder, file), 'utf8'))).toHaveProperty('schema');
         }
         const records = readChanges(w.log);
@@ -237,7 +255,7 @@ describe('a make', () => {
     });
 
     it('refuses a hub make as exists, naming the path, when one of its files is there, and writes nothing', async () => {
-        const w = world({ 'f/.oculus/data/literature.yml': 'mine\n' });
+        const w = world({ 'f/.oculus/data/literature/literature.yml': 'mine\n' });
         const before = tree(w.ws);
         expect(
             await post(w.target, {
@@ -246,9 +264,14 @@ describe('a make', () => {
                 path: 'f',
                 keys: ['venues', 'literature']
             })
-        ).toEqual({ status: 409, body: { error: 'exists', path: '.oculus/data/literature.yml' } });
+        ).toEqual({
+            status: 409,
+            body: { error: 'exists', path: '.oculus/data/literature/literature.yml' }
+        });
         expect(tree(w.ws)).toEqual(before);
-        expect(readFileSync(join(w.ws, 'f/.oculus/data/literature.yml'), 'utf8')).toBe('mine\n');
+        expect(readFileSync(join(w.ws, 'f/.oculus/data/literature/literature.yml'), 'utf8')).toBe(
+            'mine\n'
+        );
         expect(readChanges(w.log)).toEqual([]);
     });
 
@@ -343,6 +366,147 @@ describe('a make', () => {
     });
 });
 
+describe('the hub files, a git repository and the repository configuration', () => {
+    it('makes a hub with every hub file ticked: config.yml, local.yml written mode 600, the .gitignore that keeps it out of git, schedules.yml and the collections, recorded as one create of the .oculus folder (G9)', async () => {
+        const w = world({}, ['f']);
+        const answer = await post(w.target, {
+            action: 'hub',
+            root: 'ws',
+            path: 'f',
+            keys: ['venues'],
+            files: ['local', 'schedules']
+        });
+        expect(answer).toEqual({
+            status: 200,
+            body: {
+                ok: true,
+                written: [
+                    '.oculus/config.yml',
+                    '.oculus/local.yml',
+                    '.oculus/.gitignore',
+                    '.oculus/schedules.yml',
+                    '.oculus/data/research/venues.yml'
+                ]
+            }
+        });
+        const folder = join(w.ws, 'f');
+        expect(statSync(join(folder, '.oculus/local.yml')).mode & 0o777).toBe(0o600);
+        expect(parse(readFileSync(join(folder, '.oculus/local.yml'), 'utf8'))).toBeNull();
+        expect(readFileSync(join(folder, '.oculus/.gitignore'), 'utf8').split('\n')).toContain(
+            'local.yml'
+        );
+        expect(parse(readFileSync(join(folder, '.oculus/schedules.yml'), 'utf8'))).toBeNull();
+        expect(readChanges(w.log)).toEqual([
+            expect.objectContaining({
+                kind: 'files',
+                field: 'create',
+                after: [expect.objectContaining({ path: join(folder, '.oculus'), kind: 'dir' })]
+            })
+        ]);
+    });
+
+    it('writes neither local.yml nor its .gitignore when local.yml is unticked', async () => {
+        const w = world({}, ['f']);
+        const answer = await post(w.target, {
+            action: 'hub',
+            root: 'ws',
+            path: 'f',
+            keys: [],
+            files: ['schedules']
+        });
+        expect(answer).toEqual({
+            status: 200,
+            body: { ok: true, written: ['.oculus/config.yml', '.oculus/schedules.yml'] }
+        });
+        expect(tree(join(w.ws, 'f'))).toEqual([
+            '.oculus',
+            '.oculus/config.yml',
+            '.oculus/schedules.yml'
+        ]);
+    });
+
+    it('refuses a hub make as exists when the folder holds local.yml already, and writes nothing', async () => {
+        const w = world({ 'f/.oculus/local.yml': 'port: 1\n' });
+        const before = tree(w.ws);
+        expect(
+            await post(w.target, {
+                action: 'hub',
+                root: 'ws',
+                path: 'f',
+                keys: [],
+                files: ['local', 'schedules']
+            })
+        ).toEqual({ status: 409, body: { error: 'exists', path: '.oculus/local.yml' } });
+        expect(tree(w.ws)).toEqual(before);
+        expect(readFileSync(join(w.ws, 'f/.oculus/local.yml'), 'utf8')).toBe('port: 1\n');
+        expect(readChanges(w.log)).toEqual([]);
+    });
+
+    it('makes a folder with no .git a git repository by running git init there, recorded as one create of the .git folder, and refuses a folder that has one (G9)', async () => {
+        const w = world({}, ['f']);
+        expect(await post(w.target, { action: 'git', root: 'ws', path: 'f' })).toEqual({
+            status: 200,
+            body: { ok: true, written: ['.git'] }
+        });
+        expect(statSync(join(w.ws, 'f/.git/HEAD')).isFile()).toBe(true);
+        expect(readChanges(w.log)).toEqual([
+            expect.objectContaining({
+                kind: 'files',
+                field: 'create',
+                after: [expect.objectContaining({ path: join(w.ws, 'f/.git'), kind: 'dir' })]
+            })
+        ]);
+        const before = tree(w.ws);
+        expect(await post(w.target, { action: 'git', root: 'ws', path: 'f' })).toEqual({
+            status: 409,
+            body: { error: 'not-offered' }
+        });
+        expect(tree(w.ws)).toEqual(before);
+    });
+
+    it('writes the ticked repository files a repository lacks from their templates, refuses one that is there, and records the make (G9)', async () => {
+        const w = world({
+            'f/.git/HEAD': 'ref: refs/heads/main\n',
+            'f/.oculus/commands.yml': 'commands: []\n'
+        });
+        const before = tree(w.ws);
+        expect(
+            await post(w.target, {
+                action: 'repository',
+                root: 'ws',
+                path: 'f',
+                files: ['settings', 'commands']
+            })
+        ).toEqual({ status: 409, body: { error: 'exists', path: '.oculus/commands.yml' } });
+        expect(tree(w.ws)).toEqual(before);
+        expect(
+            await post(w.target, {
+                action: 'repository',
+                root: 'ws',
+                path: 'f',
+                files: ['settings', 'launch', 'cpp']
+            })
+        ).toEqual({
+            status: 200,
+            body: {
+                ok: true,
+                written: ['.oculus/settings.yml', '.oculus/launch.yml', '.oculus/cpp.yml']
+            }
+        });
+        expect(readChanges(w.log)).toEqual([
+            expect.objectContaining({
+                kind: 'files',
+                field: 'create',
+                after: [
+                    expect.objectContaining({ path: join(w.ws, 'f/.oculus/settings.yml') }),
+                    expect.objectContaining({ path: join(w.ws, 'f/.oculus/launch.yml') }),
+                    expect.objectContaining({ path: join(w.ws, 'f/.oculus/cpp.yml') })
+                ]
+            })
+        ]);
+    });
+});
+
 describe('what the Files view holds of a folder before its menu opens', () => {
     it('carries the marks of each folder in its listing and of each folder of the workspace in the workspaces answer, and the offer they give each folder is the route offer (G32)', async () => {
         const free = planted(
@@ -381,17 +545,28 @@ describe('what the Files view holds of a folder before its menu opens', () => {
             ['p', { project: true }],
             ['q', { project: true }]
         ]);
-        const target: MakeTarget = { roots: open.roots, engine: engineDir(), writes: fsWrites() };
-        const rows: [string, string, { hub: boolean; project: boolean }][] = [
-            ['free', '', { hub: true, project: true }],
-            ['free', 'a', { hub: true, project: true }],
-            ['free', 'a/b', { hub: true, project: true }],
-            ['free', 'p', { hub: false, project: false }],
-            ['free', 'q', { hub: false, project: false }],
-            ['free', 'h', { hub: false, project: false }],
-            ['free', 'h/in', { hub: false, project: true }],
-            ['inside', '', { hub: false, project: true }],
-            ['inside', 'x', { hub: false, project: true }]
+        const target: MakeTarget = {
+            roots: open.roots,
+            engine: engineDir(),
+            writes: fsWrites(),
+            initGit
+        };
+        const items = (hub: boolean, project: boolean, repository: boolean): MakeItems => ({
+            hub,
+            project,
+            git: true,
+            repository
+        });
+        const rows: [string, string, MakeItems][] = [
+            ['free', '', items(true, true, true)],
+            ['free', 'a', items(true, true, false)],
+            ['free', 'a/b', items(true, true, false)],
+            ['free', 'p', items(false, false, false)],
+            ['free', 'q', items(false, false, false)],
+            ['free', 'h', items(false, false, false)],
+            ['free', 'h/in', items(false, true, false)],
+            ['inside', '', items(false, true, true)],
+            ['inside', 'x', items(false, true, false)]
         ];
         for (const [key, path, offer] of rows) {
             const root = roots.find((one) => one.key === key);
@@ -410,7 +585,12 @@ describe('what the Files view holds of a folder before its menu opens', () => {
                 key,
                 path,
                 page,
-                route: { hub: route.body.hub, project: route.body.project }
+                route: {
+                    hub: route.body.hub,
+                    project: route.body.project,
+                    git: route.body.git,
+                    repository: route.body.repository
+                }
             }).toEqual({ key, path, page: offer, route: offer });
         }
     });
@@ -425,7 +605,12 @@ describe('what the Files view holds of a folder before its menu opens', () => {
         ['.oculus/config.yml', ''],
         ['a/notes.md', null],
         ['a/.oculus/notes/one.md', null],
-        ['a/.oculus/project.yml.tmp', null]
+        ['a/.oculus/project.yml.tmp', null],
+        ['a/.git', 'a'],
+        ['.git', ''],
+        ['a/.oculus/commands.yml', 'a'],
+        ['a/.oculus/cpp.yml', 'a'],
+        ['a/.git/index', null]
     ])(
         'names, for a write at %s, the folder whose marks it may change: %s (G32)',
         (path, owner) => {

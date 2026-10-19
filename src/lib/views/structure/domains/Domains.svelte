@@ -37,7 +37,7 @@
     const client = useState();
     const {
         entities: { portfolio },
-        selectors: { archiveDead, projects },
+        selectors: { configMap, projects },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -46,7 +46,7 @@
     const cursor = $derived(cardCursor(instance.state));
     const file = registryFile(client, 'domains', 'domains');
     const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
-    const shown = $derived(domainsWithMembers(domains, projects(), archiveDead()));
+    const shown = $derived(domainsWithMembers(domains, projects(), configMap()));
     function write(next: Partial<DomainsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }

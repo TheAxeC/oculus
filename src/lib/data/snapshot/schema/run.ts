@@ -1,7 +1,8 @@
 // Layer 1, data. One build of the schemas and the checks over them: the hub's files are read, each
 // schema is generated from the files' own `schema:` blocks and the oculus schema files, every
 // document the hub's findings cover is checked against its schema, and the set of schemas with the
-// rules that match them to files is handed back for the editor.
+// rules that match them to files is handed back for the editor, the reader's bookmarks file among
+// them.
 //
 // The findings are the schema's side of the integrity gate: a key no schema declares, a value
 // outside its options, a reference to a key that is not on disk, a field outside its `when`, a
@@ -89,6 +90,24 @@ function hubFiles(config: PortfolioConfig): HubFile[] {
     add(config.feeds.radar, 'entries', 'entries', false);
     if (config.career !== null) add(config.career, 'sections', 'entries', false);
     return [...files.values()];
+}
+
+/**
+ * The reader's bookmarks file where a hub keeps it, the default of server/files/workspace/paths.ts.
+ */
+const BOOKMARKS_FILE = `${ROOT_FOLDER}/bookmarks.yml`;
+
+/** The fields of a text's own `schema:` block, or none when it has none or it does not read. */
+function ownBlock(text: string): SchemaField[] | undefined {
+    let parsed: unknown;
+    try {
+        parsed = parse(text);
+    } catch {
+        return undefined;
+    }
+    const held =
+        typeof parsed === 'object' && parsed !== null ? (parsed as { schema?: unknown }) : {};
+    return held.schema === undefined ? undefined : fieldsOf(held.schema);
 }
 
 /** A scan rule's directory without its trailing slash. */
@@ -268,6 +287,16 @@ export function runSchemas(
         findings.push(...ctx.problems.map((problem) => problemFinding(config, path, problem)));
         findings.push(...fieldFindings(config, path, text, held.schema as unknown[], fields));
         docs.push({ name, file: path, text });
+    }
+
+    // The reader's bookmarks are a collection file in the hub's own folder that the portfolio does
+    // not build from: its schema is made from its own `schema:` block as a data file's is, and
+    // serves the editor alone, since the gate checks only what the portfolio reads.
+    const marks = readText(join(hub, BOOKMARKS_FILE));
+    const marked = marks === undefined ? undefined : ownBlock(marks);
+    if (marked !== undefined) {
+        const own = { kind: 'entries' as const, list: 'entries', written: [], own: true };
+        add('bookmarks', fileSchema(marked, own, context('schema.')), { hub: [BOOKMARKS_FILE] });
     }
 
     for (const one of projectFileSchemas(config, lists)) {

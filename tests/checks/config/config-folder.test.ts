@@ -4,8 +4,17 @@
 // name resolve. The machine's own local.yml is left out of every list here, since a checkout has
 // one or it has none and neither may change a result.
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { parse } from 'yaml';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -23,10 +32,18 @@ import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
+import {
+    TEMPLATES_PAGE,
+    collectionTemplates,
+    hubConfigText
+} from '../../../src/lib/data/sources/documents/templates.ts';
+import { ensureBookmarksFile } from '../../../src/lib/server/files/fs/bookmarks.ts';
+import { withOwnSchemas } from '../../../src/lib/server/root/watch/own-schemas.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
     isChorded,
+    readGroups,
     type DocEntry,
     type NavGroup
 } from '../../../src/lib/state/workbench/navigation/catalogue.ts';
@@ -125,19 +142,11 @@ describe("oculus's own config directory", () => {
             'usage_tiers',
             'usage_refresh_min',
             'usage_refresh_model',
-            'waiting_status',
             'audit_ignore',
             'calendar',
             'mail',
             'processes',
-            'stale_lag_days',
-            'refresh_stale_days',
-            'deadline_horizon_days',
-            'leads_horizon_days',
-            'conf_horizon_months',
-            'leads_badge_days',
-            'venue_conc_warn',
-            'linkedin_cadence_days',
+            'focus',
             'file_index',
             'slurm',
             'chat',
@@ -167,14 +176,10 @@ describe("oculus's own config directory", () => {
             'arrangements',
             'workbench',
             'floats',
-            'board',
-            'tab_split',
-            'tab_rollup',
-            'nav_live',
+            'boards',
+            'counts',
             'docs',
             'focus_label_mode',
-            'project_label_mode',
-            'archive_label_mode',
             'map_label_mode'
         ],
         'schemas/cpp-schema.yml': ['cpp_schema'],
@@ -190,26 +195,21 @@ describe("oculus's own config directory", () => {
             'portfolio_deck',
             'memories_dir',
             'wallpaper_dir',
-            'recover_command',
             'repository_scan_depth',
             'languages'
         ],
         'catalogs/vocab.yml': [
             'palette',
-            'type_color',
-            'type_order',
-            'status_legend',
-            'status_palette',
+            'types',
+            'statuses',
             'focus_lanes',
             'holding_color',
             'priority_levels',
             'fund_stages',
             'focus_lane_tones',
-            'career_host_status',
-            'career_score_dims',
-            'archive_categories',
-            'archive_dead',
-            'leads_fit',
+            'archive_order',
+            'tiers',
+            'publication_kinds',
             'lifecycle',
             'data_access',
             'venue_categories',
@@ -299,9 +299,17 @@ describe("oculus's own config directory", () => {
         ['catalogs/icons.yml', 'icons: [1]\n', 'icons', 'icons must be a map'],
         [
             'catalogs/vocab.yml',
-            'palette:\n    "#fff": c-a\nstatus_palette: 3\n',
-            'status_palette',
-            'status_palette must be a map'
+            'palette:\n    "#fff": c-a\nstatuses: 3\n',
+            'statuses',
+            'statuses must be a map'
+        ],
+        ['catalogs/vocab.yml', 'types: [active]\n', 'types', 'types must be a map'],
+        ['catalogs/vocab.yml', 'tiers: 3\n', 'tiers', 'tiers must be a map'],
+        [
+            'catalogs/vocab.yml',
+            'publication_kinds: { kind: thesis }\n',
+            'publication_kinds',
+            'publication_kinds must be a list'
         ],
         [
             'text/views/system/status.yml',
@@ -363,12 +371,14 @@ describe("oculus's own config directory", () => {
 
     it("keys every catalogue group but the float's by the rail page it holds, in rail order, System after Help", () => {
         const { config } = loadConfig(engineDir());
-        const groups = config.nav_groups as Record<string, { label: string }>;
+        const groups = readGroups(config);
         const rail = config.rail as { label: string; page: string }[];
-        expect(groups).toHaveProperty('float');
-        const pages = Object.keys(groups).filter((key) => key !== 'float');
+        expect(Object.keys(config.nav_groups as Record<string, unknown>)).toEqual(['float']);
+        const pages = groups.map((group) => group.id).filter((key) => key !== 'float');
         expect(pages).toEqual(rail.map((entry) => entry.page));
-        expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
+        expect(groups.filter((group) => group.id !== 'float').map((group) => group.label)).toEqual(
+            rail.map((entry) => entry.label)
+        );
         expect(pages.indexOf('views')).toBe(pages.indexOf('help') + 1);
         expect(pages).not.toContain('info');
         expect(config.arrangements).not.toHaveProperty('info');
@@ -382,13 +392,15 @@ describe("oculus's own config directory", () => {
     });
 
     it('uses glyph names for every configured icon', () => {
-        const { config } = loadConfig(engineDir());
+        const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const glyphs = glyphCatalog(config);
         const hosts = config.career_host_status as Record<string, { icon: string }>;
-        const statuses = config.status_legend as { key: string; icon: string }[];
+        const statuses = config.statuses as Record<string, { icon?: string }>;
         const icons = [
             ...Object.values(hosts).map((entry) => entry.icon),
-            ...statuses.map((entry) => entry.icon)
+            ...Object.values(statuses).flatMap((entry) =>
+                entry.icon === undefined ? [] : [entry.icon]
+            )
         ];
         expect(
             Object.entries(hosts)
@@ -484,8 +496,7 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
-        const raw = config.nav_groups as Record<string, Omit<NavGroup, 'id'>>;
-        const groups = Object.entries(raw).map(([id, group]) => ({ id, ...group }));
+        const groups: NavGroup[] = readGroups(config);
         const sections = arrange(
             views().filter((view) => view.listed !== false),
             groups,
@@ -530,7 +541,7 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(config));
-        const groups = new Set(Object.keys(config.nav_groups as Record<string, unknown>));
+        const groups = new Set(readGroups(config).map((group) => group.id));
         const invalid = views()
             .filter((view) => view.listed !== false)
             .filter((view) => !groups.has(view.group) || view.order < 0);
@@ -546,7 +557,7 @@ describe("oculus's own config directory", () => {
     /** The checks of the document entries of a hub's merged config. */
     function checkDocs(hub: string): void {
         const { config } = loadConfig(engineDir(), { hub });
-        const groups = Object.keys(config.nav_groups as Record<string, unknown>);
+        const groups = readGroups(config).map((group) => group.id);
         const docs = config.docs as { label: string; path: string; group: string }[];
         expect(docs.length).toBeGreaterThan(0);
         for (const entry of docs) {
@@ -615,6 +626,140 @@ describe("oculus's own config directory", () => {
         expect(unmatched).toEqual([]);
         expect(problems).toEqual([]);
     });
+
+    it('describes every flag of statuses, types and tiers and every key of publication_kinds in the schema of vocab.yml', () => {
+        const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
+        const portfolio = portfolioConfigFrom(config);
+        const dir = join(engineDir(), 'config');
+        const { schemas } = buildPortfolioWithSchemas(
+            DEMO_HUB,
+            portfolio,
+            1,
+            [],
+            createChecker(),
+            { dir, held: [{ root: 'config', path: '' }] },
+            'hub'
+        );
+        const name = schemaFor(schemas, 'config', 'catalogs/vocab.yml');
+        const schema = JSON.parse(name === undefined ? '{}' : schemas.texts[name]) as {
+            properties?: Partial<Record<string, { additionalProperties?: Row; items?: Row }>>;
+        };
+        type Row = { properties?: Record<string, { description?: string }> };
+        const vocab = schema.properties ?? {};
+        const rows: [string, Row | undefined][] = [
+            ['statuses', vocab.statuses?.additionalProperties],
+            ['types', vocab.types?.additionalProperties],
+            ['tiers', vocab.tiers?.additionalProperties],
+            ['publication_kinds', vocab.publication_kinds?.items]
+        ];
+        /** The words a row is drawn with, which are no flags. */
+        const drawn = new Set(['label', 'icon', 'color']);
+        const keys = rows.flatMap(([key, row]) =>
+            Object.entries(row?.properties ?? {})
+                .filter(([field]) => !drawn.has(field))
+                .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
+        );
+        // 17 status flags, 11 of types, 7 of tiers and the 3 keys of a publication_kinds row.
+        expect(keys).toHaveLength(38);
+        expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
+    });
+
+    /**
+     * What is wrong with a hub's own files `.oculus/config.yml`, `.oculus/bookmarks.yml` and
+     * `.oculus/workspaces/*.yml`: each one no schema matches, and each finding of the schema that
+     * does, as `<path>:<line> <message>`.
+     */
+    function hubFileProblems(hub: string, files: Record<string, string> = {}): string[] {
+        const { config } = loadConfig(engineDir(), { hub });
+        const portfolio = portfolioConfigFrom(config);
+        const checker = createChecker();
+        // The set the server serves: the build's, with the schemas of the files its readers own.
+        const schemas = withOwnSchemas(
+            buildPortfolioWithSchemas(hub, portfolio, 1, [], checker, null, 'hub').schemas
+        );
+        const held = join(hub, '.oculus', 'workspaces');
+        const rels = [
+            HUB_FILE,
+            '.oculus/bookmarks.yml',
+            ...(existsSync(held)
+                ? readdirSync(held).map((name) => `.oculus/workspaces/${name}`)
+                : [])
+        ].filter((rel) => existsSync(join(hub, rel)));
+        expect(rels).toContain(HUB_FILE);
+        const problems: string[] = [];
+        for (const rel of rels) {
+            const name = schemaFor(schemas, 'hub', rel);
+            if (name === undefined) {
+                problems.push(`${rel} has no schema`);
+                continue;
+            }
+            const text = files[rel] ?? readFileSync(join(hub, rel), 'utf8');
+            const found = checkDocument(
+                { name, file: rel, text },
+                schemas.texts,
+                checker,
+                portfolio.text
+            );
+            problems.push(...found.map((one) => `${rel}:${one.line ?? 0} ${one.message}`));
+        }
+        return problems;
+    }
+
+    /**
+     * A hub as Make Folder a Hub... writes it, with every collection the templates page offers, the
+     * bookmarks file the Files view writes on its first bookmark and a workspace file of the shape
+     * the workspace reader takes.
+     */
+    function scratchHub(): string {
+        const hub = mkdtempSync(join(tmpdir(), 'oculus-hub-files-'));
+        const page = readFileSync(join(engineDir(), TEMPLATES_PAGE), 'utf8');
+        const chosen = collectionTemplates(page);
+        const written: [string, string][] = [
+            [HUB_FILE, hubConfigText(page, chosen)],
+            ...chosen.map((one): [string, string] => [one.file, one.body]),
+            [
+                '.oculus/workspaces/scratch.yml',
+                'folders:\n  - { name: scratch, path: ~/scratch }\nprimary: scratch\n'
+            ]
+        ];
+        for (const [rel, text] of written) {
+            mkdirSync(dirname(join(hub, rel)), { recursive: true });
+            writeFileSync(join(hub, rel), text);
+        }
+        ensureBookmarksFile(join(hub, '.oculus', 'bookmarks.yml'));
+        return hub;
+    }
+
+    it("matches the hub's own files of a scratch hub to a schema each, read with no finding", () => {
+        const hub = scratchHub();
+        try {
+            expect(hubFileProblems(hub)).toEqual([]);
+        } finally {
+            rmSync(hub, { recursive: true, force: true });
+        }
+    });
+
+    it('reads a key of .oculus/config.yml outside the hub list as not declared', () => {
+        const hub = scratchHub();
+        try {
+            const text = `${readFileSync(join(hub, HUB_FILE), 'utf8')}\nwallpaperz: x\n`;
+            const found = hubFileProblems(hub, { [HUB_FILE]: text });
+            expect(found).toHaveLength(1);
+            expect(found[0]).toContain('wallpaperz');
+        } finally {
+            rmSync(hub, { recursive: true, force: true });
+        }
+    });
+
+    it.skipIf(!REAL.asked)(
+        realHubName(
+            "matches the real hub's own files to a schema each, read with no finding",
+            REAL
+        ),
+        () => {
+            expect(hubFileProblems(hubOf(REAL))).toEqual([]);
+        }
+    );
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {
         const dir = join(engineDir(), 'config');

@@ -22,6 +22,7 @@ import type { MachineProblem } from './machine.ts';
 import { CATALOGS_DIR, TEXT_KEY, textCatalog } from './merge.ts';
 import { catalogOf } from './catalog/options.ts';
 import { closedPaths, settingProblems } from './settings.ts';
+import { focusFindings } from './sections/focus.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
@@ -33,9 +34,8 @@ import { closedPaths, settingProblems } from './settings.ts';
  */
 export const VOCAB_KEYS = [
     'palette',
-    'status_palette',
-    'type_color',
-    'status_legend',
+    'statuses',
+    'types',
     'data_access',
     'themes',
     'wallpaper',
@@ -174,7 +174,8 @@ function writtenKeys(file: string): string[] {
  * not read, which is ignored where it stands (`chat.skip_permissions` and `tasks.skip_permissions`,
  * whose place is a schedule's Run unattended choice); and an `apps.closed_paths` that is missing,
  * is no list of strings or holds an entry that is no folder path, since the default of the entry
- * does not stand in for it. It is worded from the merged catalog, as iconFindings' are.
+ * does not stand in for it; and what is wrong with the `focus:` block (sections/focus.ts). It is
+ * worded from the merged catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
@@ -200,6 +201,7 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
             message: findingText(catalog, 'findings.config.skip_permissions_retired', key)
         });
     }
+    findings.push(...focusFindings(config, file, catalog));
     if (!closedPaths(config).shaped) {
         findings.push({
             file,

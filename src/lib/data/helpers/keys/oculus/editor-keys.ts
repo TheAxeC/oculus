@@ -1,6 +1,7 @@
 // Layer 1, data. The keys the editor takes for the workbench: the first presses of the LaTeX tab's
-// actions and chords (views/sources/source/latex/latex-tab.svelte.ts). The tab binds exactly
-// these, and the audit of an app's keybindings reads them as keys oculus takes. A press is written
+// actions and chords (views/sources/source/latex/latex-tab.svelte.ts), and the second presses of
+// its chords. The tab binds exactly these, the audit of an app's keybindings reads the first
+// presses as keys oculus takes, and the Keyboard Shortcuts view lists them all. A press is written
 // as the page's key tables write one (page-keys.ts), where the save key is.
 
 import { nameOfCode, type KeyPlatform } from '../keys.ts';
@@ -19,6 +20,31 @@ export const LATEX_PRESSES = {
 
 /** The first press of the LaTeX tab's two-press chords for text commands and surrounding. */
 export const LATEX_CHORD_FIRST = { code: 'KeyL', cmd: true } as const satisfies Press;
+
+/**
+ * The second presses after `LATEX_CHORD_FIRST` that run a command of the LaTeX tab's own rather
+ * than a configured one: a new `\item` and Surround.
+ */
+export const LATEX_CHORD_SECONDS = {
+    item: { code: 'Enter', cmd: true },
+    surround: { code: 'KeyW', cmd: true }
+} as const satisfies Record<string, Press>;
+
+/**
+ * The second press of a configured chord of the LaTeX tab (`chords` of config/catalogs/latex.yml):
+ * Cmd with the character's key, and Shift for a capital.
+ */
+export function latexChordSecond(character: string): Press {
+    const code =
+        character === '-'
+            ? 'Minus'
+            : /^[0-9]$/.test(character)
+              ? `Digit${character}`
+              : `Key${character.toUpperCase()}`;
+    return character === character.toLowerCase()
+        ? { code, cmd: true }
+        : { code, cmd: true, shift: true };
+}
 
 /** The first press of the LaTeX tab's chords for math commands: Ctrl+Shift+M on macOS. */
 export function latexMathFirst(

@@ -15,7 +15,7 @@ import {
     navigatePresses,
     SAVE_PRESS,
     SEARCH_PRESSES,
-    SHEET_CHARACTER,
+    SHORTCUTS_CHARACTER,
     type Press
 } from './page-keys.ts';
 import { isPress, KEY_ROWS } from './palette-table.ts';
@@ -72,7 +72,7 @@ export type KeyAction =
     | { kind: 'find-in-files' }
     | { kind: 'replace-in-files' }
     | { kind: 'scroll'; edge: 'top' | 'bottom' }
-    | { kind: 'sheet' }
+    | { kind: 'shortcuts' }
     | { kind: 'new-session' }
     | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'save' }
@@ -337,8 +337,8 @@ export function resolveKey(
     if (event.key === 'Escape' && context.cursorActive) {
         return { action: { kind: 'clear-cursor' }, state: { ...state, chord: '' } };
     }
-    if (event.key === SHEET_CHARACTER) {
-        return { action: { kind: 'sheet' }, state: { ...state, chord: '' } };
+    if (event.key === SHORTCUTS_CHARACTER) {
+        return { action: { kind: 'shortcuts' }, state: { ...state, chord: '' } };
     }
     if (Object.hasOwn(order.chords, event.key)) {
         return { action: null, state: { ...state, chord: event.key, chordAt: now } };

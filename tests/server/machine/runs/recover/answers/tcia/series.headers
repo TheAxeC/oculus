@@ -1,0 +1,8 @@
+HTTP/1.1 200
+Server: nginx
+Date: Mon, 19 Oct 2026 08:24:05 GMT
+Content-Type: application/json
+Content-Length: 696
+Connection: keep-alive
+Access-Control-Expose-Headers: Content-Disposition
+

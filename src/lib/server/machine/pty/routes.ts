@@ -5,7 +5,7 @@
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
 // or resumes a terminal, starts the composer's session, types a message into one or interrupts its
-// turn, forks a session, starts dataset recovery, starts an update task, or builds or cleans one
+// turn, forks a session, starts an update task, or builds or cleans one
 // main file of a project's manuscript or of a folder of a served root, runs a project command,
 // runs a task terminal's line again or reads the output of a listed terminal, and additionally
 // carries the write token, since it is a write in DESIGN.md's "Auth" sense: it runs a process on
@@ -27,8 +27,7 @@ import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
 import type { HubSettings } from '../../../data/index.ts';
-import { allHubs, repositoryRoots } from '../../files/roots.ts';
-import { RECOVER_KEY } from '../../../data/helpers/hub-names.ts';
+import { repositoryRoots } from '../../files/roots.ts';
 import { fallbackShell } from '../../../data/places/platform.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
 import type { RcHomes } from './latex/approval.ts';
@@ -78,16 +77,10 @@ import {
     type StartOptions
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
-import { shellWord } from './shell-word.ts';
 import { startUpdateTask } from '../runs/schedules/task.ts';
 import { run } from './tmux.ts';
 import type { Turns } from './latex/turns.ts';
-import type {
-    Dataset,
-    SessionRecord,
-    TerminalKind,
-    TerminalResume
-} from '../../../data/model/index.ts';
+import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 import { taskRefOf } from '../../../data/shapes/shapes.ts';
 
 /** The name of a start request: text, and anything else starts the terminal with no name. */
@@ -111,7 +104,7 @@ export type TerminalOptions = StartOptions &
         engine: string;
         /**
          * The settings of a hub of the workspace other than the primary, by its folder: the
-         * server's kept parse of them, which a recovery and a hub task read.
+         * server's kept parse of them, which a hub task reads.
          */
         hubSettings: HubSettings;
         /**
@@ -119,8 +112,6 @@ export type TerminalOptions = StartOptions &
          * Defaulted Tests and the route pass the source they own.
          */
         recordFor?: (id: string) => SessionRecord | null;
-        /** A dataset of the server's latest portfolio payload by its id, or null. */
-        datasetFor?: (id: string) => Dataset | null;
         /** Whether a program is found, as a build looks up each program of its recipe. */
         programFound?: (program: string) => boolean;
         /** Re-read the terminal manager after a write. */
@@ -360,53 +351,6 @@ function approveSeedTask(message: Record<string, unknown>, options: TerminalOpti
     return json({ ok: true }, { headers: NO_STORE });
 }
 
-/**
- * Run the `recover_command` of a dataset's own hub for one dataset the current snapshot holds and
- * marks `recover`, in that hub's folder, with `{key}` replaced by the dataset's key in its hub as
- * one shell word. The terminal is a task terminal, so it stays after the command ended, with the
- * command's output and its exit status, and Rerun runs the command again.
- */
-async function recoverDataset(
-    key: unknown,
-    cols: unknown,
-    rows: unknown,
-    options: TerminalOptions
-): Promise<Response> {
-    // A key that starts with a dash would read as a flag of a recovery script (a --all would fetch
-    // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the
-    // rest.
-    if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
-        return refusal('bad-terminal');
-    }
-    const dataset = options.datasetFor?.(key) ?? null;
-    if (dataset?.recover !== true) return refusal('bad-terminal');
-    const open = options.openFor();
-    const name = dataset.root ?? open.primary;
-    const hub = allHubs(options.configFor(), open, options.hubSettings).find(
-        (one) => one.key === name
-    );
-    const template = hub?.config.recoverCommand ?? null;
-    if (hub === undefined || template === null) return refusal('bad-terminal');
-    const own = dataset.root === undefined ? key : key.slice(dataset.root.length + 1);
-    if (own === '' || own.startsWith('-')) return refusal('bad-terminal');
-    const terminal = await startTerminal(
-        {
-            kind: 'shell',
-            cwd: hub.hub,
-            cols,
-            rows,
-            name: `recover ${key}`
-        },
-        {
-            ...options,
-            command: template.replaceAll(RECOVER_KEY, shellWord(own)),
-            task: { repo: hub.hub, name: `recover ${key}` }
-        }
-    );
-    options.refresh?.();
-    return json({ ok: true, terminal }, { headers: NO_STORE });
-}
-
 /** Start one of the four update tasks as a Claude terminal in the configured hub root. */
 async function startTask(
     kind: unknown,
@@ -439,8 +383,8 @@ function sessionOf(message: Record<string, unknown>): TerminalResume | Response 
 }
 
 /**
- * POST /api/terminal: start, compose, steer, interrupt, fork, stop, resize, resume or recover one
- * terminal, run a project command, or run a task terminal's line again.
+ * POST /api/terminal: start, compose, steer, interrupt, fork, stop, resize or resume one terminal,
+ * run a project command, or run a task terminal's line again.
  */
 export async function handleTerminal(
     request: Request,
@@ -482,9 +426,6 @@ export async function handleTerminal(
             );
             options.refresh?.();
             return json({ ok: true, terminal }, { headers: NO_STORE });
-        }
-        if (message.action === 'recover') {
-            return await recoverDataset(message.key, message.cols, message.rows, options);
         }
         if (message.action === 'task') {
             return await startTask(message.kind, message.cols, message.rows, options);

@@ -1,6 +1,6 @@
 // Layer 2, server. The host the Live HPC poller connects to. The machine's own `hpc_host` of
 // local.yml wins when it names one; otherwise it is the ssh alias of the cluster entry that
-// `slurm.resource` of behavior.yml names in registries/resources.yml; otherwise there is no host
+// `slurm.resource` of behavior.yml names in the resources registry; otherwise there is no host
 // and a sentence says why. A hub that sets no `slurm.resource` has no cluster, and the sentence
 // says that the hub's settings name none; that is the one case marked `unconfigured`, which is not
 // a failure: every other reason for having no host is a cluster that cannot be reached. The

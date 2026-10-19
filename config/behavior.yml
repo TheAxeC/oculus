@@ -22,38 +22,49 @@ usage_tiers:
 usage_refresh_min: 10
 usage_refresh_model: "haiku"
 
-# Collection-entry statuses that wait on someone else, so the audit asks for a date to track them by.
-waiting_status: [submitted, pending, under review, under-review]
-
-
 # Audit findings the reader has parked. Each entry is a finding's signature, the twelve hex characters the Audit view's mute control writes here; the finding stays true and is drawn in the muted section.
 audit_ignore: []
 
 
-# A manifest is stale when its `updated` date trails the newest project content by this many days.
-stale_lag_days: 1
+# === The Focus board =========================================================
+# Its horizons, thresholds and cadences, and the lists that say what its command center and its columns read.
+focus:
+  # A manifest is stale when its `updated` date trails the newest project content by this many days.
+  stale_lag_days: 1
 
+  # The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
+  refresh_stale_days:
+    litwatch: 14  # the Lit Watch update task (meta.last_run in the radar file)
+    inbox: 2  # the Inbox update task (the triage notes under `mail_dir`)
+    scout: 7  # the Scout update task (newest meta.log date in the leads file)
 
-# The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
-refresh_stale_days:
-  litwatch: 14  # the Lit Watch update task (meta.last_run in literature-radar.yml)
-  inbox: 2  # the Inbox update task (the triage notes under `mail_dir`)
-  scout: 7  # the Scout update task (newest meta.log date in position-leads.yml)
+  # Look-ahead windows for each deadline class on the Focus strip.
+  deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)
+  leads_horizon_days: 21  # academic-position-lead deadlines from the leads file (default 21)
+  conf_horizon_months: 1  # venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
 
+  venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
+  linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
 
-# Look-ahead windows for each deadline class on the Focus strip.
-deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)
+  # The command center's deadline groups, in the order it lists them.
+  ticker_categories: [paper, funding, event, teaching, position, collab, task, conference]
 
-leads_horizon_days: 21  # academic-position-lead deadlines from position-leads.yml (default 21)
+  # Where the command center's dated lines come from: each row a source and the category of `ticker_categories` its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub, whose undated entries are task lines when the row says `undated: true` and are left out otherwise. A source no row names is not read.
+  ticker_sources:
+    - { collection: projects,     category: paper }
+    - { collection: funding,      category: funding }
+    - { collection: events,       category: event }
+    - { collection: education,    category: teaching }
+    - { collection: tasks,        category: task, undated: true }
+    - { collection: applications, category: position }
+    - { collection: joint-work,   category: collab }
+    - { collection: leads,        category: position }
+    - { collection: venues,       category: conference }
 
-conf_horizon_months: 1  # venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
-
-leads_badge_days: 14         # amber count badge on Position Leads, leads due within N days (default 14)
-
-
-venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
-
-linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
+  # The entry statuses the Focus columns and counts read, compared without regard to case: the applications the positions column shows and the Applications tab counts, the teaching the teaching column shows, and the applications the Awaiting box lists as out for a decision.
+  applications_open: [active]
+  education_open: [ongoing]
+  applications_sent: [applied]
 
 
 # === Per-project file finder ================================================
@@ -98,7 +109,7 @@ mail:
 
 # === The source editor ======================================================
 # The editor colours a file by running its grammar over the text in the page as it is typed, so a file larger than this many kilobytes opens as plaintext instead; the read-only code window, painted once, colours every size.
-# The other keys are VS Code's editor settings of the same names (editor.tabSize, editor.insertSpaces, editor.wordWrap, editor.minimap.enabled, editor.renderWhitespace, editor.stickyScroll.enabled), and autosave, autosave_delay_ms, trim_trailing_whitespace and final_newline are VS Code's files.autoSave, files.autoSaveDelay, files.trimTrailingWhitespace and files.insertFinalNewline; languages holds the records VS Code's per-language settings give, by the editor's language name, and a repository's .oculus/settings.yml overrides them for its files.
+# The other keys are VS Code's editor settings of the same names (editor.tabSize, editor.insertSpaces, editor.wordWrap, editor.minimap.enabled, editor.renderWhitespace, editor.stickyScroll.enabled); suggest_details is whether the suggest list opens with its panel of descriptions shown until the reader toggles it, which each browser then keeps; autosave, autosave_delay_ms, trim_trailing_whitespace and final_newline are VS Code's files.autoSave, files.autoSaveDelay, files.trimTrailingWhitespace and files.insertFinalNewline; languages holds the records VS Code's per-language settings give, by the editor's language name, and a repository's .oculus/settings.yml overrides them for its files.
 editor:
   paint_limit_kb: 20480
   tab_size: 4
@@ -107,6 +118,7 @@ editor:
   minimap: true
   render_whitespace: selection
   sticky_scroll: true
+  suggest_details: true
   autosave: 'off'
   autosave_delay_ms: 1000
   trim_trailing_whitespace: false

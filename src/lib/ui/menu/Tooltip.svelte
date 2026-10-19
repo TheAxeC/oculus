@@ -330,7 +330,7 @@
     .bubble {
         position: relative;
         /* Drawn on the body, so it orders against the overlays rather than inside the one whose
-           control it describes: above the tray, the confirm box, the palette and the key sheet. */
+           control it describes: above the tray, the confirm box and the palette. */
         z-index: 80;
         max-width: 280px;
         padding: 3px 6px;
@@ -382,9 +382,13 @@
         backdrop-filter: blur(var(--wall-blur));
     }
 
-    /* The terminal shape: the same face as the rest of the theme, and a square corner. */
+    /* The terminal shape: a square corner, and the same face as the rest of the theme, which is
+       the monospace face while the Monospace toggle is on. */
     :global(body.rice) .bubble {
-        font-family: var(--font-mono);
         border-radius: 0;
+    }
+
+    :global(body.rice:where(:not(.rice-sans))) .bubble {
+        font-family: var(--font-mono);
     }
 </style>

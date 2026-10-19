@@ -2,7 +2,8 @@
 // reader can say, as findings on the config channel: a control word the vocabulary lacks, a source
 // it does not list, a choice with nothing to choose from, a field without a help line, an entry
 // under no heading or an unknown one, a range whose minimum is above its maximum, a `whole` that is
-// not true, a `form` that is not one of the forms, and a list of slots that is not a list of words.
+// not true, a `form` that is not one of the forms, a list of slots that is not a list of words, and
+// a `holds: lists` on an entry that is no key/value family.
 // Each is a thing a saved edit can introduce while the server runs, where a throw would take the
 // page down with it; catalogOf reads the entry as a text option, or under the heading for entries
 // with none, and the finding says why. The problems are the reader's own (readCatalog of
@@ -45,6 +46,8 @@ function problemText(problem: OptionProblem, catalog: ReturnType<typeof textCata
             return findingText(catalog, 'findings.options.form', problem.word);
         case 'slots':
             return findingText(catalog, 'findings.options.slots');
+        case 'holds':
+            return findingText(catalog, 'findings.options.holds');
         case 'heading_missing':
             return findingText(catalog, 'findings.options.heading_missing');
         case 'heading_unknown':

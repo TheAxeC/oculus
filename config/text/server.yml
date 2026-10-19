@@ -198,7 +198,6 @@ text:
             wrong_map: This setting is a map in the file, so it takes a map
             bad_record: 'Entry {0} is not a record of named fields'
             bad_field: 'Entry {0} has a field {1} that this setting does not describe'
-            wants_list: 'Entry {0} must be a list of records, as every entry of this setting is'
             wants_record: 'Entry {0} must be one record, not a list'
             wants_scalar: 'Entry {0} must be one value or a list of values, not a record'
             wants_value: 'Entry {0} must be one value, not a list or a record'
@@ -442,6 +441,7 @@ text:
             no_accounts: no accounts
             no_key: none
             no_opener: none on this platform
+            secret_set: set
         manifest_write:
             group: 'the field is a group; set its children, or clear it whole'
             id_read_only: 'the id is the name of the folder, or for a repository the name of its workspace folder; rename that to change it'

@@ -35,6 +35,17 @@ export type KeyPress = {
     alt?: true;
 };
 
+/**
+ * What a parent hands for Show Suggestions and the suggest list's description panel
+ * (keys/suggest.ts): the action's label in the parent's words, whether the panel is shown, and
+ * what to call when the reader shows or closes it.
+ */
+export type EditorSuggest = {
+    label: string;
+    details: boolean;
+    ondetails: (shown: boolean) => void;
+};
+
 /** The keys of an action: one press, or two pressed one after the other. */
 export type EditorKey = KeyPress | readonly [KeyPress, KeyPress];
 

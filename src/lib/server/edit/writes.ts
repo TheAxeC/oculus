@@ -18,10 +18,11 @@
 // registry keys its entities by it.
 //
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
-// new idea, feeds/feed-route.ts for the feed writes and Save to Literature (feeds/feeds.ts and
-// feeds/literature.ts write them), writes/entries.ts for a collection file, writes/subtasks.ts for
-// a subtask line and a career host, writes/bodies.ts for the body parsers (one per kind of write),
-// writes/file-undo.ts for taking back a file operation, and the writers of the engine's own
+// new idea, edit/feeds/feed-route.ts for the feed writes and Save to Literature
+// (edit/feeds/feeds.ts and edit/feeds/literature.ts write them), writes/entries.ts for a
+// collection file, writes/subtasks.ts for a subtask line and a career host, writes/bodies.ts for
+// the body parsers (one per kind of write), writes/file-undo.ts for taking back a file operation,
+// and the writers of the engine's own
 // configuration files, in writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the
 // audit's mute list, rail.ts for the rail list, folders.ts for the open workspace's folders,
 // config-key.ts for one option of a tracked config file and config-value.ts for one list or family

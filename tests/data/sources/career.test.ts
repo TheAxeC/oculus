@@ -4,14 +4,21 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { CAREER_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { readCareer } from '../../../src/lib/data/sources/documents/career.ts';
+import { engineDefaults } from '../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-parts/career.ts';
+import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+
+/** The career file's default path, from oculus's own table of default paths. */
+const CAREER_FILE = engineDefaults().career ?? '';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
+
+/** The demo hub's merged config, whose `career_host_status` gives an unset host its status. */
+const DEMO = loadConfig(engineDir(), { hub: DEMO_HUB }).config;
 
 const CAREER = `title: Career strategy
 milestone: "FWO Senior - 2 shots left (Nov 2026 and Nov 2027)."
@@ -43,7 +50,7 @@ dropped:
 function hub(body: string | null): string {
     const dir = scratchDir('oculus-career-');
     if (body !== null) {
-        const full = join(dir, 'registries/career.yml');
+        const full = join(dir, CAREER_FILE);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
         mkdirSync(dirname(full), { recursive: true });
         writeFileSync(full, body);
@@ -62,7 +69,7 @@ describe('reading the career file', () => {
 describe('normalising it', () => {
     let held: ReturnType<typeof career> = null;
     test.beforeAll(() => {
-        held = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career);
+        held = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career, DEMO);
     });
 
     it('reads the title, the milestone and the situation strip', () => {
@@ -70,6 +77,15 @@ describe('normalising it', () => {
         expect(held?.situation).toEqual([
             { label: 'PhD', value: 'May 2023, KU Leuven' },
             { label: 'Now', value: 'Postdoc, U Twente' }
+        ]);
+    });
+
+    it("gives a host with no status the hub's career_host_status word carrying default", () => {
+        const body = `hosts:\n  - { name: "Unplaced", inst: "KU Leuven" }\n  - { name: "Warm", status: "warm" }\n`;
+        const read = career(readCareer(hub(body), CAREER_FILE, CATALOG).career, DEMO);
+        expect(read?.hosts.map((one) => [one.name, one.status])).toEqual([
+            ['Unplaced', 'candidate'],
+            ['Warm', 'warm']
         ]);
     });
 });
@@ -81,7 +97,7 @@ describe('what the editor edits', () => {
     ];
 
     it('keeps every section as the file holds it, with the schema left out', () => {
-        const read = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career);
+        const read = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career, DEMO);
         expect(Object.keys(read?.sections ?? {})).toEqual([
             'title',
             'milestone',
@@ -103,7 +119,7 @@ describe('what the editor edits', () => {
 
     it('carries the file schema, one field per section, and not as a section', () => {
         const body = `schema:\n  - { field: title, type: text }\n  - { field: milestone, type: text }\n${CAREER}`;
-        const read = career(readCareer(hub(body), CAREER_FILE, CATALOG).career);
+        const read = career(readCareer(hub(body), CAREER_FILE, CATALOG).career, DEMO);
         expect(read?.schema).toMatchObject(SCHEMA);
         expect(read?.sections).not.toHaveProperty('schema');
     });

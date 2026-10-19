@@ -5,9 +5,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { REGISTRY_FILES, readRegistries } from '../../../src/lib/data/sources/registries.ts';
+import { readRegistries, registryFiles } from '../../../src/lib/data/sources/registries.ts';
+import { engineDefaults } from '../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+
+/** Each registry's default path, from oculus's own table of default paths. */
+const REGISTRY_FILES = registryFiles([], () => engineDefaults().collections);
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);

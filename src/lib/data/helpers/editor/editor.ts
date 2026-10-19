@@ -46,6 +46,8 @@ export type EditorOptions = {
     minimap: boolean;
     renderWhitespace: Whitespace;
     stickyScroll: boolean;
+    /** Whether the suggest list opens with its description panel shown, until a toggle. */
+    suggestDetails: boolean;
     autosave: Autosave;
     /** The milliseconds after the last edit that `after_delay` saves a tab. */
     autosaveDelay: number;

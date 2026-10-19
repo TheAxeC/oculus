@@ -24,6 +24,12 @@ const DOCS = ['HELP.md', 'DESIGN.md', 'README.md'];
 /** The folder holding the Apps guide and any other Markdown document, each read whole as well. */
 const GUIDES = 'docs';
 
+/**
+ * The folder of the answers the Recover source readers' tests replay: data a server sent, read as
+ * no prose by its path.
+ */
+const ANSWERS = 'tests/server/machine/runs/recover/answers/';
+
 /** The one file the vocabulary may appear in is the one carrying this word. */
 const MARKER = 'oculus-plan-id-audit';
 
@@ -79,12 +85,17 @@ function files(at: string): string[] {
 /**
  * The prose of each line of a file, by line: every line of a text file whole (a list, a Markdown
  * page or a LaTeX source of a fixture hub), the comment of a YAML line (a `#` opening the line or
- * following a space), and for a file of code the comment text the code reader finds on the line,
- * trailing comments included and code and strings left out.
+ * following a space), for a file of code the comment text the code reader finds on the line,
+ * trailing comments included and code and strings left out, and nothing for a recorded web answer
+ * (a `.body` or `.headers` file under ANSWERS), which is data a server sent and holds no prose of
+ * the tree. `file` is the path from the tree's root.
  */
 function proseLines(file: string, source: string): string[] {
     const lines = source.split('\n');
     if (/\.(txt|md|tex)$/.test(file)) return lines;
+    if (file.split(sep).join('/').startsWith(ANSWERS) && /\.(body|headers)$/.test(file)) {
+        return lines.map(() => '');
+    }
     if (file.endsWith('.yml')) {
         return lines.map((line) =>
             line.trimStart().startsWith('#') || line.includes(' # ') ? line : ''
@@ -152,8 +163,8 @@ describe('no history in code', () => {
     // The planted tree tells apart a code line read whole from one read only for its comment: the
     // trailing comments of src/trail.ts and utils/trail.sh are hits, while the url of src/url.ts
     // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A Markdown
-    // page under tests/ is read whole like a list. A document under docs/ holding an id is a hit of
-    // the documents.
+    // page under tests/ is read whole like a list. A recorded web answer under tests/ is data and
+    // no hit, whatever it holds. A document under docs/ holding an id is a hit of the documents.
     it('reads every line of a text file, every document and every comment of code', () => {
         const dir = scratchDir('oculus-history-');
         const plant = (rel: string, body: string): void => {
@@ -173,6 +184,8 @@ describe('no history in code', () => {
         plant('src/app.html', '<html>\n<!-- the page of D19c -->\n</html>\n');
         plant('utils/trail.sh', 'x=1 # Q12\n');
         plant('docs/x.md', 'the guide kept for Q51\n');
+        plant(`${ANSWERS}zenodo/x.body`, '{"updated": "2026-01-01", "id": "Q12"}\n');
+        plant(`${ANSWERS}zenodo/x.headers`, 'HTTP/2 200\nlast-modified: 2026-01-01\n');
         expect(commentHits(dir)).toEqual([
             'src/Page.svelte:1: <!-- drawn for O17 -->',
             'src/Page.svelte:2: <p>{x /* since Q3 */}</p>',
@@ -187,4 +200,18 @@ describe('no history in code', () => {
         ]);
         expect(documentHits(dir)).toEqual(['docs/x.md:1: the guide kept for Q51']);
     });
+
+    // Only the folder of the recorded answers is read as data. A `.body` or `.headers` file
+    // anywhere else has no reader, so the audit stops on it rather than passing it unread.
+    it.each(['tests/answers/x.body', 'tests/answers/x.headers', 'src/x.body'])(
+        'stops on a recorded answer outside the answers folder: %s',
+        (rel) => {
+            const dir = scratchDir('oculus-history-');
+            const full = join(dir, rel);
+            expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
+            mkdirSync(dirname(full), { recursive: true });
+            writeFileSync(full, 'HTTP/2 200\n', 'utf8');
+            expect(() => commentHits(dir)).toThrow('no reader is known for its language');
+        }
+    );
 });

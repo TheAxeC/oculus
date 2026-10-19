@@ -8,11 +8,14 @@
     // it in the Files view under the root of the hub the venue is of, since a folder of the hub is
     // no site and the file address cannot serve it; an address is the site link, opened in a tab of
     // the browser's own. Both links the card draws, the site and the call, go through `hrefOf`, so
-    // neither is left relative to the page's own address.
+    // neither is left relative to the page's own address. A web address written in a plain item of
+    // the metadata line (the timing) is a link (ui/display/text/LinkedText.svelte), and `wants` is
+    // inline Markdown, which links its addresses itself.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
@@ -47,7 +50,7 @@
     const client = useState();
     const {
         layout: { openView, showInFiles },
-        selectors: { archiveDead },
+        selectors: { configMap },
         source: { unsavedFile }
     } = client;
 
@@ -86,7 +89,7 @@
     /** True while the question before a delete is open. */
     let deleting = $state(false);
 
-    const groups = $derived(groupProjects(projects, archiveDead()));
+    const groups = $derived(groupProjects(projects, configMap()));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
     const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
 
@@ -238,7 +241,7 @@
                         {#if item.glyph}
                             <Glyph name={item.glyph} />
                         {/if}
-                        {item.label}
+                        <LinkedText text={item.label} />
                     </span>
                 {/if}
             {/each}

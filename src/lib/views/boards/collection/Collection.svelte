@@ -3,10 +3,10 @@
     // collection at its place in the catalogue, which is the rail page it sits on
     // (state/workbench/layout/tabs/left-out.ts `COLLECTION_PLACES`), and a collection sources.yml
     // or a hub adds that no placement names in the Registries group after them. What a collection
-    // gives its rail button is rail-part.ts's.
+    // counts is rail-part.ts's, and where the count is drawn is its row of `counts`.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import { COLLECTION_PLACES } from '$lib/state/workbench/layout/tabs/left-out';
-    import { collectionRailPart } from './rail-part';
+    import { collectionCountPart } from './rail-part';
 
     export const registration = (keys: string[]): ViewRegistration[] =>
         keys.map((id, index) => {
@@ -26,7 +26,7 @@
                 badgeTitle: applications
                     ? undefined
                     : (client) => client.railBadges.collectionBadgeTitle(id),
-                ...collectionRailPart(id)
+                ...collectionCountPart(id)
             };
         });
 </script>
@@ -166,7 +166,7 @@
     );
 
     const all = $derived(projects());
-    const unfunded = $derived(key === FUNDING ? unfundedBy(all, entries) : []);
+    const unfunded = $derived(key === FUNDING ? unfundedBy(all, entries, configMap()) : []);
 
     let said = $state('');
 

@@ -57,10 +57,10 @@ export type SubtaskAddWrite = {
     fields: Record<string, unknown>;
 };
 
-/** One host of registries/career.yml moved along the pipeline. */
+/** One host of the career file moved along the pipeline. */
 export type HostWrite = { kind: 'host'; name: string; status: string };
 
-/** Sections of registries/career.yml set from the career editor: the section and its new value. */
+/** Sections of the career file set from the career editor: the section and its new value. */
 export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
 /**
@@ -181,8 +181,14 @@ export type RootsWrite =
     | { kind: 'roots'; action: 'remove'; key: string }
     | { kind: 'roots'; action: 'order'; keys: string[] };
 
-/** The rail's whole list of pages, in order, each entry a label, a glyph name and a page key. */
-export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; page: string }[] };
+/**
+ * The rail's whole list of pages, in order, each entry a label, a glyph name, a page key, and the
+ * chord and heading glyph of its group in the view catalogue, each empty when it has none.
+ */
+export type RailWrite = {
+    kind: 'rail';
+    rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[];
+};
 
 /**
  * One option of a tracked config file set to a value: the file's name, the dotted key path and the
@@ -415,10 +421,18 @@ const auditMuteShape = z.object({
     muted: z.boolean()
 }) satisfies z.ZodType<AuditMuteWrite>;
 
-/** A row of the rail keeps its three strings and no other key. */
+/** A row of the rail keeps its five strings, the last two empty when not sent, and no other key. */
 const railShape = z.object({
     kind: z.literal('rail'),
-    rail: z.array(z.object({ label: z.string(), glyph: z.string(), page: z.string() }))
+    rail: z.array(
+        z.object({
+            label: z.string(),
+            glyph: z.string(),
+            page: z.string(),
+            chord: z.string().default(''),
+            group_glyph: z.string().default('')
+        })
+    )
 }) satisfies z.ZodType<RailWrite>;
 
 const rootsShape = z.discriminatedUnion('action', [

@@ -11,6 +11,7 @@ import {
     fileOf,
     printed,
     type AuditInput,
+    type PublicationKind,
     sentence,
     type Raised,
     scopeOf,
@@ -18,25 +19,6 @@ import {
     slurp,
     scalarShape
 } from './rules.ts';
-
-/** Hub types that should have a public entry on the website. */
-const PUBLIC = ['published', 'phd', 'submitted'];
-
-/** Hub-private negative results that must never appear on the public site. */
-const NEGATIVE = ['nogo', 'disproved'];
-
-/** Dead ends: public would mean a real publication typed as one, which is a thing to reconcile. */
-const DEADEND = ['dropped', 'abandoned'];
-
-/** Where a published work may sit when its chips do not say which section it belongs in. */
-const PUB_SECTIONS = [
-    'journal',
-    'conference',
-    'other-publications',
-    'thesis',
-    'abstracts',
-    'posters'
-];
 
 /** Title words carrying no meaning for matching one paper to another. */
 const STOPWORDS = new Set([
@@ -120,21 +102,21 @@ function sitePapers(data: unknown): SitePaper[] {
     return found;
 }
 
-/** The sections a hub project of this type and these chips is expected to appear in. */
-function expectedSections(project: Project): string[] {
-    const chips = new Set(project.chips);
-    if (project.type === 'phd' || chips.has('thesis')) return ['thesis'];
-    if (project.type === 'submitted') {
-        return chips.has('submitted') || chips.has('revision')
-            ? ['papers-in-review']
-            : ['papers-in-preparation'];
+/**
+ * The sections a hub project of this type and these chips is expected to appear in: the `kind` of
+ * the first row of `publication_kinds` whose `types` holds the type and whose `chips` shares one
+ * of the chips, a side the row leaves out holding to nothing; none when no row matches.
+ */
+function expectedSections(project: Project, kinds: readonly PublicationKind[]): string[] {
+    const type = project.type ?? '';
+    for (const row of kinds) {
+        if (row.types !== undefined && !row.types.includes(type)) continue;
+        if (row.chips !== undefined && !row.chips.some((chip) => project.chips.includes(chip))) {
+            continue;
+        }
+        return row.kind;
     }
-    if (project.type === 'abandoned') return ['abandoned-papers'];
-    if (chips.has('abstract')) return ['abstracts'];
-    if (chips.has('poster')) return ['posters'];
-    if (chips.has('conference')) return ['conference'];
-    if (chips.has('journal')) return ['journal', 'other-publications'];
-    return [...PUB_SECTIONS].sort();
+    return [];
 }
 
 /** The best match of a hub title against a pool of site papers, exact key first. */
@@ -194,16 +176,19 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
 
     const claimed = new Set<string>();
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, rules)) continue;
         const type = project.type ?? '';
         const key = normalTitle(project.title);
-        if (key === '' || NEGATIVE.includes(type) || DEADEND.includes(type)) continue;
+        if (key === '' || rules.negativeTypes.has(type) || rules.deadEndTypes.has(type)) continue;
         const found = match(key, titleWords(project.title), site);
         const hit = found.hit;
         if (hit !== null && found.score >= SAME) {
             claimed.add(hit.key);
-            const wanted = expectedSections(project);
-            if (PUBLIC.includes(type) && !sectionsOf(hit).some((one) => wanted.includes(one))) {
+            const wanted = expectedSections(project, rules.publicationKinds);
+            if (
+                rules.publicTypes.has(type) &&
+                !sectionsOf(hit).some((one) => wanted.includes(one))
+            ) {
                 add({
                     scope: scopeOf(project),
                     where: 'publications.yml',
@@ -219,7 +204,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             }
         } else if (hit !== null && found.score >= LOOSE) {
             claimed.add(hit.key);
-            if (PUBLIC.includes(type)) {
+            if (rules.publicTypes.has(type)) {
                 add({
                     scope: scopeOf(project),
                     where: 'publications.yml',
@@ -228,22 +213,26 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                     ...sentence('audit.msg_site_title_differs', hit.title, printed(sectionsOf(hit)))
                 });
             }
-        } else if (PUBLIC.includes(type)) {
+        } else if (rules.publicTypes.has(type)) {
             add({
                 scope: scopeOf(project),
                 where: 'publications.yml',
                 kind: 'publink',
                 file,
-                ...sentence('audit.msg_site_missing', type, expectedSections(project).join('/'))
+                ...sentence(
+                    'audit.msg_site_missing',
+                    type,
+                    expectedSections(project, rules.publicationKinds).join('/')
+                )
             });
         }
     }
 
     const deadClaimed = new Set<string>();
     for (const project of input.projects) {
-        if (isPersonal(project)) continue;
+        if (isPersonal(project, rules)) continue;
         const type = project.type ?? '';
-        if (!NEGATIVE.includes(type) && !DEADEND.includes(type)) continue;
+        if (!rules.negativeTypes.has(type) && !rules.deadEndTypes.has(type)) continue;
         const key = normalTitle(project.title);
         if (key === '') continue;
         const pool = site.filter((paper) => !claimed.has(paper.key));
@@ -256,7 +245,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             where: 'publications.yml',
             kind: 'publink',
             file,
-            ...(NEGATIVE.includes(type)
+            ...(rules.negativeTypes.has(type)
                 ? sentence('audit.msg_site_negative', type, printed(sectionsOf(hit)))
                 : sentence('audit.msg_site_deadend', type, printed(sectionsOf(hit))))
         });

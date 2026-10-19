@@ -12,11 +12,15 @@
     // workbench's keyboard cursor moves over, so a lane card is reachable by key like every card
     // the primitive draws, and Enter on the card under the cursor presses its name, which opens the
     // project.
+    //
+    // A web address written in the next line is a link (ui/display/text/LinkedText.svelte); the
+    // waiting line is names and catalog words.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { firstSentence } from '$lib/state/boards/board';
@@ -118,7 +122,7 @@
         <p class="wait">{wait}</p>
     {/if}
     {#if project.next}
-        <p class="next">{firstSentence(project.next, CARD_NEXT)}</p>
+        <p class="next"><LinkedText text={firstSentence(project.next, CARD_NEXT)} /></p>
     {/if}
 </div>
 

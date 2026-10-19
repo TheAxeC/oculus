@@ -134,7 +134,6 @@ export type TerminalsStore = {
         cols?: number,
         rows?: number
     ) => Promise<TerminalAnswer>;
-    recoverDataset: (key: string, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     startTask: (kind: UpdateTask, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     latex: (
         target: LatexTarget,
@@ -461,18 +460,6 @@ export function createTerminals(
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
         return post({ action: 'start', kind, cwd, cols, rows });
-    }
-
-    /**
-     * Recover one dataset in a shell terminal; the server supplies both the command and the hub
-     * cwd.
-     */
-    async function recoverDataset(
-        key: string,
-        cols: number = COLS,
-        rows: number = ROWS
-    ): Promise<TerminalAnswer> {
-        return post({ action: 'recover', key, cols, rows });
     }
 
     /**
@@ -828,7 +815,6 @@ export function createTerminals(
         terminalById,
         tabMark: (instance) => tabMarkOf(instance, terminalById),
         startTerminal,
-        recoverDataset,
         startTask,
         latex,
         approveLatex,

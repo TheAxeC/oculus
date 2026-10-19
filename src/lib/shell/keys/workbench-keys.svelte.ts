@@ -29,7 +29,6 @@ import {
     togglesPalette,
     type PaletteKey
 } from '$lib/data/helpers/keys/oculus/palette-keys';
-import { SHEET_CHARACTER } from '$lib/data/helpers/keys/oculus/page-keys';
 import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
 import { initialKeyState, resolveKey, type KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
 import { DOC_PICK, type RailOrder } from '$lib/state/workbench/navigation/catalogue';
@@ -53,10 +52,8 @@ type Options = {
     /** The mode the palette is in while it is open, and null while it is closed. */
     paletteMode: () => PaletteMode | null;
     updateOpen: () => boolean;
-    sheetOpen: () => boolean;
     setPaletteOpen: (open: boolean) => void;
     setUpdateOpen: (open: boolean) => void;
-    setSheetOpen: (open: boolean) => void;
     openPalette: (prefill: string) => void;
     /** Open the palette in the mode a palette key names, whatever mode it is in. */
     showPalette: (key: PaletteKey) => void;
@@ -110,7 +107,7 @@ export type WorkbenchKeys = {
      * pane the keyboard is in, else the pane that holds the page's active tab.
      */
     act: (action: KeyAction) => void;
-    /** Whether an overlay holds the keys: the palette, the update tray, a confirm or the sheet. */
+    /** Whether an overlay holds the keys: the palette, the update tray or a confirm. */
     covered: () => boolean;
     paneFocused: (event: FocusEvent) => void;
     frameFocused: () => void;
@@ -133,29 +130,11 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let drawnCursor: string | null = null;
 
     /**
-     * Dispatch one key. `?` closes the key sheet, and Escape restores panes unless a drag owns it.
-     * The key sheet, the palette and the update tray close on Escape through their own bits-ui
-     * dialog, which takes the key before it reaches here, and a confirm drawn inside the tray takes
-     * the first Escape the same way.
+     * Dispatch one key. Escape restores panes unless a drag owns it. The palette and the update
+     * tray close on Escape through their own bits-ui dialog, which takes the key before it reaches
+     * here, and a confirm drawn inside the tray takes the first Escape the same way.
      */
     function keys(event: KeyboardEvent): void {
-        if (
-            options.sheetOpen() &&
-            !typingIn(event.target) &&
-            !options.paletteOpen() &&
-            !options.updateOpen() &&
-            !dialogShown() &&
-            !event.defaultPrevented &&
-            !event.metaKey &&
-            !event.ctrlKey &&
-            !event.altKey &&
-            event.key === SHEET_CHARACTER
-        ) {
-            event.preventDefault();
-            options.setSheetOpen(false);
-            return;
-        }
-        if (options.sheetOpen()) return;
         const wanted = paletteKeyOf(event, options.mac);
         if (wanted !== null) {
             event.preventDefault();
@@ -298,9 +277,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());
-        } else if (action.kind === 'sheet') {
+        } else if (action.kind === 'shortcuts') {
             clearCursor();
-            options.setSheetOpen(!options.sheetOpen());
+            options.layout.openView('keys', undefined, pageOf());
         } else {
             clearCursor();
         }
@@ -589,8 +568,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     return {
         keys,
         act: (action) => void perform(action, focusedPaneElement()),
-        covered: () =>
-            options.paletteOpen() || options.updateOpen() || options.sheetOpen() || dialogShown(),
+        covered: () => options.paletteOpen() || options.updateOpen() || dialogShown(),
         paneFocused,
         frameFocused,
         panePressed,

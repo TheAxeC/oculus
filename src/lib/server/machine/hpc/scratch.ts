@@ -13,6 +13,9 @@
 // folder; every other word is listed as written, with the file that did not print, so the warning
 // says what the rule could not read. The reading is bounded: a file is read once, so two files
 // that source each other end, and at most MAX_READ files are read.
+//
+// `scratchText` is the same test over a script's text, for the job script Recover writes
+// (server/machine/runs/recover/cluster.ts), which is never a file in a code folder.
 
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -94,13 +97,33 @@ function sourced(word: string, from: string, code: string, cluster: string): str
     }
 }
 
-/** The printed text of a file, or null when it cannot be read or does not parse. */
-async function printed(file: string): Promise<string | null> {
+/** The lines of a script's printed text, or null when it does not parse. */
+async function printedLines(text: string): Promise<string[] | null> {
     try {
-        return await print(readFileSync(file, 'utf8'), { minify: true });
+        return (await print(text, { minify: true })).split('\n');
     } catch {
         return null;
     }
+}
+
+/** The printed lines of a file, or null when it cannot be read or does not parse. */
+async function printed(file: string): Promise<string[] | null> {
+    let text: string;
+    try {
+        text = readFileSync(file, 'utf8');
+    } catch {
+        return null;
+    }
+    return printedLines(text);
+}
+
+/**
+ * Whether a script's own text names `/local/$SLURM_JOB_ID` in a line of code, the rule a job
+ * script Recover writes passes before it is sent; false for a text that does not parse.
+ */
+export async function scratchText(text: string): Promise<boolean> {
+    const lines = await printedLines(text);
+    return lines?.some((line) => SCRATCH.test(line)) ?? false;
 }
 
 /**
@@ -126,12 +149,12 @@ export async function scratchRule(
             continue;
         }
         seen.add(file);
-        const text = await printed(file);
-        if (text === null) {
+        const lines = await printed(file);
+        if (lines === null) {
             unread(relative(code, file));
             continue;
         }
-        for (const line of text.split('\n')) {
+        for (const line of lines) {
             if (SCRATCH.test(line)) result.named = true;
             const words = /^(?:source|\.)\s+(.*)$/.exec(line.trim());
             const word = words === null ? null : SOURCE_WORD.exec(words[1])?.[0];

@@ -211,6 +211,7 @@ describe('the folders closed to every app', () => {
             accounts: [],
             calendars: [],
             mail: [],
+            downloads: [],
             history: join(base, 'placed', 'history')
         };
         const set = closedToApps({

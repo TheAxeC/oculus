@@ -2,9 +2,10 @@
     // Layer 3, shell. The rail's page buttons, drawn as the items of VS Code's activity bar: an
     // icon each, its page's name and digit as the tooltip, the page on screen marked by the accent
     // bar, and one badge inside the button over the icon's lower right corner: the sum of the
-    // parts the page's views give the rail (a registration's `railPart`), in the most urgent of
-    // their tones, with each part above zero named in the tooltip (rail.ts, `railBadge`); with no
-    // count, the mark of the first view whose badge is a mark. The tabs keep their own counts.
+    // counts of the page's views whose row of `counts` says `rail: true` (the registry's
+    // railPartOf), in the most urgent of their tones, with each part above zero named in the
+    // tooltip (rail.ts, `railBadge`); with no count, the mark of the first view whose badge is a
+    // mark. The tabs keep their own counts.
     //
     // A button dragged along the rail and let go elsewhere on it moves its page there, with a line
     // between two buttons saying where it would land, and its right-click menu offers Hide, Reset
@@ -23,7 +24,11 @@
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';
     import type { RailPage } from '$lib/state/workbench/navigation/rail';
-    import { badgeOf, registrationLabel } from '$lib/state/workbench/navigation/registry';
+    import {
+        badgeOf,
+        railPartOf,
+        registrationLabel
+    } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -64,7 +69,7 @@
             return [
                 {
                     label: registrationLabel(found),
-                    part: found.railPart?.(client) ?? null,
+                    part: railPartOf(found, client),
                     badge: badgeOf(found, client)
                 }
             ];

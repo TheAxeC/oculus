@@ -1,4 +1,4 @@
-// Layer 2, server. Host-status updates live here because the registries/career.yml host shape
+// Layer 2, server. Host-status updates live here because the career file's host shape
 // changes independently of collection entries and subtasks.
 //
 // `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
@@ -26,7 +26,7 @@ import {
 const STATUS = ['status'];
 
 /**
- * Set the `status` of one host of registries/career.yml, whose hosts are one-line flow maps
+ * Set the `status` of one host of the career file, whose hosts are one-line flow maps
  * under `hosts:`.
  * The status is written in the bytes of the old one, or added to the flow map when the line has no
  * status yet; the vocabulary it is checked against is the caller's, not this module's.

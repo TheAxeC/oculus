@@ -28,6 +28,7 @@ import type {
     ChangesPayload,
     Message,
     ProcessesPayload,
+    RecoverLive,
     SchedulePayload,
     SessionsPayload,
     Snapshot,
@@ -42,6 +43,7 @@ export type Payloads = {
     feeds: FeedsPayload;
     git: GitPayload;
     hpc: HpcPayload;
+    recover: RecoverLive;
     processes: ProcessesPayload;
     schedule: SchedulePayload;
     calendar: CalendarPayload;
@@ -79,6 +81,8 @@ export type EntitiesStore = {
     feeds: () => FeedsPayload | null;
     git: () => GitPayload | null;
     hpc: () => HpcPayload | null;
+    /** The Recover runs and the login node's sessions, or null before the first push. */
+    recover: () => RecoverLive | null;
     processes: () => ProcessesPayload | null;
     schedule: () => SchedulePayload | null;
     calendar: () => CalendarPayload | null;
@@ -292,7 +296,7 @@ export type WritesStore = {
         fields: { do: string; deadline?: string }
     ) => Promise<WriteAnswer>;
     writeHost: (name: string, status: string) => Promise<WriteAnswer>;
-    /** Set the changed sections of registries/career.yml, a section cleared by null. */
+    /** Set the changed sections of the career file, a section cleared by null. */
     writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /**
      * Add one entry to a collection of the hub `root` names, the primary (else the first) when it
@@ -338,7 +342,7 @@ export type WritesStore = {
     writeDeckEdit: (act: DeckEditAct, said?: boolean) => Promise<WriteAnswer>;
     /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
     writeRail: (
-        rail: { label: string; glyph: string; page: string }[],
+        rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[],
         said?: boolean
     ) => Promise<WriteAnswer>;
     /** Set one option of a tracked config file, by its file name and dotted key path. */

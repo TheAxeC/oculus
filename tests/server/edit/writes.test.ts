@@ -24,6 +24,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { careerRules, writeCareer } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import {
     MANIFEST,
     configFor,
@@ -232,7 +233,7 @@ describe('writing one career host', () => {
             root,
             'Naesens',
             'candidate',
-            careerRules(loadConfig(engineDir()).config),
+            careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
             configFor().text
         );
         expect(out).toEqual({
@@ -241,7 +242,7 @@ describe('writing one career host', () => {
             refused: [],
             records: [
                 record(
-                    join(root, 'registries/career.yml'),
+                    join(root, '.oculus/data/academic/career.yml'),
                     'Naesens',
                     'status',
                     'warm',
@@ -249,14 +250,14 @@ describe('writing one career host', () => {
                 )
             ]
         });
-        expect(readFileSync(join(root, 'registries/career.yml'), 'utf8')).toBe(
+        expect(readFileSync(join(root, '.oculus/data/academic/career.yml'), 'utf8')).toBe(
             CAREER.replace('status: "warm"', 'status: "candidate"')
         );
         const bad = writeHost(
             root,
             'Naesens',
             'promoted',
-            careerRules(loadConfig(engineDir()).config),
+            careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
             configFor().text
         );
         expect(bad.changed).toEqual([]);
@@ -300,12 +301,12 @@ const CAREER_SECTIONS = [
 ].join('\n');
 
 describe('writing career sections', () => {
-    const rules = careerRules(loadConfig(engineDir()).config);
+    const rules = careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config);
     const catalog = configFor().text;
 
     function careerHub(): { root: string; file: string } {
         const root = wider();
-        const file = join(root, 'registries/career.yml');
+        const file = join(root, '.oculus/data/academic/career.yml');
         writeFileSync(file, CAREER_SECTIONS);
         return { root, file };
     }
@@ -426,7 +427,7 @@ describe('writing career sections', () => {
 const ADD_ROWS = [
     {
         name: 'writes the key and nothing else',
-        path: 'tasks/tasks.yml',
+        path: '.oculus/data/academic/tasks.yml',
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'review-x' },
@@ -438,7 +439,7 @@ const ADD_ROWS = [
     },
     {
         name: 'writes under an `entries:` that holds only comments and keeps them',
-        path: 'tasks/tasks.yml',
+        path: '.oculus/data/academic/tasks.yml',
         file: KEYED.replace('  - key: held\n    title: Held\n', '  # a comment\n  # another\n'),
         collection: 'tasks',
         fields: { key: 'review-x' },
@@ -452,7 +453,7 @@ const ADD_ROWS = [
     },
     {
         name: 'refuses a held key',
-        path: 'tasks/tasks.yml',
+        path: '.oculus/data/academic/tasks.yml',
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'held' },
@@ -463,7 +464,7 @@ const ADD_ROWS = [
     },
     {
         name: 'refuses an empty key',
-        path: 'tasks/tasks.yml',
+        path: '.oculus/data/academic/tasks.yml',
         file: KEYED,
         collection: 'tasks',
         fields: { key: '  ' },
@@ -474,7 +475,7 @@ const ADD_ROWS = [
     },
     {
         name: 'refuses a key that begins with the key of a hub and a colon',
-        path: 'tasks/tasks.yml',
+        path: '.oculus/data/academic/tasks.yml',
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'second:thing' },
@@ -485,7 +486,7 @@ const ADD_ROWS = [
     },
     {
         name: 'refuses a venue with an empty id',
-        path: 'registries/venues.yml',
+        path: '.oculus/data/research/venues.yml',
         file: VENUES,
         collection: 'venues',
         fields: { name: 'New V', id: '' },
@@ -496,7 +497,7 @@ const ADD_ROWS = [
     },
     {
         name: 'writes a venue from its name and its id',
-        path: 'registries/venues.yml',
+        path: '.oculus/data/research/venues.yml',
         file: VENUES,
         collection: 'venues',
         fields: { name: 'New V', id: 'newv' },

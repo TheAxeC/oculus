@@ -30,6 +30,7 @@ import type { Terminals } from '../../machine/pty/channel.ts';
 import type { HeldEslints } from '../../machine/runs/lint/eslint.ts';
 import type { HeldComments } from '../../machine/runs/lint/writing/comments.ts';
 import type { LintRuns } from '../../machine/runs/lint/runs.ts';
+import type { RecoverWatcher } from '../../machine/runs/recover/live/watch.ts';
 import type { SchedulesWatcher } from '../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
@@ -177,6 +178,11 @@ export type ServerContext = {
     openPath: PathOpener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
+    /**
+     * The Recover watcher: this Mac's deps with the runs inside the server (a check, an unpack),
+     * and the `recover` channel it publishes.
+     */
+    recover: RecoverWatcher;
     /** Read the portfolio again, for a change no watched file says (a repository cloned). */
     rescan: () => void;
     /** The random wallpaper pick, kept for the life of the process. */

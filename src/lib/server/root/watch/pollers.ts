@@ -1,8 +1,8 @@
-// Layer 2, server. The wiring of the pollers the context builds: the Live HPC poller, the Processes
-// watcher, the calendar and mail pollers, and the two usage watchers a changed key of local.yml
-// builds again. The context composes the server's objects and hands this module the settings each
-// poller starts with, so what a poller is given is written here once and the composition root stays
-// a list of what exists.
+// Layer 2, server. The wiring of the pollers the context builds: the Live HPC poller (whose batch
+// carries Recover's section), the Processes watcher, the calendar and mail pollers, and the two
+// usage watchers a changed key of local.yml builds again. The context composes the server's objects
+// and hands this module the settings each poller starts with, so what a poller is given is written
+// here once and the composition root stays a list of what exists.
 
 import type {
     CalendarSettings,
@@ -16,7 +16,7 @@ import { defaultConnectDir, defaultProviderDir } from '../../accounts/connect/st
 import type { MailOptions, MailWatcher } from '../../accounts/mail/poll.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from '../../machine/hpc/actions.ts';
-import type { HpcOptions, HpcSettings, HpcWatcher } from '../../machine/hpc/poll.ts';
+import type { HpcOptions, HpcSection, HpcSettings, HpcWatcher } from '../../machine/hpc/poll.ts';
 import { liveDeps } from '../../machine/processes/live.ts';
 import type { ProcessesOptions, ProcessesWatcher } from '../../machine/processes/watch.ts';
 import type { UsageRefreshWatcher, watchUsageRefresh } from '../../machine/usage/refresh.ts';
@@ -39,6 +39,8 @@ type PollerBuilders = {
 type PollerSettings = {
     /** The Live HPC poller's host and cadences, resolved by the context from `slurm.resource`. */
     hpc: HpcSettings;
+    /** Recover's section of the Live HPC batch (runs/recover/live/batch.ts). */
+    recover: HpcSection;
     calendar: CalendarSettings;
     mail: MailSettings;
     processes: ProcessesSettings;
@@ -71,12 +73,12 @@ export function startPollers(
     settings: PollerSettings,
     folders: () => ProjectFolder[]
 ): Pollers {
-    const { hpc: hpcSettings, calendar, mail, processes, config } = settings;
+    const { hpc: hpcSettings, recover, calendar, mail, processes, config } = settings;
     const text = textCatalog(config);
     // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
     // it resolved behind the page, and neither replaces the other's answer.
     const hpcLogPaths: LogPaths = new Map();
-    const hpc = make.watchHpc(hub, { ...hpcSettings, logPaths: hpcLogPaths });
+    const hpc = make.watchHpc(hub, { ...hpcSettings, logPaths: hpcLogPaths, recover });
     const watchedProcesses = make.watchProcesses(hub, {
         patterns: processes.patterns,
         deps: liveDeps(() => folders().map((one) => (typeof one === 'string' ? one : one[0]))),

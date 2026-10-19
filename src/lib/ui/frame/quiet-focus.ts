@@ -80,7 +80,7 @@ function tabbable(found: Element): found is HTMLElement {
 
 /**
  * Put the focus quietly on the first control in document order that Tab reaches inside a box, as a
- * dialog does when it opens; on the box itself when it holds none, as the key sheet does.
+ * dialog does when it opens; on the box itself when it holds none.
  */
 export function focusFirstQuietly(box: HTMLElement): void {
     const first = [...box.querySelectorAll(FOCUSABLE)].find(tabbable);

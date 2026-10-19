@@ -42,7 +42,7 @@ import { refusal } from '../sources/explorer/acts/refusal.ts';
 import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
 import type { WorkspacesState } from '../sources/fs-transport.ts';
 import type { AppOffers } from '../../data/helpers/files/apps/choices.ts';
-import { appThemeLabels, fileIconThemes } from '../shared/words/appearance.ts';
+import { appThemeLabels } from '../shared/words/appearance.ts';
 import { t } from '../shared/words/text.ts';
 import type { GithubListing, GithubRepo } from '../../data/model/index.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
@@ -124,6 +124,7 @@ export type PaletteCommand = {
         | 'clone'
         | LspChoiceCommand
         | 'help'
+        | 'keys'
         | 'update'
         | 'workspace'
         | 'workspace-new'
@@ -417,6 +418,19 @@ export function parseCommand(query: string): ParsedCommand | null {
     };
 }
 
+/**
+ * The colon commands whose argument the palette lists to pick from, as `:language` lists the
+ * languages: a theme, a file icon theme, a view a tab opens, a project.
+ */
+export const ARGUMENT_COMMANDS = ['theme', 'file-icons', 'tab', 'goto'] as const;
+
+export type ArgumentCommand = (typeof ARGUMENT_COMMANDS)[number];
+
+/** The command of an argument list the query is, or null for any other query. */
+export function argumentCommandOf(parsed: ParsedCommand | null): ArgumentCommand | null {
+    return ARGUMENT_COMMANDS.find((name) => name === parsed?.name) ?? null;
+}
+
 /** Whether an argument names a thing of each kind a colon command opens or switches to. */
 export type ArgumentNames = {
     view: (id: string) => boolean;
@@ -507,19 +521,14 @@ export function commands(
         {
             name: 'theme',
             description: t('app.palette.cmd_theme'),
-            hint: t('app.palette.cmd_theme_hint', themes.join(' | ')),
+            hint: t('app.palette.cmd_theme_hint'),
             available: themes.length > 0
         },
         { name: 'crt', description: t('app.palette.cmd_crt'), hint: '', available: true },
         {
             name: 'file-icons',
             description: t('app.palette.cmd_file_icons'),
-            hint: t(
-                'app.palette.cmd_file_icons_hint',
-                fileIconThemes(offers)
-                    .map((one) => one.label)
-                    .join(' | ')
-            ),
+            hint: t('app.palette.cmd_file_icons_hint'),
             available: true
         },
         {
@@ -588,7 +597,8 @@ export function commands(
             hint: t('app.palette.cmd_task_add_hint'),
             available: true
         },
-        { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: false },
+        { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: true },
+        { name: 'keys', description: t('app.palette.cmd_keys'), hint: '', available: true },
         { name: 'update', description: t('app.palette.cmd_update'), hint: '', available: true },
         {
             name: 'workspace',

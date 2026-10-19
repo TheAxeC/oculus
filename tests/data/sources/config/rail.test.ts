@@ -2,7 +2,7 @@
 // place the readers look. Findings are compared whole, in order.
 
 import { describe, expect, it } from 'vitest';
-import { railFindings } from '../../../../src/lib/data/sources/config/rail.ts';
+import { railFindings, readRail } from '../../../../src/lib/data/sources/config/rail.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -47,6 +47,36 @@ describe('railFindings', () => {
                 'rail[10]',
                 'the rail button for b names a glyph glyphs.yml does not hold; it is not drawn'
             )
+        ]);
+    });
+
+    it('words a chord or group glyph it does not use, and keeps the button with the rest', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', chord: 'ab', group_glyph: 'nope' },
+            { label: 'B', glyph: 'g', page: 'b', chord: 3, group_glyph: 3 },
+            { label: 'C', glyph: 'g', page: 'c', chord: 'C', group_glyph: '' },
+            { label: 'D', glyph: 'g', page: 'd', chord: 'd', group_glyph: 'g' },
+            { label: 'E', glyph: 'g', page: 'e', chord: '' }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1, c: 1, d: 1, e: 1 } };
+        const chord = (page: string) =>
+            `the rail button for ${page} names a chord that is not one lowercase letter; its group has no chord`;
+        const glyph = (page: string) =>
+            `the rail button for ${page} names a group glyph glyphs.yml does not hold; its group heading takes the glyph of its first view`;
+        expect(find({ ...config, glyphs: { g: 'x' } })).toStrictEqual([
+            at('rail[0]', chord('a')),
+            at('rail[0]', glyph('a')),
+            at('rail[1]', chord('b')),
+            at('rail[1]', glyph('b')),
+            at('rail[2]', chord('c'))
+        ]);
+        const read = readRail(rows, ['a', 'b', 'c', 'd', 'e'], ['g']);
+        expect(read.entries.map((one) => [one.page, one.chord, one.group_glyph])).toEqual([
+            ['a', '', ''],
+            ['b', '', ''],
+            ['c', '', ''],
+            ['d', 'd', 'g'],
+            ['e', '', '']
         ]);
     });
 });

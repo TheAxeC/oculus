@@ -1,5 +1,6 @@
 // Layer 2, server. The schemas of the files whose readers live in the server: an app's `app.yml`,
-// a repository's `.oculus/commands.yml` and `.oculus/launch.yml`. Each is the JSON Schema of the
+// a repository's `.oculus/commands.yml` and `.oculus/launch.yml`, and a hub's workspace files
+// `.oculus/workspaces/*.yml`. Each is the JSON Schema of the
 // whole-file zod shape its reader checks the file with, matched to the files by path inside any
 // served root. They depend on no file of the hub, so they are the same for every build and are
 // added to the set each build generates.
@@ -13,12 +14,14 @@ import {
 import { launchFileShape } from '../../machine/debug/launch/read.ts';
 import { appShape } from '../../machine/apps/read/manifest.ts';
 import { commandsFileShape } from '../../machine/runs/commands/files.ts';
+import { workspaceFileShape } from '../../files/workspace/open.ts';
 
 /** The shapes and the files each one governs, relative to a served root. */
 const OWN = [
     { name: 'app', shape: appShape, globs: ['.oculus/apps/*/app.yml'] },
     { name: 'commands', shape: commandsFileShape, globs: ['.oculus/commands.yml'] },
-    { name: 'launch', shape: launchFileShape, globs: ['.oculus/launch.yml'] }
+    { name: 'launch', shape: launchFileShape, globs: ['.oculus/launch.yml'] },
+    { name: 'workspace', shape: workspaceFileShape, globs: ['.oculus/workspaces/*.yml'] }
 ];
 
 /** The schemas of the shapes that have one. */

@@ -10,10 +10,9 @@ import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 
 const ENGINE = engineDir();
-const LOADED = withHubCollections(loadConfig(ENGINE).config);
+const LOADED = loadConfig(ENGINE).config;
 const CATALOG = textCatalog(LOADED);
 const CONFIG = portfolioConfigFrom(LOADED);
 
@@ -23,7 +22,7 @@ function sentence(key: string, ...args: string[]): string {
     return findingText(CATALOG, key, ...args);
 }
 
-/** The three seed entries of registries/resources.yml. */
+/** The three seed entries of .oculus/data/research/resources.yml. */
 const SEED = [
     'schema:',
     '  - { field: key, type: text }',
@@ -52,7 +51,7 @@ const SEED = [
 /** A hub holding the resources registry (or none) and one project per `compute:` text. */
 function build(registry: string | null, computes: Record<string, string>): Snapshot {
     const files: Record<string, string> = {};
-    if (registry !== null) files['registries/resources.yml'] = registry;
+    if (registry !== null) files['.oculus/data/research/resources.yml'] = registry;
     for (const [id, compute] of Object.entries(computes)) {
         files[join('projects/active', id, 'project.yml')] =
             `id: ${id}\ntier: projects\ntype: active\ntitle: ${id}\n${compute}`;

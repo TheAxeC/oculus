@@ -52,7 +52,7 @@ describe('reordering and deleting entries of a collection', () => {
 
     it('writes the entries in the order the identity values name', () => {
         const root = wider();
-        writeFileSync(join(root, 'tasks', 'tasks.yml'), TWO);
+        writeFileSync(tasksPath(root), TWO);
         const out = reorderCollection(root, configFor(), 'tasks', [
             'Review the draft',
             'Another task'
@@ -65,7 +65,7 @@ describe('reordering and deleting entries of a collection', () => {
 
     it('takes one entry out of its file, by the id the reader gave it', () => {
         const root = wider();
-        writeFileSync(join(root, 'tasks', 'tasks.yml'), TWO);
+        writeFileSync(tasksPath(root), TWO);
         const out = removeEntry(root, configFor(), 'tasks', 'Another task');
         expect(out.changed).toEqual(['entries']);
         expect(tasksOf(root)).toBe(TASKS);
@@ -126,7 +126,7 @@ const VENUES = [
 describe('writing the fields an entry editor posts', () => {
     it('adds one row of a metalist and writes that field alone', () => {
         const root = wider();
-        const file = plant(root, 'network/events.yml', EVENTS);
+        const file = plant(root, '.oculus/data/academic/events.yml', EVENTS);
         const out = writeEntry(root, configFor(), 'events', 'e1', {
             meta: [
                 { label: 'Where', value: 'Leuven' },
@@ -144,7 +144,7 @@ describe('writing the fields an entry editor posts', () => {
 
     it('changes one sub-field of a nested map and keeps the folded text, the comments and the rest', () => {
         const root = wider();
-        const file = plant(root, 'registries/data.yml', DATA);
+        const file = plant(root, '.oculus/data/research/data.yml', DATA);
         const out = writeEntry(root, configFor(), 'data', 'mimic', {
             retrieval: {
                 method: 'direct',
@@ -161,7 +161,7 @@ describe('writing the fields an entry editor posts', () => {
 
     it('keeps the lines of a sub-field untouched while another is replaced', () => {
         const root = wider();
-        const file = plant(root, 'registries/data.yml', DATA);
+        const file = plant(root, '.oculus/data/research/data.yml', DATA);
         writeEntry(root, configFor(), 'data', 'mimic', {
             retrieval: {
                 method: 'physionet',
@@ -180,7 +180,7 @@ describe('writing the fields an entry editor posts', () => {
 
     it('addresses a venue by its id and writes the short name alone', () => {
         const root = wider();
-        const file = plant(root, 'registries/venues.yml', VENUES);
+        const file = plant(root, '.oculus/data/research/venues.yml', VENUES);
         const out = writeEntry(root, configFor(), 'venues', 'existing', { short: 'EV' });
         expect(out.changed).toEqual(['short']);
         expect(readFileSync(file, 'utf8')).toBe(`${VENUES}    short: EV\n`);
@@ -188,7 +188,7 @@ describe('writing the fields an entry editor posts', () => {
 
     it('renames a venue through its name and leaves its id', () => {
         const root = wider();
-        const file = plant(root, 'registries/venues.yml', VENUES);
+        const file = plant(root, '.oculus/data/research/venues.yml', VENUES);
         const out = writeEntry(root, configFor(), 'venues', 'existing', { name: 'Renamed Venue' });
         expect(out.changed).toEqual(['name']);
         expect(out.id).toBe('existing');
@@ -200,8 +200,8 @@ describe('writing the fields an entry editor posts', () => {
 
     it('refuses a select value that is none of its options and leaves the file', () => {
         const root = wider();
-        plant(root, 'registries/data.yml', DATA);
-        const before = readFileSync(join(root, 'registries/data.yml'), 'utf8');
+        plant(root, '.oculus/data/research/data.yml', DATA);
+        const before = readFileSync(join(root, '.oculus/data/research/data.yml'), 'utf8');
         const out = writeEntry(root, configFor(), 'data', 'mimic', {
             retrieval: { method: 'carrier pigeon' }
         });
@@ -217,7 +217,7 @@ describe('writing the fields an entry editor posts', () => {
                 )
             }
         ]);
-        expect(readFileSync(join(root, 'registries/data.yml'), 'utf8')).toBe(before);
+        expect(readFileSync(join(root, '.oculus/data/research/data.yml'), 'utf8')).toBe(before);
     });
 });
 
@@ -228,7 +228,7 @@ describe('a file with two entries of one identity', () => {
 
     it('refuses a write, an add and a delete with the shared-identity sentence and leaves the file', () => {
         const root = wider();
-        const file = plant(root, 'tasks/tasks.yml', TWICE);
+        const file = plant(root, '.oculus/data/academic/tasks.yml', TWICE);
         const outs = [
             writeEntry(root, configFor(), 'tasks', 'a', { key: 'a' }),
             createEntry(root, configFor(), 'tasks', { key: 'b' }),

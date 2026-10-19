@@ -23,10 +23,10 @@ import { lookup, t } from '../../shared/words/text.ts';
 
 /**
  * What a registration's badge hooks read of the client: the calendar's and the HPC queue's badge
- * words, the count of the Processes view's rows, and the rail badges' counts, hues, hover words and
- * cells, each taken out of its store's own type, so a store that changes a member's shape changes
- * it here too. The client object (state/client/context.ts) holds these stores, so it is handed to
- * badgeOf and to a rail part as it is.
+ * words, the count of the Processes view's rows, and the rail badges' counts, hues, hover words,
+ * cells and `counts` flags, each taken out of its store's own type, so a store that changes a
+ * member's shape changes it here too. The client object (state/client/context.ts) holds these
+ * stores, so it is handed to badgeOf and to a count hook as it is.
  */
 export type BadgeClient = {
     calendar: Pick<CalendarStore, 'badgeText'>;
@@ -34,6 +34,7 @@ export type BadgeClient = {
     processes: Pick<ProcessesStore, 'count'>;
     railBadges: Pick<
         RailBadgesStore,
+        | 'countFlags'
         | 'boardBadge'
         | 'boardPart'
         | 'collectionCount'
@@ -44,6 +45,9 @@ export type BadgeClient = {
         | 'repositoriesCount'
         | 'findingsCount'
         | 'sessionInputCount'
+        | 'leadsCount'
+        | 'calendarPart'
+        | 'queuePart'
         | 'boardBadgeTitle'
         | 'boardCells'
         | 'collectionBadge'
@@ -100,7 +104,7 @@ export type Registration = {
     /** A glyph name drawn as it is, for a view whose glyph is data: an app's manifest names one. */
     glyphName?: string;
     component: Component<ViewProps>;
-    /** The stable id of the `nav_groups` group of the view catalogue that owns this view. */
+    /** The id of the view catalogue's group owning this view: a rail page or a nav_groups key. */
     group: string;
     /** Position inside the group; equal positions are resolved by id. */
     order: number;
@@ -150,14 +154,16 @@ export type Registration = {
      */
     badgeTabText?: (state: BadgeClient) => string;
     /**
-     * What the view gives the button of the rail page its tab is on: a count, read from the state
-     * the tab's badge reads, and the tone the tab's badge has: an urgency tone (red, amber, green)
-     * where the view or `nav_live`'s `tone:` sets one, else the hue of the statuses or the cell it
-     * counts, as the Funding count's violet, or none. The button draws the sum of its page's parts
-     * (shell/rail/rail.ts, `railBadge`). A registration without it gives the rail nothing,
-     * whatever its tab draws.
+     * The count the view draws, as a number read from the state the tab's badge reads, and the
+     * tone the tab's badge has: an urgency tone (red, amber, green) where the view or its `counts`
+     * row's `tone:` sets one, else the hue of the statuses or the cell it counts, as the Funding
+     * count's violet, or none. A view with it draws its count on its tabs only while its row of
+     * `counts` in config/layout.yml says `tab: true` (badgeOf), and the button of the rail page its
+     * tab is on adds it to its sum only while the row says `rail: true` (railPartOf, summed by
+     * shell/rail/rail.ts's `railBadge`). A registration without it, a mark's or an app's, draws
+     * its badge as it is and gives the rail nothing.
      */
-    railPart?: (state: BadgeClient) => RailPart;
+    countPart?: (state: BadgeClient) => RailPart;
 };
 
 /** What a view module exports; the loader supplies the module's default component. */
@@ -184,8 +190,16 @@ export function registrationGlyph(registration: Pick<Registration, 'glyph' | 'gl
 /**
  * Assemble a registration's hooks without depending on any particular view or state selector. The
  * hooks read stores, so the client they read is handed to them rather than reached from a module.
+ * A view that draws a count and whose `counts` row does not say `tab: true` draws no badge.
  */
 export function badgeOf(registration: Registration, client: BadgeClient): RegistrationBadge {
+    const label = registrationLabel(registration);
+    if (
+        registration.countPart !== undefined &&
+        !client.railBadges.countFlags(registration.id).tab
+    ) {
+        return { text: '', glyph: '', tabText: '', title: label };
+    }
     const text = registration.badge?.(client) ?? '';
     const mark = registration.badgeGlyph?.(client) ?? '';
     // The hover words are text, so a badge that is a mark rather than a count says what the mark
@@ -193,7 +207,6 @@ export function badgeOf(registration: Registration, client: BadgeClient): Regist
     const marked = text === '' && mark !== '';
     const means = registration.badgeMark;
     const words = marked && means !== undefined ? lookup(means) : text;
-    const label = registrationLabel(registration);
     return {
         text,
         glyph: mark,
@@ -204,6 +217,18 @@ export function badgeOf(registration: Registration, client: BadgeClient): Regist
             (marked && means === undefined ? label : t('views.badge_title', label, words)),
         cells: registration.badgeCells?.(client)
     };
+}
+
+/**
+ * The part a view gives the badge of the rail button of the page it is on: its count and tone
+ * while its `counts` row says `rail: true`, and null for a view with no count hook or a row that
+ * does not say so. Like badgeOf, it is handed the client, so the shell drawing the rail reads no
+ * badge store itself.
+ */
+export function railPartOf(registration: Registration, client: BadgeClient): RailPart | null {
+    if (registration.countPart === undefined) return null;
+    if (!client.railBadges.countFlags(registration.id).rail) return null;
+    return registration.countPart(client);
 }
 
 /** The views one client knows about, in registration order. */

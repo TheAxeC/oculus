@@ -1,11 +1,13 @@
 // Layer 3, shell. What a page puts on its document so that the theme, the wallpaper, the glyph
 // vocabulary and the file icon theme the viewer chose are drawn: the theme's class and its derived
-// tokens, the wallpaper's layer and the properties its translucent surfaces read, the text scale,
-// which of the two glyph vocabularies renders, and the icon theme of an app when `file_icons` names
-// one. Called once from the page's script body (Workbench.svelte), which draws the wallpaper's
-// layer from the two values it answers. In the desktop app the colours the title bar strip is drawn
-// in go to the host each time a theme is drawn, the first time included, for the window buttons the
-// system draws over the strip off macOS; a page in a browser has no host and sends nothing.
+// tokens with the classes of the CRT overlay and the rice toggles, the wallpaper's layer and the
+// properties its translucent surfaces read, the text scale, which of the two glyph vocabularies
+// renders, and the icon theme of an app when `file_icons` names one, or the theme and the icon
+// theme the palette previews while its selection rests on one (`ui.preview`). Called once from the
+// page's script body (Workbench.svelte), which draws the wallpaper's layer from the two values it
+// answers. In the desktop app the colours the title bar strip is drawn in go to the host each time
+// a theme is drawn, the first time included, for the window buttons the system draws over the strip
+// off macOS; a page in a browser has no host and sends nothing.
 
 import { WALL_CLASS, applyWallpaper } from '$lib/ui/theme/theme';
 import { drawTheme } from '$lib/ui/theme/app-theme';
@@ -54,7 +56,7 @@ export function useAppearance({
     ClientState,
     'ui' | 'notices' | 'appShell' | 'desktop' | 'entities' | 'wallpapers'
 >): Appearance {
-    const { crt, icons, textScale, theme, wallpaper } = ui;
+    const { brackets, crt, icons, monospace, textScale, theme, wallpaper } = ui;
     /** The app themes the page said are unavailable, so a theme is told once. */
     const told = new Set<string>();
     const wall = $derived(wallpaper() && wallpaperOnTheme(theme(), appShell.offers()));
@@ -88,7 +90,9 @@ export function useAppearance({
                 app: state === 'ready',
                 classes: [themeClass(choice, offers), extra].join(' '),
                 extra,
-                crt: crt()
+                crt: crt(),
+                brackets: brackets(),
+                monospace: monospace()
             },
             () => current
         ).then((drawn) => {
@@ -105,7 +109,7 @@ export function useAppearance({
     });
 
     $effect(() => {
-        const choice = appShell.fileIcons();
+        const choice = ui.preview().fileIcons ?? appShell.fileIcons();
         let current = true;
         // An app's icon theme is drawn when its file has been loaded; until then, and for a theme
         // no acting app offers, the page draws Seti.

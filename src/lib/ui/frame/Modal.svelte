@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, primitive. The ground every modal box of the tree stands on, on bits-ui's Dialog, or
-    // its Alert Dialog for a question: the confirm, the prompt, the key sheet, the palette and the
-    // update tray. It draws the full-window ground and its scrim, and hands the box it holds the
-    // attributes of bits-ui's dialog content; the box, its words and its looks are the caller's.
+    // its Alert Dialog for a question: the confirm, the prompt, the palette and the update tray.
+    // It draws the full-window ground and its scrim, and hands the box it holds the attributes of
+    // bits-ui's dialog content; the box, its words and its looks are the caller's.
     //
     // While it is drawn it holds the page: the focus moves into the box, Tab stays inside it
     // through bits-ui's focus trap, and Escape and a press on the ground outside the box close it

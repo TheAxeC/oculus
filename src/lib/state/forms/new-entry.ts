@@ -7,6 +7,7 @@
 import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
 import { rootOf } from '../../data/helpers/hub-names.ts';
+import { wordsWith } from '../../data/shapes/vocab-keys.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
@@ -17,9 +18,6 @@ const TASKS = 'tasks';
 
 /** The longest key a task is given, however long its title. */
 const TASK_KEY_MAX = 80;
-
-/** The status a task added from the palette starts in. */
-const TASK_STATUS = 'todo';
 
 /**
  * The fields an Add box asks for when it adds to a collection: the identity field, and the field
@@ -52,12 +50,14 @@ type TaskFields = { fields: Record<string, unknown> } | { refusal: 'title' | 'ke
  * as lowercase ASCII words joined by hyphens, accents taken off and cut to `TASK_KEY_MAX`; a key
  * the file holds already gets `-2`, `-3` and on, inside the same length. An empty title, a title
  * that gives no key (no ASCII letter or digit after the accents are taken off) and a workspace
- * with no tasks collection give a refusal and no fields.
+ * with no tasks collection give a refusal and no fields. The task's status is the word of
+ * `statuses` (config/catalogs/vocab.yml) carrying `default_task`, and none when no word does.
  */
 function taskFields(
     title: string,
     collections: readonly Collection[],
-    primary: string | null
+    primary: string | null,
+    config: Record<string, unknown>
 ): TaskFields {
     const words = title.trim();
     if (words === '') return { refusal: 'title' };
@@ -71,7 +71,10 @@ function taskFields(
         const suffix = `-${n}`;
         key = `${slugOf(words, TASK_KEY_MAX - suffix.length)}${suffix}`;
     }
-    return { fields: { [identity]: key, title: words, status: TASK_STATUS } };
+    const status = wordsWith(config, 'statuses', 'default_task').at(0);
+    return {
+        fields: { [identity]: key, title: words, ...(status === undefined ? {} : { status }) }
+    };
 }
 
 /** The sentence that says why a title adds no task. */
@@ -94,9 +97,10 @@ export async function addTask(
     title: string,
     collections: readonly Collection[],
     primary: string | null,
+    config: Record<string, unknown>,
     write: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>
 ): Promise<TaskAdded> {
-    const made = taskFields(title, collections, primary);
+    const made = taskFields(title, collections, primary, config);
     if ('refusal' in made) return { id: '', label: '', said: refusalWords(made.refusal) };
     const answer = await write(TASKS, made.fields);
     if (!answer.ok) return { id: '', label: '', said: answer.error ?? t('editor.failed', '') };

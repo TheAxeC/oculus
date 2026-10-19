@@ -1,11 +1,14 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
-// configuration changes independently of items, filters and statistics.
+// configuration changes independently of items, filters and statistics. What each board is (its
+// tier, its list columns, its search words, its label mode and its groups of cards) is its row of
+// `boards` in config/layout.yml; this module holds no table of boards.
 
 import { z } from 'zod';
-import type { Id, Project, Resource, Tier, Venue } from '../../../data/model/index.ts';
+import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { fields, slugOf, strings, text as str } from '../../../data/helpers/guards.ts';
+import { fields, focusSetting, isMap, slugOf, text as str } from '../../../data/helpers/guards.ts';
 import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
+import { vocabKeys, wordsWith } from '../../../data/shapes/vocab-keys.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -20,27 +23,29 @@ export type LabelMode = 'short' | 'full';
 export type BoardColumn = { key: string; label: string };
 
 /**
- * One lifecycle bucket of `tab_rollup`: its id, its words, the types and chips it catches, and the
- * hue the config gives it, which the category facet draws its dot in.
+ * One group of cards of a board's `groups`: its id, its words, the types and chips it catches, and
+ * the hue the config gives it, which the category facet draws its dot in.
  */
 export type RollupBucket = { id: string; label: string; keys: string[]; color: string };
 
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
-    /**
-     * The view id this preset belongs to: `projects`, `coauthor`, `archive`, `personal` or
-     * `software`.
-     */
+    /** The view id this preset belongs to, a key of `boards`. */
     id: string;
-    /** The tiers whose projects the board shows. */
-    tiers: Tier[];
+    /** The tiers whose projects the board shows: the one its row names, or none. */
+    tiers: string[];
     /** The list mode's columns in order, with the words config/layout.yml gives them. */
     columns: BoardColumn[];
-    /** The lifecycle buckets of this board, in the config's order. */
+    /** The groups of cards of this board, in the config's order. */
     rollup: RollupBucket[];
-    /** The order types sort in; a type the list does not name sorts after every type it does. */
+    /**
+     * The order types sort in, the keys of `types`; a type the list does not name sorts after
+     * every type it does.
+     */
     typeOrder: string[];
-    /** The label mode the board starts in, from config/behavior.yml. */
+    /** The tiers of `tiers` carrying `software`, whose projects are software. */
+    softwareTiers: string[];
+    /** The label mode the board starts in, from its row's `label_mode`. */
     labels: LabelMode;
     /**
      * The search box's placeholder from config/layout.yml, or the empty string when it has none.
@@ -170,7 +175,8 @@ export type VenueCount = {
     name: string;
     count: number;
     /**
-     * True from `venue_conc_warn` of config/behavior.yml up: too much of the board on one venue.
+     * True from `venue_conc_warn` under `focus:` of config/behavior.yml up: too much of the board
+     * on one venue.
      */
     warn: boolean;
 };
@@ -183,52 +189,9 @@ export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
     hiddenTypes?: string[];
-    /** `stale_lag_days` of config/behavior.yml: how far behind counts as behind. */
+    /** `stale_lag_days` under `focus:` of config/behavior.yml: how far behind counts as behind. */
     staleLag?: number;
 };
-
-/**
- * The five boards and the tier each one shows. A view id outside this map is the first board, and a
- * tier no board names has no board.
- */
-const TIERS: Record<string, Tier[]> = {
-    projects: ['projects'],
-    coauthor: ['coauthor'],
-    archive: ['archive'],
-    personal: ['personal'],
-    software: ['software']
-};
-
-/** The board view ids, in the order presetFor knows them. A project of a board tier sits on one. */
-export const BOARDS = Object.keys(TIERS);
-
-/** Which `board:` column list a board takes its headings from. */
-const COLUMN_KEY: Record<string, string> = {
-    projects: 'cols_project',
-    personal: 'cols_project',
-    archive: 'cols_archive',
-    coauthor: 'cols_archive',
-    software: 'cols_software'
-};
-
-/** The cells each column list holds, in the order the words of `board:` are written in. */
-const COLUMNS: Record<string, string[]> = {
-    cols_project: ['title', 'authors', 'venue', 'status', 'focus', 'next'],
-    cols_archive: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding'],
-    cols_software: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding']
-};
-
-/** Which `*_label_mode` of config/layout.yml a board starts in. */
-const LABEL_KEY: Record<string, string> = {
-    projects: 'project_label_mode',
-    personal: 'project_label_mode',
-    archive: 'archive_label_mode',
-    coauthor: 'archive_label_mode',
-    software: 'project_label_mode'
-};
-
-/** The board every unknown view id falls back to. */
-const DEFAULT_BOARD = 'projects';
 
 /** The facets, in the order the toolbar offers them. */
 export const FACETS = [
@@ -260,12 +223,12 @@ export const SESSIONS_VALUES = [SESSIONS_LIVE, SESSIONS_RECENT, SESSIONS_NONE];
 export const CODE_VALUES = ['deposited', 'review-anon', 'none', NONE];
 export const REPRODUCED_VALUES = ['1', '0'];
 
-/** A finite number of the merged config, and no number for any other value. */
-const finiteShape = z.number().optional().catch(undefined);
-
-/** A number out of the merged config, and the fallback behavior.yml's own comment names. */
+/**
+ * A number under `focus:` of the merged config (config/behavior.yml), and the fallback
+ * behavior.yml's own comment names for one that is absent or no finite number.
+ */
 export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    return readAs(finiteShape, config[key]) ?? fallback;
+    return focusSetting(config, key) ?? fallback;
 }
 
 /** A JIF the registry wrote as nothing at all; the venue line leaves it out. */
@@ -302,9 +265,16 @@ export function daysUntil(date: string, now: number): number | null {
     return Math.round((at - today(now)) / DAY);
 }
 
-/** One bucket of `tab_rollup`: a row with words, its id the slug of them, its keys the strings. */
+/**
+ * One group of a board's `groups`: a row with words, its id the slug of them, its keys the strings
+ * of the list, or the one key written alone, as the options catalog's rule for a multi takes it.
+ */
 const bucketShape = z
-    .object({ label: z.string().min(1), keys: fieldItemsShape, color: wordShape })
+    .object({
+        label: z.string().min(1),
+        keys: z.union([z.string().transform((key) => [key]), fieldItemsShape]),
+        color: wordShape
+    })
     .transform((row) => ({
         id: slugOf(row.label),
         label: row.label,
@@ -314,44 +284,57 @@ const bucketShape = z
 
 const bucketsShape = rowsShape(bucketShape);
 
-/** The `tab_rollup` buckets of one board, in the config's order. */
-function rollupOf(config: Record<string, unknown>, id: string): RollupBucket[] {
-    return readAs(bucketsShape, fields(config.tab_rollup)[id]) ?? [];
+/** One column of a board's `columns`: the cell it draws, headed by its words or the cell's name. */
+const columnShape = z
+    .object({ cell: z.string().min(1), label: wordShape })
+    .transform((row) => ({ key: row.cell, label: row.label === '' ? row.cell : row.label }));
+
+const columnsShape = rowsShape(columnShape) satisfies z.ZodType<BoardColumn[]>;
+
+/**
+ * The boards of `boards` of config/layout.yml, each id with its row, in the file's order. A row
+ * that is not a map is no board.
+ */
+function boardRows(config: Record<string, unknown>): [string, Record<string, unknown>][] {
+    return Object.entries(fields(config.boards)).flatMap(([id, row]) =>
+        isMap(row) ? [[id, row] as [string, Record<string, unknown>]] : []
+    );
 }
 
-/** The columns of one board: the cells of its list, with the words `board:` gives each of them. */
-function columnsOf(config: Record<string, unknown>, id: string): BoardColumn[] {
-    const key = COLUMN_KEY[id] ?? COLUMN_KEY[DEFAULT_BOARD];
-    const words = strings(fields(config.board)[key]);
-    return COLUMNS[key].map((cell, at) => ({ key: cell, label: words[at] ?? cell }));
+/** The board view ids `boards` of the merged config names, in its order. */
+export function boardIds(config: Record<string, unknown>): string[] {
+    return boardRows(config).map(([id]) => id);
 }
 
-/** The `board.search` placeholder of one board. */
-function searchOf(config: Record<string, unknown>, id: string): string {
-    return str(fields(fields(config.board).search)[id]);
+/** The tier a board shows, as a list of the one word, or none for a row naming none. */
+function boardTiers(row: Record<string, unknown>): string[] {
+    const tier = str(row.tier).trim();
+    return tier === '' ? [] : [tier];
 }
 
-/** The `*_label_mode` of one board; anything but `full` is the short handle. */
-function labelsOf(config: Record<string, unknown>, id: string): LabelMode {
-    const key = LABEL_KEY[id] ?? LABEL_KEY[DEFAULT_BOARD];
-    return str(config[key]) === 'full' ? 'full' : 'short';
+/** The tiers of `tiers` in the merged config that carry `software`. */
+export function softwareTiers(config: Record<string, unknown>): string[] {
+    return wordsWith(config, 'tiers', 'software');
 }
 
 /**
- * The preset of one view id, read out of the merged config. A config that holds none of the keys
- * gives a board with no columns to name, no buckets and no type order, which still renders: the
- * cards are there, sorted by title, and the category facet is not offered.
+ * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
+ * map does not hold is its first board. A config that holds no board gives a board with no tier,
+ * no columns to name, no groups and no type order, which still renders: it holds no card, and the
+ * category facet is not offered. A label mode other than `full` is the short handle.
  */
 export function presetFor(view: string, config: Record<string, unknown> = {}): BoardPreset {
-    const id = view in TIERS ? view : DEFAULT_BOARD;
+    const rows = boardRows(config);
+    const [id, row] = rows.find(([one]) => one === view) ?? rows.at(0) ?? [view, {}];
     return {
         id,
-        tiers: TIERS[id],
-        columns: columnsOf(config, id),
-        rollup: rollupOf(config, id),
-        typeOrder: strings(config.type_order),
-        labels: labelsOf(config, id),
-        search: searchOf(config, id)
+        tiers: boardTiers(row),
+        columns: readAs(columnsShape, row.columns) ?? [],
+        rollup: readAs(bucketsShape, row.groups) ?? [],
+        typeOrder: vocabKeys(config.types),
+        softwareTiers: softwareTiers(config),
+        labels: str(row.label_mode) === 'full' ? 'full' : 'short',
+        search: str(row.search)
     };
 }
 
@@ -396,7 +379,9 @@ export function authorLine(project: Project): string {
 /**
  * The first sentence of a paragraph, cut to `limit`. Whitespace is collapsed first, so a line
  * broken across a manifest reads as one; a cut falls on a word boundary and is marked, so a card
- * never ends mid-word without saying that there is more.
+ * never ends mid-word without saying that there is more. A first word longer than `limit` is cut
+ * inside itself, except a web address, which is kept whole, since the card draws it as a link and
+ * a cut one names no page.
  */
 export function firstSentence(text: string, limit: number): string {
     const flat = text.replace(/\s+/g, ' ').trim();
@@ -406,5 +391,7 @@ export function firstSentence(text: string, limit: number): string {
     if (sentence.length <= limit) return sentence;
     const cut = sentence.slice(0, limit);
     const space = cut.lastIndexOf(' ');
-    return `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()}...`;
+    if (space > 0) return `${cut.slice(0, space).trimEnd()}...`;
+    const word = sentence.split(' ')[0];
+    return `${/^https?:\/\//.test(word) ? word : cut}...`;
 }

@@ -18,7 +18,9 @@
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
     // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included.
+    // project read from a repository included. A web address written in the ELI5 or the next action
+    // is a link (ui/display/text/LinkedText.svelte); the folder, the venue and the authors are
+    // names and stay words.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -31,7 +33,8 @@
     import CardSessions from './CardSessions.svelte';
     import CardStatus from './CardStatus.svelte';
     import CommandBar from '../../sessions/CommandBar.svelte';
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Clamp from '../Clamp.svelte';
     import Subtasks from '../../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
@@ -58,7 +61,7 @@
         folders,
         layout: { openBeside, openView, showDeck, showFolderInFiles },
         selection: { select },
-        selectors: { gitRoots, hubDirOf },
+        selectors: { configMap, gitRoots, hubDirOf },
         terminals: { showTerminal, startChat },
         writes: { openFolder, writeManifest }
     } = client;
@@ -116,12 +119,13 @@
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
-    const due = $derived(deadline(item.project, item.chips, now, t));
+    const due = $derived(deadline(item.project, item.chips, now, t, configMap()));
     const wait = $derived(
         snapshot === null
             ? null
             : waitingLine(
                   item.project,
+                  configMap(),
                   snapshot.entities.venues,
                   personNames(snapshot),
                   snapshot.entities.projects
@@ -396,16 +400,18 @@
             <div class="eli5">
                 <span class="label">{t('project.card.eli5')}</span>
                 {#if onmore === undefined}
-                    <p>{item.project.eli5}</p>
+                    <p><LinkedText text={item.project.eli5} /></p>
                 {:else}
                     <Clamp open={more} ontoggle={onmore}>
-                        {item.project.eli5}
+                        <LinkedText text={item.project.eli5} />
                     </Clamp>
                 {/if}
             </div>
         {/if}
         {#if item.project.next}
-            <p class="next"><CodeText text={firstSentence(item.project.next, CARD_NEXT)} /></p>
+            <p class="next">
+                <CodeText text={firstSentence(item.project.next, CARD_NEXT)} linked />
+            </p>
         {/if}
         <CardAddresses {item} />
         {#if open}

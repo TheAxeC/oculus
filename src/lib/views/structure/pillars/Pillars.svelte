@@ -42,7 +42,7 @@
     const client = useState();
     const {
         entities: { portfolio },
-        selectors: { archiveDead, configMap, projects, venues },
+        selectors: { configMap, projects, venues },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -54,14 +54,14 @@
     const file = registryFile(client, 'pillars', 'pillars');
     const lines = $derived(registryLines(portfolio(), 'pillars', file.collection?.entries ?? []));
     const allProjects = $derived(projects());
-    const dead = $derived(archiveDead());
+    const config = $derived(configMap());
     const allVenues = $derived(venues());
     const kinds = $derived(lineKinds(lines));
     const pillars = $derived(kinds.pillars);
     const provisional = $derived(kinds.provisional);
     const offpillar = $derived(kinds.offpillar);
-    const unmatched = $derived(orphans(lines, allProjects, dead));
-    const archived = $derived(archival(allProjects, dead));
+    const unmatched = $derived(orphans(lines, allProjects, config));
+    const archived = $derived(archival(allProjects, config));
     const tiers = $derived(venueTiers(configMap().venue_tiers));
 
     function write(next: Partial<PillarsState>): void {
@@ -87,7 +87,7 @@
                     <LineCard
                         {line}
                         cursor={cursor === line.id}
-                        projects={lineMembers(line, allProjects, dead)}
+                        projects={lineMembers(line, allProjects, config)}
                         venues={allVenues}
                         {tiers}
                         entry={file.entryOf(line.id)}
@@ -116,7 +116,7 @@
                             <LineCard
                                 {line}
                                 cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, dead)}
+                                projects={lineMembers(line, allProjects, config)}
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}
@@ -146,7 +146,7 @@
                             <LineCard
                                 {line}
                                 cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, dead)}
+                                projects={lineMembers(line, allProjects, config)}
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}

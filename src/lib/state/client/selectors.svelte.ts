@@ -12,7 +12,7 @@
 // The path rules come from data/helpers/files/paths.ts (`pathUnder`).
 
 import {
-    BOARDS,
+    boardIds,
     SESSIONS_LIVE,
     SESSIONS_NONE,
     SESSIONS_RECENT,
@@ -25,10 +25,10 @@ import {
 } from '../boards/board/index.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
-import { byKey } from '../../data/helpers/guards.ts';
+import { byKey, focusSetting } from '../../data/helpers/guards.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
 import { collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
-import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
+import { readAs } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
 import {
@@ -148,9 +148,6 @@ export function inFolder(path: string | null, folder: string): boolean {
     return pathUnder(folder, path) !== null;
 }
 
-/** `stale_lag_days`: a finite number. */
-const staleLagShape = z.number();
-
 /** `context_window`: a finite number above zero. */
 const contextWindowShape = z.number().gt(0);
 
@@ -188,7 +185,6 @@ export type SelectorsStore = {
     projects: () => Project[];
     venues: () => Venue[];
     datasets: () => Dataset[];
-    archiveDead: () => string[];
     manifestFields: () => FormField[];
     manifestSections: () => string[];
     fieldChoices: (field: FormField, project?: Project | null, root?: string) => Choice[];
@@ -304,9 +300,12 @@ export function createSelectors(
         return stats(items, entities.portfolio()?.entities.venues ?? {}, configMap());
     }
 
-    /** `stale_lag_days` of config/behavior.yml: how far behind its documents a manifest may be. */
+    /**
+     * `stale_lag_days` under `focus:` of config/behavior.yml: how far behind its documents a
+     * manifest may be.
+     */
     function staleLag(): number {
-        return readAs(staleLagShape, configMap().stale_lag_days) ?? STALE_LAG;
+        return focusSetting(configMap(), 'stale_lag_days') ?? STALE_LAG;
     }
 
     /** The events and education entries that name one project. Empty before the first snapshot. */
@@ -409,10 +408,10 @@ export function createSelectors(
         if (project === undefined) return null;
         const merged = configMap();
         const tier = project.tier;
-        const view = BOARDS.find(
+        const view = boardIds(merged).find(
             (name) => tier !== undefined && presetFor(name, merged).tiers.includes(tier)
         );
-        const preset = presetFor(view ?? BOARDS[0], merged);
+        const preset = presetFor(view ?? '', merged);
         return boardItemFor(snapshot, project, preset, sessionsOf);
     }
 
@@ -449,11 +448,6 @@ export function createSelectors(
         return snapshot === null ? [] : Object.values(snapshot.entities.datasets);
     }
 
-    /** Dead archive outcomes from the merged vocabulary. */
-    function archiveDead(): string[] {
-        return readAs(stringItemsShape, configMap().archive_dead) ?? [];
-    }
-
     /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
     function manifestFields(): FormField[] {
         return formFields(configMap());
@@ -478,7 +472,7 @@ export function createSelectors(
         // The Focus lane of a project offers only what the board may move it to, so `holding` is
         // not offered to a project of a tier the backlog does not draw.
         if (project === null || field.field !== 'focus') return all;
-        return all.filter((choice) => movable(project, choice.id));
+        return all.filter((choice) => movable(project, choice.id, configMap()));
     }
 
     // ------------------------------------------------------------------ sessions The joins over
@@ -712,7 +706,6 @@ export function createSelectors(
         projects,
         venues,
         datasets,
-        archiveDead,
         manifestFields,
         manifestSections,
         fieldChoices,

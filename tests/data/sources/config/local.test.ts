@@ -1,7 +1,7 @@
 // Layer 1, data tests. A hub's own `.oculus/local.yml`, read from text the case writes: checkLocal
 // over every shape of wrong value, in the order the reader refuses them, and readLocal, loadMachine
-// and localFindings over a scratch hub whose local.yml the case writes. A key that is wrong costs
-// that key alone. No hub's real local.yml is ever opened.
+// and localFindings over a scratch hub whose local.yml the case writes, the `downloads` rows among
+// them. A key that is wrong costs that key alone. No hub's real local.yml is ever opened.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
@@ -128,6 +128,64 @@ describe('readLocalText', () => {
         expect(wrongKey.config.port).toBe(9001);
         expect(wrongKey.config.literature).toStrictEqual({ mailto: 'a@b.c' });
         expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.wos_key']);
+    });
+});
+
+describe('downloads', () => {
+    const config = loadConfig(engineDir()).config;
+    const SECRET = 'download-secret-of-the-test-xyz';
+
+    it.each([
+        [
+            'a wrong service, a physionet row with no user and a repeated kaggle row',
+            [
+                'downloads:',
+                `  - { service: dropbox, user: dropper, secret: ${SECRET} }`,
+                `  - { service: physionet, secret: ${SECRET} }`,
+                `  - { service: kaggle, user: kaggler, secret: ${SECRET} }`,
+                `  - { service: kaggle, user: kaggler, secret: ${SECRET} }`
+            ],
+            ['downloads[0].service: row', 'downloads[1].user: row', 'downloads[3].service: repeat'],
+            ['kaggle']
+        ],
+        [
+            'a row for each service, a kaggle row and a kaggle-token row among them',
+            [
+                'downloads:',
+                `  - { service: physionet, user: reader, secret: ${SECRET} }`,
+                `  - { service: kaggle, user: reader, secret: ${SECRET} }`,
+                `  - { service: kaggle-token, secret: ${SECRET} }`,
+                `  - { service: synapse, secret: ${SECRET} }`
+            ],
+            [],
+            ['physionet', 'kaggle', 'kaggle-token', 'synapse']
+        ],
+        [
+            'a kaggle-token row that names a user',
+            ['downloads:', `  - { service: kaggle-token, user: kaggler, secret: ${SECRET} }`],
+            ['downloads[0].user: row'],
+            []
+        ]
+    ])('reads %s', (_name, lines, problems, services) => {
+        const hub = hubWith(lines.join('\n'));
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        try {
+            const read = readLocal(hub, true);
+            expect(read.problems.map((one) => `${one.key}: ${one.kind}`)).toStrictEqual(problems);
+            expect(read.config.downloads.map((row) => row.service)).toStrictEqual(services);
+            expect(warn).not.toHaveBeenCalled();
+            const findings = localFindings(
+                config,
+                read.problems.map((problem) => ({ file: localFile(hub), problem }))
+            );
+            for (const finding of findings) {
+                for (const value of [SECRET, 'dropbox', 'dropper', 'kaggler']) {
+                    expect(finding.message, finding.key).not.toContain(value);
+                }
+            }
+        } finally {
+            warn.mockRestore();
+        }
     });
 });
 

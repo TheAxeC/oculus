@@ -1,10 +1,12 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/linkedin/Linkedin.svelte. One idea or numbered post with
     // its metadata, snippet, promotion write, and source action. Folder and cadence rules stay
-    // outside this card.
+    // outside this card. A web address written in the snippet is a link
+    // (ui/display/text/LinkedText.svelte).
 
     import { linkedinSourcePath, openLinkedinSource } from './post-card';
     import Card from '$lib/ui/frame/Card.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { rootOf } from '$lib/state/shared/page/hubs';
@@ -68,7 +70,7 @@
             {/if}
         {/snippet}
 
-        <p class="snippet">{snippet(entry.body)}</p>
+        <p class="snippet"><LinkedText text={snippet(entry.body)} /></p>
 
         {#snippet footer()}
             <div class="actions">

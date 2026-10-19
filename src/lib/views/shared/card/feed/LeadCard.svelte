@@ -5,12 +5,13 @@
     // page opener and its title is words. Feed rules stay in state and server modules.
     //
     // The `applied` control opens Applications beside the view the card is drawn in, with an entry
-    // filled from the lead, and the lead is set to `applied` once that entry is placed
-    // (views/shared/card/feed/lead-apply.ts). The controls that write the lead are disabled,
-    // `blocked` as their title, while the leads file has unsaved text in a source tab. The
-    // `decline` control is a status write like reopen: it sets the lead's status to `declined` in
-    // the hub's file, so the change log records it and reopen puts `open` back. It is offered on an
-    // open lead alone, so a decline never writes over an outcome.
+    // filled from the lead, and the lead is set to the status carrying `lead_applied` once that
+    // entry is placed (views/shared/card/feed/lead-apply.ts). The controls that write the lead are
+    // disabled, `blocked` as their title, while the leads file has unsaved text in a source tab.
+    // The `decline` control is a status write like reopen: it sets the lead's status to the word
+    // carrying `lead_declined` in the hub's file, so the change log records it and reopen puts the
+    // word carrying `default_lead` back. It is offered on an open lead alone, so a decline never
+    // writes over an outcome. Each flag is a word's of `statuses` in config/catalogs/vocab.yml.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -20,14 +21,14 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
-        APPLIED,
-        DECLINED,
-        OPEN,
+        declinedWord,
         fitKey,
         fitTone,
+        isApplied,
         isClosed,
         isOpen,
         leadId,
+        openWord,
         type LeadEntry
     } from '$lib/state/feeds/leads';
     import { posting } from './posting';
@@ -47,7 +48,8 @@
 
     type Props = {
         entry: LeadEntry;
-        vocab: unknown;
+        /** The merged config, which the fit's colour and the status words are read through. */
+        vocab: Record<string, unknown>;
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
@@ -85,11 +87,13 @@
     const status = $derived(text('status').trim().toLowerCase());
     const deadline = $derived(text('deadline'));
     const url = $derived(text('url'));
-    const key = $derived(fitKey(fit));
+    const key = $derived(fitKey(fit, vocab));
     const tone = $derived(fitTone(fit, vocab));
     const sub = $derived(`${institution} | ${country}`);
     const note = $derived(`${focus}${fit === '' ? '' : ` - ${fit}`}`);
-    const deadlineTail = $derived(expired ? (isClosed(status) ? status : t('leads.expired')) : '');
+    const deadlineTail = $derived(
+        expired ? (isClosed(vocab, status) ? status : t('leads.expired')) : ''
+    );
 
     /** A control's own words, or the words saying why it is disabled. */
     function why(own: string): string {
@@ -100,8 +104,9 @@
         onsaid(answerWords(answer));
     }
 
+    /** Write the lead's status; a word no flag of the config gives, the empty text, writes none. */
     async function mark(next: string): Promise<void> {
-        if (title === '') return;
+        if (title === '' || next === '') return;
         say(await writeFeedField('leads', title, 'status', next, feedRoot(entry)));
     }
 
@@ -143,7 +148,7 @@
             {/if}
             {#if identity !== ''}
                 <span class="actions">
-                    {#if status !== APPLIED}
+                    {#if !isApplied(vocab, status)}
                         <ToolButton
                             label={t('leads.action.applied')}
                             title={why(t('leads.action.applied_tip'))}
@@ -152,22 +157,22 @@
                             onclick={apply}
                         />
                     {/if}
-                    {#if isOpen(status)}
+                    {#if isOpen(vocab, status)}
                         <ToolButton
                             label={t('leads.action.decline')}
                             title={why(t('leads.action.decline_tip'))}
                             small
                             disabled={blocked !== ''}
-                            onclick={() => mark(DECLINED)}
+                            onclick={() => mark(declinedWord(vocab))}
                         />
                     {/if}
-                    {#if isClosed(status)}
+                    {#if isClosed(vocab, status)}
                         <ToolButton
                             label={t('leads.action.reopen')}
                             title={why(t('leads.action.reopen_tip'))}
                             small
                             disabled={blocked !== ''}
-                            onclick={() => mark(OPEN)}
+                            onclick={() => mark(openWord(vocab))}
                         />
                     {/if}
                     <ToolButton

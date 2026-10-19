@@ -9,6 +9,7 @@ import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type {
+    CollectionFile,
     Finding,
     RawRegistry,
     RawRegistryEntry,
@@ -20,31 +21,37 @@ import type {
 /** The eight hub-relative paths, one per registry; declared with the other types in data/model/. */
 export type { RegistryFiles } from '../model/index.ts';
 
-/**
- * Oculus's default path of each registry, `.oculus/data/<key>.yml` by the key of its entry in
- * `collections:`, which the config falls back to for a key it does not hold.
- */
-export const REGISTRY_FILES: RegistryFiles = {
-    venues: '.oculus/data/venues.yml',
-    datasets: '.oculus/data/data.yml',
-    pillars: '.oculus/data/pillars.yml',
-    domains: '.oculus/data/domains.yml',
-    funding: '.oculus/data/funding.yml',
-    people: '.oculus/data/people.yml',
-    organisations: '.oculus/data/organisations.yml',
-    resources: '.oculus/data/resources.yml'
+/** The key of the `collections:` list each registry's file is named under. */
+export const REGISTRY_LIST_KEYS: Record<RegistryName, string> = {
+    venues: 'venues',
+    datasets: 'data',
+    pillars: 'pillars',
+    domains: 'domains',
+    funding: 'funding',
+    people: 'people',
+    organisations: 'organisations',
+    resources: 'resources'
 };
 
-const NAMES: RegistryName[] = [
-    'venues',
-    'datasets',
-    'pillars',
-    'domains',
-    'funding',
-    'people',
-    'organisations',
-    'resources'
-];
+const NAMES = Object.keys(REGISTRY_LIST_KEYS) as RegistryName[];
+
+/**
+ * The path of each registry: the file of the first entry of `listed` under the registry's key,
+ * else the file of oculus's own list `defaults` under it (config/sources.yml, asked only when
+ * `listed` leaves a key out), else the empty text.
+ */
+export function registryFiles(
+    listed: readonly CollectionFile[],
+    defaults: () => readonly CollectionFile[]
+): RegistryFiles {
+    const fileOf = (list: readonly CollectionFile[], name: RegistryName): string | undefined =>
+        list.find((one) => one.key === REGISTRY_LIST_KEYS[name])?.file;
+    const entries = NAMES.map((name) => [
+        name,
+        fileOf(listed, name) ?? fileOf(defaults(), name) ?? ''
+    ]);
+    return Object.fromEntries(entries) as RegistryFiles;
+}
 
 function empty(): RawRegistry {
     return { entries: [], meta: {} };

@@ -35,8 +35,12 @@
     // (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
-    // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
-    // after it, where an Escape it left untaken arms.
+    // on (keys/tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it,
+    // and after it, where an Escape it left untaken arms.
+    //
+    // A parent that hands `suggest` gets Show Suggestions, Monaco's own action, in the right-click
+    // menu and the palette under its label, and has the suggest list's description panel shown or
+    // closed as it holds it and is told when the reader toggles it (keys/suggest.ts).
     //
     // What Monaco pops up over the text is drawn on the document body, so no pane, split or float
     // clips it: the hover, the suggest list, the parameter hints and the rename box on a node of
@@ -67,7 +71,8 @@
         gutterCollections,
         type GutterCollections
     } from './gutter/editor-gutter';
-    import { tabOut } from './tab-out';
+    import { tabOut } from './keys/tab-out';
+    import { followSuggest, suggestListing } from './keys/suggest';
     import { followFirstLine, reachText, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions, Widgets } from './options';
@@ -87,7 +92,8 @@
         EditorExtension,
         EditorIndent,
         EditorOwnAction,
-        EditorReach
+        EditorReach,
+        EditorSuggest
     } from './types';
 
     /** The most characters of selected text handed to `onselect`; a longer selection hands none. */
@@ -150,6 +156,8 @@
         actions?: EditorOwnAction[];
         /** The actions the palette lists, said once loaded and again when the labels change. */
         onactions?: (actions: EditorAction[]) => void;
+        /** Show Suggestions' label and the description panel; without it the editor adds none. */
+        suggest?: EditorSuggest;
         /** Markers, widgets or providers the parent adds to the model once it exists. */
         extension?: EditorExtension;
         /** Runs of lines tinted, each from its first line (from one) for its count. */
@@ -189,6 +197,7 @@
         changeWords,
         actions = [],
         onactions,
+        suggest,
         extension,
         highlights = [],
         bars = [],
@@ -307,11 +316,17 @@
                 })
             );
         }
-        said.push(...ownListing(actions, loaded.mac));
+        said.push(...ownListing(actions, loaded.mac), ...suggestListing(suggest, loaded.mac));
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
         return () => {
             for (const action of added) action.dispose();
         };
+    });
+
+    $effect(() => {
+        if (kit === null || editor === null) return;
+        const held = followSuggest(kit.suggest, editor.getId(), suggest);
+        return () => held.dispose();
     });
 
     function caretMoved(selection: Monaco.Selection): void {

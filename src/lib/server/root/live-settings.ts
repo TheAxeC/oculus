@@ -3,7 +3,7 @@
 // watcher publishes on, reads each group of settings again through its reader, and gives the
 // poller the settings that changed. The Live HPC host is the one setting with other sources: the
 // `hpc_host` of local.yml, read from the context at each push and again when local.yml changes, and
-// the cluster entry of registries/resources.yml that `slurm.resource` names, read again after each
+// the cluster entry of the resources registry that `slurm.resource` names, read again after each
 // portfolio rebuild.
 //
 // Each group is read on its own, so one a hand edit made unreadable keeps the settings in force

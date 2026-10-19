@@ -2,9 +2,10 @@
     // Layer 3, view partial. The control of one "This browser" row, which sets the value the ui
     // store keeps for this browser: the theme list, the code theme menu (tokens, the VS Code themes
     // under the words of the theme list, and Shiki's), the text-size steps with the size in force,
-    // the terminal text size box, and the toggles for the CRT overlay, the wallpaper and the glyph
-    // vocabulary. Each writes the ui store, which saves its values together, so what the page looks
-    // like comes back whole after a reload whichever control set it.
+    // the terminal text size box, and the toggles for the CRT overlay, the wallpaper, the glyph
+    // vocabulary and the two rice toggles, Brackets and Monospace. Each writes the ui store, which
+    // saves its values together, so what the page looks like comes back whole after a reload
+    // whichever control set it.
     //
     // The terminal text size is a box holding the text being typed. It is applied on Enter and on
     // leaving the box: a decimal the store clamps to 6 to 40, or an empty box, which gives the size
@@ -25,12 +26,16 @@
     const {
         appShell: { offers },
         ui: {
+            brackets,
             codeTheme,
             crt,
             icons,
+            monospace,
+            setBrackets,
             setCodeTheme,
             setCrt,
             setIcons,
+            setMonospace,
             setTerminalFont,
             setTextScale,
             setTheme,
@@ -176,6 +181,24 @@
         active={wallpaper()}
         pressed={wallpaper()}
         onclick={() => setWallpaper(!wallpaper())}
+    />
+{:else if row.name === 'brackets'}
+    <ToolButton
+        label={t('ui.brackets')}
+        title={t('ui.brackets_title')}
+        glyph="code"
+        active={brackets()}
+        pressed={brackets()}
+        onclick={() => setBrackets(!brackets())}
+    />
+{:else if row.name === 'monospace'}
+    <ToolButton
+        label={t('ui.monospace')}
+        title={t('ui.monospace_title')}
+        glyph="terminal"
+        active={monospace()}
+        pressed={monospace()}
+        onclick={() => setMonospace(!monospace())}
     />
 {:else}
     <ToolButton

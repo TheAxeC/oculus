@@ -1,12 +1,12 @@
-// Layer 2, client state. The "This browser" rows of the Settings view: the seven appearance values
+// Layer 2, client state. The "This browser" rows of the Settings view: the nine appearance values
 // the ui store keeps per browser (theme, code theme, text size, terminal text size, CRT overlay,
-// wallpaper, icons) as rows beside the options of the config files, with their titles and
-// descriptions from the catalog.
+// wallpaper, icons, and the rice toggles Brackets and Monospace) as rows beside the options of the
+// config files, with their titles and descriptions from the catalog.
 //
 // A row is Modified when this browser holds a value of its own: a code theme, wallpaper, text size
-// or terminal text size that is not null, and a theme, CRT or icons value that differs from what a
-// browser with nothing saved starts on (`initial()` of the store, which reads the config). Reset
-// makes the store forget the value, so the config's answer applies again.
+// or terminal text size that is not null, and a theme, CRT, icons, brackets or monospace value that
+// differs from what a browser with nothing saved starts on (`initial()` of the store, which reads
+// the config). Reset makes the store forget the value, so the start value applies again.
 //
 // The wallpaper row is made where a theme shows one (the view says which with `offersWallpaper`)
 // and wherever this browser holds a wallpaper choice of its own, so a saved choice can be seen as
@@ -19,7 +19,7 @@ import { message, type Message } from '../messages.ts';
 import type { RowBase } from '../rows.ts';
 import { decimalOf } from '../write.ts';
 
-/** The names of the seven per-browser values, in the order their rows are drawn. */
+/** The names of the nine per-browser values, in the order their rows are drawn. */
 export const BROWSER_NAMES = [
     'theme',
     'code_theme',
@@ -27,7 +27,9 @@ export const BROWSER_NAMES = [
     'terminal_font',
     'crt',
     'wallpaper',
-    'icons'
+    'icons',
+    'brackets',
+    'monospace'
 ] as const;
 
 /** The name of one per-browser value. */
@@ -48,8 +50,8 @@ export type BrowserRow = RowBase & {
 };
 
 /**
- * The seven values as this browser holds them of its own: a null is one it has not chosen, which
- * the config's answer stands in for. The ui store's `Chosen` has this shape.
+ * The nine values as this browser holds them of its own: a null is one it has not chosen, which
+ * the config's answer stands in for. The ui store's `Chosen` is this type.
  */
 export type BrowserValues = {
     theme: string;
@@ -59,6 +61,8 @@ export type BrowserValues = {
     crt: boolean;
     wallpaper: boolean | null;
     icons: boolean;
+    brackets: boolean;
+    monospace: boolean;
 };
 
 /** What the rows need of the ui store, which has these members under the same names. */
@@ -70,6 +74,8 @@ export type BrowserUi = {
     crt: () => boolean;
     wallpaper: () => boolean;
     icons: () => boolean;
+    brackets: () => boolean;
+    monospace: () => boolean;
     chosen: () => BrowserValues;
     initial: () => BrowserValues;
     setTheme: (name: string) => void;
@@ -79,6 +85,8 @@ export type BrowserUi = {
     setCrt: (on: boolean) => void;
     setWallpaper: (on: boolean | null) => void;
     setIcons: (on: boolean) => void;
+    setBrackets: (on: boolean) => void;
+    setMonospace: (on: boolean) => void;
 };
 
 /** The kind of control each value is set with: a list of words, a number or an on/off switch. */
@@ -89,7 +97,9 @@ const CONTROL: Record<BrowserName, BrowserControl> = {
     terminal_font: 'number',
     crt: 'toggle',
     wallpaper: 'toggle',
-    icons: 'toggle'
+    icons: 'toggle',
+    brackets: 'toggle',
+    monospace: 'toggle'
 };
 
 /** The field of the store's chosen values each value is held in. */
@@ -100,7 +110,9 @@ const FIELD: Record<BrowserName, keyof BrowserValues> = {
     terminal_font: 'terminalFont',
     crt: 'crt',
     wallpaper: 'wallpaper',
-    icons: 'icons'
+    icons: 'icons',
+    brackets: 'brackets',
+    monospace: 'monospace'
 };
 
 /** The words of each value, read when its row is made. */
@@ -132,6 +144,14 @@ const WORDS: Record<BrowserName, () => { title: string; help: string }> = {
     icons: () => ({
         title: t('workbench.settings_browser_icons'),
         help: t('workbench.settings_browser_icons_about')
+    }),
+    brackets: () => ({
+        title: t('workbench.settings_browser_brackets'),
+        help: t('workbench.settings_browser_brackets_about')
+    }),
+    monospace: () => ({
+        title: t('workbench.settings_browser_monospace'),
+        help: t('workbench.settings_browser_monospace_about')
     })
 };
 
@@ -143,6 +163,8 @@ function inForce(ui: BrowserUi, name: BrowserName): unknown {
     if (name === 'terminal_font') return ui.terminalFont();
     if (name === 'crt') return ui.crt();
     if (name === 'wallpaper') return ui.wallpaper();
+    if (name === 'brackets') return ui.brackets();
+    if (name === 'monospace') return ui.monospace();
     return ui.icons();
 }
 
@@ -176,6 +198,8 @@ export function resetBrowserRow(ui: BrowserUi, row: BrowserRow): void {
     else if (row.name === 'terminal_font') ui.setTerminalFont(null);
     else if (row.name === 'crt') ui.setCrt(initial.crt);
     else if (row.name === 'wallpaper') ui.setWallpaper(null);
+    else if (row.name === 'brackets') ui.setBrackets(initial.brackets);
+    else if (row.name === 'monospace') ui.setMonospace(initial.monospace);
     else ui.setIcons(initial.icons);
 }
 

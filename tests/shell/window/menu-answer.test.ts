@@ -101,7 +101,7 @@ const ROWS: [string, unknown, unknown[]][] = [
     ['next-tab', undefined, ['act', { kind: 'cycle-tab', by: 1 }]],
     ['previous-tab', undefined, ['act', { kind: 'cycle-tab', by: -1 }]],
     ['help', undefined, ['openView', 'help']],
-    ['keyboard-shortcuts', undefined, ['act', { kind: 'sheet' }]],
+    ['keyboard-shortcuts', undefined, ['openView', 'keys']],
     ['update-tasks', undefined, ['colon', 'update']]
 ];
 

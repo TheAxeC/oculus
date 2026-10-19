@@ -15,7 +15,6 @@ import {
 } from '../../../src/lib/data/snapshot/references/lookup.ts';
 import type { FileScan, ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
-import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 import { join } from 'node:path';
 
 /**
@@ -27,12 +26,11 @@ const CONFIG_FOLDER = 'engine';
 /** Where the config folder lies inside the hub when oculus's folder is inside the hub folder. */
 const CONFIG_IN_HUB = 'tools/oculus/config';
 
-const LOADED = withHubCollections(loadConfig(engineDir()).config);
-export const CONFIG = portfolioConfigFrom(LOADED);
+export const CONFIG = portfolioConfigFrom(loadConfig(engineDir()).config);
 
-/** The files of the planted hub, by their path under the hub root. */
+/** The planted hub's files by their path under the hub root, the data at oculus's own paths. */
 export const HUB_FILES: Record<string, string> = {
-    'registries/venues.yml': [
+    '.oculus/data/research/venues.yml': [
         'schema:',
         '  - { field: id, type: text, required: true, help: The venue key. }',
         '  - { field: name, type: text, required: true, help: The venue name. }',
@@ -41,7 +39,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - { id: bspc, name: Journal Two }',
         ''
     ].join('\n'),
-    'registries/people.yml': [
+    '.oculus/data/people/people.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The person key. }',
         '  - { field: name, type: text, required: true, help: The name. }',
@@ -54,7 +52,7 @@ export const HUB_FILES: Record<string, string> = {
         '    name: Ann',
         ''
     ].join('\n'),
-    'registries/organisations.yml': [
+    '.oculus/data/people/organisations.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The organisation key. }',
         '  - { field: name, type: text, required: true, help: The name. }',
@@ -63,7 +61,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - { key: tue, name: Eindhoven }',
         ''
     ].join('\n'),
-    'registries/pillars.yml': [
+    '.oculus/data/pillars/pillars.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The pillar key. }',
         'entries:',
@@ -71,7 +69,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - key: federated',
         ''
     ].join('\n'),
-    'registries/domains.yml': [
+    '.oculus/data/pillars/domains.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The domain key. }',
         'entries:',
@@ -79,7 +77,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - key: brain',
         ''
     ].join('\n'),
-    'registries/resources.yml': [
+    '.oculus/data/research/resources.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The resource key. }',
         '  - { field: kind, type: select, options: [cluster, machine], help: The kind. }',
@@ -88,7 +86,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - { key: laptop, kind: machine }',
         ''
     ].join('\n'),
-    'registries/data.yml': [
+    '.oculus/data/research/data.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The dataset key. }',
         '  - { field: themes, type: tags, options: [{ key: eeg, label: EEG }], help: The themes. }',
@@ -97,7 +95,7 @@ export const HUB_FILES: Record<string, string> = {
         '    themes: [eeg]',
         ''
     ].join('\n'),
-    'funding/funding.yml': [
+    '.oculus/data/academic/funding.yml': [
         'schema:',
         '  - { field: key, type: text, help: The funding key. }',
         '  - { field: name, type: text, help: The name. }',
@@ -106,7 +104,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - { name: Grant without a key }',
         ''
     ].join('\n'),
-    'network/joint-work.yml': [
+    '.oculus/data/academic/joint-work.yml': [
         'schema:',
         '  - { field: key, type: text, help: The slug. }',
         '  - { field: person, type: select, from: people, required: true, help: The person. }',
@@ -115,7 +113,7 @@ export const HUB_FILES: Record<string, string> = {
         '    person: "amir"',
         ''
     ].join('\n'),
-    'tasks/tasks.yml': [
+    '.oculus/data/academic/tasks.yml': [
         'schema:',
         '  - { field: key, type: text, help: The slug. }',
         '  - { field: related, type: tags, from: projects, help: The projects. }',
@@ -128,7 +126,7 @@ export const HUB_FILES: Record<string, string> = {
         '    related:',
         ''
     ].join('\n'),
-    'applications/applications.yml': [
+    '.oculus/data/academic/applications.yml': [
         'schema:',
         '  - { field: key, type: text, help: The slug. }',
         '  - field: budget',
@@ -142,7 +140,7 @@ export const HUB_FILES: Record<string, string> = {
         '      - venue: bspc',
         ''
     ].join('\n'),
-    'feeds/literature-radar.yml': [
+    '.oculus/data/literature/radar.yml': [
         'schema:',
         '  - { field: title, type: text, required: true, help: The title. }',
         '  - { field: url, type: text, required: true, help: The address. }',
@@ -192,8 +190,9 @@ export const ENGINE_FILES: Record<string, string> = {
         'palette:',
         '  "#e2374d": c-red',
         '  "#7c3aed": c-violet',
-        'type_color: { active: "#ea580c", manuscript: "#0d9488" }',
-        'type_order: [active, manuscript]',
+        'types:',
+        '  active: { color: "#ea580c" }',
+        '  manuscript: { color: "#0d9488" }',
         ''
     ].join('\n')
 };

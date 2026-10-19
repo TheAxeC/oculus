@@ -1,0 +1,22 @@
+# Organisations - the universities, hospitals, funders and companies the hub names. A person's
+# `affiliations:` in .oculus/data/people/people.yml and a funding scheme's `funder:` in .oculus/data/academic/funding.yml are
+# keys into this file, so an organisation is spelled once and drawn the same way everywhere.
+# `kind:` is one of university | hospital | funder | company | other.
+
+schema:
+  - { field: key,     type: text,   required: true, label: "Organisation key" }
+  - { field: name,    type: text,   required: true }
+  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true }
+  - { field: country, type: text,   help: "two-letter country code" }
+  - { field: links,   type: tags }
+
+entries:
+  - key: "northwood-university"
+    name: "Northwood University"
+    kind: "university"
+    country: "NL"
+
+  - key: "meridian-institute"
+    name: "Meridian Institute"
+    kind: "other"
+    country: "NL"

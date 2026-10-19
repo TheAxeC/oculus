@@ -1,8 +1,11 @@
-// Layer 2, client state. Pure dataset summaries, search, tones and saved state.
-// The Data view receives records ready to draw and keeps its search words and disabled facets.
+// Layer 2, client state. Pure dataset summaries, search, tones, the words of a source Recover does
+// not run, and saved state. The Data view receives records ready to draw and keeps its search
+// words and disabled facets.
 
 import { dataAccessTone } from '../../shared/words/tones.ts';
-import type { Dataset, Project } from '../../../data/model/index.ts';
+import { t } from '../../shared/words/text.ts';
+import type { Dataset, Project, RecoverSource } from '../../../data/model/index.ts';
+import { bareId } from '../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
 
 export type DataState = { search: string; off: string[]; reveal?: string };
@@ -64,6 +67,29 @@ export function datasetUsers(ids: string[], projects: Project[]): Project[] {
     return ids
         .map((id) => projects.find((project) => project.id === id))
         .filter((project) => project !== undefined);
+}
+
+/**
+ * Whether a source is one the card states instead of Recover running it: a library call, a contact
+ * to ask, or the sets the dataset is built from.
+ */
+export function statedSource(source: RecoverSource): boolean {
+    return source.kind === 'library' || source.kind === 'request' || source.kind === 'derived';
+}
+
+/** What the card says of a source that Recover does not run, '' for a download. */
+export function statedWords(source: RecoverSource): string {
+    if (source.kind === 'library') return t('data.stated_library', source.call);
+    if (source.kind === 'request') return t('data.stated_request', source.contact);
+    if (source.kind === 'derived') {
+        return t('data.stated_derived', source.from.join(', '), source.script);
+    }
+    return '';
+}
+
+/** The key a dataset's Recover view opens under: its id as its own hub's files write it. */
+export function recoverKey(dataset: Dataset): string {
+    return bareId(dataset);
 }
 
 export type { Dataset } from '../../../data/model/index.ts';

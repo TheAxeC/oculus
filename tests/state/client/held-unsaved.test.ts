@@ -33,10 +33,12 @@ setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 type Writes = ReturnType<typeof createWrites>;
 
+/** The merged configuration as the page receives it: the collection files and the career file. */
 const CONFIG = {
+    career_file: '.oculus/data/academic/career.yml',
     collections: [
-        { key: 'tasks', file: 'tasks/tasks.yml' },
-        { key: 'events', file: 'registries/events.yml' }
+        { key: 'tasks', file: '.oculus/data/academic/tasks.yml' },
+        { key: 'events', file: '.oculus/data/academic/events.yml' }
     ]
 };
 
@@ -57,7 +59,7 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         });
         const writes = createWrites(
             () => CONFIG,
-            (file) => file.root === 'hub' && file.path === 'tasks/tasks.yml',
+            (file) => file.root === 'hub' && file.path === '.oculus/data/academic/tasks.yml',
             { ...NO_LOOKUPS, primary: () => 'hub' }
         );
         const told: string[] = [];
@@ -90,15 +92,19 @@ describe('the writes of the entry pages over a file a source tab holds unsaved t
     it.each([
         [
             'a career save',
-            'registries/career.yml',
+            '.oculus/data/academic/career.yml',
             (w: Writes) => w.writeCareer({ milestone: 'Veni' })
         ],
         [
             'an Add to People',
-            'registries/people.yml',
+            '.oculus/data/people/people.yml',
             (w: Writes) => w.newEntry('people', { key: 'wim' })
         ],
-        ['a Delete of a task', 'tasks/tasks.yml', (w: Writes) => w.deleteEntry('tasks', 'A task')]
+        [
+            'a Delete of a task',
+            '.oculus/data/academic/tasks.yml',
+            (w: Writes) => w.deleteEntry('tasks', 'A task')
+        ]
     ])('refuses %s and posts nothing', async (_name, path, send) => {
         const posted: unknown[] = [];
         vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
@@ -111,9 +117,10 @@ describe('the writes of the entry pages over a file a source tab holds unsaved t
         });
         const writes = createWrites(
             () => ({
+                ...CONFIG,
                 collections: [
                     ...CONFIG.collections,
-                    { key: 'people', file: 'registries/people.yml' }
+                    { key: 'people', file: '.oculus/data/people/people.yml' }
                 ]
             }),
             (file) => file.root === 'hub' && file.path === path,
@@ -136,7 +143,7 @@ describe('the writes of the entry pages over a file a source tab holds unsaved t
         });
         const writes = createWrites(
             () => CONFIG,
-            (file) => file.path === 'tasks/tasks.yml',
+            (file) => file.path === '.oculus/data/academic/tasks.yml',
             { ...NO_LOOKUPS, primary: () => 'hub' }
         );
         expect((await writes.writeCareer({ milestone: 'Veni' })).ok).toBe(true);
@@ -155,7 +162,7 @@ describe('a write to an entry of a hub other than the primary', () => {
                 json: () => Promise.resolve({ ok: true, changed: ['status'], refused: [] })
             });
         });
-        const lab = { root: 'lab', path: 'tasks/tasks.yml' };
+        const lab = { root: 'lab', path: '.oculus/data/academic/tasks.yml' };
         const writes = createWrites(
             () => CONFIG,
             (file) => file.root === lab.root && file.path === lab.path,
@@ -188,9 +195,11 @@ describe('a write to an entry of a hub other than the primary', () => {
                 json: () => Promise.resolve({ ok: true, changed: [], refused: [], id: 'faes2024' })
             });
         });
-        const lab = { root: 'lab', path: 'registries/literature.yml' };
+        const lab = { root: 'lab', path: '.oculus/data/literature/literature.yml' };
         const writes = createWrites(
-            () => ({ collections: [{ key: 'literature', file: 'registries/literature.yml' }] }),
+            () => ({
+                collections: [{ key: 'literature', file: '.oculus/data/literature/literature.yml' }]
+            }),
             (file) => file.root === lab.root && file.path === lab.path,
             {
                 ...NO_LOOKUPS,
@@ -212,7 +221,7 @@ describe('a write to an entry of a hub other than the primary', () => {
 describe('a rail reorder over a layout file a source tab holds unsaved text of', () => {
     const TAB = 'hub/tools/oculus/config/layout.yml';
     const HUB = '/work/hub';
-    const RAIL = [{ label: 'Files', glyph: 'files', page: 'files' }];
+    const RAIL = [{ label: 'Files', glyph: 'files', page: 'files', chord: '', group_glyph: '' }];
 
     /** A dirty tab over the hub name of the layout file, and a rail reorder sent after it. */
     async function reorder(
@@ -304,8 +313,8 @@ describe('a write while the roots are not read and a source tab holds unsaved te
     it('refuses an undo of a recorded change while the roots are not read, and once they are read refuses it for the tab that holds unsaved text', async () => {
         let roots = [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }];
         const env = server({ roots: () => roots });
-        env.files.set('hub/tasks/tasks.yml', 'a: 1\n');
-        await env.source.loadSourceDraft('one', 'hub', 'tasks/tasks.yml');
+        env.files.set('hub/.oculus/data/academic/tasks.yml', 'a: 1\n');
+        await env.source.loadSourceDraft('one', 'hub', '.oculus/data/academic/tasks.yml');
         env.source.editSourceDraft('one', 'a: 2\n');
         await env.settled();
         const posted: unknown[] = [];
@@ -323,7 +332,8 @@ describe('a write while the roots are not read and a source tab holds unsaved te
             {
                 ...NO_LOOKUPS,
                 primary: () => 'hub',
-                changeFile: () => fileNamed('/work/hub/tasks/tasks.yml', roots, 'hub'),
+                changeFile: () =>
+                    fileNamed('/work/hub/.oculus/data/academic/tasks.yml', roots, 'hub'),
                 unsavedUnknown: (file) => env.source.unsavedUnknown(file.root, file.path)
             }
         );

@@ -3,6 +3,7 @@
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
+import { anyWord } from '../../../data/shapes/vocab-keys.ts';
 import { inHubOf, joinedEntries } from '../../../data/helpers/hub-names.ts';
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
@@ -14,28 +15,27 @@ import {
     type VenueCount
 } from './presets.ts';
 
-/** The status chip the stats strip counts as ready to go out. */
-const SUBMIT_READY = 'submit-ready';
-
-/** The focus lane the stats strip counts as waiting on somebody else. */
+/** The focus lane the stats strip counts as waiting on somebody else, a key of `focus_lanes`. */
 const BLOCKED = 'blocked';
 
 /** How many venues the strip's distribution shows, most aimed at first. */
 const STATS_VENUES = 8;
 
-/** The `venue_conc_warn` the config names when it names none. */
-const VENUE_WARN = 4;
+/** The `venue_conc_warn` of `focus:` when the config names none. */
+export const VENUE_WARN = 4;
 
 /** The derived line under a project's chips, and the class that gives the line its kind. */
 export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string };
 
 /**
- * What a project is waiting on. Explicit people win over submission review, which wins over a
- * generic external block. A `waiting-on:` value is a person drawn by name or another project
- * drawn by its label, through the one rule of waiting.ts.
+ * What a project is waiting on. Explicit people win over submission review (a chip whose word of
+ * `statuses` carries `pauses_countdown`), which wins over a generic external block (a chip carrying
+ * `blocked`). A `waiting-on:` value is a person drawn by name or another project drawn by its
+ * label, through the one rule of waiting.ts.
  */
 export function waitingLine(
     project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'chips' | 'venueId'>>,
+    config: Record<string, unknown>,
     venues: Record<Id, Venue>,
     people: Record<Id, string>,
     projects: Record<Id, Project> = {}
@@ -45,7 +45,7 @@ export function waitingLine(
         return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
     const chips = project.chips ?? [];
-    if (chips.includes('submitted')) {
+    if (anyWord(config, 'statuses', 'pauses_countdown', chips)) {
         const venue = project.venueId === undefined ? undefined : venues[project.venueId];
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
         const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
@@ -57,15 +57,16 @@ export function waitingLine(
                     : t('project.helper.under_review_at', name)
         };
     }
-    if (chips.includes('blocked')) {
+    if (anyWord(config, 'statuses', 'blocked', chips)) {
         return { kind: 'blocked', text: t('project.helper.blocked_external') };
     }
     return null;
 }
 
 /**
- * The strip above the board: how many projects it holds, how many are ready to go out, how many
- * are waiting on somebody, how many are dated, and where they are aimed. The counts are over the
+ * The strip above the board: how many projects it holds, how many are ready to go out (a chip whose
+ * word of `statuses` carries `submit_ready`), how many are waiting on somebody, how many are
+ * dated, and where they are aimed. The counts are over the
  * board's own projects, before any filter, so the strip says what the board is rather than what is
  * on screen. The venues come from the registry rather than from the manifests, so a chip carries
  * the catalogued short name and the full one it stands for. A venue is counted by its name, so the
@@ -82,7 +83,7 @@ export function stats(
     let blocked = 0;
     let dated = 0;
     for (const item of items) {
-        if (item.chips.includes(SUBMIT_READY)) submitReady += 1;
+        if (anyWord(config, 'statuses', 'submit_ready', item.chips)) submitReady += 1;
         if (item.project.focus === BLOCKED) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
@@ -112,8 +113,8 @@ export function stats(
 }
 
 /**
- * How many projects carry each type, in the `type_order` of the config, with a type that list does
- * not name after the ones it does and in its own order. A project with no type is not counted:
+ * How many projects carry each type, in the order of `types` of the config, with a type that map
+ * does not name after the ones it does and in its own order. A project with no type is not counted:
  * there is no toggle to draw for a type that has no name.
  */
 export function typeCounts(items: BoardItem[], order: string[] = []): TypeCount[] {

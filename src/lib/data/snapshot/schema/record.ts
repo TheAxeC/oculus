@@ -5,8 +5,9 @@
 // Each type accepts what its reader accepts. A `text` field takes a text and the integer a year is
 // written as, a `date` a day written YYYY-MM-DD, a `checkbox` a flag, `tags` a list, `metalist` a
 // list of label and value maps, `raw` anything. Every field also accepts null, which is what a bare
-// `key:` reads as. A `select` takes the keys of its `options` and of its `from` sources, a `tags`
-// field each of them as an item; a `text` takes its `from` keys as suggestions only. A record
+// `key:` reads as. A `select` takes the keys of its `options` and of its `from` sources, and any
+// word when it has neither, a `tags` field each of them as an item; a `text` takes its `from` keys
+// as suggestions only. A record
 // allows no key it does not declare unless it is `open`.
 //
 // A `records` field holds a list of records, one record, or with `map: true` a map from a name to
@@ -159,8 +160,13 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
                   };
         }
         case 'select': {
+            // A select with neither options nor a source names no words, so it takes any word, as
+            // the write path does (server/edit/writes/entries.ts).
             const words = [...optionKeys(field), ...(from?.words ?? [])];
-            if (isPicked(field.from) || from?.unread === true) return { type: ['string', 'null'] };
+            const open = from === undefined && words.length === 0;
+            if (open || isPicked(field.from) || from?.unread === true) {
+                return { type: ['string', 'null'] };
+            }
             const schema = wordsEnum(field, [...new Set(words), null]);
             if (from !== undefined) schema['x-from'] = from.sources.join(' ');
             return schema;

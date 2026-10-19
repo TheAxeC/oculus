@@ -28,13 +28,15 @@
     // into, each open conflict's lines tinted there too, and typing into a conflict's lines settles
     // it by hand. A choice rewrites the Result as one edit of the editor's, so undo takes it back,
     // and the choice goes with it: the conflict reads open again, as it did before; the Result
-    // editor says whether an edit was its undo, its redo or typing. The count of conflicts still
-    // open is the status at the end of the pane's bar; Complete Merge and Accept Deletion are icon
-    // actions on its header. Complete Merge writes the Result over the file and stages it, which is
-    // what tells git the conflict is resolved; with conflicts still open it asks first. Where a
-    // side deleted the file, the pane says which, Accept Deletion takes the deletion (the file
-    // leaves the index and the worktree) after a confirm, and Complete Merge over an empty Result
-    // does the same, since an empty Result is the deleted side.
+    // editor says whether an edit was its undo, its redo or typing. The Result offers Show
+    // Suggestions and opens its suggest list with the description panel as a source tab's does:
+    // the reader's own choice, else `editor.suggest_details` of config/behavior.yml. The count of
+    // conflicts still open is the status at the end of the pane's bar; Complete Merge and Accept
+    // Deletion are icon actions on its header. Complete Merge writes the Result over the file and
+    // stages it, which is what tells git the conflict is resolved; with conflicts still open it
+    // asks first. Where a side deleted the file, the pane says which, Accept Deletion takes the
+    // deletion (the file leaves the index and the worktree) after a confirm, and Complete Merge
+    // over an empty Result does the same, since an empty Result is the deleted side.
     //
     // The three versions are read again whenever the repository's git state moves
     // (merge-reads.svelte.ts): a read that brings the same versions keeps the reader's choices and
@@ -67,8 +69,8 @@
 
     const {
         repositories,
-        selectors: { languages, gitFor },
-        ui: { codeTheme, editorLook }
+        selectors: { languages, gitFor, editorOptions },
+        ui: { codeTheme, editorLook, suggestDetails, setSuggestDetails }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -223,6 +225,11 @@
                         {look}
                         codeTheme={codeTheme()}
                         highlights={tints}
+                        suggest={{
+                            label: t('source.show_suggestions'),
+                            details: suggestDetails() ?? editorOptions()?.suggestDetails ?? true,
+                            ondetails: setSuggestDetails
+                        }}
                         onchange={typed}
                     />
                 </div>

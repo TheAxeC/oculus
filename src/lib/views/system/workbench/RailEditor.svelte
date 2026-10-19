@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The rail list of config/layout.yml as the Settings view edits it: one
-    // row per button with its label, icon and page, the controls that move a row and take it away,
-    // and Save, which writes the list through the `rail` write of api/write. The watcher pushes the
-    // file back within a second, and the rail redraws from that push, so the rail always shows what
-    // the file says.
+    // row per button with its label, icon and page and the chord and heading glyph of its group in
+    // the view catalogue, whose heading is the label, the controls that move a row and take it
+    // away, and Save, which writes the list through the `rail` write of api/write. The watcher
+    // pushes the file back within a second, and the rail redraws from that push, so the rail always
+    // shows what the file says.
     //
     // A sentence under the heading says what a row is, and each field has its word before it on
     // the same line. The word is decoration beside a field whose accessible name already holds it,
@@ -95,8 +96,15 @@
         if (problem.why === 'glyph_unknown') return t('workbench.rail_why_glyph_unknown', place);
         if (problem.why === 'page') return t('workbench.rail_why_page', place);
         if (problem.why === 'page_unknown') return t('workbench.rail_why_page_unknown', place);
+        if (problem.why === 'chord') return t('workbench.rail_why_chord', place);
+        if (problem.why === 'group_glyph_unknown') {
+            return t('workbench.rail_why_group_glyph_unknown', place);
+        }
         return t('workbench.rail_why_repeated', place);
     }
+
+    /** The letters a group's chord may be, one lowercase letter each. */
+    const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
     /**
      * Write the list. The answer lands on the tab it was sent from only while that tab is still
@@ -168,6 +176,26 @@
                     onchange={(value: string) => change(at, 'page', value)}
                 />
             </span>
+            <span class="field">
+                <span class="word" aria-hidden="true">{t('workbench.rail_word_chord')}</span>
+                <Select
+                    value={row.chord}
+                    label={t('workbench.rail_chord', at + 1)}
+                    empty={t('workbench.rail_chord_empty')}
+                    choices={LETTERS.map((letter) => ({ id: letter, label: letter }))}
+                    onchange={(value: string) => change(at, 'chord', value)}
+                />
+            </span>
+            <span class="field">
+                <span class="word" aria-hidden="true">{t('workbench.rail_word_group_glyph')}</span>
+                <GlyphSelect
+                    value={row.group_glyph}
+                    label={t('workbench.rail_group_glyph', at + 1)}
+                    empty={t('workbench.rail_group_glyph_empty')}
+                    choices={glyphs}
+                    onchange={(value: string) => change(at, 'group_glyph', value)}
+                />
+            </span>
             <ToolButton
                 label={t('workbench.rail_up', at + 1)}
                 glyph="collapse"
@@ -201,7 +229,8 @@
         <ToolButton
             label={t('workbench.rail_add')}
             glyph="add"
-            onclick={() => edit([...rows, { label: '', glyph: '', page: '' }])}
+            onclick={() =>
+                edit([...rows, { label: '', glyph: '', page: '', chord: '', group_glyph: '' }])}
         />
         <ToolButton
             label={t('workbench.rail_save')}

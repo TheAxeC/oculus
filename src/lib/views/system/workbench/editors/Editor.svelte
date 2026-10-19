@@ -1,9 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. The editor of a list, a multi or a family of a config file, drawn in
-    // the item of its row: the entries as the draft's form draws them (Cards.svelte,
-    // Rollup.svelte), each field with the control its catalog spec gives it, the problems of the
-    // draft named under them, the sentence of a refusal, and Save and Discard while a draft is
-    // held.
+    // the item of its row: the entries as the draft's form draws them (Cards.svelte), each field
+    // with the control its catalog spec gives it, the problems of the draft named under them, the
+    // sentence of a refusal, and Save and Discard while a draft is held.
     //
     // The draft is the tab's instance state under the file and key (state/system/config/editors/
     // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the draft
@@ -39,7 +38,6 @@
     import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
     import Cards from './Cards.svelte';
-    import Rollup from './Rollup.svelte';
 
     const {
         ui: { instanceState, setInstanceState, registerTabSave }
@@ -79,19 +77,11 @@
     const refusal = $derived(editors.said(row));
     const saved = $derived(editors.saved(row));
 
-    /** Whether the draft holds no entry: no key of a roll-up, no card of any other form. */
-    const empty = $derived(
-        draft !== null && (draft.form === 'rollup' ? draft.groups : draft.cards).length === 0
-    );
+    /** Whether the draft holds no entry. */
+    const empty = $derived(draft !== null && draft.cards.length === 0);
 
-    /** The specs the draft's fields are drawn by, and the one the keys of a roll-up are. */
+    /** The specs the draft's fields are drawn by. */
     const specs = $derived(draft === null ? {} : specsOf(row, draft.form));
-    const keySpec = $derived(
-        (Object.hasOwn(row.fields, 'key') ? row.fields.key : undefined) ?? {
-            help: '',
-            control: 'text' as const
-        }
-    );
 
     /** Put an edited draft in the tab's state; one equal to the file's is no draft. */
     function edit(next: Edit): void {
@@ -132,31 +122,19 @@
         {#if empty}
             <p class="empty" data-editor-empty>{t('settings.editor_empty')}</p>
         {/if}
-        {#if draft.form === 'rollup'}
-            <Rollup
-                {draft}
-                {specs}
-                {keySpec}
-                {lists}
-                instance={id}
-                base={`${row.file}:${row.key}`}
-                onedit={edit}
-            />
-        {:else}
-            <Cards
-                cards={draft.cards}
-                fields={draft.fields}
-                {specs}
-                form={draft.form}
-                {lists}
-                instance={id}
-                base={`${row.file}:${row.key}`}
-                title={row.title}
-                slots={row.entry.slots}
-                removeOnly={row.control === 'parked'}
-                onedit={edit}
-            />
-        {/if}
+        <Cards
+            cards={draft.cards}
+            fields={draft.fields}
+            {specs}
+            form={draft.form}
+            {lists}
+            instance={id}
+            base={`${row.file}:${row.key}`}
+            title={row.title}
+            slots={row.entry.slots}
+            removeOnly={row.control === 'parked'}
+            onedit={edit}
+        />
         {#if problems.length > 0}
             <ul class="problems">
                 {#each problems as problem, at (at)}

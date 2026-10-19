@@ -7,33 +7,25 @@
     import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
-    import type { ViewSource } from '$lib/state/sessions/view-source';
+    import type { RecordCardProps } from '$lib/views/shared/forms/registry/record-card.svelte';
     import {
         inFlight,
         isDormant,
         tierStrip,
         type Pillar,
-        type Project,
         type TierRow,
         type Venue
     } from '$lib/state/boards/structure/lines';
     import { paletteTone, toneOf } from '$lib/state/shared/words/tones';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
+    import { useState } from '$lib/state/client/use';
 
-    type Props = {
+    type Props = RecordCardProps & {
         line: Pillar;
-        cursor: boolean;
-        projects: Project[];
         venues: Venue[];
         tiers: TierRow[];
-        entry: Entry | null;
-        schema: SchemaField[] | undefined;
         muted?: boolean;
-        file: ViewSource | null;
-        fault: IdentityFault | undefined;
-        onsaid: (said: string) => void;
     };
 
     let {
@@ -52,13 +44,16 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
-    const flight = $derived(inFlight(projects));
-    const strip = $derived(tierStrip(projects, venues, tiers));
+    const {
+        selectors: { configMap }
+    } = useState();
+    const flight = $derived(inFlight(projects, configMap()));
+    const strip = $derived(tierStrip(projects, venues, tiers, configMap()));
     const funding = $derived(optionalText(entry?.fields.funding));
     const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
 </script>
 
-<div class:dormant={isDormant(projects)} class:muted data-pillar={line.id}>
+<div class:dormant={isDormant(projects, configMap())} class:muted data-pillar={line.id}>
     <RegistryCard
         collection="pillars"
         id={line.id}

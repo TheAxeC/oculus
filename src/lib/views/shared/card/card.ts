@@ -1,17 +1,38 @@
-// Layer 3, view helpers. Project-card path, label and deadline calculations, and what a session
-// press on the card opens, live here because pure display rules change independently of Svelte
-// markup.
+// Layer 3, view helpers. Project-card path, label and deadline calculations, what a session press
+// on the card opens, and the shape of a card's control, live here because pure display rules
+// change independently of Svelte markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
+import { pausesCountdown } from '$lib/state/boards/focus';
 import type { ClientState } from '$lib/state/client/context';
 import { isInstanceOf, tabsOf, type Instance, type Layout } from '$lib/state/workbench/layout';
 import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
 import { openPage } from '../explorer/opening';
-import type { CardAction } from './CardActions.svelte';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
+
+/**
+ * One control a card carries (CardActions.svelte draws the row): its words, its hover words, its
+ * glyph and what pressing it does.
+ */
+export type CardAction = {
+    /** Stable within one card, so a control keeps its measured width when it moves. */
+    id: string;
+    label: string;
+    title?: string;
+    /** A glyph name; a control with one is drawn as its icon, one without as its words. */
+    glyph?: string;
+    /** Turn the glyph round and round while the action it started is under way. */
+    turning?: boolean;
+    active?: boolean;
+    /** Drawn disabled, with `title` saying why; pressing it does nothing. */
+    disabled?: boolean;
+    /** The control that opens and closes the card, which the keyboard's Enter reaches. */
+    toggle?: boolean;
+    onclick: () => void | Promise<void>;
+};
 
 /**
  * The views that follow the selected session, so a session pressed on a card shows in one of them
@@ -123,17 +144,21 @@ export function codeLabel(value: string, translate: Translate): string {
     return translate('board.code_none');
 }
 
-/** The deadline badge label and tone for one project. */
+/**
+ * The deadline badge label and tone for one project; a project carrying a chip with
+ * `pauses_countdown` (submitted) shows its date with no countdown.
+ */
 export function deadline(
     project: BoardItem['project'],
     chips: string[],
     now: number,
-    translate: Translate
+    translate: Translate,
+    config: Record<string, unknown>
 ): { label: string; tone?: string } | null {
     const date = project.deadline;
     if (date === undefined || date === '') return null;
     const days = daysUntil(date, now);
-    if (days === null || chips.includes('submitted')) return { label: date };
+    if (days === null || pausesCountdown({ chips }, config)) return { label: date };
     if (days < 0) return { label: translate('project.card.overdue', -days), tone: 'red' };
     if (days <= DEADLINE_SOON) {
         return { label: translate('project.card.due_days', days), tone: 'amber' };

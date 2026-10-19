@@ -288,7 +288,7 @@
                     entry={feedEntry}
                     vocab={config()?.config ?? {}}
                     cursor={false}
-                    expired={isExpired(feedEntry, localDate(Date.now()))}
+                    expired={isExpired(configMap(), feedEntry, localDate(Date.now()))}
                     onsaid={say}
                     beside={instance.id}
                     {blocked}
@@ -358,7 +358,7 @@
     }
 
     /* The terminal shape: the whole tab follows the folder line, as the board does. */
-    :global(body.rice) .entry {
+    :global(body.rice:where(:not(.rice-sans))) .entry {
         font-family: var(--font-mono);
     }
 </style>

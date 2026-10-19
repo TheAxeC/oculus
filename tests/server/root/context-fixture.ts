@@ -15,6 +15,7 @@ import { createRelay } from '../../../src/lib/server/machine/lsp/relay/relay.ts'
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
 import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
+import { localDeps } from '../../../src/lib/server/machine/runs/recover/local.ts';
 import { Terminals } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
@@ -39,7 +40,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         riteDapBin: 'rite_dap',
         accounts: [],
         calendars: [],
-        mail: []
+        mail: [],
+        downloads: []
     };
     const terminals = overrides.terminals ?? new Terminals(hub, { driver: idleDriver(), poll: 0 });
     const relay =
@@ -86,7 +88,12 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hooks,
         git: { refresh: () => Promise.resolve(), close: noop },
         openFiles: { subscribed: () => [], unsubscribed: noop, remove: noop, close: noop },
-        hpc: { refresh: () => Promise.resolve(), set: noop, close: noop },
+        hpc: {
+            refresh: () => Promise.resolve(),
+            recover: () => Promise.resolve(),
+            set: noop,
+            close: noop
+        },
         calendar: {
             refresh: () => Promise.resolve(),
             setAccounts: noop,
@@ -194,6 +201,13 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         opener: noop,
         openPath: noop,
         depositPlans: new Map(),
+        recover: {
+            local: localDeps('/fixture/home', new Map()),
+            changed: noop,
+            version: () => 0,
+            section: { command: () => '', take: noop },
+            close: noop
+        },
         rescan: noop,
         wallpaper: wallpaperMemory(),
         icons: { set: {} },

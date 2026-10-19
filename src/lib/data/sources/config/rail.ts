@@ -1,5 +1,5 @@
 // Layer 1, data. The rule over the `rail:` list of config/layout.yml: which entries are rail pages
-// and what is wrong with the ones that are not, and the one reading of a list as rows of three
+// and what is wrong with the ones that are not, and the one reading of a list as rows of five
 // strings. Pure, over parsed YAML, and read by every caller: the page drawing the rail, the
 // Settings view listing the rows and checking them before it sends them, and the server refusing a
 // write, recording and undoing one, and reporting a hand edit as a finding. Each checks glyphs
@@ -11,18 +11,46 @@
 // An entry is `{ label, glyph, page }`, three non-empty strings, where `page` names a key of
 // `arrangements:` and no earlier entry names the same key. The page key is what a saved page is
 // tied to, so two entries on one key would be two buttons over one page; the second is dropped.
+// An entry may also hold `chord` and `group_glyph`, the one-letter keyboard prefix and the heading
+// glyph of the page's group in the view catalogue, whose heading is the entry's label. A chord
+// that is not one lowercase letter, or a group glyph the vocabulary does not hold, is a problem
+// too, and the entry is kept without it: the button is drawn and the group has no chord or takes
+// the glyph of its first view.
 
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
 import { itemsShape, mapShape, readAs, text } from '../../shapes/shapes.ts';
 
-/** One button of the rail: its words, its glyph name, and the arrangement key of its page. */
-export type RailEntry = { label: string; glyph: string; page: string };
+/**
+ * One button of the rail: its words, its glyph name, the arrangement key of its page, and the chord
+ * letter and heading glyph of the page's group in the view catalogue, each empty when it has none.
+ */
+export type RailEntry = {
+    label: string;
+    glyph: string;
+    page: string;
+    chord: string;
+    group_glyph: string;
+};
 
-/** Why one entry of the list is not a rail page. */
+/**
+ * Why one entry of the list is not a rail page, or, for `chord` and `group_glyph_unknown`, why
+ * the page's group goes without its chord or its heading glyph.
+ */
 export type RailWhy =
-    'shape' | 'label' | 'glyph' | 'glyph_unknown' | 'page' | 'page_unknown' | 'repeated';
+    | 'shape'
+    | 'label'
+    | 'glyph'
+    | 'glyph_unknown'
+    | 'page'
+    | 'page_unknown'
+    | 'repeated'
+    | 'chord'
+    | 'group_glyph_unknown';
+
+/** A chord letter: one lowercase letter. */
+const chordShape = z.string().regex(/^[a-z]$/);
 
 /** One entry the rule refused: its place in the list, the reason, and the page it named if any. */
 export type RailProblem = { index: number; why: RailWhy; page: string };
@@ -39,7 +67,7 @@ function word(value: unknown): string | null {
 }
 
 /**
- * A rail list as rows of three strings, whether or not the rule keeps each one: a field that is not
+ * A rail list as rows of five strings, whether or not the rule keeps each one: a field that is not
  * a string, and an item that is not a map, reads as empty strings. Null for anything that is not a
  * list. This is what the Settings view lists for the reader to mend, what a Settings tab holds
  * while it is typed in, and what the server records before and after a write.
@@ -49,7 +77,13 @@ export function railRows(raw: unknown): RailEntry[] | null {
     if (list === null) return null;
     return list.map((row) => {
         const one = readAs(mapShape, row) ?? {};
-        return { label: text(one.label), glyph: text(one.glyph), page: text(one.page) };
+        return {
+            label: text(one.label),
+            glyph: text(one.glyph),
+            page: text(one.page),
+            chord: text(one.chord),
+            group_glyph: text(one.group_glyph)
+        };
     });
 }
 
@@ -102,10 +136,41 @@ export function readRail(raw: unknown, arrangements: string[], glyphs?: string[]
         } else if (glyphs !== undefined && !glyphs.includes(glyph)) {
             problems.push({ index, why: 'glyph_unknown', page });
         } else {
-            entries.push({ label, glyph, page });
+            entries.push({ label, glyph, page, ...groupOf(held, index, page, glyphs, problems) });
         }
     }
     return { entries, problems };
+}
+
+/** Whether a field is written with something: present, and not the empty text. */
+function written(value: unknown): boolean {
+    return value !== undefined && value !== '';
+}
+
+/**
+ * The chord and the heading glyph of a kept entry's group: each as written, or empty when it is
+ * missing, and empty with a problem when the chord is no lowercase letter or the glyph is no
+ * string or no name of the vocabulary.
+ */
+function groupOf(
+    held: Record<string, unknown>,
+    index: number,
+    page: string,
+    glyphs: string[] | undefined,
+    problems: RailProblem[]
+): { chord: string; group_glyph: string } {
+    let chord = text(held.chord);
+    if (written(held.chord) && !chordShape.safeParse(held.chord).success) {
+        problems.push({ index, why: 'chord', page });
+        chord = '';
+    }
+    let group = text(held.group_glyph);
+    const unheld = glyphs !== undefined && !glyphs.includes(group);
+    if (written(held.group_glyph) && (typeof held.group_glyph !== 'string' || unheld)) {
+        problems.push({ index, why: 'group_glyph_unknown', page });
+        group = '';
+    }
+    return { chord, group_glyph: group };
 }
 
 /**
@@ -139,6 +204,10 @@ function whyText(catalog: TextCatalog, problem: RailProblem): string {
     if (problem.why === 'glyph') return findingText(catalog, 'findings.rail.glyph', page);
     if (problem.why === 'glyph_unknown') {
         return findingText(catalog, 'findings.rail.glyph_unknown', page);
+    }
+    if (problem.why === 'chord') return findingText(catalog, 'findings.rail.chord', page);
+    if (problem.why === 'group_glyph_unknown') {
+        return findingText(catalog, 'findings.rail.group_glyph_unknown', page);
     }
     if (problem.why === 'page') return findingText(catalog, 'findings.rail.page');
     if (problem.why === 'page_unknown') {

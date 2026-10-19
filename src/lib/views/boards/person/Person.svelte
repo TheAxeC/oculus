@@ -24,6 +24,9 @@
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
     //
+    // The fact strip's values (the organisations, the role, the ORCID, the email and the links) are
+    // drawn through ui/display/text/LinkedText.svelte, so a web address among them is a link.
+    //
     // The folder block is views/shared/links/FolderFiles.svelte, which lists the folder through the
     // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
     // as a file browser row does; the entry page draws it for the folder an entry's link names.
@@ -31,6 +34,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
@@ -191,7 +195,7 @@
                 <dl class="facts">
                     {#each facts as fact (fact.label + fact.value)}
                         <dt>{fact.label}</dt>
-                        <dd>{fact.value}</dd>
+                        <dd><LinkedText text={fact.value} /></dd>
                     {/each}
                 </dl>
             {/if}

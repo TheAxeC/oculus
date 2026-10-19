@@ -220,6 +220,13 @@ const COMPUTED_PREFIXES = [
         ]
     },
     {
+        // The Keyboard Shortcuts view reads the words of the palette table's keys and of its colon
+        // row by the catalog key each row names.
+        file: 'lib/views/system/help/keys/rows.ts',
+        start: 't(row.word)',
+        keys: () => [...Object.values(KEY_ROWS).map((row) => row.word), PREFIX_ROWS.command.word]
+    },
+    {
         file: 'lib/views/boards/projects/Projects.svelte',
         start: 'lookup(`views.${preset.id}`',
         keys: () =>

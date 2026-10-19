@@ -27,6 +27,7 @@ import type {
     Place,
     Reading
 } from './model.ts';
+import { vocabSource } from '../../shapes/vocab-keys.ts';
 import { VOCAB_SOURCE } from './specs.ts';
 
 /** What one scan collects while it walks a document. */
@@ -174,7 +175,7 @@ function familyFields(spec: Extract<FieldNode, { kind: 'family' }>): Record<stri
     return fields;
 }
 
-/** An options family: a list of records, or a map from the key to a record, list or value. */
+/** An options family: a list of records, or a map from the key to a record or a value. */
 function visitFamily(walk: Walk, node: Node, spec: Extract<FieldNode, { kind: 'family' }>): void {
     if (isSeq(node)) {
         const fields = familyFields(spec);
@@ -192,12 +193,7 @@ function visitFamily(walk: Walk, node: Node, spec: Extract<FieldNode, { kind: 'f
             continue;
         }
         if (spec.record === null) continue;
-        const held = followed(walk, pair.value);
-        if (spec.lists && isSeq(held)) {
-            for (const item of held.items) visit(walk, item, spec.record, null);
-        } else {
-            visit(walk, held, spec.record, null);
-        }
+        visit(walk, followed(walk, pair.value), spec.record, null);
     }
 }
 
@@ -227,8 +223,11 @@ function defineRegistry(
     }
 }
 
-/** The definitions of one list of vocab.yml: the texts, the `key` of the maps, or the map keys. */
-function defineVocab(walk: Walk, list: unknown, source: string): void {
+/**
+ * The definitions of one list of vocab.yml: the texts, the `key` of the maps, or the map keys. A
+ * field narrows a map to the keys whose row holds it, as `vocabKeys` reads the same list.
+ */
+function defineVocab(walk: Walk, list: unknown, source: string, field?: string): void {
     const node = followed(walk, list);
     if (isSeq(node)) {
         for (const item of node.items) {
@@ -236,8 +235,20 @@ function defineVocab(walk: Walk, list: unknown, source: string): void {
             define(walk, isMap(held) ? held.get('key', true) : held, [source]);
         }
     } else if (isMap(node)) {
-        for (const pair of pairsOf(node)) define(walk, pair.key, [source]);
+        for (const pair of pairsOf(node)) {
+            if (field === undefined || rowHolds(walk, pair.value, field)) {
+                define(walk, pair.key, [source]);
+            }
+        }
     }
+}
+
+/** Whether a row of a vocab.yml map carries a field as a flag, its value `true`. */
+function rowHolds(walk: Walk, row: unknown, field: string): boolean {
+    const held = followed(walk, row);
+    if (!isMap(held) || !held.has(field)) return false;
+    const value = followed(walk, held.get(field, true));
+    return isScalar(value) && value.value === true;
 }
 
 /**
@@ -277,7 +288,8 @@ function defineDocument(walk: Walk, root: YAMLMap, defines: Reading['defines']):
         }
         case 'vocab':
             for (const name of defines.lists) {
-                defineVocab(walk, root.get(name, true), `${VOCAB_SOURCE}${name}`);
+                const { key, field } = vocabSource(name);
+                defineVocab(walk, root.get(key, true), `${VOCAB_SOURCE}${name}`, field);
             }
             return;
     }

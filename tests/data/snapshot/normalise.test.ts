@@ -156,8 +156,9 @@ function portfolio(): RawPortfolio {
                     key: 'mimic',
                     name: 'MIMIC-IV',
                     source: 'https://example.invalid/mimic',
-                    hpc_path: '/data/mimic',
-                    retrieval: { method: 'wget', notes: 'credentialed' },
+                    path: '~/data/mimic',
+                    notes: 'credentialed',
+                    retrieval: [{ kind: 'physionet', project: 'mimiciv', version: '3.1' }],
                     themes: ['ecg']
                 }
             ]),
@@ -217,7 +218,7 @@ function portfolio(): RawPortfolio {
                         key: 'mimic',
                         name: 'MIMIC-IV',
                         source: 'https://example.invalid/mimic',
-                        retrieval: { method: 'wget' },
+                        retrieval: [{ kind: 'physionet', project: 'mimiciv', version: '3.1' }],
                         themes: ['ecg']
                     }
                 ]),
@@ -225,7 +226,7 @@ function portfolio(): RawPortfolio {
                     intro: 'dataset registry',
                     schema: [
                         { field: 'key', type: 'text' },
-                        { field: 'retrieval', type: 'raw' }
+                        { field: 'retrieval', type: 'records' }
                     ]
                 }
             }
@@ -238,10 +239,15 @@ function portfolio(): RawPortfolio {
     };
 }
 
-const snapshot = normalise(portfolio(), []);
+const snapshot = normalise(portfolio(), [], {});
 const alpha = snapshot.entities.projects.alpha;
 
 describe('normalise, the field mapping', () => {
+    it("reads a person's organisations from `affiliations:` alone, and nothing from `affiliation:`", () => {
+        expect(snapshot.entities.people['nobody-home'].affiliations).toEqual([]);
+        expect(snapshot.entities.people.someone.affiliations).toEqual(['twente', 'fwo']);
+    });
+
     it('fills a project from the manifest keys of the same meaning', () => {
         expect(alpha).toEqual({
             id: 'alpha',

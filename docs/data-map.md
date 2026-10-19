@@ -18,14 +18,14 @@ A hub's data files, the view that shows each, the keys that link them, and the f
 | `.oculus/workspaces/<name>.yml` | one workspace: its folders and its primary hub |
 | `.oculus/schedules.yml` | the scheduled tasks of the update tray |
 | `.oculus/tasks/<task>.md` | the steps of one update task (`litwatch`, `scout`, `inbox`, `linkedin`), which the tray hands to a Claude session |
-| `.oculus/data/<key>.yml` | the data file of one collection, at oculus's default path |
+| `.oculus/data/<kind>/<file>.yml` | the data file of one collection, at oculus's default path, in the folder of its kind (`research`, `pillars`, `literature`, `people`, `academic`) |
 | `.oculus/apps/<name>/app.yml` | one app |
 | `.oculus/notes/` | the notes, one Markdown file each, and `order.json`, their order in the Notes list; written by oculus |
 | `.oculus/memories/`, `.oculus/wallpaper/` | the photo wall's and the backdrop's pictures |
 
 A repository of the workspace may hold its own `.oculus/` with `project.yml`, `settings.yml`, `commands.yml`, `launch.yml`, `cpp.yml` and `app-data/<name>.json` (the store of an app, written by oculus). `~/.oculus/` is oculus's machine state and is never edited by hand.
 
-Make Folder a Hub, in the Files view's menu of a folder, writes `.oculus/config.yml` and the data files of the collections you tick; Make Folder a Project writes `.oculus/project.yml`.
+Make Folder a Hub..., in the Files view's menu of a folder, writes `.oculus/config.yml`, the hub files you tick (`local.yml` with its `.gitignore`, `schedules.yml`) and the data files of the collections you tick; Make Folder a Project writes `.oculus/project.yml`; Make Folder a Git Repository runs `git init`; Add Repository Configuration... writes the ticked ones of a repository's missing `settings.yml`, `commands.yml`, `launch.yml` and `cpp.yml`.
 
 ## Data files
 
@@ -33,25 +33,25 @@ Each data file is named by its entry in `collections:` of `.oculus/config.yml`, 
 
 | Key | Default file | One entry is | Primary key | View |
 |---|---|---|---|---|
-| `venues` | `.oculus/data/venues.yml` | a journal or conference | `id` | Venues |
-| `data` | `.oculus/data/data.yml` | a dataset | `key` | Data |
-| `pillars` | `.oculus/data/pillars.yml` | a research line | `key` | Pillars, Map |
-| `domains` | `.oculus/data/domains.yml` | an application domain | `key` | Domains |
-| `people` | `.oculus/data/people.yml` | a person | `key` | People, Person |
-| `organisations` | `.oculus/data/organisations.yml` | a university, hospital, funder or company | `key` | Organisations |
-| `resources` | `.oculus/data/resources.yml` | a cluster, machine or storage | `key` | Resources, Live HPC |
-| `statements` | `.oculus/data/statements.yml` | a reusable manuscript statement | `key` | Statements |
-| `funding` | `.oculus/data/funding.yml` | a grant application or programme | `key` | Funding |
-| `events` | `.oculus/data/events.yml` | a talk, visit or conference | `key` | Talks & Events |
-| `joint-work` | `.oculus/data/joint-work.yml` | a piece of work with one person | `key` | Joint work, Person |
-| `education` | `.oculus/data/education.yml` | a course, supervision or service role | `key` | Education & Service |
-| `applications` | `.oculus/data/applications.yml` | a position application | `key` | Applications |
-| `tasks` | `.oculus/data/tasks.yml` | a task | `key` | Tasks |
-| `literature` | `.oculus/data/literature.yml` | a paper kept for reading and citing | `key`, its citation key | Literature |
-| `leads` | `.oculus/data/leads.yml` | an opening the scout found | `title` | Position Leads |
-| `radar` | `.oculus/data/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
+| `venues` | `.oculus/data/research/venues.yml` | a journal or conference | `id` | Venues |
+| `data` | `.oculus/data/research/data.yml` | a dataset | `key` | Data |
+| `pillars` | `.oculus/data/pillars/pillars.yml` | a research line | `key` | Pillars, Map |
+| `domains` | `.oculus/data/pillars/domains.yml` | an application domain | `key` | Domains |
+| `people` | `.oculus/data/people/people.yml` | a person | `key` | People, Person |
+| `organisations` | `.oculus/data/people/organisations.yml` | a university, hospital, funder or company | `key` | Organisations |
+| `resources` | `.oculus/data/research/resources.yml` | a cluster, machine or storage | `key` | Resources, Live HPC |
+| `statements` | `.oculus/data/research/statements.yml` | a reusable manuscript statement | `key` | Statements |
+| `funding` | `.oculus/data/academic/funding.yml` | a grant application or programme | `key` | Funding |
+| `events` | `.oculus/data/academic/events.yml` | a talk, visit or conference | `key` | Talks & Events |
+| `joint-work` | `.oculus/data/academic/joint-work.yml` | a piece of work with one person | `key` | Joint work, Person |
+| `education` | `.oculus/data/academic/education.yml` | a course, supervision or service role | `key` | Education & Service |
+| `applications` | `.oculus/data/academic/applications.yml` | a position application | `key` | Applications |
+| `tasks` | `.oculus/data/academic/tasks.yml` | a task | `key` | Tasks |
+| `literature` | `.oculus/data/literature/literature.yml` | a paper kept for reading and citing | `key`, its citation key | Literature |
+| `leads` | `.oculus/data/academic/leads.yml` | an opening the scout found | `title` | Position Leads |
+| `radar` | `.oculus/data/literature/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
 
-Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus, at `career_file` (`registries/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
+Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
 
 A duplicate or empty primary key is a finding. A venue is written by its `name` and linked to by its `id`. The `leads` and `radar` keys name the two feed files. The `domains` file gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates, follow-ups and subtasks of every file of `collections:` and the open leads, and every entry has a page with an editor built from its schema.
 
@@ -89,7 +89,6 @@ linkedin_dir:         # a website's LinkedIn folder
 career_file:          # the career strategy
 memories_dir:         # the photo wall's pictures
 wallpaper_dir:        # the backdrop's pictures
-recover_command:      # the command the Data view's Recover runs, with {key} for the dataset
 wallpaper.image:      # the backdrop shown
 docs:                 # the hub's documents, each a tab of a page
 slurm.resource:       # the cluster Live HPC polls
@@ -115,8 +114,8 @@ project.yml:
   collaborators: [people key]
   waiting-on: [people key, or a project]
   related: [a project]
-  type: vocab type_order
-  status.chips: [vocab status_legend]
+  type: vocab types
+  status.chips: [vocab statuses, the words with a label]
   focus: vocab focus_lanes, or holding
   priority: vocab priority_levels
 people:
@@ -183,7 +182,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 |---|---|
 | `label` | the field's name on screen |
 | `options` | the allowed values of a `select` or `tags` field, each a word or `{ key, label }` |
-| `from` | where the keys come from: a registry (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`), `projects`, `vocab.<list>`, or a list of these |
+| `from` | where the keys come from: a registry (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`), `projects`, `vocab.<list>`, `vocab.<map>.<field>` (the keys of a vocabulary map whose row carries the field as `true`, such as `vocab.statuses.chip`), or a list of these |
 | `required` | `true`, or `{ when: ... }` |
 | `when` | the field is allowed only while these fields hold these values |
 | `help` | the hover text in the editor |

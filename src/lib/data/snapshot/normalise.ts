@@ -16,6 +16,7 @@ import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
 import { followups, subtasks } from './normalise-parts/plans.ts';
 import { docFlags } from './normalise-parts/folder.ts';
+import { retrievalOf } from './normalise-parts/retrieval.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -350,8 +351,9 @@ function dataset(entry: RawRegistryEntry): Dataset {
         size: str(entry.size),
         access: str(entry.access),
         source: str(entry.source),
-        retrieval: mapShape.safeParse(entry.retrieval).data,
-        hpcPath: str(entry.hpc_path),
+        ...retrievalOf(entry.retrieval),
+        path: str(entry.path),
+        notes: str(entry.notes),
         themes: strings(entry.themes),
         projectIds: []
     });
@@ -396,13 +398,9 @@ const affiliationsShape = z.union([
     stringItemsShape
 ]);
 
-/**
- * The organisation keys a person's entry names, the primary first. A file still writing the one key
- * `affiliation:` is read as a list of that one, so an entry nobody has rewritten still draws its
- * organisation; validate.ts is where the key that replaced it is named.
- */
+/** The organisation keys a person's entry names under `affiliations:`, the primary first. */
 function affiliationsOf(entry: RawRegistryEntry): string[] {
-    return readOr(affiliationsShape, entry.affiliations ?? entry.affiliation, []);
+    return readOr(affiliationsShape, entry.affiliations, []);
 }
 
 /** One organisation, the thing a person's `affiliations:` and a scheme's `funder:` point at. */
@@ -676,9 +674,15 @@ function relations(
 
 /**
  * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
- * watcher on every rebuild; `findings` is what validate returned, carried as it stands.
+ * watcher on every rebuild; `findings` is what validate returned, carried as it stands; `merged`
+ * is the hub's merged config, whose words the career's host rows take their unset status from.
  */
-export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): Snapshot {
+export function normalise(
+    raw: RawPortfolio,
+    findings: Finding[],
+    merged: Record<string, unknown>,
+    version = 0
+): Snapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 
@@ -760,7 +764,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
             resources: byId(resources),
             collections: byId(collections),
             feeds: feeds(raw.feeds),
-            career: career(raw.career)
+            career: career(raw.career, merged)
         },
         relations: tables,
         findings

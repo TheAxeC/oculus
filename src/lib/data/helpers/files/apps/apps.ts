@@ -172,6 +172,7 @@ const CLOSED_WRITES = [
     'deposit',
     'git',
     'hpc',
+    'recover',
     'usage/refresh',
     'hook',
     'terminal'

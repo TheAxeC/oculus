@@ -7,7 +7,7 @@
 // scalar is written over the bytes of the old one in the quoting it had, which leaves a folded or
 // literal block, a comment and a flow map's other pairs alone wherever the value is not theirs.
 //
-// An entry field and a section of registries/career.yml both reach their values through here, so a
+// An entry field and a section of the career file both reach their values through here, so a
 // sub-field the reader did not touch keeps the text the file wrote it in.
 
 import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';

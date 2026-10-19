@@ -16,15 +16,8 @@ import { LineCounter, isCollection, isMap, isPair, isScalar, parseDocument } fro
 import type { Document, Node } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
-import { RENAMED_FIELDS } from '../../helpers/hub-names.ts';
 import { ISO_DATE } from '../../helpers/dates.ts';
 import { ANNOTATIONS, type JsonSchema } from './json.ts';
-
-/**
- * Keys a reader still takes under an old name, which a rule of validate.ts words in its own
- * sentence: the schema does not declare them and does not report them twice.
- */
-const RETIRED_KEYS = ['affiliation', 'theme_labels'];
 
 /** A file read and parsed once, with the schema that governs it. */
 export type SchemaDoc = {
@@ -219,16 +212,8 @@ function worded(error: ErrorObject, catalog: TextCatalog): { key: string; messag
             return null;
         case 'additionalProperties': {
             const name = (error.params as { additionalProperty: string }).additionalProperty;
-            if (RETIRED_KEYS.includes(name)) return null;
             const key = keyOf([...at, name]);
-            const renamed = at.length === 0 ? RENAMED_FIELDS[name] : undefined;
-            return {
-                key,
-                message:
-                    renamed === undefined
-                        ? findingText(catalog, 'findings.schema.not_declared', key)
-                        : findingText(catalog, 'findings.validate.key_renamed', name, renamed)
-            };
+            return { key, message: findingText(catalog, 'findings.schema.not_declared', key) };
         }
         case 'required': {
             const name = (error.params as { missingProperty: string }).missingProperty;

@@ -11,11 +11,12 @@ import {
     type Venue
 } from '../../data/model/index.ts';
 import { z } from 'zod';
-import { byKey, text as str } from '../../data/helpers/guards.ts';
+import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
 import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import { listOrOneShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
+import { hasWord } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
-import { DEADLINE_SOON, daysUntil } from './board/index.ts';
+import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
 import {
     GLYPHS,
     dueFollowups,
@@ -50,35 +51,64 @@ import {
 export { dueFollowups, type TickerItem, type TickerTarget };
 
 /**
- * The deadline categories, in the order the ticker groups them. They are different jobs: your own
- * paper's submission date is not a conference's open call, and neither is a grant deadline.
+ * The deadline categories, in the order the ticker groups them: `ticker_categories` under `focus:`
+ * of config/behavior.yml. They are different jobs: your own paper's submission date is not a
+ * conference's open call, and neither is a grant deadline.
  */
-export const CATEGORIES = [
-    'paper',
-    'funding',
-    'event',
-    'teaching',
-    'position',
-    'collab',
-    'task',
-    'conference'
-];
+export function tickerCategories(config: Record<string, unknown>): string[] {
+    return strings(focusBlock(config).ticker_categories);
+}
+
+/**
+ * One source of dated entries, a row of `ticker_sources` under `focus:`: the collection read, the
+ * category its lines carry, and whether an undated entry of it is open work (a task line).
+ */
+type TickerSource = { collection: string; category: string; undated: boolean };
+
+/** One row of `ticker_sources`; a row with no collection or no category is no source. */
+const sourceShape = z.object({
+    collection: z.string().min(1),
+    category: z.string().min(1),
+    undated: z.boolean().catch(false)
+});
+
+const sourcesShape = rowsShape(sourceShape);
+
+/** The rows of `ticker_sources`, in the config's order. */
+function tickerSources(config: Record<string, unknown>): TickerSource[] {
+    return readAs(sourcesShape, focusBlock(config).ticker_sources) ?? [];
+}
+
+/**
+ * How many in-flight papers aimed at one venue make it a venue-load line: `venue_conc_warn` under
+ * `focus:`, and `VENUE_WARN` when the config holds no finite number there.
+ */
+export function venueWarn(config: Record<string, unknown>): number {
+    return setting(config, 'venue_conc_warn', VENUE_WARN);
+}
+
+/** The key of the project manifests in `ticker_sources`; their deadlines have their own loop. */
+const PROJECTS = 'projects';
 
 /** The key of the funding collection, whose entries the scheme loops read. */
 const FUNDING = 'funding';
 
-/** Which collection each category of entry comes from, for the tab a click on it opens. */
-const COLLECTIONS: Record<string, string> = {
-    funding: 'funding',
-    event: 'events',
-    teaching: 'education',
-    collab: 'joint-work',
-    task: 'tasks',
-    position: 'applications'
-};
+/** The key of the leads feed, whose live leads have a loop of their own. */
+const LEADS = 'leads';
 
-/** The categories read out of a collection, and the collection each is read from. */
-const ENTRY_CATEGORIES = ['event', 'teaching', 'task', 'position', 'collab'];
+/** The key of the venues registry, whose calls have a loop of their own. */
+const VENUES = 'venues';
+
+/**
+ * The sources that have a loop of their own (the funding schemes, the leads, the venues' calls):
+ * their rows of `ticker_sources` give only the category their lines carry.
+ */
+const OWN_LOOPS = [PROJECTS, FUNDING, LEADS, VENUES];
+
+/** The category a row of `ticker_sources` gives one source, or none when no row names it. */
+function categoryOf(sources: TickerSource[], collection: string): string | undefined {
+    return sources.find((one) => one.collection === collection)?.category;
+}
 
 /**
  * What the ticker answers. Each list is already in the order it is shown in. A line that carries a
@@ -120,11 +150,13 @@ export function collectionStatuses(collection: Collection | undefined): string[]
 export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now: number): Ticker {
     const horizon = setting(config, 'deadline_horizon_days', 90);
     const months = setting(config, 'conf_horizon_months', 1);
-    const warn = setting(config, 'venue_conc_warn', 4);
+    const warn = venueWarn(config);
     const labelMode = config.focus_label_mode;
     const projects = Object.values(snapshot.entities.projects);
-    const boardProjects = projects.filter((one) => one.tier === 'projects');
+    const boardProjects = projects.filter((one) => hasWord(config, 'tiers', 'main', one.tier));
     const collections = snapshot.entities.collections;
+    const sources = tickerSources(config);
+    const categories = tickerCategories(config);
 
     const overdue: TickerItem[] = [];
     const dated: { category: string; line: TickerItem }[] = [];
@@ -137,15 +169,17 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
      * A project's own deadline, for a project of any tier: overdue behind it, on the paper group
      * before it. It stops only at a chip the palette marks `deadline_met`. A deadline that is no
      * date is open work and is a task line. A line that shows folds its conference into itself,
-     * so the call is not listed a second time below.
+     * so the call is not listed a second time below. The category is the one the `projects` row of
+     * `ticker_sources` gives; with no such row no project deadline is read.
      */
     const folded = new Set<string>();
+    const paper = categoryOf(sources, PROJECTS);
     for (const project of projects) {
         const deadline = (project.deadline ?? '').trim();
-        if (deadline === '' || settled(project, config)) continue;
+        if (paper === undefined || deadline === '' || settled(project, config)) continue;
         const days = daysUntil(deadline, now);
         if (days !== null && days > horizon) continue;
-        const line = item('paper', GLYPHS.paper, focusLabel(project, labelMode), days, {
+        const line = item(paper, GLYPHS[paper], focusLabel(project, labelMode), days, {
             id: project.id,
             ...rootMark(project),
             target: { kind: 'manifest', id: project.id }
@@ -169,24 +203,28 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             (venue.deadline !== undefined || venue.deadlineMonth !== undefined)
         ) {
             folded.add(venue.id);
-            dated.push({ category: 'paper', line: { ...line, venue: venueLabel(venue) } });
+            dated.push({ category: paper, line: { ...line, venue: venueLabel(venue) } });
             continue;
         }
-        dated.push({ category: 'paper', line });
+        dated.push({ category: paper, line });
     }
 
     /**
      * A grant still waiting to be written. A submitted one has met its date and stops nagging. The
      * schemes are a registry entity rather than a collection (normalise leaves the collection out,
      * since the registry already carries the file), so there is no collection tab to open and a
-     * funding line is read rather than clicked until the Funding view exists.
+     * funding line is read rather than clicked until the Funding view exists. The category is the
+     * one the `funding` row of `ticker_sources` gives.
      */
+    const grant = categoryOf(sources, FUNDING);
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (terminal(config, status) || deadlineMet(config, status)) continue;
+        if (grant === undefined || terminal(config, status) || deadlineMet(config, status)) {
+            continue;
+        }
         const days = daysUntil(isoOf(scheme.deadline), now);
         if (days === null || days > horizon) continue;
-        const line = item('funding', GLYPHS.funding, scheme.title, days, {
+        const line = item(grant, GLYPHS[grant], scheme.title, days, {
             ...rootMark(scheme),
             target: { kind: 'funding', id: scheme.id }
         });
@@ -195,20 +233,25 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             continue;
         }
         if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
-        else dated.push({ category: 'funding', line });
+        else dated.push({ category: grant, line });
     }
 
-    /** Talks, teaching, tasks, positions and joint work: one rule over five files. */
-    for (const category of ENTRY_CATEGORIES) {
-        const key = COLLECTIONS[category];
+    /**
+     * The collections the other rows of `ticker_sources` name (talks, teaching, tasks, positions
+     * and joint work on the shipped list): one rule over every file.
+     */
+    for (const source of sources) {
+        if (OWN_LOOPS.includes(source.collection)) continue;
+        const { collection: key, category, undated } = source;
         const statuses = collectionStatuses(collections[key]);
         for (const entry of entriesOf(collections, key)) {
             const status = str(entry.fields.status);
             if (terminal(config, status) || deadlineMet(config, status)) continue;
             const days = daysUntil(entryDate(entry), now);
-            // An undated entry of the tasks file is open work rather than a date, so it is a task
-            // line; an undated entry of any other file names no moment and is on no list at all.
-            if (days === null && category !== 'task') continue;
+            // An undated entry of a source marked `undated` (the tasks file) is open work rather
+            // than a date, so it is a task line; an undated entry of any other file names no
+            // moment and is on no list at all.
+            if (days === null && !undated) continue;
             if (days !== null && days > horizon) continue;
             const line = item(category, GLYPHS[category], entry.title, days, {
                 entry: key,
@@ -222,7 +265,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             }
             if (days === null) openEntries.push(line);
             else if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
-            else if (CATEGORIES.includes(category)) dated.push({ category, line });
+            else if (categories.includes(category)) dated.push({ category, line });
         }
     }
 
@@ -230,45 +273,45 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
      * The position scout's live leads. They move fast, so they have a window of their own rather
      * than the ninety-day planning horizon, and they sit in the same group as the applications the
      * entry loop above found: both are positions. A closed status is left out here as well as where
-     * the snapshot is built, so the line the reader sees never outlives the lead's own status.
+     * the snapshot is built, so the line the reader sees never outlives the lead's own status. The
+     * category is the one the `leads` row of `ticker_sources` gives.
      */
     const leadsWindow = setting(config, 'leads_horizon_days', 21);
+    const position = categoryOf(sources, LEADS);
     for (const lead of snapshot.entities.feeds.leads ?? []) {
-        if (isLeadClosed(lead.status)) continue;
+        if (position === undefined || isLeadClosed(config, lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
         if (days === null || days < 0 || days > leadsWindow) continue;
         dated.push({
-            category: 'position',
-            line: item('position', GLYPHS.position, lead.title, days, {
+            category: position,
+            line: item(position, GLYPHS[position], lead.title, days, {
                 ...rootMark(lead),
                 target: { kind: 'lead', id: hubId(rootOf(lead, null), lead.title, null) }
             })
         });
     }
 
-    /** A conference's open call, by its exact date or, with none, by its usual month. */
+    /**
+     * A conference's open call, by its exact date or, with none, by its usual month. The category
+     * is the one the `venues` row of `ticker_sources` gives.
+     */
+    const call = categoryOf(sources, VENUES);
     for (const venue of Object.values(snapshot.entities.venues)) {
-        if (folded.has(venue.id)) continue;
+        if (call === undefined || folded.has(venue.id)) continue;
         const days = daysUntil(venue.deadline ?? '', now);
         if (days !== null) {
             if (days < 0 || days > horizon) continue;
             dated.push({
-                category: 'conference',
-                line: item(
-                    'conference',
-                    GLYPHS.conference,
-                    venueLabel(venue),
-                    days,
-                    rootMark(venue)
-                )
+                category: call,
+                line: item(call, GLYPHS[call], venueLabel(venue), days, rootMark(venue))
             });
             continue;
         }
         const ahead = monthsAhead(venue.deadlineMonth ?? '', now);
         if (ahead === null || ahead > months) continue;
         dated.push({
-            category: 'conference',
-            line: item('conference', GLYPHS.conference, venueLabel(venue), null, {
+            category: call,
+            line: item(call, GLYPHS[call], venueLabel(venue), null, {
                 months: ahead,
                 ...rootMark(venue)
             })
@@ -396,7 +439,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     overdue.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
     dated.sort(
         (one, two) =>
-            CATEGORIES.indexOf(one.category) - CATEGORIES.indexOf(two.category) ||
+            categories.indexOf(one.category) - categories.indexOf(two.category) ||
             (one.line.days ?? Number.MAX_SAFE_INTEGER) - (two.line.days ?? Number.MAX_SAFE_INTEGER)
     );
 
@@ -409,7 +452,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         venueLoad: venueLoad(boardProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
         behind: manifestsBehind(boardProjects, config),
-        unplaced: unplacedRow(unplaced(projects))
+        unplaced: unplacedRow(unplaced(projects, config))
     };
 }
 

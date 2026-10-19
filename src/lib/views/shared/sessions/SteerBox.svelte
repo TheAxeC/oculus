@@ -174,6 +174,10 @@
 
     :global(body.rice) .box {
         background: none;
+    }
+
+    /* The monospace face, while the rice theme's Monospace toggle is on. */
+    :global(body.rice:where(:not(.rice-sans))) .box {
         font-family: var(--font-mono);
     }
 </style>

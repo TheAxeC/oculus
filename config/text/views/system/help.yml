@@ -1,8 +1,62 @@
-# Oculus text owned by the help view: the tool's own manual, the HELP.md of oculus's folder.
+# Oculus text owned by the Help page's views: the tool's own manual, the HELP.md of oculus's folder, and the Keyboard Shortcuts view with what each key does.
 text:
     help:
         failed: 'The manual could not be read: {0}'
         loading: Reading the manual...
+    keys:
+        activate: expand the card under the cursor, open the file an Audit finding names or the project of a Focus lane card, and move into the first field of a Settings card
+        bottom: bottom of the page
+        build: run the default build of the repository holding the open file
+        clear_cursor: clear the card cursor
+        close_tab: close the active tab of the focused pane, or show the first tab that is not pinned when the active one is pinned
+        cursor_down: move the card cursor down a row
+        cursor_left: move the card cursor left
+        cursor_right: move the card cursor right
+        cursor_up: move the card cursor up a row
+        debug_into: step into
+        debug_out: step out
+        debug_over: step over
+        debug_restart: restart debugging
+        debug_start: start debugging the .rite file or a launch.yml configuration, or continue while paused
+        debug_stop: stop debugging, behind its confirmation
+        debug_toggle: toggle a breakpoint at the caret of a .rite source tab
+        editor_failed: "The editor's keys could not be read: {0}"
+        empty: 'No key matches "{0}".'
+        find: find in the page
+        find_in_files: open the Search view and put the cursor in its query box
+        go_back: go back through the tabs and places visited
+        go_forward: go forward through the tabs and places visited
+        group_apps: Apps
+        group_debug: Debug
+        group_desktop: Desktop app
+        group_editor: Editor
+        group_latex: LaTeX
+        group_workbench: Workbench
+        loading: Reading the editor's keys...
+        move_left: carry the card under the cursor left
+        move_right: carry the card under the cursor right
+        new_session: "start a new agent session: the composer in the page's Terminal tab (a new one when it has none), in that tab's folder"
+        new_text_file: new text file in the focused pane
+        next_problem: go to the next problem, across files
+        next_tab: next tab in the focused pane
+        open: 'open {0}'
+        page: 'show the rail page {0}'
+        palette: '{0}, run from the palette, which draws this key beside it'
+        previous_problem: go to the previous problem
+        previous_tab: previous tab in the focused pane
+        problems: show the Problems view, or hide it when it is the one on screen
+        reopen_closed_tab: reopen the tabs closed last
+        replace_in_files: open the Search view with the replace row shown and put the cursor in its replace box
+        save: save the tab in front
+        search: focus this board's search
+        search_placeholder: Search keys and what they do
+        shortcuts: show the keyboard shortcuts
+        tab: 'show tab {0} of the focused pane'
+        test: run the default test of the repository holding the open file
+        tex_view: show the TeX view
+        top: top of the page
     views:
         help: Help
         help_glyph: question
+        keys: Keyboard Shortcuts
+        keys_glyph: keyboard

@@ -23,7 +23,7 @@
     // A list, a multi or a family the file holds in a shape the editor draws
     // (editors/Editor.svelte) is set there; one it does not draw keeps the way to edit the file.
 
-    import CodeText from '$lib/ui/display/CodeText.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { WALLPAPER_KEY } from '$lib/state/life/pictures/wallpapers.svelte';

@@ -68,7 +68,7 @@ export function railMenu(made: boolean): MenuItem[] {
  */
 export type RailView = {
     label: string;
-    part: ReturnType<NonNullable<Registration['railPart']>> | null;
+    part: ReturnType<NonNullable<Registration['countPart']>> | null;
     badge: Pick<RegistrationBadge, 'text' | 'glyph' | 'tone' | 'title'>;
 };
 
@@ -76,7 +76,7 @@ export type RailView = {
 export type RailBadge = { text: string; glyph: string; tone?: string; title: string };
 
 /**
- * The tones that say a count means "act", most urgent first (`nav_live`'s comment in
+ * The tones that say a count means "act", most urgent first (the comment of `counts` in
  * config/layout.yml); any other tone ranks after them.
  */
 const URGENT_TONES: readonly string[] = ['red', 'amber', 'green'];

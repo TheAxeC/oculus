@@ -13,13 +13,15 @@
         badge: (client) => client.hpc.badgeText(),
         badgeTitle: (client) => client.railBadges.queueBadgeTitle(),
         badgeCells: (client) => client.railBadges.queueCells(),
-        badgeTabText: () => ''
+        badgeTabText: () => '',
+        countPart: (client) => client.railBadges.queuePart()
     };
 </script>
 
 <script lang="ts">
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
-    // jobs, quota, and one selected log. The refresh control is in the bar while the cluster
+    // jobs, quota, oculus's Recover sessions on the login node (Login.svelte), and one selected
+    // log. The refresh control is in the bar while the cluster
     // answers, and is the retry of the error box while it does not. A hub whose settings name no
     // cluster (`unconfigured`) shows the sentence that says so alone, in no error tone and with no
     // retry, since there is nothing to ask.
@@ -29,6 +31,7 @@
     import Capacity from './Capacity.svelte';
     import Jobs from './Jobs.svelte';
     import Log from './Log.svelte';
+    import Login from './Login.svelte';
     import Quota from './Quota.svelte';
     import Recent from './Recent.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -103,6 +106,9 @@
         {#if data && (data.status === 'ok' || data.jobs.length > 0 || data.recent.length > 0)}
             <Jobs rows={data.jobs} live={data.status === 'ok'} onlog={showLog} oncancel={cancel} />
             <Recent rows={data.recent} live={data.status === 'ok'} onlog={showLog} />
+        {/if}
+        {#if data && data.status !== 'unconfigured' && data.status !== 'starting'}
+            <Login reason={data.status === 'ok' ? '' : unreachable(data.hint, data.host)} />
         {/if}
         {#if logId}
             <Log

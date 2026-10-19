@@ -13,7 +13,8 @@
         badge: (client) => client.calendar.badgeText(),
         badgeTitle: (client) => client.railBadges.calendarBadgeTitle(),
         badgeCells: (client) => client.railBadges.calendarCells(),
-        badgeTabText: () => ''
+        badgeTabText: () => '',
+        countPart: (client) => client.railBadges.calendarPart()
     };
 </script>
 

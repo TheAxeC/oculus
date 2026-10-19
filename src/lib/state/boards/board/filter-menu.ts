@@ -76,7 +76,7 @@ export function valueLabel(facet: string, value: FacetValue): string {
     return value.label;
 }
 
-/** The hue of one lifecycle bucket, through the palette, and nothing when it has none. */
+/** The hue of one group of cards, through the palette, and nothing when it has none. */
 function bucketTone(preset: BoardPreset, id: string): string | undefined {
     const colour = preset.rollup.find((bucket) => bucket.id === id)?.color ?? '';
     return colour === '' ? undefined : toneOf(colour);
@@ -85,7 +85,8 @@ function bucketTone(preset: BoardPreset, id: string): string | undefined {
 /**
  * Every facet of the board as a group of the one filter control. The category facet carries its
  * bucket's own hue as a dot, which is the one facet whose values the config gives a colour to
- * (`tab_rollup`), and no other facet is given one. A facet with no values draws no group.
+ * (the board's `groups` in `boards`), and no other facet is given one. A facet with no values
+ * draws no group.
  */
 export function filterGroups(
     groups: Facet[],

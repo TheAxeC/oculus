@@ -5,6 +5,8 @@ text:
         answer_refused: 'The server refused the request (HTTP {0}).'
         answer_unreachable: The server did not answer.
         answer_unreadable: "The server's answer could not be read (HTTP {0})."
+        brackets: Brackets
+        brackets_title: Draw the buttons, chips and tags of a terminal theme in brackets.
         close_glyph: dismiss
         close_tab: Close tab
         code_theme: Code theme
@@ -35,6 +37,8 @@ text:
         float_return: Return to Page
         icons: Icons
         icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
+        monospace: Monospace
+        monospace_title: Draw the interface of a terminal theme in the monospace font.
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
         page_badge_separator: ', '

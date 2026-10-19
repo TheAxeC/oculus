@@ -55,5 +55,9 @@ body.rice .oculus-field {
     border-bottom: 1px solid var(--line);
     border-radius: 0;
     background: none;
+}
+
+/* The monospace face of a field, while the rice theme's Monospace toggle is on. */
+body.rice:where(:not(.rice-sans)) .oculus-field {
     font-family: var(--font-mono);
 }

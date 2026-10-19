@@ -345,7 +345,7 @@
     }
 
     /* The terminal shape: a log, in the face a log is read in. */
-    :global(body.rice) .chat {
+    :global(body.rice:where(:not(.rice-sans))) .chat {
         font-family: var(--font-mono);
     }
 </style>

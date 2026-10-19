@@ -21,12 +21,15 @@
 // What a name says about a file is state/sources/explorer/file-type.ts's, exported from here with
 // the rest of the browser. Whether a Monaco language is a LaTeX source tab's (`latex` or `bibtex`)
 // is data/prose/latex.ts's, exported from here so the views read it by the same rule, and so is the
-// path below a folder (`pathUnder`, data/helpers/files/paths.ts).
+// path below a folder (`pathUnder`, data/helpers/files/paths.ts). The names the make items of the
+// Files view offer and write by (`MakeItems`, `HUB_FILE`, `HUB_CHOICES`) are
+// data/helpers/hub-names.ts's, exported from here for the tree's menu and dialogs.
 
 export { OCULUS_CONFIG_ROOT } from '../../data/helpers/files/address.ts';
 export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
 export { pathUnder } from '../../data/helpers/files/paths.ts';
 export { isLatexLanguage } from '../../data/prose/latex.ts';
+export { HUB_CHOICES, HUB_FILE, type MakeItems } from '../../data/helpers/hub-names.ts';
 export {
     languageOf,
     languageOfFile,

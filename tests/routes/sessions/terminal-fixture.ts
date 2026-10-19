@@ -90,9 +90,9 @@ export function makeTaskConfig(): TaskConfig {
     const chatProject = join(chatHub, 'projects', 'active', 'alpha');
     mkdirSync(join(chatState, 'chat'), { recursive: true });
     mkdirSync(chatProject, { recursive: true });
-    mkdirSync(join(chatHub, 'registries'), { recursive: true });
+    mkdirSync(join(chatHub, '.oculus', 'data', 'research'), { recursive: true });
     writeFileSync(join(chatProject, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
-    writeFileSync(join(chatHub, 'registries', 'venues.yml'), 'entries: []\n');
+    writeFileSync(join(chatHub, '.oculus', 'data', 'research', 'venues.yml'), 'entries: []\n');
     return {
         root,
         engine: engineWith(root, 'engine'),

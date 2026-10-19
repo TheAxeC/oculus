@@ -17,7 +17,7 @@
 
     const {
         layout: { openView },
-        selectors: { archiveDead }
+        selectors: { configMap }
     } = useState();
 
     type Source =
@@ -25,7 +25,7 @@
     type Props = Source;
 
     let { projects, groups }: Props = $props();
-    const shown = $derived(groups ?? groupProjects(projects ?? [], archiveDead()));
+    const shown = $derived(groups ?? groupProjects(projects ?? [], configMap()));
     let opened = $state(new Set<string>());
 
     function isOpen(type: string): boolean {

@@ -165,11 +165,21 @@ const BYTE_ROWS: {
     hand?: [string, string];
     back?: { titles: string[]; kept: [string, string, string] };
 }[] = [
-    { name: 'a task deleted', file: ['tasks', 'tasks.yml'], held: QUOTED_TASKS, body: DELETE_TASK },
-    { name: 'a task added', file: ['tasks', 'tasks.yml'], held: QUOTED_TASKS, body: ADD_TASK },
+    {
+        name: 'a task deleted',
+        file: ['.oculus', 'data', 'academic', 'tasks.yml'],
+        held: QUOTED_TASKS,
+        body: DELETE_TASK
+    },
+    {
+        name: 'a task added',
+        file: ['.oculus', 'data', 'academic', 'tasks.yml'],
+        held: QUOTED_TASKS,
+        body: ADD_TASK
+    },
     ...[DELETE_TASK, ADD_TASK].map((body) => ({
         name: `a task ${body === DELETE_TASK ? 'deleted' : 'added'} over a hand change`,
-        file: ['tasks', 'tasks.yml'],
+        file: ['.oculus', 'data', 'academic', 'tasks.yml'],
         held: QUOTED_TASKS,
         body,
         hand: ['"ZonMw"', '"NWO"'] as [string, string],
@@ -183,13 +193,13 @@ const BYTE_ROWS: {
     })),
     {
         name: 'a lead deleted',
-        file: ['feeds', 'position-leads.yml'],
+        file: ['.oculus', 'data', 'academic', 'leads.yml'],
         held: QUOTED_LEADS,
         body: DELETE_LEAD
     },
     {
         name: 'a lead deleted over a hand change',
-        file: ['feeds', 'position-leads.yml'],
+        file: ['.oculus', 'data', 'academic', 'leads.yml'],
         held: QUOTED_LEADS,
         body: DELETE_LEAD,
         hand: ['"applied"', '"declined"'],
@@ -379,7 +389,7 @@ describe('taking a change back', () => {
 
     it('puts a deleted entry back with its subtasks, each as the file held it', async () => {
         const into = target();
-        const file = join(into.hub, 'tasks', 'tasks.yml');
+        const file = join(into.hub, '.oculus', 'data', 'academic', 'tasks.yml');
         writeFileSync(
             file,
             [
@@ -437,7 +447,7 @@ describe('taking a change back', () => {
             value: true
         });
         const radar = (): string =>
-            readFileSync(join(into.hub, 'feeds', 'literature-radar.yml'), 'utf8');
+            readFileSync(join(into.hub, '.oculus', 'data', 'literature', 'radar.yml'), 'utf8');
         expect(radar()).toContain('dismissed: true');
         expect(
             (await handleWrite(request({ kind: 'undo', at: feed.at }), TOKEN, into)).status
@@ -585,7 +595,8 @@ describe('taking a change back', () => {
 
     it('puts a career section back, each section on its own', async () => {
         const into = target();
-        const career = (): string => readFileSync(join(into.hub, 'registries/career.yml'), 'utf8');
+        const career = (): string =>
+            readFileSync(join(into.hub, '.oculus/data/academic/career.yml'), 'utf8');
         const first = await made(into, { kind: 'career', fields: { milestone: 'Veni 2026' } });
         const second = await made(into, { kind: 'career', fields: { title: 'Career strategy' } });
         expect(career()).toContain('milestone: Veni 2026');
@@ -604,7 +615,8 @@ describe('taking a change back', () => {
     it('puts a career host and a subtask line back', async () => {
         const into = target();
         const host = await made(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
-        const career = (): string => readFileSync(join(into.hub, 'registries/career.yml'), 'utf8');
+        const career = (): string =>
+            readFileSync(join(into.hub, '.oculus/data/academic/career.yml'), 'utf8');
         expect(career()).toContain('status: "candidate"');
         expect(
             (await handleWrite(request({ kind: 'undo', at: host.at }), TOKEN, into)).status
@@ -627,7 +639,7 @@ describe('taking a change back', () => {
     it('takes an added lead out again, and puts a deleted one back as it was recorded', async () => {
         const into = target();
         const leads = (): string =>
-            readFileSync(join(into.hub, 'feeds', 'position-leads.yml'), 'utf8');
+            readFileSync(join(into.hub, '.oculus', 'data', 'academic', 'leads.yml'), 'utf8');
         const added = await made(into, { kind: 'lead-add', fields: { title: 'A fresh lead' } });
         expect(added.undo).toBe('create');
         expect(leads()).toContain('A fresh lead');
@@ -652,7 +664,7 @@ describe('taking a change back', () => {
     it('puts a deleted Lit Watch entry back as it was recorded', async () => {
         const into = target();
         const radar = (): string =>
-            readFileSync(join(into.hub, 'feeds', 'literature-radar.yml'), 'utf8');
+            readFileSync(join(into.hub, '.oculus', 'data', 'literature', 'radar.yml'), 'utf8');
         const gone = await made(into, { kind: 'feed-delete', feed: 'radar', id: 'Paper' });
         expect(radar()).not.toContain('Paper');
         expect(
@@ -663,7 +675,7 @@ describe('taking a change back', () => {
 
     it('takes an added Lit Watch entry out again', { tags: ['slow'] }, async () => {
         const into = target();
-        const radarFile = join(into.hub, 'feeds', 'literature-radar.yml');
+        const radarFile = join(into.hub, '.oculus', 'data', 'literature', 'radar.yml');
         const radar = (): string => readFileSync(radarFile, 'utf8');
         const fields = {
             title: 'A paper found by the search',

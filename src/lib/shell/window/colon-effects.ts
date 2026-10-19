@@ -12,6 +12,7 @@ import type { ClientState } from '$lib/state/client/context';
 import type { DockEdge, Float } from '$lib/state/workbench/layout';
 import {
     addFolderCommand,
+    ARGUMENT_COMMANDS,
     folderCommand,
     workspaceCommand,
     type CommandOutcome,
@@ -85,7 +86,8 @@ export function pressRefusal(command: PaletteCommand): string | null {
 }
 
 /** The commands that, chosen, open the list of their own instead of running. */
-const MODE_COMMANDS = [
+const MODE_COMMANDS: string[] = [
+    ...ARGUMENT_COMMANDS,
     'language',
     'workspace',
     'workspace-save',

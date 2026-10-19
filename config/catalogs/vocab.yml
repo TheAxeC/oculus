@@ -1,6 +1,6 @@
 # ===========================================================================
 # vocab.yml
-# oculus's own configuration: words and their colours, and nothing else: the palette every hex maps onto, the chip and status vocabularies, and the lane/tier/bucket words the surfaces group by. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
+# oculus's own configuration: the words of its vocabularies, their colours, and the flags that say what each word decides: the palette every hex maps onto, the project types, the status and chip words, the project tiers, and the lane and bucket words the surfaces group by. A decision the code makes on a type, a status, a chip or a tier is a flag on its word here or a list here or under `focus:` of behavior.yml, never a word written in the code. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
 # ===========================================================================
 
 
@@ -47,103 +47,128 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
-# Project-type colours, keyed by the manifest's `type`: the colour of a project's type wherever it is drawn (its board card, the Map, the Present view's project chip).
-type_color: { active: "#ea580c", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", paused: "#9ca3af",  tech-report: "#0891b2", software: "#0d9488", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1", finished: "#16a34a", archived: "#16a34a" }
-
-# Primary board button order: every tab (Projects / Personal / Archive / Coauthor) splits its first-class button row by `type`, in THIS order, and a board shows the types its projects hold.
-type_order: [active, published, submitted, in-prep, paused, idea, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd, finished, archived]
-
-
-# Status chips: the per-project project.yml manifests are the source of truth for status.
-status_legend:
-  - { key: submit-ready,    icon: green, label: "submit-ready" }
-  - { key: submitted,       icon: brown, label: "submitted / under review" }
-  - { key: revision,        icon: orange_square, label: "major revision (back with the authors)" }
-  - { key: accepted,        icon: green_square, label: "accepted (camera-ready pending)" }
-  - { key: published,       icon: done, label: "published" }
-  - { key: in-prep,         icon: writing, label: "in preparation" }
-  - { key: abandoned,       icon: cross, label: "abandoned" }
-  - { key: tech-report,     icon: paper, label: "tech report (not peer-reviewed)" }
-  - { key: software,        icon: published, label: "software / framework (not a paper)" }
-  - { key: coauthor,        icon: collab, label: "co-author" }
-  - { key: lead,            icon: author, label: "first author" }
-  - { key: phd,             icon: scout, label: "PhD thesis" }
-  - { key: nogo,            icon: overdue, label: "no-go (failed gate)" }
-  - { key: dropped,         icon: trash, label: "dropped" }
-  - { key: disproved,       icon: cross_box, label: "disproved" }
-  - { key: results-positive, icon: white, label: "positive result (pre-writeup)" }
-  - { key: admin-prep,      icon: yellow, label: "admin/prep" }
-  - { key: numbers-pending, icon: blue, label: "numbers pending" }
-  - { key: ai-tells,        icon: red, label: "AI-writing tells" }
-  - { key: blocked,         icon: purple, label: "blocked (external)" }
-  - { key: exploring,       icon: orange, label: "exploring" }
-  - { key: nascent,         icon: white, label: "nascent (concept)" }
-  - { key: scoping,         icon: yellow, label: "scoping (lit-check and framing)" }
-  - { key: de-risking,      icon: blue, label: "de-risking (feasibility experiment)" }
-  - { key: building,        icon: active, label: "building" }
-  - { key: running,         icon: live, label: "running" }
-  - { key: finished,        icon: done, label: "finished" }
-  - { key: paused,          icon: black, label: "paused" }
-  # publication-type chips (on published works), orthogonal to outcome/role; feed the Status facet
-  - { key: journal,         icon: journals, label: "journal article" }
-  - { key: conference,      icon: conference, label: "conference paper" }
-  - { key: thesis,          icon: book, label: "thesis" }
-  - { key: abstract,        icon: page, label: "extended abstract" }
-  - { key: poster,          icon: poster, label: "poster" }
+# The project types, keyed by the manifest's `type`, in the order every board splits its type buttons by, the order a board, the Map and the board statistics list types in; a board shows the types its projects hold. `color` is the colour of a project's type wherever it is drawn (its board card, the Map, the Present view's project chip). The flags say what a type decides, each compared with the manifest's `type` as written (`hasWord`), and a type without a flag is not one of them:
+# - `dead`: a dead or paused outcome, the only kind that is not real work, written as a whole number from 1 that is the type's place in the Pillars view's Archival band, whose groups go in that order; the type is left out of a pillar's and a domain's members. A type with no number is real work, so a new live type never falls into Archival.
+# - `terminal`: a done or closed outcome, which the audit holds to no live chip.
+# - `archive_outcome`: a `type:` a project is archived with, and the name of its archive/<outcome>/ filing folder (the folder decides no tier or type, only the project's category; the audit lists an archived project whose `type:` differs from its folder).
+# - `live`: work in flight: the audit's rules over in-flight work, the cross-link group of in-flight projects, a venue's in-flight papers, the Map's in-flight members, the Focus lanes and the backlog.
+# - `on_map`: a type the Map draws as a node of the portfolio.
+# - `placed`: a type that has a venue, so the audit asks for one.
+# - `standard`: the types of the projects tier the audit expects there.
+# - `idea`: the backlog of ideas on the Focus board.
+# - `public`, `negative`, `dead_end`: the publication kind a type gives in the audit of the website's publications (`publication_kinds` below reads them).
+types:
+  active:      { color: "#ea580c", live: true, on_map: true, standard: true }
+  published:   { color: "#16a34a", terminal: true, archive_outcome: true, placed: true, public: true }
+  submitted:   { color: "#0ea5e9", placed: true, public: true }
+  in-prep:     { color: "#a16207" }
+  paused:      { color: "#9ca3af", dead: 5 }
+  idea:        { color: "#7c5cff", on_map: true, standard: true, idea: true }
+  tech-report: { color: "#0891b2", terminal: true }
+  software:    { color: "#0d9488", terminal: true }
+  nogo:        { color: "#b45309", dead: 1, terminal: true, archive_outcome: true, negative: true }
+  dropped:     { color: "#9ca3af", dead: 2, terminal: true, archive_outcome: true, dead_end: true }
+  disproved:   { color: "#dc2626", dead: 3, terminal: true, archive_outcome: true, negative: true }
+  abandoned:   { color: "#6b7280", dead: 4, terminal: true, dead_end: true }
+  exploring:   { color: "#f59e0b" }
+  phd:         { color: "#6366f1", terminal: true, archive_outcome: true, public: true }
+  finished:    { color: "#16a34a" }
+  archived:    { color: "#16a34a" }
 
 
-# Status colours of the chips of a project and of a collection entry, and the rules the deadline radar reads. A `terminal` status ends a collection entry's deadline; a project's deadline ends only at a status marked `deadline_met`.
-status_palette:
-  building:        { color: "#d4a017" }
-  running:         { color: "#16a34a" }
-  paused:          { color: "#9ca3af" }
-  # live / in-flight (still shows on the deadline radar)
-  planned:         { color: "#7c5cff" }
-  in-prep:         { color: "#7c5cff" }
-  "in prep":       { color: "#7c5cff" }
-  preparing:       { color: "#7c5cff" }
-  draft:           { color: "#7c5cff" }
-  submitted:       { color: "#b45309", deadline_met: true }
-  revision:        { color: "#b45309" }
-  pending:         { color: "#b45309" }
-  under-review:    { color: "#b45309", deadline_met: true }
-  "under review":  { color: "#b45309", deadline_met: true }
-  upcoming:        { color: "#b45309" }
-  exploring:       { color: "#7c5cff" }
-  nascent:         { color: "#7c5cff" }
-  scoping:         { color: "#0891b2" }
-  de-risking:      { color: "#16a34a" }
-  active:          { color: "#16a34a" }
-  collaborator:    { color: "#0891b2" }
-  todo:            { color: "#b45309" }
-  doing:           { color: "#16a34a" }
-  # these statuses close a project, and only a status with deadline_met ends its deadline
-  ongoing:         { color: "#16a34a", terminal: true, live_subtasks: true }
-  completed:       { color: "#0ea5e9", terminal: true }
-  published:       { color: "#0ea5e9", terminal: true }
-  done:            { color: "#0ea5e9", terminal: true }
-  awarded:         { color: "#16a34a", terminal: true }
-  granted:         { color: "#16a34a", terminal: true }
-  accepted:        { color: "#2563eb", terminal: true }
-  contributing:    { color: "#0891b2", terminal: true }
-  rejected:        { color: "#dc2626", terminal: true }
-  "not funded":    { color: "#dc2626", terminal: true }
-  declined:        { color: "#ea580c", terminal: true }
-  dropped:         { color: "#ea580c", terminal: true }
-  withdrawn:       { color: "#475569", terminal: true }
-  "not applied":   { color: "#9ca3af", terminal: true }
-  not-applied:     { color: "#9ca3af", terminal: true }
-  "not attending": { color: "#9ca3af", terminal: true }
-  not-attending:   { color: "#9ca3af", terminal: true }
-  cancelled:       { color: "#9ca3af", terminal: true }
-  canceled:        { color: "#9ca3af", terminal: true }
-  past:            { color: "#9ca3af", terminal: true }
-  skipped:         { color: "#9ca3af", terminal: true }
-  passed:          { color: "#9ca3af", terminal: true }
-  ready:           { color: "#16a34a" }
-  finished:        { color: "#0ea5e9", terminal: true }
-  archived:        { color: "#9ca3af", terminal: true }
-  applied: { color: "#0891b2", terminal: true }
+# The status words, of a project's chips (its manifest's `status.chips`, which the manifests hold as the source of truth for status) and of a collection entry's `status`, each with what is drawn for it and what it decides. A chip is drawn with its `icon` and its `label`; a word with a `color` is a status an entry takes, drawn in that colour. The flags, and a word without a flag is not one of them; each line says how the code compares a word with the flag: `wordFlag` trims a collection entry's status and puts it in lower case, and the chip flags go through `anyWord`, which compares a project's chips as written:
+# - `chip`: a status chip a manifest's `status.chips` picks from (the status legend), offered by the project form in this order.
+# - `terminal`: the status ends a collection entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
+# - `deadline_met`: the status ends a project's own deadline (a terminal chip alone does not); compared trimmed and in lower case (`wordFlag`).
+# - `live_subtasks`: a terminal entry whose subtasks still show on the radar; compared trimmed and in lower case (`wordFlag`).
+# - `waiting`: an entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case, untrimmed.
+# - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
+# - `lead_closed`: a Position Lead that is closed, counted and listed as done; compared trimmed and in lower case (`wordFlag`).
+# - `lead_declined`: a Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes; compared trimmed and in lower case (`wordFlag`).
+# - `lead_applied`: a Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes; compared trimmed and in lower case (`wordFlag`).
+# - `default_lead`: the status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on; compared trimmed and in lower case (`wordFlag`).
+# - `default_application`: the status of the Applications entry a Position Lead's apply control makes; the first such word is written, and nothing is compared with it.
+# - `default_task`: the status of a task added from the palette; the first such word is written, and nothing is compared with it.
+# - `new_idea`: the chip a new idea is made with; the first such word is written, and nothing is compared with it.
+# - `pauses_countdown`: a chip that stops a card's and a lane's countdown, and that the Focus board and the board statistics count as submitted work; a project's chips are compared as written (`anyWord`).
+# - `blocked`: a chip the Focus board and the board statistics count as blocked, which also keeps a project out of the backlog; a project's chips are compared as written (`anyWord`).
+# - `submit_ready`: a chip the board statistics count as ready to go out; a project's chips are compared as written (`anyWord`).
+# - `published`: the chip the audit expects on a published project; a project's chips are compared as written.
+statuses:
+  submit-ready:     { chip: true, label: "submit-ready", icon: green, submit_ready: true }
+  submitted:        { chip: true, label: "submitted / under review", icon: brown, color: "#b45309", deadline_met: true, waiting: true, pauses_countdown: true }
+  revision:         { chip: true, label: "major revision (back with the authors)", icon: orange_square, color: "#b45309" }
+  accepted:         { chip: true, label: "accepted (camera-ready pending)", icon: green_square, color: "#2563eb", terminal: true }
+  published:        { chip: true, label: "published", icon: done, color: "#0ea5e9", terminal: true, published: true }
+  in-prep:          { chip: true, label: "in preparation", icon: writing, color: "#7c5cff" }
+  abandoned:        { chip: true, label: "abandoned", icon: cross }
+  tech-report:      { chip: true, label: "tech report (not peer-reviewed)", icon: paper }
+  software:         { chip: true, label: "software / framework (not a paper)", icon: published }
+  coauthor:         { chip: true, label: "co-author", icon: collab }
+  lead:             { chip: true, label: "first author", icon: author }
+  phd:              { chip: true, label: "PhD thesis", icon: scout }
+  nogo:             { chip: true, label: "no-go (failed gate)", icon: overdue }
+  dropped:          { chip: true, label: "dropped", icon: trash, color: "#ea580c", terminal: true }
+  disproved:        { chip: true, label: "disproved", icon: cross_box }
+  results-positive: { chip: true, label: "positive result (pre-writeup)", icon: white }
+  admin-prep:       { chip: true, label: "admin/prep", icon: yellow }
+  numbers-pending:  { chip: true, label: "numbers pending", icon: blue }
+  ai-tells:         { chip: true, label: "AI-writing tells", icon: red }
+  blocked:          { chip: true, label: "blocked (external)", icon: purple, blocked: true }
+  exploring:        { chip: true, label: "exploring", icon: orange, color: "#7c5cff" }
+  nascent:          { chip: true, label: "nascent (concept)", icon: white, color: "#7c5cff", new_idea: true }
+  scoping:          { chip: true, label: "scoping (lit-check and framing)", icon: yellow, color: "#0891b2" }
+  de-risking:       { chip: true, label: "de-risking (feasibility experiment)", icon: blue, color: "#16a34a" }
+  building:         { chip: true, label: "building", icon: active, color: "#d4a017" }
+  running:          { chip: true, label: "running", icon: live, color: "#16a34a" }
+  finished:         { chip: true, label: "finished", icon: done, color: "#0ea5e9", terminal: true }
+  paused:           { chip: true, label: "paused", icon: black, color: "#9ca3af" }
+  # publication-type chips (on published works), orthogonal to outcome and role; they feed the Status facet
+  journal:          { chip: true, label: "journal article", icon: journals }
+  conference:       { chip: true, label: "conference paper", icon: conference }
+  thesis:           { chip: true, label: "thesis", icon: book }
+  abstract:         { chip: true, label: "extended abstract", icon: page }
+  poster:           { chip: true, label: "poster", icon: poster }
+  # the statuses of collection entries: live and in flight (still on the deadline radar)
+  planned:          { color: "#7c5cff" }
+  "in prep":        { color: "#7c5cff" }
+  preparing:        { color: "#7c5cff" }
+  draft:            { color: "#7c5cff" }
+  pending:          { color: "#b45309", waiting: true }
+  under-review:     { color: "#b45309", deadline_met: true, waiting: true }
+  "under review":   { color: "#b45309", deadline_met: true, waiting: true }
+  upcoming:         { color: "#b45309" }
+  active:           { color: "#16a34a" }
+  collaborator:     { color: "#0891b2" }
+  todo:             { color: "#b45309", default_task: true }
+  doing:            { color: "#16a34a" }
+  # these statuses close an entry, and only a status with deadline_met ends a project's deadline
+  ongoing:          { color: "#16a34a", terminal: true, live_subtasks: true }
+  completed:        { color: "#0ea5e9", terminal: true }
+  done:             { color: "#0ea5e9", terminal: true }
+  awarded:          { color: "#16a34a", terminal: true, acknowledged: true }
+  granted:          { color: "#16a34a", terminal: true }
+  contributing:     { color: "#0891b2", terminal: true, acknowledged: true }
+  rejected:         { color: "#dc2626", terminal: true }
+  "not funded":     { color: "#dc2626", terminal: true }
+  declined:         { color: "#ea580c", terminal: true, lead_closed: true, lead_declined: true }
+  withdrawn:        { color: "#475569", terminal: true }
+  "not applied":    { color: "#9ca3af", terminal: true, default_application: true }
+  not-applied:      { color: "#9ca3af", terminal: true }
+  "not attending":  { color: "#9ca3af", terminal: true }
+  not-attending:    { color: "#9ca3af", terminal: true }
+  cancelled:        { color: "#9ca3af", terminal: true }
+  canceled:         { color: "#9ca3af", terminal: true }
+  past:             { color: "#9ca3af", terminal: true }
+  skipped:          { color: "#9ca3af", terminal: true }
+  passed:           { color: "#9ca3af", terminal: true }
+  ready:            { color: "#16a34a" }
+  archived:         { color: "#9ca3af", terminal: true }
+  applied:          { color: "#0891b2", terminal: true, lead_closed: true, lead_applied: true }
+  # the statuses of a Position Lead that no chip or collection entry takes
+  closed:           { lead_closed: true }
+  dismissed:        { lead_closed: true, lead_declined: true }
+  open:             { default_lead: true }
 
 
 # Focus lanes form one lifecycle, grouped into current, parked, and incubating work. With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Ideas lane; tests/checks/look/lane-distance.test.ts holds those pairs. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the Ideas lane in mocha and everforest.
@@ -179,39 +204,43 @@ fund_stages:
 focus_lane_tones: { funding: gold, jobs: grey-d, teaching: teal }
 
 
-# Career host-pipeline statuses (Focus career card): status -> icon / label / colour.
-career_host_status:
-  awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2" }
-  warm:      { icon: fire, label: "warm",            color: "#ea580c" }
-  candidate: { icon: white, label: "candidate",      color: "#64748b" }
-  drafted:   { icon: writing, label: "drafted",      color: "#b45309" }
-  dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
+# The Archive's outcome categories, in the order the Archive groups them, which differs from the order of `types`.
+archive_order: [published, submitted, in-prep, abandoned, nogo, dropped, disproved, tech-report, software, finished, archived]
 
 
-# Career score dimensions (Focus career card host chips): `field` = the registries/career.yml host key scored, `badge` = the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).
-career_score_dims:
-  - { field: proposal,     badge: "P",  label: "proposal" }
-  - { field: ai_fl_clinic, badge: "AF", label: "AI+FL+clinic" }
-  - { field: backing,      badge: "B",  label: "backing" }
-  - { field: after,        badge: "Z",  label: "after / ZAP" }
+# The project tiers whose decisions are flags, each read with the tier as the manifest writes it, and a tier without a flag is not one of them:
+# - `finished`: finished or contributed work: the audit's rules over finished work, the cross-link group of finished projects, a venue's past papers, the Map's finished members.
+# - `software`: software projects: a card's and a board's software line, and a board that offers no New project.
+# - `main`: the research board's tier: the venue load of the Command Center and the Inbox, the manifests behind, the projects quick add writes to, and the tier a new project is made in when none is named.
+# - `backlog`: a tier whose projects may sit in the Focus backlog (`focus: holding`), where a new project of the tier starts.
+# - `personal`: projects the audit's research rules leave alone.
+# - `outcome_folders`: a tier whose category folder is its project's outcome: the audit expects a project filed under a folder named by a type carrying `archive_outcome` to have that type.
+# - `type_folders`: the category folders of a tier that name its project's type, which the audit expects the project to have.
+tiers:
+  projects: { main: true, backlog: true }
+  personal: { backlog: true, personal: true }
+  coauthor: { finished: true, type_folders: [abandoned] }
+  archive:  { finished: true, outcome_folders: true }
+  software: { software: true }
 
 
-# Archive OUTCOME categories (order = grouping), and which of them count as REAL outputs (vs dead-ends).
-archive_categories: [published, submitted, in-prep, abandoned, nogo, dropped, disproved, tech-report, software, finished, archived]
+# The section of the website's publication feed a project is expected in, for the audit of that feed: the first row whose `types` holds the project's type and whose `chips` shares one of its status chips gives its `kind`, the sections it may sit in; a row without `types` or without `chips` places no condition on that side, so the last row catches every project.
+publication_kinds:
+  - { kind: [thesis],                types: [phd] }
+  - { kind: [thesis],                chips: [thesis] }
+  - { kind: [papers-in-review],      types: [submitted], chips: [submitted, revision] }
+  - { kind: [papers-in-preparation], types: [submitted] }
+  - { kind: [abandoned-papers],      types: [abandoned] }
+  - { kind: [abstracts],             chips: [abstract] }
+  - { kind: [posters],               chips: [poster] }
+  - { kind: [conference],            chips: [conference] }
+  - { kind: [journal, other-publications], chips: [journal] }
+  - { kind: [abstracts, conference, journal, other-publications, posters, thesis] }
 
-# Dead / paused outcomes = the ONLY things that count as "not real" (the Pillars Archival band, excluded from membership). DENYLIST by design: any other type (published/submitted/in-prep/tech-report/software/phd/exploring or a future live type) is real by DEFAULT, so a new active type never silently falls into Archival. Order = the Archival card's category order. (Single source of truth: `_is_real`, `_xlink_groups`, and the Archival card.)
-archive_dead: [nogo, dropped, disproved, abandoned, paused]
 
-
-# Position-lead fit -> chip colour.
-leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
-
-
-# Project lifecycle vocab: the single source for the status guardrails the Audit view reports. `archive_outcomes` = the `type:` set on archiving, and the archive/<outcome>/ filing folder (the folder decides no tier or type, only the project's category; the Audit lists an archived project whose `type:` differs from its outcome folder). `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. `terminal_types` = done/closed outcomes.
+# Project lifecycle words the audit's status guardrails read. `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. Which types are terminal or archive outcomes is a flag of `types` above.
 lifecycle:
-  archive_outcomes: [published, nogo, dropped, disproved, phd]
   live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]
-  terminal_types: [published, nogo, dropped, disproved, abandoned, phd, tech-report, software]
   author_chips: [lead, coauthor]   # one of these marks the author role on finished or contributed work
   contradictory_chips:             # chip pairs that cannot both be true; the audit reports a project carrying one pair
     - [submit-ready, submitted]
@@ -223,7 +252,7 @@ lifecycle:
 data_access: { open: "#16a34a", registration: "#b45309", credentialed: "#dc2626", private: "#475569" }
 
 
-# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (registries/venues.yml). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
+# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (the venues registry). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
 venue_categories: [journal, conference, thesis, meeting]
 venue_tiers:
   - { key: flagship,   color: "#7c3aed", label: "flagship" }
@@ -231,7 +260,7 @@ venue_tiers:
   - { key: specialist, color: "#0891b2", label: "specialist" }
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
 
-# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).
+# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. A bucket's label and colour are set here.
 radar_buckets:
   - { key: preemption,    glyph: red,    label: "Pre-emption risk", color: "#dc2626" }
   - { key: idea,          glyph: purple, label: "Idea sparks",      color: "#7c5cff" }

@@ -50,6 +50,8 @@ import {
     type CatalogEntry
 } from '../../../../data/sources/config/catalog/options.ts';
 import { railFindings } from '../../../../data/sources/config/rail.ts';
+import { countsFindings } from '../../../../data/sources/config/sections/counts.ts';
+import { boardsFindings } from '../../../../data/sources/config/sections/boards.ts';
 import type { Finding } from '../../../../data/model/index.ts';
 import { docFindings, layoutFile } from '../../../content/docs.ts';
 import type { ChangeRecord, ReplacedText } from '../../../core/changes.ts';
@@ -234,7 +236,10 @@ const FINDERS: ((
     (config, engine) => schemaFindings(engine, config),
     (config, engine) => themeFindings(engine, config),
     (config, engine, hub, from) => docFindings(config, hub, sourceFile(engine, hub, from, 'docs')),
-    (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config))
+    (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config)),
+    (config, engine) => boardsFindings(config, layoutFile(engine), textCatalog(config)),
+    (config, engine, hub, from) =>
+        countsFindings(config, sourceFile(engine, hub, from, 'counts'), textCatalog(config))
 ];
 
 /**

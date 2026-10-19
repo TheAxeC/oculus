@@ -19,6 +19,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { isHubFolder } from '../../../data/sources/manifests.ts';
@@ -26,6 +27,7 @@ import { realPath } from '../../core/paths.ts';
 import {
     readFolders,
     rootsOf,
+    SCAN_DEPTH,
     stateEntries,
     type Root,
     type WorkspaceFinding,
@@ -36,8 +38,27 @@ import { readState, stateFileOf, type StateRead, type WorkspaceState } from './s
 /** The folder of a hub that holds its workspace files, under `.oculus/`. */
 export const WORKSPACES_FOLDER = 'workspaces';
 
+/**
+ * A workspace file as the editor's schema states it (server/root/watch/own-schemas.ts): `folders`,
+ * each a `name`, a `path` and an optional repository scan depth, and the `primary` naming one of
+ * them. The file is read by `readFile` and readFolders (folders.ts), which word their own findings;
+ * the shape says what they take.
+ */
+export const workspaceFileShape = z.strictObject({
+    folders: z
+        .array(
+            z.object({
+                name: z.string().min(1),
+                path: z.string().min(1),
+                [SCAN_DEPTH]: z.number().int().min(-1).optional()
+            })
+        )
+        .optional(),
+    primary: z.string().nullish()
+});
+
 /** The keys a workspace file takes. */
-const FILE_KEYS = ['folders', 'primary'];
+const FILE_KEYS = Object.keys(workspaceFileShape.shape);
 
 /** A workspace file the switcher offers: where it is, its name and the hub that holds it. */
 type WorkspaceFileRef = { path: string; name: string; hub: string };

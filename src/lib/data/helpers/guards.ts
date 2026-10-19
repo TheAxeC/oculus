@@ -83,6 +83,20 @@ export function numericSetting(config: Record<string, unknown>, key: string): nu
 }
 
 /**
+ * The map `focus:` of the merged config (config/behavior.yml): the Focus board's horizons,
+ * thresholds, cadences and lists. A config whose `focus` is no map has an empty one.
+ */
+export function focusBlock(config: Record<string, unknown>): Record<string, unknown> {
+    const block = config.focus;
+    return isMap(block) ? block : {};
+}
+
+/** A finite number under `focus:` of the merged config, or null when absent or invalid. */
+export function focusSetting(config: Record<string, unknown>, key: string): number | null {
+    return numericSetting(focusBlock(config), key);
+}
+
+/**
  * Whether two values are equal with the keys of every map in the same order. A deep equality
  * alone calls `{ a, b }` and `{ b, a }` equal, and a write that only reorders a map is a change to
  * a file.

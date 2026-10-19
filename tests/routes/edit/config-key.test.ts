@@ -8,7 +8,7 @@
 // own checks: a config-key write and its undo each read the whole configuration of the scratch
 // engine before and after they write (`loadConfig`, about 220 ms a read), and no case waits.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
@@ -108,10 +108,13 @@ describe('taking a setting back', () => {
             const into = keepTarget();
             if (settings !== undefined) plantHub(into.hub, settings);
             const engineBefore = behaviorOf(into);
+            const expected = after(engineBefore);
+            // A row whose write makes the settings file starts from a hub with no `.oculus` folder,
+            // so the undo is seen to remove the folders the write made as well.
+            if (expected === null) rmSync(join(into.hub, '.oculus'), { recursive: true });
             await send(into, 'behavior.yml', key, value);
             const [change] = changesOf(into);
             expect(change.file).toBe(logged(into));
-            const expected = after(engineBefore);
             const response = await undone(into, change);
             expect(response.status).toBe(200);
             if (expected === null) expect(existsSync(join(into.hub, '.oculus'))).toBe(false);

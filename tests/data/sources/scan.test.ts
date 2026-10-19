@@ -108,8 +108,7 @@ describe('a wrong scan or new_project_dir value', () => {
                 scan: SOURCES,
                 newProjectDir: SOURCES,
                 memoriesDir: SOURCES,
-                wallpaperDir: SOURCES,
-                recoverCommand: SOURCES
+                wallpaperDir: SOURCES
             },
             hub
         );

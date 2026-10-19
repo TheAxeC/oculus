@@ -48,6 +48,7 @@ export function inertDependencies(): Partial<ContextDependencies> {
         watchProcesses: () => inert(),
         watchCalendar: () => inert(),
         watchMail: () => inert(),
+        watchRecover: () => inert(),
         watchLocal: () => inert(),
         watchApps: () => inertApps(),
         watchUsageRefresh: () => inert(),

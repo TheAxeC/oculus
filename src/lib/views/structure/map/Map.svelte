@@ -74,14 +74,14 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
     const snapshot = $derived(portfolio());
-    const statuses = $derived(archiveStatuses(snapshot));
+    const statuses = $derived(archiveStatuses(snapshot, configMap()));
     /**
      * The graph the filters narrow, which is what the chips are drawn from: a type or a line stays
      * on the row while nothing of it is drawn, so a reader can press it back.
      */
     const base = $derived.by(() => {
         if (snapshot === null) return { nodes: [], edges: [] };
-        return buildGraph(snapshot, {
+        return buildGraph(snapshot, configMap(), {
             archived: enabled,
             collaborators,
             labelMode: labelModeOf(configMap())
@@ -98,7 +98,7 @@
     /** The seed this pane lays the set of nodes it is drawing out from. */
     const seed = $derived(startFor(held, graph.nodes));
 
-    const typeFilters = $derived(typeChips(base, graph, configMap().type_order, types));
+    const typeFilters = $derived(typeChips(base, graph, configMap(), types));
     const lineFilters = $derived(lineChips(base, graph, snapshot, lines));
     const hasRelationships = $derived(relationshipsOf(snapshot));
 

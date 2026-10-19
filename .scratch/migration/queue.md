@@ -1,7 +1,8 @@
 In flight (1 of 6 slots in use):
 - O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, config consolidated, the Keyboard Shortcuts view and palette lists): building.
 
-Queued, in order (1 step):
+Queued, in order (2 steps):
+- O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes): once O38 has landed.
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
 
 Owed looks: none.

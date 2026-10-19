@@ -50,7 +50,7 @@
 
     const client = useState();
     const {
-        selectors: { archiveDead, hubVocabs, projects, venues },
+        selectors: { configMap, hubVocabs, projects, venues },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -58,7 +58,7 @@
 
     const file = registryFile(client, 'venues', 'venues');
     const allVenues = $derived(venues());
-    const allProjects = $derived(realProjects(projects(), archiveDead()));
+    const allProjects = $derived(realProjects(projects(), configMap()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const labelOf = $derived(themeLabeller(hubVocabs(), 'venue_themes'));
@@ -125,7 +125,7 @@
                     {#if held.journalsOpen}
                         <div class="cards">
                             {#each journals as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects)}
+                                {@const use = venueUsers(venue, allProjects, configMap())}
                                 <Reveal
                                     id={venue.id}
                                     wanted={held.reveal}
@@ -164,7 +164,7 @@
                         </div>
                         <div class="cards">
                             {#each conferences as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects)}
+                                {@const use = venueUsers(venue, allProjects, configMap())}
                                 <Reveal
                                     id={venue.id}
                                     wanted={held.reveal}

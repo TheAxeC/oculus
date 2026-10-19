@@ -536,16 +536,3 @@ export function fileIconThemes(offers: AppOffers): { name: string; label: string
         }))
     ];
 }
-
-/**
- * The name of the file icon theme a text stands for: its saved name or the words it is listed by,
- * without regard to case. Null for a text naming none.
- */
-export function fileIconThemeNamed(text: string, offers: AppOffers): string | null {
-    const wanted = text.trim().toLowerCase();
-    const all = fileIconThemes(offers);
-    const found =
-        all.find((one) => one.name.toLowerCase() === wanted) ??
-        all.find((one) => one.label.toLowerCase() === wanted);
-    return found?.name ?? null;
-}

@@ -1,6 +1,6 @@
 // Layer 1, data. The zod helpers every reader of an untyped value shares, in the data folder, the
 // server, the state layer, the shell, the views and the routes: a schema that answers the value it
-// was given, the map, number and filled-text schemas (`mapShape`, `keysOfShape`, `filledTextShape`,
+// was given, the map, number and filled-text schemas (`mapShape`, `filledTextShape`,
 // `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema `wholeShape`, the list
 // schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an optional list of
 // strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
@@ -40,9 +40,6 @@ export const anyNumberShape = z.custom<number>((value) => typeof value === 'numb
 
 /** A map of any keys and values: what `isMap` accepts, answered as it was given. */
 export const mapShape = unchangedAs<Record<string, unknown>>(z.object({}));
-
-/** The own keys of a map in their order, an own `__proto__` key included. */
-export const keysOfShape = mapShape.transform((map) => Object.keys(map));
 
 /** A text field that carries something: absent unless it is a non-empty string. */
 export const filledTextShape = z.string().min(1).optional().catch(undefined);

@@ -24,6 +24,11 @@ import {
 } from '../../../machine/processes/watch.ts';
 import { HeldEslints, type HeldEslintsOptions } from '../../../machine/runs/lint/eslint.ts';
 import {
+    watchRecover,
+    type RecoverWatchOptions,
+    type RecoverWatcher
+} from '../../../machine/runs/recover/live/watch.ts';
+import {
     watchSchedules,
     type SchedulesOptions,
     type SchedulesWatcher
@@ -78,6 +83,7 @@ export type ContextDependencies = {
     watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
+    watchRecover: (hub: Hub, options: RecoverWatchOptions) => RecoverWatcher;
     watchLocal: (hubs: string[], changed: () => void) => LocalWatcher;
     watchApps: (hub: Hub, options: AppsWatchOptions) => AppsWatcher;
     startHosts: typeof startHosts;
@@ -107,6 +113,7 @@ export const contextDependencies: ContextDependencies = {
     watchProcesses,
     watchCalendar,
     watchMail,
+    watchRecover,
     watchLocal: (hubs, changed) => watchLocal(hubs, changed),
     watchApps: (hub, options) => watchApps(hub, options),
     startHosts,

@@ -13,7 +13,9 @@
 import { untrack } from 'svelte';
 import {
     LATEX_CHORD_FIRST,
+    LATEX_CHORD_SECONDS,
     LATEX_PRESSES,
+    latexChordSecond,
     latexMathFirst
 } from '$lib/data/helpers/keys/oculus/editor-keys';
 import { isLatexLanguage } from '$lib/state/sources/fs';
@@ -79,13 +81,6 @@ export type LatexTab = {
     /** The tab's LaTeX actions that apply now, in the order the palette lists them. */
     actions: () => EditorOwnAction[];
 };
-
-/** The key of a letter or digit as Monaco names it. */
-function codeOf(character: string): KeyPress['code'] {
-    if (character === '-') return 'Minus';
-    if (/^[0-9]$/.test(character)) return `Digit${character}` as KeyPress['code'];
-    return `Key${character.toUpperCase()}` as KeyPress['code'];
-}
 
 /** Whether the text before the caret is inside the braces of a `\cite`-like command. */
 function insideCite(before: string): boolean {
@@ -270,11 +265,8 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
 
     /** One key of `latex_editing.chords` as the chord that applies it, for the first key given. */
     function chordKey(first: KeyPress, character: string): EditorKey {
-        const shifted = character !== character.toLowerCase();
-        const second: KeyPress = shifted
-            ? { code: codeOf(character), cmd: true, shift: true }
-            : { code: codeOf(character), cmd: true };
-        return [first, second];
+        // The table's second press names a letter, a digit or the minus, which Monaco names too.
+        return [first, latexChordSecond(character) as KeyPress];
     }
 
     function actions(): EditorOwnAction[] {
@@ -397,11 +389,11 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         add('oculus.latex.closeEnvironment', t('latex.cmd_close_environment'), on.closeEnvironment);
         add('oculus.latex.wrapEnvironment', t('latex.cmd_wrap_environment'), on.wrapEnvironment);
         add('oculus.latex.selectSection', t('latex.cmd_select_section'), on.selectSection);
-        add('oculus.latex.item', t('latex.cmd_item'), on.item, [
+        add('oculus.latex.item', t('latex.cmd_item'), on.item, [first, LATEX_CHORD_SECONDS.item]);
+        add('oculus.latex.surround', t('latex.cmd_surround'), on.surround, [
             first,
-            { code: 'Enter', cmd: true }
+            LATEX_CHORD_SECONDS.surround
         ]);
-        add('oculus.latex.surround', t('latex.cmd_surround'), on.surround, chordKey(first, 'w'));
         for (const [character, command] of Object.entries(text)) {
             add(
                 `oculus.latex.text.${command}`,

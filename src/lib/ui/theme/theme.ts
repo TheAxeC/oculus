@@ -38,6 +38,25 @@ export const THEME_SHEETS = [themesCss, ...Object.values(riceSheets), vscodeCss]
 export const CRT_CLASS = 'crt';
 
 /**
+ * The body class a rice theme draws its buttons, chips and tags without brackets under: the
+ * Brackets toggle off. The rules that draw the brackets select `body.rice` without it.
+ */
+const RICE_PLAIN_CLASS = 'rice-plain';
+
+/**
+ * The body class a rice theme draws its interface in the default sans font under: the Monospace
+ * toggle off. The rules that set the monospace font select `body.rice` without it.
+ */
+const RICE_SANS_CLASS = 'rice-sans';
+
+/**
+ * The per-browser looks drawn beside a theme's own classes: the CRT overlay, and the two rice
+ * toggles, whose classes are put on only when the toggle is off, so a page that sets neither
+ * draws the rice look whole.
+ */
+export type BodyLooks = { crt: boolean; brackets: boolean; monospace: boolean };
+
+/**
  * The body class the wallpaper is switched on by. Every rule that makes a surface translucent hangs
  * off it, so taking it away returns the flat field in one step. No block in themes.css carries it:
  * it selects the rules the shell components declare for themselves.
@@ -82,18 +101,24 @@ export function applyWallpaper(
 
 /**
  * Put a theme on the document: `classes` is the theme's own body class string, the `class` of its
- * config/appearance.yml entry, and the CRT class joins it when the overlay is on. The tokens the
- * components paint text with are derived from the theme the two sheets resolve to and set on the
- * root element, since a stylesheet cannot compute them.
+ * config/appearance.yml entry, the CRT class joins it when the overlay is on, and the classes of
+ * the rice toggles join it when a toggle is off. The tokens the components paint text with are
+ * derived from the theme the two sheets resolve to and set on the root element, since a
+ * stylesheet cannot compute them.
  */
 export function applyTheme(
     document: Themeable,
     classes: string,
-    crt: boolean,
+    looks: BodyLooks,
     tokens: string = tokensCss,
     themes: string = THEME_SHEETS
 ): Record<string, string> {
-    const className = [classes, crt ? CRT_CLASS : '']
+    const className = [
+        classes,
+        looks.crt ? CRT_CLASS : '',
+        looks.brackets ? '' : RICE_PLAIN_CLASS,
+        looks.monospace ? '' : RICE_SANS_CLASS
+    ]
         .join(' ')
         .split(/\s+/)
         .filter((name) => name.length > 0)

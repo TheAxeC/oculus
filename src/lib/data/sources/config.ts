@@ -20,6 +20,8 @@ export { engineDir } from '../places/engine-dir.ts';
 export { collectionKeys, workspaceCollectionKeys } from '../snapshot/normalise.ts';
 
 export {
+    type DownloadAccount,
+    type DownloadService,
     type LocalConfig,
     DEFAULT_PORT,
     LITERATURE_KEYS,

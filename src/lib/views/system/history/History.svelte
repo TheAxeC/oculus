@@ -471,7 +471,7 @@
     }
 
     /* The terminal shape: the log follows the folder line, as every list does. */
-    :global(body.rice) .view {
+    :global(body.rice:where(:not(.rice-sans))) .view {
         font-family: var(--font-mono);
     }
 </style>

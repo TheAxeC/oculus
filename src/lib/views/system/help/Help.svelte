@@ -1,7 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Help opens the Help page's group, and is the first tab of that
-    // page's one pane, followed by the hub's documents (the `docs:` entries whose group is `help`)
-    // and the Apps guide, the Templates and the Palette pages, documents of oculus's own folder.
+    // page's one pane, followed by the Keyboard Shortcuts view (keys/Keys.svelte), the hub's
+    // documents (the `docs:` entries whose group is `help`) and the Apps guide, the Templates and
+    // the Palette pages, documents of oculus's own folder.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -92,7 +93,7 @@
         line-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
-    :global(body.rice) .view {
+    :global(body.rice:where(:not(.rice-sans))) .view {
         font-family: var(--font-mono);
     }
 </style>

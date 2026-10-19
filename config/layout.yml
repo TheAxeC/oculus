@@ -1,43 +1,30 @@
 # ===========================================================================
 # layout.yml
-# oculus's own configuration, how things are arranged: the rail's pages and what each page starts as, the view catalogue's groups, the board chrome, the tab-button rollups, the live count badges, and which title a surface draws.
+# oculus's own configuration, how things are arranged: the rail's pages and what each page starts as, the view catalogue's groups, the project boards, the views that draw a count, and which title a surface draws.
 # Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
 
-# The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
+# The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. Each page is also a group of the view catalogue, which lists the page's views and documents under the button's `label`, so a button renamed renames its group: `chord` is the group's one-letter keyboard prefix, the letter then a digit for the entry's place in the group, its views first and its documents after them, and `group_glyph` the glyph of the group's heading, one no view of the group carries, so the heading does not read as one of its entries. A page with no `chord` is counted under `direct_chord`, and one with no `group_glyph` takes the glyph of its first view; a chord that is not one lowercase letter, or a group glyph glyphs.yml does not hold, is a finding and is not used. The Settings view edits this list.
 rail:
-  - { label: "Focus", glyph: compass, page: focus }
-  - { label: "Projects", glyph: paper, page: projects }
-  - { label: "Incoming", glyph: email, page: incoming }
-  - { label: "Sessions", glyph: live, page: sessions }
-  - { label: "Explorer", glyph: folder, page: explorer }
-  - { label: "Academic Life", glyph: scout, page: academic }
-  - { label: "Pillars", glyph: pillar, page: pillars }
-  - { label: "Registries", glyph: venue, page: registries }
-  - { label: "Literature", glyph: journals, page: literature }
-  - { label: "Present", glyph: poster, page: present }
-  - { label: "Apps", glyph: app, page: apps }
-  - { label: "Help", glyph: question, page: help }
-  - { label: "System", glyph: sliders, page: views }
+  - { label: "Focus", glyph: compass, page: focus, chord: f, group_glyph: focus }
+  - { label: "Projects", glyph: paper, page: projects, chord: p, group_glyph: paper }
+  - { label: "Incoming", glyph: email, page: incoming, chord: e, group_glyph: email }
+  - { label: "Sessions", glyph: live, page: sessions, chord: m, group_glyph: live }
+  - { label: "Explorer", glyph: folder, page: explorer, chord: s, group_glyph: folder }
+  - { label: "Academic Life", glyph: scout, page: academic, chord: c, group_glyph: scout }
+  - { label: "Pillars", glyph: pillar, page: pillars, chord: l, group_glyph: book }
+  - { label: "Registries", glyph: venue, page: registries, chord: r, group_glyph: venue_dist }
+  - { label: "Literature", glyph: journals, page: literature, chord: b, group_glyph: journals }
+  - { label: "Present", glyph: poster, page: present, chord: t, group_glyph: conference }
+  - { label: "Apps", glyph: app, page: apps, chord: a, group_glyph: app }
+  - { label: "Help", glyph: question, page: help, chord: h, group_glyph: page }
+  - { label: "System", glyph: sliders, page: views, chord: y, group_glyph: settings }
 
 
-# The view catalogue's groups, in the order the Views view lists them: every group is one rail page, keyed by the page's arrangement key and labelled with its button's words, or the float of `floats:` below, so the catalogue lists each page's views under the page they sit on and the float's views under Float. A view names its group and position in its registration, a document of `docs:` below names its group, and a document of oculus's own folder that a page's arrangement shows as a tab is listed in that page's group by the label the tab carries, after the group's views and before its `docs:` documents. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
+# The view catalogue's groups that are no rail page, listed after the groups of the rail pages: the float of `floats:` below, so the catalogue lists the float's views under Float. A view names its group and position in its registration, a document of `docs:` below names its group (a rail page or a key here), and a document of oculus's own folder that a page's arrangement shows as a tab is listed in that page's group by the label the tab carries, after the group's views and before its `docs:` documents. A group with no registered views is not listed. `glyph` and `chord` are as a rail entry's `group_glyph` and `chord`.
 nav_groups:
-  focus: { label: "Focus", glyph: focus, chord: f }
   float: { label: "Float", glyph: split_right, chord: w }
-  projects: { label: "Projects", glyph: paper, chord: p }
-  incoming: { label: "Incoming", glyph: email, chord: e }
-  sessions: { label: "Sessions", glyph: live, chord: m }
-  explorer: { label: "Explorer", glyph: folder, chord: s }
-  academic: { label: "Academic Life", glyph: scout, chord: c }
-  pillars: { label: "Pillars", glyph: book, chord: l }
-  registries: { label: "Registries", glyph: venue_dist, chord: r }
-  literature: { label: "Literature", glyph: journals, chord: b }
-  present: { label: "Present", glyph: conference, chord: t }
-  apps: { label: "Apps", glyph: app, chord: a }
-  help: { label: "Help", glyph: page, chord: h }
-  views: { label: "System", glyph: settings, chord: y }
 
 
 # The one-letter prefix that reaches, by number, the views of the catalogue's groups that name no `chord` and the views no group holds: the letter, then a digit for the view's place among them. A value that is not one lowercase letter means no such prefix, and those views are reached from the catalogue alone.
@@ -168,6 +155,7 @@ arrangements:
       kind: pane
       view:
         - { view: help, pinned: true }
+        - { view: keys, pinned: true }
         - { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }, pinned: true }
         - { view: doc, state: { id: engine:docs/templates.md, path: docs/templates.md, engine: true, label: "Templates" }, pinned: true }
         - { view: doc, state: { id: engine:docs/data-map.md, path: docs/data-map.md, engine: true, label: "Data map" }, pinned: true }
@@ -234,68 +222,114 @@ floats:
   - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
-# Board (Projects / Personal / Archive / Coauthor / Software) chrome: list-view column headers and the per-board search placeholder.
-# The column words map positionally to the fixed span classes.
-board:
-  cols_project: [Project, Authors, Venue, Status, Focus, Next]
-  cols_archive: [Paper, Authors, Venue, Domain, Pillar, Funding]
-  cols_software: [Software, Authors, Venue, Domain, Pillar, Funding]
-  search:
-    projects: "Search title | eli5 | results | ideas | doc text ..."
-    personal: "Search personal | title | eli5 | next | doc text ..."
-    archive:  "Search archive | title | eli5 | outcome | doc text ..."
-    coauthor: "Search coauthor | title | eli5 | outcome | doc text ..."
-    software: "Search software | title | eli5 | tags | doc text ..."
-
-
-# Tab-button count rollups: the little N|N|N split on the Personal/Archive/Coauthor tab buttons (like the projects
-# active/idea one). Each segment = a bucket of type/chip keys; buckets are mutually exclusive and
-# cover every card (a card lands in the FIRST bucket whose keys its type or one of its chips matches).
-tab_split: { active: green, idea: violet }
-
-tab_rollup:
+# The project boards, by view id, in the order a project's tier is looked up in: a project opened from anywhere lands on the first board whose `tier` is its own, and on the first board when none is. Each board shows the projects of its `tier`, a word of `tiers` in config/catalogs/vocab.yml. `columns` are the columns of its list mode, each the `cell` it draws (title, authors, venue, status, focus, next, domain, pillar or funding) under the heading `label`, the cell's name when it has none. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the board's Aa toggle overrides it for the viewer; the full title is always on hover. `groups` are the board's groups of cards, used by the board's filter (the category facet, its dot in the group's colour), a card's group and the board's tab count, which draws each group's count in the group's colour beside the board's card count; a card lands in the first group whose `keys` hold its type or one of its status chips, and a card no group catches is in none. A key here that is no board view is never shown.
+boards:
   projects:
-    - { label: "in progress", keys: [active], color: "#16a34a" }
-    - { label: idea,          keys: [idea],   color: "#7c5cff" }
-  personal:
-    - { label: building,      keys: [building],                                color: "#d4a017" }
-    - { label: running,       keys: [running],                                 color: "#16a34a" }
-    - { label: paused,        keys: [paused],                                  color: "#9ca3af" }
-    - { label: finished,      keys: [finished],                                color: "#0ea5e9" }
-    - { label: idea,          keys: [nascent, scoping, de-risking, exploring], color: "#7c5cff" }
-  archive:
-    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-    - { label: outputs,       keys: [thesis, abstract, poster, tech-report, software], color: "#0ea5e9" }
-    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+    tier: projects
+    columns:
+      - { cell: title,   label: Project }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: status,  label: Status }
+      - { cell: focus,   label: Focus }
+      - { cell: next,    label: Next }
+    search: "Search title | eli5 | results | ideas | doc text ..."
+    label_mode: short
+    groups:
+      - { label: "in progress", keys: [active], color: "#16a34a" }
+      - { label: idea,          keys: [idea],   color: "#7c5cff" }
   coauthor:
-    - { label: "in progress", keys: [submitted, in-prep, exploring],                   color: "#16a34a" }
-    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-    - { label: outputs,       keys: [abstract, poster, tech-report, software],         color: "#0ea5e9" }
-    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+    tier: coauthor
+    columns:
+      - { cell: title,   label: Paper }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: domain,  label: Domain }
+      - { cell: pillar,  label: Pillar }
+      - { cell: funding, label: Funding }
+    search: "Search coauthor | title | eli5 | outcome | doc text ..."
+    label_mode: short
+    groups:
+      - { label: "in progress", keys: [submitted, in-prep, exploring],                   color: "#16a34a" }
+      - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+      - { label: outputs,       keys: [abstract, poster, tech-report, software],         color: "#0ea5e9" }
+      - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+  archive:
+    tier: archive
+    columns:
+      - { cell: title,   label: Paper }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: domain,  label: Domain }
+      - { cell: pillar,  label: Pillar }
+      - { cell: funding, label: Funding }
+    search: "Search archive | title | eli5 | outcome | doc text ..."
+    label_mode: short
+    groups:
+      - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+      - { label: outputs,       keys: [thesis, abstract, poster, tech-report, software], color: "#0ea5e9" }
+      - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+  personal:
+    tier: personal
+    columns:
+      - { cell: title,   label: Project }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: status,  label: Status }
+      - { cell: focus,   label: Focus }
+      - { cell: next,    label: Next }
+    search: "Search personal | title | eli5 | next | doc text ..."
+    label_mode: short
+    groups:
+      - { label: building,      keys: [building],                                color: "#d4a017" }
+      - { label: running,       keys: [running],                                 color: "#16a34a" }
+      - { label: paused,        keys: [paused],                                  color: "#9ca3af" }
+      - { label: finished,      keys: [finished],                                color: "#0ea5e9" }
+      - { label: idea,          keys: [nascent, scoping, de-risking, exploring], color: "#7c5cff" }
+  software:
+    tier: software
+    columns:
+      - { cell: title,   label: Software }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: domain,  label: Domain }
+      - { cell: pillar,  label: Pillar }
+      - { cell: funding, label: Funding }
+    search: "Search software | title | eli5 | tags | doc text ..."
+    label_mode: short
+    groups: []
 
 
-# Live-count badges on collection nav tabs: `match` = the entry statuses that count, `label` = the tooltip word.
-# The badge takes the colour of the STATUS it counts (vocab.yml `status_palette:`), so `in prep` on the
-# Funding tab is the same violet as an in-prep chip on a card. Set `tone:` to force an urgency class
-# (`red` / `amber` / `green`) instead, used where a count means "act", not "here is how many".
-nav_live:
-  joint-work: { match: [exploring], label: exploring }
-  funding:        { match: [in-prep, "in prep", submitted], label: undecided }
-  education:      { match: [ongoing], label: ongoing }
-  tasks:          { match: [todo, doing], label: open, tone: amber }
+# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts by its `groups` in `boards` above, and gives the rail the count of its first group in that group's colour, or its cards when it has no groups. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in prep` on the Funding tab is the same violet as an in-prep chip on a card, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/behavior.yml, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
+counts:
+  projects:     { tab: true, rail: true }
+  coauthor:     { tab: true, rail: true }
+  personal:     { tab: true, rail: true }
+  archive:      { tab: true, rail: false }
+  software:     { tab: true, rail: false }
+  inbox:        { tab: true, rail: true }
+  leads:        { days: 14, tab: true, rail: false }
+  calendar:     { tab: true, rail: false }
+  repositories: { tab: true, rail: true }
+  problems:     { tab: true, rail: true }
+  findings:     { tab: true, rail: true }
+  audit:        { tab: true, rail: true }
+  processes:    { tab: true, rail: false }
+  hpc:          { tab: true, rail: false }
+  session-list: { tab: true, rail: true }
+  applications: { tab: true, rail: true }
+  funding:      { match: [in-prep, "in prep", submitted], label: undecided, tab: true, rail: true }
+  education:    { match: [ongoing], label: ongoing, tab: true, rail: true }
+  joint-work:   { match: [exploring], label: exploring, tab: true, rail: true }
+  tasks:        { match: [todo, doing], label: open, tone: amber, tab: true, rail: true }
+  events:       { match: [upcoming], label: upcoming, tab: true, rail: true }
 
 
-# Project-title label mode per surface: `short` = a manifest's `short:` if set, else the full title (NO id is
-# ever shown); `full` = always the full title. Projects + Archive also have a live Aa toggle in the UI that
-# overrides their default below (persisted per browser). The full title is always on hover.
+# Project-title label mode of the surfaces that are no board: `short` = a manifest's `short:` if set, else the full title (no id is ever shown); `full` = always the full title. The full title is always on hover. A board's label mode is its `label_mode` in `boards` above.
 focus_label_mode: short      # Focus board cards and the week's ticker lines
-
-project_label_mode: short    # Projects, Personal and Software tab cards / list rows (live Aa toggle overrides)
-
-archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle overrides)
 
 map_label_mode: short        # Map tab nodes
 
 
-# Documents of the hub: one entry inside its group in the view catalogue, listed after the group's views, opening the `doc` view over api/docs, and a tab of the page its group names (see `arrangements` above). `path` is relative to the hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line. The engine lists none: a hub lists its documents in .oculus/config.yml, and this key is the hub list's `docs`.
+# Documents of the hub: one entry inside its group in the view catalogue, listed after the group's views, opening the `doc` view over api/docs, and a tab of the page its group names (see `arrangements` above). `path` is relative to the hub, `group` is the `page` of a `rail:` entry or a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line. The engine lists none: a hub lists its documents in .oculus/config.yml, and this key is the hub list's `docs`.
 docs: []

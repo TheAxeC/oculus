@@ -12,7 +12,7 @@
 
 import { fields } from '../../../data/helpers/guards.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
-import { CAREER_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
@@ -176,7 +176,7 @@ export function writtenFile(
         }
         case 'host':
         case 'career':
-            return inHub(text(merged.career_file) || CAREER_FILE, look);
+            return inHub(text(merged.career_file), look);
         case 'feed-field':
         case 'feed-delete': {
             const feed = text(body.feed);

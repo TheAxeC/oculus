@@ -29,13 +29,7 @@ import {
 } from '../../prose/latex.ts';
 import type { LintId } from '../../model/index.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
-import {
-    catalogOf,
-    configItems,
-    listedSources,
-    type CatalogEntry,
-    type FieldSpec
-} from './catalog/options.ts';
+import { catalogOf, sourcedItems, type CatalogEntry, type FieldSpec } from './catalog/options.ts';
 import { valueProblem, type RuleLists, type ValueProblem } from './catalog/value-rule.ts';
 
 /**
@@ -82,12 +76,7 @@ export function noRule(key: string): Error {
 
 /** The items of the sources the entry names, together; null while one is not held. */
 function listsOf(entry: CatalogEntry, config: Record<string, unknown>): RuleLists {
-    let sourced: string[] | null = [];
-    for (const source of listedSources(entry)) {
-        const items = configItems(source, config);
-        sourced = items === null || sourced === null ? null : [...sourced, ...items];
-    }
-    return { sourced };
+    return { sourced: sourcedItems(entry, config) };
 }
 
 /**
@@ -213,7 +202,7 @@ export function settingReader(
 
 /** The Live HPC settings of config/behavior.yml. */
 export type SlurmSettings = {
-    /** The key of the cluster entry of registries/resources.yml the poller queries. */
+    /** The key of the cluster entry of the resources registry the poller queries. */
     resource: string;
     days: number;
     pollMin: number;

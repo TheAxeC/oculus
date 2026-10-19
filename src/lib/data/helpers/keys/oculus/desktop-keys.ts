@@ -16,13 +16,16 @@ import {
     navigatePresses,
     SAVE_PRESS,
     SEARCH_PRESSES,
-    SHEET_CHARACTER,
+    SHORTCUTS_CHARACTER,
     type Press
 } from './page-keys.ts';
 import { KEY_ROWS, type Press as PalettePress } from './palette-table.ts';
 
-/** The accelerator of each of the menu's own items, in Electron's syntax. */
-const OWN = {
+/**
+ * The accelerator of each of the menu's own items, in Electron's syntax, which the Keyboard
+ * Shortcuts view lists under the desktop app.
+ */
+export const OWN_ACCELERATORS = {
     settings: 'Cmd+,',
     newWindow: 'Cmd+Shift+N',
     closeWindow: 'Cmd+Shift+W',
@@ -37,6 +40,17 @@ const OWN = {
     quit: 'Cmd+Q',
     minimize: 'Cmd+M'
 } as const;
+
+/**
+ * The menu's items that are roles whose key the menu sets on macOS alone (menu-template.ts
+ * `roleKey`); off macOS Electron chooses their keys itself.
+ */
+export const MAC_ROLE_ITEMS: readonly (keyof typeof OWN_ACCELERATORS)[] = [
+    'hide',
+    'hideOthers',
+    'quit',
+    'minimize'
+];
 
 /**
  * The key a page command is bound to: a press of the page's tables, a palette key or a character.
@@ -74,7 +88,7 @@ function boundKey(command: MenuCommand, mac: boolean): BoundKey | null {
         'debug-toggle': press(DEBUG_PRESSES.toggle),
         'next-tab': press(CYCLE_PRESSES.next),
         'previous-tab': press(CYCLE_PRESSES.previous),
-        'keyboard-shortcuts': { kind: 'character', character: SHEET_CHARACTER }
+        'keyboard-shortcuts': { kind: 'character', character: SHORTCUTS_CHARACTER }
     };
     return keys[command] ?? null;
 }
@@ -127,8 +141,8 @@ export function commandKey(command: MenuCommand, mac: boolean): string | null {
     return mac && !accelerator.command ? null : accelerator.text;
 }
 
-/** A page command that is none of the menu's own items, which carry their keys in OWN. */
-type PageCommand = Exclude<MenuCommand, keyof typeof OWN>;
+/** A page command that is none of the menu's own items, whose keys are OWN_ACCELERATORS. */
+type PageCommand = Exclude<MenuCommand, keyof typeof OWN_ACCELERATORS>;
 
 /** The keys the menu takes on macOS for the page commands, by command. */
 function pageAccelerators(): Partial<Record<PageCommand, string>> {
@@ -144,8 +158,8 @@ function pageAccelerators(): Partial<Record<PageCommand, string>> {
  * Every key the menu takes on macOS: its own items' and those of the page commands it shows, in
  * Electron's syntax.
  */
-export const ACCELERATORS: typeof OWN & Partial<Record<PageCommand, string>> = {
-    ...OWN,
+export const ACCELERATORS: typeof OWN_ACCELERATORS & Partial<Record<PageCommand, string>> = {
+    ...OWN_ACCELERATORS,
     ...pageAccelerators()
 };
 

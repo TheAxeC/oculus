@@ -1,105 +1,76 @@
-<script module lang="ts">
-    import { z } from 'zod';
-    import { optionalTextShape } from '$lib/data/shapes/shapes';
-
-    /** How a dataset is retrieved: the method as text, and the notes with spaces collapsed. */
-    const retrievalShape = z.object({
-        method: optionalTextShape,
-        notes: z
-            .string()
-            .transform((words) => words.replace(/\s+/g, ' ').trim())
-            .catch('')
-    });
-</script>
-
 <script lang="ts">
-    // Layer 3, Data view partial. One dataset card, its registry metadata, recovery, project users,
-    // Edit in File and Delete. The dataset's name opens its page. The server supplies the recovery
-    // command and working directory.
+    // Layer 3, Data view partial. One dataset card: its registry metadata, its folder, its notes,
+    // how it comes back, project users, Edit in File and Delete. The dataset's name opens its page.
+    //
+    // A set whose sources are all downloads has the Recover control, which opens the dataset's
+    // Recover view beside this one for its own hub and key. A source of the kind `library`,
+    // `request` or `derived` is stated on the card instead: the library call, the contact to ask,
+    // or the sets it is built from and the script that builds it; a web address in it, a contact's
+    // form among them, is a link. The description and the notes are inline Markdown, which links
+    // its addresses itself.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
-    import { recordActions } from '$lib/views/shared/forms/entry/entry-actions';
-    import { blockedBy } from '$lib/views/shared/forms/entry-file';
+    import {
+        createRecordCard,
+        type RecordCardProps
+    } from '$lib/views/shared/forms/registry/record-card.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import { accessTone, type Dataset } from '$lib/state/sources/registries/datasets';
+    import {
+        accessTone,
+        recoverKey,
+        statedSource,
+        statedWords,
+        type Dataset
+    } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
     import { pageView } from '$lib/state/forms/page-entry';
-    import type { ViewSource } from '$lib/state/sessions/view-source';
-    import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
     const {
-        layout: { openView },
-        selection: { select },
-        source: { unsavedFile },
-        terminals: { recoverDataset, showTerminal }
+        layout: { openView, openBeside },
+        fs: { primary }
     } = client;
 
-    type Props = {
-        dataset: Dataset;
-        /** Whether keyboard navigation has selected this dataset. */
-        cursor: boolean;
-        projects: Project[];
-        entry: Entry | null;
-        schema: SchemaField[] | undefined;
-        /** The registry file, which Edit in File opens; null when the configuration names none. */
-        file: ViewSource | null;
-        fault: IdentityFault | undefined;
-        onsaid: (said: string) => void;
-    };
+    type Props = RecordCardProps & { dataset: Dataset };
 
     let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
-    let recovering = $state(false);
 
-    /** True while the question before a delete is open. */
-    let deleting = $state(false);
+    /** Edit in File and Delete for a dataset the collection file holds. */
+    const card = createRecordCard(client, () => ({ file, entry, schema, fault, onsaid }));
 
-    /** Why the controls that write are disabled, '' when they are not. */
-    const blocked = $derived(
-        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
-    );
-
-    const retrieval = $derived(
-        readOr(retrievalShape, dataset.retrieval, { method: undefined, notes: '' })
-    );
-    const method = $derived(retrieval.method);
-    const notes = $derived(retrieval.notes);
+    /** The kinds of the dataset's download sources, each once, in the file's order. */
+    const kinds = $derived([
+        ...new Set(dataset.retrieval.filter((one) => !statedSource(one)).map((one) => one.kind))
+    ]);
+    /** The sources the card states: a library call, a contact, or what the set is built from. */
+    const statedSources = $derived(dataset.retrieval.filter(statedSource));
+    const notes = $derived(dataset.notes ?? '');
 
     /**
-     * The card's controls, drawn while the card is hovered or holds the focus: Edit in File for a
-     * dataset the collection file holds, and the recovery, which is not offered again while one is
-     * starting.
+     * The card's controls, drawn while the card is hovered or holds the focus: Edit in File and
+     * Delete for a dataset the collection file holds, and Recover for a set whose sources are all
+     * downloads.
      */
     const actions = $derived.by((): CardAction[] => {
-        const record: CardAction[] = recordActions(
-            { client, file, entry, schema, fault, onsaid },
-            blocked,
-            () => {
-                deleting = true;
-            }
-        );
-        // The Recover control runs the `recover_command` of the dataset's own hub, so a dataset
-        // whose hub sets none has no such control.
-        if (dataset.recover !== true) return record;
-        return record.concat({
+        if (!dataset.recover) return card.actions;
+        return card.actions.concat({
             id: 'recover',
             label: t('data.recover'),
-            title: t('data.recover_tip'),
+            title: t('data.recover_title'),
             glyph: 'refresh',
-            active: recovering,
             onclick: recover
         });
     });
@@ -111,17 +82,14 @@
         openView(page.view, page.state);
     }
 
-    async function recover(): Promise<void> {
-        if (recovering) return;
-        recovering = true;
-        const answer = await recoverDataset(dataset.id);
-        recovering = false;
-        if (!answer.ok) {
-            onsaid(t('data.recover_failed', answer.error));
-            return;
-        }
-        select(answer.id);
-        showTerminal(answer.id);
+    /** The dataset's Recover view beside this one, for the hub the dataset is read from. */
+    function recover(): void {
+        const key = recoverKey(dataset);
+        openBeside('recover', {
+            id: key,
+            hub: dataset.root ?? primary() ?? '',
+            label: t('data.recover_tab', key)
+        });
     }
 </script>
 
@@ -152,7 +120,7 @@
         {/if}
 
         <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
-        {#if dataset.size || dataset.hpcPath || method}
+        {#if dataset.size || dataset.path || kinds.length > 0}
             <div class="meta">
                 {#if dataset.size}
                     {@const words = `${t('data.size')} ${dataset.size}`}
@@ -160,14 +128,14 @@
                         <Tag label={words} />
                     </Tooltip>
                 {/if}
-                {#if dataset.hpcPath}
-                    {@const words = `${t('data.hpc')} ${dataset.hpcPath}`}
+                {#if dataset.path}
+                    {@const words = `${t('data.path')} ${dataset.path}`}
                     <Tooltip text={words}>
                         <Tag label={words} />
                     </Tooltip>
                 {/if}
-                {#if method}
-                    {@const words = `${t('data.fetch')} ${method}`}
+                {#if kinds.length > 0}
+                    {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
                     <Tooltip text={words}>
                         <Tag label={words} />
                     </Tooltip>
@@ -180,6 +148,13 @@
                 <Tag label={dataset.modality} />
             </div>
         {/if}
+
+        {#each statedSources as source, at (at)}
+            <div class="note">
+                <Glyph name="note_back" />
+                <span><LinkedText text={statedWords(source)} /></span>
+            </div>
+        {/each}
 
         {#if notes !== ''}
             <div class="note">
@@ -205,8 +180,8 @@
     </Card>
 </div>
 
-{#if deleting && entry !== null}
-    <DeleteAsk collection="data" id={entry.id} {onsaid} onclose={() => (deleting = false)} />
+{#if card.deleting && entry !== null}
+    <DeleteAsk collection="data" id={entry.id} {onsaid} onclose={card.close} />
 {/if}
 
 <style>

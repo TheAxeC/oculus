@@ -25,8 +25,9 @@
 //
 // A command goes to the window the reader is in when it is one of the app's entries, so Close Tab
 // and Save act where the reader is, and to the main window focused last when no window is focused;
-// Settings and Help go to the main window focused last; while a window that is none of the entries
-// is focused, a presentation's audience window or an undocked DevTools window, no command is sent
+// Settings, Help and Keyboard Shortcuts go to the main window focused last; while a window that is
+// none of the entries is focused, a presentation's audience window or an undocked DevTools window,
+// no command is sent
 // (`commandWindow`). Open in Browser opens the server of the entry the reader is in, else of the
 // main window focused last, in the default browser (`openInBrowser`). Open Recent lists the recent
 // workspaces the page last sent, a missing file drawn disabled, and sends `open-recent` with the
@@ -54,7 +55,7 @@ export type MenuActions = {
 };
 
 /** The commands that go to the main window focused last, wherever the reader is. */
-const MAIN_ONLY: readonly MenuCommand[] = ['settings', 'help'];
+const MAIN_ONLY: readonly MenuCommand[] = ['settings', 'help', 'keyboard-shortcuts'];
 
 /**
  * The window focused, as the menu reads it: one of the app's entries, no window, or a window that
@@ -79,8 +80,8 @@ export function focusedOf<W, E extends { win: W }>(
 
 /**
  * The window a command goes to: none while a window that is not one of the app's entries is
- * focused, the main window focused last for Settings and Help or with no window focused, else the
- * entry the reader is in.
+ * focused, the main window focused last for Settings, Help and Keyboard Shortcuts or with no
+ * window focused, else the entry the reader is in.
  */
 export function commandWindow<W>(
     name: MenuCommand,

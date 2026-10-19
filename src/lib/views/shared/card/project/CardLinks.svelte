@@ -14,14 +14,15 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
+    import { softwareTiers, type BoardTag, type LinkedItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
     const {
-        layout: { openView }
+        layout: { openView },
+        selectors: { configMap }
     } = client;
 
     /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
@@ -75,7 +76,8 @@
         {
             key: SOFTWARE,
             label:
-                item.project?.tier === 'software'
+                item.project?.tier !== undefined &&
+                softwareTiers(configMap()).includes(item.project.tier)
                     ? t('project.card.software_papers')
                     : t('project.card.software'),
             glyph: t('project.card.software_glyph'),

@@ -173,7 +173,7 @@
      * state/workbench/navigation's, which the Views catalogue reads the same keys through.
      */
     const merged = $derived(config()?.config);
-    const groups = $derived(readGroups(merged?.nav_groups));
+    const groups = $derived(readGroups(merged));
     const directChord = $derived(readChord(merged?.direct_chord));
     const docs = $derived(readDocs(merged?.docs));
     const pages = $derived(railPages(merged));
@@ -273,6 +273,7 @@
             'git',
             'files',
             'hpc',
+            'recover',
             'calendar',
             'inbox',
             'usage',
