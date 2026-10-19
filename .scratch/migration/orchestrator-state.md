@@ -171,6 +171,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 175 (2026-10-19, how the manifest's status-chip picker names its words, raised from O38's worktree while it builds). O38 Part 13 item 1 merges `status_legend` into `statuses`. The picker of `status.chips` in `config/schemas/manifest-schema.yml` read `from: vocab.status_legend` on the base (the 14 legend words); `statuses` now also holds the collection statuses, which are no chips. The builder wrote `from: vocab.statuses.label` (`manifest-schema.yml:42`, `vocabSource` in `src/lib/data/shapes/vocab-keys.ts:45`): a `vocab.` source with a field after a dot offers the keys whose row holds that field, so the picker offers the statuses that carry a `label`, the same 14 words as today. The brief names no such form, and the builder's own notes flag it as an open item. (a) Keep it: a status is a chip because its row has a label; pro: no new key, same words today; con: the meaning is implicit, so a collection status given a label later turns into a chip with no word saying so. (b) A flag `chip: true` on the 14 legend rows of `statuses` and `from: vocab.statuses.chip`, the same dot form reading a flag that names what it decides, as Part 14 does for every other status decision; pro: explicit, matches Part 14; con: one more flag on 14 rows. (a) is the lazy option. Recommendation: (b).
+
 
 
 
