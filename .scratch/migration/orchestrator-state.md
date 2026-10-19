@@ -219,7 +219,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Open item 172 (2026-10-19, the suggest list's descriptions): (a), in O38 Part 15 item 3: the panel opens shown and the reader's choice is kept across reloads (Axel). (c) was the lazy option.
 - Open item 173 (2026-10-19, a setting for the suggest panel): (a), in O38 Part 15 item 3: a toggle `editor.suggest_details` in `config/behavior.yml`, default true, in Settings under the editor heading, the reader's choice kept over it (Axel). (b) was the lazy option.
 - Open item 174 (2026-10-19, a Kaggle token row in `local.yml`): (a), in O38 Part 1 item 3 and case 19: `kaggle-token` is a fourth known service of the `downloads:` rows, secret only, shown in Settings as set and not used by Recover, which logs in with the `kaggle` row (Axel). (c) was the lazy option.
-- Open item 175 (2026-10-19, the status-chip source): (b), in O38 Part 13 item 1: `chip: true` on the 14 legend words of `statuses`, and `from: vocab.statuses.chip` in `manifest-schema.yml`'s status-chip picker; a status is never a chip by having a label (Axel). (a) was the lazy option.
+- Open item 175 (2026-10-19, the status-chip source): (b), in O38 Part 13 item 1: `chip: true` on the 33 legend words of `statuses`, and `from: vocab.statuses.chip` in `manifest-schema.yml`'s status-chip picker; a status is never a chip by having a label (Axel). (a) was the lazy option.
 
 - Open item 166 (2026-10-19, oculus config consolidation): (1) to (6) yes, in O38: `statuses`, `types`, the rail entries carrying their catalogue group, `boards`, the hub's own career words moved to the hub, `focus` in `behavior.yml`; no behaviour changed (Axel).
 
