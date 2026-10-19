@@ -158,6 +158,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 159 (2026-10-19, O38, the new hub's local.yml out of git): Make Folder a Hub will write `.oculus/local.yml`, which holds secrets, into a folder that may be a git repository. (a) The make also writes `.oculus/.gitignore` holding `local.yml`, when no such file exists. Pros: works whether or not the folder is a repository and whatever its root `.gitignore` says; touches no file of the owner's. Cons: one more file in `.oculus/`. (b) The make appends `/.oculus/local.yml` to the folder's root `.gitignore`, creating it when missing. Pros: one ignore file, as this hub has (`.gitignore:155`). Cons: writes a file the owner keeps by hand; a folder with no repository gets a root file it does not need. (c) The make writes nothing for git and the template's comment says to keep the file out of git. Cons: a secret can be committed by the first `git add -A`; the lazy option. Recommended (a).
 
 
 
