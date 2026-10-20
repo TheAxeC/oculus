@@ -4765,3 +4765,17 @@ Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md`
 - Not chosen: a repository picker in the form, which the bar already makes needless; Edit and Delete only on entries the form wrote, the lazy option, which needs a marker in the file.
 
 Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
+
+## Z963 (2026-10-20, O46's review, the orchestrator, automode): the names of the three appearance toggles
+
+- Chosen: `rice.icons`, `rice.brackets` and `rice.monospace`, a group like `terminal`, `wallpaper` and `crt`, since a top-level `icons` collides with the top key `icons:` of `config/catalogs/icons.yml` in the merged map; the pages name the built paths.
+- Not chosen: renaming the icons catalog's top key, a change to a catalog every view reads that O46 does not own; leaving the brief's names on the pages, the lazy option.
+
+Where it applies: O46, repair round 1 (`agents/briefs/O46-round1.md`). Booked in `plan.md` Rulings.
+
+## Z964 (2026-10-20, O46's review, the orchestrator, automode): scheduled commands and the approval of their chain
+
+- Chosen: Schedule... on every plain entry of the repository's `.oculus/commands.yml` (where the saved commands went), not on typed entries or found commands, which never had it; the Schedule... dialog lists the chain and its Save approves it as the command form's Save does; a due run of a chain not approved stays refused, with a message naming Edit and Schedule...; `HELP.md` says so.
+- Not chosen: a schedule that runs an unapproved chain, which undoes the approval rule; stating the consequence in the report alone, the lazy option.
+
+Where it applies: O46, repair round 1 (`agents/briefs/O46-round1.md`). Booked in `plan.md` Rulings.
