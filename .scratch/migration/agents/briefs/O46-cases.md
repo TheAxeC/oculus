@@ -39,3 +39,14 @@ Axel's addition to O46: the whole themes list, and every other large value, can 
 5. A folded row keeps its Modified bar, its gear menu, its message lines and its default line; Reset on it works without unfolding.
 
 Cases added: the `themes` row with its shipped themes starts folded, shows its count, unfolds on a press and on Enter, and folds again; a reload keeps it unfolded; a row of three entries starts unfolded; a search for a theme's name unfolds `themes` and clearing it folds it again; Reset on a folded `themes` row writes as before. Each is a test of the view or the state layer, seen failing on the unchanged tree first. The paths are already in the write list (`src/lib/views/system/workbench/`, `src/lib/state/system/config/`).
+
+## A block surface lines up with the boxes beside it (Z960)
+
+Axel's look at the Focus board: the Quick add box is wider than the Tasks box and the awaiting box around it. Measured on the page: all three boxes span 65 to 1118.8 px, and Quick add's surface paints 8 px past each side, because a block `Surface` paints its layer at `inset: -4px -8px` (`src/lib/ui/frame/Surface.svelte:80-88`), while a fitted one (the awaiting box) paints at `inset: 0`. 51 block Surfaces in `src/lib` do the same (`grep -rn '<Surface>' src/lib | wc -l`), Data's intro among them.
+
+The rule:
+1. Over a wallpaper, a block `Surface`'s layer is `inset: -4px 0`, inside its column, and the Surface pads its content `0 8px` (only under `body.wall`), so the words keep their margin of surface and the layer's edges line up with the cards, lanes and fitted boxes beside it. `inline` and `fitted` are unchanged. Without a wallpaper nothing changes (`display: contents`, no padding).
+2. Surface's head comment says what holds: the layer lies inside the column, and over a wallpaper the content sits 8 px further in than without one.
+3. Focus's Quick add (`QuickAdd.svelte:85`) and its said line (`Focus.svelte:191`) then line up with Tasks and the awaiting box with no change of their own; read them, and change them only if they do not.
+
+Cases: on the Focus board over a wallpaper, Quick add's painted layer spans the same left and right edges as the Tasks section and the awaiting box; Data's intro and count lines span the same edges as its cards; without a wallpaper every one of those parts lays out as on the unchanged tree. `src/lib/ui/frame/Surface.svelte` and `src/lib/views/boards/focus/` join "Paths this step writes".

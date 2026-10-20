@@ -4744,3 +4744,10 @@ Where it applies: O44. Booked in `plan.md` Rulings.
 - Not chosen: a list or family in `settings:` replacing oculus's value whole, which reverses ruling 180's point 3 and is Axel's to rule; decision 4 as written with Hide and Remove refused on a shipped entry, the lazy option, which breaks two working features and G96's case.
 
 Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
+
+## Z960 (2026-10-20, Axel's look at Focus, the orchestrator, automode): a block surface lines up with the boxes beside it
+
+- Chosen: a block `Surface` paints inside its column (`inset: -4px 0`) and, over a wallpaper only, pads its content 8 px left and right, so its edges line up with the cards, lanes and fitted boxes beside it in every view; without a wallpaper nothing changes; Focus's Quick add and its said line are then aligned with Tasks and the awaiting box.
+- Not chosen: fitting Quick add and the said line alone, the lazy option, which leaves the other 49 block Surfaces (Data's intro among them) 8 px wider than the cards beside them; keeping the bleed and widening cards to match, which moves every card.
+
+Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
