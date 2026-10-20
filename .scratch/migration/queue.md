@@ -1,16 +1,16 @@
-In flight (2 of 6 slots in use): O44 and O45, side by side (ruling O44 and O45 in parallel), each prepared and its builder started. Next: O46, then O39.
+In flight (1 of 6 slots in use): O46, repair round 1. Next: O39.
 
-Queued, in order (2 steps):
-- O46 (every key the editor completes carries its description: the catalog files' keys and the groups of dotted settings): next, after O45.
+Queued, in order (1 step):
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O46.
 
 In flight:
-- O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes; the header toolbar's flip; the Focus row sizes): building.
-- O45 (Recover places one folder of an archive, the key `folder`; brats2020's entry takes the training folder): repair round 1.
+- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; surfaces aligned and faded cards lifted on hover; Add Command... writing the repository's `.oculus/commands.yml`): repair round 1, then the review over the round and /land with the look on TEST.
 
 Owed looks: none.
 
 Landed, newest first:
+- O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.
+- O45 (Recover places one folder of an archive, the key `folder`), 2026-10-20, 323841f59.
 - O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`), 2026-10-20, 5a6cb4a70.
 - O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 00bdbdd4a.
 - O40 (O37's open look defects), 2026-10-18, 2eab73263.
