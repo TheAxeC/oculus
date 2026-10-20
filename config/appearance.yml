@@ -74,7 +74,7 @@ wallpaper:
   dim: 0.6      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
   blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy
   themes: all   # `rice` = terminal themes only | `all` = light and dark too
-  panel_opacity: 0.75   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
+  panel_opacity: 0.8   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
   popover_opacity: 0.97  # dropdowns (Collections / More / theme) - they float OVER a panel, so at
                            # `panel_opacity` you read them through two translucent layers. Unset =
                            # three quarters of the way from `panel_opacity` to solid.
