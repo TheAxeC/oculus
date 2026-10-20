@@ -115,9 +115,15 @@
         text-transform: uppercase;
     }
 
-    /* Over a wallpaper the surface goes translucent, as every other card surface does. */
+    /* Over a wallpaper the surface goes translucent, as every other card surface does; inside the
+       slide's frame (screen/Stage.svelte), the one translucent layer, it paints nothing. */
     :global(body.wall) .idea {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .idea {
+        background: transparent;
+        backdrop-filter: none;
     }
 </style>

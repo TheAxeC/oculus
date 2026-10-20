@@ -41,10 +41,14 @@
     //
     // Each session working in the folder is views/shared/sessions/SessionRow.svelte, the row the
     // entry page draws for the sessions in its folder too.
+    //
+    // Over a wallpaper the card is its own surface, and the status line and each section after it
+    // are read off a `Surface`, so a document's code blocks paint no surface of their own there.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Latex from './Latex.svelte';
@@ -112,7 +116,9 @@
             <Empty message={t('project.unknown', id)} glyph={t('project.none_glyph')} />
         {:else}
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
             <ProjectCard
                 {item}
@@ -129,42 +135,49 @@
 
             <Latex {id} />
 
-            <section class="block">
-                <h3 class="heading">{t('project.documents')}</h3>
-                {#if absent.length > 0}
-                    <div class="absent" data-absent-docs>
-                        {#each absent as doc (doc.name)}
-                            <Tag label={doc.label} />
-                        {/each}
-                    </div>
-                {/if}
-                {#if shown === null}
-                    <Empty message={t('project.no_documents')} glyph={t('project.none_glyph')} />
-                {:else}
-                    <Segment
-                        label={t('project.documents')}
-                        items={documents}
-                        value={chosen}
-                        onchange={(name: string) => choose(name)}
-                    />
-                    <Markdown
-                        doc={shown}
-                        loading={t('project.doc_loading')}
-                        failed={t('project.doc_failed', shown.error)}
-                    />
-                {/if}
-            </section>
+            <Surface>
+                <section class="block">
+                    <h3 class="heading">{t('project.documents')}</h3>
+                    {#if absent.length > 0}
+                        <div class="absent" data-absent-docs>
+                            {#each absent as doc (doc.name)}
+                                <Tag label={doc.label} />
+                            {/each}
+                        </div>
+                    {/if}
+                    {#if shown === null}
+                        <Empty
+                            message={t('project.no_documents')}
+                            glyph={t('project.none_glyph')}
+                        />
+                    {:else}
+                        <Segment
+                            label={t('project.documents')}
+                            items={documents}
+                            value={chosen}
+                            onchange={(name: string) => choose(name)}
+                        />
+                        <Markdown
+                            doc={shown}
+                            loading={t('project.doc_loading')}
+                            failed={t('project.doc_failed', shown.error)}
+                        />
+                    {/if}
+                </section>
+            </Surface>
 
-            <section class="block">
-                <h3 class="heading">{t('project.sessions')}</h3>
-                {#if rows.length === 0}
-                    <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
-                {:else}
-                    {#each rows as entry (entry.id)}
-                        <SessionRow {entry} {now} />
-                    {/each}
-                {/if}
-            </section>
+            <Surface>
+                <section class="block">
+                    <h3 class="heading">{t('project.sessions')}</h3>
+                    {#if rows.length === 0}
+                        <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
+                    {:else}
+                        {#each rows as entry (entry.id)}
+                            <SessionRow {entry} {now} />
+                        {/each}
+                    {/if}
+                </section>
+            </Surface>
         {/if}
     </div>
 </Pane>

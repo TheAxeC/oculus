@@ -7,9 +7,11 @@
     //
     // The Pillars, Domains, Data and Venues views draw it the same way, so it lives here once. What
     // was last said belongs to the view's registry file (registry-file.svelte.ts), which a card of
-    // the view also writes.
+    // the view also writes. Over a wallpaper each of the three is read off a `Surface`: the intros
+    // through Intro, the said line through its own.
 
     import type { Snippet } from 'svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
@@ -38,7 +40,9 @@
 {/if}
 {@render intro()}
 {#if file.said !== ''}
-    <p class="said" class:spaced>{file.said}</p>
+    <Surface>
+        <p class="said" class:spaced>{file.said}</p>
+    </Surface>
 {/if}
 {#if file.asking !== null}
     <AddAsk ask={file.asking} onclose={file.closeAsk} />

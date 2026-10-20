@@ -64,13 +64,6 @@
         loading: string;
         /** The line drawn when the read failed, already carrying the reason. */
         failed: string;
-        /**
-         * Whether the document keeps a surface of its own under a fenced block over a wallpaper,
-         * which a view drawing it on a box that paints nothing (the project view) needs. A view
-         * whose box is a translucent surface already (a tinted pane, the preview's frame) says
-         * false, since a second layer reads as a nearly solid one.
-         */
-        surface?: boolean;
         /** Whether a relative link to a Markdown file opens that document in a tab. */
         follow?: boolean;
         /** The formulas the renderer held apart from `doc.html` (blockMarkdownParts). */
@@ -79,7 +72,7 @@
         onlink?: (href: string) => boolean;
     };
 
-    let { doc, loading, failed, surface = true, follow = false, slots, onlink }: Props = $props();
+    let { doc, loading, failed, follow = false, slots, onlink }: Props = $props();
 
     /**
      * The client's stores, which Open Image opens the file view through. A document drawn outside
@@ -235,7 +228,7 @@
          box only hears it bubble up, so the box itself takes no key and no focus. -->
     <ContextMenu label={t('ui.prose_menu')} read={pointed} onpick={picked}>
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="doc" class:surfaced={surface} onclick={pressed} bind:this={box}>
+        <div class="doc" onclick={pressed} bind:this={box}>
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
             {@html sanitise(doc.html, slots)}
         </div>
@@ -320,12 +313,12 @@
         border-radius: var(--radius-sm);
     }
 
-    /* Over a wallpaper a document drawn on a surface (a tinted pane, the source preview's frame)
-       paints nothing under a code span or block, since a second layer reads as a nearly solid
-       one. A code span paints nothing on a box that is not tinted either: a blur behind a span
-       that wraps covers the whole box around both of its halves, which blurs the prose between
-       them. A code span is outlined in the line colour instead, so it is told from the prose
-       beside it, a rice theme's mono prose among it; a block's code is the block's own. */
+    /* Over a wallpaper a document paints no surface of its own: its container gives it one (a
+       tinted pane, a `Surface`, the preview's frame), and a second layer reads as a nearly solid
+       one, so nothing is painted under a code span or block. A blur behind a code span that wraps
+       would cover the whole box around both of its halves and blur the prose between them. A code
+       span is outlined in the line colour instead, so it is told from the prose beside it, a rice
+       theme's mono prose among it; a block's code is the block's own. */
     :global(body.wall) .doc :global(code) {
         background: transparent;
         outline: 1px solid var(--line);
@@ -338,13 +331,6 @@
 
     :global(body.wall) .doc :global(pre) {
         background: transparent;
-    }
-
-    /* A document drawn straight onto the wallpaper (a box that is not tinted) keeps the one surface
-       its fenced blocks would otherwise lack, so a block of code is read off a surface. */
-    :global(body.wall) .doc.surfaced :global(pre) {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
     }
 
     /* The Copy control of a code block: a strip as wide as the block's box that holds still while

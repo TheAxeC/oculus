@@ -280,6 +280,15 @@ body {
     --chip-on-wall: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
 }
 
+/* The panel at the wallpaper's opacity, the surface text is read off over a picture: a tinted
+   view's box and an untinted one's header and bar (ui/frame/Pane.svelte), the parts of a view
+   outside its cards (ui/frame/Surface.svelte), the rows of a table whose header row stays over
+   them (ui/display/table/Table.svelte), and the other boxes that paint the one layer and carry
+   `data-surface`. Declared on body for the same reason as the chip's. */
+body {
+    --panel-on-wall: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+}
+
 /* The border of a floating pane: the theme's own orange, declared on body for the same reason, so a
    theme that sets `--c-orange` on its class is taken and not the default one. */
 body {

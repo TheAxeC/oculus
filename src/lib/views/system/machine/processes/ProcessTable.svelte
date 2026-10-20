@@ -130,9 +130,11 @@
         white-space: nowrap;
     }
 
-    :global(body.wall) thead th {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
+    /* Over a wallpaper the heading paints nothing: the box that scrolls the table sideways never
+       scrolls up or down, so the heading scrolls away with its rows and is read off the tinted
+       box as they are. */
+    :global(body.wall) thead th:not(.actions) {
+        background: transparent;
     }
 
     :global(body.rice) thead th {
@@ -199,6 +201,8 @@
         z-index: 2;
     }
 
+    /* Over a wallpaper the column stays over the cells scrolling sideways under it, the strip of
+       `tokens.css` that keeps a mix of its own, so they do not read through it. */
     :global(body.wall) .actions {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));

@@ -3,7 +3,11 @@
     // Timing and density are prepared by state/sources/registries/venues.ts; this file only assigns
     // the catalog words and draws the density line as one SVG bar per month, in the colour of the
     // text it sits in, so no character stands for a height.
+    //
+    // Over a wallpaper the deadlines, the density line and the legend are read off one `Surface`,
+    // and each month box is a surface of its own.
 
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -42,57 +46,67 @@
     }
 </script>
 
-{#if data.next.length > 0}
-    <div class="next">
-        <strong>
-            <Glyph name="timing" />
-            {t('venues.next')}
-        </strong>
-        <span>{t('venues.next_from', monthLabel(todayMonth))}</span>
-        {#each data.next as item (item.venue.id)}
-            <span class="nextitem" title={item.venue.name}>
-                {short(item.venue)}
-                <i>
-                    {item.distance === 0 ? t('venues.thismonth') : t('venues.dist', item.distance)}
-                </i>
-            </span>
-        {/each}
+<Surface>
+    {#if data.next.length > 0}
+        <div class="next">
+            <strong>
+                <Glyph name="timing" />
+                {t('venues.next')}
+            </strong>
+            <span>{t('venues.next_from', monthLabel(todayMonth))}</span>
+            {#each data.next as item (item.venue.id)}
+                <span class="nextitem" title={item.venue.name}>
+                    {short(item.venue)}
+                    <i>
+                        {item.distance === 0
+                            ? t('venues.thismonth')
+                            : t('venues.dist', item.distance)}
+                    </i>
+                </span>
+            {/each}
+        </div>
+    {/if}
+
+    <div class="spark" title={t('venues.spark_tip', Math.max(...data.counts, 0))}>
+        <span class="spark-label">{t('venues.spark_lbl')}</span>
+        <svg
+            class="bars"
+            viewBox={`0 0 ${bars.length} ${SPARK_HEIGHT}`}
+            preserveAspectRatio="none"
+            style={`width: ${bars.length * 0.6}em`}
+            aria-hidden="true"
+        >
+            {#each bars as height, at (at)}
+                <rect
+                    x={at + 0.1}
+                    y={SPARK_HEIGHT - height}
+                    width="0.8"
+                    {height}
+                    fill="currentColor"
+                />
+            {/each}
+        </svg>
+        <span class="spark-months"
+            >{data.months.map((month) => monthLabel(month.index)[0]).join('')}</span
+        >
     </div>
-{/if}
 
-<div class="spark" title={t('venues.spark_tip', Math.max(...data.counts, 0))}>
-    <span class="spark-label">{t('venues.spark_lbl')}</span>
-    <svg
-        class="bars"
-        viewBox={`0 0 ${bars.length} ${SPARK_HEIGHT}`}
-        preserveAspectRatio="none"
-        style={`width: ${bars.length * 0.6}em`}
-        aria-hidden="true"
-    >
-        {#each bars as height, at (at)}
-            <rect x={at + 0.1} y={SPARK_HEIGHT - height} width="0.8" {height} fill="currentColor" />
-        {/each}
-    </svg>
-    <span class="spark-months"
-        >{data.months.map((month) => monthLabel(month.index)[0]).join('')}</span
-    >
-</div>
-
-<div class="legend">
-    <span class="deadline">
-        <Tag label={t('venues.leg_deadline')} glyph="linkedin" />
-    </span>
-    <span class="held">
-        <Tag label={t('venues.leg_held')} glyph="active" />
-    </span>
-    <Tag label={t('venues.leg_biennial')} glyph="refresh" />
-    <Tag label={t('venues.leg_thismonth')} glyph="current_month" />
-    <span>{t('venues.leg_approx')}</span>
-</div>
+    <div class="legend">
+        <span class="deadline">
+            <Tag label={t('venues.leg_deadline')} glyph="linkedin" />
+        </span>
+        <span class="held">
+            <Tag label={t('venues.leg_held')} glyph="active" />
+        </span>
+        <Tag label={t('venues.leg_biennial')} glyph="refresh" />
+        <Tag label={t('venues.leg_thismonth')} glyph="current_month" />
+        <span>{t('venues.leg_approx')}</span>
+    </div>
+</Surface>
 
 <div class="ribbon">
     {#each data.months as month (month.index)}
-        <div class="month" class:current={month.current}>
+        <div class="month" class:current={month.current} data-surface>
             <div class="monthname">
                 {#if month.current}
                     <Glyph name="current_month" />
@@ -207,9 +221,16 @@
         background: var(--panel);
     }
 
+    /* Over a wallpaper each month is the one translucent layer under its tags, so it carries
+       `data-surface`; inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .month {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .month {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .month.current {

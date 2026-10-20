@@ -5,8 +5,11 @@
     // lines, drawn as a status, and the disk line (save/DiskNote.svelte) while the file on disk is
     // not the one the tab read. SourceBody.svelte draws the row when either has words and hands in
     // the save outcome only while the text may be written.
+    //
+    // Over a wallpaper the row is read off a `Surface` that fills the row's own box.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import DiskNote from './DiskNote.svelte';
     import type { SaidTone } from './said-tone';
 
@@ -30,26 +33,28 @@
     let { message, failed, said, tone, disked, id, root, path }: Props = $props();
 </script>
 
-<div class="note">
-    {#if disked}
-        <DiskNote {id} {root} {path} />
-    {/if}
-    {#if message !== ''}
-        <span class="message" aria-live="polite">
-            {#if failed}
-                <Glyph name="cross" />
-            {/if}
-            {message}
-        </span>
-    {/if}
-    {#if said !== ''}
-        {#if tone === 'refusal'}
-            <span class="refused" role="alert">{said}</span>
-        {:else}
-            <span class="said" role="status">{said}</span>
+<Surface fitted>
+    <div class="note">
+        {#if disked}
+            <DiskNote {id} {root} {path} />
         {/if}
-    {/if}
-</div>
+        {#if message !== ''}
+            <span class="message" aria-live="polite">
+                {#if failed}
+                    <Glyph name="cross" />
+                {/if}
+                {message}
+            </span>
+        {/if}
+        {#if said !== ''}
+            {#if tone === 'refusal'}
+                <span class="refused" role="alert">{said}</span>
+            {:else}
+                <span class="said" role="status">{said}</span>
+            {/if}
+        {/if}
+    </div>
+</Surface>
 
 <style>
     .note {

@@ -29,10 +29,14 @@
     //
     // The view sends the query and its filters to the sources toggled on, through the server, and
     // writes nothing but the Lit Watch entry the reader adds. It never writes a `.bib` file.
+    //
+    // Over a wallpaper each paper's card is its own surface; the sources and filters, the refusal,
+    // the said line and the count are read off a `Surface`.
 
     import { onDestroy, onMount } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Progress from '$lib/ui/display/meters/Progress.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
@@ -180,21 +184,27 @@
 
 <Pane title={t('views.literature_search')} {bar}>
     <div class="literature" data-instance={instance.id}>
-        <Head
-            {form}
-            {available}
-            keys={listed.keys}
-            runs={run.sources()}
-            {timeoutS}
-            onchange={change}
-            ontoggle={toggle}
-        />
+        <Surface>
+            <Head
+                {form}
+                {available}
+                keys={listed.keys}
+                runs={run.sources()}
+                {timeoutS}
+                onchange={change}
+                ontoggle={toggle}
+            />
+        </Surface>
 
         {#if problem !== null}
-            <p class="problem" role="alert">{refusalWords(problem)}</p>
+            <Surface>
+                <p class="problem" role="alert">{refusalWords(problem)}</p>
+            </Surface>
         {/if}
         {#if said !== ''}
-            <p class="said">{said}</p>
+            <Surface>
+                <p class="said">{said}</p>
+            </Surface>
         {/if}
 
         {#if run.noneOn()}
@@ -208,11 +218,13 @@
                 </div>
             {/if}
             {#if papers.length > 0}
-                <p class="count">
-                    {papers.length === 1
-                        ? t('literature.count_one')
-                        : t('literature.count', papers.length)}
-                </p>
+                <Surface>
+                    <p class="count">
+                        {papers.length === 1
+                            ? t('literature.count_one')
+                            : t('literature.count', papers.length)}
+                    </p>
+                </Surface>
                 <div class="cards">
                     {#each papers as paper (paper.key)}
                         <LiteratureCard
@@ -255,7 +267,10 @@
         gap: 12px;
     }
 
+    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
+       itself without one (`display: contents`), so both shrink to the column. */
     .literature > :global(*),
+    .literature > :global([data-surface]) > :global(*),
     .cards > :global(*) {
         min-width: 0;
     }

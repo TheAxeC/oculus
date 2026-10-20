@@ -173,7 +173,6 @@
         {doc}
         loading={t('file.loading')}
         failed={t('source.cannot_open', path)}
-        surface={false}
         slots={drawn.slots}
         onlink={pressed}
     />
@@ -194,8 +193,16 @@
         background: var(--chip);
     }
 
+    /* Over a wallpaper the frame is the one translucent layer under the document, which paints no
+       surface of its own (shared/prose/Markdown.svelte); inside a surface already (a free float's
+       fill) the frame paints nothing in turn. */
     :global(body.wall) .framed {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .framed {
+        background: transparent;
+        backdrop-filter: none;
     }
 </style>

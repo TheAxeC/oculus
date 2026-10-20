@@ -60,7 +60,7 @@
     }
 </script>
 
-<Pane title={t('views.processes')}>
+<Pane title={t('views.processes')} tinted>
     <div class="processes" data-instance={instance.id}>
         {#if processes.hosts().length > 0}
             <AppHosts

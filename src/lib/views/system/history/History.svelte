@@ -243,7 +243,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.history')} {bar}>
+<Pane title={t('views.history')} {bar} tinted>
     <div class="view" data-instance={instance.id} data-history>
         {#if error() !== ''}
             <Empty error message={t('history.failed', error())} />
@@ -465,9 +465,10 @@
         padding: 4px 0;
     }
 
+    /* Over a wallpaper the rows are read off the tinted box, so a value's block paints nothing of
+       its own, as a document's code block on a surface does. */
     :global(body.wall) .raw {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
     }
 
     /* The terminal shape: the log follows the folder line, as every list does. */

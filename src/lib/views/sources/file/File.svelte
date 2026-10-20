@@ -79,10 +79,14 @@
     //
     // A picture the browser cannot load is the read failure: the message box with a control that
     // draws the picture again, which asks the server for the bytes once more.
+    //
+    // Over a wallpaper a PDF's pages are paper of their own; the download line is read off a
+    // `Surface`.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
     import { drawFrame, useTabFrames, type FrameSpec } from '$lib/ui/tabs/tab-frames.svelte';
@@ -465,15 +469,18 @@
         {:else if known === null || known.kind === 'text'}
             <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
         {:else}
-            <div class="other" data-tab-focus tabindex="-1">
-                <Empty
-                    message={t('file.other', extensionOf(drawn.path), size)}
-                    glyph={t('file.other_glyph')}
-                />
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
-                <a class="download" href={src} download={nameOf(drawn.path)}>{t('file.download')}</a
-                >
-            </div>
+            <Surface>
+                <div class="other" data-tab-focus tabindex="-1">
+                    <Empty
+                        message={t('file.other', extensionOf(drawn.path), size)}
+                        glyph={t('file.other_glyph')}
+                    />
+                    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
+                    <a class="download" href={src} download={nameOf(drawn.path)}
+                        >{t('file.download')}</a
+                    >
+                </div>
+            </Surface>
         {/if}
     </div>
 </Pane>

@@ -4,12 +4,13 @@
     // renders this at its root, so the shell's pane box is filled edge to edge and the scrolling
     // happens inside the view rather than around it.
     //
-    // The header is VS Code's pane header: 22 px, one line, the title cut with an
-    // ellipsis, and the actions in 20 px boxes that are always drawn. A view whose title is its
-    // file's path, which the pane's breadcrumb draws, asks for `titled: false` and has no title row
-    // at all, or only its actions. It holds icon actions only, in a Toolbar that asks for
-    // `overflow`; a search box, a select, a segment, a toggle, a chip and a text button go in the
-    // bar, which wraps, does not scroll with the body and scrolls on its own past half the box.
+    // The header is VS Code's pane header: 22 px, one line, the title cut with an ellipsis, and the
+    // actions in 20 px boxes that are always drawn. A view whose title is its file's path, which
+    // the pane's breadcrumb draws, asks for `titled: false` and has no title row at all, or only
+    // its actions. It holds icon actions only, in a Toolbar that asks for `overflow`, which
+    // measures its controls against the empty `[data-toolbar-room]` box the header lays out beside
+    // them; a search box, a select, a segment, a toggle, a chip and a text button go in the bar,
+    // which wraps, does not scroll with the body and scrolls on its own past half the box.
 
     import type { Snippet } from 'svelte';
 
@@ -29,9 +30,10 @@
         bar?: Snippet;
         /**
          * Whether the box itself carries the translucent surface over a wallpaper. A view whose
-         * content draws its text straight into the box asks for it, so the text is read off a
-         * surface rather than off the picture; a view that draws cards or frames of its own leaves
-         * it off, so its surfaces stay the one layer over the picture.
+         * content is rows or prose drawn straight into the box asks for it, so the text is read off
+         * a surface rather than off the picture; a view that draws cards or a frame of its own
+         * leaves it off, so its surfaces stay the one layer over the picture, and wraps what it
+         * draws outside them in `Surface`.
          */
         tinted?: boolean;
         /** The body. */
@@ -49,14 +51,17 @@
     }: Props = $props();
 </script>
 
-<section class="pane" class:tinted>
+<section class="pane" class:tinted data-surface={tinted ? '' : undefined}>
     {#if titled || toolbar}
         <header>
             {#if titled}
                 <h2 class="title" class:large>{title}</h2>
             {/if}
             {#if toolbar}
-                <div class="tools">{@render toolbar()}</div>
+                <div class="tools">
+                    <span class="room" data-toolbar-room aria-hidden="true"></span>
+                    {@render toolbar()}
+                </div>
             {/if}
         </header>
     {/if}
@@ -85,38 +90,59 @@
     }
 
     /* Over a wallpaper the box paints nothing, as the shell's pane around it does: a card, a lane,
-       a frame or a form inside it is then the one translucent layer over the picture, and content
-       the box holds directly sits on the picture itself. */
+       a frame or a `Surface` inside it is then the one translucent layer over the picture. */
     :global(body.wall) .pane {
         background: transparent;
     }
 
     /* A box a view asked to tint keeps the wallpaper fraction of its own colour, so the text the
-       view draws straight into it is read off a surface instead of off the picture. */
+       view draws straight into it is read off a surface instead of off the picture. It carries
+       `data-surface`, so what it holds that paints a surface paints nothing in turn. Drawn inside
+       a surface already (a free float's fill), it paints nothing itself. */
     :global(body.wall) .pane.tinted {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 
-    /* Inside a tinted box the terminal palettes' header strip would be a second translucent layer
-       over the first, which reads as one nearly solid one, so the strip paints nothing there. */
-    :global(body.rice.wall) .pane.tinted header {
+    :global(body.wall [data-surface]) .pane.tinted {
+        background: transparent;
+        backdrop-filter: none;
+    }
+
+    /* The header and the bar of a box that is not tinted would leave the title and the bar's words
+       on the picture, so over a wallpaper each is read off a surface of its own. Inside a tinted
+       box, or a box inside a surface, either would be a second translucent layer over the first,
+       which reads as one nearly solid one, so there they paint nothing, the terminal palettes'
+       header strip included. */
+    :global(body.wall) header,
+    :global(body.wall) .viewbar {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) header,
+    :global(body.wall [data-surface]) .viewbar,
+    :global(body.rice.wall [data-surface]) header {
         background: transparent;
         backdrop-filter: none;
     }
 
     /* One line of `calc(22px * scale)`, whatever the title and the actions are, as VS Code's pane
        header is. The actions' boxes are `--header-action`, which the bare buttons in it read as
-       `--bare-box`. */
+       `--bare-box`. The header is the box the room of the actions is measured in. */
     header {
         --bare-box: var(--header-action);
+        --header-start: 12px;
+        --header-end: 8px;
+        --header-gap: 8px;
+        position: relative;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--header-gap);
         flex: 0 0 auto;
         box-sizing: border-box;
         height: calc(22px * var(--text-scale, 1));
-        padding: 0 8px 0 12px;
+        padding: 0 var(--header-end) 0 var(--header-start);
         border-bottom: 1px solid var(--line);
     }
 
@@ -139,15 +165,29 @@
         font-size: var(--fs-md);
     }
 
-    /* The actions keep their room up to everything but the title's three characters; the Toolbar
-       inside measures against this width. */
+    /* The actions keep their room up to everything but the title's three characters and the gap
+       after them. */
     .tools {
         flex: 0 0 auto;
         display: flex;
         align-items: center;
         min-width: 0;
-        max-width: calc(100% - 3ch - 8px);
+        max-width: calc(100% - 3ch - var(--header-gap));
         margin-left: auto;
+    }
+
+    /* The room of the actions: an empty box laid out from the header's edges, as wide as `.tools`
+       may grow. The Toolbar measures its controls against this width, which depends on the header
+       alone, so drawing or removing the toolbar's `more` button cannot change it. Its `ch` is the
+       one `.tools` reads, since both inherit the header's font. */
+    .room {
+        position: absolute;
+        top: 0;
+        left: calc(var(--header-start) + 3ch + var(--header-gap));
+        right: var(--header-end);
+        height: 0;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     /* The strip for the view's controls: 6px above and below, VS Code's view bar padding, wrapping.

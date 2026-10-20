@@ -200,7 +200,7 @@
     const title = $derived(appShell.strip('view/title', { view: entry?.id }));
 </script>
 
-<Pane title={name} {toolbar}>
+<Pane title={name} {toolbar} tinted>
     {#if line !== ''}
         <Empty message={line}>
             {#snippet action()}

@@ -12,8 +12,12 @@
     // Connect, naming the provider as the setup page does. The hint under an account in error is
     // the server's own sentence. The confirm of a Remove says when the account's own file carries
     // its client id, since that id is deleted with the file.
+    //
+    // Over a wallpaper the rows and the said line are each read off a `Surface`, which paints
+    // nothing inside the Calendar's tinted box.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import RemoveAccount from './RemoveAccount.svelte';
     import RootChip from '../../card/RootChip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -95,68 +99,72 @@
     }
 </script>
 
-<ul class="accounts">
-    {#each rows as row (connectKey(row))}
-        <li
-            data-calendar-account={kind === 'calendar' ? connectKey(row) : undefined}
-            data-mail-account={kind === 'mail' ? connectKey(row) : undefined}
-        >
-            <span class="who">
-                <Tag label={word(row)} tone={tone(row)} />
-                <span class="label">{row.label}</span>
-                <span class="provider">{provider(row)}</span>
-                <RootChip record={{ root: row.hub }} />
-                {#if row.lastOk}
-                    <span class="when">{t('accounts.last_ok', clock(row.lastOk))}</span>
-                {/if}
-            </span>
-            <span class="controls">
-                {#if row.needsSetup === true}
-                    <ToolButton
-                        small
-                        label={t('accounts.open_setup', setupName(row))}
-                        glyph={t('views.account_setup_glyph')}
-                        onclick={openSetup}
-                    />
-                {:else if row.status !== 'connected' && signsIn(row)}
-                    <ToolButton
-                        small
-                        label={connecting(kind, row)
-                            ? t('accounts.connecting')
-                            : t('accounts.connect')}
-                        disabled={connecting(kind, row)}
-                        onclick={() => void press(row)}
-                    />
-                {/if}
-                <span class="more">
-                    <Menu
-                        label={t('ui.row_menu')}
-                        items={[
-                            {
-                                id: 'remove',
-                                label: t('accounts.remove'),
-                                glyph: t('accounts.remove_glyph')
-                            }
-                        ]}
-                        glyph={t('accounts.menu_glyph')}
-                        compact
-                        bare
-                        placement="down"
-                        align="right"
-                        onpick={() => (asking = row)}
-                    />
+<Surface>
+    <ul class="accounts">
+        {#each rows as row (connectKey(row))}
+            <li
+                data-calendar-account={kind === 'calendar' ? connectKey(row) : undefined}
+                data-mail-account={kind === 'mail' ? connectKey(row) : undefined}
+            >
+                <span class="who">
+                    <Tag label={word(row)} tone={tone(row)} />
+                    <span class="label">{row.label}</span>
+                    <span class="provider">{provider(row)}</span>
+                    <RootChip record={{ root: row.hub }} />
+                    {#if row.lastOk}
+                        <span class="when">{t('accounts.last_ok', clock(row.lastOk))}</span>
+                    {/if}
                 </span>
-            </span>
-        </li>
-        {#if row.needsSetup === true}
-            <li class="hint">{t('accounts.needs_setup', setupName(row))}</li>
-        {:else if row.status === 'error' && row.hint}
-            <li class="hint"><code class="bad">{row.hint}</code></li>
-        {/if}
-    {/each}
-</ul>
+                <span class="controls">
+                    {#if row.needsSetup === true}
+                        <ToolButton
+                            small
+                            label={t('accounts.open_setup', setupName(row))}
+                            glyph={t('views.account_setup_glyph')}
+                            onclick={openSetup}
+                        />
+                    {:else if row.status !== 'connected' && signsIn(row)}
+                        <ToolButton
+                            small
+                            label={connecting(kind, row)
+                                ? t('accounts.connecting')
+                                : t('accounts.connect')}
+                            disabled={connecting(kind, row)}
+                            onclick={() => void press(row)}
+                        />
+                    {/if}
+                    <span class="more">
+                        <Menu
+                            label={t('ui.row_menu')}
+                            items={[
+                                {
+                                    id: 'remove',
+                                    label: t('accounts.remove'),
+                                    glyph: t('accounts.remove_glyph')
+                                }
+                            ]}
+                            glyph={t('accounts.menu_glyph')}
+                            compact
+                            bare
+                            placement="down"
+                            align="right"
+                            onpick={() => (asking = row)}
+                        />
+                    </span>
+                </span>
+            </li>
+            {#if row.needsSetup === true}
+                <li class="hint">{t('accounts.needs_setup', setupName(row))}</li>
+            {:else if row.status === 'error' && row.hint}
+                <li class="hint"><code class="bad">{row.hint}</code></li>
+            {/if}
+        {/each}
+    </ul>
+</Surface>
 {#if said !== ''}
-    <p class="said">{said}</p>
+    <Surface>
+        <p class="said">{said}</p>
+    </Surface>
 {/if}
 {#if asking !== null}
     <RemoveAccount

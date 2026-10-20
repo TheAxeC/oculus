@@ -117,7 +117,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.apps')} toolbar={tools} {bar}>
+<Pane title={t('views.apps')} toolbar={tools} {bar} tinted>
     <div class="apps" data-instance={instance.id}>
         {#if all.length === 0}
             <Empty message={t('apps.list_none')} glyph={t('views.apps_glyph')}>

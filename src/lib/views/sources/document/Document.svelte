@@ -45,6 +45,9 @@
     // `open.program_ext` maps, Open in Program stand at that bar's right end
     // (shared/links/FileBarActions.svelte), and the bookmark, Open in Browser and Open in
     // Program items are also in the tab's right-click menu (shell/panes/strip/tab-menu.ts).
+    //
+    // Over a wallpaper the frame the frame layer draws is the one surface under the document
+    // (shell/frames/FrameLayer.svelte), and the empty line is read off a `Surface`.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

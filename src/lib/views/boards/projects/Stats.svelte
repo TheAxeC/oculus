@@ -7,8 +7,10 @@
     // projects before any filter, so the strip says what the board is rather than what a search has
     // left on screen; while a filter or a search shows fewer cards than that, the first count says
     // how many of them are shown (`shown`). A venue at or over `venue_conc_warn` of `focus:` is
-    // marked: that is the config's own threshold for too much of one board on one venue.
+    // marked: that is the config's own threshold for too much of one board on one venue. Over a
+    // wallpaper the strip is read off a `Surface`.
 
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -23,39 +25,41 @@
     let { stats, shown }: Props = $props();
 </script>
 
-<div class="stats" aria-label={t('board.stats')}>
-    <span class="st"
-        >{shown < stats.active
-            ? t('board.stat_projects_shown', shown, stats.active)
-            : stats.active === 1
-              ? t('board.stat_projects_one')
-              : t('board.stat_projects', stats.active)}</span
-    >
-    <span class="st">{t('board.stat_submit_ready', stats.submitReady)}</span>
-    <span class="st">{t('board.stat_blocked', stats.blocked)}</span>
-    {#if stats.dated > 0}
-        <span class="st">
-            <Glyph name={t('project.card.deadline_glyph')} />
-            {t('board.stat_dated', stats.dated)}
-        </span>
-    {/if}
-    {#if stats.venues.length > 0}
-        <span class="venues" title={t('board.stat_venues_tip')}>
-            <Glyph name={t('board.venue_dist_glyph')} />
-            {#each stats.venues as venue (venue.id)}
-                <span title={t('board.stat_venue_tip', venue.name, venue.count)}>
-                    <Tag
-                        label={venue.count > 1
-                            ? `${venue.short} ${t('board.stat_venue_count', venue.count)}`
-                            : venue.short}
-                        glyph={venue.warn ? t('board.warn_glyph') : undefined}
-                        tone={venue.warn ? 'amber' : undefined}
-                    />
-                </span>
-            {/each}
-        </span>
-    {/if}
-</div>
+<Surface>
+    <div class="stats" aria-label={t('board.stats')}>
+        <span class="st"
+            >{shown < stats.active
+                ? t('board.stat_projects_shown', shown, stats.active)
+                : stats.active === 1
+                  ? t('board.stat_projects_one')
+                  : t('board.stat_projects', stats.active)}</span
+        >
+        <span class="st">{t('board.stat_submit_ready', stats.submitReady)}</span>
+        <span class="st">{t('board.stat_blocked', stats.blocked)}</span>
+        {#if stats.dated > 0}
+            <span class="st">
+                <Glyph name={t('project.card.deadline_glyph')} />
+                {t('board.stat_dated', stats.dated)}
+            </span>
+        {/if}
+        {#if stats.venues.length > 0}
+            <span class="venues" title={t('board.stat_venues_tip')}>
+                <Glyph name={t('board.venue_dist_glyph')} />
+                {#each stats.venues as venue (venue.id)}
+                    <span title={t('board.stat_venue_tip', venue.name, venue.count)}>
+                        <Tag
+                            label={venue.count > 1
+                                ? `${venue.short} ${t('board.stat_venue_count', venue.count)}`
+                                : venue.short}
+                            glyph={venue.warn ? t('board.warn_glyph') : undefined}
+                            tone={venue.warn ? 'amber' : undefined}
+                        />
+                    </span>
+                {/each}
+            </span>
+        {/if}
+    </div>
+</Surface>
 
 <style>
     .stats,

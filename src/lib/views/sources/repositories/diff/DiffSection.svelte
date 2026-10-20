@@ -36,6 +36,10 @@
     // second line moves it and keeps the draft, Escape closes it keeping the draft, and Cancel
     // drops the draft. A commit, stash, worktree, compare or group diff, and a session the payload
     // no longer holds, offer none.
+    //
+    // Over a wallpaper the section carries `data-surface` and paints the file's one translucent
+    // layer; the editor (ui/controls/editor/kit/theme/wall.css), the hunk bars, the comment box and
+    // a header row that does not stay paint nothing on it.
 
     import DiffEditor from '$lib/ui/controls/editor/diff/DiffEditor.svelte';
     import type {
@@ -398,6 +402,7 @@
 <section
     class="file"
     class:several
+    data-surface
     bind:this={section}
     data-diff-file={path}
     data-diff-key={key}
@@ -479,6 +484,17 @@
 
     .file.several {
         height: auto;
+    }
+
+    :global(body.wall) .file {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    /* Inside a surface already (a free float's fill) the section paints nothing. */
+    :global(body.wall [data-surface]) .file {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .editor {

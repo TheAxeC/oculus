@@ -16,9 +16,13 @@
     // keeps search and the dismissed-section disclosure in this view instance's saved state. Add
     // asks the new paper's title, address and bucket, writes it to the radar file of the primary
     // hub (else the first) and opens the paper's page, where the rest is filled in.
+    //
+    // Over a wallpaper each card is its own surface and a bucket's heading is a solid button; the
+    // intro and the said line are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -117,7 +121,9 @@
             <RadarIntro {buckets} tracked={live.length} lastRun={asText(lastRun)} />
 
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
 
             {#each groups as group (group.bucket.key)}
@@ -183,7 +189,10 @@
         gap: 12px;
     }
 
+    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
+       itself without one (`display: contents`), so both shrink to the column. */
     .radar > :global(*),
+    .radar > :global([data-surface]) > :global(*),
     .cards > :global(*) {
         min-width: 0;
     }

@@ -13,7 +13,7 @@
     // is in progress the body carries SASHING_CLASS, which a frame drawing another document reads
     // to stop taking the pointer, so a fast drag over it keeps its moves.
 
-    import { SASH_PX, SASHING_CLASS, STEP } from '$lib/ui/frame/sash-size';
+    import { SASH_PX, SASHING_CLASS, STEP } from '$lib/ui/frame/sash/sash-size';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

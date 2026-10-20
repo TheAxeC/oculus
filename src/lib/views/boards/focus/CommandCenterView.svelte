@@ -132,7 +132,7 @@
 {/snippet}
 
 {#if anything}
-    <section class="week">
+    <section class="week" data-surface>
         <div class="head">
             <ToolButton
                 bare
@@ -290,9 +290,16 @@
         column-gap: 16px;
     }
 
+    /* Over a wallpaper the section is the one translucent layer under its rows, so it carries
+       `data-surface`; drawn inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .week {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .week {
+        background: transparent;
+        backdrop-filter: none;
     }
     .head {
         display: flex;
@@ -344,11 +351,12 @@
     }
     /* A needs-attention line is one sentence that wraps as text: the glyph and the count at its
        start, kept on one line together, the projects at its end, each piece kept in its place on a
-       narrow pane. */
+       narrow pane. It is a row of the Command Center, so it takes a ticker row's height, size and
+       line (`Ticker.svelte`), and the project links inherit them. */
     .behind {
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-        font-size: var(--fs-md);
-        line-height: 1.5;
+        min-height: calc(18px * var(--text-scale, 1));
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
     }
     .lead {
         white-space: nowrap;

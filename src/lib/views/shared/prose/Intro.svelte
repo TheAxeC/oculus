@@ -2,9 +2,11 @@
     // Layer 3, shared view partial. The words directly under a pane header, in plain muted type. It
     // accepts catalog HTML, optional additional lines, or structured content such as a status chip.
     // A line may carry a value from a hub file, so what it is given is sanitised before it is
-    // drawn.
+    // drawn. Over a wallpaper the words are read off a `Surface`, which paints nothing where the
+    // intro sits on a surface already.
 
     import type { Snippet } from 'svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import { sanitise } from '$lib/ui/html';
 
     type Props = {
@@ -28,30 +30,33 @@
     }
 </script>
 
-<div class="intro">
-    <div class="content">
-        {#if lines !== undefined}
-            {#each lines as line, index (`${index}:${line}`)}
+<Surface>
+    <div class="intro">
+        <div class="content">
+            {#if lines !== undefined}
+                {#each lines as line, index (`${index}:${line}`)}
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
+                    <p>{@html drawn(line)}</p>
+                {/each}
+            {:else if html !== undefined}
+                <!-- The words are one paragraph, so the text and the inline tags in it (a code,
+                     a b) run as one line of text rather than as flex items set apart by the
+                     gap. -->
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
-                <p>{@html drawn(line)}</p>
-            {/each}
-        {:else if html !== undefined}
-            <!-- The words are one paragraph, so the text and the inline tags in it (a code, a b)
-                 run as one line of text rather than as flex items set apart by the gap. -->
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
-            <p>{@html drawn(html)}</p>
-        {:else if children}
-            {@render children()}
+                <p>{@html drawn(html)}</p>
+            {:else if children}
+                {@render children()}
+            {/if}
+        </div>
+        {#if actions}
+            <div class="actions">{@render actions()}</div>
         {/if}
     </div>
-    {#if actions}
-        <div class="actions">{@render actions()}</div>
-    {/if}
-</div>
+</Surface>
 
 <style>
     /* Plain words in the muted colour, with the view's controls after them: no box, rule or
-       fill, as VS Code draws the text above a view's content. */
+       fill of their own, as VS Code draws the text above a view's content. */
     .intro {
         display: flex;
         flex-wrap: wrap;

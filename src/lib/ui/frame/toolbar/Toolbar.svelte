@@ -15,15 +15,25 @@
     // is how many controls the line draws while some are clipped, and null while all fit; the
     // toolbar measures it itself, and a render with no layout is told it.
     //
+    // The room the line has is never read from the toolbar's own box: that box is as wide as what
+    // it draws, so a room read from it would grow when the `more` button is drawn and shrink when
+    // it goes, and the line would change on every measure. The room is the `[data-toolbar-room]`
+    // span Pane's header lays out beside the toolbar, whose width the header alone gives and the
+    // toolbar's content does not size. A toolbar with no such span beside it measures nothing and
+    // draws every control, with no `more` button. Every width, the room's, the controls' and the
+    // button's, is read in fractional pixels, so a control 28.5625 px wide counts as 28.5625 and
+    // the arithmetic matches the layout to the fraction.
+    //
     // The popover stays inside the pane the toolbar is in: the pane is its collision boundary, and
-    // its controls wrap onto further lines within the pane's width, so in a pane narrower than the
-    // popover's line it never lies over the activity bar or a neighbouring pane.
+    // its controls wrap onto further lines within the pane's width, read again on every measure
+    // while the popover is open, so in a pane narrower than the popover's line it never lies over
+    // the activity bar or a neighbouring pane.
     //
     // The `more` button is the toolbar's own plain button drawn with Glyph, because ui/frame
     // imports nothing above ui/display, and not a ToolButton.
 
     import { Popover } from 'bits-ui';
-    import type { Snippet } from 'svelte';
+    import { untrack, type Snippet } from 'svelte';
     import { t } from '$lib/state/shared/words/text';
     import Glyph from '../../display/Glyph.svelte';
     import { closesPopover, fit, picksMenuItem } from './fit';
@@ -50,15 +60,32 @@
     let run = $state<HTMLElement | null>(null);
     let panel: HTMLElement | null = null;
     let open = $state(false);
-    /** The pane the toolbar is in, read when the popover opens, and its width then. */
+    /** The pane the toolbar is in, and its width, read while the popover is open. */
     let pane = $state<HTMLElement | null>(null);
     let paneWidth = $state(0);
 
-    $effect(() => {
+    /**
+     * The pane's width as the popover's limit reads it, taken when it opens and on each measure.
+     */
+    function readPane(): void {
         if (!open || root === null) return;
         pane = root.closest<HTMLElement>('.pane');
-        paneWidth = pane?.clientWidth ?? 0;
-    });
+        paneWidth = pane?.getBoundingClientRect().width ?? 0;
+    }
+
+    $effect(readPane);
+
+    /**
+     * The box whose width is the line's room: the `[data-toolbar-room]` span Pane's header lays out
+     * beside the toolbar, which the toolbar's content does not size, so the toolbar's own layout
+     * cannot change it. Null where there is no such span: the toolbar then measures nothing and
+     * draws every control, with no `more` button.
+     */
+    function roomBox(host: HTMLElement): HTMLElement | null {
+        return (
+            host.parentElement?.querySelector<HTMLElement>(':scope > [data-toolbar-room]') ?? null
+        );
+    }
 
     /** The width of the `more` button, which is the width of a header action. */
     function openerWidth(host: HTMLElement): number {
@@ -66,21 +93,27 @@
         probe.style.cssText =
             'position:absolute;visibility:hidden;width:var(--bare-box, var(--header-action))';
         host.append(probe);
-        const width = probe.offsetWidth;
+        const width = probe.getBoundingClientRect().width;
         probe.remove();
         return width;
     }
 
-    /** Which controls the room holds, and the line's controls marked clipped from there on. */
+    /**
+     * Which controls the room holds, and the line's controls marked clipped from there on. A
+     * toolbar that is not laid out (its tab hidden) keeps its line until it is, since every width
+     * reads zero there.
+     */
     function measure(): void {
         if (!overflow || root === null || run === null) return;
+        const room = roomBox(root);
+        if (room === null || root.getClientRects().length === 0) return;
         const controls = Array.from(run.children).filter(
             (one): one is HTMLElement => one instanceof HTMLElement
         );
         const gap = parseFloat(getComputedStyle(run).columnGap) || 0;
         const result = fit(
-            controls.map((one) => one.offsetWidth),
-            root.clientWidth,
+            controls.map((one) => one.getBoundingClientRect().width),
+            room.getBoundingClientRect().width,
             openerWidth(root),
             gap
         );
@@ -91,12 +124,16 @@
         });
         shown = result.opener ? result.shown : null;
         if (!result.opener) open = false;
+        readPane();
     }
 
     $effect(() => {
         if (!overflow || root === null || run === null) return;
-        measure();
-        return watchToolbar(root, run, measure);
+        const room = roomBox(root);
+        if (room === null) return;
+        // The measure reads `open` for the pane's width; the watch stays as long as the elements.
+        untrack(measure);
+        return watchToolbar(room, run, measure);
     });
 
     /**

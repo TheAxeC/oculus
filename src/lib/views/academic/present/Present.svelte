@@ -60,6 +60,9 @@
     // to it. While a source tab of the same page holds text its file does not, the slide is drawn
     // from that text (acts/live.svelte.ts), except while the presenter screen is on. The pane's
     // status line, at the end of the toolbar, says what an act came to.
+    //
+    // Over a wallpaper the slide's frame is the one surface under the slide (screen/Stage.svelte),
+    // the overview's tiles are cards, and the empty line is read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';

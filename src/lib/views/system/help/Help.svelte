@@ -69,7 +69,6 @@
             doc={shown}
             loading={t('help.loading')}
             failed={t('help.failed', shown.error)}
-            surface={false}
             follow
         />
     </div>

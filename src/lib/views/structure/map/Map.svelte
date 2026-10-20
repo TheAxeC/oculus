@@ -22,8 +22,12 @@
     // (Legend.svelte) and the graph, drawn by views/shared/graph/Graph.svelte, which the Notes
     // Graph draws too; what a node opens (node-view.ts) and the related edge a link writes
     // (edge-write.ts) are the Map's.
+    //
+    // Over a wallpaper the graph's canvas is its own surface, and the heading with the legend is
+    // read off one `Surface` above it.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
@@ -174,18 +178,22 @@
 
 <Pane title={t('views.map')} toolbar={tools} {bar}>
     <div class="map" data-instance={instance.id}>
-        <div class="head">
-            <span class="shape">
-                <Glyph name={t('map.line_glyph')} />
-                <Glyph name={t('map.project_glyph')} />
-            </span>
-            <span>{t('map.head')}</span>
-        </div>
-        <Legend
-            types={typeFilters
-                .filter((item) => item.shown && item.count > 0)
-                .map((item) => item.type)}
-        />
+        <Surface>
+            <div class="top">
+                <div class="head">
+                    <span class="shape">
+                        <Glyph name={t('map.line_glyph')} />
+                        <Glyph name={t('map.project_glyph')} />
+                    </span>
+                    <span>{t('map.head')}</span>
+                </div>
+                <Legend
+                    types={typeFilters
+                        .filter((item) => item.shown && item.count > 0)
+                        .map((item) => item.type)}
+                />
+            </div>
+        </Surface>
         {#if !hasRelationships}
             <Empty message={t('map.empty')} glyph={t('map.empty_glyph')} />
         {:else if base.nodes.length > 0 && graph.nodes.length === 0}
@@ -207,12 +215,16 @@
 <style>
     /* The head and the legend take their own height and the graph takes the rest, so the graph
        fills the body whatever the bar above it needs. */
-    .map {
+    .map,
+    .top {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        height: 100%;
         min-width: 0;
+    }
+
+    .map {
+        height: 100%;
     }
 
     .head {

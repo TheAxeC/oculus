@@ -49,6 +49,7 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
@@ -335,14 +336,18 @@
         {/if}
         <Stats stats={strip} shown={shown.length} />
         {#if said !== ''}
-            <p class="said">{said}</p>
+            <Surface>
+                <p class="said">{said}</p>
+            </Surface>
         {/if}
         {#if shown.length === 0}
             <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
         {:else if held.mode === 'list'}
-            <div class="table">
-                <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
-            </div>
+            <Surface>
+                <div class="table">
+                    <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
+                </div>
+            </Surface>
         {:else}
             <div class="cards">
                 {#each shown as item (item.id)}

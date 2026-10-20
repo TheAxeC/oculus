@@ -116,8 +116,10 @@
         gap: 4px;
     }
 
+    /* Over a wallpaper the box is read off its file's section, the surface
+       (diff/DiffSection.svelte), and paints nothing of its own. */
     :global(body.wall) .comment {
-        background: var(--chip-on-wall);
+        background: transparent;
     }
 
     :global(body.wall) .field {

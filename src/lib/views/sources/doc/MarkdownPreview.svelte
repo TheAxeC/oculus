@@ -113,7 +113,7 @@
     </FileBarActions>
 {/snippet}
 
-<Pane {title} titled={false}>
+<Pane {title} titled={false} tinted>
     <div
         class="view"
         class:noted={named && file.truncated}

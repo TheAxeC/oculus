@@ -13,8 +13,12 @@
 <script lang="ts">
     // Layer 3, view. The Pillars board over registry lines and real-project membership, followed by
     // provisional lines, off-pillar lines and archival provenance.
+    //
+    // Over a wallpaper each card is its own surface; the head and each section's heading and note
+    // are read off a `Surface`.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
@@ -103,9 +107,11 @@
 
         {#if provisional.length > 0}
             <section>
-                <h3>{t('pillars.provisional_h')}</h3>
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <p class="note">{@html inlineMarkdown(t('pillars.provisional_note'))}</p>
+                <Surface>
+                    <h3>{t('pillars.provisional_h')}</h3>
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                    <p class="note">{@html inlineMarkdown(t('pillars.provisional_note'))}</p>
+                </Surface>
                 <div class="cards">
                     {#each provisional as line (line.id)}
                         <Reveal
@@ -133,9 +139,11 @@
 
         {#if offpillar.length > 0 || archived.length > 0}
             <section>
-                <h3>{t('pillars.offpillar_h')}</h3>
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <p class="note">{@html inlineMarkdown(t('pillars.offpillar_note'))}</p>
+                <Surface>
+                    <h3>{t('pillars.offpillar_h')}</h3>
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                    <p class="note">{@html inlineMarkdown(t('pillars.offpillar_note'))}</p>
+                </Surface>
                 <div class="cards">
                     {#each offpillar as line (line.id)}
                         <Reveal

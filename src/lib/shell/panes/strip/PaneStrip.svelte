@@ -251,8 +251,18 @@
         border-bottom: 1px solid var(--line);
     }
 
+    /* Over a wallpaper the row stands over the picture, outside the view's box, so it is read off
+       a surface of its own; inside a surface already (a free float's fill) it paints nothing, and
+       so does the title row of `show_tabs: none`. */
     :global(body.wall) .path {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .path,
+    :global(body.wall [data-surface]) .title {
         background: transparent;
+        backdrop-filter: none;
     }
 
     /* The file tab's actions stand whole at the right end of the bar, in the row's height. */

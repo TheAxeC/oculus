@@ -27,8 +27,12 @@
     // A Claude account's card carries Refresh, whose glyph turns from the reader's press until that
     // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own
     // cadence turns nothing.
+    //
+    // Over a wallpaper each account's card is its own surface, and the history under them is read
+    // off a `Surface`; its table's header row scrolls with the table and paints nothing.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RootChip from '../../../shared/card/RootChip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -266,20 +270,22 @@
             <Empty message={t('usage.no_accounts')} glyph="circle_empty" />
         {/if}
         {#if data}
-            <section class="history">
-                <h2>{t('usage.history')}</h2>
-                {#if data.days.length}
-                    <div class="scroller">
-                        <Table
-                            {columns}
-                            rows={usageRows(data.days, t('usage.total'))}
-                            rowKey="rowKey"
-                        />
-                    </div>
-                {:else}
-                    <Empty message={t('usage.no_history')} glyph="circle_empty" />
-                {/if}
-            </section>
+            <Surface>
+                <section class="history">
+                    <h2>{t('usage.history')}</h2>
+                    {#if data.days.length}
+                        <div class="scroller">
+                            <Table
+                                {columns}
+                                rows={usageRows(data.days, t('usage.total'))}
+                                rowKey="rowKey"
+                            />
+                        </div>
+                    {:else}
+                        <Empty message={t('usage.no_history')} glyph="circle_empty" />
+                    {/if}
+                </section>
+            </Surface>
         {/if}
     </div>
 </Pane>

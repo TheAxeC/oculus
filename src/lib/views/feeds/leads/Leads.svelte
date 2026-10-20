@@ -24,10 +24,14 @@
     // (views/shared/card/feed/lead-apply.ts, which the lead's page reaches through the same card).
     // The controls that write the leads file are disabled while a source tab holds unsaved text of
     // it.
+    //
+    // Over a wallpaper each card is its own surface; the intro, the said line and the run log are
+    // read off a `Surface`.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -187,7 +191,9 @@
             />
 
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
 
             {#if split.live.length > 0}
@@ -258,12 +264,14 @@
                         onclick={() => write({ runlogOpen: !held.runlogOpen })}
                     />
                     {#if held.runlogOpen}
-                        <ul class="runlog">
-                            {#each shownLog as line, at (`${at}:${line}`)}
-                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                <li>{@html inlineMarkdown(line, cardMath(line))}</li>
-                            {/each}
-                        </ul>
+                        <Surface>
+                            <ul class="runlog">
+                                {#each shownLog as line, at (`${at}:${line}`)}
+                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                                    <li>{@html inlineMarkdown(line, cardMath(line))}</li>
+                                {/each}
+                            </ul>
+                        </Surface>
                         {#if log.length > LOG_LINES}
                             <ToolButton
                                 label={held.logAll
@@ -289,7 +297,10 @@
         gap: 12px;
     }
 
+    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
+       itself without one (`display: contents`), so both shrink to the column. */
     .leads > :global(*),
+    .leads > :global([data-surface]) > :global(*),
     .cards > :global(*) {
         min-width: 0;
     }

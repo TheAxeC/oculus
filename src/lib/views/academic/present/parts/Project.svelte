@@ -246,9 +246,15 @@
         font-size: var(--slide-fs-body);
     }
 
-    /* Over a wallpaper the surface goes translucent, as every other card surface does. */
+    /* Over a wallpaper the surface goes translucent, as every other card surface does; inside the
+       slide's frame (screen/Stage.svelte), the one translucent layer, it paints nothing. */
     :global(body.wall) .eli5 {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .eli5 {
+        background: transparent;
+        backdrop-filter: none;
     }
 </style>

@@ -69,8 +69,8 @@
     import { createKillArm } from './list/kill-arm.svelte';
     import { createListWidth } from './list/list-width.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Sash from '$lib/ui/frame/Sash.svelte';
-    import { SASH_PX } from '$lib/ui/frame/sash-size';
+    import Sash from '$lib/ui/frame/sash/Sash.svelte';
+    import { SASH_PX } from '$lib/ui/frame/sash/sash-size';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import {
         ROW_MIN,

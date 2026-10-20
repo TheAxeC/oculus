@@ -162,4 +162,15 @@
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }
+
+    /* Inside the slide's frame (screen/Stage.svelte), the one translucent layer over a wallpaper,
+       the figure, the diagram, its nodes and bar, and the explanation paint nothing. */
+    :global(body.wall [data-surface]) .fig,
+    :global(body.wall [data-surface]) .diagram,
+    :global(body.wall [data-surface]) .diagram :global(.dnode),
+    :global(body.wall [data-surface]) .diagram :global(.dbar),
+    :global(body.wall [data-surface]) .explain {
+        background: transparent;
+        backdrop-filter: none;
+    }
 </style>

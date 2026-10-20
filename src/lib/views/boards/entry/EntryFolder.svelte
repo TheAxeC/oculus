@@ -8,8 +8,12 @@
     // folder, and each session is views/shared/sessions/SessionRow.svelte, the row the project view
     // draws. The chosen document is kept in the view instance's state beside the entry's unsaved
     // edits, which choosing leaves where they are.
+    //
+    // Over a wallpaper each section is read off a `Surface`, so a document's code blocks paint no
+    // surface of their own on it.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
@@ -71,46 +75,52 @@
 {:else if folder === undefined}
     <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
 {:else}
-    <section class="block">
-        <h3 class="heading">{t('entry.documents')}</h3>
-        {#if shown === null}
-            <Empty
-                message={files?.loading === true ? t('entry.reading') : t('entry.no_documents')}
-                glyph={t('entry.none_glyph')}
-            />
-        {:else}
-            <Segment
-                label={t('entry.documents')}
-                items={documents}
-                value={chosen}
-                onchange={(name: string) => choose(name)}
-            />
-            <Markdown
-                doc={shown}
-                loading={t('entry.doc_loading')}
-                failed={t('entry.doc_failed', shown.error)}
-            />
-        {/if}
-    </section>
+    <Surface>
+        <section class="block">
+            <h3 class="heading">{t('entry.documents')}</h3>
+            {#if shown === null}
+                <Empty
+                    message={files?.loading === true ? t('entry.reading') : t('entry.no_documents')}
+                    glyph={t('entry.none_glyph')}
+                />
+            {:else}
+                <Segment
+                    label={t('entry.documents')}
+                    items={documents}
+                    value={chosen}
+                    onchange={(name: string) => choose(name)}
+                />
+                <Markdown
+                    doc={shown}
+                    loading={t('entry.doc_loading')}
+                    failed={t('entry.doc_failed', shown.error)}
+                />
+            {/if}
+        </section>
+    </Surface>
 
-    <section class="block files">
-        <FolderFiles {folder} root={hub}>
-            {#snippet heading()}
-                <h3 class="heading">{t('entry.files', folder)}</h3>
-            {/snippet}
-        </FolderFiles>
-    </section>
+    <Surface>
+        <section class="block files">
+            <FolderFiles {folder} root={hub}>
+                {#snippet heading()}
+                    <h3 class="heading">{t('entry.files', folder)}</h3>
+                {/snippet}
+            </FolderFiles>
+        </section>
+    </Surface>
 
-    <section class="block">
-        <h3 class="heading">{t('entry.sessions')}</h3>
-        {#if rows.length === 0}
-            <Empty message={t('entry.no_sessions')} glyph={t('entry.none_glyph')} />
-        {:else}
-            {#each rows as row (row.id)}
-                <SessionRow entry={row} {now} />
-            {/each}
-        {/if}
-    </section>
+    <Surface>
+        <section class="block">
+            <h3 class="heading">{t('entry.sessions')}</h3>
+            {#if rows.length === 0}
+                <Empty message={t('entry.no_sessions')} glyph={t('entry.none_glyph')} />
+            {:else}
+                {#each rows as row (row.id)}
+                    <SessionRow entry={row} {now} />
+                {/each}
+            {/if}
+        </section>
+    </Surface>
 {/if}
 
 <style>

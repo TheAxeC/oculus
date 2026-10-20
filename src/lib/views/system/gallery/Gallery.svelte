@@ -18,6 +18,11 @@
     // The sample data is the config's own chip vocabulary rather than invented rows, so the gallery
     // shows the hues the portfolio really uses and a chip added to config/catalogs/vocab.yml
     // appears here without anything being written in this file.
+    //
+    // Over a wallpaper each sample card is its own surface, and every other section is read off a
+    // `Surface`. The table is drawn on none: its header row stays over its rows as the pane scrolls
+    // (`stays`), so the header row and the rows carry the surface themselves and nothing is drawn
+    // behind the header row.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -27,6 +32,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
@@ -156,7 +162,9 @@
 <Pane title={t('gallery.title')} toolbar={tools} {bar}>
     <div class="gallery" data-instance={instance.id}>
         <section>
-            <h3>{t('gallery.cards')}</h3>
+            <Surface>
+                <h3>{t('gallery.cards')}</h3>
+            </Surface>
             <div class="cards">
                 <Card id="plain" cursor={cursor === 'plain'} title={t('gallery.card_plain')}>
                     {#snippet meta()}
@@ -188,77 +196,91 @@
             </div>
         </section>
 
-        <section>
-            <h3>{t('gallery.chips')}</h3>
-            {#if form !== 'filled'}
+        <Surface>
+            <section>
+                <h3>{t('gallery.chips')}</h3>
+                {#if form !== 'filled'}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render chipRow(false)}
+                {/if}
+                {#if form !== 'outline'}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render chipRow(true)}
+                {/if}
+            </section>
+        </Surface>
+
+        <Surface>
+            <section>
+                <h3>{t('gallery.tags')}</h3>
+                <!-- The same words without the capsule and without a hue, which is what everything
+                     a surface lists that is not a status word is drawn as. -->
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render chipRow(false)}
-            {/if}
-            {#if form !== 'outline'}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render chipRow(true)}
-            {/if}
-        </section>
+                {@render tagRow()}
+            </section>
+        </Surface>
+
+        <Surface>
+            <section>
+                <h3>{t('gallery.meters')}</h3>
+                <div class="meters">
+                    {#each rows.slice(0, 3) as row (row.tone)}
+                        <Meter
+                            value={row.count / most}
+                            tone={row.tone}
+                            label={t('gallery.meter', row.chip)}
+                            text={String(row.count)}
+                        />
+                    {/each}
+                </div>
+            </section>
+        </Surface>
 
         <section>
-            <h3>{t('gallery.tags')}</h3>
-            <!-- The same words without the capsule and without a hue, which is what everything a
-                 surface lists that is not a status word is drawn as. -->
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render tagRow()}
+            <Surface>
+                <h3>{t('gallery.table')}</h3>
+            </Surface>
+            <Table {columns} rows={shown} rowKey="tone" {cell} sortable stays />
         </section>
 
-        <section>
-            <h3>{t('gallery.meters')}</h3>
-            <div class="meters">
-                {#each rows.slice(0, 3) as row (row.tone)}
-                    <Meter
-                        value={row.count / most}
-                        tone={row.tone}
-                        label={t('gallery.meter', row.chip)}
-                        text={String(row.count)}
+        <Surface>
+            <section>
+                <h3>{t('gallery.confirm')}</h3>
+                <ToolButton label={t('gallery.confirm_open')} onclick={() => (asking = true)} />
+                {#if asking}
+                    <Confirm
+                        message={t('gallery.confirm_message')}
+                        detail={t('gallery.confirm_detail')}
+                        confirm={t('ui.confirm_ok')}
+                        cancel={t('ui.confirm_cancel')}
+                        onconfirm={() => (asking = false)}
+                        oncancel={() => (asking = false)}
                     />
-                {/each}
-            </div>
-        </section>
+                {/if}
+            </section>
+        </Surface>
 
-        <section>
-            <h3>{t('gallery.table')}</h3>
-            <Table {columns} rows={shown} rowKey="tone" {cell} sortable />
-        </section>
-
-        <section>
-            <h3>{t('gallery.confirm')}</h3>
-            <ToolButton label={t('gallery.confirm_open')} onclick={() => (asking = true)} />
-            {#if asking}
-                <Confirm
-                    message={t('gallery.confirm_message')}
-                    detail={t('gallery.confirm_detail')}
-                    confirm={t('ui.confirm_ok')}
-                    cancel={t('ui.confirm_cancel')}
-                    onconfirm={() => (asking = false)}
-                    oncancel={() => (asking = false)}
+        <Surface>
+            <section>
+                <h3>{t('gallery.ticker')}</h3>
+                <Ticker
+                    rows={rows.slice(0, 3).map((row) => ({
+                        id: row.tone,
+                        glyph: t('gallery.empty_glyph'),
+                        label: row.chip,
+                        tail: t('gallery.ticker_tail'),
+                        tone: row.tone
+                    }))}
                 />
-            {/if}
-        </section>
+            </section>
+        </Surface>
 
-        <section>
-            <h3>{t('gallery.ticker')}</h3>
-            <Ticker
-                rows={rows.slice(0, 3).map((row) => ({
-                    id: row.tone,
-                    glyph: t('gallery.empty_glyph'),
-                    label: row.chip,
-                    tail: t('gallery.ticker_tail'),
-                    tone: row.tone
-                }))}
-            />
-        </section>
-
-        <section>
-            <h3>{t('gallery.empty')}</h3>
-            <Empty message={t('gallery.empty_message')} glyph={t('gallery.empty_glyph')} />
-        </section>
+        <Surface>
+            <section>
+                <h3>{t('gallery.empty')}</h3>
+                <Empty message={t('gallery.empty_message')} glyph={t('gallery.empty_glyph')} />
+            </section>
+        </Surface>
     </div>
 </Pane>
 

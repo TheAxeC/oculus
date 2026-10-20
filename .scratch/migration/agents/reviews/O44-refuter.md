@@ -160,3 +160,166 @@ Reviewer usage: a1d6c8c010b60b74b, claude-opus-5-5, 341,822 tokens, 99 tool uses
 - Standards 4 (the toolbar's fallback room and its comment): sent back (round 1, finding 2).
 - Standards 5 (Markdown's unreachable `surface` default): confirmed by the orchestrator's grep (six `<Markdown` calls, each with `surface={false}`); sent back (round 1, finding 3).
 - Behaviour 1 (no before-and-after list): sent back (round 1, finding 5).
+
+## Repair round 1, refuted
+
+Paths: worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O44` (base `8ebf9f093`), round snapshot `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O44-round-1/`, builder report `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O44/tools/oculus/.scratch/migration/agents/reviews/O44-report.md`. The reviewer changed no file in the worktree or the ledger. The temporary outputs are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/`.
+
+### Verification (rerun by the reviewer)
+
+All commands ran from `tools/oculus` in the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`.
+
+```
+1. npm run diagrams && npm run test:quick   (rc 0)
+test:quick: 94 changed file(s), from git since HEAD
+test:quick: 10 test file(s), 9 essential
+        tests/views/sources/bar-actions.test.ts: imports at depth 1
+ok      prettier (0.5 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.2 s)
+ok      eslint (1.6 s)
+ok      svelte-check (6.7 s): 1792492617530 COMPLETED 526 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (17.9 s): Duration  11.94s (transform 18.62s, setup 0ms, import 26.99s, tests 12.09s, environment 763ms)
+test:quick: 20.3 s (limit 45.0 s); every command passed
+(md5 of docs/diagrams/* before and after the run: 544b6c761b189d4a24239eed27652197 both; `git diff 8ebf9f093 --stat -- tools/oculus/docs`: 6 files changed, 26 insertions(+), 26 deletions(-))
+
+2. grep -rln "offsetWidth\|clientWidth" src/lib/ui/frame/toolbar
+(no output) rc 1
+
+3. the report's Python scan of <Pane ...> openings, run as the report quotes it
+66 41 25
+UNTINTED: academic/present/Present.svelte:415 apps/frame/AppFrame.svelte:337 boards/collection/Collection.svelte:376 boards/entry/Entry.svelte:261 boards/focus/Focus.svelte:166 boards/project/Project.svelte:111 boards/projects/Projects.svelte:328 feeds/inbox/Inbox.svelte:175 feeds/leads/Leads.svelte:176 feeds/linkedin/Linkedin.svelte:163 feeds/literature/Literature.svelte:185 feeds/radar/Radar.svelte:112 sources/data/Data.svelte:98 sources/document/Document.svelte:206 sources/file/File.svelte:446 sources/notes-graph/NotesGraph.svelte:88 sources/repositories/diff/Diff.svelte:389 sources/source/Source.svelte:467 sources/venues/Venues.svelte:110 structure/domains/Domains.svelte:59 structure/map/Map.svelte:179 structure/pillars/Pillars.svelte:80 system/gallery/Gallery.svelte:162 system/machine/output/Output.svelte:73 system/machine/usage/Usage.svelte:170
+the report's table "The 66 views": 66 rows
+
+4. grep -rn --exclude=local.yml "wall-panel\|wall-popover\|chip-on-wall\|wall-blur" src/lib/views src/lib/ui src/lib/shell | wc -l
+104
+grep -n ... src/lib/views/shared/prose/Markdown.svelte: (no output) rc 1
+
+5. sh utils/folder-check.sh
+(no output) rc 0
+
+6. sh utils/unused-exports.sh > <scratch>/ue.txt; diff O44-base/unused-exports.txt <scratch>/ue.txt
+(no output) rc 0; 348 lines
+
+7. this round's added lines (diff of each files.txt path, snapshot against worktree, lines ">", plus the added lines of Help.svelte and Doc.svelte in git diff 8ebf9f093), 67 lines, grepped -i for before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|plan ids|dates|round
+hits: Surface.svelte:5 "though the element is still in the tree" (compares two properties of one state, with and without a box; no earlier state: not history); three hits of "around" (not the word "round"). The whole-diff grep of the first review was not rerun; this round changed comments only in the 15 files listed.
+
+8. prose read of every comment this round adds or changes: Standards 1 below; otherwise plain, no em dash, no "not X but Y".
+
+ASCII: LC_ALL=C grep -n '[^ -~]' over the 15 files this round changed and O44-report.md
+(no output) rc 1
+spec.md's perl gate over $(find src tests bin config -type f ! -name local.yml)
+(no output; find printed "bin: No such file or directory")
+```
+
+Commands the round's report quotes, rerun:
+- `grep -rn -E "> *:global\(|:global\([^)]*>[^)]*\)" src --include="*.svelte" --include="*.css"`: **48 lines**. The report says "prints 41 lines". The difference is exactly the round's own seven lines: five `[data-surface] > *` selectors and the two comment lines of Surface.svelte:9-10. So the figure was taken before the last change (Standards 2).
+- `grep -rn --exclude=local.yml "surface=\|surfaced" src`: the same four lines the report quotes (Pane.svelte:54, FloatLayer.svelte:138, check.ts:185, :384).
+- Token grep count: 104, as reported.
+- Pane scan: `66 41 25`, as reported.
+- unused-exports against `O44-base/unused-exports.txt`: no difference, as reported.
+- `npx vitest run tests/shell/commands/debug/debug-toolbar.test.ts tests/state/feeds/literature-home.test.ts tests/views/sources/bar-actions.test.ts`: `Test Files  3 passed (3)`, `Tests  17 passed (17)`, as reported.
+- `grep -rl "<Surface" src/lib --include="*.svelte" | wc -l`: 32, as reported. Importers of the listed parts (`grep -rlE "import (Empty|Intro|RegistryHead|Stats|AccountList|Latex|LockedCode|SourceNote|StripSaid|Ribbon|EntryFolder) from" src | wc -l`): **93**. The report's "their importers, 105 files" is the union with the 32 direct users, not the importers (Standards 2).
+- test:quick timing: the report quotes 47.1 s, over the limit; the rerun took 20.3 s. The figure depends on machine load, and no decision rests on it.
+
+The round's delta was read whole: `diff -u` of each changed `files.txt` path, snapshot against worktree (Toolbar.svelte, fit.ts, Surface.svelte, StripSaid.svelte, Inbox, Leads, Linkedin, Literature, Radar, Markdown, RenderedMarkdown, EntryFolder, Project), plus Help.svelte and Doc.svelte from `git diff 8ebf9f093`. No other `files.txt` path differs from its snapshot (`cmp` over every path).
+
+### Finding 1's enumeration, read for completeness
+
+- **Parts rooted in a Surface.** A transitive scan of components whose top-level markup opens with a Surface, or with a part built on one, gives: Empty, Intro, RegistryHead, Stats, AccountList, QuickAdd, Latex, LockedCode, SourceNote, Ribbon, EntryFolder and StripSaid. The scan also lists Markdown, Jobs, Notes, Results, Tree, Rows, RootedTree, ProjectTree, PickSession, NoAccounts, RadarIntro and RenderedMarkdown, which draw an `Empty` or `Intro` at top level in a branch. `Failed` is a false hit: it draws `Empty error` inside its own `.failed` div, and an error Empty takes no Surface.
+- **QuickAdd is missing from the report's list of parts** (`QuickAdd.svelte:85`, root `<Surface>`). Its one importer, Focus.svelte, is among the 32 direct Surface users, so it was read anyway.
+- **Selectors scanned.** The style blocks of all 114 files (the importers of all those parts, plus the direct Surface users) were scanned for `>`, `+`, `~`, `:first-*`, `:last-*`, `:nth-*`, `:only-*`, `:empty` and `:has(`. The hits are: Collection.svelte:492-506 (cards and slots only), the five feed rules, TerminalList.svelte:459 and :463, History.svelte:376 and :384, PageArea.svelte:111 and TabView.svelte:73. TerminalList's `.actions` holds only ToolButtons; its Empty, at :374, is an error Empty outside `.actions`. History draws no Surface. TabView's children are a view or `Failed`, and Failed's root is unchanged. PageArea's `.tree` holds PaneView or SplitView.
+- **Other places checked.** In the whole-tree `> :global(` grep, the remaining rules reach no wrapped element: Tabs, TabFace, Toolbar, ToolButton, Tooltip (its Ribbon children are spans), MenuOpener, Workbench, StatusBar, SplitView, PageLeaf, ProjectCard, EntryCard and Bucket (`.cards` holds only Reveal and RadarCard). A grep for combinators naming the wrapped classes or tags anywhere in `src` finds only Status.svelte:101 `.view > p` (no Surface in Status) and TerminalBar.svelte:118 `.note ~ .note` (scoped, no Surface). No script in a Surface user reads DOM structure (no `parentElement`, `children`, `firstElementChild`, sibling reads or `:scope >`).
+- **Feed containers.** The five containers' direct children were read: none is a Card. The added `[data-surface] > *` selector therefore reaches only the parts of a Surface, as the report states.
+- **Item properties.** The rules of every element a Surface wraps were read for flex and grid item properties, `align-self`, `order`, `sticky`, auto margins, `height: 100%` and `min-height`. Only StripSaid's `.said { flex: none }` needed the Surface box, and it now sits in `.line` (`StripSaid.svelte:17-26`). Presenter's Surfaces wrap the meters inside `.meters`, which takes `gap: inherit` under a wallpaper, and the captions inside `.next` and `.notes`, whose own `flex` rules are unchanged.
+- **Conclusion.** The enumeration of rules is complete: the five feed rules are the only rules whose matched element is now wrapped.
+
+### Verdicts
+
+Items of the brief's "What to build", numbered as the first report numbered them, over the whole diff since the base:
+
+- 1.1: holds. Every width is `getBoundingClientRect().width`: the controls `Toolbar.svelte:115`, the room `:116`, the opener probe `:96` and the pane `:73`. Check 2 prints nothing.
+- 1.2: holds. The room is the absolutely placed `.room` span (`Pane.svelte:62`, `:181-191`). It is positioned against the header's padding box (`header { position: relative }`), so its width is `.tools`' `max-width`, depends on the header alone, and does not change when the opener is drawn. `roomBox` (`Toolbar.svelte:84-88`) now reads only that span. With no span, `measure()` (`:108-109`) and the effect (`:132-133`) return before measuring. All 24 overflow toolbars are the first element of a Pane `tools` or `toolbar` snippet, directly or through AccountActions, SourceToolbar (RegistryTools), DiffBar or files/header/Controls, each rooted in the Toolbar (grep above).
+- 1.3: holds. `fit.ts` changed in its comment only; `:5-6` names the room span.
+- 1.4: holds. `watch.ts` observes `room` (`watchToolbar(room, run, measure)`, `Toolbar.svelte:136`).
+- 1.5: holds by reading. `.tools` keeps `flex: 0 0 auto`, `margin-left: auto` and the 3ch; the span is out of flow.
+- 2.1: holds. The surface rule in `tokens.css` is unchanged; the token `--panel-on-wall` (`tokens.css:283-290`) is the same colour mix.
+- 2.2: holds. The table has 66 rows, equal to the scan.
+- 2.3: holds. History, Processes, Apps, AppTree and MarkdownPreview are tinted. Table heads paint nothing unless `stays` (`Table.svelte:127-144`). ProcessTable's Stop column keeps its mix (ruling Z950).
+- 2.4: holds. One definition (`Surface.svelte:79-88` on `--panel-on-wall`); the shared parts wrap once; the `said` paragraphs are wrapped.
+- 2.5: holds. `data-surface` marks the layer, and a nested Surface is a plain wrapper (`Surface.svelte:98-105`).
+- 2.6: holds. Empty wraps in a Surface; `Empty error` takes none (`Empty.svelte:51-58`).
+- 2.7: holds as ruled in round 1 finding 3. The `surface` prop, the `surfaced` class and the fenced-block rule are gone from Markdown.svelte, and the six calls pass nothing. All six callers draw on a surface: RenderedMarkdown's frame, Help and Doc tinted (`Help.svelte:66`, `Doc.svelte:269`), EntryFolder and Project on a Surface. The comment at `Markdown.svelte:316-321` states what holds.
+- 2.8: holds. The float comment is rewritten; a free float carries `data-surface`; a docked float is clear.
+- 2.9: holds. Every new surface rule is under `body.wall`.
+- 2.10: holds. Each changed component carries a comment on its surface.
+- 2.11: holds. DESIGN.md:249 gains the sentence; :658 is made general.
+- 3.1: not applicable (a premise, confirmed at `Ticker.svelte:138-146`).
+- 3.2: holds. `.behind` uses `--fs-xs` with a 14 px line and an 18 px minimum height (`CommandCenterView.svelte:356-360`).
+- 3.3: holds. `.wait-names` uses `--fs-xs` with a 14 px line (`Focus.svelte`); the labels are unchanged.
+- 3.4: holds. 35 `font-size` lines in `boards/focus/`, classed in the report's Part 3 list.
+
+Cases:
+
+- 1, 2, 3: met by reading. The room no longer depends on the opener, and the arithmetic is fractional. The flip count is the look's to measure.
+- 4: met by reading.
+- 5: met. All 24 toolbars sit in Pane's `.tools` beside the span.
+- 6, 7, 8: met by reading.
+- 9, 10, 11, 12, 13: met by reading.
+- 14: not verifiable here. The code table holds all 66 views; the look settles it.
+- 15: met by reading.
+- 16, 17: met by reading.
+- 18 to 22: met by reading.
+- 23, 24, 25, 26, 27, 28: met by reading.
+- 29: met by reading. This was partial in the first review. Without a wallpaper the Surface is `display: contents`. The five feed rules now reach the wrapped part (`Inbox.svelte:251-255`, `Leads.svelte:302-306`, `Linkedin.svelte:293-297`, `Literature.svelte:272-276`, `Radar.svelte:194-198`). StripSaid's line keeps `flex: none` on its own box, and no other parent rule reaches a wrapped element (the enumeration above).
+
+### 1. Spec
+
+- none.
+
+### 2. Proof
+
+- none.
+
+### 3. Standards
+
+1. **Five comments and one doc comment are not filled to 100 columns.**
+   - Place: `src/lib/views/feeds/inbox/Inbox.svelte:249-250`, and the same comment at `Leads.svelte:300-301`, `Linkedin.svelte:291-292`, `Literature.svelte:270-271` and `Radar.svelte:192-193`; also `src/lib/ui/frame/toolbar/Toolbar.svelte:79-80`.
+   - Quoted: "`    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and`" (94 columns), followed by "`       by itself without one (...)`". Also "`     * The box whose width is the line's room: the `[data-toolbar-room]` span Pane's header lays`" (96 columns), followed by "`     * out beside the toolbar, ...`".
+   - What is wrong: the rules file asks that a comment the step edits is "rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short". In the feed comments, "by" fits on the first line (94 + 3 = 97). In Toolbar, "out" fits exactly (96 + 4 = 100, and `comment-width.test.ts:21` allows 100).
+   - Failure scenario: the comments end short inside a sentence, a mark of hand wrapping that the convention exists to prevent. Nothing in the behaviour changes.
+2. **The report carries sentences and figures the round made false, or that were taken before the last change.**
+   - Place: `.scratch/migration/agents/reviews/O44-report.md` in the worktree.
+   - First line: "NOT done: the look on TEST under rice (the 'before and after' the report shape asks for, ...) was not taken". The "Before and after" section now exists.
+   - "Part 1, the toolbar", bullet 1: "A container without the span gives its own width." Now false: such a toolbar measures nothing (`Toolbar.svelte:84-88`, `:109`).
+   - "Judgment calls" 8: "Markdown keeps its `surface` prop although every caller passes false". Now false.
+   - "Check 4" gives `Surface.svelte:76` and "Check 7" gives `Surface.svelte:69, :80, :84, :93`. After the round's longer head comment these are `:85-86` and `:79, :90, :94, :103` (`grep -n` above).
+   - "Repair round 1": "which prints 41 lines" (the rerun prints 48), and "their importers, 105 files" (93 importers; 105 is the union with the 32 direct users).
+   - The round names only Check 4's Markdown line as no longer holding.
+   - What is wrong: the rules file says every count and `file:line` in the report is taken after the last change, and a figure from before it is taken again or removed.
+   - Failure scenario: the landing booking or the look quotes the report's Part 1 bullet or judgment call 8, and records a fallback room and a Markdown prop that the code no longer has.
+
+### 4. Behaviour
+
+- none. The round's visible changes are stated with their before and after in its "Before and after" list:
+  - Row 22: the tab menu line sits in its own box, with the same height and place with and without a wallpaper.
+  - Row 23: the five feed views' parts shrink to the column again without a wallpaper.
+  - Row 24: removing Markdown's prop changes no paint, since every call passed `false`.
+  - Row 34: the toolbar fallback serves no toolbar, so nothing visible changes.
+
+  That list covers every item the first review raised under Behaviour.
+
+### Declined to judge
+
+- **Page-only results:** flip counts (cases 1 to 4 and 18 to 22), whether text reads off one layer (cases 6 to 14 and 23 to 26), and the light theme with `all` (case 24). The reviewer runs no page; the look on TEST under rice, and the scratch oculus for case 24, settle them.
+- **Spacing with a wallpaper:** a Surface that is a flex or grid item keeps its child's vertical margins inside its box (a flex item is an independent formatting context). For example, the `h3` margins of Inbox's group headings and Linkedin's section headings may space differently with a wallpaper than without one. Case 29 covers only the no-wallpaper layout, and the look settles this.
+- **A future caller of the head-comment pattern:** the example selector in `Surface.svelte:9-10` (`.list > :global([data-surface]) > :global(*)`) would also reach a Card's children if a Card were a direct child of the container. None of the five containers has one (markup read). Whether a future caller would copy the pattern onto a card container is not a fact of this diff.
+- **The whole-diff history-word grep:** not rerun. The first review ran it, and this round changed comments only in the 15 files grepped above.
+- **Worktree state outside the diff:** whether the builder's round left index or worktree state beyond the diff. Only a git command outside `git diff <base>` and `git status --short` would show it. `git status --short` lists only the step's paths, plus the orchestrator's `agents/briefs/O44-round1.md` and the report under `.scratch`.
+
+Reviewer usage: abfb7d795db113b8b, claude-opus-5-5, 277,673 tokens, 77 tool uses, 12.2 min.
+
+### Closed (repair round 1)
+
+- Standards 1 (six comments not filled to 100 columns): small and inside the brief; fixed at landing on main by rewrapping each comment as a whole paragraph.
+- Standards 2 (report sentences and figures the round made false): fixed at landing; the builder's report is carried into the main ledger with a section "Corrections at landing" that names each sentence and figure and what holds, and the landing report quotes the corrected figures.

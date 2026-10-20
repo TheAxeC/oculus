@@ -11,6 +11,7 @@
     import { personNames } from '$lib/state/boards/person';
     import { waitingLabel } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LaneCard from './LaneCard.svelte';
     import LaneHead from './LaneHead.svelte';
@@ -185,7 +186,12 @@
 </script>
 
 {#snippet lane(one: Lane, held: Project[], grid: boolean)}
-    <div class="lane" class:lit={over === one.key} style={`--tone: var(--c-${one.tone})`}>
+    <div
+        class="lane"
+        class:lit={over === one.key}
+        style={`--tone: var(--c-${one.tone})`}
+        data-surface
+    >
         <LaneHead label={one.label} count={held.length} tone={one.tone} />
         <p class="lane-sub">{one.sub}</p>
         <div
@@ -224,13 +230,15 @@
     {#if inCluster.length > 0}
         <details class="cluster" class:muted={cluster !== 'now'} open>
             <summary>
-                {#if cluster === 'now'}
-                    <Glyph name={t('focus.now_glyph')} />{t('focus.cluster_now')}
-                {:else if cluster === 'parked'}
-                    {t('focus.cluster_parked')}
-                {:else}
-                    <Glyph name={t('focus.ideas_glyph')} />{t('focus.cluster_incubate')}
-                {/if}
+                <Surface inline>
+                    {#if cluster === 'now'}
+                        <Glyph name={t('focus.now_glyph')} />{t('focus.cluster_now')}
+                    {:else if cluster === 'parked'}
+                        {t('focus.cluster_parked')}
+                    {:else}
+                        <Glyph name={t('focus.ideas_glyph')} />{t('focus.cluster_incubate')}
+                    {/if}
+                </Surface>
             </summary>
             <div class="lanes">
                 {#each inCluster as one (one.key)}
@@ -243,7 +251,11 @@
 {/each}
 
 <details class="cluster muted" open>
-    <summary><Glyph name={t('focus.ideas_glyph')} />{t('focus.ideas')}</summary>
+    <summary>
+        <Surface inline>
+            <Glyph name={t('focus.ideas_glyph')} />{t('focus.ideas')}
+        </Surface>
+    </summary>
     <div class="lanes one">
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render lane(
@@ -297,9 +309,17 @@
         background: var(--panel);
     }
 
+    /* Over a wallpaper a lane is the one translucent layer under its cards, so it carries
+       `data-surface` and an empty lane's message paints nothing of its own; drawn inside a surface
+       already (a free float's fill) the lane paints nothing. */
     :global(body.wall) .lane {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .lane {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .lane.lit {

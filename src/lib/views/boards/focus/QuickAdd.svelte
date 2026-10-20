@@ -7,8 +7,11 @@
     // one field through state/client/writes.svelte.ts, like every other write on this board. Escape
     // acts only while the form is on screen: a pane keeps the view of a tab it hides mounted, and a
     // key pressed in another tab is not one this form was asked to answer.
+    //
+    // Over a wallpaper the label and the controls are read off a `Surface`.
 
     import DateInput from '$lib/ui/forms/DateInput.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -79,48 +82,50 @@
 
 <svelte:window onkeydown={keyed} />
 
-<section class="qa" bind:this={box}>
-    <div class="bar">
-        <span class="lbl">{t('focus.quick_add')}</span>
-        <ToolButton
-            label={t('focus.add_followup')}
-            active={field === 'followup'}
-            onclick={() => (field === 'followup' ? close() : open('followup'))}
-        />
-        <ToolButton
-            label={t('focus.add_deadline')}
-            active={field === 'deadline'}
-            onclick={() => (field === 'deadline' ? close() : open('deadline'))}
-        />
-    </div>
-
-    {#if field !== null}
-        <div class="form">
-            <Select
-                value={project}
-                label={t('focus.qa_project')}
-                empty={t('focus.qa_project')}
-                {choices}
-                onchange={(next: string) => (project = next)}
+<Surface>
+    <section class="qa" bind:this={box}>
+        <div class="bar">
+            <span class="lbl">{t('focus.quick_add')}</span>
+            <ToolButton
+                label={t('focus.add_followup')}
+                active={field === 'followup'}
+                onclick={() => (field === 'followup' ? close() : open('followup'))}
             />
-            {#if field === 'deadline'}
-                <DateInput
-                    {value}
-                    label={t('focus.add_deadline')}
-                    oninput={(next: string) => (value = next)}
-                />
-            {:else}
-                <TextInput
-                    {value}
-                    label={t('focus.add_followup')}
-                    oninput={(next: string) => (value = next)}
-                />
-            {/if}
-            <ToolButton label={t('focus.qa_save')} onclick={save} />
-            <ToolButton label={t('focus.qa_cancel')} onclick={close} />
+            <ToolButton
+                label={t('focus.add_deadline')}
+                active={field === 'deadline'}
+                onclick={() => (field === 'deadline' ? close() : open('deadline'))}
+            />
         </div>
-    {/if}
-</section>
+
+        {#if field !== null}
+            <div class="form">
+                <Select
+                    value={project}
+                    label={t('focus.qa_project')}
+                    empty={t('focus.qa_project')}
+                    {choices}
+                    onchange={(next: string) => (project = next)}
+                />
+                {#if field === 'deadline'}
+                    <DateInput
+                        {value}
+                        label={t('focus.add_deadline')}
+                        oninput={(next: string) => (value = next)}
+                    />
+                {:else}
+                    <TextInput
+                        {value}
+                        label={t('focus.add_followup')}
+                        oninput={(next: string) => (value = next)}
+                    />
+                {/if}
+                <ToolButton label={t('focus.qa_save')} onclick={save} />
+                <ToolButton label={t('focus.qa_cancel')} onclick={close} />
+            </div>
+        {/if}
+    </section>
+</Surface>
 
 <style>
     .qa {

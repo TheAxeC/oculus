@@ -250,7 +250,9 @@
         gap: 6px;
     }
 
+    /* Over a wallpaper the bar is read off its file's section, the surface
+       (diff/DiffSection.svelte), and paints nothing of its own. */
     :global(body.wall) .hunk {
-        background: var(--chip-on-wall);
+        background: transparent;
     }
 </style>

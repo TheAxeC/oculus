@@ -17,6 +17,9 @@
     // and themes) is one line with each count, before the channels it reads.
     // The panel also holds the choices of the app's menu (disable, enable, remove) and, for an app
     // that is approved and reviewed again, a way back to the app.
+    //
+    // Over a wallpaper the panel is the one translucent layer under its words, so it carries
+    // `data-surface`; inside a surface already (a free float's fill) it paints nothing.
 
     import type { AppRow } from '$lib/state/system/apps/apps.svelte';
     import type { AppChoice } from '$lib/state/system/apps/flows';
@@ -54,7 +57,7 @@
     }
 </script>
 
-<div class="panel" data-app-panel={row.name}>
+<div class="panel" data-app-panel={row.name} data-surface>
     <h2>{t('apps.approve_title')}</h2>
     <h3 class="title">{title}</h3>
     {#if row.description !== ''}
@@ -152,6 +155,17 @@
         padding: 16px 20px;
         color: var(--ink);
         overflow-wrap: anywhere;
+    }
+
+    :global(body.wall) .panel {
+        border-radius: var(--input-radius);
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .panel {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     h2 {

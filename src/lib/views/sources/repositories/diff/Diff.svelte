@@ -513,8 +513,8 @@
         outline-offset: -1px;
     }
 
+    /* Over a wallpaper each file's section is the surface (diff/DiffSection.svelte). */
     :global(body.wall) .files {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
     }
 </style>

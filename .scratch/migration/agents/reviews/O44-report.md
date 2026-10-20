@@ -432,3 +432,193 @@ Read on the base copy `.agents/worktrees/O44-base/tools/oculus`. No page was run
 - Output is class 3, not class 1.
 - Part 1's toolbars "outside a Pane header" are all inside one.
 - The write list does not name the shell files that carry text on the picture (PaneStrip's path, the tab menu's said line, FoldedPane) nor FrameLayer, wall.css, Code, RenderedMarkdown and Graph, which the rule reaches; each is named above with its reason.
+
+
+## Repair round 1
+
+Carried from the builder's final message of round 1 by the orchestrator at landing; the builder did not write it into this file.
+
+The section below is appended to `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O44/tools/oculus/.scratch/migration/agents/reviews/O44-report.md`. That file holds the full text with every code quote.
+
+### Open points
+
+- All five findings are done.
+- `test:quick` passed every command, but it took 47.1 s against its 45.0 s limit. Its output says `test:quick: over the time limit`.
+- `npm run diagrams` rebuilt `docs/diagrams/`. Whether any diagram now differs from HEAD is not verified: the base copy holds only `src`, and I may not run git. This round adds no import between components, so no diagram edge should move.
+- Under rice, an untinted pane's header still gets the rice chip strip. The rule is `Pane.svelte:230-233`, the same rule as the base's `:190-193`. So on TEST under rice the header shows no change. The header change shows only under a wallpaper theme that is not rice. The view bar does change under rice.
+
+### DONE / NOT DONE
+
+| Item | State | Proof |
+|---|---|---|
+| 1. Parent rules written with `>` reach the part with and without a wallpaper | DONE | the list of rules below; `test:quick` |
+| 2. What the toolbar does with no room span is written down | DONE | `Toolbar.svelte:18-25`, `:78-88`, `fit.ts:5-6` |
+| 3. Markdown's `surface` prop removed | DONE | grep for `surface=` and `surfaced` below |
+| 4. PaneStrip, FoldedPane, StripSaid, PaneView in the write list | DONE | rows 20 to 22 of Before and after |
+| 5. Before and after | DONE | the section below |
+| Verify list rerun after the last change | DONE | Verification below |
+
+### Finding 1: `display: contents` and the parents' `>` rules
+
+How the rules were found:
+- 32 files draw a `Surface` directly (`grep -rl "<Surface"`).
+- 105 files import a part that is built on a Surface: Empty, Intro, RegistryHead, Stats, AccountList, Latex, LockedCode, SourceNote, StripSaid, Ribbon and EntryFolder.
+- I read the style blocks of all these files, and grepped the whole tree with `grep -rn -E "> *:global\(|:global\([^)]*>[^)]*\)" src --include="*.svelte" --include="*.css"`, which prints 41 lines.
+
+Five rules reached an element that is now wrapped in a Surface. Each now names both elements: `.X > :global(*)` reaches the Surface's box when a wallpaper is on, and `.X > :global([data-surface]) > :global(*)` reaches the part when there is none.
+- `Inbox.svelte:251-255`
+- `Leads.svelte:302-306`
+- `Linkedin.svelte:293-297`
+- `Literature.svelte:272-276`
+- `Radar.svelte:194-198`
+
+Each of the five carries this comment: "A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by itself without one (`display: contents`), so both shrink to the column." None of the five containers has a Card as a direct child. So the new `[data-surface] > *` selector reaches only parts inside a Surface.
+
+The other rules among the 41 reach no wrapped element:
+- `Collection.svelte:492-506` reaches only cards.
+- `TerminalList.svelte:459` and `:463`: `.actions` holds no Empty.
+- `History.svelte:376` and `:384`: that block has no Surface.
+- `Bucket.svelte:105`.
+- The rules of TabView, SplitView, PageLeaf and the other primitives, whose children are view roots or controls.
+
+No selector using `+`, `~` or `:first-child` names a wrapped element.
+
+Only one wrapped element sets its own flex or grid placement: StripSaid's `.said { flex: none }`. `StripSaid.svelte:17-21` now draws `<div class="line"><Surface fitted><p class="said" role="status">`, with `.line { flex: none }` at `:24-26`. When a wallpaper is on, the Surface box has `min-width: 0` (`Surface.svelte:66-71`). Surface's head comment (`:2-16`) now gives both selectors as an example, and says that a part whose own placement matters sits in a box of its own around the Surface.
+
+### Finding 2: the toolbar with no room span
+
+- `roomBox` looks only for the `[data-toolbar-room]` span beside the toolbar.
+- When there is no such span, `measure()` (`Toolbar.svelte:109`) and the `$effect` (`:133`) return before measuring. The toolbar then draws every control and no `more` button.
+- The head comment (`:18-25`) and `roomBox`'s comment (`:78-83`) now say: "A toolbar with no such span beside it measures nothing and draws every control, with no `more` button."
+- `fit.ts:5-6` defines the room as the width of the span Pane's header lays out beside the toolbar. No comment names the toolbar's own box as a fallback.
+
+### Finding 3: Markdown's `surface` prop
+
+- The prop, the `surfaced` class and the `.doc.surfaced pre` rule are gone from `Markdown.svelte`.
+  - `:75` reads `let { doc, loading, failed, follow = false, slots, onlink }`.
+  - `:231` reads `<div class="doc" onclick={pressed} bind:this={box}>`.
+- The wall comment at `:316-321` now says: "Over a wallpaper a document paints no surface of its own: its container gives it one (a tinted pane, a `Surface`, the preview's frame), ..."
+- `surface={false}` is removed from all six calls: RenderedMarkdown:172, Help:68, EntryFolder:93, Project:160, and Doc:287 and :296.
+- RenderedMarkdown's comment at `:196-198` says the document paints no surface of its own.
+- `grep -rn --exclude=local.yml "surface=\|surfaced" src` prints only four lines, none of them the prop:
+  - `Pane.svelte:54` and `FloatLayer.svelte:138`: the `data-surface` attribute.
+  - `check.ts:185` and `:384`: an unrelated schema function named `surfaced`.
+- The earlier Check 4 line in the report about `Markdown.svelte:346-347` no longer holds. Markdown.svelte now has no hit of the token grep.
+
+### Finding 4: the shell surfaces
+
+PaneStrip, FoldedPane, StripSaid and PaneView stay in, and are in the write list. This round changes only StripSaid, for finding 1.
+
+### Before and after
+
+Each row is read from the diff of `src` against the base copy, not seen in the running app. "Mix" means `--panel-on-wall`; "chip band" means `--chip-on-wall`.
+
+1. **Untinted views (Focus, Projects, Inbox, and the rest).**
+   - Under rice the header keeps its rice chip strip (`Pane.svelte:230-233`). Under a wallpaper theme that is not rice, the header goes from clear to the mix.
+   - The view bar goes from clear to the mix (`:117-121`).
+2. **A tinted view in a free float.** The box, header and bar paint nothing (`Pane.svelte:107-110`, `:123-128`).
+3. **A docked float.** The float's own fill is gone (`FloatLayer.svelte:214-216`). The view inside is now the one layer.
+4. **A free float** (try a Projects board, a Focus board, a source file and a PDF).
+   - Cards paint nothing and keep only their border (`Card.svelte:151-154`).
+   - Lanes paint nothing (Lanes:320-323, Band:216-219).
+   - The tab strip paints nothing (FloatLayer:222-225).
+   - The editor paints nothing (`wall.css:29-38`).
+   - The frame paints nothing (FrameLayer:294-297).
+   - Code, the preview frame, the graph, the Ribbon's months, a diff's file section, a slide frame, the breadcrumb row and Surfaces also paint nothing.
+5. **Deposit and Merge.** The Monaco editors paint nothing over the tinted box.
+6. **Entry.** The editor section and the referrers now sit on a Surface (`Entry.svelte:312-322`). The editor section is a form (EntryForm). It holds no Monaco editor, so it paints nothing of its own, before or now.
+7. **Entry folder and Project documents.** Each section is on a Surface. Fenced code blocks lose the chip band they had (base `Markdown.svelte:345-348`).
+8. **Diff with several files.**
+   - Each file section paints the mix (`DiffSection.svelte:489-498`).
+   - Hunk bars (HunkBar:255-257), comment boxes (CommentBox:121-123), the files box and the editors paint nothing.
+   - The sticky header of each file keeps its chip band (FileHeader:124-127).
+9. **Diff with one file.** The header goes clear (FileHeader:120-122).
+10. **Hpc, Status and Recover.** Table heads go clear (`Table.svelte:127-129`). Each table sits in a box that scrolls sideways, so its head scrolls away with its rows.
+11. **Usage and the Projects list.** Each section is on a Surface, and its table head goes clear.
+12. **A Summary slide.** The table head goes clear.
+13. **Other slide parts** (sections, grid, project, equation, figure panel). Each paints nothing over the slide frame (Panel:168-175; Stage:42, :88-96).
+14. **The presenter view.** Meters, captions and notes are on Surfaces (Presenter:69-78, :101-106, :116-126).
+15. **Gallery.** Each section is on a Surface. The table keeps a mixed head and now paints its rows with the mix (Table:131-139).
+16. **The career panel.** Facts, order of work, criteria and host rows go from `--fs-md` to `--fs-xs` with a 14 px line. Tags and institutions go from `--fs-sm` to `--fs-xs` (CareerPanel:345-349, :384-385, :413-414; CareerHosts:157-158).
+17. **The Focus command center.**
+    - The behind row and the awaited names go to `--fs-xs` (CommandCenterView:356-360; Focus:261-265).
+    - The list of people awaited is on a fitted Surface.
+18. **Other Focus parts.** The said line, the cluster summaries and the quick-add form are on Surfaces.
+19. **The breadcrumb row**, when it sits on its own row. It goes from clear to the mix (PaneStrip:257-260).
+20. **The folded strip.** It goes from clear to the mix (FoldedPane:99-102).
+21. **The tab menu line.** It is on a fitted Surface, inside its own box with `flex: none`, so it keeps the same height and place with and without a wallpaper (StripSaid:17-26).
+22. **Inbox, Leads, Linkedin, Literature and Radar** (finding 1). Each part still shrinks to the column, with the wallpaper off and on.
+23. **Help, Doc and a source's preview** (finding 3). No paint change, since these calls already passed `false`.
+24. **The Markdown preview.** The pane is now tinted, and the preview frame paints nothing (RenderedMarkdown:204-207).
+25. **History.** The pane is now tinted. The raw lines lose their chip band (History:470-472).
+26. **Processes.**
+    - The pane is now tinted, and the table head goes clear (ProcessTable:136-138).
+    - The sticky Stop column keeps its own mix on top of the tinted box (`:206-209`).
+27. **Apps and AppTree.** The panes are now tinted.
+28. **The app frame.**
+    - The host line is on a fitted Surface.
+    - The approval panel paints the mix with rounded corners (ApprovalPanel:160-169).
+29. **The graph's error box** (Map, Notes graph). It goes clear (Graph:464-468).
+30. **Empty and Intro** in the 25 untinted views. They are now on a Surface (Empty:51-58, Intro:33). Nothing changes inside a card or a tinted box, and an error Empty is drawn without a Surface.
+31. **Said lines** in Collection, Entry, Focus, Project, Projects, Inbox, Leads, Linkedin, Literature, Radar, the account list and the registry head (Data, Domains, Venues, Pillars) are on a Surface.
+32. **Other parts now on Surfaces.**
+    - Inbox: group headings, the add-account form, the account list.
+    - Leads: the run log.
+    - Linkedin: the section headings.
+    - Literature: the search head, the problem line, the count.
+    - Pillars: the headings and notes.
+    - Map: the head and the legend.
+    - Venues: the disclosure headings, the next-deadlines line, the spark line and the legend. The timeline keeps its place (Venues:220-223).
+    - Projects: the stats.
+    - File: the download box.
+    - Source: the lock line and the save note.
+33. **A toolbar in a pane header.** It draws one layout for a given width.
+
+### Verification, run after the last change
+
+1. `npm run diagrams && npm run test:quick` ran once and exited 0.
+   - prettier, ASCII gate, svelte-kit sync, svelte-check (0 errors, 0 warnings), vitest and eslint all print `ok`.
+   - The run ends with `test:quick: 47.1 s (limit 45.0 s); every command passed` and `test:quick: over the time limit`.
+2. `grep -rln "offsetWidth\|clientWidth" src/lib/ui/frame/toolbar` prints nothing.
+3. The Python Pane scan prints `66 41 25`.
+4. The token grep prints 104 lines. The only change from Check 4 is that Markdown.svelte's two lines are gone.
+5. `sh utils/folder-check.sh` exits 0.
+6. `sh utils/unused-exports.sh` shows no difference from the base's `unused-exports.txt`.
+7. History-word grep over the lines added in this round's files: one hit, `Surface.svelte:5` "still in the tree". It says the element stays in the page while it lays out as no box. It does not compare with earlier code.
+8. Prose read of this round's comments:
+   - Surface's comment is rewritten, so that no code span is split across two lines.
+   - The short lines in Markdown's comment at `:320-321` are refilled to the full width.
+   - `Toolbar.svelte:86` and `Doc.svelte:296` are put in Prettier's form.
+   - No comment line in the changed files is over 100 columns.
+
+While working I ran the tests of what I changed: `npx vitest run` on `debug-toolbar.test.ts`, `literature-home.test.ts` and `bar-actions.test.ts`. 3 files, 17 tests passed.
+
+`test:quick` ran once.
+
+### ASCII check
+
+`LC_ALL=C grep -n '[^ -~]'` over the 15 changed source files and the report prints nothing.
+
+### Files changed this round
+
+All under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O44/tools/oculus/`:
+- `src/lib/views/feeds/{inbox/Inbox,leads/Leads,linkedin/Linkedin,literature/Literature,radar/Radar}.svelte`
+- `src/lib/shell/panes/strip/StripSaid.svelte`
+- `src/lib/ui/frame/Surface.svelte`
+- `src/lib/ui/frame/toolbar/Toolbar.svelte`
+- `src/lib/ui/frame/toolbar/fit.ts`
+- `src/lib/views/shared/prose/Markdown.svelte` and `RenderedMarkdown.svelte`
+- `src/lib/views/system/help/Help.svelte`
+- `src/lib/views/boards/entry/EntryFolder.svelte`
+- `src/lib/views/boards/project/Project.svelte`
+- `src/lib/views/sources/doc/Doc.svelte`
+- `.scratch/migration/agents/reviews/O44-report.md`
+
+## Corrections at landing
+
+The review over round 1 (Standards 2) found these sentences and figures untrue after the round; what holds:
+- The first line's "NOT done: the look on TEST under rice ... was not taken": the "Before and after" list is in the round's section above, and the orchestrator took the look at landing (`agents/reviews/O44-landing.md`).
+- "Part 1, the toolbar", "A container without the span gives its own width": a toolbar with no room span beside it measures nothing and draws every control (`Toolbar.svelte`, `roomBox` and `measure()`).
+- Judgment call 8, Markdown keeping its `surface` prop: the prop, its class and its rule are removed (round 1, finding 3).
+- Check 4's `Surface.svelte:76` and Check 7's `Surface.svelte:69, :80, :84, :93`: after the round's longer head comment they are `:85-86` and `:79, :90, :94, :103`.
+- The round's "prints 41 lines": the grep prints 48, the seven more being the round's own five selectors and two comment lines. "Their importers, 105 files": 93 files import the listed parts; 105 is that set joined with the 32 files that draw a Surface directly.

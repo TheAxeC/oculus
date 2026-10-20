@@ -22,10 +22,14 @@
     // do: `linkedin_dir` names a folder of one Markdown file per post and no index, so there is no
     // one file for such a control to open. Each card's own control opens the post it draws, which
     // is the way into the text from here.
+    //
+    // Over a wallpaper each card is its own surface and the amber nudge paints its own opaque box;
+    // the intro, the said line and each section's heading are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -198,14 +202,18 @@
             {/if}
 
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
 
             <section>
-                <h3>
-                    <Glyph name="idea" />
-                    <span>{t('linkedin.ideas_hdr', split.ideas.length)}</span>
-                </h3>
+                <Surface>
+                    <h3>
+                        <Glyph name="idea" />
+                        <span>{t('linkedin.ideas_hdr', split.ideas.length)}</span>
+                    </h3>
+                </Surface>
                 {#if ideas.length > 0}
                     <div class="cards" data-linkedin-section="ideas">
                         {#each ideas as entry (identOf(entry))}
@@ -230,10 +238,12 @@
             </section>
 
             <section>
-                <h3>
-                    <Glyph name="done" />
-                    <span>{t('linkedin.posted_hdr', split.posts.length)}</span>
-                </h3>
+                <Surface>
+                    <h3>
+                        <Glyph name="done" />
+                        <span>{t('linkedin.posted_hdr', split.posts.length)}</span>
+                    </h3>
+                </Surface>
                 {#if posts.length > 0}
                     <div class="cards" data-linkedin-section="posted">
                         {#each posts as entry (identOf(entry))}
@@ -278,7 +288,10 @@
         gap: 12px;
     }
 
+    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
+       itself without one (`display: contents`), so both shrink to the column. */
     .linkedin > :global(*),
+    .linkedin > :global([data-surface]) > :global(*),
     .cards > :global(*) {
         min-width: 0;
     }

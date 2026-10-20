@@ -6,9 +6,11 @@
     //
     // A main file is content rather than configuration, so the rows are whatever the folder holds:
     // server/content/latex.ts answers with every `.tex` directly under `manuscript/` that declares
-    // a document class, and a project whose folder holds none draws no panel at all.
+    // a document class, and a project whose folder holds none draws no panel at all. Over a
+    // wallpaper the panel is read off a `Surface`.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import Rows from '../../shared/latex/Rows.svelte';
@@ -30,18 +32,24 @@
 </script>
 
 {#if held.mains.length > 0 || held.error !== ''}
-    <section class="block" data-latex={id}>
-        <h3 class="heading">{t('project.latex.heading')}</h3>
-        <Rows {target} />
-        <ToolButton
-            small
-            label={t('project.latex.open_view')}
-            title={t('project.latex.open_view_tip')}
-            glyph={t('views.latex_glyph')}
-            onclick={() =>
-                openView('latex', { root: held.root, path: held.dir, main: held.mains[0]?.main })}
-        />
-    </section>
+    <Surface>
+        <section class="block" data-latex={id}>
+            <h3 class="heading">{t('project.latex.heading')}</h3>
+            <Rows {target} />
+            <ToolButton
+                small
+                label={t('project.latex.open_view')}
+                title={t('project.latex.open_view_tip')}
+                glyph={t('views.latex_glyph')}
+                onclick={() =>
+                    openView('latex', {
+                        root: held.root,
+                        path: held.dir,
+                        main: held.mains[0]?.main
+                    })}
+            />
+        </section>
+    </Surface>
 {/if}
 
 <style>

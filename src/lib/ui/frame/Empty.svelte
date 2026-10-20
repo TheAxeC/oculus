@@ -10,10 +10,15 @@
     // left aligned, a red border and tint, 12px words on 17px lines, and the view's retry control
     // after the words as `action`. Under the rice theme an empty state is a shell comment: `# `
     // and the message on one line, left aligned, and the action on the line under it.
+    //
+    // Over a wallpaper an empty state is read off a `Surface`, which paints nothing inside a card,
+    // a lane or a tinted box. The error box is one layer of its own: its red tint is opaque, so it
+    // takes no surface under it.
 
     import type { Snippet } from 'svelte';
     import CodeText from '../display/text/CodeText.svelte';
     import Glyph from '../display/Glyph.svelte';
+    import Surface from './Surface.svelte';
 
     type Props = {
         /** What is not here or what failed, already translated by the view. */
@@ -29,17 +34,29 @@
     let { message, glyph, error = false, action }: Props = $props();
 </script>
 
-<p class="empty" class:error role={error ? 'alert' : undefined}>
-    {#if glyph !== undefined}
-        <Glyph name={glyph} />
-    {/if}
-    <span class="message">
-        <CodeText text={message} />
-    </span>
-    {#if action}
-        <span class="action">{@render action()}</span>
-    {/if}
-</p>
+{#snippet said()}
+    <p class="empty" class:error role={error ? 'alert' : undefined}>
+        {#if glyph !== undefined}
+            <Glyph name={glyph} />
+        {/if}
+        <span class="message">
+            <CodeText text={message} />
+        </span>
+        {#if action}
+            <span class="action">{@render action()}</span>
+        {/if}
+    </p>
+{/snippet}
+
+{#if error}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render said()}
+{:else}
+    <Surface>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render said()}
+    </Surface>
+{/if}
 
 <style>
     .empty {

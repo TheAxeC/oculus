@@ -9,6 +9,7 @@
     // address written in a card's note is a link (ui/display/text/LinkedText.svelte).
 
     import LaneHead from './lanes/LaneHead.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -108,7 +109,7 @@
 
 {#snippet column(label: string, glyph: string, sub: string, tone: string, rows: BandItem[])}
     {#if rows.length > 0}
-        <div class="lane" style={`--tone: var(--c-${tone})`}>
+        <div class="lane" style={`--tone: var(--c-${tone})`} data-surface>
             <LaneHead {label} {glyph} count={rows.length} {tone} />
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
@@ -123,10 +124,12 @@
 
 {#if anything}
     <details class="cluster" open>
-        <summary>{t('focus.cards_group')}</summary>
+        <summary>
+            <Surface inline>{t('focus.cards_group')}</Surface>
+        </summary>
         <div class="lanes">
             {#if cards.funding.length > 0}
-                <div class="lane" style={`--tone: var(--c-${tones.funding})`}>
+                <div class="lane" style={`--tone: var(--c-${tones.funding})`} data-surface>
                     <LaneHead
                         label={t('focus.funding_lane')}
                         glyph={t('focus.funding_glyph')}
@@ -203,9 +206,16 @@
         background: var(--panel);
     }
 
+    /* Over a wallpaper a column is the one translucent layer under its entries, so it carries
+       `data-surface`; drawn inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .lane {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .lane {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .lane-sub {

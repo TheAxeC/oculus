@@ -273,7 +273,7 @@
 <g id="node30" class="node">
 <title>folder shell/panes to layer ui</title>
 <polygon fill="none" stroke="none" points="78.33,-786.92 63.67,-786.92 63.67,-774.44 78.33,-774.44 78.33,-786.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="71" y="-778.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">23</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="71" y="-778.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">24</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer ui -->
 <g id="edge49" class="edge">

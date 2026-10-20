@@ -57,6 +57,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -379,7 +380,9 @@
         {/if}
 
         {#if said !== ''}
-            <p class="said">{said}</p>
+            <Surface>
+                <p class="said">{said}</p>
+            </Surface>
         {/if}
 
         {#if shown.length === 0 && unfunded.length === 0}

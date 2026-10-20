@@ -1,7 +1,9 @@
 // Layer 3, primitive helper. How many of a toolbar's controls are drawn in its one line, and
 // whether the overflow opener is drawn after them; and whether a press inside the popover of the
 // clipped controls closes it. Pure functions of widths and of the pressed node, so the toolbar's
-// arithmetic and its closing rule are tested without a layout.
+// arithmetic and its closing rule are tested without a layout. The widths are fractional pixels,
+// and the room is the width of the room span Pane's header lays out beside the toolbar, which the
+// toolbar's own layout does not change, so one set of widths gives one result.
 
 /** The controls drawn in the line, and whether the opener for the rest is drawn after them. */
 export type Fit = { shown: number; opener: boolean };

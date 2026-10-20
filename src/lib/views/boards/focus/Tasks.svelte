@@ -73,7 +73,7 @@
 {/snippet}
 
 {#if anything}
-    <section class="tasks">
+    <section class="tasks" data-surface>
         <div class="head">
             <ToolButton
                 bare
@@ -116,9 +116,16 @@
         column-gap: 16px;
     }
 
+    /* Over a wallpaper the section is the one translucent layer under its rows, so it carries
+       `data-surface`; drawn inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .tasks {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .tasks {
+        background: transparent;
+        backdrop-filter: none;
     }
     .head {
         display: flex;

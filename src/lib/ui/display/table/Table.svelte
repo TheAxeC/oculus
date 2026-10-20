@@ -18,9 +18,16 @@
         cell?: Snippet<[Record<string, unknown>, Column]>;
         /** Whether a click on a heading sorts by that column. */
         sortable?: boolean;
+        /**
+         * Whether the header row stays over the rows while they scroll under it, which it does
+         * when the table is drawn straight into a view's scrolling body (Problems, Gallery). A
+         * table inside a box that scrolls it sideways (`overflow-x: auto`) leaves this off: such
+         * a box never scrolls up or down, so the header row scrolls away with its table.
+         */
+        stays?: boolean;
     };
 
-    let { columns, rows, rowKey, cell, sortable = false }: Props = $props();
+    let { columns, rows, rowKey, cell, sortable = false, stays = false }: Props = $props();
 
     let sort: Sort | null = $state(null);
 
@@ -41,7 +48,7 @@
     }
 </script>
 
-<table>
+<table class:stays>
     <thead>
         <tr>
             {#each columns as column (column.key)}
@@ -110,11 +117,30 @@
         white-space: nowrap;
     }
 
-    /* A sticky heading sits over the rows it labels, so it keeps a pane's fraction of the panel
-       colour rather than going clear. */
+    /* Over a wallpaper the table is read off the surface it sits on (a tinted box, a `Surface`, a
+       slide's frame), so its header row paints nothing. A header row that stays over its rows
+       while they scroll under it (`stays`) is the strip of `tokens.css` that keeps a mix of its
+       own, the panel at the wallpaper's opacity, so the rows do not read through its words. Its
+       rows then carry the same surface wherever nothing under the table paints one, so the
+       header row is never a second layer over a surface behind it; inside a surface they paint
+       nothing. */
     :global(body.wall) th {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: transparent;
+    }
+
+    :global(body.wall) .stays th {
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall) .stays tbody tr:not(:hover) td {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .stays tbody tr:not(:hover) td {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     th button {

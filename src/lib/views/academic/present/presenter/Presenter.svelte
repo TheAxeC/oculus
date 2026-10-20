@@ -10,7 +10,11 @@
     // slides, the timer and what each control does. A click on the slide on show moves to the next
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
     // are read again on a tick of their own.
+    //
+    // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
+    // end-of-deck line and the notes are read off a `Surface`.
 
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         clockText,
@@ -62,13 +66,16 @@
 
 <div class="presenter" data-presenter>
     <div class="meters">
-        <span class="meter" data-counter>{t('present.counter', String(at), String(count))}</span>
-        <span class="meter" data-clock aria-label={t('present.presenter_clock')}>
-            {clockText(new Date(now))}
-        </span>
-        <span class="meter" data-timer aria-label={t('present.presenter_timer')}
-            >{timerText(spent)}</span
-        >
+        <Surface inline>
+            <span class="meter" data-counter>{t('present.counter', String(at), String(count))}</span
+            >
+            <span class="meter" data-clock aria-label={t('present.presenter_clock')}>
+                {clockText(new Date(now))}
+            </span>
+            <span class="meter" data-timer aria-label={t('present.presenter_timer')}
+                >{timerText(spent)}</span
+            >
+        </Surface>
         {#if running}
             <ToolButton label={t('present.presenter_pause')} onclick={onpause} />
         {:else}
@@ -91,10 +98,13 @@
     </div>
     <div class="side">
         <section class="next" data-next aria-label={t('present.presenter_next')}>
-            <h3 class="caption">{t('present.presenter_next')}</h3>
-            {#if next === null}
-                <p class="done">{t('present.presenter_end_of_deck')}</p>
-            {:else}
+            <Surface>
+                <h3 class="caption">{t('present.presenter_next')}</h3>
+                {#if next === null}
+                    <p class="done">{t('present.presenter_end_of_deck')}</p>
+                {/if}
+            </Surface>
+            {#if next !== null}
                 <div class="preview">
                     <Stage>
                         <Slide row={next} {deck} first={false} />
@@ -103,13 +113,17 @@
             {/if}
         </section>
         <section class="notes" aria-label={t('present.presenter_notes')}>
-            <h3 class="caption">{t('present.presenter_notes')}</h3>
+            <Surface>
+                <h3 class="caption">{t('present.presenter_notes')}</h3>
+            </Surface>
             <div class="text" data-notes>
-                {#if notes === ''}
-                    <p class="none">{t('present.presenter_no_notes')}</p>
-                {:else}
-                    <p class="words">{notes}</p>
-                {/if}
+                <Surface>
+                    {#if notes === ''}
+                        <p class="none">{t('present.presenter_no_notes')}</p>
+                    {:else}
+                        <p class="words">{notes}</p>
+                    {/if}
+                </Surface>
             </div>
         </section>
     </div>
@@ -209,5 +223,13 @@
         min-height: 0;
         overflow-y: auto;
         font-size: var(--fs-xl);
+    }
+
+    /* The scroller clips what it holds at its padding box, so over a wallpaper it takes the room
+       the notes' surface reaches past their words as padding, and gives it back as margin: the
+       words stay where they are and their surface is drawn whole. */
+    :global(body.wall) .text {
+        margin: -4px -8px;
+        padding: 4px 8px;
     }
 </style>

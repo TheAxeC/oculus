@@ -94,8 +94,16 @@
         flex-direction: row;
     }
 
+    /* Over a wallpaper the strip is the one translucent layer under the tab's name; inside a
+       surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .fold {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .fold {
         background: transparent;
+        backdrop-filter: none;
     }
 
     .name {

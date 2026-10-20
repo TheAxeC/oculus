@@ -25,9 +25,14 @@
     // by a control on its heading, and which of them is closed is kept in the tab's instance state,
     // so a reload and a move of the tab keep it; both start open. The career banner folds by itself
     // and starts folded.
+    //
+    // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
+    // are each a surface of their own; the awaiting box and the said line are read off a
+    // `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Band from './Band.svelte';
     import CareerPanel from './career/CareerPanel.svelte';
     import CommandCenter from './CommandCenter.svelte';
@@ -183,19 +188,23 @@
         <QuickAdd projects={live} onsaid={(text: string) => (said = text)} />
 
         {#if said !== ''}
-            <p class="said">{said}</p>
+            <Surface>
+                <p class="said">{said}</p>
+            </Surface>
         {/if}
 
         {#if awaiting.length > 0}
-            <section class="waitroll">
-                <p class="wait-head">{t('focus.awaiting_response')}</p>
-                {#each awaiting as row (row.key)}
-                    <span class="wait-lbl">{row.label}</span>
-                    <span class="wait-names" class:blocked={row.key === 'blocked'}
-                        >{row.names.join(', ')}</span
-                    >
-                {/each}
-            </section>
+            <Surface fitted>
+                <section class="waitroll">
+                    <p class="wait-head">{t('focus.awaiting_response')}</p>
+                    {#each awaiting as row (row.key)}
+                        <span class="wait-lbl">{row.label}</span>
+                        <span class="wait-names" class:blocked={row.key === 'blocked'}
+                            >{row.names.join(', ')}</span
+                        >
+                    {/each}
+                </section>
+            </Surface>
         {/if}
 
         <Band {now} />
@@ -247,9 +256,12 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    /* The names are the box's rows, drawn at a ticker row's size and line (`Ticker.svelte`), as the
+       rows of the command center and the tasks are. */
     .wait-names {
         min-width: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
         overflow-wrap: anywhere;
     }
 

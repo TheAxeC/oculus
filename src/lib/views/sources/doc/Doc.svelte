@@ -288,19 +288,12 @@
                         doc={run(part, shown)}
                         loading={t('doc.loading')}
                         failed={failed(shown.error)}
-                        surface={false}
                         follow
                     />
                 {/if}
             {/each}
         {:else}
-            <Markdown
-                doc={shown}
-                loading={t('doc.loading')}
-                failed={failed(shown.error)}
-                surface={false}
-                follow
-            />
+            <Markdown doc={shown} loading={t('doc.loading')} failed={failed(shown.error)} follow />
         {/if}
     </div>
 </Pane>

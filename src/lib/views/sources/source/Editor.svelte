@@ -38,8 +38,8 @@
 
     import { untrack } from 'svelte';
     import RenderedMarkdown from '$lib/views/shared/prose/RenderedMarkdown.svelte';
-    import Sash from '$lib/ui/frame/Sash.svelte';
-    import { SASH_PX, draggedShare } from '$lib/ui/frame/sash-size';
+    import Sash from '$lib/ui/frame/sash/Sash.svelte';
+    import { SASH_PX, draggedShare } from '$lib/ui/frame/sash/sash-size';
     import MonacoEditor from '$lib/ui/controls/editor/Editor.svelte';
     import type {
         EditorAction,

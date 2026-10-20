@@ -112,12 +112,10 @@
     }
 
     .inst {
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     .tag {
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -147,6 +145,8 @@
         }
     }
 
+    /* A host's line is a row of the board, drawn at the ticker row's size and line
+       (ui/display/ticker/Ticker.svelte), its tag and institution with it. */
     .host-h {
         display: flex;
         flex-wrap: wrap;
@@ -154,7 +154,8 @@
         gap: 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         padding: 0 8px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
         cursor: pointer;
     }
 

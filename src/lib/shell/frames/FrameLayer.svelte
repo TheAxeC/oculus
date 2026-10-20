@@ -17,7 +17,9 @@
     // tells a layer outside the tree. A frame is written only when its place changed. A frame of a
     // tab in a free float is one above that float (float-geometry's depths leave the odd ones
     // free), so a float in front of another hides the other float's frames too; every other frame
-    // is at depth 0, above the page and below every float, menu and dialog.
+    // is at depth 0, above the page and below every float, menu and dialog. A frame over a slot
+    // inside an element that paints the wallpaper surface (`data-surface`) is marked
+    // `data-on-surface`, so over a wallpaper it paints no second layer.
     //
     // A frame takes no pointer while a tab or a sash is being dragged, so the pane under it hears
     // the drop, and while the pane over it holds the keep layer that takes a double click
@@ -71,16 +73,20 @@
             const shown =
                 slot !== undefined && slot.isConnected && slot.getClientRects().length > 0;
             const box = shown ? slot.getBoundingClientRect() : null;
+            const onSurface = slot?.closest('[data-surface]') != null;
             const where =
                 box === null || slot === undefined
                     ? 'hidden'
-                    : [box.left, box.top, box.width, box.height, depthOver(slot)].join(' ');
+                    : [box.left, box.top, box.width, box.height, depthOver(slot), onSurface].join(
+                          ' '
+                      );
             if (placed.get(node) === where) continue;
             placed.set(node, where);
             if (box === null || slot === undefined) {
                 node.style.display = 'none';
                 continue;
             }
+            node.toggleAttribute('data-on-surface', onSurface);
             node.style.left = `${box.left}px`;
             node.style.top = `${box.top}px`;
             node.style.width = `${box.width}px`;
@@ -276,9 +282,18 @@
         background: var(--panel);
     }
 
+    /* Over a wallpaper a document's frame and a viewer's box are the one translucent layer under
+       what they hold; over a slot inside a surface already (a free float's fill) they paint
+       nothing, so the float's fill is the one layer. */
     :global(body.wall) .frame.panel {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    /* `place` sets the attribute on the element, so the selector names it as global. */
+    :global(body.wall) .frame.panel:global([data-on-surface]) {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     .frame.inert,

@@ -8,7 +8,10 @@
     // open and is a Tab stop, then Open File is.
     //
     // The row is one tree row high and stays at the top of the pane while its file scrolls under
-    // it, on the panel colour and, under the wall theme, on the translucent surface the pane draws.
+    // it, on the panel colour. Over a wallpaper it is read off its file's section, the surface
+    // (diff/DiffSection.svelte), and paints nothing; in a diff of several files (`foldable`) the
+    // files scroll under it in the pane, so it is the sticky strip of `tokens.css` and keeps a mix
+    // of its own, so the lines under it do not read through its words.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FileIcon from '$lib/ui/display/FileIcon.svelte';
@@ -55,7 +58,7 @@
     const fold = $derived(folded ? t('repositories.file_unfold') : t('repositories.file_fold'));
 </script>
 
-<div class="header" data-file-header={path}>
+<div class="header" class:stays={foldable} data-file-header={path}>
     {#if foldable}
         <span class="chevron" class:open={!folded}>
             <ToolButton
@@ -115,6 +118,10 @@
     }
 
     :global(body.wall) .header {
+        background: transparent;
+    }
+
+    :global(body.wall) .header.stays {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }

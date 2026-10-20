@@ -68,6 +68,7 @@
     {style}
     data-card={id}
     data-cursor={cursor || undefined}
+    data-surface
 >
     {#if tone !== undefined}
         <span class="bar"></span>
@@ -139,10 +140,17 @@
 
     /* Over a wallpaper a card keeps most of its own colour and lets the picture through the rest.
        The backdrop blur takes the picture's detail out from behind the text without smearing the
-       picture itself. */
+       picture itself. The card carries `data-surface`, so a part drawn inside it (an empty
+       message, a surface, a document's code block) paints nothing of its own, and a card drawn
+       inside a surface already (a free float's fill) paints nothing either and keeps its border. */
     :global(body.wall) .card {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .card {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     /* The ring is drawn inside the border rather than as a second border, so a pinned card and an

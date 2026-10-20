@@ -44,6 +44,9 @@
     // Copy Message.
     //
     // The filter, the buttons and the root are the instance's own state, kept with the page.
+    //
+    // Over a wallpaper the box is tinted. The table's header row stays over its rows as the pane
+    // scrolls (`stays`), so it keeps a mix of its own, the sticky strip of `tokens.css`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -308,7 +311,7 @@
                 glyph="info"
             />
         {:else if asTable}
-            <Table columns={tableColumns} rows={tableRows} rowKey="id">
+            <Table columns={tableColumns} rows={tableRows} rowKey="id" stays>
                 {#snippet cell(row: Record<string, unknown>, column: Column)}
                     {@const problem = byId.get(String(row.id))}
                     {#if column.key === 'severity' && problem !== undefined}

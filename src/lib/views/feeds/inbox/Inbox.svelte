@@ -27,9 +27,13 @@
     // state; the note, the answer and the archive are writes through the mail endpoint. Each
     // section is one column of cards, read top to bottom, and a card names its account only while
     // more than one mail account is configured.
+    //
+    // Over a wallpaper each card is its own surface; the account rows, the add form, the said line
+    // and each section's heading are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -155,7 +159,9 @@
 {#snippet section(label: string, threads: InboxThread[])}
     {#if threads.length > 0}
         <section class="group">
-            <h3>{label} ({threads.length})</h3>
+            <Surface>
+                <h3>{label} ({threads.length})</h3>
+            </Surface>
             <div class="cards">
                 {#each threads as thread (thread.id)}
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -169,7 +175,9 @@
 <Pane title={t('views.inbox')} toolbar={tools} {bar}>
     <div class="inbox" data-instance={instance.id}>
         {#if adding}
-            <AddAccount kind="mail" onclose={() => (adding = false)} />
+            <Surface fitted>
+                <AddAccount kind="mail" onclose={() => (adding = false)} />
+            </Surface>
         {/if}
 
         {#if data && data.accounts.length > 0}
@@ -188,7 +196,9 @@
             {/if}
         {:else}
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
 
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -236,7 +246,10 @@
         gap: 12px;
     }
 
+    /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
+       itself without one (`display: contents`), so both shrink to the column. */
     .inbox > :global(*),
+    .inbox > :global([data-surface]) > :global(*),
     .cards > :global(*) {
         min-width: 0;
     }

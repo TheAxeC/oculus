@@ -39,6 +39,7 @@
             class:bare
             data-frame
             data-scroll
+            data-surface
             style:width="{FRAME_WIDTH}px"
             style:height="{FRAME_HEIGHT}px"
             style:transform="scale({scale})"
@@ -80,9 +81,17 @@
         border-radius: 0;
     }
 
-    /* Over a wallpaper the surface goes translucent, as every other card surface does. */
+    /* Over a wallpaper the surface goes translucent, as every other card surface does. The frame
+       is the one translucent layer under the slide, so it carries `data-surface` and the slide's
+       own cards paint nothing on it; inside a surface already (a free float's fill) it paints
+       nothing in turn. */
     :global(body.wall) .frame {
         background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .frame {
+        background: transparent;
+        backdrop-filter: none;
     }
 </style>

@@ -11,11 +11,11 @@
     // over the sizes of the children that are open, so a folded child's size stays in the tree and
     // its space goes to its open neighbours rather than staying blank. The free space is the
     // container minus the sashes and the strips, which is why both thicknesses come from
-    // ui/frame/sash-size rather than from a second copy of the numbers here.
+    // ui/frame/sash/sash-size rather than from a second copy of the numbers here.
 
     import type { Snippet } from 'svelte';
-    import Sash from '$lib/ui/frame/Sash.svelte';
-    import { FOLD_PX, SASH_PX } from '$lib/ui/frame/sash-size';
+    import Sash from '$lib/ui/frame/sash/Sash.svelte';
+    import { FOLD_PX, SASH_PX } from '$lib/ui/frame/sash/sash-size';
     import { equalSizes, foldedCount, isFolded, type Layout } from '$lib/state/workbench/layout';
     import SplitView from './SplitView.svelte';
 

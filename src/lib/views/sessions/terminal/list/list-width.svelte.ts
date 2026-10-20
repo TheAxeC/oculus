@@ -17,7 +17,7 @@
 import { z } from 'zod';
 import { readAs } from '$lib/data/shapes/shapes';
 import { instanceMap } from '$lib/state/workbench/layout';
-import { SASH_PX } from '$lib/ui/frame/sash-size';
+import { SASH_PX } from '$lib/ui/frame/sash/sash-size';
 
 /** The narrow list's width, VS Code's `NarrowViewWidth`: a row's mark and its padding. */
 const LIST_NARROW = 46;

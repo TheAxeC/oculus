@@ -25,7 +25,7 @@
     // the gesture ends. A float let go with its pointer within SNAP_PX of the area's left, right or
     // bottom edge docks there.
 
-    import Sash from '$lib/ui/frame/Sash.svelte';
+    import Sash from '$lib/ui/frame/sash/Sash.svelte';
     import { START_DOCK, type DockEdge } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -135,6 +135,7 @@
         aria-label={t('ui.float_label')}
         data-float={float.id}
         data-float-place={place.kind === 'dock' ? place.edge : 'free'}
+        data-surface={place.kind === 'free' ? '' : undefined}
         style={style(float)}
         onpointerdowncapture={() => raise(float.id)}
         {@attach place.kind === 'free' ? gesture(gestureOf(float, place)) : null}
@@ -203,15 +204,24 @@
         overflow: hidden;
     }
 
-    /* Over a wallpaper a docked float is a panel as a pane is, and a free float, which covers the
-       page it floats over, takes the popover's firmer share so the page does not read through its
-       text. The pane inside draws nothing over a wallpaper, so these are the floats' fill. */
+    /* Over a wallpaper the text of a view in a float is read off one layer. A docked float lies
+       beside the area over nothing but the picture, so it paints nothing, as the shell's pane box
+       does, and the view inside is that layer: its tinted box, or its cards and surfaces. A free
+       float covers the page it floats over, so its fill is that layer, at the popover's firmer
+       share so the page does not read through the text; it carries `data-surface`, so the view
+       inside, its tinted box, its cards and its surfaces paint nothing, and so does the tab strip
+       on its top edge. */
     :global(body.wall) .dock {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: transparent;
     }
 
     :global(body.wall) .free {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+    }
+
+    :global(body.wall) .free :global([data-tab-strip]) {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     /* A move starts on the strip, which a touch screen would otherwise scroll. */

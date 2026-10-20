@@ -42,12 +42,17 @@
     // the dependency the host waits for, or the dependency whose revoke stopped it. The approval
     // panel is also where Disable, Enable and Remove are offered beside the Disable and Enable of
     // the line.
+    //
+    // Over a wallpaper the frame paints nothing and an app's own surfaces are the app's. The host
+    // line and the empty lines are read off a `Surface`, and the approval panel is a surface of
+    // its own.
 
     import { untrack } from 'svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';
     import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
@@ -363,17 +368,19 @@
             </Empty>
         {:else if apps.ready()}
             {#if hostLine() !== ''}
-                <div class="host" role="status" data-host-line>
-                    <span>{hostLine()}</span>
-                    {#if host?.state === 'ended'}
-                        <ToolButton
-                            label={t('apps.restart')}
-                            onclick={() => apps.restartHost(id)}
-                        />
-                    {:else if host?.waiting === 'approval'}
-                        <ToolButton label={t('apps.review')} onclick={() => apps.review(id)} />
-                    {/if}
-                </div>
+                <Surface fitted>
+                    <div class="host" role="status" data-host-line>
+                        <span>{hostLine()}</span>
+                        {#if host?.state === 'ended'}
+                            <ToolButton
+                                label={t('apps.restart')}
+                                onclick={() => apps.restartHost(id)}
+                            />
+                        {:else if host?.waiting === 'approval'}
+                            <ToolButton label={t('apps.review')} onclick={() => apps.review(id)} />
+                        {/if}
+                    </div>
+                </Surface>
             {/if}
             <FrameSlot id={instance.id} />
         {/if}

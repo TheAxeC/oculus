@@ -40,6 +40,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryFolder from './EntryFolder.svelte';
@@ -265,7 +266,9 @@
             <Empty message={t('entry.unknown', collectionKey, key)} glyph={t('entry.none_glyph')} />
         {:else}
             {#if said !== ''}
-                <p class="said">{said}</p>
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
             {/if}
             {#if entry !== null && collection !== null}
                 <EntryCard
@@ -306,13 +309,17 @@
                 />
             {/if}
 
-            <section class="block">
-                <h3 class="heading">{t('entry.editor')}</h3>
-                <EntryEditor {page} instance={instance.id} {file} {fault} />
-            </section>
+            <Surface>
+                <section class="block">
+                    <h3 class="heading">{t('entry.editor')}</h3>
+                    <EntryEditor {page} instance={instance.id} {file} {fault} />
+                </section>
+            </Surface>
 
             {#if REFERRED.includes(collectionKey)}
-                <Referrers {referrers} />
+                <Surface>
+                    <Referrers {referrers} />
+                </Surface>
             {/if}
 
             {#if entry !== null && hub !== null && link !== undefined}

@@ -74,6 +74,7 @@
     import { t } from '$lib/state/shared/words/text';
     import PaneBody from './PaneBody.svelte';
     import PaneStrip from './strip/PaneStrip.svelte';
+    import StripSaid from './strip/StripSaid.svelte';
     import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
     import {
         carriedIndex,
@@ -458,7 +459,7 @@
         />
     </ContextMenu>
     {#if tabMenu.said() !== ''}
-        <p class="said" role="status">{tabMenu.said()}</p>
+        <StripSaid words={tabMenu.said()} />
     {/if}
     <PaneBody
         {instances}
@@ -505,15 +506,5 @@
        one translucent layer rather than two and shows plainly around whatever the view draws. */
     :global(body.wall) .pane {
         background: transparent;
-    }
-
-    /* What a tab menu item could not do, under the strip. */
-    .said {
-        flex: none;
-        margin: 0;
-        padding: 2px var(--tab-pad);
-        border-bottom: 1px solid var(--line);
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
     }
 </style>

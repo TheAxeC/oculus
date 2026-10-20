@@ -103,7 +103,7 @@
 {/snippet}
 
 {#if career !== null}
-    <details class="career" bind:open={unfolded}>
+    <details class="career" data-surface bind:open={unfolded}>
         <summary>
             <Glyph
                 name={unfolded ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
@@ -260,9 +260,16 @@
         background: var(--chip);
     }
 
+    /* Over a wallpaper the banner is the one translucent layer under its words, so it carries
+       `data-surface`; drawn inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .career {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    :global(body.wall [data-surface]) .career {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     /* The folded banner is one line in the type of the command center's heading; a line longer
@@ -333,8 +340,11 @@
         color: var(--accent-txt, var(--accent));
     }
 
+    /* A fact, a task of the order of work and a criterion are rows of the board, drawn at the
+       ticker row's size and line (ui/display/ticker/Ticker.svelte), with every word in them. */
     .facts span {
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
         overflow-wrap: anywhere;
     }
 
@@ -371,11 +381,11 @@
 
     .order li {
         margin: 2px 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
     }
 
     .ordernote {
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -400,6 +410,7 @@
 
     .crit li {
         margin: 2px 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
     }
 </style>

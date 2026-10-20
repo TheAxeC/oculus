@@ -138,7 +138,7 @@
 <g id="node27" class="node">
 <title>shell to ui</title>
 <polygon fill="none" stroke="none" points="965.55,-295.92 946.45,-295.92 946.45,-283.44 965.55,-283.44 965.55,-295.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="956" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">107</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="956" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">108</text>
 </g>
 <!-- shell&#45;&gt;shell to ui -->
 <g id="edge27" class="edge">
@@ -177,7 +177,7 @@
 <g id="node37" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="871.78,-295.92 848.22,-295.92 848.22,-283.44 871.78,-283.44 871.78,-295.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="860" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1004</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="860" y="-287.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1034</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">

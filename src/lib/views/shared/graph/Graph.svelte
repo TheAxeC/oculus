@@ -335,7 +335,7 @@
     }
 </script>
 
-<div class="graph-wrap">
+<div class="graph-wrap" data-surface>
     {#if status !== ''}
         <div class="status">
             <Empty error message={status} />
@@ -442,13 +442,16 @@
         overflow: hidden;
     }
 
+    /* Over a wallpaper the canvas is the one translucent layer under the graph, so it carries
+       `data-surface`; inside a surface already (a free float's fill) it paints nothing. */
     :global(body.wall) .graph-wrap {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 
     /* The error box sits over the canvas's top left corner, on the panel so the nodes under it do
-       not show through the words. */
+       not show through the words. Over a wallpaper the corner paints nothing: the box's own red is
+       opaque and covers the nodes, and a mix here would be a second layer over the canvas. */
     .status {
         position: absolute;
         z-index: 1;
@@ -458,9 +461,10 @@
         background: var(--panel);
     }
 
+    :global(body.wall [data-surface]) .graph-wrap,
     :global(body.wall) .status {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
+        backdrop-filter: none;
     }
 
     svg {

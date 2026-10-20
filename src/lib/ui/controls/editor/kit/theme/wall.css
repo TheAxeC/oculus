@@ -21,5 +21,18 @@ body.wall :is([data-editor-host], [data-diff-editor]) .plain,
 body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor,
 body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor-background,
 body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor .margin {
-    background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+    background: var(--panel-on-wall);
+}
+
+/* An editor inside an element that already paints the surface (`data-surface`: a tinted pane, a
+   diff's file section, a free float's fill) is read off that surface and paints nothing. */
+body.wall [data-surface] :is([data-editor-host], [data-diff-editor])::before {
+    content: none;
+}
+
+body.wall [data-surface] :is([data-editor-host], [data-diff-editor]) .plain,
+body.wall [data-surface] :is([data-editor-host], [data-diff-editor]) .monaco-editor,
+body.wall [data-surface] :is([data-editor-host], [data-diff-editor]) .monaco-editor-background,
+body.wall [data-surface] :is([data-editor-host], [data-diff-editor]) .monaco-editor .margin {
+    background: transparent;
 }

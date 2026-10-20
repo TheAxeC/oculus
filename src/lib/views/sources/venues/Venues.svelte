@@ -13,9 +13,13 @@
 <script lang="ts">
     // Layer 3, view. The venue catalogue: theme facets, journal cards and conference timing.
     // Registry entities provide the display model while the matching collection provides editing.
+    //
+    // Over a wallpaper each card and each month of the ribbon is its own surface; the head, the
+    // two disclosures and the ribbon's lines are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -116,12 +120,14 @@
         {:else}
             {#if journals.length > 0}
                 <section>
-                    <Disclosure
-                        count={journals.length}
-                        label={t('venues.journals')}
-                        expanded={held.journalsOpen}
-                        onclick={() => write({ journalsOpen: !held.journalsOpen })}
-                    />
+                    <Surface inline>
+                        <Disclosure
+                            count={journals.length}
+                            label={t('venues.journals')}
+                            expanded={held.journalsOpen}
+                            onclick={() => write({ journalsOpen: !held.journalsOpen })}
+                        />
+                    </Surface>
                     {#if held.journalsOpen}
                         <div class="cards">
                             {#each journals as venue (venue.id)}
@@ -152,12 +158,14 @@
 
             {#if conferences.length > 0}
                 <section>
-                    <Disclosure
-                        count={conferences.length}
-                        label={t('venues.conferences')}
-                        expanded={held.conferencesOpen}
-                        onclick={() => write({ conferencesOpen: !held.conferencesOpen })}
-                    />
+                    <Surface inline>
+                        <Disclosure
+                            count={conferences.length}
+                            label={t('venues.conferences')}
+                            expanded={held.conferencesOpen}
+                            onclick={() => write({ conferencesOpen: !held.conferencesOpen })}
+                        />
+                    </Surface>
                     {#if held.conferencesOpen}
                         <div class="timeline">
                             <Ribbon venues={conferences} {todayMonth} />
@@ -204,6 +212,14 @@
     .timeline {
         margin-top: 8px;
         overflow-x: auto;
+    }
+
+    /* The scroller clips what it holds at its padding box, so over a wallpaper it takes the room
+       the ribbon's surface reaches past its words as padding, and gives it back as margin: the
+       ribbon stays where it is and its surface is drawn whole. */
+    :global(body.wall) .timeline {
+        margin: 4px -8px 0;
+        padding: 4px 8px;
     }
 
     .cards {
