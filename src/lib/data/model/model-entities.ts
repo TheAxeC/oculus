@@ -514,10 +514,11 @@ export const FETCHED_KINDS = [
 
 /**
  * Where a source's files land and what follows their check: `into` a folder below the dataset's
- * folder (the folder itself when absent), `unpack` its archives after the check, dropping `strip`
- * leading folders of every path an archive holds.
+ * folder (the folder itself when absent), `unpack` its archives after the check into the archive's
+ * folder, taking only the contents of `folder` when the source names one, a folder inside each
+ * archive, and dropping `strip` leading folders of every path, counted below `folder`.
  */
-type SourcePlace = { into?: string; unpack?: true; strip?: number };
+type SourcePlace = { into?: string; unpack?: true; strip?: number; folder?: string };
 
 /**
  * One file of a `url` source: its address, the sha256 or the md5 the entry gives for it when it
@@ -604,8 +605,11 @@ export type RecoverFile = {
     /** The position of its source in the entry's `retrieval` list. */
     source: number;
     service?: RecoverService;
-    /** Set when its source unpacks: how many leading folders each path loses. */
-    unpack?: { strip: number };
+    /**
+     * Set when its source unpacks: the folder inside the archive whose contents alone are placed,
+     * when the source names one, and how many leading folders each path below it loses.
+     */
+    unpack?: { strip: number; folder?: string };
     throttle?: string;
 };
 

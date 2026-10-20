@@ -331,7 +331,8 @@ export function startLocalVerify(
 
 /**
  * Start Unpack of the archives, one child after another, each into its own folder with its
- * source's strip; refused while a run of the dataset goes.
+ * source's strip and folder; the child's lines of what it unpacked, skipped or was warned of go
+ * to the log. Refused while a run of the dataset goes.
  */
 export function startLocalUnpack(
     place: LocalPlace,
@@ -370,7 +371,8 @@ export function startLocalUnpack(
                     archive,
                     work: join(dirname(archive), `.recover-unpack-${place.key}`),
                     target: dirname(archive),
-                    strip: row.unpack?.strip ?? 0
+                    strip: row.unpack?.strip ?? 0,
+                    folder: row.unpack?.folder ?? ''
                 },
                 deps.sevenZip()
             )
@@ -378,7 +380,11 @@ export function startLocalUnpack(
         current = child;
         const said = (chunk: unknown): void => {
             for (const line of String(chunk).split('\n')) {
-                if (line.startsWith('unpack') || line.startsWith('skipped')) {
+                if (
+                    line.startsWith('unpack') ||
+                    line.startsWith('skipped') ||
+                    line.startsWith('7-Zip warned')
+                ) {
                     logLine(files.log, `unpack: ${line}`);
                 }
             }

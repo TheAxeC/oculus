@@ -39,7 +39,7 @@ const rowShape = z.object({
     url: z.string(),
     source: z.number(),
     service: z.enum(['physionet', 'kaggle', 'synapse']).optional(),
-    unpack: z.object({ strip: z.number() }).optional(),
+    unpack: z.object({ strip: z.number(), folder: z.string().optional() }).optional(),
     throttle: z.string().optional(),
     state: z.enum(['verified', 'present', 'partial', 'different', 'missing']),
     have: z.number()

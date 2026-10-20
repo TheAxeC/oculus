@@ -4695,3 +4695,10 @@ Where it applies: O45, carried by its repair round. Booked in `plan.md` Rulings.
 - Not chosen: a description made up from the names of the keys inside a group, the lazy option, which tells the reader nothing; or folding it into O39, the repository move.
 
 Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z953 (2026-10-20, O46's brief, the orchestrator, automode): where a group of settings keeps its description
+
+- Chosen: `catalogs/options.yml` gets a second top-level key, `option_groups:`, holding for each config file the help line of each group of dotted settings (`wallpaper`, `slurm`, `focus` and the others). Only the editor's schema reads it, so the Settings view and the writes see nothing new; a group with no help line, and a help line for something that is no group, are findings.
+- Not chosen: a group entry inside `options:`, which every reader of the options would take for a setting (the Settings view would list it, and a write of a whole group would be allowed); or the help lines kept in code, the lazy option, which puts text for a reader where no other help line lives.
+
+Where it applies: O46. Booked in `plan.md` Rulings.

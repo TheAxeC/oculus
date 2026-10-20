@@ -1,16 +1,22 @@
 // Layer 2, server. What every reader of a dataset's sources (`sources/`, one per kind) shares: the
 // shape of a listed file and the reader of the listing kept on disk, the refusal that names the
 // source, the request with its timeout, the size probe, the credential headers built in memory
-// from the `downloads` rows, and the check of a name a source gives. The listing that runs the
-// readers over an entry's sources is `listFiles` of routes.ts.
+// from the `downloads` rows, and the check of a name a source gives (`safeName`, passed on from
+// the registry read, data/snapshot/normalise-parts/retrieval.ts, whose `folder` follows the same
+// rule). The listing that runs the readers over an entry's sources is `listFiles` of routes.ts.
 //
 // A reader answers the files it lists or a refusal; an answer that does not parse is a refusal and
 // never an empty list, so a set whose source changed its answer is never read as having no files.
+// A kept listing whose unpack folder breaks the registry's rule reads as no listing, so the
+// sources are listed again from the registry.
 
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
 import type { RecoverChecksum, RecoverFile, RecoverRefusal } from '../../../../data/model/index.ts';
+import { archiveFolderShape } from '../../../../data/snapshot/normalise-parts/retrieval.ts';
+
+export { safeName } from '../../../../data/snapshot/normalise-parts/retrieval.ts';
 
 /** The checksum a source publishes for a file. */
 export type Checksum = RecoverChecksum;
@@ -50,7 +56,9 @@ const keptFileShape = z.object({
     url: httpsShape,
     source: z.number().int().min(0),
     service: z.enum(['physionet', 'kaggle', 'synapse']).optional(),
-    unpack: z.object({ strip: z.number().int().min(0) }).optional(),
+    unpack: z
+        .object({ strip: z.number().int().min(0), folder: archiveFolderShape.optional() })
+        .optional(),
     throttle: z.string().optional()
 });
 
@@ -235,19 +243,6 @@ export async function sized(
     };
     await Promise.all(Array.from({ length: Math.min(PROBES_AT_ONCE, files.length) }, worker));
     return ended.refusal ?? out;
-}
-
-/** A control character, a backslash or an empty, `.` or `..` part makes a name unusable. */
-// eslint-disable-next-line no-control-regex
-const BAD_NAME = /[\u0000-\u001f\u007f\\]/;
-
-/**
- * Whether a name a source or an entry gives is a relative path that stays inside its folder: no
- * leading `/`, no `.` or `..` part, no empty part, no backslash and no control character.
- */
-export function safeName(name: string): boolean {
-    if (name === '' || name.startsWith('/') || BAD_NAME.test(name)) return false;
-    return name.split('/').every((part) => part !== '' && part !== '.' && part !== '..');
 }
 
 /** A name with the source's `into` folder in front of it. */

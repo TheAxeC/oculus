@@ -287,6 +287,8 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
   - Fetch downloads every missing, partial or different file, and a partial file resumes. The row's own Fetch downloads that file alone.
   - Fetch is disabled until access is set up for a credentialed PhysioNet set, a Kaggle set or a Synapse set: add the row the view shows under `downloads:` in the primary hub's `.oculus/local.yml`.
   - Verify checks every file against its source's checksum. Unpack opens the archives of a source marked `unpack: true`.
+  - A source can name a `folder` inside its archives: Unpack places only that folder's contents in the archive's folder, and an archive without it is not unpacked.
+  - An archive 7-Zip ends with an error is not unpacked, and the log names the code; a 7-Zip warning is logged and the archive is unpacked.
   - Stop ends this dataset's run. A run goes on when the view or the window closes; open the view again to see it.
   - While a run goes the view follows it live: the server pushes its state, the bytes its folder holds with their rate and the log, every three seconds on this Mac, with the bytes and rate of each file, and on the cluster once a minute and at each Live HPC poll. The plan, the sources and the access are read when the view opens and again after a press or the refresh control.
   - The log under the plan lists every request, command and result with its time. On the cluster the download runs on the login node and Live HPC's Login node section lists it; Verify and Unpack there are sbatch jobs.

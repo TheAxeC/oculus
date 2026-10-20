@@ -740,7 +740,8 @@ schema:
       - { field: script,     type: text,   when: { kind: derived }, required: { when: { kind: derived } }, help: "The project script that builds the set, as its path in the hub." }
       - { field: into,       type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "A folder below the dataset's folder that the source's files land in; the folder itself when absent." }
       - { field: unpack,     type: checkbox, when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "Whether the source's archives are unpacked into their folder after the check." }
-      - { field: strip,      type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "How many leading folders of every path an archive holds the unpack drops." }
+      - { field: strip,      type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "How many leading folders the unpack drops of every path an archive holds, counted below folder when the source names one." }
+      - { field: folder,     type: text,   label: "Folder in the archive", when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "A folder inside each archive; the unpack takes only its contents, which land in the archive's folder, and strip counts below it." }
 datasets:
 #  - key: my-eeg                  # required; what a project's datasets names
 #    name: "My EEG set"           # required
@@ -756,6 +757,7 @@ datasets:
 #      - kind: zenodo
 #        record: "1234567"
 #        unpack: true             # unpack the source's archives after the check
+#        folder: data/train       # only this folder of each archive, its contents in the archive's folder
 #      - kind: url
 #        urls:
 #          - { url: https://example.org/labels.csv, sha256: "" }   # or md5:, never both

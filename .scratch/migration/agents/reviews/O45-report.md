@@ -228,3 +228,191 @@ Not changed: `plan.test.ts` (`plan.ts` is unchanged and `planOf` spreads every f
 - A strip larger than the depth below the folder places nothing and still says `unpacked`, as a large strip does without a folder (read from `place()`, `unpack.ts:105-115`; not run).
 - The DESIGN.md and HELP.md additions are long (Verify 6).
 - `validate.ts` is outside the write list (Files).
+
+## Repair round 1
+
+Not done: none of the six items is left open. One part of ruling Z951 has no run: no archive was found that makes 7-Zip return status 1, so the status-1 branch (`unpack.ts:90`) is read, not run (item 1).
+
+Open items of the state file: unchanged from the head of this report; this round adds none.
+
+Commands below are run from the worktree's `tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. Program runs use `node -e "$PROG" <7z-wasm> <archive> <work> <target> <strip> <folder>`, where `$PROG` is `UNPACK_PROGRAM` printed by `node --input-type=module -e "const m = await import('<tree>/src/lib/server/machine/runs/recover/unpack.ts'); process.stdout.write(m.UNPACK_PROGRAM)"`. Fixtures are the ones under `$TMPDIR/o45-first/` named in this report, plus new ones under `$TMPDIR/o45-r1/`, made with `mkdir`, `printf`, `ln -s`, `zip -q` and `zip -qry`.
+
+### Item 1: ruling Z951, 7-Zip's status
+
+What changed:
+
+- `src/lib/server/machine/runs/recover/unpack.ts:74`: `SevenZip({ print: say, printErr: say })`, without the `quit` option that 7z-wasm never reads.
+- `unpack.ts:82-91`: the status is the return value, and the thrown-status path is kept:
+  ```js
+  let code;
+  try {
+      code = seven.callMain(['x', '/a/' + path.basename(file), '-o/o', '-y', '-bd']);
+  } catch (error) {
+      code = error && typeof error.status === 'number' ? error.status : 2;
+  }
+  process.exitCode = 0;
+  const name = path.basename(file);
+  if (code === 1) say('7-Zip warned (code 1) on ' + name);
+  else if (code !== 0) throw new Error('7-Zip ended with code ' + code + ' on ' + name);
+  ```
+  `extract()` runs once per pass, so both passes of a two-pass tar are read the same way. Status 2 or above throws before `place()` runs, so nothing of the archive is placed. The program's catch then prints `unpack failed: 7-Zip ended with code <n> on <archive>` and exits 1. `process.exitCode = 0` is needed because 7z-wasm's `quit_` sets `process.exitCode` to the status (`node_modules/7z-wasm/7zz.umd.js`: `quit_=(status,toThrow)=>{process.exitCode=status;throw toThrow}`). Without it, a status-1 archive would be placed and then exit 1, and Recover would stop the run.
+- `unpack.ts:18-22`: the head comment gains a paragraph on the status.
+- `src/lib/server/machine/runs/recover/local.ts:383-387`: the line filter also passes lines that start with `7-Zip warned`, so the warning reaches the log as `unpack: 7-Zip warned (code 1) on <archive>`. Before this, only lines starting `unpack` or `skipped` were logged. The doc comment at `local.ts:332-335` says so. The cluster job's log takes the program's stdout whole: `cluster.ts:368` runs the program with no filter, and `cluster.ts:105` drops only empty lines.
+- `tests/server/machine/runs/recover/safety.test.ts:681-691`: two new G113 rows. The archive is `{ 'A/B/x.txt': 'x', 'A/M': '../..' }` with `A/M` a Unix link. One row has the folder `A/B`, the other no folder. Each expects the target to hold `set.zip` alone and the log to hold `unpack: unpack failed: 7-Zip ended with code 2 on set.zip`.
+- `safety.test.ts:739`: every unpack row now also asserts `expect(log).not.toContain('7-Zip warned')`, so a clean unpack has no warning line.
+- `safety.test.ts:5-10`: the head comment names the code-2 rows.
+- `HELP.md:291` and `DESIGN.md:767` state the status rule (see item 4).
+
+The new rows on the unchanged base, from the scratch base copy `$TMPDIR/o45-baserun` (the base copy's `src tests utils config`, with the worktree's `safety.test.ts` copied in): `npx vitest run tests/server/machine/runs/recover/safety.test.ts --reporter=json --outputFile=$TMPDIR/o45-first/base-r1.json`, then the rows read from the JSON:
+
+```
+failed | 'with the folder A/B, places nothing w...' | AssertionError: expected [ 'A', 'set.zip' ] to deeply equal [ 'set.zip' ] | safety.test.ts:733:50
+failed | 'with no folder, places nothing when 7...' | AssertionError: expected [ 'A', 'set.zip' ] to deeply equal [ 'set.zip' ] | safety.test.ts:733:50
+```
+
+(vitest cuts the titles; the ellipsis is its own. Line 733 is `expect(readdirSync(place.folder).sort()).toEqual(one.after)`. That run had 45 tests and 15 failed: these two, plus the 13 rows the first build added, which need the folder argument.)
+
+After the change: `npx vitest run tests/server/machine/runs/recover/safety.test.ts tests/server/machine/runs/recover/plan.test.ts tests/server/machine/runs/recover/sources.test.ts --reporter=json --outputFile=$TMPDIR/o45-r1/after.json` gave `total 93 passed 93 failed 0 skipped 0`. All 14 unpack rows passed, the base rows included, with the `not.toContain('7-Zip warned')` assertion in place (the `--reporter=dot` run: `Tests 93 passed (93)`):
+
+```
+passed | 'unpacks a zip into its folder, its fi...'
+passed | 'keeps a name that climbs out, and an ...'
+passed | 'unpacks only the folder a source name...'
+passed | 'unpacks the folder a source names wit...'
+passed | 'moves nothing from an archive that ho...'
+passed | 'moves nothing for a folder that diffe...'
+passed | 'moves nothing for a folder that is a ...'   (x.txt)
+passed | 'moves nothing for a folder that is em...'
+passed | 'moves nothing for a folder that is a ...'   (the link A/L -> B)
+passed | 'with the folder A/B, places nothing w...'
+passed | 'with no folder, places nothing when 7...'
+passed | 'refuses the folder ../up and moves no...'
+passed | 'refuses the folder /abs and moves not...'
+passed | 'refuses the folder A/../../up and mov...'
+```
+
+The base row 'keeps a name that climbs out, and an absolute one, inside the folder' gets 7-Zip status 0. It still passes with `unpack: unpacked slip.zip` and no `7-Zip warned` line, and status 2 would have given the status line instead, so its expected result is unchanged. The `../evil.txt` entry was also run by hand. `zip -q` from `$TMPDIR/o45-r1/slipz/d` with `../evil.txt` stores the name `../evil.txt`, but it drops the leading slash of an absolute name, so that half is covered only by the test row. Run: `node -e "$PROG" ... slip.zip ... 0 ''` gave `exit 0 | unpacked slip.zip | ./evil.txt ./ok.txt ./slip.zip ...`.
+
+Program runs after the change (`exit | the program's own lines | the target after`):
+
+```
+c10   abc.tar.gz strip 0 folder 'A/B' | exit 0 | Warnings: 1;unpacked abc.tar.gz | ./abc.tar.gz ./sub ./sub/y.txt ./x.txt
+c21   abc.tar.gz strip 1 folder ''    | exit 0 | Warnings: 1;unpacked abc.tar.gz | ./abc.tar.gz ./B ./B/sub ./B/sub/y.txt ./B/x.txt ./z.txt
+link  link.zip strip 0 folder ''      | exit 1 | ERROR: Dangerous link path was ignored : A/L2 : ../..;ERROR: Dangerous link path was ignored : A/L : /etc;unpack failed: 7-Zip ended with code 2 on link.zip | ./link.zip
+slink slink.zip strip 0 folder ''     | exit 1 | ERROR: Dangerous symbolic link path was ignored : A/M : ../C;unpack failed: 7-Zip ended with code 2 on slink.zip | ./slink.zip
+slink slink.zip strip 0 folder 'A/B'  | exit 1 | (the same two lines) | ./slink.zip
+c1    abc.zip strip 0 folder 'A/B'    | exit 0 | unpacked abc.zip | ./abc.zip ./sub ./sub/y.txt ./x.txt
+c4    abc.zip strip 1 folder ''       | exit 0 | unpacked abc.zip | ./abc.zip ./B ./B/sub ./B/sub/y.txt ./B/x.txt ./z.txt
+c3    abc.zip strip 0 folder 'A/Q'    | exit 1 | unpack failed: the archive holds no folder A/Q | ./abc.zip
+c19   empty.zip strip 0 folder 'A/E'  | exit 1 | unpack failed: the folder A/E in the archive is empty | ./empty.zip
+```
+
+The two-pass tar: 7-Zip prints `Warnings: 1` on the tar pass, but both passes return status 0. The program says no `7-Zip warned` line, places the folder and exits 0 (c10 and c21 above). The status was read directly with one `node -e` call: it loads `7zz.umd.js`, mounts `$TMPDIR/o45-r1/status`, and calls `callMain(['x', ...])` on `abc.tar.gz` and then on the `abc.tar` it wrote. The output was `gz pass returned 0 | tar pass (abc.tar) returned 0`.
+
+Status 1 has no run. One `node -e` call gave these statuses: `abc.zip` with bytes appended (`tail.zip`) returned 0 (7-Zip prints `There are data after the end of archive`, `Warnings: 1`); bytes put in front (`head.zip`) returned 2 (`Cannot open the file as [zip] archive`); `abc.tar.gz` with bytes appended returned 2 (`There are some data after the end of the payload data`). In these runs, archive-level warnings come back as 0 and data faults as 2. So the status-1 branch, `unpack.ts:90` with the `process.exitCode = 0` at `:88`, is checked only by reading it.
+
+### Item 2: the outward-link row removed
+
+The row 'moves nothing for a folder that is a link leading out of the archive' is gone from `safety.test.ts`. Its place at `:681-691` now holds the two code-2 rows of item 1. The row 'moves nothing for a folder that is a link the archive holds' (`safety.test.ts:670-680`, `A/L -> B`) remains the proof of the `lstat` check in `found()` (`unpack.ts:65`). 7-Zip gives that archive status 0: it passes with `the archive holds no folder A/L` and no warning line, so the program reaches the lookup.
+
+7z-wasm does not write a link that leads out. The run built `$TMPDIR/o45-r1/out/a/out.zip` with `zip -qry` from `A/k.txt`, `A/L -> /etc`, `A/M -> ../..`, `A/N -> ../../../tmp` and `A/K -> k.txt` (`unzip -Z1`: `A/ A/k.txt A/N A/M A/K A/L`). One `node -e` call ran `callMain(['x', '/a/out.zip', '-o/o', '-y', '-bd'])`:
+
+```
+ERROR: Dangerous link path was ignored : A/N : ../../../tmp
+ERROR: Dangerous link path was ignored : A/M : ../..
+ERROR: Dangerous link path was ignored : A/L : /etc
+returned 2
+find: ./A ./A/K ./A/k.txt
+links: ./A/K -> k.txt
+```
+
+Only the link that stays inside its folder was written. The earlier `slink.zip` run shows `A/M -> ../C` is refused too ("Dangerous symbolic link path was ignored"), although `../C` stays inside the archive. With Z951 such an archive now fails whole with code 2.
+
+### Item 3: the kaggle row of `sources.test.ts` restored
+
+`cp` from the base copy's `tests/server/machine/runs/recover/sources.test.ts`, then `diff .agents/worktrees/O45-base/tools/oculus/tests/server/machine/runs/recover/sources.test.ts .agents/worktrees/migration-O45/tools/oculus/tests/server/machine/runs/recover/sources.test.ts` prints nothing (`diff=0`). The file is now byte-equal to the base, and `sources.test.ts` leaves this step's file list. Case 11 stays a run: the brats2020 read (c12 in this report) carries `"folder":"BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData"` with `"recover":true`. The plan row takes it through `unpackOf` (`routes.ts:128-132`). The real-hub integrity run below gives no finding.
+
+### Item 4: `HELP.md`
+
+- `HELP.md:289` is the base's Verify bullet again. `diff <(sed -n 289p HELP.md) <(sed -n 289p /Users/axelfaes/workspace/research-hub/tools/oculus/HELP.md)` prints nothing.
+- `HELP.md:290`, a bullet of its own: "A source can name a `folder` inside its archives: Unpack takes only that folder, and an archive without it is not unpacked."
+- `HELP.md:291`, the user's side of Z951: "An archive 7-Zip ends with an error is not unpacked, and the log names the code; a 7-Zip warning is logged and the archive is unpacked."
+- `DESIGN.md:767`, the Recover decision, gains one sentence after "mounted through NODEFS.": "7-Zip's status is read on every pass: a status of 2 or above fails the archive and places nothing of it, and a warning (status 1) is logged and the archive placed, so a partial unpack is never logged as unpacked."
+
+### Item 5: `source_left_out`
+
+`config/text/findings.yml:256`: `source_left_out: 'source {1} of the dataset {0}, of kind {2}, does not read as a source of its kind (a field missing or malformed, or given without the one it needs), so it is left out and Recover does not run the set'`. It was rendered for three causes with one `node --input-type=module -e` call, which imports `leftOutSources` and `findingText` and takes the template from `findings.yml`:
+
+```
+source 1 of the dataset nounpack, of kind kaggle, does not read as a source of its kind (a field missing or malformed, or given without the one it needs), so it is left out and Recover does not run the set
+source 2 of the dataset nodataset, of kind kaggle, does not read as a source of its kind (a field missing or malformed, or given without the one it needs), so it is left out and Recover does not run the set
+source 1 of the dataset badfolder, of kind kaggle, does not read as a source of its kind (a field missing or malformed, or given without the one it needs), so it is left out and Recover does not run the set
+```
+
+The three causes are `folder` without `unpack: true`, a kaggle source with no `dataset`, and the folder `../up`. A row with no `kind` reads "of kind null", and a numeric kind reads its number (`kindOf`, `retrieval.ts:187-190`, unchanged). `grep -rn "has a field that does not fit" src tests config docs HELP.md DESIGN.md` prints nothing.
+
+### Item 6: host- or user-visible changes, before and after
+
+These add to "Host- or user-visible changes, before and after" above. Each was run with the base program (`.agents/worktrees/O45-base`, five arguments) and the new one (six arguments, folder `''`), both strip 1, under `$TMPDIR/o45-r1/links/`:
+
+- **A link in the dataset folder at a name the archive writes is replaced by the archive's folder.** The target holds `B -> $TMPDIR/o45-r1/links/<v>-outside` (that folder holds `keep.txt`) and `abc.zip`, whose `A/B/` holds `x.txt` and `sub/y.txt`.
+  - Before: `exit 0 | unpacked abc.zip | target: ./abc.zip ./B ./z.txt | B is link | outside: ./keep.txt ./sub ./sub/y.txt ./x.txt`. The files went through the link into its target outside the dataset folder.
+  - After: `exit 0 | unpacked abc.zip | target: ./abc.zip ./B ./B/sub ./B/sub/y.txt ./B/x.txt ./z.txt | B is folder | outside: ./keep.txt`. The link is removed and a real folder `B` holds the files. The link's target is untouched.
+- **An archive entry that is a link replaces a real folder of that name in the target.** The target holds a real folder `L` with `keep.txt` and `safe.zip` (`zip -qry`: `A/ A/B/ A/B/x.txt A/L`, where `A/L -> B`).
+  - Before: `exit 1 | unpack failed: ENOENT: no such file or directory, stat '.../OLD-b/.w/out/A/L' | target: ./B ./B/x.txt ./L ./L/keep.txt ./safe.zip | L is folder`. The base followed the link with `stat` after `B` had moved, failed part way and left `B` placed.
+  - After: `exit 0 | unpacked safe.zip | target: ./B ./B/x.txt ./L ./safe.zip | L is link -> B`. The real folder `L` and its `keep.txt` are removed and replaced by the archive's link. `move()` (`unpack.ts:99-113`) merges only when both sides are real folders by `lstat`; otherwise it removes the target name and puts the archive's entry there. The base did the same for an archive file at a folder's name.
+- **From Z951, an archive 7-Zip ends with status 2 or above now places nothing.** Before, on the base: `link.zip` with no folder printed `unpacked link.zip`, placed `A/k.txt` and exited 2, and Recover logged `unpack: ended with code 2`. After: `unpack failed: 7-Zip ended with code 2 on link.zip`, the target holds `link.zip` alone, and the program exits 1. Recover logs `unpack: ended with code 1 on <archive>` and ends the run (`local.ts:399-402`), and the cluster job stops at `|| exit 1` (`cluster.ts:375`). An archive that holds both a safe link and one 7-Zip calls dangerous now fails whole (`slink.zip` above). Before, it was placed without the dangerous link.
+
+### The checks, once each
+
+```
+npm run diagrams && npm run test:quick                                   exit=0
+  test:quick: 21 changed file(s), from git since HEAD; 90 test file(s), 9 essential
+  ok prettier (1.3 s) | ok ASCII gate (1.4 s) | ok svelte-kit sync (3.4 s) | ok eslint (11.4 s)
+  ok svelte-check (34.0 s): 524 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok vitest (59.1 s): Duration 49.82s
+  test:quick: 63.0 s (limit 45.0 s); every command passed
+  test:quick: over the time limit
+  diagrams: against the main checkout's docs/diagrams/*.dot, only layer-server.dot:42 (173 to 174) and layers.dot:48 (484 to 485), as in the first build
+the three recover files (slow rows included)                              Test Files 3 passed (3) | Tests 93 passed (93)
+npx vitest run tests/server/machine/runs/recover/ tests/routes/machine/recover.test.ts tests/data --reporter=dot      Test Files 40 passed (40) | Tests 539 passed (539)
+OCULUS_TEST_HUB=<worktree root> npx vitest run tests/checks/config/integrity.test.ts --testTimeout 0 --hookTimeout 0
+  the demo hub > validates with no findings | the real hub > validates with no findings | Tests 14 passed (14)
+tree checks (history, comment-width, duplication, size, boundaries, imports order and cycles, keys, diagrams, templates), --testTimeout 0 --hookTimeout 0
+  Test Files 10 passed (10) | Tests 128 passed (128)
+sh utils/unused-exports.sh vs .agents/worktrees/O45-base/unused-exports.txt  348 lines; diff exit 0
+python3 yaml.safe_load of ../../.oculus/data/research/data.yml and config/text/findings.yml   both parse
+grep -rn "strip" src/lib/server/machine/runs/recover src/lib/data src/lib/state/system/machine/recover.svelte.ts | grep -v folder
+  routes.ts:130, unpack.ts:46, :118, :179, :192, local.ts:374, retrieval.ts:67; model-entities.ts:382, model-deck.ts:14, catalogs.ts:30 are other strips
+LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md docs/apps.md docs/templates.md ../../.oculus/data/research/data.yml config/text/findings.yml
+  only data.yml:693 (Hjortkj<ae ligature>r, unchanged line)
+LC_ALL=C grep -ln '[^ -~]' unpack.ts local.ts safety.test.ts             nothing
+history words over the added lines of unpack.ts, local.ts, safety.test.ts, findings.yml (diff against the base copy) and HELP.md, DESIGN.md (against the main checkout)
+  one hit, unpack.ts:24 "... is refused before 7-Zip runs." (an order of execution)
+```
+
+### DONE / NOT DONE (repair round 1)
+
+| Item | State | Proof |
+| --- | --- | --- |
+| 1 Z951: status read from `callMain`, code 2+ fails with nothing placed | DONE | two new rows fail on the base (`safety.test.ts:733:50`), pass after; runs of `link.zip`, `slink.zip` |
+| 1 Z951: status 1 placed and logged | DONE in code, NOT RUN | `unpack.ts:88-90`, `local.ts:386`; no archive found that returns 1 |
+| 1 Z951: both passes of a tar read | DONE | c10, c21; direct `callMain` returned 0 and 0 |
+| 1 Z951: head comment | DONE | `unpack.ts:18-22` |
+| 1 Z951: every existing unpack row rerun | DONE | 93 of 93 pass; 'keeps a name that climbs out' gets status 0 |
+| 2 outward-link row removed; 7z-wasm writes no outward link | DONE | `out.zip` run: three links ignored, `returned 2`, only `A/K -> k.txt` written |
+| 3 `sources.test.ts` back to the base | DONE | `diff` against the base copy prints nothing |
+| 4 HELP `folder` bullet; Verify bullet as at the base | DONE | `HELP.md:289-291`; `sed -n 289p` diff prints nothing |
+| 5 `source_left_out` reworded | DONE | `findings.yml:256`; three causes rendered |
+| 6 two link changes reported, before and after | DONE | runs under `$TMPDIR/o45-r1/links/` |
+| `npm run diagrams && npm run test:quick` | DONE, over time | exit 0, 63.0 s against 45 s |
+| the other checks of "Verify before you report" | DONE | the block above |
+
+Problems the landing should know:
+
+- The status-1 branch has no run (item 1).
+- An archive entry that is a link now replaces a real folder of that name and its contents in the dataset folder (item 6). The ruling keeps this code.
+- An archive that holds any link 7-Zip calls dangerous, `../C` inside the archive included, now places nothing (item 6).
+- `test:quick` ran 63.0 s against its 45 s limit, with every command passing.
+- `HELP.md:291` and the `DESIGN.md:767` sentence on the status are additions beyond the six items. They state the user-visible side of Z951.
+- `src/lib/server/machine/runs/recover/local.ts` changed in this round (the line filter and its doc comment), and the step's path list holds it.

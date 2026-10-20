@@ -125,6 +125,12 @@ const READERS: Partial<
     url: listUrls
 };
 
+/** How a file of an unpacking source unpacks: its strip, and its folder when the source has one. */
+function unpackOf(source: RecoverSource): NonNullable<RemoteFile['unpack']> {
+    const strip = source.strip ?? 0;
+    return source.folder === undefined ? { strip } : { strip, folder: source.folder };
+}
+
 /**
  * Every file of a dataset's sources, in the sources' order, each named below the dataset's folder,
  * or the first refusal. A name that is absolute or climbs out of its folder, from the source or
@@ -156,7 +162,7 @@ async function listFiles(
                 ...one,
                 name,
                 source: index,
-                ...(source.unpack === true ? { unpack: { strip: source.strip ?? 0 } } : {}),
+                ...(source.unpack === true ? { unpack: unpackOf(source) } : {}),
                 ...(source.kind === 'physionet' && source.throttle !== undefined
                     ? { throttle: source.throttle }
                     : {})

@@ -313,7 +313,7 @@ function nodeBuild(version: string) {
  * The job script of a Verify or an Unpack. Its work is under `/local/$SLURM_JOB_ID`, removed when
  * it ends. Verify appends a check line per file; Unpack checks the Node tarball against its
  * `SHASUMS256.txt` before unpacking it into the work folder, copies each archive there and runs
- * the unpack program on the copy into the archive's folder.
+ * the unpack program on the copy into the archive's folder, with its source's strip and folder.
  */
 function jobScript(
     action: 'verify' | 'unpack',
@@ -365,12 +365,15 @@ function jobScript(
         `NODE="$WORK"/${shellWord(`${node.name}/bin/node`)}`,
         'unpack() {',
         '    mkdir -p "$WORK/a" && cp -- "$1" "$WORK/a/" || { say "unpack: cannot copy $1"; return 1; }',
-        '    "$NODE" "$HOME/.oculus/recover/jobs/unpack.cjs" "$HOME/.oculus/recover/7z-wasm" "$WORK/a/$(basename -- "$1")" "$WORK/u" "$(cd "$(dirname -- "$1")" && pwd)" "$2"',
+        '    "$NODE" "$HOME/.oculus/recover/jobs/unpack.cjs" "$HOME/.oculus/recover/7z-wasm" "$WORK/a/$(basename -- "$1")" "$WORK/u" "$(cd "$(dirname -- "$1")" && pwd)" "$2" "$3"',
         '    code=$?',
         '    rm -rf "$WORK/a"',
         '    return $code',
         '}',
-        ...rows.map((row) => `unpack ${shellWord(row.name)} ${row.unpack?.strip ?? 0} || exit 1`),
+        ...rows.map(
+            (row) =>
+                `unpack ${shellWord(row.name)} ${row.unpack?.strip ?? 0} ${shellWord(row.unpack?.folder ?? '')} || exit 1`
+        ),
         "say 'unpack: done'",
         ''
     ].join('\n');

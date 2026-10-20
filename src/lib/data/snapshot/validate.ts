@@ -34,7 +34,7 @@ import {
 } from '../shapes/shapes.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
 import { isWords } from './schema/check.ts';
-import { checkResources } from './validate-kinds.ts';
+import { checkDatasetSources, checkResources } from './validate-kinds.ts';
 
 /** A text, which an id of a relation field must be. */
 const idShape = z.string();
@@ -393,6 +393,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkFolderNames(raw, catalog, findings);
     checkPeople(raw, catalog, findings);
     checkResources(raw, catalog, findings);
+    checkDatasetSources(raw, catalog, findings);
     checkFundingStatements(raw, rules.vocab.acknowledged, catalog, findings);
     checkEntryStatus(raw, rules.vocab.statuses, catalog, findings);
     checkEntryIdentity(raw, catalog, findings);

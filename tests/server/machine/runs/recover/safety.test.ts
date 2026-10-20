@@ -2,10 +2,13 @@
 // or `path:` that would read as an option or name a folder outside `~/data`, and a file name from
 // a source that is absolute or climbs out, are refused before any process starts. On this Mac the
 // fetch script is run by the system's `sh` with a stand-in curl that records its argument vector,
-// and the unpack is the real 7z-wasm run on zips written byte by byte; on the cluster each remote
-// command string is run by `sh` over a scratch home in place of the login node, with stand-ins for
-// tmux, sbatch and curl. A credential of `downloads` is followed from its config file (mode 600)
-// to its removal, and looked for in every vector, command string, script and log.
+// and the unpack is the real 7z-wasm run on zips written byte by byte, a source's folder inside
+// the archive taken alone and refused when the archive holds it in another letter case, as a file,
+// as a link or empty, and when it is absolute or climbs out, and an archive 7-Zip ends with code
+// 2 (a link it ignores as dangerous) placing nothing; on the cluster each remote command string is
+// run by `sh` over a scratch home in place of the login node, with stand-ins for tmux, sbatch and
+// curl. A credential of `downloads` is followed from its config file (mode 600) to its removal,
+// and looked for in every vector, command string, script and log.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -57,6 +60,31 @@ import { answering, ranged } from './recorded.ts';
 
 /** A name that holds a space, a single quote and a command substitution. */
 const ODD = "it's a $(touch pwned) file.dat";
+
+/** A folder inside an archive that holds a space, a single quote and a command substitution. */
+const ODD_FOLDER = "Training data/it's $(touch pwned)";
+
+/** The zip each folder case unpacks: two files below `A/B` and one below `C`. */
+const NESTED = { 'A/B/x.txt': 'x', 'A/B/sub/y.txt': 'y', 'C/z.txt': 'z' };
+
+/**
+ * A zip whose named entries are symbolic links made on Unix, each entry's text its link's target:
+ * the central directory's "made by" gives Unix, and the high half of its external attributes the
+ * link's mode.
+ */
+function withLinks(zip: Buffer, links: string[]): Buffer {
+    const end = zip.length - 22;
+    let at = zip.readUInt32LE(end + 16);
+    for (let count = zip.readUInt16LE(end + 10); count > 0; count -= 1) {
+        const length = zip.readUInt16LE(at + 28);
+        if (links.includes(zip.toString('utf8', at + 46, at + 46 + length))) {
+            zip.writeUInt16LE((3 << 8) | 20, at + 4);
+            zip.writeUInt32LE((0o120777 << 16) >>> 0, at + 38);
+        }
+        at += 46 + length + zip.readUInt16LE(at + 30) + zip.readUInt16LE(at + 32);
+    }
+    return zip;
+}
 
 /** A row of the plan, missing unless the case says otherwise. */
 function row(extra: Partial<PlanRow>): PlanRow {
@@ -480,17 +508,36 @@ describe('a credential reaches curl only through its config file', () => {
 
 describe('the cluster jobs and the unpack take each value as one argument', () => {
     it.each([
-        { action: 'verify' as const, line: /^check /, want: ['sha256', 'a'.repeat(64), ODD] },
-        { action: 'unpack' as const, line: /^unpack '/, want: [ODD, '2'] }
+        {
+            action: 'verify' as const,
+            words: 'the checksum and the file name',
+            unpack: { strip: 2, folder: ODD_FOLDER },
+            line: /^check /,
+            want: ['sha256', 'a'.repeat(64), ODD]
+        },
+        {
+            action: 'unpack' as const,
+            words: 'the file name, the strip and the folder',
+            unpack: { strip: 2, folder: ODD_FOLDER },
+            line: /^unpack '/,
+            want: [ODD, '2', ODD_FOLDER]
+        },
+        {
+            action: 'unpack' as const,
+            words: 'the file name, the strip and no folder',
+            unpack: { strip: 0 },
+            line: /^unpack '/,
+            want: [ODD, '0', '']
+        }
     ])(
-        'the $action job reads each file name as one word, and sbatch its script',
+        'the $action job reads $words each as one word, and sbatch its script',
         { tags: ['slow'] },
         async (one) => {
             const stand = standIns(['curl', 'sbatch', 'tmux'], { sbatch: '4567' });
             const node = loginNode(stand);
             const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb');
             if (place === null) throw new Error('the place is refused');
-            const rows = [row({ name: ODD, state: 'present', have: 10, unpack: { strip: 2 } })];
+            const rows = [row({ name: ODD, state: 'present', have: 10, unpack: one.unpack })];
             expect(await startClusterJob(one.action, place, rows, node.deps)).toBeNull();
             expect(stand.calls().find((call) => call.program === 'sbatch')?.args).toEqual([
                 '--parsable',
@@ -515,12 +562,13 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
         }
     );
 
-    it('passes the program and each path of an unpack as one argument of the vector', () => {
+    it('passes the program, each path and the folder of an unpack as one argument each', () => {
         const input = {
             archive: "/d/it's a set.zip",
             work: '/d/.recover-unpack-k',
             target: '/d',
-            strip: 1
+            strip: 1,
+            folder: ODD_FOLDER
         };
         expect(unpackVector(input, '/7z')).toEqual([
             '-e',
@@ -529,7 +577,8 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
             "/d/it's a set.zip",
             '/d/.recover-unpack-k',
             '/d',
-            '1'
+            '1',
+            ODD_FOLDER
         ]);
     });
 
@@ -537,9 +586,12 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
         name: string;
         archive: string;
         entries: Record<string, string>;
+        links?: string[];
         strip: number;
+        folder?: string;
         after: string[];
         texts: Record<string, string>;
+        said?: string;
     }>([
         {
             name: 'unpacks a zip into its folder, its first folder stripped',
@@ -556,7 +608,97 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
             strip: 0,
             after: ['abs.txt', 'evil.txt', 'ok.txt', 'slip.zip'],
             texts: { 'evil.txt': 'x', 'abs.txt': 'y', 'ok.txt': 'z' }
-        }
+        },
+        {
+            name: 'unpacks only the folder a source names, its contents at the top of the folder',
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 0,
+            folder: 'A/B',
+            after: ['set.zip', 'sub', 'x.txt'],
+            texts: { 'x.txt': 'x', 'sub/y.txt': 'y' }
+        },
+        {
+            name: 'unpacks the folder a source names with the strip counted below it',
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 1,
+            folder: 'A',
+            after: ['set.zip', 'sub', 'x.txt'],
+            texts: { 'x.txt': 'x', 'sub/y.txt': 'y' }
+        },
+        {
+            name: 'moves nothing from an archive that holds no folder of that name',
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 0,
+            folder: 'A/Q',
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: the archive holds no folder A/Q'
+        },
+        {
+            name: "moves nothing for a folder that differs from the archive's in letter case",
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 0,
+            folder: 'a/b',
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: the archive holds no folder a/b'
+        },
+        {
+            name: 'moves nothing for a folder that is a file in the archive',
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 0,
+            folder: 'A/B/x.txt',
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: the archive holds no folder A/B/x.txt'
+        },
+        {
+            name: 'moves nothing for a folder that is empty in the archive',
+            archive: 'set.zip',
+            entries: { 'A/E/': '', 'A/F/f.txt': 'f' },
+            strip: 0,
+            folder: 'A/E',
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: the folder A/E in the archive is empty'
+        },
+        {
+            name: 'moves nothing for a folder that is a link the archive holds',
+            archive: 'set.zip',
+            entries: { 'A/B/x.txt': 'x', 'A/L': 'B' },
+            links: ['A/L'],
+            strip: 0,
+            folder: 'A/L',
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: the archive holds no folder A/L'
+        },
+        ...['A/B', undefined].map((folder) => ({
+            name: `${folder === undefined ? 'with no folder' : `with the folder ${folder}`}, places nothing when 7-Zip ends with code 2`,
+            archive: 'set.zip',
+            entries: { 'A/B/x.txt': 'x', 'A/M': '../..' },
+            links: ['A/M'],
+            strip: 0,
+            folder,
+            after: ['set.zip'],
+            texts: {},
+            said: 'unpack failed: 7-Zip ended with code 2 on set.zip'
+        })),
+        ...['../up', '/abs', 'A/../../up'].map((folder) => ({
+            name: `refuses the folder ${folder} and moves nothing`,
+            archive: 'set.zip',
+            entries: NESTED,
+            strip: 0,
+            folder,
+            after: ['set.zip'],
+            texts: {},
+            said: `unpack failed: the archive holds no folder ${folder}`
+        }))
     ])('$name', { tags: ['slow'], timeout: 90000 }, async (one) => {
         const runs: LocalRuns = new Map();
         let told = (): void => undefined;
@@ -565,14 +707,20 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
         const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb');
         if (place === null) throw new Error('the place is refused');
         mkdirSync(place.folder, { recursive: true });
-        writeFileSync(join(place.folder, one.archive), zipOf(one.entries));
+        writeFileSync(
+            join(place.folder, one.archive),
+            withLinks(zipOf(one.entries), one.links ?? [])
+        );
         const rows = [
             row({
                 name: one.archive,
                 state: 'present',
                 have: 1,
                 checksum: null,
-                unpack: { strip: one.strip }
+                unpack: {
+                    strip: one.strip,
+                    ...(one.folder === undefined ? {} : { folder: one.folder })
+                }
             })
         ];
 
@@ -587,6 +735,7 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
             expect(readFileSync(join(place.folder, name), 'utf8')).toBe(text);
         }
         const log = readFileSync(recoverFiles(deps.home, 'research-hub', 'mitdb').log, 'utf8');
-        expect(log).toContain(`unpack: unpacked ${one.archive}`);
+        expect(log).toContain(`unpack: ${one.said ?? `unpacked ${one.archive}`}`);
+        expect(log).not.toContain('7-Zip warned');
     });
 });
