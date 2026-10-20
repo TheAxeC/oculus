@@ -4674,3 +4674,10 @@ Where it applies: O38's landing, finding Spec R1-a of `agents/reviews/O38-refute
 - Not chosen: put back the 60 s `vi.waitFor` margin so the rows run in `npm test`, which the round's rule against a wall-clock margin rules out.
 
 Where it applies: O38's landing, finding Spec R-2 of `agents/reviews/O38-refuter.md`, "Repair round 1, refuted". Booked in `plan.md` Rulings.
+
+## Z950 (2026-10-20, O44's first run, the orchestrator, automode): which table strips keep a translucent mix over a wallpaper
+
+- Chosen: the strips that do stay in place over scrolling content keep their mix: Processes' Stop column (over the command and folder cells scrolling sideways), and the table heads of Problems and Gallery (their tables sit in the pane body, so the head stays over the rows), through one prop of `Table.svelte`. Every other table head sits in a box that scrolls only sideways, scrolls away with its rows, and paints nothing over a wallpaper.
+- Not chosen: taking the tables out of their sideways-scrolling boxes so their heads stick, which would scroll the whole pane sideways in seven views; or keeping the brief's rule, the lazy option, which left a second translucent layer under heads nothing scrolls under and let scrolled text show behind the Stop button.
+
+Where it applies: O44's brief, Part 2 class 1, cases 7 and 26, decision 6. Booked in `plan.md` Rulings.
