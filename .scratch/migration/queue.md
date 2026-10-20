@@ -1,10 +1,8 @@
-In flight (1 of 6 slots in use): O46, repair round 1. Next: O39.
+In flight (1 of 6 slots in use):
+- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; surfaces aligned and faded cards lifted on hover; Add Command... writing the repository's `.oculus/commands.yml`): repair round 1, then the review over the round and /land with the look on TEST.
 
 Queued, in order (1 step):
 - O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O46.
-
-In flight:
-- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; surfaces aligned and faded cards lifted on hover; Add Command... writing the repository's `.oculus/commands.yml`): repair round 1, then the review over the round and /land with the look on TEST.
 
 Owed looks: none.
 
