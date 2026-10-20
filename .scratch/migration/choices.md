@@ -4751,3 +4751,10 @@ Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md`
 - Not chosen: fitting Quick add and the said line alone, the lazy option, which leaves the other 49 block Surfaces (Data's intro among them) 8 px wider than the cards beside them; keeping the bleed and widening cards to match, which moves every card.
 
 Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
+
+## Z961 (2026-10-20, Axel's addition to O46, the orchestrator, automode): which faded things lose their fade under the pointer
+
+- Chosen: the rule covers every card or node faded for being archival or inactive: the Pillars view's off-pillar lines (`LineCard` `muted`) and archival card, dormant lines and domains (`LineCard`, `DomainCard` `dormant`), expired leads (`LeadCard` `expired`, opacity and grayscale) and archived nodes of the map and notes graph (`Nodes.svelte`, `Graph.svelte`); each shows at full strength while the pointer is over it or the keyboard focus is inside it.
+- Not chosen: the Pillars view's off-pillar and archival cards alone, the lazy option, which leaves the same fade unreadable on hover in four other places; also lifting the fade of disabled controls, chips and tags, which mark a control that does nothing, not old content.
+
+Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.

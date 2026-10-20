@@ -50,3 +50,22 @@ The rule:
 3. Focus's Quick add (`QuickAdd.svelte:85`) and its said line (`Focus.svelte:191`) then line up with Tasks and the awaiting box with no change of their own; read them, and change them only if they do not.
 
 Cases: on the Focus board over a wallpaper, Quick add's painted layer spans the same left and right edges as the Tasks section and the awaiting box; Data's intro and count lines span the same edges as its cards; without a wallpaper every one of those parts lays out as on the unchanged tree. `src/lib/ui/frame/Surface.svelte` and `src/lib/views/boards/focus/` join "Paths this step writes".
+
+## A faded card shows at full strength under the pointer (Axel, 2026-10-20; Z961)
+
+Axel's addition: off-pillar and archival things are faded by default, since they are archival; while the pointer is over one, the fade goes away.
+
+The faded things, as on main:
+- `src/lib/views/structure/pillars/LineCard.svelte:102-105`, `.dormant, .muted { opacity: 0.62 }`: an off-pillar line (`muted`, passed by `Pillars.svelte:162`) and a dormant line.
+- `src/lib/views/structure/pillars/ArchivalCard.svelte:74-76`, `.muted { opacity: 0.62 }`: the archival card.
+- `src/lib/views/structure/domains/DomainCard.svelte:47-49`, `.dormant { opacity: 0.62 }`.
+- `src/lib/views/shared/card/feed/LeadCard.svelte:229-232`, `.expired { opacity: 0.62; filter: grayscale(0.55) }`.
+- `src/lib/views/shared/graph/Nodes.svelte:106-108` and `Graph.svelte:507-510`, an archived node and its label at `opacity: 0.6`.
+
+The rule:
+1. Each of these shows at full strength (opacity 1, no grayscale) while the pointer is over it (`:hover`) or the keyboard focus is inside it (`:focus-within`; for a graph node, while it is the hovered or focused node the graph already tracks, its label with it), and fades again when the pointer leaves and the focus moves out.
+2. The change is eased over a short transition (about 120 ms), and is instant under `prefers-reduced-motion: reduce`.
+3. Each rule carries a comment saying what is faded and why it lifts under the pointer.
+4. Disabled controls, chips and tags keep their fade: it marks a control that does nothing, not old content.
+
+Cases: in the Pillars view, an off-pillar line card and the archival card at 0.62, and at 1 with the pointer over them and with the focus on a link inside them, back to 0.62 after; a dormant domain card the same; an expired lead without its grayscale under the pointer; an archived node of the map and its label at 1 under the pointer. Each is a test of the view seen failing on the unchanged tree first, or, where a test environment does not apply `:hover`, a test of the rule's selector together with the look at landing. `src/lib/views/structure/pillars/`, `src/lib/views/structure/domains/DomainCard.svelte`, `src/lib/views/shared/card/feed/LeadCard.svelte` and `src/lib/views/shared/graph/` join "Paths this step writes".
