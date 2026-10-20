@@ -4758,3 +4758,10 @@ Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md`
 - Not chosen: the Pillars view's off-pillar and archival cards alone, the lazy option, which leaves the same fade unreadable on hover in four other places; also lifting the fade of disabled controls, chips and tags, which mark a control that does nothing, not old content.
 
 Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
+
+## Z962 (2026-10-20, open item 181's ruling (a), the orchestrator, automode): how Add Command... writes the repository's commands file
+
+- Chosen: the repository is the one whose command bar the form was opened from; the entry is added to its `.oculus/commands.yml` in place, the file made from its template when missing; Save approves the chain the form lists; Edit and Delete on every plain entry of the file, keys the form does not show kept, a typed entry keeping Open File only; the `saved` source, `saved.ts` and `~/.oculus/commands.json` removed.
+- Not chosen: a repository picker in the form, which the bar already makes needless; Edit and Delete only on entries the form wrote, the lazy option, which needs a marker in the file.
+
+Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
