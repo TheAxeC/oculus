@@ -71,14 +71,14 @@ terminal:
 # === Look ===================================================================
 # How the wallpaper and the panels over it are drawn. Which image is the wallpaper is the `wallpaper.image` key of the primary hub's own .oculus/config.yml (a hub name and a file name joined by a slash, `random`, or empty for none), set from the picker under the wallpaper rows of the Settings view; the folder each hub keeps its wallpaper images in is `wallpaper_dir` of its .oculus/config.yml.
 wallpaper:
-  dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
+  dim: 0.6      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
   blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy
-  themes: rice   # `rice` = terminal themes only | `all` = light and dark too
-  panel_opacity: 0.76   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
+  themes: all   # `rice` = terminal themes only | `all` = light and dark too
+  panel_opacity: 0.75   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
   popover_opacity: 0.97  # dropdowns (Collections / More / theme) - they float OVER a panel, so at
                            # `panel_opacity` you read them through two translucent layers. Unset =
                            # three quarters of the way from `panel_opacity` to solid.
-  panel_blur: 2         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
+  panel_blur: 0         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told
