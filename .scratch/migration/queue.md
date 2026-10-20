@@ -1,11 +1,12 @@
-In flight (2 of 6 slots in use): O44 and O45, side by side (ruling O44 and O45 in parallel), each prepared and its builder started. Next: O39.
+In flight (2 of 6 slots in use): O44 and O45, side by side (ruling O44 and O45 in parallel), each prepared and its builder started. Next: O46, then O39.
 
-Queued, in order (1 step):
-- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O44 and O45.
+Queued, in order (2 steps):
+- O46 (every key the editor completes carries its description: the catalog files' keys and the groups of dotted settings): next, after O45.
+- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O46.
 
 In flight:
 - O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes; the header toolbar's flip; the Focus row sizes): building.
-- O45 (Recover places one folder of an archive, the key `folder`; brats2020's entry takes the training folder): building.
+- O45 (Recover places one folder of an archive, the key `folder`; brats2020's entry takes the training folder): repair round 1.
 
 Owed looks: none.
 

@@ -4688,3 +4688,10 @@ Where it applies: O44's brief, Part 2 class 1, cases 7 and 26, decision 6. Booke
 - Not chosen: failing on a warning too, which blocks a set over a message that changes nothing; or leaving it, the lazy option, under which an archive 7-Zip could not fully open is placed half and reads unpacked.
 
 Where it applies: O45, carried by its repair round. Booked in `plan.md` Rulings.
+
+## Z952 (2026-10-20, your report of the completion menu, the orchestrator, automode): giving every completed key a description
+
+- Chosen: a step O46, after O45 and before O39. The keys of the catalog files (`statuses` and the rest of `vocab.yml`, and the glyphs, icons, agents, latex, text and schema files) are described in the shape oculus reads them with; each group of dotted settings (`wallpaper`, `slurm`, `lint`, `terminal`, `editor` and the others) gets a help line of its own in `catalogs/options.yml`, which the menu shows.
+- Not chosen: a description made up from the names of the keys inside a group, the lazy option, which tells the reader nothing; or folding it into O39, the repository move.
+
+Where it applies: O46. Booked in `plan.md` Rulings.
