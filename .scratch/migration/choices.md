@@ -4730,3 +4730,10 @@ Where it applies: O46. Booked in `plan.md` Rulings.
 - Not chosen: one file for all of it, which makes every view-state change rewrite the arrangement; keeping the desktop host's turn beside the server's, the lazy option, which leaves two turns for one file.
 
 Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z958 (2026-10-20, O44's review, the orchestrator, automode): the shell's text over the wallpaper
+
+- Chosen: the breadcrumb row (`PaneStrip.svelte`), the folded pane's strip (`FoldedPane.svelte`) and the tab menu's refusal line (`StripSaid.svelte` in `PaneView.svelte`) keep the wallpaper surface O44's builder gave them, and the four files join O44's write list.
+- Not chosen: taking them back off the surface, which leaves shell text over the picture that ruling 177 puts on a surface; leaving the choice open for Axel, the lazy option, which holds the step for a choice the ruling already answers.
+
+Where it applies: O44. Booked in `plan.md` Rulings.
