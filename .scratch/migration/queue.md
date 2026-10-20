@@ -1,8 +1,9 @@
-In flight (0 of 6 slots in use): none. O38 and its own work (the cluster moves and the four deposit pushes) are done. Next: O44, then O39.
+In flight (0 of 6 slots in use): none. O38 and its own work (the cluster moves and the four deposit pushes) are done. Next: O44, then O45, then O39.
 
 Queued, in order (2 steps):
 - O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes): next.
-- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O44.
+- O45 (Recover places one folder of an archive, the key `folder`; brats2020's entry takes the training folder): after O44.
+- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O45.
 
 Owed looks: none.
 
