@@ -1,13 +1,13 @@
-In flight (1 of 6 slots in use):
-- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`, config consolidated, the Keyboard Shortcuts view and palette lists): building.
+In flight (0 of 6 slots in use): none. O38 and its own work (the cluster moves and the four deposit pushes) are done. Next: O44, then O39.
 
 Queued, in order (2 steps):
-- O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes): once O38 has landed.
-- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): once O38 has landed.
+- O44 (every text over a wallpaper on a surface, under rice and the other wallpaper themes): next.
+- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O44.
 
 Owed looks: none.
 
 Landed, newest first:
+- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`), 2026-10-20, 5a6cb4a70.
 - O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 00bdbdd4a.
 - O40 (O37's open look defects), 2026-10-18, 2eab73263.
 - O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
