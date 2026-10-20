@@ -4681,3 +4681,10 @@ Where it applies: O38's landing, finding Spec R-2 of `agents/reviews/O38-refuter
 - Not chosen: taking the tables out of their sideways-scrolling boxes so their heads stick, which would scroll the whole pane sideways in seven views; or keeping the brief's rule, the lazy option, which left a second translucent layer under heads nothing scrolls under and let scrolled text show behind the Stop button.
 
 Where it applies: O44's brief, Part 2 class 1, cases 7 and 26, decision 6. Booked in `plan.md` Rulings.
+
+## Z951 (2026-10-20, O45's builder report, the orchestrator, automode): what Unpack does when 7-Zip reports a problem
+
+- Chosen: 7-Zip's status is read. An error (status 2 or above) fails that archive with a log line naming the status, and nothing of it is placed; a warning (status 1) places the archive and logs the warning.
+- Not chosen: failing on a warning too, which blocks a set over a message that changes nothing; or leaving it, the lazy option, under which an archive 7-Zip could not fully open is placed half and reads unpacked.
+
+Where it applies: O45, carried by its repair round. Booked in `plan.md` Rulings.
