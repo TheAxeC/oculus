@@ -1,19 +1,18 @@
 // Layer 4, server test. What a schedule runs, started through the real `runEntry` with the
 // recording tmux double, a stub path as the Claude program, scratch folders and a scratch
-// saved-commands file: the argument vector of each of the three things a schedule runs, and the
-// words a start that cannot happen is refused with. No case reaches tmux or `claude`, reads
-// `local.yml` or the home folder; the paths are the ones the scratch world holds. What this does
-// not cover: the session a real `claude` starts, and a chain the reader approved.
+// repository whose `.oculus/commands.yml` holds the command a row runs: the argument vector of
+// each of the three things a schedule runs, and the words a start that cannot happen is refused
+// with. No case reaches tmux or `claude`, reads `local.yml` or the home folder; the paths are the
+// ones the scratch world holds. What this does not cover: the session a real `claude` starts.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import type { ScheduleEntry } from '../../../../../src/lib/data/model/index.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
-import { it, scratchDir } from '../../../../fixtures/scratch.ts';
+import { it } from '../../../../fixtures/scratch.ts';
 import { lineOf, tmux } from '../../../../routes/sessions/terminal-fixture.ts';
 import { TEXT } from '../../../text.ts';
-import { CLAUDE, world, type World } from './schedules-fixture.ts';
+import { CLAUDE, plantCommands, world, type World } from './schedules-fixture.ts';
 
 const SIZE = { cols: 80, rows: 24 };
 
@@ -31,8 +30,11 @@ type Row = {
     name: string;
     /** The entry to run, from the scratch world. */
     entry: (w: World) => ScheduleEntry;
-    /** The text of the world's saved commands file, when the row needs another one. */
-    saved?: (w: World) => object;
+    /**
+     * The entries of the repository's `.oculus/commands.yml` as YAML lines, when the row needs
+     * others than the world's approved `sync`.
+     */
+    commands?: string;
     /** The roots the file browser serves at the start; the world's repository when absent. */
     roots?: (w: World) => string[];
     /** The answer and, for a start, what tmux was told. */
@@ -88,20 +90,22 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a saved command starts one task terminal named after it, in its repository',
+        name: 'a command of the commands file starts one task terminal named after it, in its repository',
         entry: (w) => entry({ command: 'sync', folder: w.repo }),
         expected: { cwd: (w) => w.repo, words: [], terminalName: 'sync' }
     },
     {
         name: 'a command chain that needs approval starts nothing',
         entry: (w) => entry({ command: 'sync', folder: w.repo }),
-        saved: (w) => ({ [w.repo]: [{ name: 'sync', run: 'echo synced', depends_on: ['build'] }] }),
+        commands:
+            '  - name: build\n    run: echo built\n' +
+            '  - name: sync\n    run: echo synced\n    depends_on: [build]\n',
         expected: { refused: () => ({ refused: 'needs-approval', names: ['sync'] }) }
     },
     {
-        name: 'a saved command that is gone is refused with command-unknown',
+        name: 'a command the commands file no longer holds is refused with command-unknown',
         entry: (w) => entry({ command: 'sync', folder: w.repo }),
-        saved: () => ({}),
+        commands: '  - name: build\n    run: echo built\n',
         expected: { refused: () => ({ refused: 'command-unknown', names: ['sync'] }) }
     },
     {
@@ -130,14 +134,7 @@ describe('runEntry', () => {
     it('starts what a schedule runs, or refuses it with its word', async () => {
         for (const row of ROWS) {
             const w = world();
-            if (row.saved !== undefined) {
-                writeFileSync(w.files.commands, JSON.stringify(row.saved(w)));
-            }
-            mkdirSync(join(w.repo, '.oculus'), { recursive: true });
-            writeFileSync(
-                join(w.repo, '.oculus', 'commands.yml'),
-                'commands:\n  - name: build\n    run: echo built\n'
-            );
+            if (row.commands !== undefined) plantCommands(w, row.commands);
             const driver = tmux();
             const roots = row.roots === undefined ? [w.repo] : row.roots(w);
             const answer = await runEntry(row.entry(w), SIZE, {
@@ -146,8 +143,7 @@ describe('runEntry', () => {
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor: () => roots,
-                commands: w.files.commands,
-                approvalsFor: () => join(scratchDir('oculus-approvals-'), 'approvals.json')
+                approvalsFor: () => w.approvals
             });
             const created = driver.calls.filter((args) => args.includes('new-session'));
             if ('refused' in row.expected) {

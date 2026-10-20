@@ -37,61 +37,54 @@ export {
 export { loadMachine, readMachine } from './config/machine.ts';
 export { configDir } from './config/folder.ts';
 export {
+    type ConfigWhere,
     type ReplacedFile,
     CATALOGS_DIR,
-    TEXT_KEY,
     droppedFile,
-    flattenText,
+    keyFile,
     loadConfig,
-    sourceFile,
-    textCatalog
-} from './config/merge.ts';
+    sourceFile
+} from './config/merge/merge.ts';
+export { TEXT_KEY, textCatalog } from './config/merge/text.ts';
+export { type WorkspaceLayer } from './config/merge/workspace-layer.ts';
 export {
     type IconMemory,
     VOCAB_KEYS,
-    behaviorFindings,
     glyphCatalog,
     iconCatalog,
-    iconFindings,
     iconSet,
     localFindings,
-    settingFindings,
     vocabCatalog
 } from './config/catalogs.ts';
 export {
-    type AppsSettings,
     type CalendarSettings,
-    type MailSettings,
     type LiteratureSettings,
-    type OpenSettings,
-    type LatexFormatting,
-    type LintSettings,
-    type ProcessesSettings,
-    type SearchSettings,
+    type MailSettings,
     type SlurmSettings,
-    appsSettings,
-    autofetchMin,
-    repositoryScanDepth,
     calendarSettings,
-    changesKeep,
-    closedPaths,
-    confirmDelete,
-    fileIconAtArrow,
-    latexBuild,
-    latexFormatting,
-    lintSettings,
     literatureSettings,
     mailSettings,
-    openSettings,
-    processesSettings,
     refreshSettings,
-    searchSettings,
     slurmSettings,
     usageTiers
-} from './config/settings.ts';
-export { languageFindings } from './config/sections/languages.ts';
-export { latexEditingFindings, latexUnimathFindings } from './config/catalog/latex-editing.ts';
-export { nestingFindings } from './config/catalog/nesting.ts';
-export { optionFindings } from './config/catalog/option-findings.ts';
-export { schemaFindings } from './config/catalog/schema-findings.ts';
-export { themeFindings } from './config/sections/themes.ts';
+} from './config/settings/connectors.ts';
+export {
+    type OpenSettings,
+    type SearchSettings,
+    autofetchMin,
+    confirmDelete,
+    fileIconAtArrow,
+    openSettings,
+    repositoryScanDepth,
+    searchSettings
+} from './config/settings/files.ts';
+export { type LatexFormatting, latexBuild, latexFormatting } from './config/settings/latex.ts';
+export { type LintSettings, lintSettings } from './config/settings/lint.ts';
+export {
+    type AppsSettings,
+    type ProcessesSettings,
+    appsSettings,
+    changesKeep,
+    closedPaths,
+    processesSettings
+} from './config/settings/machine.ts';

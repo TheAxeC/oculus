@@ -10,12 +10,10 @@ import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sou
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { createCloseQuestion } from '../../../../src/lib/shell/panes/strip/close-question.svelte.ts';
 import { createTabMenu } from '../../../../src/lib/shell/panes/strip/tab-menu-state.svelte.ts';
-import { serialiseLayout } from '../../../../src/lib/state/workbench/layout/index.ts';
-import { createClientState } from '../../../fixtures/client.ts';
 import {
-    fakeStorage,
-    openLayout,
+    admittedPage,
     heldPages,
+    openSaved,
     pageAround
 } from '../../../state/workbench/layout/layout-fixture.ts';
 
@@ -45,7 +43,7 @@ describe('the closes of the tab menu, through its state', () => {
         autosave?: { takes: boolean },
         held: { dirty?: string[]; saves?: Record<string, boolean> } = {}
     ) {
-        const client = createClientState();
+        const client = admittedPage();
         const tab = (id: string, view: string) => ({ id, view, state: {} });
         const pane = {
             kind: 'pane' as const,
@@ -57,10 +55,7 @@ describe('the closes of the tab menu, through its state', () => {
             ],
             active: 'a'
         };
-        openLayout(
-            client.layout,
-            fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
-        );
+        openSaved(client, heldPages([pageAround('main', pane)], []));
         const dirty = new Set(held.dirty ?? ['b']);
         const handed: string[][] = [];
         const saved: string[] = [];

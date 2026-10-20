@@ -2,17 +2,18 @@
 // the running terminals the tab lists. The fresh busy read a close asks first.
 //
 // The client is built through the client's own wiring (state/client/context.ts) over a stubbed
-// `fetch` that records each stop and answers the busy read from a table the case sets.
+// `fetch` that records each stop and answers the busy read from a table the case sets, and over a
+// page state server that admits every layout save.
 //
 // What this does NOT cover: the dialog a close raises and its Cancel and Close presses, which are
 // seen on screen; the choice between acting and each question is tests/state/workbench/navigation/
 // pages.test.ts.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState } from '../../../../src/lib/state/client/context.ts';
+import type { ClientState } from '../../../../src/lib/state/client/context.ts';
 import { tabsOf } from '../../../../src/lib/state/workbench/layout/instance.ts';
 import type { Terminal } from '../../../../src/lib/data/model/index.ts';
-import { fakeStorage, openLayout } from '../../workbench/layout/layout-fixture.ts';
+import { admittedPage, openLayout } from '../../workbench/layout/layout-fixture.ts';
 import { openOwning, terminalTabsOf } from './terminal-tabs-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -55,8 +56,8 @@ function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
 }
 
 beforeEach(() => {
-    client = createClientState();
-    openLayout(client.layout, fakeStorage());
+    client = admittedPage();
+    openLayout(client.layout);
     version = 0;
     stops = [];
     reads = [];
@@ -159,11 +160,9 @@ describe('a tab that is moved, split or reloaded', () => {
     });
 
     it('ends no terminal when the layout of another workspace is opened', async () => {
-        const storage = fakeStorage();
-        openLayout(client.layout, storage);
         owning([A]);
         listed([A, B]);
-        openLayout(client.layout, storage, '/w/other.yml');
+        openLayout(client.layout, '/w/other.yml');
         await closedAndStopped(owning([B]), B);
         expect(stops).toEqual([B]);
     });

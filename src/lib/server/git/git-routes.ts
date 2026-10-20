@@ -297,7 +297,7 @@ export function messagePrompt(config: Record<string, unknown>): string {
 }
 
 /**
- * The real suggestion: the instruction from the catalog, the model from config/behavior.yml, under
+ * The real suggestion: the instruction from the catalog, the model from the merged config, under
  * the account the route read.
  */
 async function suggestFor(

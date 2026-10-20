@@ -232,7 +232,7 @@ function jobOption(job: TerminalJob): string {
 const jobShape = z.object({
     repo: z.string(),
     name: z.string(),
-    source: z.enum(['file', 'saved', 'found', 'app', 'latex']).optional().catch(undefined),
+    source: z.enum(['file', 'found', 'app', 'latex']).optional().catch(undefined),
     token: z.string().optional().catch(undefined),
     chain: z
         .array(z.object({ name: z.string(), cwd: z.string() }))

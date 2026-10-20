@@ -34,6 +34,7 @@ text:
             file_not_a_map: the workspace file is not a map of keys; no folder is served
             unknown_key: '{0} is not a key a workspace file takes; it is ignored'
             state_unreadable: the open-workspace state file does not read; the workspace is unsaved and holds no folder
+            page_state_unreadable: '{0}; the page state it keeps reads as nothing, and oculus writes nothing over the file while it does not read'
         hubs:
             id_prefix: 'the id {0} begins with {1}:, the name of a hub folder, so it cannot be told from a record of that hub'
         docs:
@@ -108,6 +109,16 @@ text:
             directory_missing: config directory does not exist
             hub_key_unknown: "key {0} is not one the hub's settings file takes; it is not applied"
             hub_key_not_map: "{0} must be a map holding keys the hub's settings file takes; it is not applied"
+            settings_not_a_map: 'settings must be a map of options; none of it is applied'
+            settings_hub_key: "{0} is a key of the hub's settings file, .oculus/config.yml, which a workspace file does not set; it is not applied"
+            settings_unknown: '{0} is not an option; it is not applied'
+            settings_not_map: '{0} must be a map holding options; it is not applied'
+            settings_value: "{0} must be {1}; oculus's value stands"
+            settings_empty: "{0} must not be empty; oculus's value stands"
+            settings_removed_value: "{0} takes {1} out with a removed that is not true; oculus's entry stands"
+            settings_removed_unknown: "{0} takes {1} out, which oculus's list does not hold"
+            settings_null_unknown: "{0} sets {1} to null, which oculus's map does not hold"
+            settings_repeated: "{0} names {1} in more than one entry; none of them is applied and oculus's entry stands"
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
             glyph_no_icon: glyph {0} has no icon
@@ -175,6 +186,10 @@ text:
             heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
             whole: whole is not true; the option is drawn as a text box
             form: 'the form {0} is not one of program, extension, bundle_id; the option is drawn as a text box'
+            key: "key {0} names no field of the family's records; a workspace file's settings: replaces the list whole"
+            groups: 'groups is not a map of group paths to help lines; no group of the file is described'
+            group_missing: 'the group {0} has no help line in groups:; the editor shows no description for it'
+            group_unknown: "{0} is no group of this file's options, since no option lies under it or it is an option itself; the line is not read"
         words:
             boolean: true or false
             number: a number
@@ -227,6 +242,8 @@ text:
             bad_from: 'the field {0} takes its keys from {1}, which is no registry, projects or vocab list'
             bad_when: 'the field {0} is conditioned on {1}, which is no field of its record'
             bad_map: 'the field {0} has map set but is not a records field'
+            group_missing: 'the map {0}, which dotted fields lie in, has no help line in groups:; the editor shows no description for it'
+            group_unknown: '{0} is no map a dotted field lies in; the line is not read'
             option_kind: 'an option of the field {0} is neither a word nor a map of key and label, so it is left out'
             option_no_key: 'an option row of the field {0} has no key, so it is left out'
             option_not_word: 'the option key {1} of the field {0} is not one word of letters, digits, - and _, so the row is left out'

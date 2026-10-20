@@ -11,7 +11,7 @@
 
 import { isAbsolute } from 'node:path';
 import { expandHome } from '../../../../files/files.ts';
-import type { LatexBuilding } from '../../../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../../../data/sources/config/settings/latex.ts';
 import { programPath } from '../../../../core/program.ts';
 import { NO_APPROVAL, NO_CHOICE, notFound } from '../../choices.ts';
 import type { Adapter, Prepared, RootEnv, ServerEntry } from '../../servers.ts';

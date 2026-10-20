@@ -17,14 +17,15 @@ import { fields, isMap } from '../../../data/helpers/guards.ts';
 import { arrangedDocs, withDocs } from './arrangement.ts';
 import { readDocs, type DocEntry } from './catalogue.ts';
 import { t } from '../../shared/words/text.ts';
+import { settingsTyped } from '../../system/config/typed.ts';
 
 export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };
 
 /**
  * One rail button and the arrangement its page is made from the first time it is pressed: the
- * arrangement of config/layout.yml with the hub's documents of the page's group added as tabs, and
- * those documents.
+ * arrangement of config/defaults/layout.yml with the hub's documents of the page's group added as
+ * tabs, and those documents.
  */
 export type RailPage = RailEntry & { node: unknown; docs: DocEntry[] };
 
@@ -97,17 +98,18 @@ export function sameRail(left: readonly RailEntry[], right: readonly RailEntry[]
 }
 
 /**
- * Whether a tab holds a rail list no save has taken: a Settings tab whose list differs from the one
- * the config holds. A tab of another view, and a Settings tab editing nothing, holds none.
+ * Whether a tab holds work no write has taken: a Settings tab whose rail list differs from the one
+ * the config holds, or that holds text typed into a field or an editor draft of a list or a family
+ * (system/config/typed.ts). A tab of another view holds none.
  */
-export function railTyped(
+export function settingsUnsaved(
     view: string | undefined,
     state: unknown,
-    saved: readonly RailEntry[]
+    config: Record<string, unknown> | undefined
 ): boolean {
     if (view !== SETTINGS_VIEW) return false;
     const draft = railDraft(state);
-    return draft !== null && !sameRail(draft, saved);
+    return (draft !== null && !sameRail(draft, configRail(config))) || settingsTyped(state);
 }
 
 /** One rail entry moved one place up or down, the list unchanged at either end. */

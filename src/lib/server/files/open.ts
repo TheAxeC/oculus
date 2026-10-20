@@ -18,8 +18,8 @@
 //
 // The platform and its opener program are read from data/places/platform.ts.
 //
-// A file is opened only when its extension has an entry in `open.program_ext` of
-// config/behavior.yml. On macOS the entry's application opens it, `open -b <bundle id>`, so neither
+// A file is opened only when its extension has an entry in `open.program_ext` of the merged
+// config. On macOS the entry's application opens it, `open -b <bundle id>`, so neither
 // a per-file Open With choice nor the machine's default for the type decides the program; on Linux
 // the entry's bundle id is not used and the desktop's own program for the type opens it. The
 // extension of the name asked for and of the real name must both have an entry, and on macOS the

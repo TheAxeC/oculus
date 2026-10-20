@@ -1,7 +1,7 @@
 /* Tokyo Night (folke/tokyonight.nvim, Apache-2.0, and enkia/tokyo-night-vscode-theme, MIT):
    Night, Storm and Neon, then Light. One block per palette, each a set of overrides on the
    tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and
-   the picker rows are the `themes:` list of config/appearance.yml. */
+   the picker rows are the `themes:` list of config/defaults/appearance.yml. */
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
 body.tokyonight {

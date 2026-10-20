@@ -44,9 +44,19 @@ const SCAFFOLD = [
     'title: Bookmarks',
     '',
     'schema:',
-    '  - { field: label, type: text, label: Label, required: true }',
-    '  - { field: root, type: select, label: Root }',
-    '  - { field: path, type: text, label: Path }',
+    '  - field: label',
+    '    type: text',
+    '    label: Label',
+    '    required: true',
+    '    help: The name the bookmark is listed and found by.',
+    '  - field: root',
+    '    type: select',
+    '    label: Root',
+    '    help: The key of the root the file browser serves that the file or folder lies under.',
+    '  - field: path',
+    '    type: text',
+    '    label: Path',
+    "    help: The file or folder inside the root; left out, the bookmark is the root's top.",
     ''
 ].join('\n');
 

@@ -4,8 +4,9 @@
     // cleared, so the language map names it again), the file association of the file's ending and
     // the language's own settings; each language with its name in brackets, and the one in force
     // marked. Choosing the association turns the list into a second one, titled with the ending,
-    // whose pick writes the association to config/sources.yml and closes the palette; a refusal of
-    // the write is said in the palette, which stays open. With no source tab on screen the list
+    // whose pick writes the association into the `languages` map of the open workspace file's
+    // `settings:` and closes the palette; a refusal of the write is said in the palette, which
+    // stays open. With no source tab on screen the list
     // says there is none to set the language of.
 
     import { onDestroy } from 'svelte';

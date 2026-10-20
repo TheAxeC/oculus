@@ -122,7 +122,7 @@ const timeoutShape = z.object({
 });
 
 /**
- * The seconds one source is given, `literature.timeout_s` of config/behavior.yml as the page last
+ * The seconds one source is given, `literature.timeout_s` of the merged config as the page last
  * received it, and null until the configuration has spoken or when it names no positive number.
  */
 export function timeoutSeconds(config: Record<string, unknown>): number | null {

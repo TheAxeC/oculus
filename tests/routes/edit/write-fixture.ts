@@ -7,8 +7,9 @@
 //
 // It is its own file because the suites are made over it: tests/routes/edit/write.test.ts, which
 // is what each write kind answers, tests/routes/edit/undo/undo.test.ts, which is what taking one
-// of them back writes, and the two config-key suites, which write a scratch copy of the engine's
-// config folder (`scratchEngine`) and never the checkout's.
+// of them back writes, and the Settings write suites, which read a scratch copy of the engine's
+// config folder (`scratchEngine`) and write a saved workspace file under the synthetic hub
+// (`configTarget`), never the checkout's.
 
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -29,11 +30,12 @@ import { scratchDir } from '../../fixtures/scratch.ts';
 import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
+import { plantSaved } from '../../fixtures/hubs/workspace.ts';
 
 export const MANIFEST =
     'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
-/** A collection file and a career file, at the hub paths config/sources.yml names. */
+/** A collection file and a career file, at the hub paths config/defaults/sources.yml names. */
 const TASKS =
     'title: Tasks\nschema:\n  - { field: title, type: text }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
@@ -143,8 +145,6 @@ export function targetOver(
         overrides: files.overrides,
         projects: () => [],
         bookmarks: files.bookmarks,
-        behaviorFile: join(dir, 'behavior.yml'),
-        layoutFile: join(dir, 'layout.yml'),
         glyphs: [],
         changes: { file: files.changes, keep, writes: fsWrites() }
     };
@@ -312,8 +312,6 @@ export function deckTarget(): PrimaryTarget {
         projects: () => projects,
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
-        behaviorFile: join(dir, 'behavior.yml'),
-        layoutFile: join(dir, 'layout.yml'),
         glyphs: [],
         changes: { file: changes, keep: 500, writes: fsWrites() }
     };
@@ -468,7 +466,7 @@ export function deckOf(into: PrimaryTarget): string {
 
 /**
  * A scratch engine holding a copy of this checkout's tracked config/, which is what a case of the
- * config-key write is made over.
+ * config-key write is made over, so a case can prove oculus's own files are left as they were.
  */
 export function scratchEngine(): string {
     const engine = scratchDir('oculus-engine-');
@@ -484,17 +482,26 @@ export function engineFile(engine: string, name: string): string {
     return file;
 }
 
+/** One defaults file of a scratch engine, by its name (`behavior.yml`). */
+export function defaultsFile(engine: string, name: string): string {
+    return engineFile(engine, `defaults/${name}`);
+}
+
 /**
  * The write target of a scratch engine: the synthetic hub and change log of `target()`, over an
- * engine that is not the checkout, so the config-key write reads and writes the copy.
+ * engine that is not the checkout, with the saved workspace `<hub>/.oculus/workspaces/main.yml`
+ * open (its `settings:` block `settings`, or none), so a Settings write lands in that file.
  */
-export function configTarget(engine: string = scratchEngine()): PrimaryTarget {
-    return {
-        ...target(),
-        engine,
-        behaviorFile: engineFile(engine, 'behavior.yml'),
-        layoutFile: engineFile(engine, 'layout.yml')
-    };
+export function configTarget(engine: string = scratchEngine(), settings = ''): PrimaryTarget {
+    const base = target();
+    return { ...base, engine, workspace: plantSaved(base.hub, settings).open };
+}
+
+/** The open workspace file of a target, which a Settings write of a non-hub option lands in. */
+export function workspaceFileOf(into: PrimaryTarget): string {
+    const file = into.workspace?.file ?? null;
+    if (file === null) throw new Error('the target has no workspace file open');
+    return file;
 }
 
 /** The one refusal an outcome carries, with the proof that it changed and recorded nothing. */

@@ -1,25 +1,30 @@
-// Layer 4, server test. The config-value writer: one list option of a tracked config file set in
-// place, the refusals that leave the file as it was, and the bytes it keeps.
+// Layer 4, server test. The config-value writer: one list option or family set at its place, the
+// workspace file's `settings:` holding what makes the merge give back the value the reader sees,
+// the refusals that leave every file as it was, and the bytes a write keeps.
 //
-// Every case runs over a scratch engine, a copy of the checkout's config/ folder with the machine's
-// own file left out (tests/routes/edit/write-fixture.ts), so the writer reads the catalog, the text
-// and the other files from the copy and writes the copy. What this does NOT cover: the route that
-// carries the writer, History and Undo (tests/routes/edit/config-value.test.ts) and the editors
-// that send the write.
+// Every case runs over a scratch engine, a copy of the checkout's config/ folder
+// (tests/routes/edit/write-fixture.ts), and a scratch hub with a saved workspace file
+// (tests/fixtures/hubs/workspace.ts `plantSaved`), so the writer reads the options and the text
+// from the copy and writes the scratch files. What this does NOT cover: the route that carries the
+// writer, History and Undo (tests/routes/edit/config-value.test.ts) and the editors that send the
+// write.
 // @module-tag slow: every case takes 250 ms or more in a run of its own. The time is the writer's
 // own reading: every write, a refusal included, first reads the whole configuration of the scratch
 // engine (`loadConfig`, about 220 ms a read) for the catalog and the words of its answer, and a
 // write reads it again after, to check it; no case waits.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { parse } from 'yaml';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
+import { loadLayers } from '../../../src/lib/server/edit/writes/config/config-place.ts';
 import { writeConfigValue } from '../../../src/lib/server/edit/writes/config/config-value.ts';
-import { it } from '../../fixtures/scratch.ts';
-import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
-import { hubLinkedToEngine, linkedHub } from './writes-fixture.ts';
+import { plantSaved } from '../../fixtures/hubs/workspace.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { defaultsFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import { linkedHub } from './writes-fixture.ts';
 
 /** Every path the writer's module graph read through `readFileSync`, newest last. */
 const reads = vi.hoisted(() => ({ paths: [] as string[] }));
@@ -44,58 +49,154 @@ function why(key: string, ...args: string[]): string {
     return words(CATALOG, `server.config_value.${key}`, ...args);
 }
 
-/** One file of a scratch engine, as it is now. */
-function held(engine: string, file: string): string {
-    return readFileSync(engineFile(engine, file), 'utf8');
+/** A scratch engine, a hub and a saved workspace whose `settings:` block is `settings`. */
+type World = { engine: string; hub: string; workspace: string };
+
+function world(settings = ''): World {
+    const engine = scratchEngine();
+    const hub = scratchDir('oculus-hub-');
+    return { engine, hub, workspace: plantSaved(hub, settings).file };
 }
 
-/** The value a scratch engine's file holds at a dotted key path. */
-function valueOf(engine: string, file: string, key: string): unknown {
-    let node: unknown = parse(held(engine, file));
-    for (const segment of key.split('.')) node = (node as Record<string, unknown>)[segment];
+/** The value at a dotted key path of a parsed map, or undefined. */
+function at(parsed: unknown, key: string): unknown {
+    let node = parsed;
+    for (const segment of key.split('.')) {
+        node = (node as Record<string, unknown> | undefined)?.[segment];
+    }
     return node;
 }
 
-/** A write with the value the file holds now as its base. */
-function write(engine: string, file: string, key: string, value: unknown) {
-    return writeConfigValue(engine, file, key, value, valueOf(engine, file, key));
+/** The value in force at a key over a world's layers, as the server merges them. */
+function inForce(one: World, key: string): unknown {
+    return at(loadLayers(one.engine, { hub: one.hub, workspace: one.workspace }).config, key);
+}
+
+/** A write over a world's layers with the value in force as its base. */
+function write(one: World, file: string, key: string, value: unknown, own = false) {
+    return writeConfigValue(
+        one.engine,
+        file,
+        key,
+        value,
+        inForce(one, key),
+        { hub: one.hub, workspace: one.workspace },
+        { own }
+    );
 }
 
 const PATTERNS = 'behavior.yml:processes.patterns';
 
-describe('a list written in place', () => {
-    it('adds one item, removes one and swaps two, and keeps every other line', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
+describe('a list written into the workspace file', { tags: ['slow'] }, () => {
+    it('adds the list under settings, then rewrites it in place, and leaves the defaults file', () => {
+        const one = world();
+        const defaults = readFileSync(defaultsFile(one.engine, 'behavior.yml'), 'utf8');
+        const opened = readFileSync(one.workspace, 'utf8');
         const next = ['codex', 'python3', 'claude', 'node', 'pytest'];
-        const outcome = write(engine, 'behavior.yml', 'processes.patterns', next);
-        expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([PATTERNS]);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace(
-                '[python3, codex, claude, node, latexmk]',
-                '[codex, python3, claude, node, pytest]'
-            )
+        const first = write(one, 'behavior.yml', 'processes.patterns', next);
+        expect(first.refused).toEqual([]);
+        expect(first.changed).toEqual([PATTERNS]);
+        expect(readFileSync(one.workspace, 'utf8')).toBe(
+            `${opened}settings:\n  processes:\n    patterns: [ codex, python3, claude, node, pytest ]\n`
         );
-        expect(valueOf(engine, 'behavior.yml', 'processes.patterns')).toEqual(next);
-        expect(outcome.records).toHaveLength(1);
-        expect(outcome.records?.[0]).toMatchObject({
+        expect(first.records?.[0]).toMatchObject({
+            file: one.workspace,
             key: 'behavior.yml',
             field: 'processes.patterns',
             before: ['python3', 'codex', 'claude', 'node', 'latexmk'],
             after: next,
             undo: 'field'
         });
+        const second = write(one, 'behavior.yml', 'processes.patterns', ['node']);
+        expect(second.changed).toEqual([PATTERNS]);
+        expect(readFileSync(one.workspace, 'utf8')).toBe(
+            `${opened}settings:\n  processes:\n    patterns: [ node ]\n`
+        );
+        expect(inForce(one, 'processes.patterns')).toEqual(['node']);
+        expect(readFileSync(defaultsFile(one.engine, 'behavior.yml'), 'utf8')).toBe(defaults);
     });
 });
 
-describe("the machine's own file", () => {
-    it('refuses local.yml before any file is read', () => {
-        const engine = scratchEngine();
+describe(
+    'a keyed list or a family written as what the merge gives back',
+    { tags: ['slow'] },
+    () => {
+        it('writes the rail without a button as every entry then the removed one, and the merge has no button', () => {
+            const one = world();
+            const rail = inForce(one, 'rail') as { page: string }[];
+            const seen = rail.filter((row) => row.page !== 'focus');
+            const outcome = write(one, 'layout.yml', 'rail', seen, true);
+            expect(outcome.changed).toEqual(['layout.yml:rail']);
+            const stored = at(parse(readFileSync(one.workspace, 'utf8')), 'settings.rail');
+            expect(stored).toEqual([...seen, { page: 'focus', removed: true }]);
+            expect(inForce(one, 'rail')).toEqual(seen);
+        });
+
+        it('keeps a rail drag in its new order after the merge', () => {
+            const one = world();
+            const rail = inForce(one, 'rail') as { page: string }[];
+            const dragged = [rail[2], rail[0], rail[1], ...rail.slice(3)];
+            expect(write(one, 'layout.yml', 'rail', dragged, true).changed).toEqual([
+                'layout.yml:rail'
+            ]);
+            expect(inForce(one, 'rail')).toEqual(dragged);
+        });
+
+        it('keeps a shipped theme removed by the Settings editor out of the merged list', () => {
+            const one = world();
+            const themes = inForce(one, 'themes') as { name: string }[];
+            const seen = themes.filter((row) => row.name !== 'dark');
+            expect(write(one, 'appearance.yml', 'themes', seen).changed).toEqual([
+                'appearance.yml:themes'
+            ]);
+            const stored = at(parse(readFileSync(one.workspace, 'utf8')), 'settings.themes');
+            expect((stored as unknown[]).at(-1)).toEqual({ name: 'dark', removed: true });
+            expect((inForce(one, 'themes') as { name: string }[]).map((row) => row.name)).toEqual(
+                seen.map((row) => row.name)
+            );
+        });
+
+        it('writes a family without a key as every key then the removed key set to null', () => {
+            const one = world();
+            const tiers = inForce(one, 'usage_tiers') as Record<string, unknown>;
+            const names = Object.keys(tiers);
+            const seen = Object.fromEntries(Object.entries(tiers).slice(1));
+            expect(write(one, 'behavior.yml', 'usage_tiers', seen).changed).toEqual([
+                'behavior.yml:usage_tiers'
+            ]);
+            const stored = at(parse(readFileSync(one.workspace, 'utf8')), 'settings.usage_tiers');
+            expect(stored).toEqual({ ...seen, [names[0]]: null });
+            expect(Object.keys(inForce(one, 'usage_tiers') as object)).toEqual(names.slice(1));
+        });
+
+        it('refuses a family without an entry another option needs, and writes nothing', () => {
+            const one = world();
+            const before = readFileSync(one.workspace, 'utf8');
+            const boards = inForce(one, 'boards') as Record<string, unknown>;
+            const seen = Object.fromEntries(
+                Object.entries(boards).filter(([key]) => key !== 'projects')
+            );
+            const outcome = write(one, 'layout.yml', 'boards', seen);
+            expect(outcome.changed).toEqual([]);
+            expect(outcome.refused.map((row) => row.field)).toEqual(['layout.yml:boards']);
+            expect(readFileSync(one.workspace, 'utf8')).toBe(before);
+        });
+    }
+);
+
+describe("the machine's own file", { tags: ['slow'] }, () => {
+    it("refuses local.yml without reading the hub's .oculus/local.yml", () => {
+        const one = world();
+        const local = join(one.hub, '.oculus', 'local.yml');
+        writeFileSync(local, 'port: 8791\n');
         reads.paths.length = 0;
-        const outcome = writeConfigValue(engine, 'local.yml', 'hub', ['x'], []);
+        const outcome = writeConfigValue(one.engine, 'local.yml', 'hub', ['x'], [], {
+            hub: one.hub,
+            workspace: one.workspace
+        });
         expect(refusalOf(outcome, 'local.yml:hub')).toBe(why('local'));
-        expect(reads.paths.filter((path) => path.endsWith('local.yml'))).toEqual([]);
+        expect(reads.paths.filter((path) => path === local)).toEqual([]);
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 
     it("refuses a hub settings file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
@@ -107,45 +208,42 @@ describe("the machine's own file", () => {
             'scan',
             [{ dir: 'x' }],
             [],
-            undefined,
-            hub,
-            [hub]
-        );
-        expect(refusalOf(outcome, 'sources.yml:scan')).toBe(why('local'));
-        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
-    });
-
-    it("refuses a hub settings file that is a link to oculus's own config/local.yml, and writes nothing", () => {
-        const engine = scratchEngine();
-        const { hub, local } = hubLinkedToEngine(engine);
-        const outcome = writeConfigValue(
-            engine,
-            'sources.yml',
-            'scan',
-            [{ dir: 'x' }],
-            [],
-            undefined,
-            hub,
-            [hub]
+            { hub },
+            { hubs: [hub] }
         );
         expect(refusalOf(outcome, 'sources.yml:scan')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 });
 
-describe('a write refused with nothing written', () => {
-    it('refuses a base the file no longer holds, with the sentence that it changed since it was read', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const stale = ['python3', 'codex'];
+describe('a write refused with nothing written', { tags: ['slow'] }, () => {
+    it('refuses a base the merge no longer gives, with the sentence that it changed since it was read', () => {
+        const one = world();
+        const before = readFileSync(one.workspace, 'utf8');
         const outcome = writeConfigValue(
-            engine,
+            one.engine,
             'behavior.yml',
             'processes.patterns',
             ['x'],
-            stale
+            ['python3', 'codex'],
+            { hub: one.hub, workspace: one.workspace }
         );
         expect(refusalOf(outcome, PATTERNS)).toBe(why('changed'));
-        expect(held(engine, 'behavior.yml')).toBe(before);
+        expect(readFileSync(one.workspace, 'utf8')).toBe(before);
+    });
+
+    it('refuses a list with the unsaved workspace, with the no-workspace-file sentence', () => {
+        const one = world();
+        const before = readFileSync(one.workspace, 'utf8');
+        const outcome = writeConfigValue(
+            one.engine,
+            'behavior.yml',
+            'processes.patterns',
+            ['x'],
+            inForce(one, 'processes.patterns'),
+            { hub: one.hub }
+        );
+        expect(refusalOf(outcome, PATTERNS)).toBe(words(CATALOG, 'server.config_key.no_workspace'));
+        expect(readFileSync(one.workspace, 'utf8')).toBe(before);
     });
 });

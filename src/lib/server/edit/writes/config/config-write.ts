@@ -1,8 +1,9 @@
 // Layer 2, server. The writes of configuration files, as one dispatch: a deck group's slides, the
-// audit's mute list, the rail, one option of a tracked config file, one setting an app declares,
-// one list or family of one, and the open workspace's folders. Each is a file of the reader's own,
-// and anything about it can go wrong on this machine, so a writer that throws is told as
-// `unwritable` and the file is left alone.
+// audit's mute list, the rail, one option of oculus's defaults files, one setting an app declares,
+// one list or family of one, the reset of one option, and the open workspace's folders. Each is a
+// file of the reader's own (the workspace file, the primary hub's settings file, a deck), and
+// anything about it can go wrong on this machine, so a writer that throws is told as `unwritable`
+// and the file is left alone.
 //
 // The dispatch answers with the outcome and the kind the change log files it under, or with the
 // refusal and its status, and leaves the logging and the response to the endpoint in writes.ts,
@@ -12,6 +13,7 @@ import {
     appSettingWrite,
     auditMuteWrite,
     configKeyWrite,
+    configResetWrite,
     configValueWrite,
     deckSlidesWrite,
     railWrite,
@@ -20,8 +22,9 @@ import {
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 import { writeMute } from './lists/audit-mute.ts';
 import { writeAppSetting } from './app-setting.ts';
-import { machineHubs } from './config-checks.ts';
+import { layersOf, machineHubs } from './config-place.ts';
 import { writeConfigKey } from './config-key.ts';
+import { resetConfig } from './config-reset.ts';
 import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
 import { writeDeckSlides } from './lists/deck/deck.ts';
@@ -63,24 +66,22 @@ function sourcesOf(into: WriteTarget): SourceInputs {
     return { hub: into.hub, projects: into.projects, entities: into.entities };
 }
 
-/** The primary hub's folder for a layer write, none while the workspace has no primary. */
-function hubOf(into: WriteTarget): string | undefined {
-    return into.hub ?? undefined;
-}
-
 /** The answer to a body that is a write of a configuration file, or null for any other body. */
 export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | null {
     const deck = deckSlidesWrite(body);
     if (deck !== null) return settled('deck-slides', () => writeDeckSlides(into, deck));
+    const layers = layersOf(into);
     const mute = auditMuteWrite(body);
     if (mute !== null) {
         return settled('audit-mute', () =>
-            writeMute(into.behaviorFile, mute.signature, mute.muted)
+            writeMute(into.engine, layers, mute.signature, mute.muted, machineHubs(into))
         );
     }
     const rail = railWrite(body);
     if (rail !== null) {
-        return settled('rail', () => writeRail(into.layoutFile, rail.rail, into.glyphs));
+        return settled('rail', () =>
+            writeRail(into.engine, layers, rail.rail, into.glyphs, machineHubs(into))
+        );
     }
     const stored = appSettingWrite(body);
     if (stored !== null) {
@@ -96,9 +97,10 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
                 setting.file,
                 setting.key,
                 setting.value,
+                layers,
                 sourcesOf(into),
-                hubOf(into),
-                machineHubs(into)
+                machineHubs(into),
+                setting.copy === true
             )
         );
     }
@@ -111,10 +113,15 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
                 family.key,
                 family.value,
                 family.base,
-                sourcesOf(into),
-                hubOf(into),
-                machineHubs(into)
+                layers,
+                { inputs: sourcesOf(into), hubs: machineHubs(into), copy: family.copy === true }
             )
+        );
+    }
+    const reset = configResetWrite(body);
+    if (reset !== null) {
+        return settled('config-reset', () =>
+            resetConfig(into.engine, reset.file, reset.key, layers, machineHubs(into))
         );
     }
     const roots = rootsWrite(body);

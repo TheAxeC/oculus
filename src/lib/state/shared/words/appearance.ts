@@ -1,11 +1,13 @@
-// Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
-// string each theme puts on the body, the words it is offered under and the glyph drawn before
-// them, the wallpaper's numbers, what the CRT overlay and terminal text size start as, the terminal
-// grid's cursor, Option key and copy-on-selection settings, the code theme the editors start on,
-// and what a pane's top row draws (`show_tabs`, `editor_actions`). It is installed the way the tone
-// vocabulary is: the server ships the `themes` key as the page's data at first load, and every
-// later edit of config/appearance.yml arrives on the `config` channel, so a theme is added by
-// editing YAML and nothing else.
+// Layer 2, client state. The appearance options as the page reads them out of the merged config:
+// the picker's order, the class string each theme puts on the body, the words it is offered under
+// and the glyph drawn before them, the wallpaper's numbers, the terminal grid's text size, cursor,
+// Option key and copy-on-selection settings, the code theme of the editors, what a pane's top row
+// draws (`show_tabs`, `editor_actions`), and the look (`configuredLook`): the theme, the text size,
+// the terminal themes' toggles, the wallpaper's and the CRT overlay's switches and the status bar's
+// three values. It is installed the way the tone vocabulary is: the server ships these keys as the
+// page's data at first load, and every later edit of oculus's defaults, the hub's settings file or
+// the workspace file's `settings:` arrives on the `config` channel, so a theme is added by editing
+// YAML and nothing else.
 //
 // The colour themes the acting apps offer are not held here: the apps store holds the offers made
 // from the rows of the `apps` channel (null until the first payload arrives), and every reader that
@@ -22,9 +24,9 @@
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
 // configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
-// during its first render gets the page's data and draws again when a push replaces it. What the
-// viewer picked out of this list is state/workbench/ui.svelte.ts's, which is the store that
-// persists.
+// during its first render gets the page's data and draws again when a push replaces it. A change of
+// one of these options is written by state/workbench/ui.svelte.ts through the Settings write path,
+// which holds the value it sent until the push that carries it arrives.
 //
 // Each key of the file is read through a schema below that repairs a value of the wrong type to
 // its default, so a half-edited file still draws a page.
@@ -43,13 +45,6 @@ import {
 import { byKey } from '../../../data/helpers/guards.ts';
 import { anyNumberShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 
-export {
-    CODE_TOKENS,
-    codeThemeInfo,
-    isCodeTheme,
-    type CodeThemeInfo
-} from '../../../data/helpers/editor/code-themes.ts';
-
 /** The `file_icons` value that draws Seti, the default file icon theme. */
 const SETI_ICONS = 'seti';
 
@@ -63,7 +58,7 @@ export const APP_THEME_CLASS = 'app-theme';
 export type Theme = { name: string; class: string; glyph: string; label: string };
 
 /**
- * The wallpaper as config/appearance.yml describes it, with every number already resolved: the
+ * The wallpaper as the `wallpaper` options describe it, with every number already resolved: the
  * folder and the chosen file are the server's half and are not here, the rest is what the page
  * paints with. `panel` and `popover` are percentages because that is what color-mix takes.
  */
@@ -83,7 +78,7 @@ export type Wallpaper = {
 };
 
 /**
- * The terminal grid's settings from `terminal:` of config/appearance.yml, in xterm's own names and
+ * The terminal grid's settings from the `terminal` options, in xterm's own names and
  * values. A key the file leaves out, or writes with a value of the wrong type, is absent here, so
  * the grid keeps what it would do without the key.
  */
@@ -107,17 +102,16 @@ export type EditorActions = 'strip' | 'hidden';
 /** The class the terminal palettes carry, and the one `themes: rice` selects on. */
 const RICE = 'rice';
 
-/** The theme a browser starts on when config/appearance.yml lists none at all. */
+/** The theme a browser starts on when the `themes` option lists none at all. */
 const FALLBACK_THEME = 'light';
 
-/** The theme a page in the desktop app's window starts on when no theme is saved. */
+/** The theme a page in the desktop app's window starts on when the `theme` option names none. */
 const APP_THEME = 'vscode-dark-modern';
 
 /**
- * The theme a page shows: the saved one when the list holds it, else the start. The start is the
+ * The theme a page shows: the named one when the list holds it, else the start. The start is the
  * app's dark theme for a page in the desktop app's window when the list holds it, and the
- * `fallback` (the first theme listed) for a browser tab, which keeps its own start. A pure
- * function of its arguments.
+ * `fallback` (the first theme listed) for a browser tab. A pure function of its arguments.
  */
 function chosenTheme(
     saved: unknown,
@@ -131,10 +125,44 @@ function chosenTheme(
     return inApp && listed.includes(APP_THEME) ? APP_THEME : fallback;
 }
 
+/**
+ * The look the options set, as the merged config holds them: the theme named (empty for the
+ * start), the text size, the terminal themes' three toggles (`rice.icons`, `rice.brackets` and
+ * `rice.monospace`), whether the wallpaper shows (`shown`, `hidden`, or empty for the theme's
+ * answer), whether the CRT overlay is drawn, and the status bar's hidden items, Do Not Disturb and
+ * the repository last chosen in it.
+ */
+export type Look = {
+    theme: string;
+    textSize: number;
+    icons: boolean;
+    brackets: boolean;
+    monospace: boolean;
+    wallpaper: 'shown' | 'hidden' | '';
+    crt: boolean;
+    statusHidden: string[];
+    statusQuiet: boolean;
+    statusRepository: string;
+};
+
+/** The look of a config that sets none of its keys, which oculus's defaults files also hold. */
+const NO_LOOK: Look = {
+    theme: '',
+    textSize: 1,
+    icons: false,
+    brackets: true,
+    monospace: true,
+    wallpaper: '',
+    crt: false,
+    statusHidden: [],
+    statusQuiet: false,
+    statusRepository: ''
+};
+
 let list: Theme[] = [];
 let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
-let crt = false;
+let look: Look = NO_LOOK;
 let codeTheme = CODE_TOKENS;
 let tabBar: TabBar = 'multiple';
 let actionsAt: EditorActions = 'strip';
@@ -257,8 +285,57 @@ const tabBarShape = z.enum(['multiple', 'single', 'none']).catch('multiple');
 /** The `editor_actions` key; a value that is neither of the two reads as `strip`. */
 const editorActionsShape = z.enum(['strip', 'hidden']).catch('strip');
 
-/** The `crt` key: whether the overlay starts on. */
-const crtShape = z.object({ default: z.boolean().catch(false) });
+/** A text size the options allow: 0.7 to 1.6 in tenths, and one for any other value. */
+export function boundedTextSize(value: unknown): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 1;
+    return Math.min(1.6, Math.max(0.7, Math.round(value * 10) / 10));
+}
+
+/**
+ * The keys of the look, each read on its own: a key that is missing or of the wrong type reads as
+ * the value a config that sets none holds, so a half-edited file still draws a page.
+ */
+const lookShape = z
+    .object({
+        theme: z.string().catch(NO_LOOK.theme),
+        text_size: z.unknown().transform(boundedTextSize),
+        rice: z
+            .object({
+                icons: z.boolean().catch(NO_LOOK.icons),
+                brackets: z.boolean().catch(NO_LOOK.brackets),
+                monospace: z.boolean().catch(NO_LOOK.monospace)
+            })
+            .catch({
+                icons: NO_LOOK.icons,
+                brackets: NO_LOOK.brackets,
+                monospace: NO_LOOK.monospace
+            }),
+        wallpaper: z
+            .object({ show: z.enum(['shown', 'hidden', '']).catch('') })
+            .catch({ show: '' }),
+        crt: z.object({ on: z.boolean().catch(false) }).catch({ on: false }),
+        status_bar: z
+            .object({
+                hidden: rowsShape(z.string().min(1))
+                    .transform((items) => [...new Set(items)])
+                    .catch([]),
+                quiet: z.boolean().catch(false),
+                repository: z.string().catch('')
+            })
+            .catch({ hidden: [], quiet: false, repository: '' })
+    })
+    .transform((node): Look => ({
+        theme: node.theme,
+        textSize: node.text_size,
+        icons: node.rice.icons,
+        brackets: node.rice.brackets,
+        monospace: node.rice.monospace,
+        wallpaper: node.wallpaper.show,
+        crt: node.crt.on,
+        statusHidden: node.status_bar.hidden,
+        statusQuiet: node.status_bar.quiet,
+        statusRepository: node.status_bar.repository
+    }));
 
 /**
  * Install the theme list from the merged config's `themes` key. A row with no `name` is dropped,
@@ -272,7 +349,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     list = [];
     byName = {};
     paper = readAs(wallpaperShape, config.wallpaper);
-    crt = readAs(crtShape, config.crt)?.default ?? false;
+    look = readAs(lookShape, config) ?? NO_LOOK;
     codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
     tabBar = readAs(tabBarShape, config.show_tabs) ?? 'multiple';
     actionsAt = readAs(editorActionsShape, config.editor_actions) ?? 'strip';
@@ -372,23 +449,24 @@ export function themeNamed(text: string, offers: AppOffers): string | null {
 
 /**
  * The words of the first theme row whose `class` is `cls`, and the class itself when no row carries
- * it: how the Code theme menu words a VS Code theme, whatever name the row is saved under.
+ * it: how the Settings view's choice of a code theme words a VS Code theme, whatever name the theme
+ * row is saved under.
  */
 export function themeClassLabel(cls: string): string {
     configGeneration();
     return list.find((theme) => theme.class === cls)?.label ?? cls;
 }
 
-/** The theme a browser that has saved none starts on: the first the config lists. */
+/** The theme a browser starts on when the `theme` option names none: the first the config lists. */
 function defaultTheme(): string {
     configGeneration();
     return list[0]?.name ?? FALLBACK_THEME;
 }
 
 /**
- * The theme a page shows given the name it saved (any value, since the saved record is read
- * untrusted) and whether the page is in the desktop app's window: `chosenTheme` over the list the
- * config installed.
+ * The theme a page shows given the name it is asked for (any value, since an option or a preview
+ * may name anything) and whether the page is in the desktop app's window: `chosenTheme` over the
+ * list the config installed.
  */
 export function themeFor(saved: unknown, inApp: boolean, offers: AppOffers): string {
     configGeneration();
@@ -402,52 +480,45 @@ export function themeFor(saved: unknown, inApp: boolean, offers: AppOffers): str
 }
 
 /**
- * The theme a saved record of the page's view settings names, or the app's start when the record
- * is missing, does not parse or names a theme the config does not list. The desktop app's find bar
- * has no store of its own and takes the window's theme from the record the window's page saved.
+ * The look the merged config sets: the `theme`, `text_size`, `rice`, `wallpaper.show` and `crt.on`
+ * options of the appearance defaults and the `status_bar` options of the behavior defaults, as the
+ * open workspace file or oculus's defaults hold them.
  */
-export function savedTheme(raw: string | null): string {
-    let named: unknown = null;
-    try {
-        const held: unknown = raw === null ? null : JSON.parse(raw);
-        named = readAs(z.object({ theme: z.string() }), held)?.theme;
-    } catch {
-        // A record that does not parse names no theme.
-    }
-    return themeFor(named, true, NO_OFFERS);
-}
-
-/** What the CRT overlay starts as, the `crt.default` of config/appearance.yml. */
-export function crtDefault(): boolean {
+export function configuredLook(): Look {
     configGeneration();
-    return crt;
+    return look;
 }
 
 /**
- * The code theme a browser that has picked none starts on: the `code_theme` of
- * config/appearance.yml when it is `tokens` or the id of a Shiki theme, otherwise `tokens`, which
- * data/sources/config/sections/themes.ts reports.
+ * The theme the config names, or the start when it names none or one the config does not list. A
+ * page with no `apps` channel, the find bar and the presenter's pages, draws it with no offers.
+ */
+export function configuredTheme(inApp: boolean): string {
+    return themeFor(configuredLook().theme, inApp, NO_OFFERS);
+}
+
+/**
+ * The code theme the editors draw: the `code_theme` option when it is `tokens` or the id of a Shiki
+ * theme, otherwise `tokens`, which data/sources/config/sections/themes.ts reports.
  */
 export function codeThemeDefault(): string {
     configGeneration();
     return codeTheme;
 }
 
-/** How many tabs a pane's top row draws, the `show_tabs` of config/appearance.yml. */
+/** How many tabs a pane's top row draws, the `show_tabs` option. */
 export function showTabs(): TabBar {
     configGeneration();
     return tabBar;
 }
 
-/** Where a pane draws its actions, the `editor_actions` of config/appearance.yml. */
+/** Where a pane draws its actions, the `editor_actions` option. */
 export function editorActions(): EditorActions {
     configGeneration();
     return actionsAt;
 }
 
-/**
- * Whether a pane's strip wraps its tabs onto more rows, the `wrap_tabs` of config/appearance.yml.
- */
+/** Whether a pane's strip wraps its tabs onto more rows, the `wrap_tabs` option. */
 export function wrapTabs(): boolean {
     configGeneration();
     return wrapping;
@@ -465,7 +536,7 @@ export function terminalOptions(): TerminalOptions {
     return { ...terminal.options };
 }
 
-/** The wallpaper's numbers, or null when config/appearance.yml configures none. */
+/** The wallpaper's numbers, or null when the `wallpaper` options configure none. */
 export function wallpaperSettings(): Wallpaper | null {
     configGeneration();
     return paper;

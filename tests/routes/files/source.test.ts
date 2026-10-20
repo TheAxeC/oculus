@@ -56,7 +56,6 @@ async function save(
         token,
         () => TEXT,
         [one.root],
-        join(one.root.dir, 'oculus', 'config'),
         join(one.dir, 'history'),
         stat
     );
@@ -82,15 +81,7 @@ describe('POST /api/source', () => {
         const token = mintToken();
         const body = { root: one.root.key, path: 'notes.md', content: 'after\n' };
         expect(
-            (
-                await handleSource(
-                    request('stale', body),
-                    token,
-                    () => TEXT,
-                    [one.root],
-                    join(one.root.dir, 'oculus', 'config')
-                )
-            ).status
+            (await handleSource(request('stale', body), token, () => TEXT, [one.root])).status
         ).toBe(403);
         expect(readFileSync(one.file, 'utf8')).toBe('before\n');
     });
@@ -102,8 +93,7 @@ describe('POST /api/source', () => {
             request(token, { root: one.root.key, path: '../outside.md', content: 'after\n' }),
             token,
             () => TEXT,
-            [one.root],
-            join(one.root.dir, 'oculus', 'config')
+            [one.root]
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({
@@ -131,8 +121,7 @@ describe('POST /api/source', () => {
             }),
             token,
             () => TEXT,
-            [one.root],
-            join(one.root.dir, 'oculus', 'config')
+            [one.root]
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({
@@ -434,7 +423,6 @@ describe("POST /api/source, a hub's .oculus/local.yml", () => {
             token,
             () => TEXT,
             [{ key: 'hub', dir: hub, hub: true }],
-            join(one.root.dir, 'oculus', 'config'),
             join(one.dir, 'history')
         );
         expect(response.status).toBe(400);

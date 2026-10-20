@@ -5,10 +5,13 @@
 // change of a job, of the run record or of one of the files it reads, the payload naming the update
 // tasks whose file the primary hub's `.oculus/tasks/` holds.
 //
-// The file and the saved commands file are read at start and again on every change of either, and
-// through `reload()` after the route's write. A reload stops the job of an entry that went, became
-// paused, got a problem or changed its `when`, starts the job of one that came or changed, and
-// keeps the rest; a run in progress is left going. A file that does not read stops every job.
+// The file is read at start and again on every change of it, of the `.oculus/commands.yml` of a
+// repository whose commands the payload lists, and through `reload()` after the route's write. The
+// payload lists the plain commands of the `.oculus/commands.yml` of the hub, of each served root
+// that is a repository and of the repository each command entry names. A reload stops the job of
+// an entry that went, became paused, got a problem or changed its `when`, starts the job of one
+// that came or changed, and keeps the rest; a run in progress is left going. A file that does not
+// read stops every job.
 //
 // A due time is decided once. The run record (schedules/record.ts) keeps the newest due time
 // handled per schedule, and a decision writes it under the record's lock before anything starts, so
@@ -37,7 +40,7 @@
 //
 // A Run now follows the same rule, handles no due time, and runs a paused or Off entry.
 
-import { mkdirSync, watch, type FSWatcher } from 'node:fs';
+import { existsSync, mkdirSync, watch, type FSWatcher } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { Cron } from 'croner';
 import { z } from 'zod';
@@ -49,8 +52,15 @@ import type {
 } from '../../../../data/model/index.ts';
 import type { Hub, Sink } from '../../../core/channels.ts';
 import type { Entry } from '../../processes/table.ts';
-import { readAllSaved } from '../commands/saved.ts';
-import { readSchedules, type Disk, type Reading } from './file.ts';
+import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
+import { repositoryOf } from '../commands/repo.ts';
+import {
+    readSchedules,
+    resolveFolder,
+    scheduledCommands,
+    type Disk,
+    type Reading
+} from './file.ts';
 import {
     appendRun,
     claimDue,
@@ -67,16 +77,19 @@ import { SCHEDULED_SIZE, TASKS_FOLDER, tasksWithFile } from './task.ts';
 /** The channel the payload is published on. */
 const CHANNEL = 'schedule';
 
+/** A repository's commands file, by its name in the repository's `.oculus` folder. */
+const COMMANDS_FILE = 'commands.yml';
+
 /** Milliseconds between two checks for a due time croner's timer did not wake for. */
 const CHECK_MS = 30_000;
 
 /** What the watcher needs of the world beyond the hub. */
 export type SchedulesOptions = {
     /**
-     * The schedules file (null while the workspace has no primary hub, and then no entry exists),
-     * the run record and the saved commands file.
+     * The schedules file (null while the workspace has no primary hub, and then no entry exists)
+     * and the run record.
      */
-    files: { schedules: string | null; record: string; commands: string };
+    files: { schedules: string | null; record: string };
     /** The directories the file browser serves, read at the call. */
     rootsFor: () => string[];
     /** The primary hub's folder, read at the call; null while the workspace has none. */
@@ -224,7 +237,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     /** Read through a call, so a check before an await never stands in for the one after it. */
     const stopped = (): boolean => closed;
     /** The last read of the schedules file. */
-    let current: Reading = { ok: true, rows: [], commandsUnread: false };
+    let current: Reading = { ok: true, rows: [] };
     /** The pattern each named entry was last applied with, empty when it does not run. */
     const patterns = new Map<string, string>();
     /** The entry each running schedule starts, as the last read holds it. */
@@ -250,11 +263,30 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     let recordSaid = false;
     let fileSaid = false;
 
-    const disk = (): Disk => ({
-        hub: options.hub(),
-        roots: options.rootsFor(),
-        commands: files.commands
-    });
+    const disk = (): Disk => ({ hub: options.hub(), roots: options.rootsFor() });
+
+    /**
+     * The repositories whose commands the dialog lists: the hub and each served root that is a
+     * repository, and the repository each command entry of the last read names, by real path.
+     */
+    const commandRepos = (): string[] => {
+        const primary = options.hub();
+        const roots = options.rootsFor();
+        const named = current.ok
+            ? current.rows.flatMap((row) => {
+                  const runs = row.entry?.runs;
+                  if (runs === undefined || !('command' in runs)) return [];
+                  const folder = resolveFolder(runs.folder, primary);
+                  return folder === null ? [] : [folder];
+              })
+            : [];
+        const folders = [...(primary === null ? [] : [primary]), ...roots, ...named];
+        const repos = folders.flatMap((folder) => {
+            const found = repositoryOf(folder, roots);
+            return 'repo' in found ? [found.repo] : [];
+        });
+        return [...new Set(repos)];
+    };
 
     // ---- the payload -----------------------------------------------------------------------
 
@@ -267,7 +299,9 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             );
         }
         if (record.ok) recordSaid = false;
-        const saved = readAllSaved(files.commands);
+        const commands = commandRepos().flatMap((repo) =>
+            (scheduledCommands(repo) ?? []).map((name) => ({ folder: repo, name }))
+        );
         const rows: ScheduleRow[] = current.ok
             ? current.rows.map((row) => ({
                   at: row.at,
@@ -283,12 +317,11 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         const unread: SchedulePayload['unread'] = [];
         if (!current.ok) unread.push({ file: 'schedules', line: current.line });
         if (!record.ok) unread.push({ file: 'record', line: null });
-        if (!saved.ok) unread.push({ file: 'commands', line: null });
         const primary = options.hub();
         const roots = [...(primary === null ? [] : [primary]), ...options.rootsFor()];
         return {
             schedules: rows,
-            commands: saved.ok ? saved.commands : [],
+            commands,
             folders: roots.filter((root, at) => roots.indexOf(root) === at),
             tasks: primary === null ? null : tasksWithFile(primary),
             unread,
@@ -610,9 +643,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     // ---- the files ---------------------------------------------------------------------------
 
     const readFile = (): Reading =>
-        files.schedules === null
-            ? { ok: true, rows: [], commandsUnread: false }
-            : readSchedules(files.schedules, disk());
+        files.schedules === null ? { ok: true, rows: [] } : readSchedules(files.schedules, disk());
 
     const reload = (): void => {
         if (stopped()) return;
@@ -628,6 +659,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             jobs.clear();
             patterns.clear();
             entries.clear();
+            followCommands();
             publish();
             return;
         }
@@ -650,6 +682,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         for (const [name, pattern] of wanted) {
             if (patterns.get(name) !== pattern) void apply(name, pattern);
         }
+        followCommands();
         publish();
     };
 
@@ -659,11 +692,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     const folders = new Map<string, FSWatcher>();
     const onChange = (file: string | null): void => {
         if (file === null || file === basename(files.record)) publish();
-        if (
-            file === null ||
-            (files.schedules !== null && file === basename(files.schedules)) ||
-            file === basename(files.commands)
-        ) {
+        if (file === null || (files.schedules !== null && file === basename(files.schedules))) {
             reload();
         }
     };
@@ -678,6 +707,37 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             // a folder that cannot be watched is read at start and after the route's writes
         }
     }
+
+    // The `.oculus` folder of each repository whose commands the payload lists is watched, so a
+    // command added, edited or removed in its `commands.yml` reaches the dialog and the entries'
+    // problems; a repository without the folder is watched for it coming. The set is made again at
+    // each reload, since the entries name the repositories. Neither folder is made.
+    const commandWatches = new Map<string, FSWatcher>();
+    const followCommands = (): void => {
+        const wanted = new Map<string, string | null>();
+        for (const repo of commandRepos()) {
+            const own = join(repo, ROOT_FOLDER);
+            if (existsSync(own)) wanted.set(own, COMMANDS_FILE);
+            else wanted.set(repo, ROOT_FOLDER);
+        }
+        for (const [folder, handle] of commandWatches) {
+            if (wanted.has(folder)) continue;
+            handle.close();
+            commandWatches.delete(folder);
+        }
+        for (const [folder, name] of wanted) {
+            if (commandWatches.has(folder)) continue;
+            try {
+                const handle = watch(folder, { persistent: false }, (_event, file) => {
+                    if (file === null || file === name) reload();
+                });
+                handle.on('error', () => undefined);
+                commandWatches.set(folder, handle);
+            } catch {
+                // a folder that cannot be watched is read again at the next reload
+            }
+        }
+    };
 
     // The primary hub's task files are watched in their folder, and the folder holding it is
     // watched for that folder coming or going, so a task file written, renamed or removed reaches
@@ -781,6 +841,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             stopListening();
             clearInterval(check);
             for (const handle of folders.values()) handle.close();
+            for (const handle of commandWatches.values()) handle.close();
             tasksWatch?.close();
             tasksParent?.close();
         }

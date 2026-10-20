@@ -1,5 +1,5 @@
 // Layer 2, client state. The workbench: a page that belongs to one folder. This module makes the
-// page's arrangement from the `workbench:` key of config/layout.yml, gives each of its tabs the
+// page's arrangement from the `workbench:` key of the merged config, gives each of its tabs the
 // folder, marks the arrangement's empty pane as the page's documents pane (`Pane.documents`, where
 // a view opened from the workbench lands first), names the page, opens the item the page was opened
 // for in that pane, and remakes the page for Reset layout. The layout store

@@ -158,10 +158,10 @@ export type Registration = {
      * tone the tab's badge has: an urgency tone (red, amber, green) where the view or its `counts`
      * row's `tone:` sets one, else the hue of the statuses or the cell it counts, as the Funding
      * count's violet, or none. A view with it draws its count on its tabs only while its row of
-     * `counts` in config/layout.yml says `tab: true` (badgeOf), and the button of the rail page its
-     * tab is on adds it to its sum only while the row says `rail: true` (railPartOf, summed by
-     * shell/rail/rail.ts's `railBadge`). A registration without it, a mark's or an app's, draws
-     * its badge as it is and gives the rail nothing.
+     * `counts` in config/defaults/layout.yml says `tab: true` (badgeOf), and the button of the rail
+     * page its tab is on adds it to its sum only while the row says `rail: true` (railPartOf,
+     * summed by shell/rail/rail.ts's `railBadge`). A registration without it, a mark's or an app's,
+     * draws its badge as it is and gives the rail nothing.
      */
     countPart?: (state: BadgeClient) => RailPart;
 };

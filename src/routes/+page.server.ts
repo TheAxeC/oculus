@@ -5,6 +5,7 @@ import {
     workspaceCollectionKeys
 } from '$lib/data/sources/config';
 import { platformText } from '$lib/data/places/platform';
+import { pageStateRead } from '$lib/server/files/workspace/page-state/routes';
 import { payloadOf } from '$lib/server/machine/apps/read/held';
 import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
@@ -35,6 +36,11 @@ import type { PageServerLoad } from './$types';
 // the `apps` channel they are at least as new as, so the registry holds the apps' views before the
 // first frame and the socket's replay is taken only above that version.
 //
+// The page state of this machine rides with them too, each workspace's arrangement, the view states
+// and the debugger's record from the state folder, with the version of the `state` channel the read
+// is at least as new as, so the arrangement is drawn from it on the first frame and the socket's
+// replay is taken only above that version.
+//
 // The write token rides with them, which is how DESIGN.md's "Auth" delivers it to the page: it is
 // minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and
 // nowhere else. invalidateAll() runs this load again, which is how a page that met a 403 gets the
@@ -62,6 +68,11 @@ export const load: PageServerLoad = ({ locals }) => {
             ...payloadOf(locals.server.apps.held()),
             version: locals.server.hub.version('apps')
         },
+        pageState: pageStateRead(
+            locals.server.workspace.stateFolder,
+            textCatalog(config),
+            locals.server.hub
+        ),
         token: locals.token
     };
 };

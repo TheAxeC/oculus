@@ -10,9 +10,10 @@
 // The tab's record also holds, under `asked_page`, a page an app's `open` asked the PDF to go to,
 // until the file view turns to it.
 //
-// Both records come out of `localStorage`, so every read here checks its value: a place that is
-// not an object or holds a number that is no number reads as null, a zoom or a mode that is not
-// one of the viewer's reads as the viewer's default, and a bad entry of the list is dropped.
+// Both records come out of the view states the server keeps in `views.json` of the state folder,
+// a file that can be edited by hand, so every read here checks its value: a place that is not an
+// object or holds a number that is no number reads as null, a zoom or a mode that is not one of
+// the viewer's reads as the viewer's default, and a bad entry of the list is dropped.
 // Nothing here reads a store or a file; the ui store is the file view's to call.
 
 import { z } from 'zod';

@@ -3,7 +3,7 @@
    apart from it, so an error, a warning and a change still read as what they are. One block per
    palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
    shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
-   config/appearance.yml. */
+   config/defaults/appearance.yml. */
 
 /* --- Phosphor: a green phosphor monitor, pairs with the CRT overlay --- */
 body.phosphor {

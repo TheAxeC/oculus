@@ -1,8 +1,11 @@
-// Hand-built layout trees and a fake Storage, shared by the suites over state/workbench/layout: the
-// saved form and its migrations in saved/layout-saved.test.ts. Nothing here touches localStorage or
-// the DOM.
+// Hand-built layout trees, and a page whose page state holds a saved arrangement, shared by the
+// suites over state/workbench/layout and the shell suites that start from a saved arrangement.
+// Nothing here touches the DOM.
 
-import { panes } from '../../../../src/lib/state/workbench/layout/index.ts';
+import type { PageStateAnswer } from '../../../../src/lib/data/model/index.ts';
+import { createClientState, type ClientState } from '../../../../src/lib/state/client/context.ts';
+import type { StateTransport } from '../../../../src/lib/state/shared/stores/page-state.svelte.ts';
+import { panes, serialiseLayout } from '../../../../src/lib/state/workbench/layout/index.ts';
 import type { LayoutStore } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import type {
     Float,
@@ -16,18 +19,8 @@ import type {
     Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 
-/** The identity of the workspace that has no file, as the stored keys name it. */
+/** The identity of the workspace that has no file, as the page state names it. */
 export const UNSAVED = 'unsaved';
-
-/** The key the arrangement of a workspace is stored under in the browser. */
-export function layoutKey(identity: string): string {
-    return `oculus.layout.workspace:${identity}`;
-}
-
-/** The key a copy of an arrangement that could not be read is kept under. */
-export function unreadKey(identity: string): string {
-    return `oculus.layout.unread:${identity}`;
-}
 
 export function instance(id: string, view = 'projects'): Instance {
     return { id, view, state: null };
@@ -86,27 +79,41 @@ export function viewsOf(tree: Layout): string[] {
     return panes(tree).flatMap(({ pane: node }) => node.tabs.map((tab) => tab.view));
 }
 
-/** A fake Storage: what the store needs of one, and a window on what it wrote. */
-export function fakeStorage(seed?: string, identity: string = UNSAVED) {
-    const held: Record<string, string> = seed === undefined ? {} : { [layoutKey(identity)]: seed };
-    return {
-        held,
-        getItem: (key: string): string | null => held[key] ?? null,
-        setItem: (key: string, value: string): void => {
-            held[key] = value;
-        }
-    };
-}
-
 /**
- * Load a layout store over a storage and open the workspace with this identity in it, which is what
- * a page does once the workspace answer has come. Answers whether a saved arrangement was read.
+ * Load a layout store and open the workspace with this identity in it, which is what a page does
+ * once the workspace answer has come. Answers whether a saved arrangement was read.
  */
 export function openLayout(
     layout: Pick<LayoutStore, 'loadLayout' | 'workspaceOpened'>,
-    storage: ReturnType<typeof fakeStorage>,
     identity: string = UNSAVED
 ): boolean {
-    layout.loadLayout(storage);
+    layout.loadLayout();
     return layout.workspaceOpened(identity);
+}
+
+/** A way to a server that admits every write and keeps none, for a case that reads no save. */
+const ADMITTING: StateTransport = {
+    read: () => Promise.resolve(null),
+    send: () => Promise.resolve<PageStateAnswer>({ ok: true })
+};
+
+/** A page over a server that admits every save and keeps none. */
+export function admittedPage(): ClientState {
+    return createClientState(undefined, null, 'main', null, ADMITTING);
+}
+
+/**
+ * Hand a page's page state `pages` as the saved arrangement of the unsaved workspace, as the
+ * server's read hands it, and open that workspace.
+ */
+export function openSaved(client: ClientState, pages: Pages): void {
+    const envelope: unknown = JSON.parse(serialiseLayout(pages));
+    client.pageState.install({
+        layouts: { [UNSAVED]: { envelope } },
+        views: {},
+        debug: null,
+        version: 0,
+        findings: []
+    });
+    openLayout(client.layout);
 }

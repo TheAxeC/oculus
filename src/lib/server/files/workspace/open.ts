@@ -1,12 +1,15 @@
 // Layer 2, server. The open workspace: what `workspace.json` of the state folder names, read
 // together with the workspace file it names. A workspace file is `.oculus/workspaces/<name>.yml` of
-// a hub, holding `folders:` (a `name` and a `path` each) and an optional `primary:` naming one of
-// the hub folders:
+// a hub, holding `folders:` (a `name` and a `path` each), an optional `primary:` naming one of the
+// hub folders, and an optional `settings:`, the reader's values of oculus's options, which the
+// config's merge reads (data/sources/config/merge/workspace-layer.ts):
 //
 //     folders:
 //       - { name: research-hub, path: ~/workspace/research-hub }
 //       - { name: claude, path: ~/.claude }
 //     primary: research-hub
+//     settings:
+//       code_theme: vscode-dark-2026
 //
 // When the state names no file, or a file that is gone, that does not parse as a map, or that does
 // not lie in a hub's `.oculus/workspaces/`, the workspace is unsaved and holds the folders the
@@ -19,15 +22,14 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parse } from 'yaml';
-import { z } from 'zod';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER, WORKSPACES_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { workspaceFileShape } from '../../../data/sources/config/merge/workspace-file.ts';
 import { isHubFolder } from '../../../data/sources/manifests.ts';
 import { realPath } from '../../core/paths.ts';
 import {
     readFolders,
     rootsOf,
-    SCAN_DEPTH,
     stateEntries,
     type Root,
     type WorkspaceFinding,
@@ -35,29 +37,10 @@ import {
 } from './folders.ts';
 import { readState, stateFileOf, type StateRead, type WorkspaceState } from './state.ts';
 
-/** The folder of a hub that holds its workspace files, under `.oculus/`. */
-export const WORKSPACES_FOLDER = 'workspaces';
-
 /**
- * A workspace file as the editor's schema states it (server/root/watch/own-schemas.ts): `folders`,
- * each a `name`, a `path` and an optional repository scan depth, and the `primary` naming one of
- * them. The file is read by `readFile` and readFolders (folders.ts), which word their own findings;
- * the shape says what they take.
+ * The keys a workspace file takes, from its shape (data/sources/config/merge/workspace-file.ts).
+ * The file is read by `readFile` and readFolders (folders.ts), which word their own findings.
  */
-export const workspaceFileShape = z.strictObject({
-    folders: z
-        .array(
-            z.object({
-                name: z.string().min(1),
-                path: z.string().min(1),
-                [SCAN_DEPTH]: z.number().int().min(-1).optional()
-            })
-        )
-        .optional(),
-    primary: z.string().nullish()
-});
-
-/** The keys a workspace file takes. */
 const FILE_KEYS = Object.keys(workspaceFileShape.shape);
 
 /** A workspace file the switcher offers: where it is, its name and the hub that holds it. */

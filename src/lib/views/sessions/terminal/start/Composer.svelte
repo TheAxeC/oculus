@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The composer of a new session: one box holding the prompt, with its
     // controls in its foot as VS Code's chat input holds them, the attach control, the pickers
-    // (workspace, agent, account, and the agent's own lists out of config/catalogs/agents.yml) and
-    // Start. The Terminal view draws it alone while a tab shows no terminal, and right of the row
-    // of terminals while the tab is composing (New With a Prompt, or the `n` key).
+    // (workspace, then agent, account, and the agent's own lists out of config/catalogs/agents.yml,
+    // which AgentPickers.svelte draws) and Start. The Terminal view draws it alone while a tab
+    // shows no terminal, and right of the row of terminals while the tab is composing (New With a
+    // Prompt, or the `n` key).
     //
     // What each picker last chose is kept in the tab's instance state
     // (state/sessions/terminal/composer/composer.ts), so the tab's next composer opens on the same
@@ -27,10 +28,10 @@
     // (`splitEnded`).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import AgentFindings from './AgentFindings.svelte';
+    import AgentPickers from './AgentPickers.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import AttachPicker from './AttachPicker.svelte';
     import SeedApproval from './SeedApproval.svelte';
@@ -64,7 +65,6 @@
     } from '$lib/state/sessions/terminal/composer/composer';
     import { makeChosen, plannedFolder } from '$lib/state/sessions/terminal/composer/worktree';
     import type { WorktreeChoice } from '$lib/state/sessions/terminal/composer/worktree';
-    import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
     import type { AgentChoices } from '$lib/state/sessions/agents.svelte';
     import type { SeedApproval as Approval } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
@@ -302,12 +302,6 @@
         }
         await start(true);
     }
-
-    /** The words of the value a list has picked. */
-    function pickedLabel(key: string): string {
-        const list = choices?.lists.find((one) => one.key === key);
-        return list?.values.find((one) => one.id === picks[key])?.label ?? '';
-    }
 </script>
 
 <div class="composer" data-composer>
@@ -372,56 +366,17 @@
                     name={choosing?.name ?? null}
                     ontoggle={() => (worktree = choosing === null ? { root, name: '' } : null)}
                 />
-                <span class="picker" data-picker="agent">
-                    <Menu
-                        label={profileWords(agent, t)}
-                        glyph={markGlyph(agent, '')}
-                        placement="down"
-                        items={AGENTS.map((one) => ({
-                            id: one,
-                            label: profileWords(one, t),
-                            glyph: markGlyph(one, ''),
-                            active: one === agent
-                        }))}
-                        onpick={(id) => keep({ agent: id as ComposerAgent })}
-                    />
-                </span>
-                {#if accounts.length > 1}
-                    <span class="picker" data-picker="account">
-                        <Menu
-                            label={account}
-                            placement="down"
-                            items={accounts.map((one) => ({
-                                id: one.label,
-                                label: one.label,
-                                title: one.dir,
-                                active: one.label === account
-                            }))}
-                            onpick={pickAccount}
-                        />
-                    </span>
-                {/if}
-                {#each choices?.lists ?? [] as list (list.key)}
-                    <span class="picker" data-picker={list.key}>
-                        <Menu
-                            label={pickedLabel(list.key)}
-                            placement="down"
-                            groups={[
-                                {
-                                    id: list.key,
-                                    heading: list.label,
-                                    items: list.values.map((one) => ({
-                                        id: one.id,
-                                        label: one.label,
-                                        active: one.id === picks[list.key]
-                                    }))
-                                }
-                            ]}
-                            items={[]}
-                            onpick={(id: string) => pickList(list.key, id)}
-                        />
-                    </span>
-                {/each}
+                <AgentPickers
+                    {agent}
+                    agents={AGENTS}
+                    {accounts}
+                    {account}
+                    {choices}
+                    {picks}
+                    onagent={(id: ComposerAgent) => keep({ agent: id })}
+                    onaccount={pickAccount}
+                    onlist={pickList}
+                />
                 <span class="grow"></span>
                 <ToolButton
                     label={t('composer.start')}
@@ -502,11 +457,6 @@
         flex: 1 1 auto;
     }
 
-    .picker {
-        display: inline-flex;
-        min-width: 0;
-    }
-
     /* Over the wallpaper the box sits on the tinted box of the view, which is its surface there. */
     :global(body.wall) .box {
         background: transparent;
@@ -516,7 +466,7 @@
         background: none;
     }
 
-    /* The monospace face, while the rice theme's Monospace toggle is on. */
+    /* The monospace face, while the rice theme's option `rice.monospace` is on. */
     :global(body.rice:where(:not(.rice-sans))) .box {
         font-family: var(--font-mono);
     }

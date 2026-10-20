@@ -1,0 +1,112 @@
+# ===========================================================================
+# options/sources.yml
+# Every option of defaults/sources.yml described once, in the shape the head of options/appearance.yml describes. sources.yml has no dotted options, so `groups:` is empty. loadConfig() reads it into the merged map's `options` and `option_groups` under sources.yml.
+# ===========================================================================
+
+options:
+    portfolio_deck:
+        heading: sources
+        section: Portfolio deck
+        help: The folder, relative to the hub, of the portfolio deck, the deck the Present view opens when a pane names none. It holds a present.yml and the Markdown slide files. A folder that is not there leaves the Present view with nothing to draw and says so.
+        control: folder
+    scan:
+        heading: sources
+        section: Project scan
+        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and type are the manifest's own tier and type lines, not the folder's. When a project lies deeper than one level, the first folder under the rule's dir is its category. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
+        fields:
+            dir:
+                help: the folder scanned, relative to the hub
+                control: folder
+                allow_missing: optional
+            optional:
+                help: true when a hub without the folder reports nothing
+                control: toggle
+    new_project_dir:
+        heading: sources
+        section: Project scan
+        help: The folder a new project is made in, for each tier. The New project form of a board offers it in its Folder field, and an app's new-project write with no folder uses it. A folder must be a scan folder or lie under one, so the project is read once made; an entry for a word that is not a tier, or one that names a folder outside the scan, is a finding. A tier with no entry has no folder to offer and its form asks for one. This is a setting of the hub kept in the hub's .oculus/config.yml; the engine's map is empty.
+        fields:
+            key:
+                help: the tier the folder is for, projects, coauthor, archive or personal
+                control: choice
+                options: [projects, coauthor, archive, personal]
+            value:
+                help: the folder new projects of the tier are made in, relative to the hub
+                control: folder
+                allow_missing: optional
+    languages:
+        heading: editor
+        section: File languages
+        help: "The language each file opens in, for its colours, its comment keys and the status bar. A file's language is the first match of its whole name lowercased, then of its extension lowercased, so a file called CMakeLists.txt is CMake before its .txt is read; a file no entry matches opens as plain text, a dotfile such as .bashrc included, since it has no extension. A language the editor does not colour is refused, and so is an entry that is not an extension with its dot or a file name without a slash; two languages that claim one ending keep the first in the file. A workspace file's settings: overrides the endings of a language, adds a language, and takes one of oculus's out with <language>: null."
+        holds: lists
+        fields:
+            key:
+                help: the language's name as the editor and the status bar show it
+                control: choice
+                from: languages
+            value:
+                help: the extensions (with their dot) and whole file names of that language
+                control: list
+    collections:
+        heading: sources
+        section: Collections
+        help: The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. The keys data (the dataset registry), venues, pillars, domains, funding, people, organisations and resources name the file of the registry of that name, and the keys leads and radar the files the Position Leads and Lit Watch views read; a registry or feed the list leaves out is read from the engine's path, and one it names whose file is not there is a finding. Each key except data, venues, pillars, domains, leads and radar also becomes a collection view, a generic card list. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and data registries.
+        fields:
+            key: the collection's key, which the view and the entries' cross-links use
+            file:
+                help: the YAML file of the collection, relative to the hub
+                control: file
+    publications_file:
+        heading: sources
+        section: Registry and feed files
+        help: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. Empty names no file, and the check is skipped, as it is when the file is not checked out. This is a setting of the hub, kept in the hub's .oculus/config.yml.
+        control: file
+        empty: true
+        allow_missing: true
+    linkedin_dir:
+        heading: sources
+        section: Registry and feed files
+        help: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea. Empty names no folder, and the LinkedIn view says so. This is a setting of the hub, kept in the hub's .oculus/config.yml.
+        control: folder
+        empty: true
+    career_file:
+        heading: sources
+        section: Registry and feed files
+        help: The career strategy file, whose order of work, hosts, eligibility and dropped routes surface on the Focus board's Career strategy panel. The per-scheme statements surface on the Funding tab.
+        control: file
+    memories_dir:
+        heading: sources
+        section: Folders
+        help: The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the standard folder is used. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: folder
+        allow_missing: true
+    wallpaper_dir:
+        heading: sources
+        section: Folders
+        help: The folder of this hub's wallpaper images, relative to the hub and inside it. The wallpaper.image key names one of them as the hub's name and the file's name joined by a slash, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the standard folder is used. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: folder
+        allow_missing: true
+    bookmarks:
+        heading: sources
+        section: Saved files
+        help: Where the reader's own bookmarks live. A value of ~ or one starting with ~/ is under the home folder, an absolute value is used as it is, and any other value is resolved against the primary hub's folder. This is a setting of the hub, read from the primary hub's .oculus/config.yml; a change is read again at once.
+        control: text
+    schedules:
+        heading: sources
+        section: Saved files
+        help: Where the schedules live, the entries the update tray's Schedules section lists and a reader may write by hand. A value of ~ or one starting with ~/ is under the home folder, an absolute value is used as it is, and any other value is resolved against the primary hub's folder. This is a setting of the hub, read from the primary hub's .oculus/config.yml; a change is read again at once.
+        control: text
+    apps_dir:
+        heading: apps
+        section: Apps folder
+        help: Where the machine's apps live, one folder of web files per app. The hub's owner writes the shipped folder, and a git pull into the hub writes it too; an app kept approved stays approved through a change to any of its files but app.yml, a pulled change included, while the server runs. A value of ~ or one starting with ~/ is under the home folder, an absolute value is used as it is, and any other value is resolved against the primary hub's folder. This is a setting of the hub, read from the primary hub's .oculus/config.yml; a change is read again at once.
+        control: text
+    repository_scan_depth:
+        heading: sources
+        section: Folders
+        help: How many folder levels below each folder of the open workspace the Repositories view looks for repositories, so a folder of clones lists each clone. 0 lists only the folders themselves. A change is read again at once.
+        control: number
+        min: 0
+        max: 3
+        whole: true
+groups: {}

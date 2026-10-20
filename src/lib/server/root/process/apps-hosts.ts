@@ -29,6 +29,7 @@ import { words } from '../../core/words.ts';
 import { updateHostStore } from '../../edit/writes/apps/host-store.ts';
 import type { WriteTarget } from '../../edit/writes.ts';
 import type { OpenWorkspace } from '../../files/workspace/open.ts';
+import { perOculus } from '../../files/workspace/paths.ts';
 import { expandHome, type Root } from '../../files/files.ts';
 import { createOpenFiles, type OpenFiles } from '../../files/fs/open-files.ts';
 import { defaultHistoryDir } from '../../files/fs/history.ts';
@@ -109,8 +110,8 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
                 closedPaths: closedPaths(options.config()).folders,
                 privateReal: closedToApps({
                     home: homedir(),
-                    config: configDir(options.engine),
                     local: options.local(),
+                    perOculus: perOculus(options.open().primaryDir, options.config()),
                     roots: roots()
                 }),
                 fs: diskFs

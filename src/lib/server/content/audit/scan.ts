@@ -11,8 +11,8 @@
 // again here.
 //
 // Every finding carries a signature, twelve hex characters of a sha1 over its scope, its place, its
-// kind, the catalog key of its message and the arguments that fill it. It is what the mute list in
-// config/behavior.yml holds, so a muted finding is still muted after a rebuild, and rewording a
+// kind, the catalog key of its message and the arguments that fill it. It is what the mute list
+// `audit_ignore:` holds, so a muted finding is still muted after a rebuild, and rewording a
 // message in the catalog keeps every mute. A finding also names the file it is about, outside the
 // signature, which the Audit view opens.
 //

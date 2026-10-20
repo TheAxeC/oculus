@@ -1,50 +1,54 @@
 <script lang="ts">
     // Layer 3, view partial. One setting, drawn as VS Code's Settings editor draws one: the bar on
-    // its left edge when it is Modified, its title with the section before the name, the gear on
-    // the right, the description, the control, the message lines, and the line with the default and
-    // the file and line of the key.
+    // its left edge when it is Modified (its value in force differs from the defaults file's), its
+    // title with the section before the name, the gear on the right, the description, the control,
+    // the message lines, and the line with the default and, when the user's file sets the key, that
+    // file and the line of the key.
     //
-    // The kinds of row differ in what they put under the description. A config option has its
-    // control (Control.svelte, which draws the control its catalog entry names) and a default line;
-    // the rail row and the arrangements row have the editors of the rail list and of the page
-    // reset, and the workbench row has none, since its layout tree is edited in the file; a "This
-    // browser" row has the control of the value the ui store keeps; a row of the machine's own file
-    // has its description, its key path, where it is set and the value in force the server sent (a
-    // line for each row of a joined list, with a way to open the file of each hub that holds a
-    // row). A config row whose key is not in the file says so and has the way to edit the file.
+    // The kinds of row differ in what they put under the description. An option of a defaults file
+    // has its control (Control.svelte, which draws the control its catalog entry names) and a
+    // default line; the rail row and the arrangements row have the editors of the rail list and of
+    // the page reset, and the workbench row has none, since its layout tree is edited in the file;
+    // a row of the machine's own file has its description, its key path, where it is set and the
+    // value in force the server sent (a line for each row of a joined list, with a way to open the
+    // file of each hub that holds a row). A row with no value in force says so and has the way to
+    // edit the user's file.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
-    // holds something (state/system/config/view/gear.ts): a "This browser" row has no setting ID in
-    // a file to copy, so its menu is Reset Setting alone and exists once the row is Modified. A
-    // list, multi or parked list is reset by writing its default through the editors' write; a
-    // family has no default.
+    // holds something (state/system/config/view/gear.ts). Reset takes the user's value out of its
+    // file: a list, multi, parked list or family through the editors' write, which drops the
+    // editor's draft, any other row through the row's write, which drops the typed text.
     //
-    // A list, a multi or a family the file holds in a shape the editor draws
-    // (editors/Editor.svelte) is set there; one it does not draw keeps the way to edit the file.
+    // A list, a multi or a family in force in a shape the editor draws (editors/Editor.svelte) is
+    // set there; one it does not draw keeps the way to edit the user's file.
+    //
+    // The editor of a row's entries and its Fields list are each drawn under a disclosure line
+    // (editors/Fold.svelte), which the reader folds and unfolds; a folded row keeps its Modified
+    // bar, its gear, its message lines and its default line, and Reset works on it unfolded or not.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { WALLPAPER_KEY } from '$lib/state/life/pictures/wallpapers.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { resetBrowserRow } from '$lib/state/system/config/other-rows/browser';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
-    import { message, type Message } from '$lib/state/system/config/messages';
+    import { message } from '$lib/state/system/config/messages';
     import { LOCAL_PATH, hubFileTarget, openTarget } from '$lib/state/system/config/config-files';
     import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
-    import { withTypedText } from '$lib/state/system/config/typed';
+    import { settingsQuery, withTypedText } from '$lib/state/system/config/typed';
+    import { foundInside, partTexts, type FoldPart } from '$lib/state/system/config/view/fold';
     import { gearEntries } from '$lib/state/system/config/view/gear';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
+    import Fold from '../editors/Fold.svelte';
     import Origins from '../editors/Origins.svelte';
     import PagesReset from '../PagesReset.svelte';
     import RailEditor from '../RailEditor.svelte';
     import AppControl from './other-rows/AppControl.svelte';
-    import BrowserControl from './other-rows/BrowserControl.svelte';
     import WallpaperPicker from './other-rows/WallpaperPicker.svelte';
     import Control from './Control.svelte';
     import Gear from './Gear.svelte';
@@ -69,9 +73,6 @@
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
-
-    /** What the control of a "This browser" row says of the text last applied, or null. */
-    let browserSaid: Message | null = $state(null);
 
     /** The kind of control the item draws, which the markup names. */
     const control = $derived.by(() => {
@@ -103,18 +104,23 @@
             : []
     );
 
+    /** Whether the query stands and is found inside a part of the row, which unfolds it. */
+    function searched(part: FoldPart): boolean {
+        if (row.kind !== 'config') return false;
+        return foundInside(settingsQuery(ui.instanceState(id)), partTexts(row, part));
+    }
+
     /** The sentences under the control, in the order they are drawn. */
     const lines = $derived.by(() => {
         const found: string[] = [];
         if (row.kind !== 'config') {
             return [
                 ...(row.kind === 'local' && row.refused !== null ? [said(row.refused)] : []),
-                ...(browserSaid === null ? [] : [said(browserSaid)]),
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
         }
-        if (row.state === 'missing' && row.key !== WALLPAPER_KEY) {
-            found.push(said(message('missing', placeOf(row).file)));
+        if (row.state === 'missing' && row.key !== WALLPAPER_KEY && row.place.path !== null) {
+            found.push(said(message('missing', row.place.path)));
         }
         const mismatch = mismatchMessage(row);
         if (mismatch !== null) found.push(said(mismatch));
@@ -127,11 +133,12 @@
     });
 
     function reset(): void {
-        if (row.kind === 'browser') {
-            resetBrowserRow(ui, row);
-        } else if (row.kind === 'app') {
+        if (row.kind === 'app') {
             void writeAppSetting(row.setting.key, row.setting.default);
-        } else if (row.kind === 'config' && ['list', 'multi', 'parked'].includes(row.control)) {
+        } else if (
+            row.kind === 'config' &&
+            ['list', 'multi', 'parked', 'family'].includes(row.control)
+        ) {
             editors.clear(row);
             ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
             void editors.reset(row);
@@ -151,11 +158,11 @@
         }
     }
 
-    /** Where the row's file opens: through the workspace folder that holds it, if any. */
+    /** Where the user's file of the row opens: through the workspace folder holding it, if any. */
     const target = $derived.by(() => {
         if (row.kind !== 'config') return null;
-        const { root, file } = placeOf(row);
-        return openTarget(root, file, workspaces());
+        const place = placeOf(row);
+        return place === null ? null : openTarget(place.root, place.file, workspaces());
     });
 
     /** Open the machine file of a hub in a source tab, through the folder named for the hub. */
@@ -239,23 +246,29 @@
                 {/each}
             </div>
         {/if}
-    {:else if row.kind === 'browser'}
-        <BrowserControl {row} onsaid={(next: Message | null) => (browserSaid = next)} />
     {:else if row.kind === 'app'}
         <AppControl {row} {lists} />
     {:else}
         {#if control === 'family' || control === 'rail' || control === 'arrangements' || control === 'workbench'}
             {#if fields.length > 0}
-                <p class="fields">{t('workbench.settings_fields')}</p>
-                <ul class="field-list">
-                    {#each fields as [name, about] (name)}
-                        <li><code>{name}</code> <CodeText text={about} /></li>
-                    {/each}
-                </ul>
+                <Fold
+                    {id}
+                    row={row.id}
+                    part="fields"
+                    title={t('workbench.settings_fields')}
+                    count={fields.length}
+                    searched={searched('fields')}
+                >
+                    <ul class="field-list">
+                        {#each fields as [name, about] (name)}
+                            <li><code>{name}</code> <CodeText text={about} /></li>
+                        {/each}
+                    </ul>
+                </Fold>
             {/if}
         {/if}
         {#if control === 'rail'}
-            <RailEditor {id} />
+            <RailEditor {id} title={row.title} searched={searched('entries')} />
         {:else if control === 'arrangements'}
             <PagesReset />
         {:else if row.key === WALLPAPER_KEY}
@@ -282,16 +295,16 @@
             {#if defaultWords(row) !== ''}
                 <span class="default">{defaultWords(row)}</span>
             {/if}
-            {#if (row.line !== undefined || row.hub?.present === true) && target === null}
+            {#if row.own && row.place.path !== null && target === null}
                 <span class="default">
-                    {t('workbench.settings_open_unavailable', placeOf(row).file)}
+                    {t('workbench.settings_open_unavailable', row.place.path)}
                 </span>
-            {:else if row.line !== undefined || row.hub?.present === true}
+            {:else if row.own && row.place.path !== null}
                 <ToolButton
                     label={row.line === undefined
-                        ? placeOf(row).file
-                        : `${placeOf(row).file}:${row.line}`}
-                    title={t('workbench.settings_edit_in_tip', placeOf(row).file)}
+                        ? row.place.path
+                        : `${row.place.path}:${row.line}`}
+                    title={t('workbench.settings_edit_in_tip', row.place.path)}
                     plain
                     onclick={open}
                 />
@@ -359,7 +372,6 @@
     }
 
     .description,
-    .fields,
     .path {
         margin: 4px 0 8px;
         color: var(--muted-txt, var(--muted));

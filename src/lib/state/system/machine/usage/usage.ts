@@ -3,7 +3,7 @@
 // and the token counts of the day rows summed.
 
 import type { UsageDay, UsageWindow } from '../../../../data/model/index.ts';
-import { refreshSettings } from '../../../../data/sources/config/settings.ts';
+import { refreshSettings } from '../../../../data/sources/config/settings/connectors.ts';
 
 export type { UsageAccount, UsageDay, UsageWindow } from '../../../../data/model/index.ts';
 
@@ -74,7 +74,7 @@ export function usageRows(rows: UsageDay[], totalWord: string): UsageRow[] {
 
 /**
  * When a refresher that last refreshed at `lastRefresh` refreshes next, as an ISO time, `minutes`
- * of config/behavior.yml's `usage_refresh_min` after it; the empty string while either is unknown
+ * of the merged config's `usage_refresh_min` after it; the empty string while either is unknown
  * (no last refresh, a time that does not parse, or no cadence delivered yet).
  */
 export function nextRefresh(lastRefresh: string, minutes: number): string {

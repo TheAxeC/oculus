@@ -3,10 +3,12 @@
 // context, which reads the files again, holds every key at once and builds again the watchers made
 // from a key that changed. This module is the watch itself and the two pure answers the context
 // needs after a read: which keys differ from the ones in force, and which watchers those keys are
-// the inputs of. A move of the primary hub is a key of its own (`workspace`), so the watchers built
-// from the primary hub's files (the bookmarks, the schedules and the usage refresh) are built again
-// with the keys that name them; the portfolio, the git watch and the other parts that read the
-// folders follow the workspace through their own subscription.
+// the inputs of. The same answers serve the per-oculus paths the merged config places (the
+// bookmarks, the schedules and the apps folder), which the context compares at each config push. A
+// move of the primary hub is a key of its own (`workspace`), so the watchers built from the primary
+// hub's files (the bookmarks, the schedules and the usage refresh) are built again with the keys
+// that name them; the portfolio, the git watch and the other parts that read the folders follow the
+// workspace through their own subscription.
 //
 // It watches each hub's `.oculus` folder rather than the file: every write oculus makes replaces
 // the file by a rename, and an editor saves the same way, so a watch on the file itself would be
@@ -21,6 +23,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { debounce as debounced } from 'lodash-es';
 import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { LOCAL_NAME, type LocalConfig } from '../../../data/sources/config.ts';
+import type { PerOculus } from '../../files/workspace/paths.ts';
 
 export type LocalWatchOptions = {
     /**
@@ -87,10 +90,19 @@ export function watchLocal(
 }
 
 /**
- * A key a change can name: a key of the machine's own values, or `workspace`, a move of the open
- * workspace's primary hub, which is no key of any file.
+ * A key a change can name: a key of the machine's own values, a per-oculus path the merged config
+ * places (`bookmarks`, `schedules`, `appsDir`, which the context compares at each config push), or
+ * `workspace`, a move of the open workspace's primary hub, which is no key of any file.
  */
-export type ChangedKey = keyof LocalConfig | 'workspace';
+export type ChangedKey = keyof LocalConfig | keyof PerOculus | 'workspace';
+
+/** Every per-oculus path, as the context holds it. */
+const PER_OCULUS: (keyof PerOculus)[] = ['bookmarks', 'schedules', 'appsDir'];
+
+/** The per-oculus paths whose value in `next` differs from the one in `held`. */
+export function changedPaths(held: PerOculus, next: PerOculus): (keyof PerOculus)[] {
+    return PER_OCULUS.filter((key) => held[key] !== next[key]);
+}
 
 /** Every key of the machine's own values, as the context holds it. */
 const FIELDS: (keyof LocalConfig)[] = [
@@ -98,12 +110,10 @@ const FIELDS: (keyof LocalConfig)[] = [
     'hpcHost',
     'sessionsCache',
     'sessionsOverrides',
-    'bookmarks',
     'changes',
     'history',
     'approvals',
     'lsp',
-    'schedules',
     'scheduleRecord',
     'claudeBin',
     'commitMessageAccount',
@@ -112,11 +122,15 @@ const FIELDS: (keyof LocalConfig)[] = [
     'accounts',
     'calendars',
     'calendarDir',
-    'appsDir',
     'mail',
     'mailDir',
     'literature'
 ];
+
+/** Whether a changed key is a key of the machine's own values. */
+export function isLocalKey(key: ChangedKey): key is keyof LocalConfig {
+    return (FIELDS as ChangedKey[]).includes(key);
+}
 
 /** The keys whose value in `next` differs from the one in `held`. */
 export function changedKeys(held: LocalConfig, next: LocalConfig): (keyof LocalConfig)[] {
@@ -124,9 +138,12 @@ export function changedKeys(held: LocalConfig, next: LocalConfig): (keyof LocalC
 }
 
 /** Every key a change can name. */
-const ALL_KEYS: ChangedKey[] = [...FIELDS, 'workspace'];
+const ALL_KEYS: ChangedKey[] = [...FIELDS, ...PER_OCULUS, 'workspace'];
 
-/** The watchers the context builds from local.yml, in the order they are built. */
+/**
+ * The watchers the context builds from local.yml and from the per-oculus paths of the merged
+ * config, in the order they are built.
+ */
 export const WATCHERS = [
     'portfolio',
     'sessions',

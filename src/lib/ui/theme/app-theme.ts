@@ -5,12 +5,18 @@
 // block it makes is `body.app-theme`, put in a style element of the document, and the editor's
 // rules for the theme are held for the editor to read (app-rules.ts).
 //
-// A theme is loaded by the name the page saves it under (data/helpers/files/apps/choices.ts), so a
-// page that holds only that name, the find page and the presenter's pages, loads it the same way
-// the workbench does.
+// A theme is loaded by the name the `theme` option holds it under (data/helpers/files/apps/
+// choices.ts), so a page that holds only that name, the find page and the presenter's pages, loads
+// it the same way the workbench does.
 
 import { NO_OFFERS } from '$lib/data/helpers/files/apps/choices';
-import { APP_THEME_CLASS, appThemeState, themeClass } from '$lib/state/shared/words/appearance';
+import {
+    APP_THEME_CLASS,
+    appThemeState,
+    configuredLook,
+    configuredTheme,
+    themeClass
+} from '$lib/state/shared/words/appearance';
 import {
     GIT_DEFAULTS,
     basesOf,
@@ -107,8 +113,9 @@ function paintAppTheme(document: AppThemeDocument, sheet: AppThemeSheet | null):
 }
 
 /**
- * What a page draws its theme from: the theme, and the per-browser looks beside it (the CRT
- * overlay, and whether a rice theme draws brackets and the monospace font).
+ * What a page draws its theme from: the theme, and the looks the options set beside it (the CRT
+ * overlay, `crt.on`, and whether a rice theme draws brackets and the monospace font,
+ * `rice.brackets` and `rice.monospace`).
  */
 export type ThemeDraw = BodyLooks & {
     /** The saved name of the theme. */
@@ -153,21 +160,23 @@ export async function drawTheme(
 }
 
 /**
- * Draw the theme a saved record names on a page that holds no `apps` channel (the find page and
- * the presenter's pages): an app's theme is loaded from the server, which answers for the saved
- * name alone. Such a page holds no per-browser values, so it draws no overlay and a rice theme
- * whole, brackets and monospace font included.
+ * Draw the theme the config names on a page that holds no `apps` channel (the find page and the
+ * presenter's pages): an app's theme is loaded from the server, which answers for the name alone.
+ * The terminal themes' `rice.brackets` and `rice.monospace` are the config's too; such a page
+ * draws no CRT overlay, which belongs to the workbench.
  */
-export function drawSavedTheme(
+export function drawConfiguredTheme(
     document: Themeable & AppThemeDocument,
-    choice: string
+    inApp: boolean
 ): Promise<boolean> {
+    const choice = configuredTheme(inApp);
+    const { brackets, monospace } = configuredLook();
     return drawTheme(document, {
         choice,
         app: appThemeState(choice, NO_OFFERS) !== 'none',
         classes: themeClass(choice, NO_OFFERS),
         crt: false,
-        brackets: true,
-        monospace: true
+        brackets,
+        monospace
     });
 }

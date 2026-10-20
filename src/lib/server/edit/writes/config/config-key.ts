@@ -1,20 +1,21 @@
-// Layer 2, server. One option of a tracked config file set to a value, in place: the Settings
-// view's write for a toggle, a number, a text, a choice, a glyph, a hue, a colour, a folder, a file
-// or a path.
+// Layer 2, server. One option of oculus's defaults files set to a value: the Settings view's write
+// for a toggle, a number, a text, a choice, a glyph, a hue, a colour, a folder, a file or a path,
+// and the write every control of the shell that sets an option sends.
 //
-// The edit is over the bytes through yaml-edit.ts's `replaceValue`, so the key's own line keeps its
-// comment, its quote style, its line end and every other byte of the file; the file is never
-// written whole from a parse. The options catalog (config/catalogs/options.yml) decides what may be
-// written: the file must be one of its tracked files, the key one of its entries, the entry a
-// single value with a control, and the value one that control takes (config-fit.ts). The machine's
-// own file, a local.yml or a link to a hub's `.oculus/local.yml`, is refused before the file is
-// read. The checks that stand between the edited text and the file are config-checks.ts's, which
-// config-value.ts runs as well.
+// The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
+// settings file, any other in the `settings:` map of the open workspace file; oculus's own files
+// are never written. When the file holds the key as a plain or quoted value, the edit is over the
+// bytes through yaml-edit.ts's `replaceValue`, so the key's own line keeps its comment, its quote
+// style, its line end and every other byte of the file. When it does not hold the key, the write
+// adds it (config-checks.ts `insertKey`), creating a hub's settings file and its folder when they
+// are not there, and the undo takes the added text out and removes what the write made
+// (`takeOutAdded`).
 //
-// A key of the hub list is written in the hub's settings file (`<hub>/.oculus/config.yml`), any
-// other key in the engine's file. When the settings file or the key in it is not there, the write
-// adds the key at the end of the file and creates the file and its folder, and the undo takes the
-// added text out and removes what the write made (config-checks.ts `takeOutAdded`).
+// The options files (config/options/) decide what may be written: the file must be one of their
+// defaults files, the key one of their entries, the entry a single value with a control, and the
+// value one that control takes (config-fit.ts). The machine's own file, a hub's `.oculus/local.yml`
+// or a link to one, is refused before the file is read. The checks that stand between the edited
+// text and the file are config-checks.ts's, which config-value.ts runs as well.
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
@@ -30,23 +31,21 @@ import { REFUSALS, why } from '../../yaml/why.ts';
 import type { Why } from '../../yaml/why.ts';
 import { isCollection, leafProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
+import { insertKey, kept, mergedAt, refusedBy, written } from './config-checks.ts';
 import {
     absentIn,
-    insertKey,
+    blockLevels,
     isMachinePlace,
-    lacksPrimary,
     opening,
-    kept,
-    mergedAt,
     optionNow,
     optionOf,
     placeOf,
+    placeRefusal,
     placeText,
-    refusedBy,
     type ConfigKeyOutcome,
-    type OptionNow,
-    written
-} from './config-checks.ts';
+    type ConfigLayers,
+    type OptionNow
+} from './config-place.ts';
 
 export type { ConfigKeyOutcome };
 
@@ -83,58 +82,56 @@ function single(entry: CatalogEntry): boolean {
 }
 
 /**
- * The value the file holds at one option now, and whether the option is still there: the file is
- * one the catalog tracks, parses, and holds the key as a plain or quoted value. An undo reads it;
- * a file it may not read throws.
+ * The value the file at the option's place holds now, and whether the option is still there: the
+ * option is one the options files name, the file parses, and it holds the key as a plain or quoted
+ * value. An undo reads it; a file it may not read throws.
  */
-export function configKeyNow(engine: string, file: string, key: string, hub?: string): OptionNow {
-    return optionNow(
-        engine,
-        file,
-        key,
-        (text) => {
-            const found = locate(text, key);
-            return found.kind === 'found' ? { found: true, value: found.node.value } : null;
-        },
-        hub
-    );
+export function configKeyNow(
+    engine: string,
+    layers: ConfigLayers,
+    file: string,
+    key: string
+): OptionNow {
+    return optionNow(engine, layers, file, key, (text, at) => {
+        const found = locate(text, at);
+        return found.kind === 'found' ? { found: true, value: found.node.value } : null;
+    });
 }
 
 /**
- * Set one option of a tracked config file, in the hub's settings file when it is a key of the hub
- * list and a hub is given. A refusal answers the one reason and writes nothing; a value equal to
- * the one in force writes nothing and answers with nothing changed. Given `inputs`, the value is
- * checked against the entry and the lists the server holds (config-fit.ts); without them, as in an
- * undo, no value is checked and the file is put back as it was. A file that cannot be read or
- * written throws, which the route answers as `unwritable`.
+ * Set one option of a defaults file at its place over the layers. A refusal answers the one reason
+ * and writes nothing; a value equal to the one held writes nothing and answers with nothing
+ * changed, unless `copy` asks for the key the file does not hold to be added with that value, which
+ * is how Edit in a file shows a key at its line. Given `inputs`, the value is checked against the
+ * entry and the lists the server holds (config-fit.ts); without them, as in an undo, no value is
+ * checked and the file is put back as it was. A file that cannot be read or written throws, which
+ * the route answers as `unwritable`.
  */
 export function writeConfigKey(
     engine: string,
     file: string,
     key: string,
     value: unknown,
+    layers: ConfigLayers,
     inputs?: SourceInputs,
-    hub?: string,
-    hubs: readonly string[] = []
+    hubs: readonly string[] = [],
+    copy = false
 ): ConfigKeyOutcome {
-    const { before, text, refuse } = opening(engine, file, key, hub);
+    const { before, text, refuse } = opening(engine, file, key, layers);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_key.local'));
-    if (lacksPrimary(file, key, hub)) return refuse(words(text, 'server.workspace.no_primary'));
     const entry = optionOf(catalogOf(before.config), file, key);
     if (entry === null) return refuse(words(text, 'server.config_key.no_entry'));
     if (!single(entry)) return refuse(words(text, 'server.config_key.not_single'));
+    const place = placeOf(layers, file, key);
+    if (place === null) return refuse(placeRefusal(text, file, key));
     const wanted = Object.is(value, -0) ? 0 : value;
 
-    const place = placeOf(engine, hub, file, key);
-    if (isMachinePlace(place, hubs, engine)) return refuse(words(text, 'server.config_key.local'));
+    if (isMachinePlace(place, hubs)) return refuse(words(text, 'server.config_key.local'));
     const onDisk = placeText(place);
     const source = onDisk ?? '';
-    const found = locate(source, key);
+    const found = locate(source, place.at);
     if (found.kind === 'unparsed') return refuse(words(text, 'server.config_key.not_parsed'));
-    const adding =
-        place.layer === 'hub' &&
-        found.kind === 'missing' &&
-        (onDisk === null || absentIn(source, key));
+    const adding = found.kind === 'missing' && (onDisk === null || absentIn(source, place.at));
     if (found.kind === 'missing' && !adding) {
         return refuse(words(text, 'server.config_key.not_in_file'));
     }
@@ -142,7 +139,7 @@ export function writeConfigKey(
     const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
     const unfit = leafProblem(entry, held, wanted, { text, sources });
     if (unfit !== null) return refuse(unfit);
-    if (isDeepStrictEqual(held, wanted)) return { changed: [], refused: [] };
+    if (isDeepStrictEqual(held, wanted) && !(copy && adding)) return { changed: [], refused: [] };
 
     const scalar = wanted as string | number | boolean;
     let edited: { text: string } | { why: Why };
@@ -152,19 +149,19 @@ export function writeConfigKey(
         // is written double-quoted, the one style that holds any string on one line.
         if (
             'text' in edited &&
-            !kept(source, edited.text, key, wanted) &&
+            !kept(source, edited.text, place.at, wanted) &&
             typeof wanted === 'string'
         ) {
             edited = replaceValue(source, found.node, scalar, 'QUOTE_DOUBLE');
         }
     } else {
-        const inserted = insertKey(source, key, wanted, text);
+        const inserted = insertKey(source, place.at, wanted, blockLevels(place));
         edited = inserted === null ? { why: why(REFUSALS.keyNoPlace) } : { text: inserted };
     }
-    if (!('text' in edited) || !kept(source, edited.text, key, wanted)) {
+    if (!('text' in edited) || !kept(source, edited.text, place.at, wanted)) {
         return refuse(words(text, 'server.config_key.not_kept'));
     }
-    const reason = refusedBy(engine, hub, file, edited.text, before, place.layer);
+    const reason = refusedBy(engine, layers, place, edited.text, before);
     if (reason !== null) return refuse(reason);
 
     return written(

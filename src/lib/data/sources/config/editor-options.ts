@@ -1,7 +1,7 @@
-// Layer 1, data. The `editor:` block of config/behavior.yml and a repository's
+// Layer 1, data. The `editor:` block of config/defaults/behavior.yml and a repository's
 // `.oculus/settings.yml` read by the options catalog's rule (catalog/value-rule.ts), like every
-// other setting (settings.ts): the editor's keys, and the records of `editor.languages`, each
-// field of a record against the fields the catalog's `editor.languages` entry lists.
+// other setting (settings/reader.ts): the editor's keys, and the records of `editor.languages`,
+// each field of a record against the fields the catalog's `editor.languages` entry lists.
 //
 // A key that is missing is the catalog's `default`; a value the rule refuses is the `default` and
 // comes back as a problem naming the key, which the Findings view lists. A field of a language
@@ -24,7 +24,7 @@ import { byKey, isMap } from '../../helpers/guards.ts';
 import { registered } from '../../prose/languages.ts';
 import type { FieldSpec } from './catalog/options.ts';
 import { valueProblem } from './catalog/value-rule.ts';
-import { noRule, settingEntry, settingReader, type SettingProblem } from './settings.ts';
+import { noRule, settingEntry, settingReader, type SettingProblem } from './settings/reader.ts';
 
 /**
  * Why a value was not read: the rule refused it, or the name or record is not one the editor has.

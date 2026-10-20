@@ -24,7 +24,7 @@ import type {
     AgentId
 } from '../../../model/index.ts';
 import { AGENT_FLAGS, AGENTS } from '../../../shapes/catalog-words.ts';
-import { AGENT_FILE_KEYS } from '../../../shapes/catalog-files.ts';
+import { AGENT_FILE_KEYS } from '../../../shapes/catalog-files/agents.ts';
 import { itemsShape, mapShape, readAs, readOr } from '../../../shapes/shapes.ts';
 
 /** The values a flag with a closed set of them accepts, from the same two help texts. */

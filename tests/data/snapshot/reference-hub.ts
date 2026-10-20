@@ -1,6 +1,7 @@
 // Layer 4, test helper. A small hub planted in a scratch directory for the reference index and the
 // rename of a hub key: one file of each kind that names a key or defines one, and an engine folder
-// holding the two configuration files the index reads (`behavior.yml` and `catalogs/vocab.yml`).
+// holding the configuration files the index reads (`defaults/behavior.yml`, `defaults/sources.yml`
+// and `catalogs/vocab.yml`).
 // The texts are synthetic; none of them is a file of the hub.
 
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -184,8 +185,8 @@ export const HUB_FILES: Record<string, string> = {
 
 /** The engine's configuration files the index reads, planted with the keys the rows name. */
 export const ENGINE_FILES: Record<string, string> = {
-    'behavior.yml': ['usage_refresh_min: 10', 'slurm:', '  resource: hpc', ''].join('\n'),
-    'sources.yml': ['scan:', '  - { dir: projects/manuscripts }', ''].join('\n'),
+    'defaults/behavior.yml': ['usage_refresh_min: 10', 'slurm:', '  resource: hpc', ''].join('\n'),
+    'defaults/sources.yml': ['scan:', '  - { dir: projects/manuscripts }', ''].join('\n'),
     'catalogs/vocab.yml': [
         'palette:',
         '  "#e2374d": c-red',

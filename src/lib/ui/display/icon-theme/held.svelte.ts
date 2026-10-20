@@ -1,9 +1,9 @@
 // Layer 3, primitive. The file icon theme of an app that the page draws, when `file_icons` of
-// config/appearance.yml names one. The app declares a VS Code icon theme file; the server reads it
-// and answers it with the paths of its pictures and fonts turned into the addresses of the app's
-// files (GET /api/app-icons), and this holds the theme read, puts the theme's `@font-face` rules in
-// the document, and answers the icon a file or a folder gets. With no theme held every answer is
-// null, and FileIcon draws Seti as it does for `file_icons: seti`.
+// config/defaults/appearance.yml names one. The app declares a VS Code icon theme file; the server
+// reads it and answers it with the paths of its pictures and fonts turned into the addresses of the
+// app's files (GET /api/app-icons), and this holds the theme read, puts the theme's `@font-face`
+// rules in the document, and answers the icon a file or a folder gets. With no theme held every
+// answer is null, and FileIcon draws Seti as it does for `file_icons: seti`.
 //
 // The theme is held once for the page, as the app colour theme's rules are (ui/theme/app-rules.ts):
 // every file icon of the page asks it, and it is a rune so that an icon is drawn again when the

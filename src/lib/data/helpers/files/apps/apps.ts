@@ -146,9 +146,10 @@ const OPEN_WRITES = [
 ] as const;
 
 /**
- * The names closed to every app: the kinds that take back, rewrite an engine file or edit the
- * machine's overrides, `app-store`, which every app is granted for its own store and cannot ask
- * for, and the write routes the page never sends an app's request to.
+ * The names closed to every app: the kinds that take back, rewrite the reader's settings (the
+ * workspace file's `settings:`, the hub's settings file) or edit the machine's overrides,
+ * `app-store`, which every app is granted for its own store and cannot ask for, and the write
+ * routes the page never sends an app's request to.
  */
 const CLOSED_WRITES = [
     'undo',
@@ -156,6 +157,7 @@ const CLOSED_WRITES = [
     'audit-mute',
     'config-key',
     'config-value',
+    'config-reset',
     'app-setting',
     'session',
     'deck-slides',

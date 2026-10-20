@@ -4,7 +4,7 @@
 // The long documents stay out of the snapshot (DESIGN.md, "Layer 1, data"): the snapshot is a few
 // hundred kilobytes because the READMEs are not in it, and a view that opens one asks the server
 // for that one file. readDoc is what that request calls, and the hub-level documents, the files of
-// the `docs:` list of config/layout.yml, go through it like any other.
+// the `docs:` list of config/defaults/layout.yml, go through it like any other.
 // projectDocs is the cheap existence check a project card shows, and it opens no file. The build
 // reads no document of a project's folder but its manifest and the slide files of its `present/`
 // deck, which sources/deck/ reads.

@@ -164,8 +164,9 @@
     }
 
     /* The terminal shape: a bracketed text tag in its own colour, no pill and no fill. It is the
-       Brackets toggle's (Settings, This browser): with the toggle off, the body carries
-       `rice-plain` and the chip keeps its capsule in the rice palette and shape. */
+       option `rice.brackets`'s (the Settings view's option, written into the workspace file's
+       `settings:`): with the option off, the body carries `rice-plain` and the chip keeps its
+       capsule in the rice palette and shape. */
     :global(body.rice:where(:not(.rice-plain))) .chip {
         min-height: 0;
         padding: 1px 0;

@@ -1,0 +1,107 @@
+# ===========================================================================
+# sources.yml
+# oculus's own configuration of what the portfolio reads: where the projects are, which registry, collection, document and feed file each surface is built from, and where a hub keeps its pictures. The folders files are served from are the folders of the open workspace. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. loadConfig() merges it with the other files of config/defaults/, and every key here is a top-level key of the merged map; the options of config/options/sources.yml describe every key. Nothing writes this file.
+# The keys from scan to apps_dir are the hub list: a hub's own .oculus/config.yml replaces any of them whole, and the values here are oculus's defaults: the scan folders of a research hub's usual layout, and each collection's file and the career file under `.oculus/data/`, in the folder of its kind (research, pillars, literature, people, academic). This file is the one table of those default paths: oculus reads a registry or feed a hub's own list leaves out, and the Literature file, from here (a hub's own folders, its website among them, are set in its own settings file).
+# It also holds the map from a file name to the language the editor colours it in (languages).
+# ===========================================================================
+
+
+# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and type are the manifest's own `tier` and `type` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
+scan:
+  - { dir: projects/ideas }
+  - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing
+  - { dir: projects/active }
+  - { dir: projects/manuscripts }
+  - { dir: projects/software, optional: true }   # optional; a hub without the folder reports nothing
+  - { dir: projects/coauthor }
+  - { dir: projects/archive }
+
+
+# The folder a new project is made in, for each tier. The engine names none: a hub sets `new_project_dir` in its .oculus/config.yml, a map from a tier (projects, coauthor, archive or personal) to a folder that is a scan folder or lies under one. A tier with no entry has no folder to offer, and a new project of it needs the folder given.
+new_project_dir: {}
+
+
+# The portfolio deck: the folder, relative to the hub, whose present.yml and Markdown slides the Present view opens when a pane names no deck. A project's deck is its own present/ folder and a custom deck is any folder, so this key names the one deck that belongs to the hub as a whole.
+portfolio_deck: deck
+
+
+# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list, and the keys leads and radar, which name the files of Position Leads and Lit Watch and are no collection. This list is also where each registry and feed names its file: the file of the entry keyed `data` is the dataset registry (the Data view, provenance and a recovery recipe per dataset; the projects that use a dataset come from the manifests' `datasets:`), `venues` the venue catalogue, `pillars` the pillars registry (membership computed from the manifests' `pillar:`), `domains` the domains registry (projects grouped by the manifests' `domain:`), `funding` the funding registry, `people` the people registry (one entry per human the hub names, exactly one with `self: true`, whose `affiliations:` are keys of the organisations file), `organisations` the organisations registry (what a person's `affiliations:` and a funding entry's `funder:` point at), `resources` the resources registry (the clusters, machines and storage that a project's `compute:` and the `slurm.resource` key name by key), `leads` the position scout's leads and `radar` the literature scout's accumulated radar, which its refresh deduplicates by URL. A hub that lists none of these keys has no such registry or feed: it is read from its engine path and reported as unnamed, and a key it lists whose file is not there is a finding. A hub that names no list and holds a `.oculus/data/` folder reports a missing file of this list as a finding, as it does a file it names. The domains registry gives each domain its card colour (`color`) and label (`title`) and says which domains expect a dataset (`expects_datasets`); the `themes` field of the venues and data registries lists the theme words as its options. A key listed twice uses its first entry and is a finding. The schema is the file's own `schema:` block, and the links between files are in docs/data-map.md, the Data map tab of the Help page. Oculus's own path of each key is the one below, and Make Folder a Hub writes the ticked keys with these paths. Every entry has a page with an editor built from the schema, where it is edited and deleted, Add asks the new entry's name and opens that page, and an entry's status, deadline and date are also changed on its card. Edit in File opens the file at the entry.
+collections:
+  - { key: data,           file: ".oculus/data/research/data.yml" }
+  - { key: venues,         file: ".oculus/data/research/venues.yml" }
+  - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
+  - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
+  - { key: statements,     file: ".oculus/data/research/statements.yml" }
+  - { key: people,         file: ".oculus/data/people/people.yml" }
+  - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
+  - { key: resources,      file: ".oculus/data/research/resources.yml" }
+  - { key: funding,        file: ".oculus/data/academic/funding.yml" }
+  - { key: events,         file: ".oculus/data/academic/events.yml" }
+  - { key: education,      file: ".oculus/data/academic/education.yml" }
+  - { key: applications,   file: ".oculus/data/academic/applications.yml" }
+  - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
+  - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
+  - { key: literature,     file: ".oculus/data/literature/literature.yml" }
+  - { key: leads,          file: ".oculus/data/academic/leads.yml" }
+  - { key: radar,          file: ".oculus/data/literature/radar.yml" }
+
+
+# Career strategy: the order of work, hosts, eligibility and dropped options live in the career file and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
+career_file: .oculus/data/academic/career.yml
+
+
+# The public website's publications feed the Audit view cross-checks, and the folder of the LinkedIn posts pipeline. oculus names neither: a hub sets them in its .oculus/config.yml, relative to the hub, and empty names no file or folder.
+publications_file: ''
+linkedin_dir: ''
+
+
+# The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
+memories_dir: .oculus/memories
+
+# The folder of this hub's wallpaper images, relative to the hub and inside it. The `wallpaper.image` key of the primary hub's .oculus/config.yml names one of them as `<hub name>/<file name>`, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
+wallpaper_dir: .oculus/wallpaper
+
+# Where the reader's own bookmarks, the schedules and the machine's apps live, each relative to the primary hub, under the home folder for a value of ~ or one starting with ~/, or an absolute path. A hub sets them in its .oculus/config.yml, and the primary hub's file is the one read.
+bookmarks: .oculus/bookmarks.yml
+schedules: .oculus/schedules.yml
+apps_dir: .oculus/apps
+
+# How many folder levels below each folder of the open workspace the Repositories view looks for repositories, 0 to 3.
+repository_scan_depth: 1
+
+
+# The language each file name opens in, which the editor, the code window and the status bar colour and name it by. One language per line, the editor's own lowercase name, then the endings it claims: an entry that starts with a dot is an extension (.py), any other entry is a whole file name compared lowercased (makefile, cmakelists.txt). A whole name is matched before an extension, and a file no entry matches, a dotfile included, opens as plain text. A language the editor does not colour is refused, and an ending two languages claim belongs to the first one listed.
+languages:
+  bash:          [.sh, .bash, .zsh, .slurm]
+  bibtex:        [.bib]
+  css:           [.css]
+  diff:          [.diff, .patch]
+  ini:           [.ini, .toml]
+  javascript:    [.js, .jsx, .mjs, .cjs, .javascript]
+  json:          [.json, .jsonc, .json5, .ipynb]
+  julia:         [.jl, .julia]
+  latex:         [.tex, .latex, .sty, .cls, .rnw, .jnw, .pnw]
+  lisp:          [.lisp, .el, .scm]
+  makefile:      [.mk, .mak, .make, .makefile, makefile]
+  markdown:      [.md, .markdown, .mkdown, .mkd]
+  matlab:        [.m, .matlab]
+  ocaml:         [.ml, .mli, .ocaml]
+  python:        [.py, .pyi, .gyp, .ipython, .python]
+  r:             [.r]
+  typescript:    [.ts, .tsx, .mts, .cts, .typescript]
+  xml:           [.xml, .html, .xhtml, .rss, .atom, .xjb, .xsd, .xsl, .plist, .wsf, .svg]
+  yaml:          [.yml, .yaml]
+  plaintext:     [.txt, .text, .plaintext]
+  c:             [.c, .i]
+  cpp:           [.cpp, .cc, .cxx, .c++, .hpp, .hh, .hxx, .h++, .h, .ii, .ino, .inl, .ipp, .tpp]
+  cmake:         [.cmake, cmakelists.txt]
+  lua:           [.lua]
+  ruby:          [.rb, .rbi, .rake, .gemspec, .podspec, .ru, gemfile, rakefile, podfile, vagrantfile]
+  scss:          [.scss]
+  java:          [.java, .jav]
+  dart:          [.dart]
+  fortran:       [.f90, .f95, .f03, .f08]
+  fortran-fixed: [.f, .for, .f77]
+  jinja:         [.jinja, .jinja2, .j2]
+  svelte:        [.svelte]
+  rite:          [.rite]

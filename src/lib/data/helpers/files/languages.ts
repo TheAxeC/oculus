@@ -1,8 +1,8 @@
 // Layer 1, data. The map from a file name to the language the editor colours it in, read from the
-// `languages:` key of config/sources.yml: each language's name, as the editor and the status bar
-// know it, with the file name endings it claims. An entry starting with a dot is an extension
-// (`.py`), any other entry is a whole file name (`makefile`), and both are kept lowercased, which
-// is how a name is compared.
+// `languages:` key of config/defaults/sources.yml: each language's name, as the editor and the
+// status bar know it, with the file name endings it claims. An entry starting with a dot is an
+// extension (`.py`), any other entry is a whole file name (`makefile`), and both are kept
+// lowercased, which is how a name is compared.
 //
 // One rule, imported by both layers: the file browser, the source tab, the diff and the merge views
 // read a name's language through it, and the server words the entries it drops as findings

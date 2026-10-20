@@ -5,19 +5,14 @@ text:
         answer_refused: 'The server refused the request (HTTP {0}).'
         answer_unreachable: The server did not answer.
         answer_unreadable: "The server's answer could not be read (HTTP {0})."
-        brackets: Brackets
-        brackets_title: Draw the buttons, chips and tags of a terminal theme in brackets.
         close_glyph: dismiss
         close_tab: Close tab
-        code_theme: Code theme
         code_theme_tokens: From the theme
         confirm_cancel: Cancel
         confirm_dont_save: Don't Save
         confirm_ok: Confirm
         confirm_save: Save
         confirm_stop: Confirm
-        crt_on: CRT
-        crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
         dirty_glyph: bullet
         drag_float: Floating {0}
         drag_hint: Moving {0}
@@ -35,10 +30,6 @@ text:
         float_dock_right: Dock Right
         float_label: Floating pane
         float_return: Return to Page
-        icons: Icons
-        icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
-        monospace: Monospace
-        monospace_title: Draw the interface of a terminal theme in the monospace font.
         move_to_page: 'Move tab to {0}'
         move_to_page_list: Move tab to page...
         page_badge_separator: ', '
@@ -130,8 +121,6 @@ text:
         text_redo: Redo
         text_select_all: Select All
         text_undo: Undo
-        theme: Theme
-        theme_glyph: darkmode
         titlebar: Title bar
         titlebar_actions: Editor actions
         titlebar_back: Go Back
@@ -149,8 +138,6 @@ text:
         toolbar_more_glyph: more
         unknown_view: 'Unknown view: {0}'
         untitled_word: Untitled-
-        wallpaper: Wallpaper
-        wallpaper_title: Wallpaper behind the panels, and the slight transparency that goes with it
         window_copy: Copy into New Window
         window_move: Move into New Window
         window_restore: Restore into Main Window

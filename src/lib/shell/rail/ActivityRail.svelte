@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, shell. The strip down the left, drawn as VS Code's activity bar: one icon per page
-    // of the `rail:` list of config/layout.yml (RailPages.svelte), and at the foot Workbenches and
-    // Update (RailFoot.svelte). A page button shows its page, made from its
+    // of the `rail:` list of config/defaults/layout.yml (RailPages.svelte), and at the foot
+    // Workbenches and Update (RailFoot.svelte). A page button shows its page, made from its
     // arrangement the first time and switched to after that, which is the whole of what the rail
     // decides about pages; what a page holds is the layout store's, and every view is reached from
     // the catalogue on the System page. A workbench, a page that belongs to one folder, has no

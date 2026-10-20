@@ -30,7 +30,10 @@ import {
     type Formatter,
     type LatexRefusal
 } from '../../../data/prose/latex.ts';
-import type { LatexBuilding, LatexFormatting } from '../../../data/sources/config/settings.ts';
+import type {
+    LatexBuilding,
+    LatexFormatting
+} from '../../../data/sources/config/settings/latex.ts';
 import type { OpsRefusal } from '../../../data/file-ops.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { realPath } from '../../core/paths.ts';
@@ -62,9 +65,9 @@ export type LatexTarget = {
     project: (id: string) => Pick<Project, 'folder' | 'root' | 'workspaceFolder'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
-    /** The formatter Format Document runs, read from config/behavior.yml at each request. */
+    /** The formatter Format Document runs, read from the merged config at each request. */
     formatting: () => LatexFormatting;
-    /** What a build and SyncTeX are set by, read from config/behavior.yml at each request. */
+    /** What a build and SyncTeX are set by, read from the merged config at each request. */
     building: () => LatexBuilding;
     /** How the two programs are run when a caller needs them other than the machine's own. */
     tools?: Tools;

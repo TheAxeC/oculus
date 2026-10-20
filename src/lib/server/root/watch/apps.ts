@@ -1,6 +1,6 @@
-// Layer 2, server. The watcher of the apps: it finds the apps of the machine's folder (the primary
-// hub's `.oculus/apps`) and of each folder of the open workspace while oculus runs, and publishes
-// them on the `apps` channel.
+// Layer 2, server. The watcher of the apps: it finds the apps of the machine's folder (`apps_dir`
+// of the config, by default the primary hub's `.oculus/apps`) and of each folder of the open
+// workspace while oculus runs, and publishes them on the `apps` channel.
 //
 // It owns the handles it needs and no more. A recursive `fs.watch` lies over the real path of the
 // machine's apps folder, of each folder's `.oculus/apps` and of each app folder that is itself a
@@ -27,14 +27,9 @@ import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import { HUB_FILE, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { AppRow } from '../../../data/model/index.ts';
-import {
-    appsSettings,
-    configDir,
-    localFile,
-    type LocalConfig
-} from '../../../data/sources/config.ts';
+import { appsSettings, sourceFile, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import {
     POLL,
@@ -111,6 +106,11 @@ export type AppsWatchOptions = {
     local: () => LocalConfig;
     /** The merged configuration as it is now. */
     config: () => Record<string, unknown>;
+    /**
+     * The file each value of that configuration was read from, as loadConfig's `from` names it,
+     * which a finding about a stored value names.
+     */
+    from: () => Readonly<Record<string, string>>;
     /** The open workspace as it is now. */
     open: () => OpenWorkspace;
     /**
@@ -132,22 +132,28 @@ export type AppsWatchOptions = {
 };
 
 /**
- * The machine's apps folder: `apps_dir` of the primary hub's `.oculus/local.yml`, else that hub's
- * `.oculus/apps`; null when the workspace has no primary.
+ * The machine's apps folder: `apps_dir` of the merged config (the primary hub's
+ * `.oculus/config.yml`, else oculus's default, that hub's `.oculus/apps`); null when the value is
+ * relative and the workspace has no primary.
  */
-function machineFolder(local: LocalConfig, open: OpenWorkspace): string | null {
-    const dir = perOculus(open.primaryDir, local).appsDir;
-    return dir === null ? null : expandHome(dir);
+function machineFolder(
+    config: Readonly<Record<string, unknown>>,
+    open: OpenWorkspace
+): string | null {
+    return perOculus(open.primaryDir, config).appsDir;
 }
 
-/** The machine's apps folder with the primary hub's `local.yml`, or null with no primary. */
+/**
+ * The machine's apps folder with the file its `apps_dir` was read from, or null with no folder.
+ */
 function machineIn(
-    local: LocalConfig,
+    engine: string,
+    read: { config: Readonly<Record<string, unknown>>; from: Readonly<Record<string, string>> },
     open: OpenWorkspace
-): { dir: string; localFile: string } | null {
-    const dir = machineFolder(local, open);
-    if (dir === null || open.primaryDir === null) return null;
-    return { dir, localFile: localFile(open.primaryDir) };
+): { dir: string; settingsFile: string } | null {
+    const dir = machineFolder(read.config, open);
+    if (dir === null) return null;
+    return { dir, settingsFile: sourceFile(engine, open.primaryDir, read.from, 'apps_dir') };
 }
 
 function reason(error: unknown): string {
@@ -278,7 +284,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     /** The folders waiting to appear: each path a read would start watching if it were there. */
     const waitingFor = (): string[] => {
         const waiting: string[] = [];
-        const machine = machineFolder(options.local(), options.open());
+        const machine = machineFolder(options.config(), options.open());
         if (machine !== null) waiting.push(machine);
         for (const root of roots) {
             waiting.push(join(expandHome(root.dir), ROOT_FOLDER, 'apps'));
@@ -320,22 +326,20 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         stateKey = workspaceKey(open.file ?? '');
         const local = options.local();
         const config = options.config();
+        const read = { config, from: options.from() };
         const settings = appsSettings(config);
         const before = state;
         const primary = open.primaryDir;
         state = scanApps({
-            machine: machineIn(local, open),
-            appearanceFile: join(configDir(options.engine), 'appearance.yml'),
+            machine: machineIn(options.engine, read, open),
+            appearanceFile: sourceFile(options.engine, primary, read.from, 'file_icons'),
             roots: roots.map((root) => ({ ...root, dir: expandHome(root.dir) })),
             primary: open.primary,
-            settingsFile:
-                primary === null
-                    ? join(configDir(options.engine), 'behavior.yml')
-                    : join(primary, HUB_FILE),
+            settingsFile: sourceFile(options.engine, primary, read.from, 'app_settings'),
             privateFolders: closedToApps({
                 home: options.home ?? homedir(),
-                config: configDir(options.engine),
                 local,
+                perOculus: perOculus(primary, config),
                 roots
             }),
             config,
@@ -465,7 +469,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             return held;
         },
         stateFile: () => stateFile,
-        folder: () => machineFolder(options.local(), options.open()),
+        folder: () => machineFolder(options.config(), options.open()),
         workspace: () => stateKey,
         onRead(listener: () => void): () => void {
             listeners.add(listener);

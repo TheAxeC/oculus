@@ -4,12 +4,12 @@
 
 import type { WriteAnswer } from '../../../shared/stores/shapes';
 
-export { confirmDelete } from '../../../../data/sources/config/settings.ts';
+export { confirmDelete } from '../../../../data/sources/config/settings/files.ts';
 
 /**
  * What a question's answer does to the setting: a yes with the "Do not ask me again" box ticked
- * writes `files.confirm_delete: false` into behavior.yml; any other answer writes nothing. Returns
- * whether a write was sent.
+ * writes the behavior.yml option `files.confirm_delete` as false, which lands in the open workspace
+ * file's `settings:`; any other answer writes nothing. Returns whether a write was sent.
  */
 export function rememberAnswer(
     write: (file: string, key: string, value: unknown) => Promise<WriteAnswer>,

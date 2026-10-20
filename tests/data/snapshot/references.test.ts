@@ -1,7 +1,7 @@
 // Layer 1, data tests. The reference index of the snapshot build (data/snapshot/references/): the
 // places in the hub's files that name a key and the places that define one, found by the schemas
 // the files are checked by and by nothing else. A hub planted in a scratch directory, with an
-// engine folder holding `behavior.yml` and `catalogs/vocab.yml`, is built through
+// engine folder holding `defaults/behavior.yml` and `catalogs/vocab.yml`, is built through
 // buildPortfolioWithSchemas, and the index is asked what stands at a position: the key, the
 // definitions it names and every place that names the same ones.
 //
@@ -50,7 +50,7 @@ type Row = {
 const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
 
 /** behavior.yml as a tab holds it with a heading line typed above its keys. */
-const BEHAVIOR_WITH_HEADING = `# The cluster.\n${ENGINE_FILES['behavior.yml']}`;
+const BEHAVIOR_WITH_HEADING = `# The cluster.\n${ENGINE_FILES['defaults/behavior.yml']}`;
 
 /** A joint-work file whose `target` takes the keys of the source the `kind` of its record picks. */
 const PICKED = [
@@ -117,7 +117,7 @@ const ROWS: Row[] = [
                 'title: An idea\ntier: personal\ntype: idea\ncollaborators: [amir]\n'
         },
         engine: {
-            'sources.yml': [
+            'defaults/sources.yml': [
                 'scan:',
                 '  - { dir: projects/manuscripts }',
                 '  - { dir: side-projects, optional: true }',
@@ -219,11 +219,11 @@ const ROWS: Row[] = [
     },
     {
         name: 'the clusters of the options catalog, the resources of kind cluster',
-        at: ['engine', 'behavior.yml', 2, 12],
+        at: ['engine', 'defaults/behavior.yml', 2, 12],
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['engine:behavior.yml:2:12']
+        references: ['engine:defaults/behavior.yml:2:12']
     },
     {
         name: 'a vocabulary value, defined as a key of its map in vocab.yml',
@@ -248,7 +248,7 @@ const ROWS: Row[] = [
         name: 'a vocabulary key of a map in vocab.yml, listed by the options file that names its list',
         at: ['engine', 'catalogs/vocab.yml', 5, 4],
         engine: {
-            'layout.yml': [
+            'defaults/layout.yml': [
                 'boards:',
                 '  projects:',
                 '    groups:',
@@ -259,7 +259,7 @@ const ROWS: Row[] = [
         kind: 'definition',
         key: 'manuscript',
         targets: ['engine:catalogs/vocab.yml:5'],
-        references: ['engine:layout.yml:3:37']
+        references: ['engine:defaults/layout.yml:3:37']
     },
     {
         name: "a deck group's slide, a project id",
@@ -357,22 +357,22 @@ const ROWS: Row[] = [
     },
     {
         name: 'an open text under the hub root of a config file that lies inside the hub folder',
-        at: ['hub', 'tools/oculus/config/behavior.yml', 3, 12],
+        at: ['hub', 'tools/oculus/config/defaults/behavior.yml', 3, 12],
         options: { engineInHub: true },
-        open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
+        open: { 'hub:tools/oculus/config/defaults/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['hub:tools/oculus/config/behavior.yml:3:12']
+        references: ['hub:tools/oculus/config/defaults/behavior.yml:3:12']
     },
     {
         name: 'an open text under the hub root of a config file that another workspace folder holds',
-        at: ['engine', 'behavior.yml', 2, 12],
-        open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
+        at: ['engine', 'defaults/behavior.yml', 2, 12],
+        open: { 'hub:tools/oculus/config/defaults/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['engine:behavior.yml:2:12']
+        references: ['engine:defaults/behavior.yml:2:12']
     },
     {
         name: 'a from picked by another field of the record, the person source',

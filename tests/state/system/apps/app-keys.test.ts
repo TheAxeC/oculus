@@ -6,8 +6,8 @@
 // The keys oculus takes are read from the code that takes them (data/helpers/keys/
 // oculus-keys.ts): a row checks a key of each source, the workbench's resolver, the palette, the
 // editor's LaTeX presses and the desktop menu's accelerators, and the rail's chord letters come
-// from the engine's config/layout.yml. What this does NOT cover: the DOM that feeds a real press to
-// the resolver.
+// from the engine's config/defaults/layout.yml. What this does NOT cover: the DOM that feeds a real
+// press to the resolver.
 
 import { describe, expect } from 'vitest';
 import { boundKeys, type KeyApp } from '../../../../src/lib/data/helpers/keys/bound-keys.ts';
@@ -33,7 +33,7 @@ import { createKeyResolver } from '../../../../src/lib/state/system/apps/shell/k
 import { contextOf } from '../../../../src/lib/state/system/apps/shell/context.ts';
 import { it } from '../../../fixtures/scratch.ts';
 
-/** The chord letters of the engine's config/layout.yml: the keys of the rail's chords. */
+/** The chord letters of the engine's config/defaults/layout.yml: the keys of the rail's chords. */
 const LETTERS = railChordLetters(loadConfig(engineDir()).config);
 
 const binding = (change: Partial<AppKeybinding>): AppKeybinding => ({

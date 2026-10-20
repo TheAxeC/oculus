@@ -2,8 +2,9 @@
     // Layer 3, partial of shell/keys/Palette.svelte. The rows of `:theme`, `:file-icons`, `:tab`
     // and `:goto`, as the `:language` list draws its own: every choice a row, the one in force
     // marked (lists/argument-list.svelte.ts). A press runs the command with the row's choice: it
-    // switches the theme, writes the file icon theme to config/appearance.yml, opens the view in a
-    // tab, or opens the project, whose tab takes the keyboard on its head once drawn.
+    // writes the theme or the file icon theme through the Settings write path into the open
+    // workspace file's `settings:`, opens the view in a tab, or opens the project, whose tab takes
+    // the keyboard on its head once drawn.
     //
     // In `:theme` and `:file-icons` the choice under the selection is drawn as the selection moves,
     // through the UI store's preview, which nothing saves; leaving the list (Escape, closing the

@@ -72,10 +72,10 @@ describe('runs the command of an app root and settles with how the press ended',
             [{ name: 'build', source: 'file' }]
         ],
         [
-            'a command saved through the form',
+            'a command found in a build file',
             'cathedra',
             'build',
-            [{ name: 'build', source: 'form' }]
+            [{ name: 'build', source: 'found' }]
         ],
         [
             'a root the file browser does not show',

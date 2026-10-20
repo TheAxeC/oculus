@@ -10,7 +10,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { createBuilds, type BuildDeps } from '../../../../src/lib/state/sessions/latex/builds.ts';
-import type { LatexBuilding } from '../../../../src/lib/data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../../src/lib/data/sources/config/settings/latex.ts';
 import { TEXT } from '../../../server/text.ts';
 
 setCatalog(TEXT);

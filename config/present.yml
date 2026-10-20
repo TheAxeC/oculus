@@ -1,8 +1,0 @@
-# What oculus carries for every deck the Present view draws. A deck is a folder with a present.yml and Markdown slide files; its own present.yml can change anything set here. Which deck is the portfolio deck is `portfolio_deck` in sources.yml.
-defaults:
-    # The hue a slide's `tag.class` wears, one palette hue name per class.
-    tag_tones:
-        measured: green
-        design: amber
-        proof: purple
-        mixed: cyan

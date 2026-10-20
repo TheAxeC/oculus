@@ -11,7 +11,7 @@ import { findingText } from '../../../helpers/finding-text.ts';
 import { readNesting, type NestingDrop } from '../../../helpers/files/nesting.ts';
 import type { Finding } from '../../../model/index.ts';
 import { configDir } from '../folder.ts';
-import { textCatalog } from '../merge.ts';
+import { textCatalog } from '../merge/text.ts';
 
 /** The key of file-nesting.yml a drop is about, and its sentence. */
 function aboutDrop(

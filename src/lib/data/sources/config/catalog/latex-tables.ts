@@ -21,7 +21,7 @@ import {
     latexEnvironmentRow,
     latexSymbolRow,
     latexUnimathRow
-} from '../../../shapes/catalog-files.ts';
+} from '../../../shapes/catalog-files/latex.ts';
 import { filledTextShape, mapShape, optionalTextShape } from '../../../shapes/shapes.ts';
 
 /** One `@` suggestion: what is typed after the `@`, the snippet it inserts, what it means. */

@@ -27,7 +27,7 @@ import {
 import { createLimiter } from '../../../../data/helpers/run/limiter.ts';
 import { webAddress } from '../../../../data/places/hub-address.ts';
 import type { AppRequestBody, AppRow, Message } from '../../../../data/model/index.ts';
-import type { AppsSettings } from '../../../../data/sources/config/settings.ts';
+import type { AppsSettings } from '../../../../data/sources/config/settings/machine.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import {

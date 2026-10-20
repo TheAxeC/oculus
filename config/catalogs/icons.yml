@@ -7,12 +7,8 @@ icons:
     biennial: repeat
     expand: plus-circle
     collapse: minus-circle
-    darkmode: contrast
     theme_base: sun-moon
     theme_rice: square-terminal
-    crt: scan-line
-    wallpaper: image
-    icons: type
     launch: external-link
     open_program: app-window
     open_preview: file-search

@@ -8,7 +8,13 @@ import { isDeepStrictEqual } from 'node:util';
 import type { LocalConfig } from '../../../../data/sources/config.ts';
 import type { GitWatcher } from '../../watch/git.ts';
 import type { AutofetchWatcher } from '../../watch/autofetch.ts';
-import { WATCHERS, keysBuilding, rebuiltBy, type WatcherName } from '../../watch/local.ts';
+import {
+    WATCHERS,
+    isLocalKey,
+    keysBuilding,
+    rebuiltBy,
+    type WatcherName
+} from '../../watch/local.ts';
 import type { PortfolioWatcher, Watcher } from '../../watch/portfolio.ts';
 import type { SessionsWatcher } from '../../watch/sessions.ts';
 import type { SchedulesWatcher } from '../../../machine/runs/schedules/watch.ts';
@@ -79,12 +85,11 @@ export function createRebuild(
             if (!plan[name]) continue;
             const reason = tryStart(name);
             if (reason === null) continue;
-            const keys = keysBuilding(name).filter(
-                (key): key is keyof LocalConfig =>
-                    key !== 'workspace' &&
-                    previous !== undefined &&
-                    !isDeepStrictEqual(local[key], previous[key])
-            );
+            const keys = keysBuilding(name)
+                .filter(isLocalKey)
+                .filter(
+                    (key) => previous !== undefined && !isDeepStrictEqual(local[key], previous[key])
+                );
             console.error(
                 `local.yml: ${keys.join(', ') || name} cannot be applied, the ${name} watcher cannot be built from it (${reason}); the value in force stays`
             );

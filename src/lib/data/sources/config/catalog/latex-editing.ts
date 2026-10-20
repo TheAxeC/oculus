@@ -10,7 +10,7 @@ import { findingText } from '../../../helpers/finding-text.ts';
 import type { Finding } from '../../../model/index.ts';
 import { readLatexEditing, readLatexUnimath } from './latex-tables.ts';
 import { configDir } from '../folder.ts';
-import { textCatalog } from '../merge.ts';
+import { textCatalog } from '../merge/text.ts';
 
 /** One finding for each list of `latex_editing:` that lost a row. */
 export function latexEditingFindings(engine: string, config: Record<string, unknown>): Finding[] {

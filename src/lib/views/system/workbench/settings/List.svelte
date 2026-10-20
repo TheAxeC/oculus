@@ -1,21 +1,25 @@
 <script lang="ts">
     // Layer 3, view partial. The list of the Settings view: a group per subject heading, with one
-    // line under it for each file the heading draws from (the file's name, the tag on the machine's
-    // own file, the control that opens the file in a source tab, and the file's description), a
-    // title per section, and one item per setting. The Catalogs and Texts groups list files
-    // instead: one row per file with its path and the same open control. A file that is being read,
-    // could not be read, is cut or does not parse says so on its line and has no setting in any
-    // heading; a folder that is not listed says so under its group. Each heading and each section
+    // line under it for each file the heading draws from, a title per section, and one item per
+    // setting. A defaults file's line holds the file's subject as its title, its description, Open
+    // Settings File (the open workspace file, which keeps the user's values of its settings, in a
+    // source tab; with the unsaved workspace, Save Workspace As... in its place) and Show Defaults
+    // (the defaults file, in a source tab that only reads it). The hub's settings file and the
+    // machine's own file have a line with their title, their description, the tag on the machine's
+    // file and Open Settings File. The Catalogs, Schemas and Texts groups list files instead: one
+    // row per file with its path and the control that opens it. A user's file that is being read,
+    // could not be read, is cut or does not parse says so on its line, as does the unsaved
+    // workspace; a folder that is not listed says so under its group. Each heading and each section
     // carries the id the table of contents scrolls to.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
-    import { openTarget } from '$lib/state/system/config/config-files';
+    import { DEFAULTS, openTarget } from '$lib/state/system/config/config-files';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
-    import type { Group } from '$lib/state/system/config/groups';
+    import type { FileLine, Group } from '$lib/state/system/config/groups';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { RowWriter } from '$lib/state/system/config/write';
@@ -25,7 +29,8 @@
 
     const {
         fs: { workspaces },
-        layout: { openView }
+        layout: { openView },
+        ui: { requestPalette }
     } = useState();
 
     type Props = {
@@ -39,14 +44,20 @@
     let { groups, id, writer, editors, lists }: Props = $props();
 
     /** Where a file opens in a source tab: through the workspace folder that holds it, if any. */
-    const targetOf = (root: string, file: string) => openTarget(root, file, workspaces());
+    const targetOf = (root: string | null, file: string | null) =>
+        openTarget(root, file, workspaces());
 
     /**
-     * Open one file of oculus's config tree, or the primary hub's settings file, in a source tab.
+     * Open one file of oculus's config tree, or a user's file, in a source tab.
      */
-    function openFile(root: string, file: string): void {
+    function openFile(root: string | null, file: string | null): void {
         const target = targetOf(root, file);
         if (target !== null) openView('source', sourceTabState(target.root, target.path));
+    }
+
+    /** Open oculus's defaults file of a line in a source tab, which reads it and cannot save it. */
+    function showDefaults(line: FileLine): void {
+        openView('source', sourceTabState(OCULUS_CONFIG_ROOT, `${DEFAULTS}/${line.file}`));
     }
 </script>
 
@@ -56,24 +67,41 @@
             <h2 class="group-title">{group.title}</h2>
         </div>
         {#each group.lines as line (line.file)}
-            <div class="file" data-file={line.file}>
+            <div class="file" data-file={line.file} data-line={line.kind}>
                 <div class="file-head">
-                    <span class="file-path">{line.file}</span>
+                    <span class="file-title">{line.title}</span>
                     {#if line.local}
                         <Tag label={t('settings.local_tag')} />
                     {/if}
-                    {#if targetOf(line.root, line.file) !== null}
+                    {#if line.opens.path === null}
                         <ToolButton
-                            label={t('views.open_source')}
-                            glyph="edit"
-                            title={t('views.open_source_tip', line.file)}
+                            label={t('settings.save_workspace')}
+                            glyph="save"
+                            title={t('settings.save_workspace_tip')}
                             compact
-                            onclick={() => openFile(line.root, line.file)}
+                            onclick={() => requestPalette(':workspace-save ')}
+                        />
+                    {:else if targetOf(line.opens.root, line.opens.path) !== null}
+                        <ToolButton
+                            label={t('settings.open_settings_file')}
+                            glyph="edit"
+                            title={t('settings.open_settings_file_tip', line.opens.path)}
+                            compact
+                            onclick={() => openFile(line.opens.root, line.opens.path)}
                         />
                     {:else}
                         <span class="unavailable">
-                            {t('workbench.settings_open_unavailable', line.file)}
+                            {t('workbench.settings_open_unavailable', line.opens.path)}
                         </span>
+                    {/if}
+                    {#if line.kind === 'defaults'}
+                        <ToolButton
+                            label={t('settings.show_defaults')}
+                            glyph="open_preview"
+                            title={t('settings.show_defaults_tip', `${DEFAULTS}/${line.file}`)}
+                            compact
+                            onclick={() => showDefaults(line)}
+                        />
                     {/if}
                 </div>
                 {#if line.description !== ''}
@@ -167,6 +195,11 @@
         display: flex;
         align-items: center;
         gap: 8px;
+    }
+
+    .file-title {
+        font-size: var(--fs-md);
+        font-weight: 600;
     }
 
     .file-path {

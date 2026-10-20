@@ -1,6 +1,6 @@
-// Layer 2, client state tests. One view's row of the `counts` map of config/layout.yml as the page
-// reads it: its flags, its statuses trimmed and in lower case with a status written alone read as
-// one, and its days.
+// Layer 2, client state tests. One view's row of the `counts` map of config/defaults/layout.yml as
+// the page reads it: its flags, its statuses trimmed and in lower case with a status written alone
+// read as one, and its days.
 
 import { describe, expect, it } from 'vitest';
 import { countRow } from '../../../src/lib/state/workbench/rail-badges/rail-badges.ts';

@@ -383,7 +383,7 @@
     }
 
     /* The terminal shape: a square corner, and the same face as the rest of the theme, which is
-       the monospace face while the Monospace toggle is on. */
+       the monospace face while the option `rice.monospace` is on. */
     :global(body.rice) .bubble {
         border-radius: 0;
     }

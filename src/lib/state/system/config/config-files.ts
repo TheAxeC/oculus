@@ -1,9 +1,11 @@
-// Layer 2, client state. What the Settings view knows of oculus's configuration files by name: the
-// extension they carry, the machine's own file, the folders of the vocabulary catalogs and of the
-// schemas, and the one-line description each file has in the text catalog.
+// Layer 2, client state. What the Settings view knows of the configuration files by name: the
+// extension they carry, the machine's own file, the open workspace file, the folders of the
+// defaults files, of the vocabulary catalogs and of the schemas, and the one-line description each
+// file has in the text catalog.
 
 import { joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
+import { ROOT_FOLDER, WORKSPACES_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { hasText, lookup } from '../../shared/words/text.ts';
 
@@ -24,20 +26,42 @@ export const LOCAL_NAME = 'local.yml';
 export const PRIMARY_ROOT = '';
 
 /**
- * Where a file of a Settings line is opened in an editor: a file of oculus's own `config/` folder
- * through the workspace folder that holds it, the primary hub's settings file through the
- * primary's folder. Null when no folder of the workspace holds the file, which is when Settings
- * offers no open and says why.
+ * Where a file of a Settings line or row is opened in an editor: a file of oculus's own `config/`
+ * folder (`OCULUS_CONFIG_ROOT`) through the workspace folder that holds it, a file of the primary
+ * hub (`PRIMARY_ROOT`) through the primary's folder, and a file of any other served root, such as
+ * the open workspace file, there. Null when no folder of the workspace holds the file (a root or a
+ * path that is null), which is when Settings offers no open and says why.
  */
 export function openTarget(
-    root: string,
-    file: string,
+    root: string | null,
+    file: string | null,
     saved: { primary: string | null; engine: { root: string; path: string } | null }
 ): { root: string; path: string } | null {
-    if (root === PRIMARY_ROOT)
+    if (root === null || file === null) return null;
+    if (root === PRIMARY_ROOT) {
         return saved.primary === null ? null : { root: saved.primary, path: file };
+    }
+    if (root !== OCULUS_CONFIG_ROOT) return { root, path: file };
     if (saved.engine === null) return null;
     return { root: saved.engine.root, path: joinPath(saved.engine.path, file) };
+}
+
+/**
+ * The open workspace file as the Settings view reads and opens it: the served root of the hub
+ * folder that holds it, null when no folder of the workspace is that hub, and its path in the hub.
+ * Null for the unsaved workspace, which has no file.
+ */
+export function workspaceFilePlace(saved: {
+    open: { name: string; hub: string } | null;
+    folders: readonly { key: string }[];
+}): { root: string | null; path: string } | null {
+    const { open } = saved;
+    if (open === null) return null;
+    const served = saved.folders.some((one) => one.key === open.hub);
+    return {
+        root: served ? open.hub : null,
+        path: `${ROOT_FOLDER}/${WORKSPACES_FOLDER}/${open.name}${CONFIG_SUFFIX}`
+    };
 }
 
 /** The path of a hub's machine file inside the hub's folder. */
@@ -76,6 +100,9 @@ export function isPrivateFile(
         (folder) => pathUnder(same(folder), absolute) !== null
     );
 }
+
+/** The folder under config/ that holds oculus's defaults files, which Show Defaults opens. */
+export const DEFAULTS = 'defaults';
 
 /** The folder under config/ that holds the vocabulary catalogs. */
 export const CATALOGS = 'catalogs';

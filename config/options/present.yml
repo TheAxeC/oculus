@@ -1,0 +1,20 @@
+# ===========================================================================
+# options/present.yml
+# Every option of defaults/present.yml described once, and a help line for each group of its dotted options, in the shape the head of options/appearance.yml describes. loadConfig() reads it into the merged map's `options` and `option_groups` under present.yml.
+# ===========================================================================
+
+options:
+    defaults.tag_tones:
+        heading: presentation
+        section: Status chips
+        help: "The hue each tag class of a project slide wears. A workspace file's settings: overrides the hue of a tag class, adds a tag class, and takes one of oculus's out with <tag class>: null."
+        fields:
+            key:
+                help: a slide tag class
+                control: choice
+                from: slide_tags
+            value:
+                help: a palette hue name
+                control: hue
+groups:
+    defaults: What oculus carries for every deck the Present view draws, which a deck's own present.yml can change.

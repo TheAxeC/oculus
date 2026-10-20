@@ -17,6 +17,11 @@
     // sent the editor says "Saved." until the next edit, as the rail list's Save does, and a list
     // or family with no entry says so above its Add, so a saved empty family reads as one and not
     // as a list that failed to draw.
+    //
+    // The entries are drawn under a disclosure line (Fold.svelte) with the row's title and their
+    // number, folded at first past five entries; the problems, the refusal and Save and Discard
+    // stay drawn under a folded line. An edit keeps the line unfolded, so an entry added past the
+    // fifth does not fold the editor being typed in.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -35,9 +40,12 @@
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import { message } from '$lib/state/system/config/messages';
     import type { ConfigRow } from '$lib/state/system/config/rows';
+    import { settingsQuery } from '$lib/state/system/config/typed';
+    import { foundInside, heldFold, partTexts, withFold } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
     import Cards from './Cards.svelte';
+    import Fold from './Fold.svelte';
 
     const {
         ui: { instanceState, setInstanceState, registerTabSave }
@@ -83,12 +91,21 @@
     /** The specs the draft's fields are drawn by. */
     const specs = $derived(draft === null ? {} : specsOf(row, draft.form));
 
+    /** Whether the query stands and is found inside the entries, which unfolds them. */
+    const searched = $derived(
+        foundInside(settingsQuery(instanceState(id)), partTexts(row, 'entries'))
+    );
+
     /** Put an edited draft in the tab's state; one equal to the file's is no draft. */
     function edit(next: Edit): void {
         if (draft === null || sending) return;
         editors.clear(row);
         const changed = applyEdit(draft, next);
-        const state = instanceState(id);
+        const kept = instanceState(id);
+        const state =
+            heldFold(kept, row.id, 'entries') === undefined
+                ? withFold(kept, row.id, 'entries', false)
+                : kept;
         if (!isEdited(changed, current, lists)) {
             setInstanceState(id, withSavedDraft(state, row.file, row.key, null));
             return;
@@ -119,22 +136,31 @@
 
 {#if draft !== null}
     <div class="editor" data-editor={draft.form}>
-        {#if empty}
-            <p class="empty" data-editor-empty>{t('settings.editor_empty')}</p>
-        {/if}
-        <Cards
-            cards={draft.cards}
-            fields={draft.fields}
-            {specs}
-            form={draft.form}
-            {lists}
-            instance={id}
-            base={`${row.file}:${row.key}`}
+        <Fold
+            {id}
+            row={row.id}
+            part="entries"
             title={row.title}
-            slots={row.entry.slots}
-            removeOnly={row.control === 'parked'}
-            onedit={edit}
-        />
+            count={draft.cards.length}
+            {searched}
+        >
+            {#if empty}
+                <p class="empty" data-editor-empty>{t('settings.editor_empty')}</p>
+            {/if}
+            <Cards
+                cards={draft.cards}
+                fields={draft.fields}
+                {specs}
+                form={draft.form}
+                {lists}
+                instance={id}
+                base={`${row.file}:${row.key}`}
+                title={row.title}
+                slots={row.entry.slots}
+                removeOnly={row.control === 'parked'}
+                onedit={edit}
+            />
+        </Fold>
         {#if problems.length > 0}
             <ul class="problems">
                 {#each problems as problem, at (at)}

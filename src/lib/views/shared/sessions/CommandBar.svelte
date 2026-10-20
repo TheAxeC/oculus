@@ -2,11 +2,14 @@
     // Layer 3, shared view. The commands of one repository as a row of buttons: one per command up
     // to five, the rest in an overflow menu, then the control that adds a command. A press runs the
     // command as a task terminal; one that has not been approved asks first. The question and the
-    // form that saves a command are drawn by the shell (shell/commands/CommandAsk.svelte), which
-    // the bar opens through the commands store. The tooltip of a button is the command's line and
-    // where it was read from. A right-click on a button opens its menu: Edit, Schedule... and
-    // Delete for a command saved through the form, Open File at its entry for one read from a file
-    // or found. Schedule... opens the schedule dialog for the command over the update tray.
+    // form that writes an entry of the repository's `.oculus/commands.yml` are drawn by the shell
+    // (shell/commands/CommandAsk.svelte), which the bar opens through the commands store. The
+    // tooltip of a button is the command's line and where it was read from. A right-click on a
+    // button opens its menu (views/shared/sessions/commands.ts `commandMenu`): Edit, Schedule...,
+    // Delete and Open File at its entry for a plain entry of the file, Open File alone for a typed
+    // entry and a found command. Edit opens the form on the entry, Delete removes the entry from
+    // the file after a yes, and Schedule... opens the schedule dialog for the command over the
+    // update tray.
     //
     // The bar holds the repository's list while it is drawn (the commands store's `watch`), so a
     // repository nobody draws is not asked for. It draws nothing until the list is read, and a

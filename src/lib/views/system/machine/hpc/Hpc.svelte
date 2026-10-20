@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Live HPC is the first tab of the float docked at the right edge
-    // that config/layout.yml ships, before Usage, and the first entry of the catalogue's Float
-    // group, which `w` then `1` opens.
+    // that config/defaults/layout.yml ships, before Usage, and the first entry of the catalogue's
+    // Float group, which `w` then `1` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'hpc',

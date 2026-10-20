@@ -1,6 +1,7 @@
 // Layer 2, client-state tests. The draft of a form: the edits kept in the editor instance's ui
 // record under the kind of form and the thing they were typed for, compared against the saved
-// value now, settled after a save, and read back after a reload through a fake storage.
+// value now, settled after a save, and read back after a reload from the view states a second
+// page's page state is handed, as the server's read hands them.
 //
 // The project is synthetic and handed to the project target through its projectOf argument, and
 // the page kind is judged by a table of saved values, so what is checked is the draft. Typing into
@@ -26,7 +27,6 @@ import {
 import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
 import { projectDraftTarget } from '../../../src/lib/state/forms/schema.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 
 let client: ClientState;
 let projects: Record<string, Project>;
@@ -75,7 +75,6 @@ function build(storeOf: ClientState): FormDraftStore {
 
 beforeEach(() => {
     client = createClientState();
-    client.ui.loadUi(fakeStorage());
     projects = { alpha: project('alpha', 'drafting'), beta: project('beta', 'submitted') };
     saved = { 'venues:jbhi': { short: 'JBHI', tier: 'a' } };
     drafts = build(client);
@@ -136,13 +135,17 @@ describe('a revert', () => {
 });
 
 describe('a reload', () => {
-    it('reads the edits back out of the storage the ui store saved them to', () => {
-        const storage = fakeStorage();
-        client.ui.loadUi(storage);
+    it('reads the edits back out of the view states the page state keeps', () => {
         drafts.editDraft('ed-1', 'project', 'alpha', 'authors', ['Faes', 'Another']);
 
         const next = createClientState();
-        next.ui.loadUi(storage);
+        next.pageState.install({
+            layouts: {},
+            views: client.pageState.views(),
+            debug: null,
+            version: 1,
+            findings: []
+        });
         const again = build(next);
         expect(again.draftEdits('ed-1', 'project', 'alpha')).toEqual({
             authors: ['Faes', 'Another']
@@ -154,7 +157,6 @@ describe('a reload', () => {
 describe('the wiring', () => {
     it("registers the client's own form draft with the close guard", () => {
         const wired = createClientState();
-        wired.ui.loadUi(fakeStorage());
         wired.formDraft.editDraft('ed-1', 'project', 'not-in-any-snapshot', 'title', 'words');
         expect(wired.ui.unsaved('ed-1')).toBe(true);
         wired.formDraft.revertDraft('ed-1');

@@ -1,10 +1,15 @@
 <script lang="ts">
-    // Layer 3, view partial. The rail list of config/layout.yml as the Settings view edits it: one
-    // row per button with its label, icon and page and the chord and heading glyph of its group in
-    // the view catalogue, whose heading is the label, the controls that move a row and take it
-    // away, and Save, which writes the list through the `rail` write of api/write. The watcher
-    // pushes the file back within a second, and the rail redraws from that push, so the rail always
-    // shows what the file says.
+    // Layer 3, view partial. The rail list in force (oculus's `rail:` with the open workspace
+    // file's entries laid over it by page) as the Settings view edits it: one row per button with
+    // its label, icon and page and the chord and heading glyph of its group in the view catalogue,
+    // whose heading is the label, the controls that move a row and take it away, and Save, which
+    // writes the list through the `rail` write of api/write into the workspace file's `settings:`.
+    // The watcher pushes the file back within a second, and the rail redraws from that push, so
+    // the rail always shows the list in force.
+    //
+    // The rows are drawn under a disclosure line (editors/Fold.svelte) with the row's title and
+    // their number, folded at first past five rows; the problems and the actions stay drawn under a
+    // folded line, and an edit keeps the line unfolded.
     //
     // A sentence under the heading says what a row is, and each field has its word before it on
     // the same line. The word is decoration beside a field whose accessible name already holds it,
@@ -47,7 +52,10 @@
         type RailProblem
     } from '$lib/state/workbench/navigation/rail';
     import { t } from '$lib/state/shared/words/text';
+    import { RAIL_ROW } from '$lib/state/system/config/groups';
+    import { heldFold, withFold } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
+    import Fold from './editors/Fold.svelte';
 
     const {
         entities: { config },
@@ -56,7 +64,16 @@
         writes: { writeRail }
     } = useState();
 
-    let { id }: { id: string } = $props();
+    type Props = {
+        /** The Settings tab's instance id. */
+        id: string;
+        /** The rail row's title, which the disclosure line carries. */
+        title: string;
+        /** Whether the query stands and is found inside the rail list. */
+        searched: boolean;
+    };
+
+    let { id, title, searched }: Props = $props();
 
     const merged = $derived(config()?.config);
     /** Whether the configuration has been read, before which the file's list is not known. */
@@ -75,10 +92,17 @@
     /** The line under the list after a save: what it did, or why it did not. */
     let outcome = $state('');
 
-    /** Put the list being typed in the tab's state. A list equal to the file's is no draft. */
+    /**
+     * Put the list being typed in the tab's state, and keep the line unfolded. A list equal to the
+     * one in force is no draft.
+     */
     function edit(next: RailEntry[]): void {
         outcome = '';
-        const held = instanceState(id);
+        const kept = instanceState(id);
+        const held =
+            heldFold(kept, RAIL_ROW, 'entries') === undefined
+                ? withFold(kept, RAIL_ROW, 'entries', false)
+                : kept;
         setInstanceState(id, withRailDraft(held, sameRail(next, saved) ? null : next));
     }
 
@@ -141,83 +165,87 @@
 
 <div class="rail" data-settings="rail">
     <p class="about">{t('workbench.rail_about')}</p>
-    {#if read && rows.length === 0}
-        <p class="empty">{t('workbench.rail_empty')}</p>
-    {/if}
-    <!-- Keyed by position: a row being typed may carry the same page as another until it is
+    <Fold {id} row={RAIL_ROW} part="entries" {title} count={rows.length} {searched}>
+        {#if read && rows.length === 0}
+            <p class="empty">{t('workbench.rail_empty')}</p>
+        {/if}
+        <!-- Keyed by position: a row being typed may carry the same page as another until it is
          mended, and the rule names that row rather than the markup refusing it. -->
-    {#each rows as row, at (at)}
-        <div class="row" data-rail-row={at}>
-            <span class="field">
-                <span class="word" aria-hidden="true">{t('workbench.rail_word_label')}</span>
-                <TextInput
-                    value={row.label}
-                    label={t('workbench.rail_label', at + 1)}
-                    oninput={(value: string) => change(at, 'label', value)}
+        {#each rows as row, at (at)}
+            <div class="row" data-rail-row={at}>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_word_label')}</span>
+                    <TextInput
+                        value={row.label}
+                        label={t('workbench.rail_label', at + 1)}
+                        oninput={(value: string) => change(at, 'label', value)}
+                    />
+                </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_word_icon')}</span>
+                    <GlyphSelect
+                        value={row.glyph}
+                        label={t('workbench.rail_glyph', at + 1)}
+                        empty={t('workbench.rail_glyph_empty')}
+                        choices={glyphs}
+                        onchange={(value: string) => change(at, 'glyph', value)}
+                    />
+                </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_word_page')}</span>
+                    <Select
+                        value={row.page}
+                        label={t('workbench.rail_page', at + 1)}
+                        empty={t('workbench.rail_page_empty')}
+                        choices={pages.map((key) => ({ id: key, label: key }))}
+                        onchange={(value: string) => change(at, 'page', value)}
+                    />
+                </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_word_chord')}</span>
+                    <Select
+                        value={row.chord}
+                        label={t('workbench.rail_chord', at + 1)}
+                        empty={t('workbench.rail_chord_empty')}
+                        choices={LETTERS.map((letter) => ({ id: letter, label: letter }))}
+                        onchange={(value: string) => change(at, 'chord', value)}
+                    />
+                </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true"
+                        >{t('workbench.rail_word_group_glyph')}</span
+                    >
+                    <GlyphSelect
+                        value={row.group_glyph}
+                        label={t('workbench.rail_group_glyph', at + 1)}
+                        empty={t('workbench.rail_group_glyph_empty')}
+                        choices={glyphs}
+                        onchange={(value: string) => change(at, 'group_glyph', value)}
+                    />
+                </span>
+                <ToolButton
+                    label={t('workbench.rail_up', at + 1)}
+                    glyph="collapse"
+                    compact
+                    disabled={at === 0}
+                    onclick={() => edit(moveRailEntry(rows, at, -1))}
                 />
-            </span>
-            <span class="field">
-                <span class="word" aria-hidden="true">{t('workbench.rail_word_icon')}</span>
-                <GlyphSelect
-                    value={row.glyph}
-                    label={t('workbench.rail_glyph', at + 1)}
-                    empty={t('workbench.rail_glyph_empty')}
-                    choices={glyphs}
-                    onchange={(value: string) => change(at, 'glyph', value)}
+                <ToolButton
+                    label={t('workbench.rail_down', at + 1)}
+                    glyph="expand"
+                    compact
+                    disabled={at === rows.length - 1}
+                    onclick={() => edit(moveRailEntry(rows, at, 1))}
                 />
-            </span>
-            <span class="field">
-                <span class="word" aria-hidden="true">{t('workbench.rail_word_page')}</span>
-                <Select
-                    value={row.page}
-                    label={t('workbench.rail_page', at + 1)}
-                    empty={t('workbench.rail_page_empty')}
-                    choices={pages.map((key) => ({ id: key, label: key }))}
-                    onchange={(value: string) => change(at, 'page', value)}
+                <ToolButton
+                    label={t('workbench.rail_remove', at + 1)}
+                    glyph="trash"
+                    compact
+                    onclick={() => edit(rows.filter((_, index) => index !== at))}
                 />
-            </span>
-            <span class="field">
-                <span class="word" aria-hidden="true">{t('workbench.rail_word_chord')}</span>
-                <Select
-                    value={row.chord}
-                    label={t('workbench.rail_chord', at + 1)}
-                    empty={t('workbench.rail_chord_empty')}
-                    choices={LETTERS.map((letter) => ({ id: letter, label: letter }))}
-                    onchange={(value: string) => change(at, 'chord', value)}
-                />
-            </span>
-            <span class="field">
-                <span class="word" aria-hidden="true">{t('workbench.rail_word_group_glyph')}</span>
-                <GlyphSelect
-                    value={row.group_glyph}
-                    label={t('workbench.rail_group_glyph', at + 1)}
-                    empty={t('workbench.rail_group_glyph_empty')}
-                    choices={glyphs}
-                    onchange={(value: string) => change(at, 'group_glyph', value)}
-                />
-            </span>
-            <ToolButton
-                label={t('workbench.rail_up', at + 1)}
-                glyph="collapse"
-                compact
-                disabled={at === 0}
-                onclick={() => edit(moveRailEntry(rows, at, -1))}
-            />
-            <ToolButton
-                label={t('workbench.rail_down', at + 1)}
-                glyph="expand"
-                compact
-                disabled={at === rows.length - 1}
-                onclick={() => edit(moveRailEntry(rows, at, 1))}
-            />
-            <ToolButton
-                label={t('workbench.rail_remove', at + 1)}
-                glyph="trash"
-                compact
-                onclick={() => edit(rows.filter((_, index) => index !== at))}
-            />
-        </div>
-    {/each}
+            </div>
+        {/each}
+    </Fold>
     {#if problems.length > 0}
         <ul class="problems">
             {#each problems as problem (problem.index)}

@@ -36,11 +36,10 @@
         type DeckRef
     } from '$lib/state/life/present';
     import { readDeck } from '$lib/state/life/present.svelte';
-    import { savedTheme } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { drawSavedTheme } from '$lib/ui/theme/app-theme';
+    import { drawConfiguredTheme } from '$lib/ui/theme/app-theme';
     import type { PageData } from './$types';
 
     let { data }: { data: PageData } = $props();
@@ -181,7 +180,7 @@
     }
 
     onMount(() => {
-        void drawSavedTheme(document, savedTheme(localStorage.getItem('oculus.ui.v1')));
+        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined);
         const asked = new URLSearchParams(window.location.search);
         ref = { root: asked.get('root') ?? '', path: asked.get('path') ?? '' };
         name = presentName(ref);

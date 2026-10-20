@@ -215,7 +215,7 @@ function matchersOf(value: Entry['problemMatcher']): string[] | undefined {
  * the first part of a finding's field. A name repeated in the list keeps the first; a role (`build`
  * or `test`) already in `taken` is ignored on the entry that claims it again, which stays listed.
  */
-export function collect(
+function collect(
     items: unknown[],
     where: {
         repo: string;
@@ -294,7 +294,7 @@ function pendingTask(typed: Typed): AppTaskRef {
 }
 
 /** The finding for a whole file. */
-export function fileFinding(file: string, message: string): Reading {
+function fileFinding(file: string, message: string): Reading {
     return { commands: [], findings: [{ file, field: '', message }] };
 }
 
@@ -324,6 +324,11 @@ export function readListFile(file: string, key: string, words: ListWords): ListF
     } catch {
         return { findings: fileFinding(file, 'cannot be read').findings };
     }
+    return readListText(file, text, key, words);
+}
+
+/** The text of a file read down to the list under `key`, as readListFile reads the file's bytes. */
+function readListText(file: string, text: string, key: string, words: ListWords): ListFile {
     const lines = new LineCounter();
     const doc = parseDocument(text, { lineCounter: lines });
     if (doc.errors.length > 0) {
@@ -346,21 +351,47 @@ export function readListFile(file: string, key: string, words: ListWords): ListF
     };
 }
 
-/**
- * The commands of `<repo>/.oculus/commands.yml`. No file is no commands and no finding. A file
- * that is not YAML, or whose top is not a map, or whose `commands` is not a list is one finding
- * and no commands.
- */
-export function readCommandsFile(repo: string, taken: Taken): Reading {
-    const file = join(repo, COMMANDS_FILE);
-    const read = readListFile(file, 'commands', {
-        top: 'must be a map with a commands list',
-        list: 'must be a list of commands'
-    });
+/** The path of a repository's `.oculus/commands.yml`. */
+export function commandsFile(repo: string): string {
+    return join(repo, COMMANDS_FILE);
+}
+
+/** The words of a commands file that does not read down to its list. */
+const COMMANDS_WORDS: ListWords = {
+    top: 'must be a map with a commands list',
+    list: 'must be a list of commands'
+};
+
+/** The commands of a list file's read, or its findings. */
+function commandsOf(repo: string, file: string, read: ListFile, taken: Taken): Reading {
     if ('findings' in read) return { commands: [], findings: read.findings };
     return collect(
         read.items,
         { repo, file, label: 'commands', source: 'file', lineOf: read.lineOf, typed: true },
         taken
     );
+}
+
+/**
+ * The commands of `<repo>/.oculus/commands.yml`. No file is no commands and no finding. A file
+ * that is not YAML, or whose top is not a map, or whose `commands` is not a list is one finding
+ * and no commands.
+ */
+export function readCommandsFile(repo: string, taken: Taken): Reading {
+    const file = commandsFile(repo);
+    return commandsOf(repo, file, readListFile(file, 'commands', COMMANDS_WORDS), taken);
+}
+
+/** The commands a text of `<repo>/.oculus/commands.yml` would hold, read as the file is read. */
+export function readCommandsText(repo: string, text: string, taken: Taken): Reading {
+    const file = commandsFile(repo);
+    return commandsOf(repo, file, readListText(file, text, 'commands', COMMANDS_WORDS), taken);
+}
+
+/**
+ * Whether the findings of a commands file say the file itself does not read: it cannot be read,
+ * is not YAML, has no map at its top or a `commands` that is not a list.
+ */
+export function fileUnread(reading: Reading): boolean {
+    return reading.findings.some((one) => one.field === '' || one.field === 'commands');
 }

@@ -118,11 +118,15 @@
         return pool.state === 'failed' ? t('settings.list_failed', pool.error) : '';
     });
 
-    /** The choices of a choice: its list, or while the list is not there the held word alone. */
+    /**
+     * The choices of a choice under the words and groups their sources give them: its list, or
+     * while the list is not there the held word alone.
+     */
     const choices = $derived(
         (pool.state === 'ready' ? pool.items : held === '' ? [] : [held]).map((id) => ({
             id,
-            label: lists.labels.get(id) ?? id
+            label: pool.labels.get(id) ?? id,
+            group: pool.groups.get(id)
         }))
     );
 

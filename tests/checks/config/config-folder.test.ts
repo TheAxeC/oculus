@@ -1,8 +1,9 @@
 // Layer 4, tree check. The config folder oculus ships, read the way the server reads it: which keys
 // sit in which file, that no key is defined in two, that every file carries a description line, the
 // one the Settings view shows, and that the glyphs, the icons and the catalogue groups the files
-// name resolve. The machine's own local.yml is left out of every list here, since a checkout has
-// one or it has none and neither may change a result.
+// name resolve. The files are oculus's defaults (config/defaults/), the options files that
+// describe them (config/options/), the catalogs, the schemas and the texts; options/local.yml is
+// the description of a hub's local.yml keys and holds no machine's values.
 
 import {
     existsSync,
@@ -23,11 +24,11 @@ import {
     engineDir,
     glyphCatalog,
     iconCatalog,
-    iconFindings,
     iconSet,
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
+import { iconFindings } from '../../../src/lib/data/sources/config/catalogs.ts';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
@@ -98,7 +99,7 @@ function glyphReaders(engine: string): Set<string> {
         else if (typeof value === 'object' && value !== null) Object.values(value).forEach(values);
     };
     walk(join(engine, 'config'), (file) => {
-        if (!file.endsWith('.yml') || file.endsWith(LOCAL_NAME)) return;
+        if (!file.endsWith('.yml')) return;
         if (file.endsWith('glyphs.yml') || file.endsWith('icons.yml')) return;
         values(parse(readFileSync(file, 'utf8')));
     });
@@ -108,24 +109,26 @@ function glyphReaders(engine: string): Set<string> {
 /** Every description key opens with this, which is what makes an orphan one findable. */
 const DESC_PREFIX = 'settings.desc_';
 
-/**
- * The tracked YAML of the config folder, in name order. The machine's own local.yml is left out: it
- * is in the folder on a machine that has made one and absent on a fresh clone, so a check over the
- * tracked files must not read it either way.
- */
+/** The folders of the config folder whose files merge into one map, the texts aside. */
+const MERGED = ['defaults', 'options', 'catalogs', 'schemas'];
+
+/** The YAML of the merged folders of the config folder, named relative to it, in name order. */
 function tracked(dir: string): string[] {
-    const own = (at: string, prefix: string): string[] =>
+    return MERGED.flatMap((at) =>
         readdirSync(join(dir, at))
-            .filter((name) => name.endsWith('.yml') && name !== LOCAL_NAME)
-            .map((name) => `${prefix}${name}`);
-    return [...own('', ''), ...own('catalogs', 'catalogs/'), ...own('schemas', 'schemas/')].sort();
+            .filter((name) => name.endsWith('.yml'))
+            .map((name) => `${at}/${name}`)
+    ).sort();
 }
 
 describe("oculus's own config directory", () => {
-    /** Every non-text top-level key, by its root config file. */
+    /** Every non-text top-level key, by the file of the config folder that defines it. */
     const EXPECTED: Record<string, string[]> = {
-        'appearance.yml': [
+        'defaults/appearance.yml': [
             'themes',
+            'theme',
+            'text_size',
+            'rice',
             'wallpaper',
             'crt',
             'code_theme',
@@ -135,8 +138,8 @@ describe("oculus's own config directory", () => {
             'wrap_tabs',
             'terminal'
         ],
-        'present.yml': ['defaults'],
-        'behavior.yml': [
+        'defaults/present.yml': ['defaults'],
+        'defaults/behavior.yml': [
             'read_limits',
             'context_window',
             'usage_tiers',
@@ -161,7 +164,8 @@ describe("oculus's own config directory", () => {
             'lint',
             'literature',
             'open',
-            'apps'
+            'apps',
+            'status_bar'
         ],
         'catalogs/agents.yml': ['agents'],
         'catalogs/file-nesting.yml': ['patterns'],
@@ -169,7 +173,7 @@ describe("oculus's own config directory", () => {
         'catalogs/icons.yml': ['icons'],
         'catalogs/latex.yml': ['latex_editing'],
         'catalogs/unimath.yml': ['latex_unimath'],
-        'layout.yml': [
+        'defaults/layout.yml': [
             'rail',
             'nav_groups',
             'direct_chord',
@@ -184,17 +188,21 @@ describe("oculus's own config directory", () => {
         ],
         'schemas/cpp-schema.yml': ['cpp_schema'],
         'schemas/deck-schema.yml': ['deck_schema'],
-        'schemas/manifest-schema.yml': ['manifest_schema'],
+        'schemas/manifest-schema.yml': ['manifest_schema', 'groups'],
         'catalogs/meta.yml': ['meta'],
-        'catalogs/options.yml': ['options'],
-        'sources.yml': [
+        'defaults/sources.yml': [
             'scan',
             'new_project_dir',
             'collections',
             'career_file',
+            'publications_file',
+            'linkedin_dir',
             'portfolio_deck',
             'memories_dir',
             'wallpaper_dir',
+            'bookmarks',
+            'schedules',
+            'apps_dir',
             'repository_scan_depth',
             'languages'
         ],
@@ -217,6 +225,22 @@ describe("oculus's own config directory", () => {
             'radar_buckets'
         ]
     };
+
+    /**
+     * The options files, one per defaults file and one for a hub's local.yml, each holding
+     * `options:` and `groups:`, which the merge reads into its own two keys.
+     */
+    const OPTION_FILES = [
+        'options/appearance.yml',
+        'options/behavior.yml',
+        'options/layout.yml',
+        'options/local.yml',
+        'options/present.yml',
+        'options/sources.yml'
+    ];
+
+    /** The keys of the merged map the options folder fills. */
+    const OPTION_KEYS = ['options', 'option_groups'];
 
     const CATALOG_FILES = [
         'app.yml',
@@ -330,7 +354,9 @@ describe("oculus's own config directory", () => {
 
     it('holds exactly the expected top-level keys, and no more', () => {
         const { config } = loadConfig(engineDir());
-        const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
+        const expected = [
+            ...new Set([...Object.values(EXPECTED).flat(), ...OPTION_KEYS, 'text'])
+        ].sort();
         expect(Object.keys(config).sort()).toEqual(expected);
     });
 
@@ -354,8 +380,8 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const catalog = textCatalog(config);
         const dir = join(engineDir(), 'config');
-        // The machine's own file is described too, and this checkout holds one or it does not, so
-        // it is named here rather than read off the disk.
+        // A defaults file and its options file share a name, and so one description; the hub's
+        // settings file is described too and lies outside the folder.
         const files = tracked(dir);
         const missing = files.filter((name) => !(descriptionKey(name) in catalog));
         expect(missing).toEqual([]);
@@ -365,7 +391,7 @@ describe("oculus's own config directory", () => {
             .filter((key) => key.startsWith(DESC_PREFIX))
             .sort();
         expect(described).toEqual(
-            [...files, LOCAL_NAME, HUB_FILE].map((name) => descriptionKey(name)).sort()
+            [...new Set([...files, HUB_FILE].map((name) => descriptionKey(name)))].sort()
         );
     });
 
@@ -772,6 +798,11 @@ describe("oculus's own config directory", () => {
                 seen[key] = name;
             }
         }
-        expect(tracked(dir)).toEqual(Object.keys(EXPECTED).sort());
+        for (const name of OPTION_FILES) {
+            const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
+            expect(Object.keys(parsed).sort(), name).toEqual(['groups', 'options']);
+        }
+        for (const key of OPTION_KEYS) expect(seen[key]).toBe(undefined);
+        expect(tracked(dir)).toEqual([...Object.keys(EXPECTED), ...OPTION_FILES].sort());
     });
 });

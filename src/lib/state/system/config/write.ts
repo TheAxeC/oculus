@@ -1,15 +1,15 @@
 // Layer 2, client state. What the Settings view writes. `commit` turns what a control holds (the
 // text of a field, the boolean of a toggle, the word of a choice, the hex of a colour) into the
 // value to write, or into the message saying why nothing is written; the rules are the control's
-// own (editors/fields.ts). `createRowWriter` is the write sequence of the rows of
-// one view: it sends a value through the `writeConfigKey` it is given, reads the answer by its
-// shape, and keeps for each row the message, the value the control shows while the write is out and
-// the last value sent. It is a plain closure with no runes; the view hands it a callback that
-// redraws.
+// own (editors/fields.ts). `createRowWriter` is the write sequence of the rows of one view: it
+// sends a value through the `writeConfigKey` it is given, and a Reset through the `resetConfig`,
+// which takes the user's value out of its file; it reads the answer by its shape, and keeps for
+// each row the message, the value the control shows while the write is out and the last value
+// sent. It is a plain closure with no runes; the view hands it a callback that redraws.
 //
-// A value that equals the file's and equals the last value sent for the key is not sent. A later
-// write of a key supersedes an earlier one, so the answer of the earlier, arriving after, changes
-// nothing the later set. A view that is closed ignores every answer still on its way.
+// A value that equals the one in force and equals the last value sent for the key is not sent. A
+// later write of a key supersedes an earlier one, so the answer of the earlier, arriving after,
+// changes nothing the later set. A view that is closed ignores every answer still on its way.
 
 import { isEqual } from 'lodash-es';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
@@ -22,7 +22,10 @@ import type { ConfigRow } from './rows.ts';
 /** The write of one option: the client writes store's `writeConfigKey`. */
 export type WriteConfigKey = (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
 
-export { decimalOf, type Committed } from './editors/fields.ts';
+/** The reset of one option: the client writes store's `resetConfig`. */
+export type ResetConfig = (file: string, key: string) => Promise<WriteAnswer>;
+
+export { type Committed } from './editors/fields.ts';
 
 /**
  * The value a control's input makes for a row, or why none is: the rules of the row's control
@@ -48,7 +51,7 @@ export function answered(answer: WriteAnswer, row: ConfigRow): Message | null {
 export type RowWriter = {
     /** Write what a control holds for a row, or say why it is not written. */
     submit: (row: ConfigRow, input: string | boolean) => Promise<void>;
-    /** Write the row's default. */
+    /** Take the user's value of the row out of its file, so the default is in force. */
     reset: (row: ConfigRow) => Promise<void>;
     /** The value the control shows while a write is out and until the file holds it. */
     shown: (row: ConfigRow) => unknown;
@@ -66,6 +69,7 @@ export type RowWriter = {
  */
 export function createRowWriter(
     write: WriteConfigKey,
+    reset: ResetConfig,
     changed: () => void,
     lists: () => Lists
 ): RowWriter {
@@ -77,20 +81,24 @@ export function createRowWriter(
     /** Whether the sequence was closed, read afresh after every wait. */
     const stopped = (): boolean => closed;
 
-    async function send(row: ConfigRow, value: unknown): Promise<void> {
-        // A key the file lacks is written only where the hub's settings file can take it, which
-        // adds the key.
-        if (closed || (row.state === 'missing' && row.hub === null)) return;
+    /**
+     * Send a value, or with `resetting` the reset, which shows the default while it is out. A
+     * reset is sent while the file holds the key, whatever the value in force is.
+     */
+    async function send(row: ConfigRow, value: unknown, resetting = false): Promise<void> {
+        if (closed) return;
         const key = row.id;
         const sent = !last.has(key) || isEqual(last.get(key), value);
-        if (isEqual(value, row.value) && sent) return;
+        if (resetting ? !row.own : isEqual(value, row.value) && sent) return;
         const turn = (sequence.get(key) ?? 0) + 1;
         sequence.set(key, turn);
         last.set(key, value);
         showing.set(key, { value, base: row.value });
         saying.delete(key);
         changed();
-        const answer = await write(row.file, row.key, value);
+        const answer = resetting
+            ? await reset(row.file, row.key)
+            : await write(row.file, row.key, value);
         if (stopped() || sequence.get(key) !== turn) return;
         const said = answered(answer, row);
         if (said !== null) {
@@ -126,7 +134,7 @@ export function createRowWriter(
 
     return {
         submit,
-        reset: (row) => send(row, row.default),
+        reset: (row) => send(row, row.default, true),
         shown,
         said: (row) => saying.get(row.id) ?? null,
         clear,

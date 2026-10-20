@@ -8,11 +8,12 @@
    one palette class; the rice palettes additionally carry `rice`, which holds the shape they share
    (square corners, no shadow, monospace chrome, one step down the type scale). `crt` is an
    independent overlay that goes on any of them. Two classes go on a rice palette's body only when
-   the reader turns its toggle off in Settings, This browser: `rice-plain` draws the buttons, chips
-   and tags without brackets, and `rice-sans` draws the chrome in the default sans font. A rule
-   that belongs to one of the toggles selects `body.rice:where(:not(<class>))`.
+   the reader turns its option off (the Settings view's option, written into the workspace file's
+   `settings:`): `rice-plain`, for `rice.brackets` off, draws the buttons, chips and tags without
+   brackets, and `rice-sans`, for `rice.monospace` off, draws the chrome in the default sans font.
+   A rule that belongs to one of the toggles selects `body.rice:where(:not(<class>))`.
    The theme names and the class string each one puts on the body are the `themes:` list of
-   config/appearance.yml; light is :root alone and carries no class. */
+   config/defaults/appearance.yml; light is :root alone and carries no class. */
 
 body.dark {
     color-scheme: dark;
@@ -68,10 +69,11 @@ body.rice {
     font-size: var(--fs-md);
 }
 
-/* The monospace chrome, which the Monospace toggle of Settings, This browser takes away: its body
-   class `rice-sans` leaves `--font-ui` and the body's font at the default sans font of
-   tokens.css, while editors, code and terminals keep `--font-mono`. `:where` keeps the rule's
-   weight that of `body.rice`, so the rules of the components weigh against it as before. */
+/* The monospace chrome, which the option `rice.monospace` off takes away (the Settings view's
+   option, written into the workspace file's `settings:`): its body class `rice-sans` leaves
+   `--font-ui` and the body's font at the default sans font of tokens.css, while editors, code and
+   terminals keep `--font-mono`. `:where` keeps the rule's weight that of `body.rice`, so the rules
+   of the components weigh against it as they do against `body.rice`. */
 body.rice:where(:not(.rice-sans)) {
     --font-ui: var(--font-mono);
     font-family: var(--font-mono);

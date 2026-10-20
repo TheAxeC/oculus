@@ -81,6 +81,17 @@ export function joinPath(dir: string, path: string): string {
     return base === '/' ? `/${below}` : `${base}/${below}`;
 }
 
+/** An absolute path with its `.` and `..` segments folded away, for a path joined from two. */
+export function foldedPath(path: string): string {
+    const kept: string[] = [];
+    for (const part of path.split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part === '..') kept.pop();
+        else kept.push(part);
+    }
+    return `/${kept.join('/')}`;
+}
+
 /**
  * The path of a target below a folder: `''` for the folder itself, the path under it for anything
  * below it, and null outside it, a sibling whose name starts with the folder's name included. An

@@ -11,7 +11,7 @@
 
 import type { NestingRule } from '../../../../data/helpers/files/nesting.ts';
 
-export { fileIconAtArrow } from '../../../../data/sources/config/settings.ts';
+export { fileIconAtArrow } from '../../../../data/sources/config/settings/files.ts';
 import type { Naming } from '../naming.ts';
 import {
     childPath,

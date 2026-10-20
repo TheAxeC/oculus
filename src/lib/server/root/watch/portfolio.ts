@@ -46,38 +46,25 @@ import {
     mutedSignatures
 } from '../../content/audit/scan.ts';
 import {
-    behaviorFindings,
     configDir,
-    iconFindings,
     iconSet,
-    languageFindings,
     localFindings,
-    latexEditingFindings,
-    latexUnimathFindings,
-    nestingFindings,
-    optionFindings,
-    schemaFindings,
     loadConfig,
     sourceFile,
-    settingFindings,
     textCatalog,
-    themeFindings,
     type IconMemory
 } from '../../../data/sources/config.ts';
 import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { platformText } from '../../../data/places/platform.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
-import { docFindings, layoutFile } from '../../content/docs.ts';
 import { picturesOf } from '../../content/images.ts';
 import { wallpaperFindings } from '../../content/wallpaper.ts';
-import { railFindings } from '../../../data/sources/config/rail.ts';
-import { countsFindings } from '../../../data/sources/config/sections/counts.ts';
-import { boardsFindings } from '../../../data/sources/config/sections/boards.ts';
 import { placeClones } from '../../../data/sources/clones.ts';
 import { allHubs, primaryConfig, repositoriesOf } from '../../files/roots.ts';
 import { engineConfigIn } from '../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../files/workspace/open.ts';
-import { hubOption } from '../../files/workspace/paths.ts';
+import { configOptions } from '../../files/workspace/paths.ts';
+import { readerFindings } from '../process/context/findings.ts';
 import type { MachineProblem } from '../../../data/sources/config/machine.ts';
 import { workspaceFindings } from '../../files/workspace/words.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds/feeds.ts';
@@ -464,6 +451,22 @@ export function watchPortfolio(
     };
 
     /**
+     * The open workspace file, whose `settings:` is the last layer of the merged config: watched as
+     * a config change through its folder, as a hub's settings file is, and moved to the file a
+     * rebuild finds open, the handle on the file before closed. A file whose folder could not be
+     * watched is tried again at the next rebuild.
+     */
+    let settingsFile: string | null = null;
+    const followSettings = (file: string | null): void => {
+        if (file !== settingsFile && settingsFile !== null) {
+            handles.get(settingsFile)?.close();
+            handles.delete(settingsFile);
+        }
+        settingsFile = file;
+        if (file !== null) openFile(file, () => true);
+    };
+
+    /**
      * The parent of one root, watched flat and filtered on the root's own name, so the root being
      * removed or made again queues the rebuild that drops or reads its card. A parent that has
      * gone takes its handle with it, and a missing parent is tried again at the next rebuild.
@@ -595,9 +598,10 @@ export function watchPortfolio(
 
     /**
      * One rebuild. `withConfig` also republishes the config channel. The directory set is derived
-     * again from the config that was just read, so a scan path added to layout.yml is watched from
-     * the next rebuild on; a path removed keeps its handle until the watcher is closed. Unopened
-     * directories are retried, and opening a feed directory republishes its current contents.
+     * again from the config that was just read, so a path added to the `scan` option (the primary
+     * hub's `.oculus/config.yml`, over oculus's sources.yml) is watched from the next rebuild on; a
+     * path removed keeps its handle until the watcher is closed. Unopened directories are retried,
+     * and opening a feed directory republishes its current contents.
      */
     const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
@@ -605,7 +609,8 @@ export function watchPortfolio(
             // on disk, and no request is in flight when it runs.
             const workspace = paths.open();
             const primaryDir = workspace.primaryDir;
-            const { config, findings, from } = loadConfig(paths.engine, hubOption(primaryDir));
+            const { config, findings, from } = loadConfig(paths.engine, configOptions(workspace));
+            followSettings(workspace.file);
             // The hubs other than the primary are read again at every rebuild, each with its own
             // settings, so a folder that left the workspace or lost its config is out of this
             // build. The settings are the parse the server keeps for each hub, which is made again
@@ -631,10 +636,10 @@ export function watchPortfolio(
                 // checked here rather than in loadConfig, which merges files and never touches the
                 // disk: a root whose directory is not on this machine, a document with no file at
                 // its path, and an icon the installed package does not ship are all facts about the
-                // machine, and they belong on the same channel as the rest. The rail list of
-                // layout.yml is checked here with them, against the arrangements and the glyphs of
-                // the same merged config, so its findings reach the page with the config they
-                // are about.
+                // machine, and they belong on the same channel as the rest. The other readers of
+                // the merged config (process/context/findings.ts) are checked here with them, the
+                // rail list against the arrangements and the glyphs of the same merged config, so
+                // their findings reach the page with the config they are about.
                 paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
@@ -645,23 +650,14 @@ export function watchPortfolio(
                     findings: [
                         ...findings,
                         ...others.flatMap((one) => one.findings),
-                        ...iconFindings(paths.engine, config),
-                        ...behaviorFindings(paths.engine, config),
-                        ...settingFindings(paths.engine, config),
-                        ...languageFindings(paths.engine, config),
-                        ...latexEditingFindings(paths.engine, config),
-                        ...latexUnimathFindings(paths.engine, config),
-                        ...nestingFindings(paths.engine, config),
-                        ...optionFindings(paths.engine, config),
-                        ...schemaFindings(paths.engine, config),
-                        ...themeFindings(paths.engine, config),
+                        ...readerFindings({ engine: paths.engine, hub: primaryDir, from }, config),
                         ...localFindings(config, paths.problems()),
                         ...workspaceFindings(workspace, textCatalog(config)),
                         ...(paths.held?.() ?? []),
                         ...wallpaperFindings(
                             config,
                             picturesOf(allHubs(config, workspace, paths.settings)),
-                            sourceFile(paths.engine, primaryDir, from, 'wallpaper'),
+                            sourceFile(paths.engine, primaryDir, from, 'wallpaper.image'),
                             textCatalog(config)
                         ),
                         ...(primaryDir === null
@@ -690,19 +686,7 @@ export function watchPortfolio(
                                       )
                                   },
                                   primaryDir
-                              )),
-                        ...docFindings(
-                            config,
-                            primaryDir,
-                            sourceFile(paths.engine, primaryDir, from, 'docs')
-                        ),
-                        ...railFindings(config, layoutFile(paths.engine), textCatalog(config)),
-                        ...boardsFindings(config, layoutFile(paths.engine), textCatalog(config)),
-                        ...countsFindings(
-                            config,
-                            sourceFile(paths.engine, primaryDir, from, 'counts'),
-                            textCatalog(config)
-                        )
+                              ))
                     ]
                 };
                 hub.publish('config', payload);

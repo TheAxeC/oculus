@@ -26,6 +26,7 @@ import {
 } from '../../../../data/sources/config.ts';
 import type { Root } from '../../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
+import { perOculus } from '../../../files/workspace/paths.ts';
 import { defaultHistoryDir } from '../../../files/fs/history.ts';
 import { approveApp, defaultApprovalsPath, revokeApp } from '../../approvals/approvals.ts';
 import type { AppHosts } from '../host/manager.ts';
@@ -116,8 +117,8 @@ export function routeOptions(
         privateReal: () =>
             closedToApps({
                 home: server.home ?? homedir(),
-                config: configDir(server.engine),
                 local: server.local,
+                perOculus: perOculus(server.workspace.open().primaryDir, config()),
                 roots: server.workspace.open().roots
             }),
         text: () => textCatalog(config()),

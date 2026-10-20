@@ -1,0 +1,749 @@
+# ===========================================================================
+# options/behavior.yml
+# Every option of defaults/behavior.yml described once, and a help line for each group of its dotted options, in the shape the head of options/appearance.yml describes. loadConfig() reads it into the merged map's `options` and `option_groups` under behavior.yml.
+# ===========================================================================
+
+options:
+    read_limits:
+        heading: boards
+        section: Audit checks
+        help: "Soft limits, in characters, for the audit's readability warnings. A manifest field longer than its limit earns a finding, and a field with no limit here is not checked. A workspace file's settings: overrides a field's limit, adds one for a field with none, and takes one of oculus's out with <field>: null."
+        fields:
+            key:
+                help: the manifest field, status.line, next, latest or eli5, or results for each entry of the results list
+                control: choice
+                options: [status.line, next, latest, eli5, results]
+            value:
+                help: the most characters the field may hold before it earns a finding
+                control: number
+    audit_ignore:
+        heading: boards
+        section: Audit checks
+        help: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
+        control: parked
+    focus.stale_lag_days:
+        heading: boards
+        section: Audit checks
+        help: How many days a project's manifest `updated` date may trail the newest content of the project before the audit and the Focus board call the manifest behind.
+        control: number
+    context_window:
+        heading: sessions
+        section: Session meter
+        help: The token window the session detail meter measures the last turn against, unless the transcript names its own window. A value that is not above zero leaves the meter without a window.
+        control: number
+    usage_tiers:
+        heading: sessions
+        section: Usage figures
+        help: "The words shown for the subscription tier ids that the supported command-line agents report. A workspace file's settings: overrides the words of a tier id, adds a tier id, and takes one of oculus's out with <tier id>: null."
+        fields:
+            key:
+                help: a tier id as the agent reports it
+                control: text
+                from: usage_tiers
+            value: the words shown for that tier
+    usage_refresh_min:
+        heading: sessions
+        section: Usage figures
+        help: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The Usage view reads the same number as its cadence.
+        control: number
+        min: 1
+        max: 35791
+    usage_refresh_model:
+        heading: sessions
+        section: Usage figures
+        help: The model the hidden usage sessions are started with, passed to the Claude command line as --model.
+        control: choice
+        from: models
+    focus.refresh_stale_days.litwatch:
+        heading: boards
+        section: Thresholds and horizons
+        help: Days after which the Focus refresh strip prompts to refresh the literature radar, counted from meta.last_run of the radar file. A radar that has never run is prompted for while this key is present. Removing the key stops the prompt for this feed.
+        control: number
+    focus.refresh_stale_days.inbox:
+        heading: boards
+        section: Thresholds and horizons
+        help: Days after which the Focus refresh strip prompts to triage the inbox again, counted from the run date the triage skill writes at the top of triage.json under mail_dir. A note that the page's triage action writes keeps that date, so it does not reset the count, and with no run date there is no prompt. Removing the key stops the prompt for this feed.
+        control: number
+    focus.refresh_stale_days.scout:
+        heading: boards
+        section: Thresholds and horizons
+        help: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
+        control: number
+    focus.deadline_horizon_days:
+        heading: boards
+        section: Thresholds and horizons
+        help: How many days ahead the week's ticker lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, tasks, positions and joint work.
+        control: number
+    focus.leads_horizon_days:
+        heading: boards
+        section: Thresholds and horizons
+        help: How many days ahead the week's ticker lists the deadline of an open position lead from the leads file.
+        control: number
+    focus.conf_horizon_months:
+        heading: boards
+        section: Thresholds and horizons
+        help: How many whole months ahead the week's ticker lists a conference call that has a usual month but no exact date. 1 lists this month and the next.
+        control: number
+    focus.venue_conc_warn:
+        heading: boards
+        section: Thresholds and horizons
+        help: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and the board statistics flag the venue.
+        control: number
+    focus.linkedin_cadence_days:
+        heading: boards
+        section: Thresholds and horizons
+        help: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
+        control: number
+    focus.ticker_categories:
+        heading: boards
+        section: Command center
+        help: The command center's deadline groups, in the order it lists them. A category no row of `focus.ticker_sources` gives draws no group, and a dated line whose category this list does not hold is not listed.
+        control: list
+    focus.ticker_sources:
+        heading: boards
+        section: Command center
+        help: "Where the command center's dated lines come from, in the order they are read: each row a source and the category its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub. A source no row names is not read. A workspace file's settings: overrides a row by its collection, adds a row for a new collection, and takes one of oculus's rows out with { collection: <source>, removed: true }; the rows it names are read first, in its order."
+        key: collection
+        fields:
+            collection:
+                help: the source, projects, funding, leads, venues or the key of a collection of the hub
+                control: text
+            category:
+                help: the category of `focus.ticker_categories` the source's lines carry
+                control: text
+            undated:
+                help: true when an undated entry of the collection is open work, listed among the tasks; an undated entry of any other source is left out
+                control: toggle
+    focus.applications_open:
+        heading: boards
+        section: Command center
+        help: The statuses of an Applications entry that is open, compared without regard to case. The Focus board's positions column shows those entries and the Applications tab counts them.
+        control: multi
+        from: entry_statuses
+    focus.education_open:
+        heading: boards
+        section: Command center
+        help: The statuses of an education entry that is running, compared without regard to case. The Focus board's teaching column shows those entries.
+        control: multi
+        from: entry_statuses
+    focus.applications_sent:
+        heading: boards
+        section: Command center
+        help: The statuses of an Applications entry that is out for a decision, compared without regard to case. The Focus board's Awaiting box lists those entries under Applications.
+        control: multi
+        from: entry_statuses
+    file_index.enabled:
+        heading: boards
+        section: File finder
+        help: Whether project cards list the project's files. false turns the file finder off.
+        control: toggle
+    file_index.max_per_project:
+        heading: boards
+        section: File finder
+        help: How many files the finder lists for one project, the newest first. A value that is not a number above zero means 400.
+        control: number
+    file_index.ext:
+        heading: boards
+        section: File finder
+        help: The extensions, each with its dot, of the files the finder lists, compared in lower case. An empty list means the built-in list of common document and code extensions.
+        control: list
+    slurm.resource:
+        heading: cluster
+        section: Slurm
+        help: "The cluster the Live HPC poller queries: the key of a cluster entry of the resources registry, whose host is the ssh alias. This is a setting of the hub, kept in the hub's .oculus/config.yml. The machine's own hpc_host in local.yml takes precedence. Empty sets no cluster, and the HPC view says so and polls nothing. A key that names no cluster with a host shows why in the HPC view."
+        control: choice
+        empty: no cluster
+        from: clusters
+    slurm.days:
+        heading: cluster
+        section: Slurm
+        help: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm.
+        control: number
+        min: 0
+        max: 3650
+        whole: true
+    slurm.poll_min:
+        heading: cluster
+        section: Slurm
+        help: Minutes between two Live HPC polls of the job queue.
+        control: number
+        min: 1
+        max: 35791
+    slurm.quota_min:
+        heading: cluster
+        section: Slurm
+        help: Minutes between two reads of the cluster's disk quota.
+        control: number
+        min: 1
+        max: 35791
+    slurm.prewarm:
+        heading: cluster
+        section: Slurm
+        help: Whether the poller resolves the log paths of finished jobs behind the page, so that opening a log is quick. false defers that resolution.
+        control: toggle
+    processes.patterns:
+        heading: terminal
+        section: Processes
+        help: The program names the Processes view lists beside oculus's own terminals. A name matches a process whose program, or whose first argument, has that file name.
+        control: list
+        form: program
+    chat.model:
+        heading: sessions
+        section: In-page chat
+        help: The model an in-page chat session is started with, passed to the Claude command line. Empty leaves the choice to the command line.
+        control: choice
+        from: models
+        empty: the command line chooses the model
+    calendar.poll_min:
+        heading: calendar
+        section: Calendar reads
+        help: Minutes between two reads of the calendar accounts.
+        control: number
+        min: 1
+        max: 35791
+    calendar.days_back:
+        heading: calendar
+        section: Calendar reads
+        help: How many days before now the calendar window opens.
+        control: number
+        min: 0
+        max: 3650
+        whole: true
+    calendar.days_ahead:
+        heading: calendar
+        section: Calendar reads
+        help: How many days after now the calendar window closes.
+        control: number
+        min: 0
+        max: 3650
+        whole: true
+    mail.poll_min:
+        heading: calendar
+        section: Mail reads
+        help: Minutes between two reads of the inbox plate.
+        control: number
+        min: 1
+        max: 35791
+    mail.per_signal:
+        heading: calendar
+        section: Mail reads
+        help: How many threads each of the plate's three signals is read at most.
+        control: number
+        min: 1
+        max: 500
+        whole: true
+    editor.paint_limit_kb:
+        heading: editor
+        section: Source editor
+        help: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size.
+        control: number
+        min: 1
+    editor.tab_size:
+        heading: editor
+        section: Source editor
+        help: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
+        control: number
+        min: 1
+        max: 8
+        whole: true
+    editor.insert_spaces:
+        heading: editor
+        section: Source editor
+        help: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
+        control: toggle
+    editor.word_wrap:
+        heading: editor
+        section: Source editor
+        help: How the editor wraps a long line, VS Code's editor.wordWrap. off never wraps, on wraps at the width of the editor, wordWrapColumn wraps at column 80, and bounded wraps at the smaller of the editor's width and column 80. Alt+Z in a source tab switches the wrap of that tab. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
+        control: choice
+        options: ['off', 'on', wordWrapColumn, bounded]
+    editor.minimap:
+        heading: editor
+        section: Source editor
+        help: Whether the source editor draws the minimap, the overview of the file at its right edge, VS Code's editor.minimap.enabled. The diff editor draws its minimap as Monaco does.
+        control: toggle
+    editor.render_whitespace:
+        heading: editor
+        section: Source editor
+        help: Which spaces and tabs the editor draws as marks, VS Code's editor.renderWhitespace. none draws none, boundary draws all but single spaces between words, selection draws them inside a selection, trailing draws the ones at the end of a line, and all draws every one.
+        control: choice
+        options: [none, boundary, selection, trailing, all]
+    editor.sticky_scroll:
+        heading: editor
+        section: Source editor
+        help: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, from the symbols pyright, clangd and yaml-language-server answer for a Python, C, C++ or YAML file they serve, and from the braces of Java, Dart, R and Rite, and of C and C++ while no language server serves the file.
+        control: toggle
+    editor.suggest_details:
+        heading: editor
+        section: Source editor
+        help: Whether the suggest list opens with its side panel of descriptions shown. Ctrl+Space or Cmd+I while the list shows closes or opens the panel and writes that choice to this key, for every editor of every page.
+        control: toggle
+    editor.autosave:
+        heading: editor
+        section: Source editor
+        help: 'off: An editor with changes is never automatically saved. after_delay: An editor with changes is automatically saved after the configured editor.autosave_delay_ms. on_focus_change: An editor with changes is automatically saved when the editor loses focus, and every such editor is saved when the page loses focus.'
+        control: choice
+        options: ['off', after_delay, on_focus_change]
+    editor.autosave_delay_ms:
+        heading: editor
+        section: Source editor
+        help: Controls the delay in milliseconds after which an editor with unsaved changes is saved automatically. Only applies when editor.autosave is set to after_delay.
+        control: number
+        min: 0
+        whole: true
+    editor.trim_trailing_whitespace:
+        heading: editor
+        section: Source editor
+        help: When enabled, will trim trailing whitespace when saving a file.
+        control: toggle
+    editor.final_newline:
+        heading: editor
+        section: Source editor
+        help: When enabled, a save ends a last line of text with one line ending and takes off the empty lines after the last line that holds any character.
+        control: toggle
+    editor.languages:
+        heading: editor
+        section: Source editor
+        help: "The editor options of a language, by the editor's language name, as VS Code's per-language settings give them. A record sets any of the fields below for the files of that language and overrides the global key of the same name; a repository's .oculus/settings.yml has a languages key of the same records that overrides these for the files of that repository. A language the editor does not colour, a field not listed and a value outside its words or range are not read and are listed in the Findings view. A workspace file's settings: overrides a language's record, adds one for a language with none, and takes one of oculus's out with <language>: null."
+        fields:
+            key:
+                help: the language's name as the editor and the status bar show it
+                control: choice
+                from: languages
+            tab_size:
+                help: the width of one step of indentation, a whole number from 1 to 8
+                control: number
+                min: 1
+                max: 8
+                whole: true
+            insert_spaces:
+                help: true indents a file with no indented line with spaces, false with a tab
+                control: toggle
+            word_wrap:
+                help: off, on, wordWrapColumn or bounded
+                control: choice
+                options: ['off', 'on', wordWrapColumn, bounded]
+            rulers:
+                help: the columns that draw a vertical line, a list of whole numbers
+                control: list
+                items: number
+                min: 1
+                whole: true
+            format_on_save:
+                help: true formats the document with the language server before each save, false saves it as typed; a language whose server does not format, Python among them, saves as typed either way
+                control: toggle
+            trim_trailing_whitespace:
+                help: When enabled, will trim trailing whitespace when saving a file.
+                control: toggle
+            final_newline:
+                help: When enabled, a save ends a last line of text with one line ending and takes off the empty lines after the last line that holds any character.
+                control: toggle
+    latex.auto_build:
+        heading: editor
+        section: LaTeX
+        help: When a main file is built without being asked. on_file_change builds it when any file it includes changes on disk, whoever wrote the file (the editor, an agent, git), for the main files of the open LaTeX tabs and of the PDFs they build. on_save builds the main file the saved file belongs to when the file is saved in the editor. never builds only when asked. A build is in the background, and its errors and warnings reach the editor as markers when it ends.
+        control: choice
+        options: [on_file_change, on_save, never]
+    latex.auto_build_interval_ms:
+        heading: editor
+        section: LaTeX
+        help: The shortest time, in milliseconds, between the starts of two automatic builds of one main file. A change that comes while a build runs gives one build after it.
+        control: number
+        min: 1
+        whole: true
+    latex.recipe_default:
+        heading: editor
+        section: LaTeX
+        help: The recipe a build uses when the file names none and the reader asked for none. first is the first recipe of latex.recipes and last_used is the one the reader last asked for with Build with Recipe.
+        control: choice
+        options: [first, last_used]
+    latex.out_dir:
+        heading: editor
+        section: LaTeX
+        help: The folder a build writes the PDF, the log and the SyncTeX file to. %DIR% is the main file's own folder; any other value is a folder resolved from the main file's folder, which must stay under the served root.
+        control: text
+    latex.aux_dir:
+        heading: editor
+        section: LaTeX
+        help: The folder a build writes its auxiliary files to. %OUTDIR% is the output folder; any other value is resolved as latex.out_dir is.
+        control: text
+    latex.clean_and_retry:
+        heading: editor
+        section: LaTeX
+        help: true cleans the auxiliary files and builds once more after a build that ended in an error, as LaTeX Workshop does; a build the reader stopped is not retried.
+        control: toggle
+    latex.auto_clean:
+        heading: editor
+        section: LaTeX
+        help: Whether Clean runs after a build, by how the build ended. never does not clean; on_failed, on_succeeded and on_built clean after a failed build, a successful one, or either.
+        control: choice
+        options: [never, on_failed, on_succeeded, on_built]
+    latex.synctex_path:
+        heading: editor
+        section: LaTeX
+        help: Where the synctex program is, which finds the PDF position of a source line and the source line of a PDF click. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.reverse_synctex:
+        heading: editor
+        section: LaTeX
+        help: The click on a page of the PDF that opens the source at that place. ctrl_click is Cmd, or Ctrl, and a click; double_click is a double click. Any other click selects text and follows links.
+        control: choice
+        options: [ctrl_click, double_click]
+    latex.texcount_autorun:
+        heading: editor
+        section: LaTeX
+        help: on_save counts the words of the main file after each save of a LaTeX file, so the status bar's tooltip has the number; never counts only when asked.
+        control: choice
+        options: [never, on_save]
+    latex.context_menu:
+        heading: editor
+        section: LaTeX
+        help: true adds Build and SyncTeX from Cursor to the editor's right-click menu of a LaTeX file.
+        control: toggle
+    latex.unimath_symbols:
+        heading: editor
+        section: LaTeX
+        help: Offer the Unicode math symbols in LaTeX completion, each with its glyph.
+        control: toggle
+    latex.includegraphics_preview:
+        heading: editor
+        section: LaTeX
+        help: 'Show the picture beside a file suggested inside \includegraphics.'
+        control: toggle
+    latex.recipes:
+        heading: editor
+        section: LaTeX
+        help: "The recipes a build can run, each a name and the tools it chains in order. A recipe whose name an earlier recipe took, one with no name, one that names no tool and one that names a tool latex.tools does not hold is not read and is listed in the Findings view. A workspace file's settings: overrides a recipe by its name, adds a recipe with a new name, and takes one of oculus's out with { name: <recipe>, removed: true }; the recipes it names come first, in its order."
+        key: name
+        fields:
+            name: the name the build asks for, which a % !LW recipe = <name> comment also names
+            tools:
+                help: the names of the tools the recipe runs one after the other
+                control: list
+    latex.tools:
+        heading: editor
+        section: LaTeX
+        help: "The tools recipes chain, each a program and its arguments. An argument may hold the placeholders %DOC%, %DOC_EXT%, %DOCFILE%, %DOCFILE_EXT%, %DIR%, %OUTDIR% and %AUXDIR%. A tool whose name an earlier tool took, or that has no name or no program, is not read and is listed in the Findings view. A workspace file's settings: overrides a tool by its name, adds a tool with a new name, and takes one of oculus's out with { name: <tool>, removed: true }; the tools it names come first, in its order."
+        key: name
+        fields:
+            name: the name recipes call the tool by
+            command: the program, found on PATH
+            args:
+                help: the arguments, one per item
+                control: list
+    latex.formatter:
+        heading: editor
+        section: LaTeX
+        help: The program Format Document runs on a .tex file, as LaTeX Workshop's latex-workshop.formatting.latex offers them. latexindent comes with TeX Live and MacTeX, tex-fmt and badness are installed on their own. none formats nothing and says so. The program reads the text and writes the formatted text back, with no shell and a 20 second limit.
+        control: choice
+        options: [none, latexindent, tex-fmt, badness]
+    latex.latexindent_path:
+        heading: editor
+        section: LaTeX
+        help: Where latexindent is, when latex.formatter is latexindent. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.tex_fmt_path:
+        heading: editor
+        section: LaTeX
+        help: Where tex-fmt is, when latex.formatter is tex-fmt. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.badness_path:
+        heading: editor
+        section: LaTeX
+        help: Where badness is, when latex.formatter is badness. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.texlab_path:
+        heading: editor
+        section: LaTeX
+        help: 'The texlab program the LaTeX language server runs. Empty: texlab on the PATH oculus was started with.'
+        control: path
+        empty: true
+    lint.chktex:
+        heading: editor
+        section: Linting
+        help: true runs ChkTeX on a .tex or .latex file when it is saved and when a tab of it with no unsaved text opens, and shows its findings in the editor and the Problems view.
+        control: toggle
+    lint.ruff:
+        heading: editor
+        section: Linting
+        help: true runs Ruff on a .py or .pyi file when it is saved and when a tab of it with no unsaved text opens, and shows its findings in the editor and the Problems view.
+        control: toggle
+    lint.eslint:
+        heading: editor
+        section: Linting
+        help: true runs the ESLint of the repository on a TypeScript, JavaScript or Svelte file under an eslint.config.* file, after the configuration is approved in the palette (:eslint-config), and shows its findings in the editor and the Problems view.
+        control: toggle
+    lint.shellcheck:
+        heading: editor
+        section: Linting
+        help: true runs ShellCheck on a .sh, .bash or .slurm file when it is saved and when a tab of it with no unsaved text opens, and shows its findings in the editor and the Problems view.
+        control: toggle
+    lint.writing:
+        heading: editor
+        section: Linting
+        help: true marks, in a Markdown or YAML file and in the comments of a code file, each character the hub's writing rules ban (em and en dashes, curly quotes, the ellipsis, arrows, the non-breaking space) and each Markdown paragraph broken across lines, in the editor and the Problems view, with a quick fix where the fix is exact. It runs no program.
+        control: toggle
+    lint.chktex_path:
+        heading: editor
+        section: Linting
+        help: 'Where ChkTeX is: an absolute path or one that starts with ~. Empty: ChkTeX on the PATH oculus was started with. A named path that cannot be used is reported as not found, and the PATH is not tried in its place.'
+        control: path
+        empty: true
+    lint.ruff_path:
+        heading: editor
+        section: Linting
+        help: 'Where Ruff is: an absolute path or one that starts with ~. Empty: Ruff on the PATH oculus was started with. A named path that cannot be used is reported as not found, and the PATH is not tried in its place.'
+        control: path
+        empty: true
+    lint.shellcheck_path:
+        heading: editor
+        section: Linting
+        help: 'Where ShellCheck is: an absolute path or one that starts with ~. Empty: ShellCheck on the PATH oculus was started with. A named path that cannot be used is reported as not found, and the PATH is not tried in its place.'
+        control: path
+        empty: true
+    lint.chktex_args:
+        heading: editor
+        section: Linting
+        help: The arguments ChkTeX runs with, as LaTeX Workshop's latex-workshop.linting.chktex.exec.args offers them. oculus adds the output format, -I0 and the .chktexrc it finds beside the file or in the root.
+        control: list
+    lint.writing_skip:
+        heading: editor
+        section: Linting
+        help: The globs of the files the writing rules leave alone, matched against the path from the file's root (a glob without a slash also matches a file name). A skipped file has no marks and no linter item. A file named glyphs.yml is skipped whatever this holds. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: list
+    lint.writing_glyphs:
+        heading: editor
+        section: Linting
+        help: The globs of the files that draw arrows as icons. The writing rules mark every banned character in them but arrows. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: list
+    writes.timeout_seconds:
+        heading: editor
+        section: Saving
+        help: Seconds a save waits for the server's answer before it is given up and its form says so. A value that is not above zero makes a save wait as long as the request does.
+        control: number
+    notes.autosave_ms:
+        heading: editor
+        section: Notes
+        help: Milliseconds a note of a hub's notes folder waits after the last keystroke before its tab saves it, whatever editor.autosave says. Closing the tab inside the wait saves first.
+        control: number
+    changes.keep:
+        heading: editor
+        section: Change log
+        help: How many changes the change log holds. Every write that changed something is recorded in ~/.oculus/changes.jsonl, or where the changes key of local.yml puts it, and the file is rewritten down to this number once it has grown past twice it.
+        control: number
+        min: 1
+        whole: true
+    files.confirm_delete:
+        heading: editor
+        section: Files
+        help: Whether moving a file or folder to the Trash in the Files view asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here.
+        control: toggle
+    files.file_icon_at_arrow:
+        heading: editor
+        section: Files
+        help: Whether a file's row in the Files view drops the empty slot of a folder's arrow, so the file's icon sits where its sibling folders' arrows sit. false lines its icon up with its sibling folders' icons, as VS Code's Explorer does.
+        control: toggle
+    git.message_model:
+        heading: editor
+        section: Git
+        help: The model the Changes section of the Session view asks for a suggested commit message. Empty uses the command line's own default model.
+        control: choice
+        from: models
+        empty: the command line's own default model
+    git.autofetch_minutes:
+        heading: editor
+        section: Git
+        help: Minutes between two automatic git fetch --prune of every repository oculus shows that has a remote, as VS Code's auto fetch. 0, the default, fetches only when Fetch is pressed; nothing else reaches a remote unasked. It is read again within a minute of a change.
+        control: number
+        min: 0
+        max: 35791
+        whole: true
+    search.max_hits:
+        heading: editor
+        section: Search
+        help: How many hits one answer of the Search view carries before it says it was cut.
+        control: number
+        min: 1
+        whole: true
+    search.timeout_s:
+        heading: editor
+        section: Search
+        help: Seconds one root's ripgrep search, or its list of file names, is given.
+        control: number
+        min: 1
+    search.max_names:
+        heading: editor
+        section: Search
+        help: How many file names the palette's file mode lists in all before it says the list was cut.
+        control: number
+        min: 1
+        whole: true
+    literature.timeout_s:
+        heading: editor
+        section: Literature search
+        help: Seconds one source of the Literature search is given to answer a request. A source that has not answered by then shows that it gave no answer in time.
+        control: number
+        min: 1
+        max: 120
+        whole: true
+    literature.per_source:
+        heading: editor
+        section: Literature search
+        help: How many hits one page of the Literature search asks of each source. Semantic Scholar takes at most 100 and Web of Science at most 50, so a larger page is cut to what the source takes.
+        control: number
+        min: 1
+        max: 100
+        whole: true
+    literature.cache_min:
+        heading: editor
+        section: Literature search
+        help: Minutes the server keeps a source's answer for the same request, so a search run again, or a source switched off and on, is not asked a second time. 0 keeps nothing.
+        control: number
+        min: 0
+        max: 1440
+        whole: true
+    open.program_ext:
+        heading: editor
+        section: Opening in programs
+        help: "The extensions a file may carry to be handed to a program on this machine, each with the bundle id of the one application it opens in on macOS; on Linux the desktop's own program for the type opens it and the bundle id is not used. A file of any other extension, and a listed file with an execute bit, marked as a Finder alias on macOS or ending .desktop on Linux, is refused, and a folder is shown in Finder on macOS and opened in the file manager on Linux. Read again at every request. A workspace file's settings: overrides the application of an extension, adds an extension, and takes one of oculus's out with <extension>: null."
+        fields:
+            key:
+                help: an extension with its dot, compared in lower case
+                control: text
+                form: extension
+            value:
+                help: the bundle id of the application that opens it
+                control: text
+                form: bundle_id
+                from: bundle_ids
+    apps.connect_timeout_s:
+        heading: apps
+        section: App limits
+        help: Seconds an app's frame is given to complete the bridge handshake before it is drawn as failed to load.
+        control: number
+        min: 1
+        max: 2147483
+        whole: true
+    apps.state_max_kb:
+        heading: apps
+        section: App limits
+        help: Kilobytes of one tab's saved state that an app's `setState` accepts.
+        control: number
+        min: 1
+        whole: true
+    apps.store_max_kb:
+        heading: apps
+        section: App limits
+        help: Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
+        control: number
+        min: 1
+        whole: true
+    apps.writes_per_min:
+        heading: apps
+        section: App limits
+        help: How many writes, `setStore` included, one frame or one host may send in a minute; a host's store updates, a secret's stores and deletes and a custom editor's saves count here.
+        control: number
+        min: 1
+        whole: true
+    apps.opens_per_min:
+        heading: apps
+        section: App limits
+        help: How many calls of `open`, `commands.run`, `commands.execute` and `createPanel` one frame may send in a minute, and of `executeCommand` one host.
+        control: number
+        min: 1
+        whole: true
+    apps.messages_per_min:
+        heading: apps
+        section: App limits
+        help: How many calls of `sendToPage` and of the `ui` calls (messages, quick pick, input box, progress) one host or frame may make in a minute.
+        control: number
+        min: 1
+        whole: true
+    apps.keys_per_s:
+        heading: apps
+        section: App limits
+        help: How many key events per second the page takes from one frame.
+        control: number
+        min: 1
+        whole: true
+    apps.max_files:
+        heading: apps
+        section: App limits
+        help: How many files an app's folder may hold before the app is refused.
+        control: number
+        min: 1
+        whole: true
+    apps.max_mb:
+        heading: apps
+        section: App limits
+        help: How many megabytes an app's files may total before the app is refused, and the most a custom editor reads or saves in one file.
+        control: number
+        min: 1
+        whole: true
+    apps.host_output_kb:
+        heading: apps
+        section: App limits
+        help: How many kilobytes of a host's output are kept, beside the last 1000 lines.
+        control: number
+        min: 1
+        whole: true
+    apps.host_stop_seconds:
+        heading: apps
+        section: App limits
+        help: How many seconds a host's `deactivate` is given to settle before the host is sent SIGTERM.
+        control: number
+        min: 1
+        whole: true
+    apps.scan_entries:
+        heading: apps
+        section: App limits
+        help: How many entries per root a `workspaceContains` look and a `readDirectory` read at most.
+        control: number
+        min: 1
+        whole: true
+    apps.closed_paths:
+        heading: apps
+        section: Closed folders
+        help: The folders, each relative to a root and applied to every root, that an app's `open({ file })` and custom editor never reach, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+        control: list
+    status_bar.hidden:
+        heading: appearance
+        section: Status bar
+        help: The status bar items hidden from the bar, each by the id the bar gives it. The bar's right-click menu hides an item and shows it again.
+        control: list
+    status_bar.quiet:
+        heading: appearance
+        section: Status bar
+        help: Whether Do Not Disturb is on, so a notification goes into the notification list and shows no toast. The Do Not Disturb button of the notification list switches it.
+        control: toggle
+    status_bar.repository:
+        heading: appearance
+        section: Status bar
+        help: The repository the reader last chose in the status bar's repository item, by the root the git channel names it with. Empty is none chosen.
+        control: text
+groups:
+    focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, which statuses count as open or sent, and where the dated lines come from.
+    focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
+    file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.
+    slurm: The Live HPC poller, the cluster it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.
+    processes: The Processes view and the programs it lists beside oculus's own terminals.
+    chat: The in-page chat sessions and the model they start with.
+    calendar: The reads of the calendar accounts, how often they run and the window of days they read.
+    mail: The reads of the inbox plate, how often they run and how many threads each of its signals takes.
+    editor: The source editor, its indentation, wrapping, minimap, whitespace marks, sticky scroll, suggest panel, autosave and save clean-up, each language's own options, and the size above which a file opens as plain text.
+    latex: LaTeX builds and editing, when a build runs, the recipes and tools it chains, where it writes, what follows it, SyncTeX, word counts, the formatter, the language server and the completion.
+    lint: The linters run on a saved file, which ones run, where their programs are, the arguments ChkTeX takes, and the files the writing rules leave alone or let draw arrows.
+    writes: Saving from a form, and how long a save waits for the server's answer.
+    notes: The notes of a hub's notes folder, and how soon a note is saved after the last keystroke.
+    changes: The change log of every write, and how many changes it keeps.
+    files: The Files view, whether a move to the Trash asks first, and where a file's icon sits beside its sibling folders' arrows.
+    git: Git in oculus, the model a suggested commit message is asked of, and how often every repository with a remote is fetched.
+    search: The Search view and the palette's file mode, how many hits and file names an answer carries, and how long one root is searched.
+    literature: The Literature search, how long a source is given, how many hits a page asks of each source and how long an answer is kept.
+    open: Handing a file to a program on this machine, which extensions may be handed over and the application each opens in.
+    apps: The apps, the limits on what an app's frame and host may send, store, read and hold, and the folders an app never reaches.
+    status_bar: The status bar at the foot of the window, the items hidden from it, whether notifications stay quiet, and the repository its repository item shows.

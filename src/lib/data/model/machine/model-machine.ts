@@ -98,7 +98,7 @@ export type AppMessage = { app: string; tab: string; method: string; params: unk
 /** The `app-messages` channel: the messages sent since the page's last one, in order. */
 export type AppMessagesPayload = { messages: AppMessage[] };
 
-/** Every word that names why a schedule does not run or a start of it was refused. */
+/** Every word that says why a schedule does not run, or why a save or a start of it was refused. */
 export const SCHEDULE_WORDS = [
     'name-missing',
     'name-wrong',
@@ -121,6 +121,8 @@ export const SCHEDULE_WORDS = [
     'flag-wrong',
     'unattended-command',
     'needs-approval',
+    'approval-unwritten',
+    'chain-changed',
     'record-locked',
     'record-unread',
     'record-unwritten',
@@ -135,7 +137,8 @@ export const SCHEDULE_WORDS = [
 export type ScheduleWord = (typeof SCHEDULE_WORDS)[number];
 
 /**
- * What a schedule runs: an update task, a saved command or the first message of a Claude session.
+ * What a schedule runs: an update task, a command of a repository's `.oculus/commands.yml` or the
+ * first message of a Claude session.
  */
 type ScheduleTarget =
     { task: UpdateTask } | { command: string; folder: string } | { prompt: string; folder: string };
@@ -193,7 +196,11 @@ export type ScheduleRow = {
 /** The `schedule` channel: one complete read of the schedules and what the tray's dialog offers. */
 export type SchedulePayload = {
     schedules: ScheduleRow[];
-    /** Every saved command, for the dialog's command list. */
+    /**
+     * The commands of `.oculus/commands.yml` that a schedule can run, each with its repository's
+     * real path, for the dialog's command list: those of the hub, of each root the file browser
+     * serves that is a repository, and of the repository each entry names.
+     */
     commands: { folder: string; name: string }[];
     /**
      * The hub folder first, then each root the file browser serves, for the dialog's folder box.
@@ -205,7 +212,7 @@ export type SchedulePayload = {
      */
     tasks: UpdateTask[] | null;
     /** The files that do not read, with the parser's line when it gave one. */
-    unread: { file: 'schedules' | 'record' | 'commands'; line: number | null }[];
+    unread: { file: 'schedules' | 'record'; line: number | null }[];
     /**
      * Tmux's words for why the terminal list cannot be read, while no list was ever read and so no
      * due time is decided; null otherwise.

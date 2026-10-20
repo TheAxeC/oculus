@@ -11,7 +11,7 @@ text:
         markdown_source_title: 'Open Source: the source tab of {0}'
         none: No document chosen. Open one from a group of the Views catalogue.
         none_glyph: book
-        unlisted: "{0} is not in the documents list (docs in .oculus/config.yml in the hub, or in config/layout.yml when the hub sets none), and no entry there carries this tab's name."
+        unlisted: "{0} is not in the documents list (docs in .oculus/config.yml in the hub, or in oculus's config/defaults/layout.yml when the hub sets none), and no entry there carries this tab's name."
     views:
         doc: Document
         doc_glyph: book

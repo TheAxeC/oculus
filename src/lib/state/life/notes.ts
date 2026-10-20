@@ -8,7 +8,7 @@ import { readAs } from '../../data/shapes/shapes.ts';
 
 /**
  * The wait between the last keystroke and the save. It is `notes.autosave_ms` of
- * config/behavior.yml; the number here is what a page uses before the first configuration push
+ * the merged config; the number here is what a page uses before the first configuration push
  * lands, since there is nothing to read until it does.
  */
 const AUTOSAVE_MS = 800;

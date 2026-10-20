@@ -28,10 +28,10 @@
     // first, naming the records that refer to the entry, and an entry that is gone says so; it is
     // shown again when Undo brings it back.
     //
-    // The card is views/shared/forms/entry/EntryCard.svelte, the one the collection view draws,
-    // with every control it has there (Start Agent on a task, Copy BibTeX on a Literature entry)
-    // and, since it is handed neither a grip nor a title opener, with the long fields whole and the
-    // title as words.
+    // The card is views/shared/forms/entry/card/EntryCard.svelte, the one the collection view
+    // draws, with every control it has there (Start Agent on a task, Copy BibTeX on a Literature
+    // entry) and, since it is handed neither a grip nor a title opener, with the long fields whole
+    // and the title as words.
     //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
     // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
@@ -47,7 +47,7 @@
     import LeadCard from '../../shared/card/feed/LeadCard.svelte';
     import RadarCard from '../../shared/card/feed/RadarCard.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
-    import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
+    import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
     import Referrers from '../../shared/forms/entry/Referrers.svelte';

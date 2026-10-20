@@ -36,6 +36,13 @@ export function settingsSchema(
             }
         },
         additionalProperties: false,
-        definitions: { language: { ...record, type: ['object', 'null'] } }
+        definitions: {
+            language: {
+                ...record,
+                type: ['object', 'null'],
+                description:
+                    'The editor options of one language for the files of this repository, with the fields of the editor.languages option.'
+            }
+        }
     };
 }

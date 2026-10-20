@@ -30,7 +30,8 @@ import {
     folderToAdd,
     pathAsWritten
 } from '../../../../files/workspace/folders.ts';
-import { SCAN_DEPTH, scalarText, type FolderRefusal } from '../../../../files/workspace/folders.ts';
+import { SCAN_DEPTH } from '../../../../../data/sources/config/merge/workspace-file.ts';
+import { scalarText, type FolderRefusal } from '../../../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../../../files/workspace/open.ts';
 import { readState, writeState } from '../../../../files/workspace/state.ts';
 import { othersThan, readBack, setItems } from '../../../list-edit.ts';

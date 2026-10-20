@@ -22,21 +22,17 @@
 // (edit/feeds/feeds.ts and edit/feeds/literature.ts write them), writes/entries.ts for a
 // collection file, writes/subtasks.ts for a subtask line and a career host, writes/bodies.ts for
 // the body parsers (one per kind of write), writes/file-undo.ts for taking back a file operation,
-// and the writers of the engine's own
-// configuration files, in writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the
-// audit's mute list, rail.ts for the rail list, folders.ts for the open workspace's folders,
-// config-key.ts for one option of a tracked config file and config-value.ts for one list or family
-// of one. What an importer of this module needs of them is re-exported here, so an importer may
-// name this module or the one that holds the function.
+// and the writers of configuration files, in writes/config/: deck.ts for a deck group's slides,
+// audit-mute.ts for the audit's mute list, rail.ts for the rail list, folders.ts for the open
+// workspace's folders, config-key.ts for one option of oculus's defaults files, config-value.ts for
+// one list or family of one and config-reset.ts for taking one out again, each written in the open
+// workspace file or the primary hub's settings file (config-place.ts). What an importer of this
+// module needs of them is re-exported here, so an importer may name this module or the one that
+// holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';
-import {
-    appsSettings,
-    changesKeep,
-    configDir,
-    type LocalConfig
-} from '../../data/sources/config.ts';
+import { appsSettings, changesKeep, type LocalConfig } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
 import type { HubSettings } from '../../data/index.ts';
 import { tokenedBody } from '../core/auth.ts';
@@ -144,25 +140,16 @@ export type WriteTarget = {
      */
     changes?: ChangeLog;
     /**
-     * The engine's own config/behavior.yml, where the audit's mute list lives. It is named here
-     * rather than reached for, so a test writes a copy and a run started over another engine
-     * directory writes that copy rather than the checkout's.
-     */
-    behaviorFile: string;
-    /**
-     * The engine's own config/layout.yml, where the rail's list of pages lives, named here for the
-     * reason `behaviorFile` is.
-     */
-    layoutFile: string;
-    /**
      * The glyph names of config/catalogs/glyphs.yml as this write's configuration holds them, which
      * a rail entry's glyph must be one of.
      */
     glyphs: string[];
     /**
      * The open workspace, whose folders the Files view's Add Folder and Remove Folder write into
-     * its file (or into the state while it is unsaved). A target built without it writes no
-     * folders: the write answers `unwritable`.
+     * its file (or into the state while it is unsaved), and in whose file's `settings:` a Settings
+     * write of an option lands (writes/config/config-place.ts). A target built without it writes no
+     * folders, the folders write answering `unwritable`, and has no workspace file to set an
+     * option in.
      */
     workspace?: OpenWorkspace;
     /**
@@ -259,12 +246,6 @@ export { undoChange, valueNow } from './writes/undo.ts';
 /** The kind the change log files the acts on a deck's files under. */
 const DECK_EDIT = 'deck-edit';
 
-/** The engine config file the audit's mute list lives in. */
-const BEHAVIOR = 'behavior.yml';
-
-/** The engine config file the rail's list of pages lives in. */
-const LAYOUT = 'layout.yml';
-
 /**
  * The open workspace and the machine's values a target is made from, both as the server holds
  * them at the call, the reader of the settings of the workspace's other hubs, and the engine's own
@@ -330,9 +311,7 @@ export function target(
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
-        bookmarks: perOculus(open.primaryDir, local).bookmarks ?? undefined,
-        behaviorFile: join(configDir(engine), BEHAVIOR),
-        layoutFile: join(configDir(engine), LAYOUT),
+        bookmarks: perOculus(open.primaryDir, merged).bookmarks ?? undefined,
         glyphs: glyphNames(merged) ?? [],
         hubs: hubTargets(open, settings),
         workspace: open,

@@ -52,7 +52,7 @@ export { dueFollowups, type TickerItem, type TickerTarget };
 
 /**
  * The deadline categories, in the order the ticker groups them: `ticker_categories` under `focus:`
- * of config/behavior.yml. They are different jobs: your own paper's submission date is not a
+ * of the merged config. They are different jobs: your own paper's submission date is not a
  * conference's open call, and neither is a grant deadline.
  */
 export function tickerCategories(config: Record<string, unknown>): string[] {

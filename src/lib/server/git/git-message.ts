@@ -6,7 +6,7 @@
 // The instruction is the catalog's `git.message_prompt`, so the shape of a hub commit message (a
 // capitalised imperative subject, a blank line, `- Verb ...` bullets, no attribution of any kind)
 // is config rather than a string in a module. The model is `git.message_model` of
-// config/behavior.yml, read through a schema, with a default when the key is missing or malformed.
+// the merged config, read through a schema, with a default when the key is missing or malformed.
 // Empty means the CLI's own default model, so nothing is passed.
 //
 // The run writes no session (`--no-session-persistence`), so a suggestion never lists in the
@@ -66,7 +66,7 @@ const messageModelShape = z
     .transform((config) => config.git.message_model);
 
 /**
- * `git.message_model` of config/behavior.yml. A missing or malformed key answers the empty string,
+ * `git.message_model` of the merged config. A missing or malformed key answers the empty string,
  * which is the CLI's own default model.
  */
 export function messageModel(config: Record<string, unknown>): string {

@@ -7,8 +7,8 @@ import { deadlineOf, isClosed } from '../../feeds/leads.ts';
 import { daysSince } from '../../feeds/feeds.ts';
 
 /**
- * One view's row of the `counts` map of config/layout.yml as the page reads it; a field the row
- * does not hold reads as nothing. What is wrong with a row is a finding of the config check
+ * One view's row of the `counts` map of config/defaults/layout.yml as the page reads it; a field
+ * the row does not hold reads as nothing. What is wrong with a row is a finding of the config check
  * (data/sources/config/sections/counts.ts), which takes a field the way this reads it.
  */
 export type CountRow = {

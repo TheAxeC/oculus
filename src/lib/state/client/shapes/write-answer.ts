@@ -54,8 +54,8 @@ const timeoutShape = z.object({ writes: z.object({ timeout_seconds: z.number().p
 
 /**
  * How long a write waits for its answer before it is given up, in milliseconds, from
- * `writes.timeout_seconds` of config/behavior.yml; null when the configuration names no positive
- * number, and then a write waits as long as the request does.
+ * `writes.timeout_seconds` of config/defaults/behavior.yml; null when the configuration names no
+ * positive number, and then a write waits as long as the request does.
  */
 export function writeTimeout(config: Record<string, unknown> | null): number | null {
     const parsed = timeoutShape.safeParse(config);

@@ -49,7 +49,6 @@ async function save(one: Fixture, content: string, list: Root[] = [one.root], ke
         token,
         () => TEXT,
         list,
-        join(one.dir, 'oculus', 'config'),
         one.history
     );
 }

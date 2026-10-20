@@ -5,9 +5,9 @@
 // Beside the words a tab draws, the store answers the counts themselves, as numbers: the count
 // each view draws (a registration's `countPart`), read from the same state the tab reads, so a
 // tab and the rail never count one thing two ways. Whether a view's tabs draw its count and
-// whether the rail sums it is the view's row of `counts` in config/layout.yml (`countFlags`): the
-// rail sums the views whose row says `rail: true`, Talks & Events among them, and no list of
-// views in code decides it.
+// whether the rail sums it is the view's row of `counts` in config/defaults/layout.yml
+// (`countFlags`): the rail sums the views whose row says `rail: true`, Talks & Events among them,
+// and no list of views in code decides it.
 
 import { focusSetting, scalar } from '../../../data/helpers/guards.ts';
 import type { EntitiesStore } from '../../shared/stores/shapes.ts';

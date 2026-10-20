@@ -186,7 +186,7 @@ const EDITED: Edited[] = [
         hub: { 'projects/active/beta/project.yml': `${BETA}domain: heart\n` },
         // Config files that name the domain by keys oculus does not read stay as they are.
         engine: {
-            'behavior.yml': 'data_domains: [heart]\nslurm:\n  resource: hpc\n',
+            'defaults/behavior.yml': 'data_domains: [heart]\nslurm:\n  resource: hpc\n',
             'catalogs/vocab.yml': 'domains:\n  heart: { color: "#e2374d", label: Heart }\n'
         },
         after: {

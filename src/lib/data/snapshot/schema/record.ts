@@ -37,7 +37,11 @@ export type Lists = (source: string) => string[] | null | undefined;
  * Something wrong with the schema itself: a `from` that names no list, a `when` on no field, a
  * `map` on a field that is no `records` field.
  */
-export type SchemaProblem = { key: string; word: 'from' | 'when' | 'map'; args: string[] };
+export type SchemaProblem = {
+    key: string;
+    word: 'from' | 'when' | 'map' | 'group_missing' | 'group_unknown';
+    args: string[];
+};
 
 /** The sentence of a schema problem, in the catalog's words. */
 export function problemText(catalog: TextCatalog, problem: SchemaProblem): string {
@@ -48,6 +52,10 @@ export function problemText(catalog: TextCatalog, problem: SchemaProblem): strin
             return findingText(catalog, 'findings.schema.bad_when', ...problem.args);
         case 'map':
             return findingText(catalog, 'findings.schema.bad_map', ...problem.args);
+        case 'group_missing':
+            return findingText(catalog, 'findings.schema.group_missing', ...problem.args);
+        case 'group_unknown':
+            return findingText(catalog, 'findings.schema.group_unknown', ...problem.args);
     }
 }
 
@@ -105,7 +113,10 @@ function listed(
 /** The label and value of a `metalist` row. */
 const METALIST_ROW: JsonSchema = {
     type: 'object',
-    properties: { label: { type: TEXT_TYPES }, value: { type: TEXT_TYPES } },
+    properties: {
+        label: { type: TEXT_TYPES, description: 'The name of the fact the row holds.' },
+        value: { type: TEXT_TYPES, description: 'The fact itself, as the card shows it.' }
+    },
     additionalProperties: false
 };
 
@@ -298,7 +309,16 @@ const SCHEMA_FIELD: JsonSchema = {
                 { type: 'array', items: { type: 'string' } },
                 {
                     type: 'object',
-                    properties: { field: { type: 'string' }, sources: { type: 'object' } },
+                    properties: {
+                        field: {
+                            type: 'string',
+                            description: 'The field of the record whose value picks the source.'
+                        },
+                        sources: {
+                            type: 'object',
+                            description: 'The source each value of that field picks.'
+                        }
+                    },
                     required: ['field', 'sources'],
                     additionalProperties: false
                 }
@@ -310,7 +330,12 @@ const SCHEMA_FIELD: JsonSchema = {
                 { type: 'boolean' },
                 {
                     type: 'object',
-                    properties: { when: { type: 'object' } },
+                    properties: {
+                        when: {
+                            type: 'object',
+                            description: 'The condition under which the field is required.'
+                        }
+                    },
                     required: ['when'],
                     additionalProperties: false
                 }
@@ -343,7 +368,12 @@ const SCHEMA_FIELD: JsonSchema = {
 };
 
 /** The schema of a whole `schema:` block: a list of fields, defined at the root as `field`. */
-export const SCHEMA_BLOCK: JsonSchema = { type: 'array', items: { $ref: '#/definitions/field' } };
+export const SCHEMA_BLOCK: JsonSchema = {
+    type: 'array',
+    items: { $ref: '#/definitions/field' },
+    description:
+        "The fields the file's records may hold, each with its type, its words and the values it takes, which the form draws and the editor checks."
+};
 
 /** The definitions a file schema holding a `schema:` block carries at its root. */
 export const SCHEMA_DEFINITIONS: Record<string, JsonSchema> = { field: SCHEMA_FIELD };

@@ -60,8 +60,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // before it sends, and the server reads the file and runs the timer by the same rule, so the two
 // cannot disagree on what runs; `data/helpers/run/marker`, the line a project command's chain
 // prints before each command, which the server writes into the chain's line and the page reads the
-// task's output by; `data/helpers/run/limiter`, the sliding-window count of the app limits, which
-// the page applies to a frame's calls and the server to a host's, so the two count by one rule;
+// task's output by; `data/helpers/run/chain`, the chain a press of a project command runs, which
+// the server resolves a press and approves a save by and the command form draws under its fields,
+// so the lines the form shows are the lines its Save approves; `data/helpers/run/limiter`, the
+// sliding-window count of the app limits, which the page applies to a frame's calls and the server
+// to a host's, so the two count by one rule;
 // `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
 // types, which the source tab and the diff view resolve a tab's options through; and
 // `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
@@ -71,14 +74,15 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // fills a catalog string with and the one the server words every finding with before the snapshot
 // carries it; `data/helpers/editor/code-themes`, the list of Shiki's bundled themes (ids, display
 // names, dark or light), which the server words the finding for a bad `code_theme:` from, the
-// appearance store checks a saved pick against and the Settings view draws as the Code theme menu;
-// and `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the
-// page drawing the rail, the Settings view editing it and the server writing it and wording its
-// findings all read, so the three agree on which entries are pages; and
-// `data/sources/config/settings`, the typed readers of single settings, which the page reads by the
-// rule the server reads by: the Files view `files.confirm_delete`, so a delete asks only while the
-// setting says so, the source editor the paint limit, the cards and the file view the
-// `open.program_ext` map, and the Usage view the refresh cadence; and
+// appearance store checks a saved pick against and the Settings view offers on its Code theme row;
+// and `data/sources/config/rail`, the rule over the `rail:` list of config/defaults/layout.yml,
+// which the page drawing the rail, the Settings view editing it and the server writing it and
+// wording its findings all read, so the three agree on which entries are pages; and
+// the seven files of `data/sources/config/settings/`, the typed readers of single settings, which
+// the page reads by the rule the server reads by: the Files view `files.confirm_delete`, so a
+// delete asks only while the setting says so, and `lint.writing`, the source editor the paint
+// limit, the cards and the file view the `open.program_ext` map, the Usage view the refresh
+// cadence, the apps' frames their limits and the LaTeX tab what a build is set by; and
 // `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its control,
 // `min`, `max` and values), which the Settings view refuses a value by before it is sent and the
 // server's write and readers by after it, so the three agree; and
@@ -297,6 +301,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/run/schedules',
         'data/helpers/run/cron',
         'data/helpers/run/marker',
+        'data/helpers/run/chain',
         'data/helpers/run/limiter',
         'data/helpers/editor/editor',
         'data/helpers/search/**',
@@ -304,7 +309,13 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/editor/code-themes',
         'data/helpers/finding-text',
         'data/sources/config/rail',
-        'data/sources/config/settings',
+        'data/sources/config/settings/connectors',
+        'data/sources/config/settings/files',
+        'data/sources/config/settings/latex',
+        'data/sources/config/settings/lint',
+        'data/sources/config/settings/machine',
+        'data/sources/config/settings/problems',
+        'data/sources/config/settings/reader',
         'data/sources/config/editor-options',
         'data/sources/config/catalog/latex-tables',
         'data/sources/config/catalog/options',
@@ -468,7 +479,7 @@ const FROZEN = [
     'lib/state/shared/words/appearance.ts:list',
     'lib/state/shared/words/appearance.ts:byName',
     'lib/state/shared/words/appearance.ts:paper',
-    'lib/state/shared/words/appearance.ts:crt',
+    'lib/state/shared/words/appearance.ts:look',
     'lib/state/shared/words/appearance.ts:codeTheme',
     'lib/state/shared/words/appearance.ts:terminal',
     'lib/state/shared/words/appearance.ts:tabBar',

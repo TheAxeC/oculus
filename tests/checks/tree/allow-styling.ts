@@ -25,24 +25,24 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/card/CardDocs.svelte:162 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/entry/EntryCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:413 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/entry/card/EntryCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
+        why: 'the rule at src/lib/views/shared/forms/entry/card/EntryCard.svelte:323 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:417 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/entry/card/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card .title)',
+        why: 'the rule at src/lib/views/shared/forms/entry/card/EntryCard.svelte:327 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:413 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/entry/card/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
+        why: 'the rule at src/lib/views/shared/forms/entry/card/EntryCard.svelte:323 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/entry/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card)',
-        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:406 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/entry/card/EntryCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card)',
+        why: 'the rule at src/lib/views/shared/forms/entry/card/EntryCard.svelte:316 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/entry/EntryCard.svelte styles .title of ui/frame/Card.svelte, ui/frame/Pane.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/shared/forms/entry/EntryCard.svelte:417 reaches into the primitive rather than asking it for the difference'
+        line: 'views/shared/forms/entry/card/EntryCard.svelte styles .title of ui/frame/Card.svelte, ui/frame/Pane.svelte through .slot > :global(.card .title)',
+        why: 'the rule at src/lib/views/shared/forms/entry/card/EntryCard.svelte:327 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/links/CrossLinks.svelte styles .label of ui/controls/Chip.svelte, ui/controls/Tag.svelte, ui/tabs/TabFace.svelte through .member :global(.label)',

@@ -1,11 +1,12 @@
 // Layer 2, client state. The project commands of a repository: the list read once through the query
-// client, the calls that run, approve, save and remove one, Rerun and Restart for a task terminal,
+// client, the calls that run and approve one, the writes of the form that add, edit and remove an
+// entry of the repository's `.oculus/commands.yml`, Rerun and Restart for a task terminal,
 // the errors a task terminal printed kept as diagnostics, and the two default keys.
 //
 // A repository's list is held under the key `['commands', repo]` while a view watches it. A `files`
 // message that names the repository's folder or its `.oculus` folder, or names no folder, marks it,
 // and the next read asks again with any read still out cancelled, so the later read is the one
-// held. A save or a remove reads it again at once. A view that stops watching the last repository
+// held. A write of the form reads it again at once. A view that stops watching the last repository
 // forgets the key, and an answer still out for it is never held.
 //
 // A press that needs a decision is held here as the question (`asking`): the lines of the chain a
@@ -20,8 +21,8 @@
 // is made, refused when the write or the run was refused, dropped when the question was answered
 // no, replaced by another press's question, or superseded before it could be held.
 //
-// The form that saves a command is held here too (`forming`): a button opens it with the command
-// to edit or none, and the shell draws it over the page, so it stands on the modal ground like
+// The command form is held here too (`forming`): a button opens it with the entry of the file to
+// edit or none, and the shell draws it over the page, so it stands on the modal ground like
 // the question does and not inside the view that opened it.
 //
 // A task terminal's output is read by the pane that shows it, which hands each chunk to `note`. A
@@ -61,15 +62,18 @@ import type {
 import { SCROLLBACK_LINES } from '../../../data/model/index.ts';
 import {
     deepestHolding,
+    foldedPath,
     joinPath,
     pathUnder,
     underServedRoot
 } from '../../../data/helpers/files/paths.ts';
+import { draftChain, draftOf, type DraftCommand } from '../../../data/helpers/run/chain.ts';
 import { chainMarker } from '../../../data/helpers/run/marker.ts';
 import { ESCAPES, FRESH, errorMatch, stepMatcher, type MatcherRun } from './pty/matchers.ts';
 import { readAs, readJson, rowsShape } from '../../../data/shapes/shapes.ts';
 import { tabOfFile, type ServedRoot } from '../../sources/repositories/file-git.ts';
 import { unreachableAnswer } from '../../shared/answers/answers.ts';
+import { terminalSentence } from '../../shared/answers/terminal-words.ts';
 import type { EntitiesStore, Fetcher, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { folderNamed } from '../../shared/answers/files-named.ts';
@@ -86,7 +90,7 @@ export type {
     ProjectCommand
 } from '../../../data/model/index.ts';
 
-export { errorMatch };
+export { draftOf, errorMatch };
 
 /** What every repository's query key opens with. */
 const KIND = 'commands';
@@ -107,37 +111,8 @@ function lastLines(text: string, lines: number): string {
     return parts.length <= kept ? text : parts.slice(parts.length - kept).join('');
 }
 
-/** A path with its `.` and `..` segments folded away, for a path joined from two. */
-function folded(path: string): string {
-    const kept: string[] = [];
-    for (const part of path.split('/')) {
-        if (part === '' || part === '.') continue;
-        if (part === '..') kept.pop();
-        else kept.push(part);
-    }
-    return `/${kept.join('/')}`;
-}
-
 /** The command a run asks for, as the form writes it. */
-export type CommandDraft = {
-    name: string;
-    run: string;
-    cwd?: string;
-    depends_on?: string[];
-    default?: CommandDefault;
-};
-
-/** The form's draft of a saved command, with its folder written relative to the repository. */
-export function draftOf(repo: string, command: ProjectCommand): CommandDraft {
-    const folder = pathUnder(repo, command.cwd) ?? '';
-    return {
-        name: command.name,
-        run: command.run,
-        ...(folder === '' ? {} : { cwd: folder }),
-        ...(command.depends_on.length === 0 ? {} : { depends_on: command.depends_on }),
-        ...(command.default === undefined ? {} : { default: command.default })
-    };
-}
+type CommandDraft = DraftCommand;
 
 /** The path, under the repository, of the file a file or found command is written at, or null. */
 export function entryPath(repo: string, command: ProjectCommand): string | null {
@@ -168,7 +143,7 @@ export type CommandAsking =
     | { kind: 'approve'; repo: string; name: string; source: CommandSource; lines: ChainLine[] }
     | { kind: 'restart'; id: string; process: string };
 
-/** The form that saves a command: the repository, and the command edited or null for a new one. */
+/** The command form: the repository, and the entry of its file edited or null for a new one. */
 export type CommandForming = { repo: string; edit: CommandDraft | null };
 
 /** The commands of the repositories, and what is done with them. */
@@ -181,8 +156,21 @@ export type CommandsStore = {
     load: (repo: string) => Promise<CommandsAnswer>;
     /** Put an answer in as though it had been read. */
     seed: (repo: string, answer: CommandsAnswer) => void;
+    /** Add an entry to the end of the repository's `.oculus/commands.yml`. */
     save: (repo: string, command: CommandDraft) => Promise<CommandWrite>;
+    /** Rewrite the entry of the file that is named `was`, in its place. */
+    edit: (repo: string, was: string, command: CommandDraft) => Promise<CommandWrite>;
+    /** Remove the entry of the file of that name. */
     remove: (repo: string, name: string) => Promise<CommandWrite>;
+    /**
+     * The lines a save or an edit of the draft approves (data/helpers/run/chain.ts `draftChain`),
+     * the sentence refusing a chain that does not resolve, or null while the list is not held.
+     */
+    draftLines: (
+        repo: string,
+        command: CommandDraft,
+        was: string | null
+    ) => { lines: ChainLine[] } | { refused: string } | null;
     approve: (repo: string, lines: ChainLine[]) => Promise<CommandWrite>;
     /**
      * Ask the server to run a command, with the source tab on screen, or else the one focused last,
@@ -238,7 +226,7 @@ const commandShape = z.object({
     cwd: z.string(),
     depends_on: z.array(z.string()).catch([]),
     default: z.enum(['build', 'test']).optional().catch(undefined),
-    source: z.enum(['file', 'saved', 'found', 'app']),
+    source: z.enum(['file', 'found', 'app']),
     entry: z.object({ file: z.string(), line: z.number() }).optional().catch(undefined),
     task: appTaskShape.optional().catch(undefined),
     matchers: z.array(z.string()).optional().catch(undefined)
@@ -436,7 +424,19 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
     }
 
     const save = (repo: string, command: CommandDraft) => write(repo, { action: 'save', command });
+    const edit = (repo: string, was: string, command: CommandDraft) =>
+        write(repo, { action: 'edit', was, command });
     const remove = (repo: string, name: string) => write(repo, { action: 'remove', name });
+    const draftLines = (
+        repo: string,
+        command: CommandDraft,
+        was: string | null
+    ): { lines: ChainLine[] } | { refused: string } | null => {
+        const held = commands(repo);
+        if (held === null) return null;
+        const drawn = draftChain(repo, command, held.commands, was);
+        return 'lines' in drawn ? drawn : { refused: terminalSentence(drawn.error, drawn.names) };
+    };
     const approve = (repo: string, chain: ChainLine[]) => write(repo, { action: 'approve', chain });
 
     /** What a source tab says, as the placeholders of a run read it. */
@@ -619,7 +619,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
 
     /** The whole path of a file an error line names: as written if absolute, else in `folder`. */
     function wholeOf(folder: string, file: string): string {
-        return folded(file.startsWith('/') ? file : joinPath(folder, file));
+        return foldedPath(file.startsWith('/') ? file : joinPath(folder, file));
     }
 
     /** The file of the repository a path names, when the file routes serve it; else null. */
@@ -842,7 +842,9 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         load,
         seed,
         save,
+        edit,
         remove,
+        draftLines,
         approve,
         run,
         rerun,

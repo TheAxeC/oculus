@@ -6,8 +6,8 @@
 // picks by. Whether anything else is text is the file's own first bytes, through
 // data/helpers/files/text-kind.ts, because a name says nothing reliable about that and a list of
 // extensions is wrong about every name nobody put on it. The language is the config's: the map of
-// config/sources.yml (data/helpers/files/languages.ts), handed in by the caller, so a file's
-// language moves with the map and the kind of a file never waits for it.
+// config/defaults/sources.yml (data/helpers/files/languages.ts), handed in by the caller, so a
+// file's language moves with the map and the kind of a file never waits for it.
 
 import { isTextBytes } from '../../../data/helpers/files/text-kind.ts';
 import { extensionOf } from '../../../data/helpers/files/opens-in-program.ts';

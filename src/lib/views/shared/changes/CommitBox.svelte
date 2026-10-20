@@ -264,8 +264,8 @@
 
     /* Under body.rice the box is the terminal form of a field, as TextArea draws one: a line at
        its left, no radius, no fill. The field in it is TextArea's bare one, which takes the mono
-       font there while the Monospace toggle is on. The line takes the accent while the field
-       holds the focus. */
+       font there while the option `rice.monospace` is on. The line takes the accent while the
+       field holds the focus. */
     :global(body.rice) .box {
         border: 0;
         border-left: 1px solid var(--line);

@@ -1,5 +1,5 @@
 // Layer 2, server. What the Markdown server is told of its client: the extensions that make a file
-// Markdown, read from the `languages:` key of config/sources.yml, and the settings it reads once
+// Markdown, read from the `languages:` key of the merged config, and the settings it reads once
 // after `initialized` (it never asks `workspace/configuration`). A link to a file that is not
 // there is a warning; a link to a heading or to a reference is not checked, since the server
 // would flag every link to a heading of a file the reader has not opened.

@@ -1,27 +1,33 @@
-// Layer 2, server. One list option or one family of a tracked config file set to a value, in place:
-// the Settings view's write for the editors of a list, a multi, a parked list, a key/value table
-// and a form of records.
+// Layer 2, server. One list option or one family of oculus's defaults files set to a value: the
+// Settings view's write for the editors of a list, a multi, a parked list, a key/value table and a
+// form of records, and the write the rail's list and the audit's mute list go through.
 //
-// The options catalog (config/catalogs/options.yml) decides what may be written: the file must be
-// one of its tracked files, the key one of its entries, and the entry a list-valued control
-// (`list`, `multi`, `parked`) or a family (`fields`). A single value goes through config-key.ts,
-// the rail and the arrangements keep their own write (rail.ts), the workbench layout is edited in
-// the file, and the machine's own file, a local.yml or a link to a hub's `.oculus/local.yml`, is
-// refused before the file is read.
+// The options files (config/options/) decide what may be written: the file must be one of their
+// defaults files, the key one of their entries, and the entry a list-valued control (`list`,
+// `multi`, `parked`) or a family (`fields`). A single value goes through config-key.ts, the rail
+// and the audit's mute list have a write of their own that checks the value by its own rule and
+// then comes here (`own`), the workbench layout is edited in the file, and the machine's own file,
+// a hub's `.oculus/local.yml` or a link to one, is refused before the file is read.
 //
-// The write is refused, with nothing written, unless the file still holds `base` at the key (the
-// value the editor read), the value fits the entry (config-fit.ts: its shape, and every field
-// against its control and its list), the key's lines can be rewritten in place (block-edit.ts
-// keeps every byte outside them), the edited text reads back as the original with this key changed
-// to the value and in the value's order, and config-checks.ts's readers accept the merged
-// configuration. A value equal to the file's, in order, writes nothing. The lists a field is
-// checked against come from the write target (`inputs`); without them, as in an undo, no value is
-// checked against the entry and the file is put back as it was.
+// The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
+// settings file, as the whole value, and any other in the `settings:` map of the open workspace
+// file. There the value the reader sees is written as what makes the merge give it back: a list of
+// records whose option names a `key:` field as every entry of it then one `{ <key>: x, removed:
+// true }` for each of oculus's entries it does not hold, a map family as every key of it then `x:
+// null` for each of oculus's keys it does not hold (data/sources/config/merge/keyed.ts), and any
+// other value whole.
 //
-// A key of the hub list is written in the hub's settings file (`<hub>/.oculus/config.yml`) and any
-// other key in the engine's file. A key the settings file does not hold is added at the end of it,
-// and the file is created with its folder when it is not there (config-key.ts says the same of a
-// single value), and the undo of that write takes the added text out (config-checks.ts).
+// The write is refused, with nothing written, unless the merged configuration still holds `base`
+// at the key (the value the editor read), the value fits the entry (config-fit.ts: its shape, and
+// every field against its control and its list), the key's lines can be rewritten in place
+// (block-edit.ts keeps every byte outside them) or added, the edited text reads back as the
+// original with this key changed to the written value and in its order, and config-checks.ts's
+// readers accept the merged configuration. A value equal to the one in force, in order, writes
+// nothing. The lists a field is checked against come from the write target (`inputs`); without
+// them a field is checked for its type alone.
+//
+// An undo writes the value the file held back (`stored`): `base` is then the value the file holds
+// at the key's place, the value is written as it is, and no value is checked against the entry.
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
@@ -33,31 +39,32 @@
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Pair } from 'yaml';
-import { z } from 'zod';
 import { isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
-import { LOCAL_NAME, loadConfig } from '../../../../data/sources/config.ts';
-import { catalogOf } from '../../../../data/sources/config/catalog/options.ts';
+import { LOCAL_NAME } from '../../../../data/sources/config.ts';
+import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
+import { familyOverride, recordsOverride } from '../../../../data/sources/config/merge/keyed.ts';
+import { familyKind } from '../../../../data/sources/config/merge/workspace-layer.ts';
 import { words } from '../../../core/words.ts';
 import { setBlock } from '../../block-edit.ts';
 import { isCollection, valueProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
+import { insertKey, kept, mergedAt, refusedBy, replacedShape, written } from './config-checks.ts';
 import {
     absentIn,
-    insertKey,
+    blockLevels,
     isMachinePlace,
-    lacksPrimary,
+    loadLayers,
     opening,
-    kept,
-    mergedAt,
     optionNow,
     optionOf,
     placeOf,
+    placeRefusal,
     placeText,
-    refusedBy,
     type ConfigKeyOutcome,
+    type ConfigLayers,
     type OptionNow,
-    written
-} from './config-checks.ts';
+    type Place
+} from './config-place.ts';
 
 /** The keys that name something on every object, which no key or field of a value may be. */
 const RESERVED = ['__proto__', 'constructor', 'prototype'];
@@ -68,6 +75,21 @@ const OWN_WRITE = ['rail', 'arrangements', 'workbench'];
 /** The collection a key names in a file's text: its parsed value, or why there is none. */
 type Held =
     { kind: 'unparsed' } | { kind: 'missing' } | { kind: 'found'; seq: boolean; value: unknown };
+
+/**
+ * How a value write is made beyond its value: the lists a field is checked against (`inputs`), the
+ * hubs whose `local.yml` no write reaches, whether the value is the one the file held (`stored`, an
+ * undo) rather than the one the reader sees, whether the caller checked the value by a rule of its
+ * own (`own`, the rail and the audit's mute list), and whether a key the file does not hold is
+ * added with a value equal to the one in force (`copy`, Edit in a file).
+ */
+export type ValueWriteOptions = {
+    inputs?: SourceInputs;
+    hubs?: readonly string[];
+    stored?: boolean;
+    own?: boolean;
+    copy?: boolean;
+};
 
 /**
  * The collection a dotted key path names. Each segment is a string key of a map, and the node at
@@ -120,28 +142,52 @@ function valueAt(parsed: unknown, key: string): unknown {
 }
 
 /**
- * The value the file holds at one list or family now, and whether it is still there as a list or
- * a map: the file is one the catalog tracks, parses, and holds the key as a bare collection. An
- * undo reads it; a file it may not read throws.
+ * What the file at a place holds for the value the reader sees: the value itself in the hub's
+ * settings file, and in the workspace file the value laid over oculus's as the merge reads it back
+ * (a keyed list or a map family entry by entry, any other value whole).
  */
-export function configValueNow(engine: string, file: string, key: string, hub?: string): OptionNow {
-    return optionNow(
-        engine,
-        file,
-        key,
-        (text) => {
-            const held = locate(text, key);
-            return held.kind === 'found' ? { found: true, value: held.value } : null;
-        },
-        hub
-    );
+function storedForm(
+    engine: string,
+    layers: ConfigLayers,
+    place: Place,
+    entry: CatalogEntry,
+    key: string,
+    seen: unknown
+): unknown {
+    if (place.layer === 'hub') return seen;
+    const kind = familyKind(entry);
+    if (kind.kind !== 'records' && kind.kind !== 'map') return seen;
+    const oculus = mergedAt(loadLayers(engine, { hub: layers.hub }).config, key);
+    if (kind.kind === 'records') {
+        if (!Array.isArray(seen)) return seen;
+        return recordsOverride(Array.isArray(oculus) ? oculus : [], seen, kind.field);
+    }
+    if (!isMap(seen)) return seen;
+    return familyOverride(isMap(oculus) ? oculus : {}, seen);
 }
 
 /**
- * Set one list option or family of a tracked config file, in the hub's settings file when it is a
- * key of the hub list and a hub is given. A refusal answers the one reason and writes nothing; a
- * value equal to the one held writes nothing and answers with nothing changed. A file that cannot
- * be read or written throws, which the route answers as `unwritable`.
+ * The value the file at the option's place holds now, and whether it is still there as a list or a
+ * map: the option is one the options files name, the file parses, and it holds the key as a bare
+ * collection. An undo reads it; a file it may not read throws.
+ */
+export function configValueNow(
+    engine: string,
+    layers: ConfigLayers,
+    file: string,
+    key: string
+): OptionNow {
+    return optionNow(engine, layers, file, key, (text, at) => {
+        const held = locate(text, at);
+        return held.kind === 'found' ? { found: true, value: held.value } : null;
+    });
+}
+
+/**
+ * Set one list option or family of a defaults file at its place over the layers. A refusal answers
+ * the one reason and writes nothing; a value equal to the one in force writes nothing and answers
+ * with nothing changed. A file that cannot be read or written throws, which the route answers as
+ * `unwritable`.
  */
 export function writeConfigValue(
     engine: string,
@@ -149,98 +195,106 @@ export function writeConfigValue(
     key: string,
     value: unknown,
     base: unknown,
-    inputs?: SourceInputs,
-    hub?: string,
-    hubs: readonly string[] = []
+    layers: ConfigLayers,
+    options: ValueWriteOptions = {}
 ): ConfigKeyOutcome {
-    const { before, text, refuse } = opening(engine, file, key, hub);
+    const { before, text, refuse } = opening(engine, file, key, layers);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_value.local'));
-    if (lacksPrimary(file, key, hub)) return refuse(words(text, 'server.workspace.no_primary'));
     const entry = optionOf(catalogOf(before.config), file, key);
     if (entry === null) return refuse(words(text, 'server.config_value.no_entry'));
-    if (OWN_WRITE.includes(key) && file === 'layout.yml')
+    if (options.own !== true && OWN_WRITE.includes(key) && file === 'layout.yml')
         return refuse(words(text, 'server.config_value.own_write'));
     if (!isCollection(entry)) return refuse(words(text, 'server.config_value.single'));
+    const place = placeOf(layers, file, key);
+    if (place === null) return refuse(placeRefusal(text, file, key));
 
-    const place = placeOf(engine, hub, file, key);
-    if (isMachinePlace(place, hubs, engine))
+    if (isMachinePlace(place, options.hubs ?? []))
         return refuse(words(text, 'server.config_value.local'));
     const onDisk = placeText(place);
     const source = onDisk ?? '';
-    const found = locate(source, key);
+    const found = locate(source, place.at);
     if (found.kind === 'unparsed') return refuse(words(text, 'server.config_value.not_parsed'));
-    const adding =
-        place.layer === 'hub' &&
-        found.kind === 'missing' &&
-        (onDisk === null || absentIn(source, key));
+    const adding = found.kind === 'missing' && (onDisk === null || absentIn(source, place.at));
     if (found.kind === 'missing' && !adding) {
         return refuse(words(text, 'server.config_value.not_in_file'));
     }
-    const held = found.kind === 'found' ? found.value : mergedAt(before.config, key);
-    if (!isDeepStrictEqual(held, base)) return refuse(words(text, 'server.config_value.changed'));
-    if (sameInOrder(held, value)) return { changed: [], refused: [] };
+    const fileHeld = found.kind === 'found' ? found.value : mergedAt(before.config, key);
+    const shown = options.stored === true ? fileHeld : mergedAt(before.config, key);
+    if (!isDeepStrictEqual(shown, base)) return refuse(words(text, 'server.config_value.changed'));
+    const copying = options.copy === true && adding;
+    if (sameInOrder(shown, value) && !copying) return { changed: [], refused: [] };
     const reserved = reservedIn(value);
     if (reserved !== null) return refuse(words(text, 'server.config_value.reserved', reserved));
-    const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
-    const unfit = valueProblem(entry, held, value, { text, sources });
-    if (unfit !== null)
-        return { changed: [], refused: [{ field: `${file}:${key}`, reason: unfit }] };
+    if (options.stored !== true && options.own !== true) {
+        const { inputs } = options;
+        const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
+        const unfit = valueProblem(entry, shown, value, { text, sources });
+        if (unfit !== null) return refuse(unfit);
+    }
+    const stored =
+        options.stored === true ? value : storedForm(engine, layers, place, entry, key, value);
+    if (sameInOrder(fileHeld, stored) && !adding) return { changed: [], refused: [] };
 
     const edited = adding
-        ? insertKey(source, key, value, text)
-        : setBlock(source, key.split('.'), value);
+        ? insertKey(source, place.at, stored, blockLevels(place))
+        : setBlock(source, place.at.split('.'), stored);
     if (edited === null) return refuse(words(text, 'server.config_value.unsupported'));
     const reread = parseDocument(edited);
-    const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), key) : undefined;
-    if (!kept(source, edited, key, value) || !sameInOrder(returned, value))
+    const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), place.at) : undefined;
+    if (!kept(source, edited, place.at, stored) || !sameInOrder(returned, stored))
         return refuse(words(text, 'server.config_value.not_kept'));
-    const reason = refusedBy(engine, hub, file, edited, before, place.layer);
-    if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
+    const reason = refusedBy(engine, layers, place, edited, before);
+    if (reason !== null) return refuse(reason);
 
-    return written(place.path, file, key, edited, { before: held, after: value }, source, adding);
+    return written(
+        place.path,
+        file,
+        key,
+        edited,
+        { before: fileHeld, after: stored },
+        source,
+        adding
+    );
 }
-
-/** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
-const replacedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
 
 /**
  * Take a config-value write back by putting the text it replaced over the text it left, so the
  * file comes back byte for byte, its alignment and line ends included. It applies only when the
  * file holds exactly the text the write left at the offset the record names and the value at the
- * key is the one the write set; the result must read back as the file with that one key at the
- * record's earlier value, and pass the config checks a write passes. A record without the text,
- * one whose text is malformed, and a file that has moved on answer null, and the undo goes through
- * the value write, which takes the key back to the record's earlier value. The file the undo
- * writes is recorded with its own replaced text.
+ * key's place is the one the write set; the result must read back as the file with that one key at
+ * the record's earlier value, and pass the config checks a write passes. A record without the text,
+ * one whose text is malformed, a layer that is not there and a file that has moved on answer null,
+ * and the undo goes through the value write, which takes the key back to the record's earlier
+ * value. The file the undo writes is recorded with its own replaced text.
  */
 export function putBackConfigValue(
     engine: string,
     file: string,
     key: string,
     values: { replaced?: unknown; before: unknown; after: unknown },
-    hub?: string,
+    layers: ConfigLayers,
     hubs: readonly string[] = []
 ): ConfigKeyOutcome | null {
     const text = replacedShape.safeParse(values.replaced);
     if (!text.success) return null;
     const { offset, before: earlier, after: later } = text.data;
-    const loaded = loadConfig(engine, { hub });
+    const loaded = loadLayers(engine, layers);
     if (optionOf(catalogOf(loaded.config), file, key) === null) return null;
-    const place = placeOf(engine, hub, file, key);
-    if (isMachinePlace(place, hubs, engine)) return null;
+    const place = placeOf(layers, file, key);
+    if (place === null || isMachinePlace(place, hubs)) return null;
     const source = placeText(place);
     if (source === null) return null;
     if (offset > source.length || !source.startsWith(later, offset)) return null;
-    const found = locate(source, key);
+    const found = locate(source, place.at);
     if (found.kind !== 'found' || !isDeepStrictEqual(found.value, values.after)) return null;
     const edited = `${source.slice(0, offset)}${earlier}${source.slice(offset + later.length)}`;
     if (edited === source) return null;
     const reread = parseDocument(edited);
-    const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), key) : undefined;
-    if (!kept(source, edited, key, values.before) || !sameInOrder(returned, values.before)) {
+    const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), place.at) : undefined;
+    if (!kept(source, edited, place.at, values.before) || !sameInOrder(returned, values.before)) {
         return null;
     }
-    const reason = refusedBy(engine, hub, file, edited, loaded, place.layer);
+    const reason = refusedBy(engine, layers, place, edited, loaded);
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
     return written(
         place.path,

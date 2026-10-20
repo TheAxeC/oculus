@@ -17,9 +17,14 @@
 
 import { isDeepStrictEqual } from 'node:util';
 import { join } from 'node:path';
-import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import {
+    HUB_FILE,
+    MANIFEST,
+    ROOT_FOLDER,
+    WORKSPACES_FOLDER
+} from '../../../data/helpers/hub-names.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
-import { WORKSPACES_FOLDER, openWorkspace, type OpenWorkspace } from './open.ts';
+import { openWorkspace, type OpenWorkspace } from './open.ts';
 import { stateFileOf } from './state.ts';
 
 /** What the parts of the server are told: the workspace now and the one before. */

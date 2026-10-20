@@ -13,10 +13,12 @@
 // store keeps what each channel has shown and hears every message the entities store keeps, wired
 // in state/client/context.ts, as it hears every write that did not land from the writes store.
 //
-// Five sources post: a refused rail write, a session that starts waiting on a permission prompt or
+// Seven sources post: a refused rail write, a session that starts waiting on a permission prompt or
 // goes idle after its turn (`permission_prompt`, `idle_prompt`), each worded as what it waits for,
-// an update task whose run date moved, a Live HPC job newly in `recent`, and any write refused or
-// unanswered (`writes.onUnwritten`).
+// an update task whose run date moved, a Live HPC job newly in `recent`, any write refused or
+// unanswered (`writes.onUnwritten`), a save of the page state the server refused
+// (`pageState.onRefused`), and an option a control set while no workspace file is open, which
+// offers Save Workspace As (`noWorkspace`, called by the ui store).
 
 import { z } from 'zod';
 import type { HookEvent, Message } from '../../../data/model/index.ts';
@@ -174,6 +176,8 @@ export function notesRuns(inbox: unknown): TaskRuns {
 export type NoticeOpeners = {
     openSession: (id: string, title: string) => void;
     openView: (view: string) => void;
+    /** Ask for the name of a workspace file to save the workspace to. */
+    saveWorkspace: () => void;
 };
 
 export type NoticeSourcesStore = {
@@ -184,6 +188,10 @@ export type NoticeSourcesStore = {
      * otherwise a write that got no answer, in the words the writes store gave.
      */
     unwritten: (reason: string, refused: boolean) => void;
+    /** Hear a save of the page state the server refused, with its sentence. */
+    stateRefused: (error: string) => void;
+    /** Say that an option has no workspace file to be written to, and offer to save one. */
+    noWorkspace: () => void;
 };
 
 /** The words each update task goes by, the tray's own. */
@@ -294,5 +302,16 @@ export function createNoticeSources(
         );
     }
 
-    return { heard, unwritten };
+    function stateRefused(error: string): void {
+        notices.post(t('app.state_refused', error), { tone: 'error' });
+    }
+
+    function noWorkspace(): void {
+        notices.post(t('app.setting_no_workspace'), {
+            tone: 'warning',
+            actions: [{ label: t('app.setting_save_workspace'), run: open.saveWorkspace }]
+        });
+    }
+
+    return { heard, unwritten, stateRefused, noWorkspace };
 }

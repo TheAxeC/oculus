@@ -18,7 +18,7 @@ import type { AppsHeld } from '../held.ts';
 
 /**
  * Take, in place, the rules that lost out of the rows of the acting apps, and add a finding for
- * each. `base` is the map of `config/sources.yml`.
+ * each. `base` is the `languages` map of the merged config.
  */
 export function dropTakenLanguages(held: AppsHeld, base: LanguageMap, catalog: TextCatalog): void {
     const acting = held.apps.filter((app) => appActive(app.row));

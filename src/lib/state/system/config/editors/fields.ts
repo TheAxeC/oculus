@@ -28,7 +28,8 @@ import {
     type CatalogEntry,
     type Control,
     type FieldSpec,
-    type Form
+    type Form,
+    type Source
 } from '../../../../data/sources/config/catalog/options.ts';
 import {
     itemProblem,
@@ -36,7 +37,7 @@ import {
     type ValueProblem
 } from '../../../../data/sources/config/catalog/value-rule.ts';
 import { message, type Message } from '../messages.ts';
-import type { Lists, SourceItems } from './sources.ts';
+import type { Lists } from './sources.ts';
 
 export type { CatalogEntry, FieldSpec };
 
@@ -70,10 +71,9 @@ const DECIMAL = /^-?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
 /**
  * The number a text is as a decimal, or null when it is not one: the trimmed text must match the
  * pattern above and give a finite number, and `-0` is `0`. The one reading of a number's text,
- * which a config number row, a number field of a card and the terminal text size box of the
- * "This browser" rows share.
+ * which a config number row and a number field of a card share.
  */
-export function decimalOf(input: string): number | null {
+function decimalOf(input: string): number | null {
     const trimmed = input.trim();
     const number = Number(trimmed);
     if (!DECIMAL.test(trimmed) || !Number.isFinite(number)) return null;
@@ -235,13 +235,26 @@ export function fromWords(
 
 // ---- the lists a choice draws from ----------------------------------------------------------
 
-/** The words a choice or multi may take, and whether the lists they come from are there yet. */
-export type Pool = { items: string[]; state: 'ready' | 'loading' | 'failed'; error: string };
+/**
+ * The words a choice or multi may take, whether the lists they come from are there yet, and the
+ * words and the group each item is drawn under where its source gives them.
+ */
+export type Pool = {
+    items: string[];
+    state: 'ready' | 'loading' | 'failed';
+    error: string;
+    labels: Map<string, string>;
+    groups: Map<string, string>;
+};
 
-/** Add one source's answer to a pool. */
-function addSource(pool: Pool, answer: SourceItems): void {
-    if (answer.state === 'ready') pool.items.push(...answer.items);
-    else if (answer.state === 'failed') {
+/** Add one source's answer to a pool, with the words and groups the source gives its items. */
+function addSource(pool: Pool, source: Source, lists: Lists): void {
+    const answer = lists.items(source);
+    if (answer.state === 'ready') {
+        pool.items.push(...answer.items);
+        for (const [item, label] of lists.labels(source)) pool.labels.set(item, label);
+        for (const [item, group] of lists.groups(source)) pool.groups.set(item, group);
+    } else if (answer.state === 'failed') {
         pool.state = 'failed';
         pool.error = answer.error;
     } else if (pool.state === 'ready') pool.state = 'loading';
@@ -253,13 +266,19 @@ function addSource(pool: Pool, answer: SourceItems): void {
  * no source gives no items. The first source still loading or failed decides the pool's state.
  */
 export function poolOf(spec: CatalogEntry, record: Record<string, FieldValue>, lists: Lists): Pool {
-    const pool: Pool = { items: [...(spec.options ?? [])], state: 'ready', error: '' };
-    for (const source of listedSources(spec)) addSource(pool, lists.items(source));
+    const pool: Pool = {
+        items: [...(spec.options ?? [])],
+        state: 'ready',
+        error: '',
+        labels: new Map(),
+        groups: new Map()
+    };
+    for (const source of listedSources(spec)) addSource(pool, source, lists);
     const picked = pickedSources(spec);
     if (picked !== undefined) {
         const word = record[picked.field];
         const source = typeof word === 'string' ? byKey(picked.sources, word) : undefined;
-        if (source !== undefined) addSource(pool, lists.items(source));
+        if (source !== undefined) addSource(pool, source, lists);
     }
     pool.items = [...new Set(pool.items)];
     return pool;

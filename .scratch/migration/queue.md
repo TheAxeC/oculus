@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use):
-- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; surfaces aligned and faded cards lifted on hover; Add Command... writing the repository's `.oculus/commands.yml`): repair round 1 built; the review over the round runs, then /land with the look on TEST.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): after O46.
+- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): next.
 
 Owed looks: none.
 
 Landed, newest first:
+- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; Add Command... into the repository's `.oculus/commands.yml`; Schedule... approving its chain), 2026-10-20, the commit "Land O46".
 - O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.
 - O45 (Recover places one folder of an archive, the key `folder`), 2026-10-20, 323841f59.
 - O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`), 2026-10-20, 5a6cb4a70.

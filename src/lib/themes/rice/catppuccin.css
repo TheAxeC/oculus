@@ -1,7 +1,7 @@
 /* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. One block per
    palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
    shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
-   config/appearance.yml. */
+   config/defaults/appearance.yml. */
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
 body.mocha {

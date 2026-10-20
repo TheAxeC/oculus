@@ -290,8 +290,8 @@ export function venueLabel(venue: Venue | undefined): string {
  * `pauses_countdown` (submitted). The blocked tally counts the projects on a lane that carry a chip
  * with `blocked`, whatever else the project is waiting for. A `waiting-on:` value is a people key
  * or another project's id, drawn by waiting.ts. The applications are the entries whose status is in
- * `applications_sent` under `focus:` of config/behavior.yml, and the hosts those whose status
- * carries `waiting` in the hub's `career_host_status`.
+ * `applications_sent` under `focus:` of config/defaults/behavior.yml, and the hosts those whose
+ * status carries `waiting` in the hub's `career_host_status`.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -368,8 +368,8 @@ export function liveProjects(projects: Project[], config: Record<string, unknown
 }
 
 /**
- * The list of status words under `focus:` of config/behavior.yml at a key, trimmed and in lower
- * case, which is how an entry's status is compared with them; none if absent.
+ * The list of status words under `focus:` of config/defaults/behavior.yml at a key, trimmed and in
+ * lower case, which is how an entry's status is compared with them; none if absent.
  */
 export function focusWords(config: Record<string, unknown>, key: string): string[] {
     return strings(focusBlock(config)[key]).map((word) => word.trim().toLowerCase());

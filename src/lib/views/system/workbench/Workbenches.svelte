@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Workbenches is the last tab of the float docked at the right edge
-    // that config/layout.yml ships, and the third entry of the catalogue's Float group, which `w`
-    // then `3` opens.
+    // that config/defaults/layout.yml ships, and the third entry of the catalogue's Float group,
+    // which `w` then `3` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'workbenches',

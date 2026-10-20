@@ -120,7 +120,7 @@ export type FolderItem = { view: ViewId; state: unknown };
 /**
  * One page: a whole workbench with a name of its own. Pages sit above the layout tree so tree and
  * workbench operations remain independent of page selection. `rail` is the `arrangements:` key of
- * config/layout.yml the page was made from by a rail button, which is what ties the page to that
+ * the merged config the page was made from by a rail button, which is what ties the page to that
  * button: renaming the button keeps the page, and a page no button made carries none. `folder` ties
  * the page to one folder, which makes it a workbench in the reader's words; such a page has no
  * `rail` key. `item` is what the page was opened for. `docs` is the paths of the hub's documents

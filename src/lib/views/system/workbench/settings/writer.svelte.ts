@@ -6,15 +6,21 @@
 import type { Lists } from '$lib/state/system/config/editors/sources';
 import {
     createRowWriter,
+    type ResetConfig,
     type RowWriter,
     type WriteConfigKey
 } from '$lib/state/system/config/write';
 
 /** A write sequence whose `shown` and `said` redraw whatever read them when a write moves. */
-export function reactiveWriter(write: WriteConfigKey, lists: () => Lists): RowWriter {
+export function reactiveWriter(
+    write: WriteConfigKey,
+    reset: ResetConfig,
+    lists: () => Lists
+): RowWriter {
     let version = $state(0);
     const inner = createRowWriter(
         write,
+        reset,
         () => {
             version += 1;
         },

@@ -174,6 +174,7 @@ text:
             add: Add schedule
             ahead: '{0} {1}'
             cancel: Cancel
+            chain_heading: 'Each run starts these lines in this order; Save approves them:'
             command: Command
             day_fri: Fri
             day_mon: Mon
@@ -205,8 +206,11 @@ text:
             pattern: Cron pattern
             pause: Pause
             paused: Paused
-            problem_command_missing: No saved command {0} in {1}.
-            problem_commands_unread: The saved commands file does not read.
+            problem_approval_unwritten: The approvals file could not be written, so the command's lines are not approved; save the schedule again to approve them.
+            problem_chain_changed: The lines of the command {0} changed since the dialog listed them; read them again and save.
+            problem_chain_unapproved: "The command {0} runs lines that are not approved; open Edit or Schedule... on it in its repository's command bar and save to approve them."
+            problem_command_missing: '.oculus/commands.yml in {1} holds no command {0} that runs a line.'
+            problem_commands_unread: '.oculus/commands.yml in {0} does not read, so no command of it is scheduled.'
             problem_entry_changed: The schedules file changed since the tray read it; try again.
             problem_entry_unwritable: 'The entry "{0}" cannot be changed from here; edit schedules.yml by hand.'
             problem_entry_wrong: Entry {0} of the file is not a map of keys, so it does not run.
@@ -219,7 +223,6 @@ text:
             problem_name_missing: The schedule has no name.
             problem_name_twice: Two schedules are named {0}; neither runs until one is renamed.
             problem_name_wrong: The name {0} is longer than 80 characters or holds a control character.
-            problem_needs_approval: "The command {0} runs lines that need your approval; run it once from its repository's command bar."
             problem_no_primary: The open workspace has no primary hub, so there is no schedules file to write; set a primary in the workspace file.
             problem_prompt_control: The prompt holds a control character other than a tab or a new line.
             problem_prompt_empty: The prompt is empty.
@@ -228,7 +231,7 @@ text:
             problem_record_unread: The run record does not read, so nothing starts.
             problem_record_unwritten: The run record could not be written; check ~/.oculus/schedule.json and try again.
             problem_runs_wrong: What it runs must be exactly one of a task, a command and a prompt.
-            problem_schedules_unread: schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read, so oculus writes nothing to it.
+            problem_schedules_unread: schedules.yml in the .oculus folder of the primary hub (or the path `schedules` of its config.yml names) does not read, so oculus writes nothing to it.
             problem_schedules_unwritten: The schedules file could not be written, so nothing was saved.
             problem_server_stopped: The server stopped before the run started.
             problem_unattended_command: Run unattended applies to an update task or a prompt.
@@ -236,7 +239,7 @@ text:
             problem_when_never: The pattern {0} never comes due.
             problem_when_unreadable: 'The pattern {0} does not read: a cron pattern has five fields, such as 0 7 * * 1, or is a nickname such as @daily.'
             prompt: Prompt
-            refused_command: Choose a saved command.
+            refused_command: Choose a command.
             refused_days: Choose at least one day.
             refused_task: Choose a task.
             refused_time: The time must be HH:MM, such as 07:00.
@@ -258,10 +261,9 @@ text:
             unattended: Run unattended
             unattended_note: 'A run starts with --dangerously-skip-permissions: the agent edits files and runs commands with nobody asked.'
             unattended_unset: not chosen
-            unread_commands: The saved commands file ~/.oculus/commands.json does not read, so no command schedule runs.
             unread_record: The run record ~/.oculus/schedule.json does not read, so no schedule runs; the file is left as it is.
-            unread_schedules: 'schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read, so no schedule runs and oculus writes nothing to it.'
-            unread_schedules_at: 'schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules: 'schedules.yml in the .oculus folder of the primary hub (or the path `schedules` of its config.yml names) does not read, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules_at: 'schedules.yml in the .oculus folder of the primary hub (or the path `schedules` of its config.yml names) does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
             when: When
             when_custom: Custom
             when_day: Every day
@@ -270,6 +272,9 @@ text:
             when_week: Weekly
         search: Search
         sessions: 'Sessions: {0}, {1} live'
+        setting_no_workspace: No workspace file is open, so this setting has no file to be kept in; save the workspace to a file and set it again
+        setting_save_workspace: Save Workspace As...
+        state_refused: 'What this page keeps was not saved: {0}'
         socket: 'Socket: {0}'
         socket_closed: closed
         socket_connecting: connecting
@@ -294,10 +299,6 @@ text:
             scout_note: academic openings (web | minutes)
             tasks: Tasks
             update_tasks: Update tasks
-        text: Text
-        text_larger: Larger text
-        text_reset: Reset text size
-        text_smaller: Smaller text
         thousands_separator: ','
         title: oculus
         title_waiting: oculus ({0} waiting) | {1}

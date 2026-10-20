@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LineCounter, isNode, parse, parseDocument } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
+import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files/vocab.ts';
 import {
     FILTERED_TYPES,
     type Finding,
@@ -235,7 +235,7 @@ export function runSchemas(
     const scans = config.scan.map(dirOf);
     const manifest = context('');
     if (config.schema !== undefined) {
-        add('manifest', manifestSchema(config.schema, manifest), {
+        add('manifest', manifestSchema(config.schema, manifest, config.merged.groups), {
             hub: scans.flatMap((dir) => [
                 `${dir}/**/${MANIFEST}`,
                 `${dir}/**/${ROOT_FOLDER}/${MANIFEST}`

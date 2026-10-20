@@ -4779,3 +4779,17 @@ Where it applies: O46, repair round 1 (`agents/briefs/O46-round1.md`). Booked in
 - Not chosen: a schedule that runs an unapproved chain, which undoes the approval rule; stating the consequence in the report alone, the lazy option.
 
 Where it applies: O46, repair round 1 (`agents/briefs/O46-round1.md`). Booked in `plan.md` Rulings.
+
+## Z965 (2026-10-20, O46's review over round 1, the orchestrator, automode): the chain Schedule... approves
+
+- Chosen: the dialog's Save sends the chain it lists; the schedules route approves it only when it equals the chain it resolves from `commands.yml` at the save, refuses `entry-changed` otherwise so the dialog lists the new chain, and writes the approval after the schedules file is committed, so a refused save approves nothing.
+- Not chosen: approving the server's chain whatever the dialog listed, which lets a pull between the draw and the press approve lines the reader never saw; stating the window in the report alone, the lazy option.
+
+Where it applies: O46, fixed at landing. Booked in `plan.md` Rulings.
+
+## Z966 (2026-10-20, O46's review over round 1, the orchestrator, automode): the tests no guarded entry asked for
+
+- Chosen: `tests/views/shared/forms/entry-card.test.ts` removed, since the order of a card's fields guards nothing of cost and the split is proved by reading and the look; `approval.test.ts` and `schedule-dialog.test.ts` booked as a new guarded entry G117 (a scheduled command runs only a chain approved as listed); O46's other new test files named under the entries their units fall under, or removed, at landing.
+- Not chosen: keeping every new test under entries written to fit them; leaving tests that no entry names, the lazy option.
+
+Where it applies: O46, at landing. Booked in `plan.md` Rulings.

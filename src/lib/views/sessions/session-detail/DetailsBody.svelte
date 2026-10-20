@@ -7,8 +7,8 @@
     // The meter is the context window, and what it measures is the last turn's occupancy, never the
     // lifetime sums beside it: a session that has run for hours has sent far more tokens than any
     // window holds, and the number that matters is what the model carried on the turn it just took.
-    // The window itself is `context_window` in config/behavior.yml, or the transcript's own when it
-    // states one, which Codex does and Claude does not.
+    // The window itself is `context_window` in config/defaults/behavior.yml, or the transcript's
+    // own when it states one, which Codex does and Claude does not.
 
     import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';

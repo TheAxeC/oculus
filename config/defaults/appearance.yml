@@ -1,0 +1,119 @@
+# ===========================================================================
+# appearance.yml
+# oculus's shipped values of what the chrome looks like: the UI theme picker's list and the theme drawn, the page's text size, the glyphs and the look of the terminal themes, the wallpaper behind the panels, the CRT overlay, the code theme of the editors, and the terminal grid's text size, cursor and Option key. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/appearance.yml describe every key. Nothing writes this file.
+# ===========================================================================
+
+
+# The UI themes in picker order. `name` is saved, `class` lands on <body>, `glyph` is the glyph name drawn before the words, and `label` is the words shown.
+themes:
+  - { name: light,        class: "",                   glyph: theme_base, label: "light" }
+  - { name: dark,         class: "dark",               glyph: theme_base, label: "dark" }
+  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  glyph: theme_base, label: "vscode dark modern" }
+  - { name: vscode-light-modern, class: "vscode-light-modern", glyph: theme_base, label: "vscode light modern" }
+  - { name: vscode-light-2026, class: "vscode-light-2026", glyph: theme_base, label: "vscode light 2026" }
+  - { name: vscode-light-plus, class: "vscode-light-plus", glyph: theme_base, label: "vscode light+" }
+  - { name: vscode-light-visual-studio, class: "vscode-light-visual-studio", glyph: theme_base, label: "vscode light (visual studio)" }
+  - { name: vscode-quiet-light, class: "vscode-quiet-light", glyph: theme_base, label: "vscode quiet light" }
+  - { name: vscode-solarized-light, class: "vscode-solarized-light", glyph: theme_base, label: "vscode solarized light" }
+  - { name: vscode-abyss, class: "vscode-abyss", glyph: theme_base, label: "vscode abyss" }
+  - { name: vscode-dark-2026, class: "vscode-dark-2026", glyph: theme_base, label: "vscode dark 2026" }
+  - { name: vscode-dark-plus, class: "vscode-dark-plus", glyph: theme_base, label: "vscode dark+" }
+  - { name: vscode-dark-visual-studio, class: "vscode-dark-visual-studio", glyph: theme_base, label: "vscode dark (visual studio)" }
+  - { name: vscode-kimbie-dark, class: "vscode-kimbie-dark", glyph: theme_base, label: "vscode kimbie dark" }
+  - { name: vscode-monokai, class: "vscode-monokai", glyph: theme_base, label: "vscode monokai" }
+  - { name: vscode-monokai-dimmed, class: "vscode-monokai-dimmed", glyph: theme_base, label: "vscode monokai dimmed" }
+  - { name: vscode-red, class: "vscode-red", glyph: theme_base, label: "vscode red" }
+  - { name: vscode-solarized-dark, class: "vscode-solarized-dark", glyph: theme_base, label: "vscode solarized dark" }
+  - { name: vscode-tomorrow-night-blue, class: "vscode-tomorrow-night-blue", glyph: theme_base, label: "vscode tomorrow night blue" }
+  - { name: vscode-dark-high-contrast, class: "vscode-dark-high-contrast", glyph: theme_base, label: "vscode dark high contrast" }
+  - { name: vscode-light-high-contrast, class: "vscode-light-high-contrast", glyph: theme_base, label: "vscode light high contrast" }
+  - { name: mocha,           class: "rice mocha",           glyph: theme_rice, label: "mocha" }
+  - { name: macchiato,       class: "rice macchiato",       glyph: theme_rice, label: "macchiato" }
+  - { name: frappe,          class: "rice frappe",          glyph: theme_rice, label: "frappe" }
+  - { name: gruvbox,         class: "rice gruvbox",         glyph: theme_rice, label: "gruvbox" }
+  - { name: nord,            class: "rice nord",            glyph: theme_rice, label: "nord" }
+  - { name: synthwave,       class: "rice synthwave",       glyph: theme_rice, label: "synthwave '84" }
+  - { name: tokyoneon,       class: "rice tokyoneon",       glyph: theme_rice, label: "tokyo neon" }
+  - { name: tokyonight,      class: "rice tokyonight",      glyph: theme_rice, label: "tokyo night" }
+  - { name: tokyostorm,      class: "rice tokyostorm",      glyph: theme_rice, label: "tokyo night storm" }
+  - { name: rosepine,        class: "rice rosepine",        glyph: theme_rice, label: "rose pine" }
+  - { name: rosepinemoon,    class: "rice rosepinemoon",    glyph: theme_rice, label: "rose pine moon" }
+  - { name: everforest,      class: "rice everforest",      glyph: theme_rice, label: "everforest" }
+  - { name: dracula,         class: "rice dracula",         glyph: theme_rice, label: "dracula" }
+  - { name: onedark,         class: "rice onedark",         glyph: theme_rice, label: "one dark" }
+  - { name: oxocarbon,       class: "rice oxocarbon",       glyph: theme_rice, label: "oxocarbon" }
+  - { name: flexoki,         class: "rice flexoki",         glyph: theme_rice, label: "flexoki" }
+  - { name: phosphor,        class: "rice phosphor",        glyph: theme_rice, label: "phosphor" }
+  - { name: phosphoramber,   class: "rice phosphoramber",   glyph: theme_rice, label: "phosphor amber" }
+  - { name: kanagawa,        class: "rice kanagawa",        glyph: theme_rice, label: "kanagawa" }
+  - { name: kanagawadragon,  class: "rice kanagawadragon",  glyph: theme_rice, label: "kanagawa dragon" }
+  - { name: solarized,       class: "rice solarized",       glyph: theme_rice, label: "solarized" }
+  - { name: latte,           class: "rice latte",           glyph: theme_rice, label: "latte (light)" }
+  - { name: gruvboxlight,    class: "rice gruvboxlight",    glyph: theme_rice, label: "gruvbox light" }
+  - { name: rosepinedawn,    class: "rice rosepinedawn",    glyph: theme_rice, label: "rose pine dawn (light)" }
+  - { name: tokyolight,      class: "rice tokyolight",      glyph: theme_rice, label: "tokyo night light" }
+  - { name: kanagawalotus,   class: "rice kanagawalotus",   glyph: theme_rice, label: "kanagawa lotus (light)" }
+  - { name: everforestlight, class: "rice everforestlight", glyph: theme_rice, label: "everforest light" }
+  - { name: flexokilight,    class: "rice flexokilight",    glyph: theme_rice, label: "flexoki light" }
+
+# The theme drawn: a name of `themes` above, or the saved name of a colour theme an approved app offers. Empty draws the first theme of the list, and the app's dark theme in the desktop app.
+theme: ''
+
+# The size of the page's text, a multiplier of the theme's own sizes from 0.7 to 1.6 in tenths.
+text_size: 1
+
+# The look of the terminal themes (the themes whose class holds `rice`): `icons` keeps the icons instead of their ASCII stand-ins, `brackets` draws buttons, chips and tags in brackets, and `monospace` draws the interface in the monospace font.
+rice:
+  icons: false
+  brackets: true
+  monospace: true
+
+
+# === Terminal ===============================================================
+# The terminal grid paints its own text and cannot inherit the page's size. `font_px` is CSS pixels; leave the key out to follow the theme's `--fs-md` token instead.
+terminal:
+  font_px: 12.5
+  mac_option_is_meta: false   # true makes Option send Meta on macOS, so Option+B and Option+F move by word; false types the characters Option makes
+  copy_on_selection: false    # true copies a selection to the clipboard as soon as it is made
+  cursor_style: block         # block | line | underline (line is a thin bar)
+  cursor_blinking: false      # true makes the cursor blink
+
+
+# === Look ===================================================================
+# How the wallpaper and the panels over it are drawn. Which image is the wallpaper is the `wallpaper.image` key of the primary hub's own .oculus/config.yml (a hub name and a file name joined by a slash, `random`, or empty for none), set from the picker under the wallpaper rows of the Settings view; the folder each hub keeps its wallpaper images in is `wallpaper_dir` of its .oculus/config.yml. `show` is `shown`, `hidden`, or empty for the theme's answer.
+wallpaper:
+  show: ''
+  image: ''
+  dim: 0.6      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
+  blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy
+  themes: all   # `rice` = terminal themes only | `all` = light and dark too
+  panel_opacity: 0.8   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
+  popover_opacity: 0.97  # dropdowns (Collections / More / theme) - they float OVER a panel, so at
+                           # `panel_opacity` you read them through two translucent layers. Unset =
+                           # three quarters of the way from `panel_opacity` to solid.
+  panel_blur: 0         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
+
+
+# The CRT overlay (scanlines and vignette, cosmetic only): whether it is drawn over the page.
+crt:
+  on: false
+
+
+# === Code theme =============================================================
+# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. The class name of any of the 19 VS Code themes (such as `vscode-dark-2026`, `vscode-light-modern`) takes that theme's TextMate rules under any UI theme, and any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme.
+code_theme: tokens
+
+
+# === File icons =============================================================
+# The file icon theme: `seti` draws the icons of VS Code's default theme, and the saved name of an icon theme an approved, enabled app offers (`<app view id>/<id>`, which the File Icon Theme row of the Settings view and `:file-icons` in Cmd-K write) draws that theme's icons in the Files view, the tabs, Cmd-K and the diff headers. A value naming no such theme is reported as a finding and read as `seti`.
+file_icons: seti
+
+
+# === Pane strip =============================================================
+# What the top row of every pane draws, as VS Code's workbench.editor.showTabs and workbench.editor.editorActionsLocation do. The strip menu's Tab Bar and Editor Actions Position submenus write these two keys.
+# `multiple` draws every tab, `single` draws the active tab alone, `none` draws no tab and no row, but a title row with the lock mark while the pane is locked.
+show_tabs: multiple
+# `strip` draws Split Right and the `...` pane menu at the right of the row, or with `show_tabs: none` in the window's title bar strip for the active pane, `hidden` draws neither (the pane menu stays reachable by a right click on the strip or on an empty pane).
+editor_actions: strip
+# `true` wraps the tabs of a pane onto more rows instead of scrolling the one row; it applies only while `show_tabs` is `multiple`, as VS Code's workbench.editor.wrapTabs.
+wrap_tabs: false

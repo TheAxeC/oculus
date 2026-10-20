@@ -1,10 +1,11 @@
 <script lang="ts">
-    // Layer 3, view partial. The control of one option of a config file, drawn from the option's
+    // Layer 3, view partial. The control of one option of a defaults file, drawn from the option's
     // catalog entry by editors/FieldControl.svelte: a checkbox for a toggle, a number box held to
     // its range, a text box or area, a choice, a glyph, hue or colour picker, a folder, file or
     // path box, and for a list, a multi, a parked list or a family its editor (../editors/
-    // Editor.svelte). A list or family the file holds in a shape the editor does not draw has the
-    // way to edit the file instead, and so does a row whose key is not in the file, which says so.
+    // Editor.svelte). A list or family in force in a shape the editor does not draw has the way to
+    // edit the user's file instead (EditLink.svelte), and so does a row with no value in force,
+    // which says so.
     //
     // A box keeps its unsent text in the tab's instance state under the file and key
     // (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it on
@@ -22,7 +23,7 @@
     } from '$lib/state/system/config/editors/fields';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
-    import { placeOf, type ConfigRow } from '$lib/state/system/config/rows';
+    import type { ConfigRow } from '$lib/state/system/config/rows';
     import { typedText, withTypedText } from '$lib/state/system/config/typed';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
@@ -45,7 +46,7 @@
 
     let { row, id, writer, editors, lists }: Props = $props();
 
-    /** The value the control shows: the one sent while its write is out, else the file's. */
+    /** The value the control shows: the one sent while its write is out, else the one in force. */
     const held = $derived(writer.shown(row) ?? row.value);
 
     /** The control the row is drawn with. */
@@ -117,7 +118,7 @@
 </script>
 
 {#if row.state === 'missing'}
-    <EditLink {...placeOf(row)} line={row.line} />
+    <EditLink {row} />
 {:else if single}
     <div class="box" class:wide={control === 'long'} role="presentation" onkeydown={revert}>
         <FieldControl
@@ -135,7 +136,7 @@
     <Editor {row} {id} {editors} {lists} />
 {:else}
     <div class="summary">
-        <EditLink {...placeOf(row)} line={row.line} />
+        <EditLink {row} />
     </div>
 {/if}
 

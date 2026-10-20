@@ -42,15 +42,15 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - The Command Center is the strip's button that opens the palette. The Focus board's "Command center" is a different thing: the board's panel of what wants attention.
 - Go Back and Go Forward walk the tabs you made active, on any page, pane or float, and in a source tab the places you jumped to (Go to Definition, a search result, a problem) and caret moves of more than 10 lines. Back or Forward to a closed tab opens it again in the page, pane or float it was closed from, at its place among the tabs there, while that page and pane are still there; otherwise it opens in the pane you are in on the page on screen. A step whose file is gone is skipped. Each window keeps its own last fifty steps until it reloads, and a button is disabled at either end. The keys are under [The keys](#the-keys); the palette has `:go-back` and `:go-forward`.
 - Toggle Left Dock, Toggle Bottom Dock and Toggle Right Dock hide or show the float docked at that edge. A toggle is drawn pressed while its float shows and disabled when no float is docked there. Docking a float at a hidden edge, by drag or from a menu, or opening a view in its float, shows the edge again. Which edges are hidden is saved with the layout. The palette has `:toggle-left-dock`, `:toggle-bottom-dock` and `:toggle-right-dock`.
-- With `show_tabs: none` and `editor_actions: strip` in `appearance.yml`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar, and in a browser, which has no strip, each pane draws them in a title row of its own.
+- With the options `show_tabs: none` and `editor_actions: strip`, set in Settings or the open workspace file's `settings:`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar, and in a browser, which has no strip, each pane draws them in a title row of its own.
 - In the app the window has no title bar of the system's: the strip moves the window, the window buttons sit at its left on macOS and over its right end elsewhere, where they take the strip's colours of the theme on screen (no room is kept for them in full screen, where macOS hides them), and a double press on its empty part does what macOS's "Double-click a window's title bar to" setting says: zoom, minimise or nothing. The find bar opens under the strip.
 - A float's window in the app has the same strip, with the name of the float's tab in the middle and no toggles; its Back and Forward walk that window's own steps. A browser tab opened for a float draws no strip.
 
 ### The rail
 
-- One button per entry of `rail:` in `config/layout.yml`: `{ label, glyph, page }`, where `page` names an arrangement under `arrangements:`.
-- A button shows its page, made from the arrangement the first time and as you left it after that. Its badge is the sum of the counts its page's views give the rail, which are the views whose row of `counts` in config/layout.yml says `rail: true`: Projects, Coauthor and Personal the first group their tab counts (the cards in progress, and the cards being built), Inbox, Repositories, Problems, Findings, Audit, the sessions the Session list shows as needing input, Funding, Education, Applications, Joint Work, Tasks and Talks & Events. Its tooltip names each count above zero, and the badge takes the most urgent of their colours, red before amber before green before any other colour, such as Funding's violet, or the accent when none has one. A page whose views count nothing shows the first mark among them, such as LinkedIn's overdue post. Every tab keeps its own count, and the views whose row says `rail: false`, Position Leads, Processes, Calendar, Live HPC, Archive and Software, count on their tabs only. A row's `tab: false` takes the count off the view's tabs.
-- Drag a button to move it. Right-click it (or Shift+F10) to hide it, reset its page, or open the rail list in Settings. History undoes a move or a hide. Reset asks first.
+- One button per entry of the rail list in force: `rail:` in `config/defaults/layout.yml`, with the entries of the open workspace file's `settings:` laid over it by `page`. An entry is `{ label, glyph, page }`, where `page` names an arrangement under `arrangements:`.
+- A button shows its page, made from the arrangement the first time and as you left it after that. Its badge is the sum of the counts its page's views give the rail, which are the views whose row of `counts` in `config/defaults/layout.yml` says `rail: true`: Projects, Coauthor and Personal the first group their tab counts (the cards in progress, and the cards being built), Inbox, Repositories, Problems, Findings, Audit, the sessions the Session list shows as needing input, Funding, Education, Applications, Joint Work, Tasks and Talks & Events. Its tooltip names each count above zero, and the badge takes the most urgent of their colours, red before amber before green before any other colour, such as Funding's violet, or the accent when none has one. A page whose views count nothing shows the first mark among them, such as LinkedIn's overdue post. Every tab keeps its own count, and the views whose row says `rail: false`, Position Leads, Processes, Calendar, Live HPC, Archive and Software, count on their tabs only. A row's `tab: false` takes the count off the view's tabs.
+- Drag a button to move it. Right-click it (or Shift+F10) to hide it, reset its page, or open the rail list in Settings. A move or a hide is written into the open workspace file's `settings:`, and History undoes it. Reset asks first.
 - Every view sits on one rail page, or in the float (Live HPC, Usage, Workbenches). The Views catalogue lists them by group: each rail button is a group, with its `chord` letter and its heading glyph `group_glyph`, then the float of `nav_groups`; `docs` adds documents to a group.
 - A click on a catalogue entry opens the view on the page you came from. A view that is already open somewhere is shown where it is. Shift-click opens it in a new pane to the right. The right-click menu has Open on this page and Open beside on this page; a view the page already holds is shown where it is by either.
 - The Help page holds this manual, the Apps guide, the Templates and Palette pages, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
@@ -59,7 +59,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ### Pages and the pane tree
 
-- A page is a working surface: a tree of splits and panes, each pane a strip of tabs. The layout is saved as it changes, and every browser tab and app window of one server shares it.
+- A page is a working surface: a tree of splits and panes, each pane a strip of tabs. The layout is saved as it changes, by the server into `~/.oculus/layouts.json`, one arrangement per workspace, and every browser tab and app window of one server shares it: two pages that change the layout at the same moment keep both changes.
 - The Pages view lists every page with show, rename and close; a rail page also has Reset. Drag a page's row onto a pane's edge to show it there.
 - Settings has Reset all pages: it rebuilds every rail page and the floats, and leaves your own pages and workbenches alone. It asks first, and about each tab with unsaved text; Save saves that tab first, and a save that fails stops the reset with nothing done.
 - Eleven views exist once: Settings, Focus, Usage, Live HPC, Audit, Findings, History, Processes, Pages, Workbenches and Status. Opening one goes to wherever it is. Files, Search, Terminal and the session views can be open on several pages.
@@ -71,7 +71,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - The tabs a page starts with are pinned. Cmd+W on a pinned tab closes nothing; Close in its menu does. Pin and unpin from the tab's menu, Pin Editor in the palette, or by dragging into the pinned tabs.
 - Reopen Closed Tab (Cmd+Shift+T in the app, `:reopen-closed-tab` in the palette) reopens the tabs the last close closed, in the pane you are in on the page on screen. The window keeps twenty until it reloads.
 - A new tab opens right after the active one; closing the shown tab shows the one shown before it.
-- `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` in `appearance.yml` set the tab strip; they are also in Settings and in the strip's right-click menu.
+- The options `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` set the tab strip; Settings and the strip's right-click menu write them into the open workspace file's `settings:`.
 - New Text File (right-click on a strip's empty part) opens an untitled text. Its first Save asks for a folder and a name.
 - A tab showing a file draws its path as a breadcrumb. Press a folder to show it in Files; in a source tab the path goes on with the symbols around the caret.
 - A dot in place of the close control means unsaved text. Closing that tab, its pane or its page asks whether to save it first. Save (the default, Enter) saves each such tab and closes the ones that saved; a tab whose save fails, or that has nothing to save it to (an untitled tab), stays open with its text. Don't Save closes and loses the text. Cancel or Escape keeps every tab and its text. Unsaved text survives a tab switch and a reload.
@@ -80,7 +80,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ### Workbenches
 
-- A workbench is a page for one folder. Left: Files, Search, Repositories, Deposit (for a project with a deposit), the TeX view, Problems and the sessions list, each limited to the folder. Right: the documents pane. The arrangement is `workbench:` in `config/layout.yml`.
+- A workbench is a page for one folder. Left: Files, Search, Repositories, Deposit (for a project with a deposit), the TeX view, Problems and the sessions list, each limited to the folder. Right: the documents pane. The arrangement is `workbench:` in `config/defaults/layout.yml`.
 - Open Workbench is on a project card, a collection card whose `link` is a folder, an entry page, and a person's folder block; Open in New Files is on a folder or root in Files. A workbench for a project or entry opens that item first.
 - A folder has at most one workbench. A limited tab says `In <root>/<path>` and has a control that widens it to the whole root.
 - Workbenches, at the foot of the rail, lists the open ones; Manage Workbenches opens the Workbenches view.
@@ -102,22 +102,24 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 - Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task is a file of the primary hub, `.oculus/tasks/litwatch.md`, `scout.md`, `linkedin.md` or `inbox.md`, and runs as a Claude session in a terminal that is asked to follow that file step by step. The tray offers only the tasks whose file the hub holds, and says so in one line when it holds none; [templates](docs/templates.md) has a template of each file. A task's row gives its last run ("Last run:", or "Last post:" for LinkedIn) and, after a bar, the schedule that runs it next ("Next:"). A pressed task, and a schedule's Run now, turn a sync glyph until the terminal opens or the refusal is said. Chat starts a Claude session over the portfolio.
 - A schedule or a request that names a task whose file the primary hub lacks is refused and starts nothing, and the Focus board's refresh lines name only the tasks that have a file.
-- A schedule runs a task, a saved command or a prompt on a cron pattern, in local time. The dialog shows the next three runs before it saves.
+- A schedule runs a task, a command of a repository's `.oculus/commands.yml` or a prompt on a cron pattern, in local time. The dialog shows the next three runs before it saves.
 - An entry is `name`, `runs` (`{ task: litwatch }`, `{ command: build, folder: ... }` or `{ prompt: "...", folder: ... }`), `when`, and optional `paused` and `unattended`. Without `when` it runs only from Run now. The template is in [templates](docs/templates.md).
 - You may edit the file by hand; the dialog, Pause and Resume change only their own keys and keep your comments.
 - A run missed while oculus was stopped starts once when it starts again. A due run while the last one still works is skipped.
-- Run unattended starts Claude with `--dangerously-skip-permissions`, so nobody is asked. A saved command never runs unattended.
+- Run unattended starts Claude with `--dangerously-skip-permissions`, so nobody is asked. A command never runs unattended.
+- Schedule... on the right-click menu of an entry with a `run` opens the dialog on that command. The dialog lists the lines each run starts, the commands it depends on first, and Save approves them. A scheduled command runs only while its chain is approved: an entry of `commands.yml` written or changed by hand, or by a pull, runs on its schedule once its chain is approved through Edit or Schedule...; until then its due run starts nothing and the tray says why.
 - A schedules file or run record (`~/.oculus/schedule.json`) that does not read stops every schedule, and the tray says so.
 
 ### The status bar and notifications
 
-- The repository, branch and sync items follow one repository: the one holding the active tab's file, else the workbench's folder, else the one you picked from the repository item's list, else the hub's.
+- The repository, branch and sync items follow one repository: the one holding the active tab's file, else the workbench's folder, else the one you picked from the repository item's list (`status_bar.repository`), else the hub's.
 - Switching branch and Sync ask first. Sync pushes when only ahead, otherwise pulls then pushes; with no upstream it offers Publish Branch.
-- The problems item toggles the Problems view. The debug item lists the launch configurations. Right-click the bar to hide or show any item.
+- The problems item toggles the Problems view. The debug item lists the launch configurations. Right-click the bar to hide or show any item; the hidden items are `status_bar.hidden`.
 - In a source tab: the blame item opens the commit in the graph; the line and column open `:`; indentation, encoding and line ending convert the text; the language server item restarts or shows the server.
 - The LaTeX item shows during a LaTeX tab or a build, and opens the TeX view. It turns amber while a build waits for your approval.
 - When the bar is too narrow, items leave from the middle; hidden ones stay listed in the right-click menu.
-- The bell counts unread notifications. Do Not Disturb survives a reload. A toast shows for eight seconds.
+- The bell counts unread notifications. Do Not Disturb is `status_bar.quiet`, so it holds on every page and after a reload. A toast shows for eight seconds.
+- The status bar's choices are options, written into the open workspace file's `settings:` like every option Settings sets; with no workspace file open, oculus offers Save Workspace As... and writes nothing.
 
 ## The keys
 
@@ -302,9 +304,9 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - **Live HPC.** The cluster is `slurm.resource` of the hub's `config.yml`; the host is `hpc_host` of `local.yml`, else the cluster entry's `host`. It runs `squeue`, `sacct` and `sinfo` over ssh every `slurm.poll_min` minutes. Submit Job (on a `.slurm` file) shows its plan (folders, rsync arguments, the `sbatch` command) before it runs, and warns when the script does not use `/local/$SLURM_JOB_ID`. Its glyph turns while the plan is prepared and again while the job is sent. It never uses rsync `--delete`. Cancel runs `scancel`. The Login node section lists the Recover downloads that run on the login node, with the bytes each folder holds and its rate, and follows them live: the same poll reads them, and once a minute while a Recover run on the cluster is followed, so opening the section sends no request.
 - **Processes.** Lists terminals, processes matching `processes.patterns`, and app hosts. Stop asks first. Its tab counts the programs it lists as running: the processes in its table and the app hosts that are running or starting.
 - **Usage.** Refreshed every `usage_refresh_min` minutes. Refresh on a Claude account turns its glyph until that refresh answers.
-- **Audit.** Mute writes a finding's signature to `audit_ignore:` in `behavior.yml`.
+- **Audit.** Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`.
 - **Memories.** Add takes a JPEG or PNG.
-- **Settings.** Each control writes its file as you set it, keeps the file's comments, and is undoable in History. A key of the hub's list is written to `.oculus/config.yml`; the `local.yml` keys are listed under This machine with their value in force. Search takes `@modified` and `@id:`.
+- **Settings.** Each control writes your value into the open workspace file's `settings:` as you set it, keeps the file's comments, and is undoable in History; with no workspace file open it offers Save Workspace As... and writes nothing. A key of the hub's list is written to the primary hub's `.oculus/config.yml`, and oculus's own files are never written. A value differing from oculus's is marked Modified, and Reset takes your value out of its file. A list or map is written as you see it, and an entry of oculus's you remove or hide is written as `removed: true` (a list) or `null` (a map), so it stays out. Each heading has Open Settings File, which opens the workspace file, and Show Defaults, which opens oculus's defaults file to read only; Edit in a file opens the file at the key, adding the key with the value in force when the file lacks it. The `local.yml` keys are listed under This machine with their value in force. Search takes `@modified` and `@id:`.
 - **Refactor Preview.** Shows a language server's edit before anything is written, one check per file and edit. Apply writes the checked edits; Discard writes nothing.
 - **Problems.** The filter takes comma-separated terms: a word, a glob, or `!` to exclude. A press shows the place in a preview tab.
 - **TeX view.** Follows the LaTeX file in front. A Math Symbol inserts its command. Math Preview (Cmd+Alt+M) renders the math at the caret.
@@ -313,7 +315,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 ### LaTeX builds
 
 - A file builds through its root: a `% !TEX root = <path>` comment, else the file itself if it has `\documentclass`, else the main file that includes it, else the only main file of its folder.
-- `% !TEX program = xelatex` or `lualatex` picks the engine; `% !LW recipe = <name>` picks a recipe. Recipes and tools are `latex.recipes` and `latex.tools` in `behavior.yml`, with LaTeX Workshop's placeholders. `latex.out_dir` and `latex.aux_dir` set the output folders.
+- `% !TEX program = xelatex` or `lualatex` picks the engine; `% !LW recipe = <name>` picks a recipe. Recipes and tools are the options `latex.recipes` and `latex.tools`, with LaTeX Workshop's placeholders, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. `latex.out_dir` and `latex.aux_dir` set the output folders.
 - A build runs in a terminal. A build that would read a `latexmkrc` or run document code (`Rscript`, `julia`, `pweave`, `quarto`, `R CMD Sweave`) waits until you approve it; a changed file asks again.
 - `latex.auto_build`: `on_file_change` (default), `on_save` or `never`. `latex.auto_clean`, `latex.clean_and_retry` and `latex.texcount_autorun` do what their names say.
 - A failed build posts a notice with Open Compiler Log and Show Problems; its errors go to Problems and the editor.
@@ -334,8 +336,8 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - Show in Files on a card or a link opens Files at that folder or file.
 - The star on a row bookmarks it in `.oculus/bookmarks.yml` of the primary hub. The Bookmarks section lists them: a file bookmark opens the file, a folder bookmark shows it in Files. Bookmarks can be renamed, removed and reordered.
 - An app can add a badge and a colour to a row.
-- Delete moves to the Trash after asking. Do not ask me again writes `files: { confirm_delete: false }` to `behavior.yml`.
-- A file's icon sits where its sibling folders' arrows sit. `files: { file_icon_at_arrow: false }` in `behavior.yml`, or the Settings toggle Files: File Icon At Arrow, lines it up with their icons instead, as VS Code does.
+- Delete moves to the Trash after asking. Do not ask me again writes `files: { confirm_delete: false }` to the open workspace file's `settings:`.
+- A file's icon sits where its sibling folders' arrows sit. `files: { file_icon_at_arrow: false }` in the workspace file's `settings:`, or the Settings toggle Files: File Icon At Arrow, lines it up with their icons instead, as VS Code does.
 - Drag onto a folder to move (Option to copy). Files dragged in from the system upload.
 - Every create, rename, move, copy, paste, upload and delete is undoable in History (Cmd+Z in Files). An undone delete restores files up to 5 MB.
 - Before each save, the old text is kept in the local history (`~/.oculus/history`, 50 copies per file, none over 256 KB). The Timeline section lists those copies and the file's commits; Restore writes a copy back.
@@ -421,12 +423,13 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 
 ## Project commands
 
-- A repository's commands come from `.oculus/commands.yml`, from the commands saved with Add Command..., and from what oculus finds (CMake presets, `package.json` scripts, `Makefile` targets).
+- A repository's commands come from `.oculus/commands.yml` and from what oculus finds (CMake presets, `package.json` scripts, `Makefile` targets).
 - `commands.yml` is a list `commands:` of `name`, `run`, optional `cwd`, `depends_on` and `default` (`build` or `test`). The template is in [templates](docs/templates.md).
+- Add Command... on a repository's command bar adds an entry to the end of that repository's `commands.yml`, and makes the file from its template when there is none. The form lists the lines a press would run, the commands it depends on first; Save approves them, so the command runs without asking. Edit and Delete, on the right-click menu of an entry with a `run`, change only that entry and keep your comments and its other keys. A file that does not read is not written, and the form says why.
 - Commands show above the commit box in Repositories, on a project card, and in Run Command on a folder in Files.
 - `depends_on` runs each command of the chain once, in order, and stops at the first failure.
 - `${file}`, `${fileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${lineNumber}`, `${selectedText}` and `${workspaceFolder}` reach the command as environment variables.
-- A command from a file or a found one runs only after you approve its exact text on this machine. A command saved with the form runs without asking.
+- A command runs only after you approve its exact text on this machine; a Save of the form, or of the schedule dialog that Schedule... opens, is that approval. A changed line, folder or `depends_on`, by hand or by a pull, asks again; an entry written or changed by hand runs on a schedule once its chain is approved through Edit or Schedule....
 - The terminal stays after the command ends, with a check or a cross. Rerun and Restart run it again. A `file:line: error:` line opens that file.
 - An app can add tasks and problem matchers ([Apps guide](docs/apps.md)).
 
@@ -464,7 +467,7 @@ configurations:
 - What an app adds (commands, keys, menus, status items, views, editors, settings, themes, languages, servers, debuggers, tasks, terminals, source controls, file badges) shows only while it is approved and enabled.
 - An app's settings are written to `app_settings` of the hub's `config.yml`.
 - No app can reach `~/.oculus`, oculus's `config/`, a hub's `secrets` folder or any `local.yml`.
-- Limits are the `apps:` block of `behavior.yml`. The [Apps guide](docs/apps.md) has the manifest, the bridge and an example.
+- Limits are the options under `apps:`, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. The [Apps guide](docs/apps.md) has the manifest, the bridge and an example.
 
 ## Source Control and worktrees
 
@@ -490,24 +493,27 @@ configurations:
 
 ## Configuration and the data
 
-- Every setting is in one of three places: oculus's `config/` folder, a hub's `.oculus/config.yml`, or a hub's `.oculus/local.yml`. A saved change applies at once.
+- Every setting is in one of four places: oculus's `config/defaults/` folder, which holds oculus's own values and is never written; the open workspace file's `settings:`, which holds your values and is where Settings and every control that sets an option write; a hub's `.oculus/config.yml`, for the keys of the hub; and a hub's `.oculus/local.yml`, for this machine's. A saved change applies at once, on every page.
 - `config/` holds:
-  - `appearance.yml`: themes, wallpaper look, code theme, file icons, terminal look, tab strip.
-  - `behavior.yml`: thresholds, cadences and limits; `focus:` (the Focus horizons, the Command Center's categories and sources, the statuses the Focus columns count as open); the `editor`, `files`, `literature`, `apps`, `open`, `git`, `lint`, `latex`, `search`, `mail`, `calendar`, `changes`, `processes` and Live HPC keys.
-  - `layout.yml`: the rail, the arrangements, `workbench:`, `nav_groups`, `docs:`.
-  - `sources.yml`: what the portfolio reads, and `languages:`, the map from file names to languages.
-  - `present.yml`: `defaults.tag_tones` for every deck.
-  - `catalogs/`: the composer's agents, file nesting, glyphs, icons, LaTeX tables, the options catalog, and `vocab.yml` (the palette, `statuses`, `types`, `tiers`, `publication_kinds`, Focus lanes, venue tiers, radar buckets).
+  - `defaults/appearance.yml`: the theme, the text size, the terminal themes' `rice.icons`, `rice.brackets` and `rice.monospace`, the theme list, the wallpaper and the CRT overlay, the code theme, file icons, the terminal's look, the tab strip.
+  - `defaults/behavior.yml`: thresholds, cadences and limits; `focus:` (the Focus horizons, the Command Center's categories and sources, the statuses the Focus columns count as open); the `editor`, `files`, `literature`, `apps`, `open`, `git`, `lint`, `latex`, `search`, `mail`, `calendar`, `changes`, `processes`, `status_bar` and Live HPC keys.
+  - `defaults/layout.yml`: the rail, the arrangements, `workbench:`, `nav_groups`, `docs:`.
+  - `defaults/sources.yml`: what the portfolio reads, and `languages:`, the map from file names to languages.
+  - `defaults/present.yml`: `defaults.tag_tones` for every deck.
+  - `options/`: one file per defaults file and one for `local.yml`, describing every option (its help, heading, section and control) and each group of dotted options; Settings and the completion menu show these words.
+  - `catalogs/`: the composer's agents, file nesting, glyphs, icons, LaTeX tables, Unicode math, and `vocab.yml` (the palette, `statuses`, `types`, `tiers`, `publication_kinds`, Focus lanes, venue tiers, radar buckets).
 - What a status, type or tier word does is a flag on that word in `vocab.yml`: which status counts as blocked, waiting or submitted, which type is live, an idea or a dead end, which tier is finished or software. A word a hub adds behaves as its flags say.
   - `schemas/`: the forms of `project.yml`, a deck's `present.yml` and `cpp.yml`.
   - `text/`: every word on screen.
-- Every option is described in `catalogs/options.yml` and set in Settings. A wrong value is a finding, and that option takes its default.
+- Every option is described in its file under `config/options/` and set in Settings. A wrong value is a finding, and that option takes oculus's value.
+- The open workspace file's `settings:` holds keys as the defaults files hold them, with no file names: `code_theme: vscode-dark-2026`, `terminal: { font_px: 14 }`. A value replaces oculus's whole, except a list whose entries have a key field (`rail` by `page`, `floats` by `view`, `themes`, `latex.recipes` and `latex.tools` by `name`, `focus.ticker_sources` by `collection`) and a map such as `arrangements` or `counts`, which override oculus's entries one by one: your entries come first in your order, then oculus's others. `{ page: focus, removed: true }` in such a list takes oculus's entry out, and `focus: null` in such a map takes oculus's key out. A key of a hub's `config.yml`, a key no option names and a value its option refuses are findings naming the workspace file and the key, and oculus's value stands. The template is in [templates](docs/templates.md).
+- In a YAML file the editor checks, Ctrl+Space completes the keys, each with its description: the options of the defaults files, a workspace file's `settings:`, a hub's `config.yml` and `local.yml`, the catalogs, the schemas and the hub's data files.
 - A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](docs/templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path. Its `collections:` names the file of each registry, card list and feed: `leads` and `radar` name the Position Leads and Lit Watch files.
 - A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
-- A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, and where oculus keeps its files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
+- A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, the download accounts, and where oculus keeps this machine's files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
 - `commit_message_account` in `local.yml` names the Claude account the suggested commit message runs under: the label of a `claude` row of `accounts:` in any hub's file. Empty or absent, it runs on `~/.claude`; a label no Claude row holds is a finding and `~/.claude` is used. The run saves no session, so it is never listed in Sessions.
 - The rest of `.oculus/` (bookmarks, workspaces, schedules, update tasks, data files, notes, apps, pictures) is listed in the Data map ([data map](docs/data-map.md)).
-- `~/.oculus/` is oculus's own state: the open workspace, the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
+- `~/.oculus/` is oculus's own state: the open workspace, the page state the server saves for every page (`layouts.json`, each workspace's arrangement and its unread copy; `layout-writes.json`, the last 500 layout writes; `views.json`, each tab's view state; `debug.json`, the debugger's breakpoints and watches), the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
 - The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
 - A hub's data files, their keys and the views that show them are in the Data map ([data map](docs/data-map.md)), a tab of the Help page. A collection's default file is under `.oculus/data/`, in the folder of its kind: `research`, `pillars`, `literature`, `people` or `academic`.
 - A collection no hub of the workspace lists under `collections:` has no view: its tab is left out of its page, and a pane left with no tab names the missing key. The tab comes back when a hub lists the key.
@@ -532,5 +538,5 @@ configurations:
 
 - `calendars` and `mail` in `local.yml` list your accounts (`provider`: `google`, `microsoft`, or `ics` for a calendar link). Add account and Remove in the views write them.
 - The first account of a provider opens Account setup, which saves your app's client to `~/.oculus/connect/`. Tokens and calendar links live in files with mode 0600 and are never shown or logged.
-- `mail.poll_min`, `calendar.poll_min`, `calendar.days_back` and `calendar.days_ahead` in `behavior.yml` set the polling.
+- The options `mail.poll_min`, `calendar.poll_min`, `calendar.days_back` and `calendar.days_ahead`, set in Settings or the open workspace file's `settings:`, set the polling.
 - An Inbox thread is on your plate when it is unread in the inbox, labelled `todo`, or a single unlabelled message. The notes per thread are in `<mail_dir>/triage.json`, written by the card and by the Inbox update task.

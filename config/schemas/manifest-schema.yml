@@ -1,8 +1,6 @@
 # ===========================================================================
 # manifest-schema.yml
-# oculus's own configuration, the project.yml edit form as data: which fields there are, what each
-# one is called, which widget edits it, which section it sits in, and where a widget's choices come
-# from. Merged with the other config/*.yml by loadConfig(); `manifest_schema` is its top-level key.
+# oculus's own configuration, the project.yml edit form as data: which fields there are, what each one is called, which widget edits it, which section it sits in, and where a widget's choices come from. Merged with oculus's other config files by loadConfig(); its top-level keys are `manifest_schema` and `groups`, the help lines of the maps its dotted fields lie in.
 # ===========================================================================
 
 
@@ -86,3 +84,11 @@ manifest_schema:
     doi:           { label: "DOI", type: text, section: Outcome, help: "The DOI of the published paper. Any project may carry it." }
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }
+
+# The help line of each map a dotted field lies in (`status` of `status.chips`), which the YAML editor shows for the map. A map without a line and a line for no such map are findings.
+groups:
+  status: "Where the project stands: the chips shown on its card and the one line read at a glance."
+  followup: "A note of something to do later, and the date before which it stays hidden."
+  code_availability: "The deposit of the project's code: whether and where it is deposited, and the public repository it is deposited in."
+  repository: "The project's repository on its remote: its address, visibility, description, homepage, topics and the date it was created."
+  reproduced: "The last run of the whole pipeline again from the raw data: its date and what it needed."

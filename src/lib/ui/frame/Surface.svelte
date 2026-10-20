@@ -15,12 +15,13 @@
     // whose own flex or grid placement matters sits in a box of its own around the Surface, which
     // is the parent's item in both cases (shell/panes/strip/StripSaid.svelte).
     //
-    // The paint is a layer behind the content that reaches a little past the box on every side,
-    // so the words keep a margin of surface around them while the box itself adds no padding: the
-    // content stays where it is with or without a wallpaper, and the margins of what it holds fall
-    // outside it in a flow of blocks, as they do without one. The layer is absolutely placed, so
-    // the box is the containing block and the stacking context of what it holds while a wallpaper
-    // is on.
+    // The paint is a layer behind the content. A block surface's layer lies inside its column: it
+    // reaches 4 px above and below the box and not past its sides, and the box pads its content
+    // 8 px on each side, so the words keep a margin of surface and the layer's edges line up with
+    // the cards, lanes and fitted boxes beside it. Over a wallpaper the content of a block surface
+    // therefore sits 8 px further in than without one; the margins of what it holds fall outside
+    // it in a flow of blocks, as they do without one. The layer is absolutely placed, so the box is
+    // the containing block and the stacking context of what it holds while a wallpaper is on.
     //
     // One translucent layer over the picture and never two: an element that paints that one layer
     // carries `data-surface` (a tinted pane, a card, a lane, a free float, this), and a Surface
@@ -70,6 +71,11 @@
         min-width: 0;
     }
 
+    /* A block surface pads its words inside its column, where its layer lies. */
+    :global(body.wall) .surface:not(.inline, .fitted) {
+        padding: 0 8px;
+    }
+
     :global(body.wall) .surface.inline {
         display: inline-flex;
         align-items: center;
@@ -79,7 +85,7 @@
     :global(body.wall) .surface::before {
         content: '';
         position: absolute;
-        inset: -4px -8px;
+        inset: -4px 0;
         z-index: -1;
         border-radius: var(--input-radius);
         background: var(--panel-on-wall);

@@ -8,8 +8,8 @@
 //
 // `--from` names VS Code's `extensions` folder (default: the installed macOS app's). `--check`
 // writes nothing: it exits 1 and names every block or theme whose file differs from what a run
-// would write, every `vscode-*` row of config/appearance.yml without a block or block without a
-// row, and every class that the list of VS Code themes in
+// would write, every `vscode-*` row of config/defaults/appearance.yml without a block or block
+// without a row, and every class that the list of VS Code themes in
 // src/lib/data/helpers/editor/code-themes.ts (the one layer 1 holds, since it cannot read themes/)
 // lacks or holds without a block. A run writes two files and a second run changes no byte of them:
 //
@@ -52,7 +52,7 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CSS_PATH = join(ROOT, 'src', 'lib', 'themes', 'vscode.css');
 const JSON_PATH = join(ROOT, 'src', 'lib', 'themes', 'vscode-rules.json');
-const APPEARANCE_PATH = join(ROOT, 'config', 'appearance.yml');
+const APPEARANCE_PATH = join(ROOT, 'config', 'defaults', 'appearance.yml');
 const DEFAULT_FROM = '/Applications/Visual Studio Code.app/Contents/Resources/app/extensions';
 
 /** The width a comment line may reach. */

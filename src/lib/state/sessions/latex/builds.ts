@@ -48,7 +48,7 @@
 
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import type { LatexApproval } from '../../../data/model/index.ts';
-import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../data/sources/config/settings/latex.ts';
 import { t } from '../../shared/words/text.ts';
 import { emptyTarget, type LatexTarget } from '../terminal/latex-target.ts';
 import { readListed } from '../terminal/pty/pty-io.ts';

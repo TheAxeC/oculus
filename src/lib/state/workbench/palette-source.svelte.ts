@@ -54,8 +54,9 @@ export type PaletteSource = {
 export type PaletteSourceStore = {
     paletteSource: () => PaletteSource;
     /**
-     * Hold a file ending under a language in the `languages` map of config/sources.yml. Null, and
-     * no write, when the map is not one or the language already holds the ending.
+     * Hold a file ending under a language in the `languages` map, written into the open workspace
+     * file's `settings:`. Null, and no write, when the map is not one or the language already holds
+     * the ending.
      */
     associate: (ending: string, language: string) => Promise<WriteAnswer | null>;
     /**

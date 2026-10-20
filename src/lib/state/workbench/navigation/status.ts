@@ -376,8 +376,9 @@ export type ChosenState = 'none' | 'use' | 'wait' | 'drop';
  * roots are not read yet (`roots` null), and while the channel carries no readable state for it:
  * the choice is kept and the hub followed until the channel reports it. 'drop' when the roots are
  * read and it lies under none of them, a workspace with no root included, so the picker does not
- * list it and the choice is forgotten. `roots` are the current workspace's roots, which are the
- * roots the channel and the Files view serve.
+ * list it and the bar follows the hub as with no choice; the `status_bar.repository` option keeps
+ * the choice. `roots` are the current workspace's roots, which are the roots the channel and the
+ * Files view serve.
  */
 export function chosenState(
     chosen: string | null,
@@ -547,14 +548,15 @@ export function languageHint(name: string, current: string): string {
         : t('statusbar.palette_language_hint', name);
 }
 
-/** The `languages` map of config/sources.yml as the picker writes it: endings by language. */
+/** The `languages` map of the merged config as the picker writes it: endings by language. */
 const endingsShape = z.record(z.string(), z.array(z.string()));
 
 /**
- * Associate an ending with a language by writing `languages` of config/sources.yml: the ending is
- * taken from the language that held it and added to the chosen one, which is created when the file
- * has no entry for it. The write carries the map it was made from as its base. Null, and no write,
- * when the map is not one or the language already holds the ending.
+ * Associate an ending with a language by writing `languages`, an option of
+ * config/defaults/sources.yml, through the Settings write path into the open workspace file's
+ * `settings:`: the ending is taken from the language that held it and added to the chosen one,
+ * which is created when the map has no entry for it. The write carries the map it was made from as
+ * its base. Null, and no write, when the map is not one or the language already holds the ending.
  */
 export async function associateEnding(
     write: (file: string, key: string, value: unknown, base: unknown) => Promise<WriteAnswer>,

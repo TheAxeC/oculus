@@ -8,11 +8,11 @@
 // start, and performs the drop of a tab another window handed it. A popped-out page writes its
 // window's place when the host reports the window moved or resized, puts its tabs back in the main
 // window when the reader closes the window, and has the host close the window when its float stops
-// being one placed in a window. Every window, sent to the server's new origin after a restart,
-// carries the arrangement there and goes. The menu's commands are window/menu-commands.svelte.ts's.
+// being one placed in a window. Every window, sent to the server's new origin after a restart, goes
+// there and reads the same server's arrangement. The menu's commands are
+// window/menu-commands.svelte.ts's.
 
 import type { ClientState } from '../../state/client/context.ts';
-import { carryWorkbench } from '../../state/workbench/layout/index.ts';
 
 /** The bar a window's title takes above its content, which a screen point is moved by. */
 function titleBar(): number {
@@ -33,15 +33,10 @@ export function useDesktopWindows(client: ClientState): void {
         })
     );
 
-    // A restart onto another port: the page takes its arrangement and settings to the new origin,
-    // whose storage holds none of them, and goes to its own address there.
+    // A restart onto another port: the page goes to its own address there, where the same server's
+    // page state and configuration hold its arrangement and settings.
     $effect(() =>
         bridge.on('move-to', (origin) => {
-            try {
-                carryWorkbench(localStorage, window, origin);
-            } catch {
-                // A page without storage moves without the arrangement.
-            }
             location.assign(`${origin}${location.pathname}${location.search}${location.hash}`);
         })
     );

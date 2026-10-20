@@ -12,28 +12,32 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The Settings editor over the options catalog (config/catalogs/options.yml),
-    // drawn as VS Code's: a search with the count of the settings found, a table of contents on
-    // the left, and a list of groups. The groups are this browser's own values, a subject heading
-    // for each part of the configuration (Appearance, Editor, Terminal and the rest, each with a
-    // line per file it draws from), the machine's own file, and one each for the catalog files
-    // and the text files. Each setting is an item with its control, its default and the file and
-    // line of its key. A text, number, choice, toggle or picker is written to its file as it is
-    // changed or left, through the same write the History view records and can undo; a list, a
-    // multi or a family is edited in its item (editors/) and written whole on Save.
+    // Layer 3, view. The Settings editor over the options catalog (config/options/), drawn as VS
+    // Code's: a search with the count of the settings found, a table of contents on the left, and a
+    // list of groups. The groups are a subject heading for each part of the configuration
+    // (Appearance, Editor, Terminal and the rest, each with a line per defaults file it draws from,
+    // which opens the open workspace file and shows the defaults file), the machine's own file, and
+    // one each for the catalog, schema and text files. Each setting is an item with its control,
+    // its default and the file and line of the user's value of it. A text, number, choice, toggle
+    // or picker is written as it is changed or left, through the same write the History view
+    // records and can undo; a list, a multi or a family is edited in its item (editors/) and
+    // written whole on Save. A write lands in the open workspace file's `settings:`, or in the
+    // primary hub's `.oculus/config.yml` for a key of the hub list; oculus's own files are never
+    // written.
     //
-    // Oculus's own files are read through the read-only route over its `config/` folder, and handed
-    // the version of the config channel, so a write that the watcher pushes back redraws the value.
-    // Only the five tracked files are asked for, and with them the primary hub's settings file,
-    // `.oculus/config.yml`, read through the primary's folder with the folders on its way listed
-    // (state/system/config/view/hub-file.ts); a file opens in an editor only through a folder of
-    // the workspace that holds it; the machine's own
-    // files are listed from the catalog, and the value in force of each key comes with the
-    // workspaces answer, so their text is not read here. The Catalogs and Texts groups are made
-    // from the listings of the two folders, which the same version re-reads. The lists the controls
-    // offer (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's
-    // folders) are built here from the stores the page holds (editors/sources.ts); one that is not
-    // there yet is drawn as loading.
+    // A row's value is the value in force, read from the merged configuration of the config
+    // channel, so a write that the channel pushes back redraws it. The line of a key is read from
+    // the user's files: the open workspace file, read through the hub folder that holds it, and the
+    // primary hub's settings file, read through the primary's folder with the folders on its way
+    // listed (state/system/config/view/hub-file.ts); both are read again at each push. A file
+    // opens in an editor only through a folder of the workspace that holds it, and a defaults file
+    // through the read-only route over oculus's `config/` folder. The machine's own files are
+    // listed from the catalog, and the value in force of each key comes with the workspaces
+    // answer, so their text is not read here. The Catalogs, Schemas and Texts groups are made from
+    // the listings of their folders, which the same push re-reads. The lists the controls offer
+    // (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's folders)
+    // are built here from the stores the page holds (editors/sources.ts); one that is not there yet
+    // is drawn as loading.
     //
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after
@@ -48,20 +52,18 @@
     // selected row.
     //
     // The partials are in settings/: Header (search, count, filter, the table's toggle), Contents
-    // (table of contents), List (groups and sections), Item (one setting), Control (one option's
-    // control), BrowserControl (the controls of this browser's values), AppControl (the control of
-    // a setting an app declares), Gear (the item's menu); the
-    // controls themselves and the editors of lists, multis and families are in editors/.
+    // (table of contents), List (groups and sections, with the line of each file under a heading),
+    // Item (one setting), Control (one option's control), EditLink (the way to edit a
+    // setting in its file), AppControl (the control of a setting an app declares), Gear (the item's
+    // menu); the controls themselves and the editors of lists, multis and families are in editors/.
 
     import { tick, untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
     import { themeClasses } from '$lib/ui/theme/theme';
     import { t } from '$lib/state/shared/words/text';
-    import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { appSettingRows } from '$lib/state/system/config/other-rows/app-rows';
-    import { thisBrowserRows } from '$lib/state/system/config/other-rows/browser';
-    import { CATALOGS, SCHEMAS } from '$lib/state/system/config/config-files';
+    import { CATALOGS, SCHEMAS, workspaceFilePlace } from '$lib/state/system/config/config-files';
     import { hasSavedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { listsOf, type Folder } from '$lib/state/system/config/editors/sources';
     import {
@@ -96,7 +98,7 @@
         registry,
         layout: { instanceLayoutState, restateInstance },
         ui,
-        writes: { writeConfigKey, writeConfigValue }
+        writes: { resetConfig, writeConfigKey, writeConfigValue }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -104,24 +106,30 @@
     /** The folder of the text files, under oculus's config folder like the catalogs'. */
     const TEXT = 'text';
 
-    /** The version of the config channel, which the watcher moves after a write in the folder. */
+    /** The version of the config channel, which the server moves after a write of a layer. */
     const pushed = $derived(message('config')?.version ?? 0);
 
     /** The folder name of the primary hub, or null while there is none. */
     const hubRoot = $derived(primary());
 
+    /** The open workspace file's root and path, or null for the unsaved workspace. */
+    const workspaceFile = $derived(workspaceFilePlace(workspaces()));
+
     $effect(() => {
         refresh(OCULUS_CONFIG_ROOT, pushed);
         if (hubRoot !== null) refresh(hubRoot, pushed);
+        const root = workspaceFile?.root ?? null;
+        if (root !== null && root !== hubRoot) refresh(root, pushed);
     });
 
-    const writer = reactiveWriter(writeConfigKey, () => lists);
+    const writer = reactiveWriter(writeConfigKey, resetConfig, () => lists);
     $effect(() => () => writer.close());
 
-    // A draft ends when the file holds what it sent, another value, or a form the editor does not
-    // draw: the tab's state drops it.
+    // A draft ends when the value in force is what it sent, another value, or a form the editor
+    // does not draw: the tab's state drops it.
     const editors = reactiveEditors(
         writeConfigValue,
+        resetConfig,
         (row) =>
             ui.setInstanceState(
                 instance.id,
@@ -147,11 +155,29 @@
         return listing(hubRoot, path, { hidden: true, ignored: true });
     }
 
+    /** The text of a file that is not read. */
+    const UNREAD = { text: '', truncated: false, error: '', loading: false };
+
     /** One file of the hub, which a workspace with no primary does not have. */
     function hubText(path: string): ReturnType<typeof fileText> {
-        if (hubRoot === null) return { text: '', truncated: false, error: '', loading: false };
+        if (hubRoot === null) return UNREAD;
         return fileText(hubRoot, path);
     }
+
+    /** The user's files: the primary hub's settings file and the open workspace file. */
+    const userFiles = $derived({
+        ...(hubRoot === null ? {} : { hubFile: hubFileText(hubListing, hubText) }),
+        workspace:
+            workspaceFile === null
+                ? null
+                : {
+                      ...workspaceFile,
+                      text:
+                          workspaceFile.root === null
+                              ? UNREAD
+                              : fileText(workspaceFile.root, workspaceFile.path)
+                  }
+    });
 
     /** The body classes the theme sheets hold a block for, read once from the sheets. */
     const classes = themeClasses();
@@ -182,14 +208,13 @@
     const groups = $derived(
         settingsGroups(
             catalogOf(config()?.config ?? {}),
-            (file) => fileText(OCULUS_CONFIG_ROOT, file),
-            thisBrowserRows(ui, wallpaperOnTheme(ui.theme(), appShell.offers())),
+            config()?.config ?? {},
+            userFiles,
             {
                 catalogs: listedFiles(CATALOGS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
                 schemas: listedFiles(SCHEMAS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
                 texts: listedFiles(TEXT, (path) => listing(OCULUS_CONFIG_ROOT, path))
             },
-            hubFileText(hubListing, hubText),
             appSettingRows(appShell.acting(), config()?.config ?? {}),
             {
                 primary: primary(),
@@ -202,7 +227,7 @@
         )
     );
 
-    // The watcher's push moves a row's value; each editor learns what the file now holds.
+    // The config channel's push moves a row's value; each editor learns the value now in force.
     $effect(() => {
         const rows = groups.flatMap((group) => group.sections.flatMap((section) => section.rows));
         untrack(() => {

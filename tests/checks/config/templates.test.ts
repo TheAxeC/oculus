@@ -1,7 +1,7 @@
 // Layer 4, tree check. docs/templates.md against the lists whose keys its templates show: the
 // config.yml template holds every key a hub's settings file may set (`hubKeys` of
-// data/helpers/hub-names.ts) and no other, the local.yml template every key the options catalog
-// lists under local.yml (config/catalogs/options.yml), and the project.yml template every field of
+// data/helpers/hub-names.ts) and no other, the local.yml template every key the options folder
+// lists for local.yml (config/options/local.yml), and the project.yml template every field of
 // config/schemas/manifest-schema.yml but the read-only ones, which the project's folder gives and
 // no file holds. A key added to a list without its template line, or a template line whose key is
 // gone from its list, fails its case. tests/checks/config/template-keys.ts reads the blocks.
@@ -64,13 +64,8 @@ describe('docs/templates.md', () => {
         expect(keyDifference(hubKeys(), shown)).toEqual({ missing: [], extra: [] });
     });
 
-    it('shows every local.yml key of the options catalog in the local.yml template, and no other', () => {
-        const options = engineYaml('config/catalogs/options.yml').options;
-        const listed = keysOf(
-            keysOf(options).includes('local.yml')
-                ? (options as Record<string, unknown>)['local.yml']
-                : {}
-        );
+    it('shows every local.yml key of the options folder in the local.yml template, and no other', () => {
+        const listed = keysOf(engineYaml('config/options/local.yml').options);
         const shown = templateKeys(templateBlock(PAGE, '## local.yml'));
         expect(listed.length).toBeGreaterThan(0);
         expect(keyDifference(listed, shown)).toEqual({ missing: [], extra: [] });

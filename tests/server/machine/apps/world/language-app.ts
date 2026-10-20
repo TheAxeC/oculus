@@ -14,7 +14,7 @@ import { Relay } from '../../../../../src/lib/server/machine/lsp/relay/relay.ts'
 import { SchemaFeed } from '../../../../../src/lib/server/machine/lsp/schema-feed.ts';
 import { createServers } from '../../../../../src/lib/server/machine/lsp/servers.ts';
 import { appFeed } from '../../../../../src/lib/server/root/process/context/app-feed.ts';
-import { latexBuild } from '../../../../../src/lib/data/sources/config/settings.ts';
+import { latexBuild } from '../../../../../src/lib/data/sources/config/settings/latex.ts';
 import type { LspRpc } from '../../../../../src/lib/data/model/index.ts';
 import { config } from '../../../../routes/apps/apps-fixture.ts';
 import { frame, recordingSink, settle } from '../../lsp/lsp-fixture.ts';

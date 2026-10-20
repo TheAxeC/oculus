@@ -4,8 +4,8 @@
 // catch-up or hand run that started, was skipped or failed. A key of the file that no schedule
 // holds is kept by every write and is not shown.
 //
-// The file is read through readJsonChecked and written whole by a rename, then read back, as
-// commands/saved.ts does: a missing file is made by the first write, and a file that does not read
+// The file is read through readJsonChecked and written whole by a rename, then read back: a
+// missing file is made by the first write, and a file that does not read
 // (not JSON, or an entry not of this shape) is never written over, so what the reader put there
 // stays and no scheduled run starts while it does not read. The entries are held in a Map keyed by
 // the name as written, so a schedule named `__proto__`, `constructor` or `toString` has its own

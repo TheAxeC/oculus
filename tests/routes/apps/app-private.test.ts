@@ -195,14 +195,13 @@ const FILES_ROWS: Row[] = [
 ];
 
 describe('the folders closed to every app', () => {
-    it('are the state folder, the hub secrets, the hub local.yml, the oculus config local.yml and each state file local.yml places elsewhere', () => {
+    it("are the state folder, the hub secrets, the hub local.yml and each state file local.yml or the hub's config.yml places elsewhere", () => {
         const base = plantScratch('oculus-private-', {
             'home/.oculus/approvals.json': '{}',
             'hub/secrets/k': 'k',
             'hub/.oculus/local.yml': 'port: 1\n',
             'placed/history/f.json': '{}',
-            'engine/x': 'x',
-            'engine/config/local.yml': 'port: 2\n'
+            'placed/marks.yml': 'entries: []\n'
         });
         const local = {
             port: 1,
@@ -216,8 +215,12 @@ describe('the folders closed to every app', () => {
         };
         const set = closedToApps({
             home: join(base, 'home'),
-            config: join(base, 'engine', 'config'),
             local,
+            perOculus: {
+                bookmarks: join(base, 'placed', 'marks.yml'),
+                schedules: null,
+                appsDir: null
+            },
             roots: [{ key: 'hub', dir: join(base, 'hub'), hub: true }]
         });
         const real = (path: string) => realpathSync(join(base, path));
@@ -226,8 +229,8 @@ describe('the folders closed to every app', () => {
                 real('home/.oculus'),
                 real('hub/secrets'),
                 real('hub/.oculus/local.yml'),
-                real('engine/config/local.yml'),
-                real('placed/history')
+                real('placed/history'),
+                real('placed/marks.yml')
             ].sort()
         );
     });

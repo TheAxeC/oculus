@@ -71,8 +71,22 @@
 </div>
 
 <style>
+    /* The archival card is faded as archival; while the pointer is over it or the keyboard focus
+       is inside it the fade lifts, so it is read at full strength. */
     .muted {
         opacity: 0.62;
+        transition: opacity 120ms ease;
+    }
+
+    .muted:hover,
+    .muted:focus-within {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .muted {
+            transition: none;
+        }
     }
 
     p {

@@ -1,6 +1,6 @@
-// Layer 3, view helper of views/shared/forms/entry/EntryCard.svelte and of the registry cards. The
-// controls one entry's card carries in its meta row, from what the card knows: whether a write can
-// address the entry, why the controls that write are disabled, and the handlers the card gives
+// Layer 3, view helper of views/shared/forms/entry/card/EntryCard.svelte and of the registry cards.
+// The controls one entry's card carries in its meta row, from what the card knows: whether a write
+// can address the entry, why the controls that write are disabled, and the handlers the card gives
 // each. The cards of a registry (Venues, Data and the others) take Edit in File and Delete from
 // `recordActions`.
 

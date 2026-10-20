@@ -152,7 +152,7 @@ export type GitWatchOptions = {
     text?: () => Record<string, string>;
     /**
      * How many levels below a root its repositories are looked for, asked again with the roots;
-     * `repository_scan_depth` of config/sources.yml in the running server, 1 when absent.
+     * `repository_scan_depth` of the merged config in the running server, 1 when absent.
      */
     depth?: () => number;
     /**

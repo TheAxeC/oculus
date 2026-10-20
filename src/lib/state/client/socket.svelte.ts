@@ -17,12 +17,13 @@
 //
 // The payload carries the address the server listens at. A server that moves to another port
 // (a changed `port` in local.yml) reports its new address on the open socket, and the page goes
-// there with its path, query and hash and the host name the reader used, carrying its arrangement
-// and settings across the change of origin (workbench/layout/saved/carry.ts). It follows only a
-// change of the address it holds, the first it heard or the last it followed, only when its own
-// port is that address's port (a page opened at `localhost` has the port, and one reached through a
-// forwarded port of another number does not), and only once the new address answers, so a page
-// forwarded under the same number, whose new port its own machine does not serve, stays put.
+// there with its path, query and hash and the host name the reader used; the page at the new
+// address reads the same server's page state and configuration, so its arrangement and settings
+// are there with nothing carried. It follows only a change of the address it holds, the first it
+// heard or the last it followed, only when its own port is that address's port (a page opened at
+// `localhost` has the port, and one reached through a forwarded port of another number does not),
+// and only once the new address answers, so a page forwarded under the same number, whose new port
+// its own machine does not serve, stays put.
 //
 // A socket is admitted to write when the token its subscription carries is the server's. The first
 // open is admitted by the token the page was loaded with. After a reconnect the server may be a
@@ -46,7 +47,6 @@ import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
 import { setAppearance } from '../shared/words/appearance.ts';
 import { setVocab } from '../shared/words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
-import { carryWorkbench } from '../workbench/layout/saved/carry.ts';
 import type {
     AppsPayload,
     ConfigPayload,
@@ -347,19 +347,13 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     /**
      * Go to `moved` when it answers: a page whose port is forwarded under the same number reaches
      * a port of its own machine that nothing serves, and stays where it is rather than land on an
-     * error page. The arrangement and the settings are written into the window's name, for the
-     * origin the page goes to, just before it goes.
+     * error page.
      */
     async function goWhenAnswered(moved: string): Promise<void> {
         try {
             await fetch(moved, { mode: 'no-cors', cache: 'no-store' });
         } catch {
             return;
-        }
-        try {
-            carryWorkbench(localStorage, window, new URL(moved).origin);
-        } catch {
-            // A page without storage follows without the arrangement.
         }
         location.assign(moved);
     }
@@ -368,10 +362,10 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      * Install a config push into the stores the page draws from. The colours and the chip
      * vocabulary ride the same push as the strings: they are keys of the merged config, so an edit
      * to config/catalogs/vocab.yml recolours the page without a reload, an edit to
-     * config/appearance.yml changes the theme picker's list, and the glyph vocabulary, each name
-     * with its ASCII stand-in, arrives the same way. The icons are the one part not read out of the
-     * merged config: the config carries the icon names and the server turns them into the drawings
-     * this installs.
+     * config/defaults/appearance.yml changes the theme picker's list, and the glyph vocabulary,
+     * each name with its ASCII stand-in, arrives the same way. The icons are the one part not read
+     * out of the merged config: the config carries the icon names and the server turns them into
+     * the drawings this installs.
      *
      * The configuration's generation is raised once at the end, after every store took its part, so
      * a component that draws again sees the new strings and the new tones together and never half

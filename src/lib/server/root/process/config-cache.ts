@@ -1,13 +1,14 @@
-// Layer 2, server. The parse of the engine's config folder and of the hub's settings file, kept by
-// the server context between requests. Reading and parsing every config file costs about 75 ms and
-// holds the one event loop the socket's upgrade waits on, and a page that boots makes several
-// requests at once, so a request takes the parse the previous request made while the folder and
-// the file are as they were: the stamp of the folder (the path, size, inode and times of every
-// entry) and of the file (its size, inode and times) is the same, and so is the hub the parse was
-// made for. Adding, removing or writing a file of the folder, or writing the settings file, moves
-// the stamp, so the next request parses again. The settings file is `<hub>/.oculus/config.yml` and
-// the hub is the open workspace's primary at each request; a hub without the file is stamped as
-// absent, so making the file moves the stamp.
+// Layer 2, server. The parse of the engine's config folder, of the hub's settings file and of the
+// open workspace file's `settings:`, kept by the server context between requests. Reading and
+// parsing every config file costs about 75 ms and holds the one event loop the socket's upgrade
+// waits on, and a page that boots makes several requests at once, so a request takes the parse the
+// previous request made while the folder and the files are as they were: the stamp of the folder
+// (the path, size, inode and times of every entry) and of each file (its size, inode and times) is
+// the same, and so are the hub and the workspace file the parse was made for. Adding, removing or
+// writing a file of the folder, or writing, adding or removing either file, moves the stamp, so the
+// next request parses again. The settings file is `<hub>/.oculus/config.yml`, the hub is the open
+// workspace's primary at each request, and the workspace file is the one open at each request; a
+// file that is not there is stamped as absent, so making it moves the stamp.
 //
 // The settings of every other hub of the workspace (the engine's folder parsed under that hub's
 // own `.oculus/config.yml`) are kept the same way, one parse per hub folder under the stamp of the
@@ -110,12 +111,17 @@ function filesStamp(files: readonly string[]): string {
     return files.map(fileStamp).join('\n');
 }
 
-/** What the engine's folder and the hub's settings file hold, and which hub the file is of. */
-function configStamp(engine: string, hub: string | null): string {
+/**
+ * What the engine's folder, the hub's settings file and the open workspace file hold, and which hub
+ * and which workspace file they are.
+ */
+function configStamp(engine: string, hub: string | null, workspace: string | null = null): string {
     const engineStamp = folderStamp(configDir(engine));
     const fileOfHub = hub === null ? ABSENT : fileStamp(join(hub, HUB_FILE));
-    if (engineStamp === UNREADABLE || fileOfHub === UNREADABLE) return UNREADABLE;
-    return `${engineStamp}\n--hub ${hub ?? ''}\n${fileOfHub}`;
+    const fileOfWorkspace = workspace === null ? ABSENT : fileStamp(workspace);
+    const stamps = [engineStamp, fileOfHub, fileOfWorkspace];
+    if (stamps.includes(UNREADABLE)) return UNREADABLE;
+    return `${engineStamp}\n--hub ${hub ?? ''}\n${fileOfHub}\n--workspace ${workspace ?? ''}\n${fileOfWorkspace}`;
 }
 
 /** What the cache needs of the server: where the folders are, how to parse, where findings go. */
@@ -123,6 +129,8 @@ export type ConfigCacheDeps = {
     engine: string;
     /** The primary hub's folder, read at each request; null while the workspace has no primary. */
     hub: () => string | null;
+    /** The open workspace file, read at each request; null while the workspace is unsaved. */
+    workspace: () => string | null;
     load: () => LoadedConfig;
     /**
      * Parse the engine's folder under the settings file of the hub at `dir`, or under no hub's
@@ -153,7 +161,7 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     const heldHubs = new Map<string, { stamp: string; read: LoadedConfig }>();
     let heldDefaults: { stamp: string; read: LoadedConfig } | undefined;
     const take = (say: boolean): LoadedConfig => {
-        const stamp = configStamp(deps.engine, deps.hub());
+        const stamp = configStamp(deps.engine, deps.hub(), deps.workspace());
         if (stamp !== UNREADABLE && held?.stamp === stamp) {
             if (say && !held.said) {
                 deps.report(held.read.findings);
@@ -193,7 +201,7 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
         vocab() {
             const others = deps.others();
             const stamps = [
-                configStamp(deps.engine, deps.hub()),
+                configStamp(deps.engine, deps.hub(), deps.workspace()),
                 ...others.map((one) => fileStamp(join(one.dir, HUB_FILE)))
             ];
             const readable = !stamps.includes(UNREADABLE);

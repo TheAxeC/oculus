@@ -83,7 +83,7 @@ export function tasksPath(root: string): string {
     return join(root, '.oculus', 'data', 'academic', 'tasks.yml');
 }
 
-/** A collection file at the hub path config/sources.yml gives the `tasks` key. */
+/** A collection file at the hub path config/defaults/sources.yml gives the `tasks` key. */
 export const TASKS = [
     'title: Tasks',
     'schema:',

@@ -61,7 +61,7 @@ export function read(
     }
     const base = plantScratch('oculus-apps-manifest-', files, ['machine']);
     const scanned = scanApps({
-        machine: { dir: join(base, 'machine'), localFile: join(base, 'local.yml') },
+        machine: { dir: join(base, 'machine'), settingsFile: join(base, 'config.yml') },
         appearanceFile: join(base, 'appearance.yml'),
         primary: null,
         roots: Object.keys(layout.roots ?? {}).map((key) => ({
@@ -94,7 +94,7 @@ export function again(
     primary: string | null = null
 ) {
     return scanApps({
-        machine: machine === null ? null : { dir: machine, localFile: join(base, 'local.yml') },
+        machine: machine === null ? null : { dir: machine, settingsFile: join(base, 'config.yml') },
         appearanceFile: join(base, 'appearance.yml'),
         primary,
         roots,

@@ -104,7 +104,7 @@ export type SearchRunner = (
 export type SearchOptions = {
     /** How one root is searched; the real binary when absent. */
     run?: SearchRunner;
-    /** Milliseconds one root's search is given, from `search.timeout_s` in config/behavior.yml. */
+    /** Milliseconds one root's search is given, from `search.timeout_s` of the merged config. */
     timeout: number;
     /** The clock the elapsed time is read from, so a test can hold it still. */
     now?: () => number;
@@ -536,9 +536,9 @@ export async function runSearch(
 export type NamesOptions = {
     /** How one root is listed; the real binary when absent. */
     run?: SearchRunner;
-    /** Milliseconds one root's listing is given, from `search.timeout_s` in config/behavior.yml. */
+    /** Milliseconds one root's listing is given, from `search.timeout_s` of the merged config. */
     timeout: number;
-    /** How many names the whole answer carries, from `search.max_names` in config/behavior.yml. */
+    /** How many names the whole answer carries, from `search.max_names` of the merged config. */
     max: number;
     /** The folders no name is answered from (`privateFolders`), as absolute paths. */
     withheld: string[];

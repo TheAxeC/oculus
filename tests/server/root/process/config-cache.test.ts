@@ -84,10 +84,11 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
  * built.
  */
 function servingHubs() {
-    const engine = plantScratch('oculus-hook-config-', { 'config/behavior.yml': 'one: 1\n' }, [
-        'config/catalogs',
-        'config/text'
-    ]);
+    const engine = plantScratch(
+        'oculus-hook-config-',
+        { 'config/defaults/behavior.yml': 'one: 1\n' },
+        ['config/catalogs', 'config/text']
+    );
     const hub = plantScratch('oculus-hook-hub-', { '.oculus/config.yml': layoutOf('hub.md') });
     const lab = plantScratch('oculus-hook-lab-', { '.oculus/config.yml': layoutOf('lab.md') });
     const state = plantState(
@@ -110,8 +111,8 @@ function servingHubs() {
 
 describe('the config cache of the server context', () => {
     it('parses a config folder once for requests over it, and again once a file of it is written', async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
-        const file = join(served.engine, 'config', 'behavior.yml');
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
+        const file = join(served.engine, 'config', 'defaults', 'behavior.yml');
         expect(await served.ask()).toMatchObject({ one: 1 });
         expect(await served.ask()).toMatchObject({ one: 1 });
         expect(served.read).toHaveBeenCalledTimes(1);
@@ -119,14 +120,14 @@ describe('the config cache of the server context', () => {
         utimesSync(file, new Date(), new Date(Date.now() + 5000));
         expect(await served.ask()).toMatchObject({ one: 2 });
         expect(served.read).toHaveBeenCalledTimes(2);
-        writeFileSync(join(served.engine, 'config', 'more.yml'), 'two: 3\n');
+        writeFileSync(join(served.engine, 'config', 'defaults', 'more.yml'), 'two: 3\n');
         expect(await served.ask()).toMatchObject({ one: 2, two: 3 });
         expect(served.read).toHaveBeenCalledTimes(3);
         served.close();
     });
 
     it('parses again for every request while an entry of the folder cannot be stat-ed', async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
         symlinkSync(join(served.engine, 'missing'), join(served.engine, 'config', 'dangling.yml'));
         await served.ask();
         await served.ask();
@@ -135,8 +136,8 @@ describe('the config cache of the server context', () => {
     });
 
     it('keeps the one read of a request for the rest of it, whatever is written meanwhile', async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
-        const file = join(served.engine, 'config', 'behavior.yml');
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
+        const file = join(served.engine, 'config', 'defaults', 'behavior.yml');
         expect(await served.ask(() => writeFileSync(file, 'one: 22222\n'))).toMatchObject({
             one: 1
         });
@@ -148,7 +149,7 @@ describe('the config cache of the server context', () => {
 
     it("parses again once the hub's .oculus/config.yml is written", async () => {
         const served = serving(
-            { 'config/behavior.yml': 'one: 1\n' },
+            { 'config/defaults/behavior.yml': 'one: 1\n' },
             { '.oculus/config.yml': layoutOf('a.md') }
         );
         expect(await served.ask()).toMatchObject({ docs: [{ path: 'a.md' }] });
@@ -162,7 +163,7 @@ describe('the config cache of the server context', () => {
 
     it("keeps its read when a file of the hub's .oculus other than config.yml is written", async () => {
         const served = serving(
-            { 'config/behavior.yml': 'one: 1\n' },
+            { 'config/defaults/behavior.yml': 'one: 1\n' },
             { '.oculus/config.yml': layoutOf('a.md') }
         );
         await served.ask();
@@ -174,7 +175,7 @@ describe('the config cache of the server context', () => {
 
     it('reads the settings file of the primary hub the open workspace names now', async () => {
         const served = serving(
-            { 'config/behavior.yml': 'one: 1\n' },
+            { 'config/defaults/behavior.yml': 'one: 1\n' },
             { '.oculus/config.yml': layoutOf('a.md') }
         );
         const other = plantScratch('oculus-hook-other-', {
@@ -192,7 +193,7 @@ describe('the config cache of the server context', () => {
     });
 
     it('parses once for requests over a folder with no .oculus/config.yml', async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
         await served.ask();
         await served.ask();
         expect(served.read).toHaveBeenCalledTimes(1);
@@ -200,7 +201,7 @@ describe('the config cache of the server context', () => {
     });
 
     it("parses again once the hub's .oculus/config.yml is made, and again once it is removed", async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
         const file = join(served.hub, '.oculus/config.yml');
         await served.ask();
         mkdirSync(join(served.hub, '.oculus'), { recursive: true });
@@ -248,12 +249,13 @@ describe('the config cache of the server context', () => {
     });
 
     it('says the findings of a parse a server reader made once, at the next request', () => {
-        const engine = plantScratch('oculus-hook-config-', { 'config/behavior.yml': 'one: 1\n' }, [
-            'config/catalogs',
-            'config/text'
-        ]);
+        const engine = plantScratch(
+            'oculus-hook-config-',
+            { 'config/defaults/behavior.yml': 'one: 1\n' },
+            ['config/catalogs', 'config/text']
+        );
         const finding: Finding = {
-            file: join(engine, 'config/behavior.yml'),
+            file: join(engine, 'config/defaults/behavior.yml'),
             key: 'one',
             message: 'bad'
         };
@@ -261,6 +263,7 @@ describe('the config cache of the server context', () => {
         const cache = createConfigCache({
             engine,
             hub: () => null,
+            workspace: () => null,
             load: () => ({ config: { one: 1 }, findings: [finding], from: {} }),
             loadHub: () => ({ config: {}, findings: [], from: {} }),
             report: (findings) => said.push(findings),
@@ -275,8 +278,12 @@ describe('the config cache of the server context', () => {
         cache.read();
         cache.quiet();
         expect(said).toEqual([[finding]]);
-        writeFileSync(join(engine, 'config/behavior.yml'), 'one: 2\n');
-        utimesSync(join(engine, 'config/behavior.yml'), new Date(), new Date(Date.now() + 5000));
+        writeFileSync(join(engine, 'config/defaults/behavior.yml'), 'one: 2\n');
+        utimesSync(
+            join(engine, 'config/defaults/behavior.yml'),
+            new Date(),
+            new Date(Date.now() + 5000)
+        );
         cache.read();
         expect(said).toEqual([[finding], [finding]]);
     });
@@ -289,14 +296,14 @@ describe('the config cache of the server context', () => {
         const alone = (): number =>
             served.read.mock.calls.filter(([, options]) => options?.hub === undefined).length;
         expect(alone()).toBe(1);
-        writeFileSync(join(served.engine, 'config/behavior.yml'), 'one: 2\n');
+        writeFileSync(join(served.engine, 'config/defaults/behavior.yml'), 'one: 2\n');
         expect(defaults().config).toMatchObject({ one: 2 });
         expect(alone()).toBe(2);
         served.close();
     });
 
     it('keeps its read for a primary hub folder that does not exist', async () => {
-        const served = serving({ 'config/behavior.yml': 'one: 1\n' });
+        const served = serving({ 'config/defaults/behavior.yml': 'one: 1\n' });
         writeState(served.state, {
             open: null,
             recent: [],

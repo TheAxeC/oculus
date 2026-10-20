@@ -21,7 +21,7 @@ import {
     readOr,
     rowsShape
 } from '../shapes/shapes.ts';
-import { configDir } from './config/folder.ts';
+import { engineFile } from './config/folder.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type {
     CollectionFile,
@@ -61,11 +61,11 @@ export type EngineDefaults = { collections: CollectionFile[]; career: string | n
 
 /**
  * Oculus's own default paths, from the `collections:` list and `career_file` of the engine's
- * config/sources.yml, the one table of those paths. A hub whose list leaves a key out reads that
- * key's file from here. A sources file that cannot be read gives no path.
+ * config/defaults/sources.yml, the one table of those paths. A hub whose list leaves a key out
+ * reads that key's file from here. A sources file that cannot be read gives no path.
  */
 export function engineDefaults(engine: string = engineDir()): EngineDefaults {
-    const held = readYamlMap(join(configDir(engine), 'sources.yml'), {}, [], () => null);
+    const held = readYamlMap(engineFile(engine, 'sources.yml'), {}, [], () => null);
     return {
         collections: collectionFiles(held?.collections),
         career: readAs(filledTextShape, held?.career_file) ?? null

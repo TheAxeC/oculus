@@ -6,15 +6,25 @@
 // one rule (data/helpers/run/schedules.ts) said in the catalog's words.
 //
 // The dialog's draft is held here, one per client, since two places open it: the tray's
-// "Schedule..." beside a task and the command bar's "Schedule..." on a saved command, and the
+// "Schedule..." beside a task and the command bar's "Schedule..." on a command, and the
 // second does not draw the tray. Opening it fills the draft; the dialog edits it through `edit`,
-// and a save that lands, or a close, puts it away.
+// and a save that lands, or a close, puts it away. For a command the dialog lists the chain the
+// entry runs, worded from the commands store it hands `chainOf`, so the lines are the ones the
+// command form lists for an Edit of the entry; a save sends those lines, and the server approves
+// them when the save lands and refuses a save whose lines are not the chain the file now holds.
 
 import { z } from 'zod';
+import { draftOf, type DraftCommand } from '../../../../data/helpers/run/chain.ts';
 import { cronRuns } from '../../../../data/helpers/run/cron.ts';
 import { nameKey, readEntry } from '../../../../data/helpers/run/schedules.ts';
 import { UPDATE_TASKS, type UpdateTask } from '../../../../data/helpers/run/tasks.ts';
-import type { ScheduleRow, Terminal, UnchosenKey } from '../../../../data/model/index.ts';
+import type {
+    ChainLine,
+    CommandsAnswer,
+    ScheduleRow,
+    Terminal,
+    UnchosenKey
+} from '../../../../data/model/index.ts';
 import { readAs } from '../../../../data/shapes/shapes.ts';
 import {
     failedAnswer,
@@ -48,7 +58,7 @@ type ScheduleDraft = {
     kind: RunsKind;
     /** The chosen update task; '' while the entry's own value does not read and none is chosen. */
     task: UpdateTask | '';
-    /** The chosen saved command, as `commands()` keys it; '' is none. */
+    /** The chosen command, as `commands()` keys it; '' is none. */
     commandKey: string;
     /** The folder a prompt starts in: `hub`, an absolute path or a path under `~/`. */
     folder: string;
@@ -74,7 +84,7 @@ type DialogFill = {
     at?: number;
     name?: string;
     task?: UpdateTask;
-    /** A saved command's name, with the `folder` of its repository. */
+    /** A command's name in a repository's `.oculus/commands.yml`; `folder` is the repository. */
     command?: string;
     folder?: string;
 };
@@ -145,7 +155,10 @@ export type ScheduleStore = {
     tasks: () => CommandChoice[];
     whens: () => CommandChoice[];
     dayNames: () => string[];
-    /** The saved commands the dialog offers, with the draft's own when the list lacks it. */
+    /**
+     * The commands of the repositories' `.oculus/commands.yml` files the dialog offers, with the
+     * draft's own when the list lacks it.
+     */
     commands: () => CommandChoice[];
     /** `hub` and the other folders a prompt may start in. */
     folders: () => string[];
@@ -156,17 +169,44 @@ export type ScheduleStore = {
     edit: (patch: Partial<Omit<ScheduleDraft, 'was'>>) => void;
     /** Set one of the draft's three boxes of choices from the text a box hands on. */
     choose: (box: 'kind' | 'task' | 'when', value: string) => void;
-    /** Choose a saved command by its key in `commands()`. */
+    /** Choose a command by its key in `commands()`. */
     pickCommand: (key: string) => void;
+    /** The repository of the draft's command, or null for a draft that runs no command. */
+    commandFolder: (draft: ScheduleDraft) => string | null;
+    /**
+     * The lines the draft's command runs, worded as the command form words them for an Edit of the
+     * entry (the commands store's `draftLines` over `draftOf`), with those lines as they are sent
+     * with a Save (`chain`), which approves them; the sentence refusing a chain that does not
+     * resolve; null while the repository's list is not held or holds no plain entry of that name.
+     */
+    chainOf: (
+        draft: ScheduleDraft,
+        held: HeldCommands
+    ) => { lines: string[]; chain: ChainLine[] } | { refused: string } | null;
     /** The next runs of the draft's pattern, or why it has none; '' for Off. */
     preview: (draft: ScheduleDraft) => string;
     /** The sentences for every problem the draft has; none when it can be saved. */
     check: (draft: ScheduleDraft) => string[];
-    save: (draft: ScheduleDraft) => Promise<ScheduleAnswer>;
+    /** Save the draft; a command's draft carries the chain its dialog listed (`chainOf`). */
+    save: (draft: ScheduleDraft, chain: ChainLine[] | null) => Promise<ScheduleAnswer>;
     remove: (row: RowRef) => Promise<ScheduleAnswer>;
     pause: (row: RowRef) => Promise<ScheduleAnswer>;
     resume: (row: RowRef) => Promise<ScheduleAnswer>;
     runNow: (row: RowRef) => Promise<ScheduleAnswer>;
+};
+
+/**
+ * What the dialog's chain reads of the commands store (state/sessions/terminal/commands.svelte.ts,
+ * which this folder may not import): a repository's list while it is held, and the lines a save of
+ * a draft approves.
+ */
+type HeldCommands = {
+    commands: (repo: string) => CommandsAnswer | null;
+    draftLines: (
+        repo: string,
+        command: DraftCommand,
+        was: string | null
+    ) => { lines: ChainLine[] } | { refused: string } | null;
 };
 
 /** The server's answer to a POST. */
@@ -189,7 +229,7 @@ function firstLine(prompt: string): string {
     return line.length > PROMPT_SHOWN ? `${line.slice(0, PROMPT_SHOWN)}...` : line;
 }
 
-/** A saved command's key in the dialog's list: its repository and its name. */
+/** A command's key in the dialog's list: its repository and its name. */
 function commandKeyOf(folder: string, name: string): string {
     return JSON.stringify([folder, name]);
 }
@@ -344,7 +384,6 @@ export function createSchedule(
         const payload = entities.schedule();
         const lines = (payload?.unread ?? []).map((one) => {
             if (one.file === 'record') return t('app.schedules.unread_record');
-            if (one.file === 'commands') return t('app.schedules.unread_commands');
             return one.line === null
                 ? t('app.schedules.unread_schedules')
                 : t('app.schedules.unread_schedules_at', one.line);
@@ -463,6 +502,35 @@ export function createSchedule(
         edit({ commandKey: key });
     }
 
+    function commandFolder(one: ScheduleDraft): string | null {
+        return one.kind === 'command' ? (readKey(one.commandKey)?.folder ?? null) : null;
+    }
+
+    function chainOf(
+        one: ScheduleDraft,
+        held: HeldCommands
+    ): { lines: string[]; chain: ChainLine[] } | { refused: string } | null {
+        const chosen = one.kind === 'command' ? readKey(one.commandKey) : null;
+        if (chosen === null) return null;
+        const entry = held
+            .commands(chosen.folder)
+            ?.commands.find(
+                (command) =>
+                    command.source === 'file' &&
+                    command.task === undefined &&
+                    command.name === chosen.name
+            );
+        if (entry === undefined) return null;
+        const drawn = held.draftLines(chosen.folder, draftOf(chosen.folder, entry), entry.name);
+        if (drawn === null || 'refused' in drawn) return drawn;
+        return {
+            lines: drawn.lines.map((line) =>
+                line.folder === '.' ? line.run : t('commands.approve_in', line.run, line.folder)
+            ),
+            chain: drawn.lines
+        };
+    }
+
     /** The entry the draft stands for, as the file and the route read it. */
     function rawOf(one: ScheduleDraft, when: string): Record<string, unknown> {
         const chosen = readKey(one.commandKey);
@@ -539,11 +607,11 @@ export function createSchedule(
         return { ok: true, terminal: read.terminal ?? null, skipped: '' };
     }
 
-    async function save(one: ScheduleDraft): Promise<ScheduleAnswer> {
+    async function save(one: ScheduleDraft, chain: ChainLine[] | null): Promise<ScheduleAnswer> {
         const made = patternOf(one);
         const entry = rawOf(one, 'pattern' in made ? made.pattern : '');
         const answer = await send(
-            { action: 'save', at: one.was?.at ?? null, was: one.was?.name ?? null, entry },
+            { action: 'save', at: one.was?.at ?? null, was: one.was?.name ?? null, entry, chain },
             one.name
         );
         if (answer.ok) draft = null;
@@ -579,6 +647,8 @@ export function createSchedule(
         edit,
         choose,
         pickCommand,
+        commandFolder,
+        chainOf,
         preview,
         check,
         save,

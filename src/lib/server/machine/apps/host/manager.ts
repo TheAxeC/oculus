@@ -30,7 +30,7 @@ import type {
     AppMessagesPayload,
     Message
 } from '../../../../data/model/index.ts';
-import type { AppsSettings } from '../../../../data/sources/config/settings.ts';
+import type { AppsSettings } from '../../../../data/sources/config/settings/machine.ts';
 import type { Hub } from '../../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../../core/file-poll.ts';
 import { words } from '../../../core/words.ts';

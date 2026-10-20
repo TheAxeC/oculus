@@ -1,0 +1,304 @@
+# ===========================================================================
+# behavior.yml
+# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/behavior.yml describe every key. Nothing writes this file.
+# ===========================================================================
+
+
+# Manifest readability soft-limits (chars) for the audit warnings.
+read_limits: { status.line: 220, next: 300, latest: 200, eli5: 360, results: 300 }
+
+
+# The session detail meter measures the last turn against this token window unless the transcript names one.
+context_window: 1000000
+
+# Labels for subscription tier identifiers reported by supported command-line agents.
+usage_tiers:
+  default_claude_max_20x: "Max 20x"
+  default_claude_max_5x: "Max 5x"
+  default_claude_pro: "Pro"
+  prolite: "Plus"
+
+# Hidden usage sessions refresh each account's cached figures on this cadence and model.
+usage_refresh_min: 10
+usage_refresh_model: "haiku"
+
+# Audit findings the reader has parked. Each entry is a finding's signature, the twelve hex characters the Audit view's mute control writes here; the finding stays true and is drawn in the muted section.
+audit_ignore: []
+
+
+# === The Focus board =========================================================
+# Its horizons, thresholds and cadences, and the lists that say what its command center and its columns read.
+focus:
+  # A manifest is stale when its `updated` date trails the newest project content by this many days.
+  stale_lag_days: 1
+
+  # The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
+  refresh_stale_days:
+    litwatch: 14  # the Lit Watch update task (meta.last_run in the radar file)
+    inbox: 2  # the Inbox update task (the triage notes under `mail_dir`)
+    scout: 7  # the Scout update task (newest meta.log date in the leads file)
+
+  # Look-ahead windows for each deadline class on the Focus strip.
+  deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)
+  leads_horizon_days: 21  # academic-position-lead deadlines from the leads file (default 21)
+  conf_horizon_months: 1  # venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
+
+  venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
+  linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
+
+  # The command center's deadline groups, in the order it lists them.
+  ticker_categories: [paper, funding, event, teaching, position, collab, task, conference]
+
+  # Where the command center's dated lines come from: each row a source and the category of `ticker_categories` its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub, whose undated entries are task lines when the row says `undated: true` and are left out otherwise. A source no row names is not read.
+  ticker_sources:
+    - { collection: projects,     category: paper }
+    - { collection: funding,      category: funding }
+    - { collection: events,       category: event }
+    - { collection: education,    category: teaching }
+    - { collection: tasks,        category: task, undated: true }
+    - { collection: applications, category: position }
+    - { collection: joint-work,   category: collab }
+    - { collection: leads,        category: position }
+    - { collection: venues,       category: conference }
+
+  # The entry statuses the Focus columns and counts read, compared without regard to case: the applications the positions column shows and the Applications tab counts, the teaching the teaching column shows, and the applications the Awaiting box lists as out for a decision.
+  applications_open: [active]
+  education_open: [ongoing]
+  applications_sent: [applied]
+
+
+# === Per-project file finder ================================================
+# Project cards index the newest matching files up to `max_per_project`; `enabled: false` disables it.
+file_index:
+  enabled: true
+  max_per_project: 400
+  ext: [".pdf", ".tex", ".bib", ".md", ".yml", ".yaml", ".py", ".sh", ".slurm", ".ipynb",
+        ".csv", ".json", ".png", ".jpg", ".svg", ".txt", ".docx", ".xlsx", ".pptx"]
+
+
+# === Served mode: live SLURM poller and in-page chat =========================
+# Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
+# `resource` is the key of a cluster entry of the hub's resources registry, whose `host` is the ssh alias the poller uses; empty means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config.yml.
+slurm:
+  resource: ''
+  days: 3
+  poll_min: 20
+  quota_min: 60
+  prewarm: true
+
+# The Processes view lists the local processes whose program is one of these names, beside oculus's own terminals.
+processes:
+  patterns: [python3, codex, claude, node, latexmk]
+
+chat:
+  model: "opus"
+
+# The read-only calendar connector: the poll cadence in minutes and the calendar window in days.
+calendar:
+  poll_min: 15
+  days_back: 31
+  days_ahead: 62
+
+
+# === Mail connector =========================================================
+# How often the inbox plate is read, and how many threads each of the three plate signals is read.
+mail:
+  poll_min: 10
+  per_signal: 25
+
+
+# === The source editor ======================================================
+# The editor colours a file by running its grammar over the text in the page as it is typed, so a file larger than this many kilobytes opens as plaintext instead; the read-only code window, painted once, colours every size.
+# The other keys are VS Code's editor settings of the same names (editor.tabSize, editor.insertSpaces, editor.wordWrap, editor.minimap.enabled, editor.renderWhitespace, editor.stickyScroll.enabled); suggest_details is whether the suggest list opens with its panel of descriptions shown, which toggling the panel writes; autosave, autosave_delay_ms, trim_trailing_whitespace and final_newline are VS Code's files.autoSave, files.autoSaveDelay, files.trimTrailingWhitespace and files.insertFinalNewline; languages holds the records VS Code's per-language settings give, by the editor's language name, and a repository's .oculus/settings.yml overrides them for its files.
+editor:
+  paint_limit_kb: 20480
+  tab_size: 4
+  insert_spaces: true
+  word_wrap: 'off'
+  minimap: true
+  render_whitespace: selection
+  sticky_scroll: true
+  suggest_details: true
+  autosave: 'off'
+  autosave_delay_ms: 1000
+  trim_trailing_whitespace: false
+  final_newline: false
+  languages:
+    makefile: { insert_spaces: false }
+    markdown: { word_wrap: 'on' }
+    yaml: { tab_size: 2 }
+
+
+# === LaTeX ==================================================================
+# What a build runs and when it runs, as LaTeX Workshop's latex.* settings read. A recipe is a named chain of tools and a tool is a program with its arguments; a build runs the chain as one task terminal in the main file's folder, each tool one command joined with && (a tool whose program is not on PATH refuses the build before any terminal starts). The placeholders %DOC% (the main file's path without its extension), %DOC_EXT% (with it), %DOCFILE% and %DOCFILE_EXT% (its name without and with the extension), %DIR% (its folder), %OUTDIR% and %AUXDIR% (the two folders below) are filled in per main file.
+# recipe_default: first builds with the first recipe, last_used with the one the reader last asked for. A % !TEX program = xelatex or lualatex comment, or a % !LW recipe = <name> comment, picks the recipe of a file whichever of the two is set.
+# out_dir and aux_dir: where the PDF and the auxiliary files go; %DIR% is the main file's own folder, any other value is a folder under the served root, resolved from the main file's folder.
+# auto_build: on_file_change builds a main file when any file it includes changes on disk, whoever wrote it; on_save builds when a file of it is saved in the editor; never builds only when asked. auto_build_interval_ms is the shortest time between two automatic builds of one main file. clean_and_retry cleans and builds once more a build that ended in an error. auto_clean runs Clean after a build: never, on_failed, on_succeeded or on_built.
+# synctex_path is where the synctex program is (empty finds it on PATH); reverse_synctex is the click that opens the source from the PDF: ctrl_click (Cmd or Ctrl and a click) or double_click. texcount_autorun: on_save counts the words of the main file after each save of a LaTeX file; context_menu adds Build and SyncTeX to the editor's right-click menu.
+# formatter is the program Format Document runs on a .tex file: none, latexindent, tex-fmt or badness. Each *_path names where that program is; empty finds it on PATH.
+# texlab_path is the texlab program the LaTeX language server runs (an absolute path or one that starts with ~); empty finds texlab on the PATH oculus was started with. A change reaches a running texlab at its next start. unimath_symbols offers the Unicode math symbols of LaTeX Workshop in completion after a backslash, each with its glyph; includegraphics_preview shows the picture beside a file suggested inside \includegraphics.
+latex:
+  recipe_default: first
+  out_dir: "%DIR%"
+  aux_dir: "%OUTDIR%"
+  auto_build: on_file_change
+  auto_build_interval_ms: 1000
+  clean_and_retry: true
+  auto_clean: never
+  synctex_path: ''
+  reverse_synctex: ctrl_click
+  texcount_autorun: never
+  context_menu: false
+  unimath_symbols: false
+  includegraphics_preview: true
+  formatter: none
+  latexindent_path: ''
+  tex_fmt_path: ''
+  badness_path: ''
+  texlab_path: ''
+  recipes:
+    - { name: latexmk, tools: [latexmk] }
+    - { name: latexmk (latexmkrc), tools: [latexmk_rconly] }
+    - { name: latexmk (lualatex), tools: [lualatexmk] }
+    - { name: latexmk (xelatex), tools: [xelatexmk] }
+    - { name: pdflatex -> bibtex -> pdflatex * 2, tools: [pdflatex, bibtex, pdflatex, pdflatex] }
+    - { name: Compile Rnw files, tools: [rnw2tex, latexmk] }
+    - { name: Compile Jnw files, tools: [jnw2tex, latexmk] }
+    - { name: Compile Pnw files, tools: [pnw2tex, latexmk] }
+    - { name: tectonic, tools: [tectonic] }
+  tools:
+    - { name: latexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -pdf, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: lualatexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -lualatex, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: xelatexmk, command: latexmk, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, -xelatex, "-outdir=%OUTDIR%", "-auxdir=%AUXDIR%", "%DOC%"] }
+    - { name: latexmk_rconly, command: latexmk, args: ["%DOC%"] }
+    - { name: pdflatex, command: pdflatex, args: [-synctex=1, -interaction=nonstopmode, -file-line-error, "%DOC%"] }
+    - { name: bibtex, command: bibtex, args: ["%DOCFILE%"] }
+    - { name: rnw2tex, command: Rscript, args: [-e, "knitr::opts_knit$set(concordance = TRUE); knitr::knit('%DOCFILE_EXT%')"] }
+    - { name: jnw2tex, command: julia, args: [-e, "using Weave; weave(\"%DOC_EXT%\", doctype=\"tex\")"] }
+    - { name: pnw2tex, command: pweave, args: [-f, tex, "%DOC_EXT%"] }
+    - { name: tectonic, command: tectonic, args: [--synctex, --keep-logs, --print, "%DOC%.tex"] }
+
+
+# === Linters ================================================================
+# The linters oculus runs on a source tab's file when it is saved and when a tab of a file with no unsaved text opens: ChkTeX for .tex and .latex files, Ruff for .py and .pyi, ESLint for TypeScript, JavaScript and Svelte files under an eslint.config.* file, ShellCheck for .sh, .bash and .slurm, and the writing rules of the hub for Markdown and YAML files and for the comments of code files. The writing rules run no program: they mark each character the hub bans (em and en dashes, curly quotes, the ellipsis, arrows, the non-breaking space) and each Markdown paragraph broken across lines. Their findings are marks in the editor and rows of the Problems view. Each switch is true or false.
+# chktex_path, ruff_path and shellcheck_path name the program: an absolute path or one that starts with ~; empty finds it on the PATH oculus was started with. A named path that cannot be used is reported as not found, and the PATH is not tried in its place. ESLint is the one the repository holds, and only after its eslint.config.* files are approved in the palette (:eslint-config).
+# chktex_args are the arguments ChkTeX runs with, LaTeX Workshop's by default; oculus adds the output format, -I0 and a .chktexrc found beside the file or in the root.
+# writing_skip lists the globs of the files the writing rules leave alone, matched against the path from the file's root, such as vendored trees, received text and generated files. A file named glyphs.yml is skipped whatever the list holds. Empty here: the files are a hub's own, so a hub sets the list in its .oculus/config.yml.
+# writing_glyphs lists the globs of the files that draw arrows as icons, where the writing rules mark every banned character but arrows. Empty here, and set by a hub like writing_skip.
+lint:
+  chktex: true
+  ruff: true
+  eslint: true
+  shellcheck: true
+  writing: true
+  chktex_path: ''
+  ruff_path: ''
+  shellcheck_path: ''
+  chktex_args: [-wall, -n22, -n30, -e16, -q]
+  writing_skip: []
+  writing_glyphs: []
+
+
+# === Writes =================================================================
+# How long a save waits for the server's answer before it is given up and its form says so, in seconds.
+writes:
+  timeout_seconds: 30
+
+
+# === Notes ==================================================================
+# How long a note of a hub's `.oculus/notes/` waits after the last keystroke before its source tab saves it, in milliseconds, whatever `editor.autosave` says. The save is the source tab's own, with its base, its history copy and its conflict rules, and closing the tab inside the wait saves first. A note renamed or moved while its tab holds unsaved text is followed by the tab, so the save writes to the new path; a note moved to the Trash closes its tab and its unsaved text is dropped, so no file appears at the old path.
+notes:
+  autosave_ms: 800
+
+
+# === The change log =========================================================
+# Every write that changed something is recorded in ~/.oculus/changes.jsonl, or wherever local.yml's `changes` key puts it. `keep` is how many changes the file holds; it is rewritten down to that number, or the few more that keep the last act whole, once it has grown past twice it.
+changes:
+  keep: 500
+
+
+# === The Files view =========================================================
+# Whether moving a file or folder to the Trash asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here. file_icon_at_arrow: whether a file's row drops the empty slot of a folder's arrow, so its icon sits where its sibling folders' arrows sit; false lines its icon up with theirs, as VS Code's Explorer does.
+files:
+  confirm_delete: true
+  file_icon_at_arrow: true
+
+
+# === The git panel ==========================================================
+# The Changes section of the Session view asks this model for a suggested commit message. Empty uses the command-line default.
+# The minutes between two automatic fetches of every repository with a remote, 0 for none.
+git:
+  message_model: ""
+  autofetch_minutes: 0
+
+
+# === Search across files ====================================================
+# The Search view runs ripgrep over one served root or all of them. `max_hits` is how many hits one answer carries before it says it was cut; `timeout_s` is how long one root's search is given, and the same time is given to one root's list of file names; `max_names` is how many file names the palette's file mode lists in all before it says the list was cut.
+search:
+  max_hits: 500
+  timeout_s: 10
+  max_names: 100000
+
+# === Literature search ======================================================
+# The Literature search view asks every source toggled on for one page of hits. `timeout_s` is how many seconds one source is given; `per_source` is how many hits one page asks of each source; `cache_min` is how many minutes an answer is kept for the same request, 0 for none.
+literature:
+  timeout_s: 20
+  per_source: 25
+  cache_min: 30
+
+# === Open in its program ====================================================
+# Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in on macOS; on Linux the desktop's own program for the type opens it and the bundle id is not used. A file of any other extension, and a listed file with an execute bit, marked as a Finder alias on macOS or ending .desktop on Linux, is refused; a folder is shown in Finder on macOS and opened in the file manager on Linux. Read again at every request.
+open:
+  program_ext:
+    ".docx": com.microsoft.Word
+    ".doc": com.microsoft.Word
+    ".xlsx": com.microsoft.Excel
+    ".xls": com.microsoft.Excel
+    ".pptx": com.microsoft.Powerpoint
+    ".ppt": com.microsoft.Powerpoint
+    ".rtf": com.apple.TextEdit
+    ".pages": com.apple.iWork.Pages
+    ".numbers": com.apple.iWork.Numbers
+    ".key": com.apple.iWork.Keynote
+    ".pdf": com.apple.Preview
+
+
+# === Apps ===================================================================
+# An app is a folder of web files that oculus finds while it runs and draws in a sandboxed frame once the reader has approved it (DESIGN.md, "Apps added while oculus runs"). These are the limits an app's frame is held to and the folders `open` never reaches for an app.
+apps:
+  # Seconds a frame is given to complete the bridge handshake before it is drawn as failed to load.
+  connect_timeout_s: 10
+  # Kilobytes of one tab's saved state that `setState` accepts.
+  state_max_kb: 64
+  # Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
+  store_max_kb: 256
+  # Writes, `setStore` included, that pass per frame or per host per minute; a host's store updates, a secret's stores and deletes and a custom editor's `document.save` count here.
+  writes_per_min: 30
+  # Calls of `open`, `commands.run`, `commands.execute` and `createPanel` that pass per frame per minute, and of `executeCommand` per host.
+  opens_per_min: 30
+  # Calls of `sendToPage` per host and of the `ui` calls (messages, quick pick, input box, progress) per host or frame that pass per minute.
+  messages_per_min: 600
+  # Key events per second the page takes from a frame.
+  keys_per_s: 20
+  # Files an app's folder may hold.
+  max_files: 500
+  # Megabytes an app's files may total, and the most a custom editor reads or saves in one file.
+  max_mb: 20
+  # Kilobytes of a host's output kept, beside the last 1000 lines.
+  host_output_kb: 256
+  # Seconds a host's `deactivate` is given to settle before the host is sent SIGTERM.
+  host_stop_seconds: 5
+  # Entries per root that a `workspaceContains` look and a `readDirectory` read at most.
+  scan_entries: 10000
+  # Folders, each relative to a root and applied to every root, that `open({ file })` and a custom editor's document never reach for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+  closed_paths: [secrets]
+
+
+# === The status bar =========================================================
+# The items hidden from the bar (each by the id the bar gives it), whether Do Not Disturb keeps notifications from showing a toast, and the repository the reader last chose in the bar's repository item (by its root, empty for none). The bar's right-click menu, the Do Not Disturb button and the repository item write them.
+status_bar:
+  hidden: []
+  quiet: false
+  repository: ''
+
+# The values of the settings that apps declare under `contributes.configuration`, as a map from the setting's whole key (`notes.width` is one key) to its value. The map is kept in a hub's own .oculus/config.yml, where `app_settings` is a key of the hub list; the apps read the map of the primary hub's .oculus/config.yml, and the Settings view writes into that file. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. This file sets no map.

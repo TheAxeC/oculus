@@ -1,0 +1,114 @@
+# ===========================================================================
+# options/local.yml
+# Every key a hub's .oculus/local.yml takes described once, the machine's own values, and a help line for each group of its dotted keys, in the shape the head of options/appearance.yml describes. local.yml has no defaults file in oculus: each key is listed under This machine with the value in force. loadConfig() reads it into the merged map's `options` and `option_groups` under local.yml; readLocalText() in src/lib/data/sources/config/local.ts reads a local.yml, whose keys (LOCAL_KEYS there) are the ones described here.
+# ===========================================================================
+
+options:
+    port:
+        section: Server
+        control: number
+        whole: true
+        help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it, or with a value that is not one, the port is the server's default, 8790 unless the server was started with another. Only the primary hub's file sets it. The server moves to a port written to the file at once, and stays on the port it listens on when that port cannot be used.
+    hpc_host:
+        section: HPC host
+        help: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.
+    sessions_cache:
+        section: Sessions
+        help: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    sessions_overrides:
+        section: Sessions
+        help: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    changes:
+        section: Saved files
+        help: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    history:
+        section: Saved files
+        help: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    approvals:
+        section: Saved files
+        help: 'Where the approvals live: the project commands and debug launches, apps, interpreters and Svelte configurations a reader approved, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.'
+    lsp:
+        section: Saved files
+        help: Where the language servers keep this machine's state, a folder per served root named by a hash of the root's real path, holding the index clangd writes there instead of into the repository, and choices.json, the interpreter and the compile database chosen for each repository. Without it the folder is ~/.oculus/lsp. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change ends every language server, and each starts again on its next document under the new folder; the old folder is left as it was.
+    schedule_record:
+        section: Saved files
+        help: Where the schedules' run record lives, each schedule's latest runs and the last due time it handled. Without it the file is ~/.oculus/schedule.json, mode 0600 when oculus creates it. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    claude_bin:
+        section: Programs
+        help: The Claude command line that the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
+    commit_message_account:
+        section: Programs
+        help: The Claude account that the suggested commit message runs under, the label of a claude row of accounts in any hub's file, compared once reduced to lowercase letters, digits and dashes. Empty or without it the run takes the default folder, ~/.claude. A label that is not a Claude row's is a finding and the default folder is used. It is read from the primary hub's file only. A change is read again at once.
+    open_bin:
+        section: Programs
+        help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to the platform's opener, which is /usr/bin/open on macOS, xdg-open on Linux and wslview under WSL2. A change is read again at once.
+    rite_dap_bin:
+        section: Programs
+        help: The rite debug adapter that the Debug view starts, rite_dap of a cathedra build, an absolute path, a path under ~/ or a name resolved on PATH. Without it the name is rite_dap. A change is read again at once.
+    accounts:
+        section: Usage accounts
+        help: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. The rows of every hub's file are read together, each marked with its hub. Without a row in any hub's file the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes across the hubs; a later repeat is left out with a finding. A change is read again at once.
+        fields:
+            tool:
+                help: claude or codex, the tool whose folder this is
+                control: choice
+                options: [claude, codex]
+            dir: the configuration folder the Usage view reads, an absolute path, a path under ~/ or one relative to the folder of the hub that holds this file
+            label: the words the Usage view shows the account under
+    calendars:
+        section: Calendar accounts
+        help: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. The rows of every hub's file are read together, each marked with its hub. Without it no calendar is read. A change is read again at once.
+        fields:
+            provider:
+                help: google, microsoft or ics, the service the calendar is read from
+                control: choice
+                options: [google, microsoft, ics]
+            label: the account's name, lowercase letters, digits and dashes, unique per provider
+    calendar_dir:
+        section: Calendar accounts
+        help: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    mail:
+        section: Mail accounts
+        help: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. The rows of every hub's file are read together, each marked with its hub. Without it no mail is read. A change is read again at once.
+        fields:
+            provider:
+                help: google or microsoft, the service the mail is read from
+                control: choice
+                options: [google, microsoft]
+            label: the account's name, lowercase letters, digits and dashes, unique per provider
+    mail_dir:
+        section: Mail accounts
+        help: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    literature.wos_key:
+        section: Literature search
+        help: Under `literature:`, the Web of Science Starter API key. Without it the Web of Science toggle of the Literature search is switched off. A change is read again at the next search.
+    literature.scopus_key:
+        section: Literature search
+        help: Under `literature:`, the Elsevier API key for Scopus. Without it the Scopus toggle of the Literature search is switched off. A change is read again at the next search.
+    literature.scopus_insttoken:
+        section: Literature search
+        help: Under `literature:`, the Elsevier institutional token that goes with the Scopus key, sent when the key needs one. A change is read again at the next search.
+    literature.openalex_key:
+        section: Literature search
+        help: Under `literature:`, an OpenAlex API key. Without it OpenAlex allows about 100 searches a day. A change is read again at the next search.
+    literature.semantic_scholar_key:
+        section: Literature search
+        help: Under `literature:`, a Semantic Scholar API key. Without it Semantic Scholar often answers that too many requests were made. A change is read again at the next search.
+    literature.ncbi_key:
+        section: Literature search
+        help: Under `literature:`, an NCBI API key, which lets PubMed answer more requests a second. A change is read again at the next search.
+    literature.mailto:
+        section: Literature search
+        help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. A change is read again at the next search.
+    downloads:
+        section: Download accounts
+        help: The accounts the Data view's Recover downloads with, a list of service (physionet, kaggle, kaggle-token or synapse), user and secret, one row per service. A physionet row holds the PhysioNet user name and password, a kaggle row the Kaggle user name and API key, a kaggle-token row Kaggle's API token and no user, and a synapse row a Synapse personal access token and no user. Recover sends the secret to curl through a file only it can read, deleted when the download ends, and never shows it. Recover signs in to Kaggle with the kaggle row alone; the kaggle-token row is kept for Kaggle's token and Recover does not use it. Without its row a credentialed PhysioNet set, a Kaggle set or a Synapse set cannot be fetched, and for a Kaggle set that row is the kaggle row. It is read from the primary hub's file only. A change is read again at the next Recover.
+        fields:
+            service:
+                help: physionet, kaggle, kaggle-token or synapse, the service the row signs in to
+                control: choice
+                options: [physionet, kaggle, kaggle-token, synapse]
+            user: the user name at PhysioNet or Kaggle; absent for kaggle-token and synapse
+            secret: the PhysioNet password, the Kaggle API key, Kaggle's API token or the Synapse token, shown as set
+groups:
+    literature: The keys and the contact address the Literature search's sources are called with from this machine.

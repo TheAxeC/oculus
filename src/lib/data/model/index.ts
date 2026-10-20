@@ -381,7 +381,7 @@ export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability'
  * from a repository), the collection key or the website, `where` the file, field or entry it is
  * about, `file` the path of the file it is about relative to the folder its `root` names (the empty
  * text when there is none, which the signature does not read), and `signature` the twelve hex
- * characters the mute list in config/behavior.yml holds. A finding of a hub other than the primary
+ * characters the mute list `audit_ignore:` holds. A finding of a hub other than the primary
  * has its root key in front of its `scope`, so its signature differs from a primary-hub finding of
  * the same place. `root` is the Files root `file` is relative to: a hub's as for any record, and
  * the repository's key for a finding that names a file of a project read from a repository; such a
@@ -400,7 +400,7 @@ export type AuditFinding = Rooted & {
 /** The payload of the `audit` channel: what the scan found, and what the reader has parked. */
 export type AuditPayload = {
     findings: AuditFinding[];
-    /** The signatures of config/behavior.yml's `audit_ignore:`, the primary hub's mute list. */
+    /** The signatures of the merged config's `audit_ignore:`, the mute list in force. */
     muted: string[];
 };
 
@@ -793,6 +793,15 @@ export type {
     DebugStatus,
     DebugWatch
 } from './machine/model-debug.ts';
+export type {
+    HeldLayout,
+    LayoutWrite,
+    PageState,
+    PageStateAnswer,
+    PageStateRead,
+    PageStateWrite,
+    StatePayload
+} from './machine/model-page-state.ts';
 export type {
     ChainLine,
     CommandContext,

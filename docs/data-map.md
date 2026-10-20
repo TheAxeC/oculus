@@ -12,10 +12,10 @@ A hub's data files, the view that shows each, the keys that link them, and the f
 
 | File | What it is |
 |---|---|
-| `.oculus/config.yml` | the hub's settings; a folder holding it is a hub |
+| `.oculus/config.yml` | the hub's settings, among them `bookmarks`, `schedules` and `apps_dir`, where the bookmarks file, the schedules file and the machine's apps folder are; a folder holding it is a hub |
 | `.oculus/local.yml` | this machine's values (port, cluster alias, programs, accounts); out of git |
 | `.oculus/bookmarks.yml` | the bookmarked folders and files of the Files view |
-| `.oculus/workspaces/<name>.yml` | one workspace: its folders and its primary hub |
+| `.oculus/workspaces/<name>.yml` | one workspace: its folders, its primary hub and `settings:`, the workspace's own values of oculus's options |
 | `.oculus/schedules.yml` | the scheduled tasks of the update tray |
 | `.oculus/tasks/<task>.md` | the steps of one update task (`litwatch`, `scout`, `inbox`, `linkedin`), which the tray hands to a Claude session |
 | `.oculus/data/<kind>/<file>.yml` | the data file of one collection, at oculus's default path, in the folder of its kind (`research`, `pillars`, `literature`, `people`, `academic`) |

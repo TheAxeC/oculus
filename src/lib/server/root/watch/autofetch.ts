@@ -1,4 +1,4 @@
-// Layer 2, server. The automatic fetch: while `git.autofetch_minutes` of config/behavior.yml is
+// Layer 2, server. The automatic fetch: while `git.autofetch_minutes` of the merged config is
 // above 0, every repository on the `git` channel that has a remote is fetched (`git fetch
 // --prune`) once each period, one after the other. It owns no channel and no file handle; it looks
 // at the `config` and `git` channels once a minute and acts on what they hold then.

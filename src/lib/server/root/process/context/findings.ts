@@ -1,25 +1,14 @@
-// Layer 2, server. The findings the context says on stderr at start and after a move of the open
-// workspace: every reader of the configuration's, the machine's files', the workspace's and the
-// documents', in the one format a config finding is said in.
+// Layer 2, server. The findings of the readers of the merged configuration, which the portfolio
+// watcher publishes on the `config` channel and the context says on stderr at start and after a
+// move of the open workspace: the readers of the configuration (data/sources/config/sections/
+// findings.ts) with the documents of `docs:` checked against the disk, the machine's files' and the
+// workspace's, in the one format a config finding is said in.
 
-import {
-    behaviorFindings,
-    iconFindings,
-    languageFindings,
-    latexEditingFindings,
-    latexUnimathFindings,
-    localFindings,
-    nestingFindings,
-    optionFindings,
-    schemaFindings,
-    settingFindings,
-    sourceFile,
-    textCatalog,
-    themeFindings
-} from '../../../../data/sources/config.ts';
+import { localFindings, textCatalog, type ConfigWhere } from '../../../../data/sources/config.ts';
 import type { MachineProblem } from '../../../../data/sources/config/machine.ts';
+import { READER_FINDINGS } from '../../../../data/sources/config/sections/findings.ts';
 import type { Finding } from '../../../../data/model/index.ts';
-import { docFindings } from '../../../content/docs.ts';
+import { docsFindings } from '../../../content/docs.ts';
 import { workspaceFindings } from '../../../files/workspace/words.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 
@@ -28,6 +17,11 @@ export function reportFindings(findings: Finding[]): void {
     for (const finding of findings) {
         console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);
     }
+}
+
+/** Every finding of the readers of the merged configuration and of its documents. */
+export function readerFindings(where: ConfigWhere, config: Record<string, unknown>): Finding[] {
+    return [...READER_FINDINGS, docsFindings].flatMap((find) => find(where, config));
 }
 
 /** What the findings are read from: the engine, the merged configuration and the workspace. */
@@ -43,18 +37,8 @@ export type FindingSources = {
 export function startFindings(sources: FindingSources): Finding[] {
     const { engine, config, from, open, problems } = sources;
     return [
-        ...iconFindings(engine, config),
-        ...behaviorFindings(engine, config),
-        ...settingFindings(engine, config),
-        ...languageFindings(engine, config),
-        ...latexEditingFindings(engine, config),
-        ...latexUnimathFindings(engine, config),
-        ...nestingFindings(engine, config),
-        ...optionFindings(engine, config),
-        ...schemaFindings(engine, config),
-        ...themeFindings(engine, config),
+        ...readerFindings({ engine, hub: open.primaryDir, from }, config),
         ...localFindings(config, problems),
-        ...docFindings(config, open.primaryDir, sourceFile(engine, open.primaryDir, from, 'docs')),
         ...workspaceFindings(open, textCatalog(config))
     ];
 }

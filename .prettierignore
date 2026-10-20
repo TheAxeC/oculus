@@ -16,11 +16,11 @@ tests/fixtures/hubs/demo/
 
 # config/catalogs/unimath.yml holds one symbol to a line, which a formatter pass would spread over
 # four times as many lines.
-config/appearance.yml
-config/behavior.yml
+config/defaults/appearance.yml
+config/defaults/behavior.yml
 config/catalogs/glyphs.yml
 config/catalogs/unimath.yml
-config/layout.yml
+config/defaults/layout.yml
 config/schemas/
-config/sources.yml
+config/defaults/sources.yml
 config/catalogs/vocab.yml

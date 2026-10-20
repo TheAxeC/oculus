@@ -3,7 +3,6 @@
 // reads, the preparation of an entry's launch for a root, the `initialize` request a server is
 // given from the capabilities its page sent, and the held server itself.
 
-import { configDir } from '../../../../data/sources/config/folder.ts';
 import type { LspRpc } from '../../../../data/model/index.ts';
 import { Held, type Page } from '../held/held.ts';
 import { spawnChild } from '../held/process.ts';
@@ -60,10 +59,7 @@ export function createState(options: RelayOptions, calls: ServerCalls): RelaySta
     const state: RelayState = {
         options,
         servers,
-        apps:
-            options.appServers === undefined
-                ? undefined
-                : new AppEntries(options.appServers, configDir(options.oculus)),
+        apps: options.appServers === undefined ? undefined : new AppEntries(options.appServers),
         appFeed: options.appServers,
         spawn: appSpawn(() => state, options.spawn ?? spawnChild),
         now: options.now ?? Date.now,

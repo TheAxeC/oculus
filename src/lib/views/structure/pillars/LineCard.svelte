@@ -99,9 +99,27 @@
 </div>
 
 <style>
+    /* An off-pillar line and a dormant line are archival, so they are faded; while the pointer is
+       over one or the keyboard focus is inside it the fade lifts, so the line being read is read
+       at full strength. */
     .dormant,
     .muted {
         opacity: 0.62;
+        transition: opacity 120ms ease;
+    }
+
+    .dormant:hover,
+    .dormant:focus-within,
+    .muted:hover,
+    .muted:focus-within {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dormant,
+        .muted {
+            transition: none;
+        }
     }
 
     .metrics {

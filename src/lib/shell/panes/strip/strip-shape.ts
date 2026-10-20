@@ -1,8 +1,8 @@
-// Layer 3, shell. What a pane's top row draws under the two settings of config/appearance.yml,
-// apart from the component so it can be read without a DOM: which tabs, whether the row is the tab
-// row, a title row that holds the lock mark, or no row, whether the Split Right button and the pane
-// menu opener are drawn in the row or handed up to the window's title bar strip, and whether the
-// lock mark is.
+// Layer 3, shell. What a pane's top row draws under the two settings of
+// config/defaults/appearance.yml, apart from the component so it can be read without a DOM: which
+// tabs, whether the row is the tab row, a title row that holds the lock mark, or no row, whether
+// the Split Right button and the pane menu opener are drawn in the row or handed up to the window's
+// title bar strip, and whether the lock mark is.
 //
 // With the tab bar not drawn (`show_tabs: none`) the actions at their first place
 // (`editor_actions: strip`) go up to the window strip, as VS Code's `editorActionsLocation`

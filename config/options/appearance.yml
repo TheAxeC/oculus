@@ -1,0 +1,179 @@
+# ===========================================================================
+# options/appearance.yml
+# Every option of defaults/appearance.yml described once, and a help line for each group of its dotted options. loadConfig() reads every file of config/options/ into the merged map: `options` maps a defaults file's name (appearance.yml, the name of this file) to these entries, each carrying as its `default` the value defaults/appearance.yml holds at its path, and `option_groups` maps it to the help lines. catalogOf() in src/lib/data/sources/config/catalog/options.ts reads them, and optionFindings() in option-findings.ts reports an entry or a group line it cannot read.
+# ===========================================================================
+
+# Shape, the same in every file of this folder. `options:` maps a dotted key path of the defaults file of the same name to an entry, and `groups:` maps each group of dotted options (a proper prefix of a key path, such as `wallpaper` of `wallpaper.dim`) to the help line the editor shows for it. local.yml has no defaults file: its options are the keys of a hub's .oculus/local.yml.
+# An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
+# A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option. A list of records names under `key:` the field its rows are told apart by, which is how a workspace file's `settings:` overrides one row.
+# Every entry outside local.yml holds `help`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `control`. The value the Settings view's Modified filter compares with, the one its Reset puts back, and, for a setting a reader of src/lib/data/sources/config/settings/ reads, the one used when the key is missing or wrong, is the defaults file's own value at the path. A local.yml entry holds `help` and `section`, is listed under This machine with the value in force, and holds `control` where the key takes a number or a choice, and `fields` for a list of records, so the editor checks the file's keys and values by the entry.
+# The controls are toggle, number, text, long (a text area), choice, multi (several words of a list), list (one text box per item), glyph (a name of catalogs/glyphs.yml), hue (a palette hue name), colour (a palette hex, drawn as its hue), folder and file (a path inside the hub, offered from the files there), path (an absolute or ~/ path), parked (a list whose items can only be removed) and, in a family field, records (a nested list of records described by its own `fields`).
+# A choice or multi names its words in `options`, or the list they come from in `from` (one source, or a list of sources offered together; SOURCES in options.ts), or for a field in `from: { field, sources }` the source another field of the record names. On a text, `from` names the source a text box suggests from and the value is not held to it; `empty: true` adds the empty value to a choice or path, and `empty: <words>` does the same and gives the words the choice draws for its empty item; `min` and `max` bound a number; `slots` names the fixed items of a list; `items: number` makes a list's items numbers; `whole: true` holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or each item of a list, to one of the forms of FORMS in options.ts: `program` (no slash or white space), `extension` (a dot and one segment) or `bundle_id` (two or more dot-separated segments of letters, digits and dashes); `joined: true` writes a multi as one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of the record is true.
+# A family's entry holds `help` and `fields`, and, for a key/value family (fields `key` and `value`) whose every key holds a list of values (`languages`), `holds: lists`; the reader refuses `holds: lists` on any other entry, and a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its help line alone (a text box) or a map of `help`, `control` and the keys above.
+# A value outside its control, `min`, `max` or `options` is wrong by one rule, src/lib/data/sources/config/catalog/value-rule.ts: the Settings view refuses it before the write, the server's write refuses it, and one written by hand is a finding naming the file and the key while the reader uses the defaults file's value.
+options:
+    themes:
+        heading: appearance
+        section: Themes
+        help: "The UI themes of the theme picker, in picker order. A row with no name, or repeating a name an earlier row gave, is dropped. A workspace file's settings: overrides a theme by its name, adds a theme with a new name, and takes one of oculus's themes out with { name: <theme>, removed: true }; the themes it names come first, in its order."
+        key: name
+        fields:
+            name: the name the theme key saves the theme under
+            class:
+                help: the classes put on the page body, empty for the light theme
+                control: multi
+                from: theme_classes
+                joined: true
+            glyph:
+                help: the glyph name drawn before the label
+                control: glyph
+            label: the words the picker shows, the name when the row has none
+    theme:
+        heading: appearance
+        section: Themes
+        help: The UI theme the page is drawn in, a name of themes or the saved name of a colour theme an approved, enabled app offers. Empty draws the first theme of themes, and vscode-dark-modern in the desktop app; a name that is neither draws that same theme. The theme picker, :theme in Cmd-K and an app's theme command write this key.
+        control: choice
+        from: themes
+        empty: the first theme of the list
+    text_size:
+        heading: appearance
+        section: Text size
+        help: The size of the page's text, a multiplier of the theme's own sizes from 0.7 to 1.6, rounded to a tenth when it is read.
+        control: number
+        min: 0.7
+        max: 1.6
+    rice.icons:
+        heading: appearance
+        section: Terminal themes
+        help: Whether a terminal theme keeps the icons. false draws the ASCII stand-ins of catalogs/glyphs.yml in their place, which is the terminal themes' own look. The Icons toggle of the theme picker writes this key.
+        control: toggle
+    rice.brackets:
+        heading: appearance
+        section: Terminal themes
+        help: Whether a terminal theme draws its buttons, chips and tags in brackets. The Brackets toggle of the theme picker writes this key.
+        control: toggle
+    rice.monospace:
+        heading: appearance
+        section: Terminal themes
+        help: Whether a terminal theme draws its interface in the monospace font. false draws it in the sans font. The Monospace toggle of the theme picker writes this key.
+        control: toggle
+    terminal.font_px:
+        heading: terminal
+        section: Display and keys
+        help: Text size of the terminal grid in CSS pixels. The grid paints its own text and cannot inherit the page's size; a value is clamped to 6 to 40. Leaving the key out makes the terminal follow the theme's --fs-md token. The text size buttons of a terminal tab write this key.
+        control: number
+        min: 6
+        max: 40
+    terminal.mac_option_is_meta:
+        heading: terminal
+        section: Display and keys
+        help: Whether the Option key sends Meta on macOS, so Option+B and Option+F move by word in a shell. false types the characters Option makes, such as the accented letters of the US-International layout. A value that is not true or false counts as false.
+        control: toggle
+    terminal.copy_on_selection:
+        heading: terminal
+        section: Display and keys
+        help: 'Whether a selection in the terminal grid is copied to the clipboard as soon as it is made, which includes Select All. false copies only when asked: Copy, Copy as HTML or the copy key. A value that is not true or false counts as false.'
+        control: toggle
+    terminal.cursor_style:
+        heading: terminal
+        section: Display and keys
+        help: The shape of the terminal grid's cursor. block fills the cell, line draws a thin bar, underline draws a line under the cell. Any other value counts as block.
+        control: choice
+        options: [block, line, underline]
+    terminal.cursor_blinking:
+        heading: terminal
+        section: Display and keys
+        help: Whether the terminal grid's cursor blinks. false keeps it steady. A value that is not true or false counts as false.
+        control: toggle
+    wallpaper.show:
+        heading: appearance
+        section: Wallpaper
+        help: Whether the wallpaper is drawn under the themes wallpaper.themes names. hidden never draws it, shown draws it, and empty takes the theme's answer, which draws it under those themes.
+        control: choice
+        options: [shown, hidden]
+        empty: the theme's answer
+    wallpaper.image:
+        heading: appearance
+        section: Wallpaper
+        help: "The wallpaper: a hub name and a file name joined by a slash (lab/photo.jpg), the file being in that hub's wallpaper folder, or random for one image of any hub kept until the server restarts. Empty shows no wallpaper. The picker under the wallpaper rows writes this key into the primary hub's own .oculus/config.yml."
+        control: text
+    wallpaper.dim:
+        heading: appearance
+        section: Wallpaper
+        help: How far the image is darkened, from 0 (the raw image) to 1 (fully hidden); a value is clamped to that range. Busy images want 0.7 to 0.85.
+        control: number
+        min: 0
+        max: 1
+    wallpaper.blur:
+        heading: appearance
+        section: Wallpaper
+        help: Blur of the image itself in pixels, from 0 (sharp) to 64. Raise it only for a busy picture.
+        control: number
+        min: 0
+        max: 64
+    wallpaper.themes:
+        heading: appearance
+        section: Wallpaper
+        help: Which UI themes show the wallpaper. rice shows it on the terminal-style themes only, all shows it on the light and dark themes too. Any other value counts as rice.
+        control: choice
+        options: [rice, all]
+    wallpaper.panel_opacity:
+        heading: appearance
+        section: Wallpaper
+        help: How solid the panels stay over the image, from 0 to 1 (1 is opaque); a value is clamped to that range. The value is applied as a whole percentage.
+        control: number
+        min: 0
+        max: 1
+    wallpaper.popover_opacity:
+        heading: appearance
+        section: Wallpaper
+        help: How solid dropdowns and popovers are, from 0 to 1. They float over a panel, so at the panel's own opacity they would be read through two translucent layers. Leaving the key out sets it three quarters of the way from panel_opacity to solid.
+        control: number
+        min: 0
+        max: 1
+    wallpaper.panel_blur:
+        heading: appearance
+        section: Wallpaper
+        help: Backdrop blur behind each panel in pixels, from 0 to 64. It keeps text crisp without smearing the image.
+        control: number
+        min: 0
+        max: 64
+    crt.on:
+        heading: appearance
+        section: CRT overlay
+        help: Whether the CRT overlay (scanlines and vignette, cosmetic only) is drawn over the page. :crt in Cmd-K and an app's crt command switch it.
+        control: toggle
+    code_theme:
+        heading: appearance
+        section: Code theme
+        help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class name of any of the 19 VS Code themes (for example vscode-dark-2026 or vscode-light-modern) takes that theme's TextMate rules under any UI theme, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. A value that is none of these is reported as a finding and read as tokens.
+        control: choice
+        from: code_themes
+    file_icons:
+        heading: appearance
+        section: File icons
+        help: The file icon theme. seti draws the icons of VS Code's default theme. The icon theme of an approved, enabled app is saved as its app's view id, a slash and the theme's id with that id percent-encoded; it draws that theme's icons in the Files view, the tabs, Cmd-K and the diff headers. A value naming no such theme, because its app is unapproved, disabled, removed or changed, is reported as a finding and read as seti. The :file-icons command in Cmd-K writes this key.
+        control: choice
+        from: file_icon_themes
+    show_tabs:
+        heading: appearance
+        section: Pane tabs
+        help: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and no row, but a title row with the lock mark while the pane is locked, and the pane's actions go to the window's title bar strip. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
+        control: choice
+        options: [multiple, single, none]
+    editor_actions:
+        heading: appearance
+        section: Pane tabs
+        help: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, or while show_tabs is none in the window's title bar strip for the active pane, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
+        control: choice
+        options: [strip, hidden]
+    wrap_tabs:
+        heading: appearance
+        section: Pane tabs
+        help: Whether the tabs of a pane wrap onto more rows when they do not fit, instead of scrolling along one row. It applies only while show_tabs is multiple. Any value that is not true counts as false.
+        control: toggle
+groups:
+    rice: How the terminal themes (the themes whose class holds rice) draw the interface, with icons or their ASCII stand-ins, with or without brackets around buttons, chips and tags, and in the monospace or the sans font.
+    terminal: How the terminal grid draws its text and its cursor, what the Option key sends on macOS, and whether a selection is copied as soon as it is made.
+    wallpaper: The picture behind the panels, whether it is drawn and under which themes, how far it is darkened and blurred, and how solid and how blurred the panels and popovers over it stay.
+    crt: The cosmetic CRT overlay of scanlines and vignette drawn over the whole page.

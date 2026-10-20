@@ -23,7 +23,6 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
-import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import { keptValues, same } from '../../core/changes.ts';
 import { appById } from '../../machine/apps/read/held.ts';
 import { APP_STORE, storeNow, writeAppStore } from './apps/store.ts';
@@ -44,11 +43,17 @@ import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
 import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
-import { machineHubs, takeOutAdded } from './config/config-checks.ts';
-import { railNow, writeRail } from './config/lists/rail.ts';
+import { takeOutAdded } from './config/config-checks.ts';
+import {
+    layersOf,
+    machineHubs,
+    placeOf,
+    type ConfigLayers,
+    type OptionNow
+} from './config/config-place.ts';
+import { configResetNow, restoreReset } from './config/config-reset.ts';
 import { foldersValueNow, workspaceValueShape, writeFolders } from './config/lists/folders.ts';
 import { hubOfFile } from '../../files/workspace/open.ts';
-import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
     identityOrder,
@@ -93,14 +98,81 @@ function fileOf(change: Change): string {
     return resolve(change.file);
 }
 
+/** The kinds of change a Settings write records, whose record names a defaults file and a key. */
+const CONFIG_KINDS: readonly string[] = ['config-key', 'config-value', 'config-reset', 'rail'];
+
 /**
- * The hub a record of a config write was written under: the hub when the file it names lies in the
- * hub's settings file, and none when it lies in the engine's, since a key of the hub list whose
- * write went to the engine's file is taken back there.
+ * The layers a record of a Settings write is taken back over: the target's, when the file the
+ * record names is where the target places its key (the primary hub's settings file or the open
+ * workspace file), and null otherwise, as for a record of another workspace file or of another
+ * primary hub, which this target does not write.
  */
-function layerHub(into: WriteTarget, change: Change): string | undefined {
-    if (into.hub === null) return undefined;
-    return fileOf(change) === resolve(into.hub, HUB_FILE) ? into.hub : undefined;
+function recordLayers(into: WriteTarget, change: Change): ConfigLayers | null {
+    const layers = layersOf(into);
+    const place = placeOf(layers, change.key, change.field);
+    return place !== null && resolve(place.path) === fileOf(change) ? layers : null;
+}
+
+/** What the file at a Settings record's place holds now at its key, by the kind of the record. */
+function configNow(into: WriteTarget, change: Change): OptionNow {
+    const layers = recordLayers(into, change);
+    if (layers === null) return ABSENT;
+    if (change.kind === 'config-key') {
+        return configKeyNow(into.engine, layers, change.key, change.field);
+    }
+    if (change.kind === 'config-reset') {
+        return configResetNow(into.engine, layers, change.key, change.field);
+    }
+    return configValueNow(into.engine, layers, change.key, change.field);
+}
+
+/**
+ * The write that takes a Settings record back. A write that added the key is taken back by taking
+ * the added text out, and a hub's settings file and the folders it made with it. A reset puts the
+ * text it removed back. A key write writes the earlier value; a value write puts the text it
+ * replaced back while the file holds what it left, and otherwise writes the earlier value as the
+ * file held it.
+ */
+function configUndo(into: WriteTarget, change: Change): WriteOutcome | null {
+    const layers = recordLayers(into, change);
+    if (layers === null) return null;
+    const hubs = machineHubs(into);
+    const { engine } = into;
+    if (change.created !== undefined) {
+        const outcome = takeOutAdded(
+            engine,
+            layers,
+            change.key,
+            change.field,
+            change,
+            madeBy(change)
+        );
+        return outcome === null ? null : { found: true, ...outcome };
+    }
+    if (change.kind === 'config-reset') {
+        const outcome = restoreReset(engine, change.key, change.field, change, layers, hubs);
+        return outcome === null ? null : { found: true, ...outcome };
+    }
+    if (change.kind === 'config-key') {
+        const outcome = writeConfigKey(
+            engine,
+            change.key,
+            change.field,
+            change.before,
+            layers,
+            undefined,
+            hubs
+        );
+        return { found: true, ...outcome };
+    }
+    const outcome =
+        putBackConfigValue(engine, change.key, change.field, change, layers, hubs) ??
+        writeConfigValue(engine, change.key, change.field, change.before, change.after, layers, {
+            hubs,
+            stored: true,
+            own: change.kind === 'rail'
+        });
+    return { found: true, ...outcome };
 }
 
 /** The paths a record says its write made, as absolute paths. */
@@ -171,10 +243,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return own === null ? ABSENT : careerSection(own.hub, change.field, into.career);
     }
     if (change.kind === 'deck-slides') return deckSlidesNow(into, change);
-    if (change.kind === 'rail') {
-        const rail = railNow(into.layoutFile);
-        return rail === null ? { found: false, value: null } : { found: true, value: rail };
-    }
+    if (CONFIG_KINDS.includes(change.kind)) return configNow(into, change);
     if (change.kind === 'roots') {
         const file = fileOf(change);
         if (into.workspace === undefined || hubOfFile(file) === null) {
@@ -182,14 +251,8 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         }
         return foldersValueNow(file);
     }
-    if (change.kind === 'config-key') {
-        return configKeyNow(into.engine, change.key, change.field, layerHub(into, change));
-    }
     if (change.kind === 'app-setting') {
-        return appSettingNow(into.engine, into.hub ?? undefined, change.field);
-    }
-    if (change.kind === 'config-value') {
-        return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
+        return appSettingNow(into.hub ?? undefined, change.field);
     }
     if (own === null) return ABSENT;
     if (change.kind === LITERATURE_SAVE) {
@@ -289,9 +352,6 @@ const mapBeforeShape = z.catch(mapShape, () => ({}));
 
 /** The string items of a list the record holds, none for anything that is not a list. */
 const wordsBeforeShape = z.catch(stringItemsShape, () => []);
-
-/** The rail a record holds, as the rows the rail rule reads out of it; none for anything else. */
-const railBeforeShape = z.unknown().transform((before) => railRows(before) ?? []);
 
 /** The scalar a feed field held, or null, which clears the field. */
 const scalarBeforeShape = z.catch(feedValueShape, null);
@@ -428,15 +488,7 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         if ('error' in outcome) return outcome;
         return { found: true, ...outcome };
     }
-    if (change.kind === 'rail') {
-        const outcome = writeRail(
-            into.layoutFile,
-            railBeforeShape.parse(change.before),
-            into.glyphs
-        );
-        if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
-        return { found: true, ...outcome };
-    }
+    if (CONFIG_KINDS.includes(change.kind)) return configUndo(into, change);
     if (change.kind === 'roots') {
         const file = fileOf(change);
         if (into.workspace === undefined || hubOfFile(file) === null) return UNWRITABLE;
@@ -446,56 +498,6 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'app-setting') {
         return { found: true, ...undoAppSetting(into, change, madeBy(change)) };
-    }
-    if (change.kind === 'config-key' || change.kind === 'config-value') {
-        const layer = layerHub(into, change);
-        // A write that added a key to the hub's settings file is taken back by taking the added
-        // text out and removing the file and folders it made.
-        if (change.created !== undefined) {
-            const outcome = takeOutAdded(
-                into.engine,
-                into.hub ?? undefined,
-                change.key,
-                change.field,
-                change,
-                madeBy(change)
-            );
-            return outcome === null ? null : { found: true, ...outcome };
-        }
-        if (change.kind === 'config-key') {
-            const outcome = writeConfigKey(
-                into.engine,
-                change.key,
-                change.field,
-                change.before,
-                undefined,
-                layer,
-                machineHubs(into)
-            );
-            return { found: true, ...outcome };
-        }
-        // The text the write replaced goes back as it was when the file still holds what the write
-        // left; any other file is put right through the value write.
-        const outcome =
-            putBackConfigValue(
-                into.engine,
-                change.key,
-                change.field,
-                change,
-                layer,
-                machineHubs(into)
-            ) ??
-            writeConfigValue(
-                into.engine,
-                change.key,
-                change.field,
-                change.before,
-                change.after,
-                undefined,
-                layer,
-                machineHubs(into)
-            );
-        return { found: true, ...outcome };
     }
     if (own === null) return null;
     if (change.kind === LITERATURE_SAVE) {

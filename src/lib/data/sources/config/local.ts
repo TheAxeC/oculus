@@ -54,11 +54,6 @@ export type LocalConfig = {
      */
     sessionsOverrides?: string;
     /**
-     * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine
-     * sets it, and the file browser then uses .oculus/bookmarks.yml in the primary's folder.
-     */
-    bookmarks?: string;
-    /**
      * Where the change log lives, `changes` in the file. Absent unless the machine sets it, and the
      * write path then uses ~/.oculus/changes.jsonl.
      */
@@ -81,11 +76,6 @@ export type LocalConfig = {
      * ~/.oculus/lsp.
      */
     lsp?: string;
-    /**
-     * Where the schedules live, `schedules` in the file. Absent unless the machine sets it, and the
-     * schedule watcher then uses .oculus/schedules.yml in the primary's folder.
-     */
-    schedules?: string;
     /**
      * Where the schedules' run record lives, `schedule_record` in the file. Absent unless the
      * machine sets it, and the schedule watcher then uses ~/.oculus/schedule.json.
@@ -122,11 +112,6 @@ export type LocalConfig = {
      * unless the machine sets it, and the calendar connector then uses ~/.oculus/calendar.
      */
     calendarDir?: string;
-    /**
-     * Where the machine's apps live, `apps_dir` in the file. Absent unless the machine sets it, and
-     * the apps watcher then reads .oculus/apps in the primary's folder.
-     */
-    appsDir?: string;
     /** The mail accounts the Inbox view reads, empty unless the machine names any. */
     mail: MailAccountConfig[];
     /**
@@ -176,12 +161,10 @@ export const LOCAL_KEYS = [
     'hpc_host',
     'sessions_cache',
     'sessions_overrides',
-    'bookmarks',
     'changes',
     'history',
     'approvals',
     'lsp',
-    'schedules',
     'schedule_record',
     'claude_bin',
     'commit_message_account',
@@ -190,7 +173,6 @@ export const LOCAL_KEYS = [
     'accounts',
     'calendars',
     'calendar_dir',
-    'apps_dir',
     'mail',
     'mail_dir',
     'literature',
@@ -503,15 +485,12 @@ export const PROGRAM_KEYS = [
 export const STATE_PATHS = [
     ['sessions_cache', 'sessionsCache'],
     ['sessions_overrides', 'sessionsOverrides'],
-    ['bookmarks', 'bookmarks'],
     ['changes', 'changes'],
     ['history', 'history'],
     ['approvals', 'approvals'],
     ['lsp', 'lsp'],
-    ['schedules', 'schedules'],
     ['schedule_record', 'scheduleRecord'],
     ['calendar_dir', 'calendarDir'],
-    ['apps_dir', 'appsDir'],
     ['mail_dir', 'mailDir']
 ] as const;
 

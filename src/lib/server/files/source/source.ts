@@ -21,9 +21,8 @@
 // A save copies the file as the compare read it into the local history (server/files/fs/
 // history.ts), after every refusal above and before the write. A copy that cannot be made does not
 // stop the save: the answer is `ok` and carries `refused: [{ field: 'history', reason }]`, which
-// the tab says. A save of a machine file (a hub's `.oculus/local.yml` or oculus's own
-// `config/local.yml`) is refused while a key in its text does not read (`localRefusal`), and is
-// otherwise a save like any other.
+// the tab says. A save of a machine file (a hub's `.oculus/local.yml`) is refused while a key in
+// its text does not read (`localRefusal`), and is otherwise a save like any other.
 //
 // The GET answers the one fact the tab needs before it draws anything, whether the file is writable
 // on this machine, so the editor can say so rather than letting a reader type into something that
@@ -151,14 +150,14 @@ export function sourceBody(value: unknown): SourceBody | null {
 
 /**
  * The sentence a save of the machine's own file is refused with, or null for any other file and for
- * a body whose every key reads. The `local.yml` of each hub of the workspace and the one in
- * oculus's config folder `config` are read by their own rules rather than merged, and a key one
- * gets wrong is read as its default: saved, the wrong value would cost the machine that key without
- * a word at the save, so the save is refused with the sentence naming it. The file is recognised by
- * its device and inode, so any spelling of its path is it.
+ * a body whose every key reads. The `local.yml` of each hub of the workspace is read by its own
+ * rules rather than merged, and a key one gets wrong is read as its default: saved, the wrong value
+ * would cost the machine that key without a word at the save, so the save is refused with the
+ * sentence naming it. The file is recognised by its device and inode, so any spelling of its path
+ * is it.
  */
-function localRefusal(list: Root[], config: string, path: string, content: string): string | null {
-    if (!namesMachineFile(path, list, config)) return null;
+function localRefusal(list: Root[], path: string, content: string): string | null {
+    if (!namesMachineFile(path, list)) return null;
     return checkLocal(content, LOCAL_NAME);
 }
 
@@ -246,7 +245,7 @@ function bytesOf(content: string, marked: boolean): Buffer {
  * Make a file that is not there, in a folder of its root. A folder that is not there, or that is a
  * file, is the missing file's 404; a folder in the file's place is refused `changed`.
  */
-function createFile(rootList: Root[], config: string, body: SourceBody, folder: boolean): Response {
+function createFile(rootList: Root[], body: SourceBody, folder: boolean): Response {
     if (folder) return changed('path', 'folder');
     const parent = resolveRootPath(rootList, body.root, dirname(body.path));
     if ('error' in parent) {
@@ -262,7 +261,7 @@ function createFile(rootList: Root[], config: string, body: SourceBody, folder: 
         return json({ ok: false, error: 'the file is not there' }, { status: 404 });
     }
     const target = join(parent.path, basename(body.path));
-    const refusal = localRefusal(rootList, config, target, body.content);
+    const refusal = localRefusal(rootList, target, body.content);
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     const written = bytesOf(body.content, false);
     try {
@@ -282,7 +281,6 @@ export async function handleSource(
     token: string,
     text: () => Record<string, string>,
     rootList: Root[],
-    config: string,
     history?: string,
     stat: StatOf = statSync
 ): Promise<Response> {
@@ -315,7 +313,7 @@ export async function handleSource(
         }
     }
     if (real === null) {
-        if (body.create === true) return createFile(rootList, config, body, folder);
+        if (body.create === true) return createFile(rootList, body, folder);
         return body.base === undefined
             ? json({ ok: false, error: 'the file is not there' }, { status: 404 })
             : changed('base', 'changed');
@@ -331,7 +329,7 @@ export async function handleSource(
     }
     if (!isWholeText(bytes)) return refuse('binary');
     if (body.base !== undefined && hashOf(bytes) !== body.base) return changed('base', 'changed');
-    const refusal = localRefusal(rootList, config, real, body.content);
+    const refusal = localRefusal(rootList, real, body.content);
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     const after = stampOf(stat, real);
     if (after === null || !sameStamp(before, after)) return changed('base', 'changed');

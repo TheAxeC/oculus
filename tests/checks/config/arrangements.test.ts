@@ -1,9 +1,9 @@
-// Layer 4, tree check. The arrangements of config/layout.yml, read from the shipped file: each rail
-// page is first made from its arrangement, a workbench page from the `workbench:` key, and an
-// arrangement the reader refuses (parseArrangement answers null) makes no page, so the page opens
-// nothing. One row per arrangement of the file and one for `workbench:`, so a page added later is
-// checked the day it is added. The rows of `pinned` read the forms of a pinned tab and a `pinned:`
-// of another value, which makes the arrangement not add up.
+// Layer 4, tree check. The arrangements of config/defaults/layout.yml, read from the shipped file:
+// each rail page is first made from its arrangement, a workbench page from the `workbench:` key,
+// and an arrangement the reader refuses (parseArrangement answers null) makes no page, so the page
+// opens nothing. One row per arrangement of the file and one for `workbench:`, so a page added
+// later is checked the day it is added. The rows of `pinned` read the forms of a pinned tab and a
+// `pinned:` of another value, which makes the arrangement not add up.
 
 import { describe, expect, it } from 'vitest';
 import { collectionKeys, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -21,7 +21,7 @@ const pages: [string, unknown][] = [
     ['workbench', config.workbench]
 ];
 
-describe('the arrangements of config/layout.yml', () => {
+describe('the arrangements of config/defaults/layout.yml', () => {
     it.each(pages)('the %s page parses and names only views the catalogue knows', (_page, node) => {
         const client = createClientState();
         registerAll(client.registry);

@@ -39,20 +39,20 @@ export const CRT_CLASS = 'crt';
 
 /**
  * The body class a rice theme draws its buttons, chips and tags without brackets under: the
- * Brackets toggle off. The rules that draw the brackets select `body.rice` without it.
+ * option `rice.brackets` off. The rules that draw the brackets select `body.rice` without it.
  */
 const RICE_PLAIN_CLASS = 'rice-plain';
 
 /**
- * The body class a rice theme draws its interface in the default sans font under: the Monospace
- * toggle off. The rules that set the monospace font select `body.rice` without it.
+ * The body class a rice theme draws its interface in the default sans font under: the option
+ * `rice.monospace` off. The rules that set the monospace font select `body.rice` without it.
  */
 const RICE_SANS_CLASS = 'rice-sans';
 
 /**
- * The per-browser looks drawn beside a theme's own classes: the CRT overlay, and the two rice
- * toggles, whose classes are put on only when the toggle is off, so a page that sets neither
- * draws the rice look whole.
+ * The looks the options set beside a theme's own classes: the CRT overlay (`crt.on`), and the two
+ * rice toggles (`rice.brackets`, `rice.monospace`), whose classes are put on only when the option
+ * is off, so a config that sets neither draws the rice look whole.
  */
 export type BodyLooks = { crt: boolean; brackets: boolean; monospace: boolean };
 
@@ -101,9 +101,9 @@ export function applyWallpaper(
 
 /**
  * Put a theme on the document: `classes` is the theme's own body class string, the `class` of its
- * config/appearance.yml entry, the CRT class joins it when the overlay is on, and the classes of
- * the rice toggles join it when a toggle is off. The tokens the components paint text with are
- * derived from the theme the two sheets resolve to and set on the root element, since a
+ * config/defaults/appearance.yml entry, the CRT class joins it when the overlay is on, and the
+ * classes of the rice toggles join it when a toggle is off. The tokens the components paint text
+ * with are derived from the theme the two sheets resolve to and set on the root element, since a
  * stylesheet cannot compute them.
  */
 export function applyTheme(

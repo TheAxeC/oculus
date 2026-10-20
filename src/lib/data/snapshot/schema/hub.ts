@@ -66,7 +66,12 @@ export function fileSchema(
         const record = recordSchema([...fields, ...options.written], ctx);
         const properties: Record<string, JsonSchema> = {
             ...frame(),
-            [options.list]: { type: ['array', 'null'], items: record }
+            [options.list]: {
+                type: ['array', 'null'],
+                items: record,
+                description:
+                    "The file's records, each holding the fields the file's `schema:` declares."
+            }
         };
         top = { type: 'object', properties, additionalProperties: false };
     } else {

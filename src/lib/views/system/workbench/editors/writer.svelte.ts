@@ -10,6 +10,7 @@ import {
 } from '$lib/state/system/config/editors/writer';
 import type { Lists } from '$lib/state/system/config/editors/sources';
 import type { ConfigRow } from '$lib/state/system/config/rows';
+import type { ResetConfig } from '$lib/state/system/config/write';
 
 /**
  * An editors' write sequence whose `sending`, `shown`, `said` and `saved` redraw whatever read
@@ -17,12 +18,14 @@ import type { ConfigRow } from '$lib/state/system/config/rows';
  */
 export function reactiveEditors(
     write: WriteConfigValue,
+    reset: ResetConfig,
     ended: (row: ConfigRow) => void,
     held: (row: ConfigRow) => boolean,
     lists: () => Lists
 ): EditorWriter {
     let version = $state(0);
     const inner = createEditorWriter(write, {
+        reset,
         changed: () => {
             version += 1;
         },

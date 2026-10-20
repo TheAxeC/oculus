@@ -2,9 +2,9 @@
 // root's `.oculus/commands.yml` (the hub's for a machine app) and run as a press of it runs, so the
 // reader is asked to approve a chain that is not approved yet and sees the terminal it runs in.
 //
-// A command saved through the form, and a command found in a build file, are not named here: only
-// the commands file's own commands are reachable, so an app can ask for nothing the reader has not
-// written into that file. The call settles when the press ends: `ok` once the terminal is made,
+// A command found in a build file is not named here: only the commands file's own commands are
+// reachable, so an app can ask for nothing the reader has not written into that file, by hand or
+// through the command form. The call settles when the press ends: `ok` once the terminal is made,
 // `declined` when the reader answered no, `failed` when the run was refused, `missing` when the
 // root is not shown or the file holds no command of the name.
 

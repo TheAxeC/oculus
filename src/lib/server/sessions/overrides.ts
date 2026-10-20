@@ -9,8 +9,7 @@
 // A write keeps every other key of the file and every other key of the session's own entry, and
 // goes through one atomic replace, because the file holds work the user did by hand. A file that is
 // there and is not JSON, or is not a map, is never written over: the write is refused with the
-// reason, as the saved commands file refuses one, and the file is left as it was. The reads below
-// take such a file as holding no override.
+// reason, and the file is left as it was. The reads below take such a file as holding no override.
 
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';

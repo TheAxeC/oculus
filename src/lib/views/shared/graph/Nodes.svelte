@@ -7,7 +7,8 @@
     // opens it on Enter or Space. The layer
     // holds no pointer state of its own: a press goes to the graph, which owns the drag, the link
     // and the pan, and the node the pointer or the keyboard is on is handed back through the two
-    // bound props, since the graph draws that node's label on top. An archived project is dimmed.
+    // bound props, since the graph draws that node's label on top. An archived project is dimmed,
+    // and drawn at full strength while it is the node the pointer or the keyboard is on.
 
     import { nodeTone } from './node-tone';
     import type { PointNode } from '$lib/state/boards/structure/graph';
@@ -40,6 +41,7 @@
     <g
         class="node"
         class:archived={node.archived !== undefined}
+        class:lifted={node.id === hovered || node.id === focused}
         class:target={node.id === targetId}
         data-node={node.id}
         role="button"
@@ -103,8 +105,21 @@
         cursor: grab;
     }
 
+    /* An archived project is faded as archival; while it is the node the pointer or the keyboard is
+       on the fade lifts, with its label (Labels.svelte), so it is read at full strength. */
     .node.archived {
         opacity: 0.6;
+        transition: opacity 120ms ease;
+    }
+
+    .node.archived.lifted {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .node.archived {
+            transition: none;
+        }
     }
 
     .node.target circle {

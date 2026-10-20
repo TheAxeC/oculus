@@ -74,13 +74,9 @@ async function undoneAt(held: ReturnType<typeof made>, at: string): Promise<Answ
  */
 function files(held: ReturnType<typeof made>): Record<string, string> {
     const state = new Set(
-        [
-            held.into.bookmarks,
-            held.into.behaviorFile,
-            held.into.layoutFile,
-            held.into.overrides,
-            held.into.changes?.file
-        ].filter((one) => one !== undefined)
+        [held.into.bookmarks, held.into.overrides, held.into.changes?.file].filter(
+            (one) => one !== undefined
+        )
     );
     const found: Record<string, string> = {};
     const walk = (dir: string): void => {

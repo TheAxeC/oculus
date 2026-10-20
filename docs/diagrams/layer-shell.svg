@@ -415,7 +415,7 @@
 <g id="node41" class="node">
 <title>folder shell/window to layer state</title>
 <polygon fill="none" stroke="none" points="180.33,-86.08 165.67,-86.08 165.67,-73.6 180.33,-73.6 180.33,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="173" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="173" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
 </g>
 <!-- folder shell/window&#45;&gt;folder shell/window to layer state -->
 <g id="edge71" class="edge">

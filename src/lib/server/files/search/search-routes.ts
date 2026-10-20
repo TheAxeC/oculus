@@ -36,9 +36,9 @@ import type { Root } from '../files.ts';
 export type SearchRouteOptions = SearchOptions & {
     /** Every root this request may search. */
     roots: Root[];
-    /** How many hits one answer carries, from config/behavior.yml. */
+    /** How many hits one answer carries, from the merged config. */
     cap: number;
-    /** How many names one list carries, from config/behavior.yml. */
+    /** How many names one list carries, from the merged config. */
     maxNames: number;
     /** The repositories of the workspace, each listed with its own ignore rules. */
     repositories?: readonly string[];

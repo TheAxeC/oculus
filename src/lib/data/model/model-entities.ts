@@ -359,7 +359,7 @@ export type Project = Rooted & {
      * Whole days the newest of the project's documents is ahead of its own project.yml, so the
      * manifest is behind what the folder says. Absent when the manifest is the newer of the two,
      * which is a project with nothing to report. The threshold a badge is drawn at is
-     * `stale_lag_days` under `focus:` of config/behavior.yml and is applied by the board.
+     * `stale_lag_days` under `focus:` of config/defaults/behavior.yml and is applied by the board.
      */
     staleDays?: number;
     chips: Chip[];

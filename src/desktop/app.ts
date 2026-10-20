@@ -24,7 +24,6 @@ import { machineFacts, machineLacks } from '../lib/server/root/process/start/fir
 import { parseAppArgs, type AppArgs } from './decide/args.ts';
 import { EVENT } from './decide/channels.ts';
 import { permissionGranted } from './decide/permissions.ts';
-import { createSaveTurn } from './decide/save-turn.ts';
 import { ZOOM_LEAST, ZOOM_MOST } from './decide/window-file.ts';
 import { say as showDialog } from './dialogs.ts';
 import { dropClosed, guardOutput } from './output.ts';
@@ -140,7 +139,6 @@ async function run(
     let recent: RecentEntry[] = [];
     registerBridge(
         windows,
-        createSaveTurn(),
         (address) => printPdf(address, { preload }),
         (entries) => {
             recent = entries;

@@ -6,7 +6,7 @@
    Carbon's yellow 30 and orange 40 (@carbon/colors, Apache-2.0), the system it is drawn from.
    One block per palette, each a set of overrides on the tokens of tokens.css; the shape every
    rice palette shares is `body.rice` in themes.css, and the picker rows are the `themes:` list
-   of config/appearance.yml. */
+   of config/defaults/appearance.yml. */
 
 /* --- Nord ---------------------------------------------------------------- */
 body.nord {

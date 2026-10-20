@@ -21,7 +21,7 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | `tasks/<task>.md` | `<hub>/.oculus/tasks/` | you |
 | `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | Make Folder a Project, or you |
 | `settings.yml` | `<repository>/.oculus/settings.yml` | Add Repository Configuration..., or you |
-| `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., or you |
+| `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., Add Command..., or you |
 | `launch.yml` | `<repository>/.oculus/launch.yml` | Add Repository Configuration..., Add Configuration, or you |
 | `cpp.yml` | `<repository>/.oculus/cpp.yml` | Add Repository Configuration..., or you |
 | `app.yml` | `<apps folder>/<name>/app.yml` | you |
@@ -98,6 +98,13 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The wallpaper images' folder, inside the hub.
 # wallpaper_dir: .oculus/wallpaper
 
+# Where oculus keeps the bookmarks, the schedules and the apps. A path that starts with `~` is
+# under your home folder; any other relative path is read from the primary hub's folder. Read from
+# the primary hub.
+# bookmarks: .oculus/bookmarks.yml
+# schedules: .oculus/schedules.yml
+# apps_dir: .oculus/apps
+
 # The wallpaper: `<hub name>/<file name>`, `random`, or empty for none. Read from the primary hub.
 # wallpaper:
 #   image: ""
@@ -132,7 +139,7 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #     on-hold: { label: on hold, icon: black, color: "#9ca3af", blocked: true }
 
 # The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
-# config/layout.yml. Set here, it replaces oculus's whole map for this hub.
+# config/defaults/layout.yml. Set here, it replaces oculus's whole map for this hub.
 # counts: {}
 
 # The host pipeline of the Focus board's career card: each status a host of the career file takes,
@@ -178,7 +185,7 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 
 # The programs oculus starts.
 # claude_bin: claude
-# commit_message_account: work
+# commit_message_account: personal
 # The program an https address is handed to: /usr/bin/open on macOS, xdg-open on Linux, wslview
 # under WSL2.
 # open_bin: /usr/bin/open
@@ -216,10 +223,7 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 #   - { service: kaggle-token, secret: <token> }
 #   - { service: synapse, secret: <token> }
 
-# Where oculus keeps its files.
-# bookmarks: .oculus/bookmarks.yml
-# schedules: .oculus/schedules.yml
-# apps_dir: .oculus/apps
+# Where oculus keeps this machine's files.
 # changes: ~/.oculus/changes.jsonl
 # history: ~/.oculus/history
 # approvals: ~/.oculus/approvals.json
@@ -246,9 +250,19 @@ The star in the Files view writes this file. An entry with a `root` and no `path
 title: Bookmarks
 
 schema:
-  - { field: label, type: text, label: Label, required: true }
-  - { field: root, type: select, label: Root }
-  - { field: path, type: text, label: Path }
+  - field: label
+    type: text
+    label: Label
+    required: true
+    help: The name the bookmark is listed and found by.
+  - field: root
+    type: select
+    label: Root
+    help: The key of the root the file browser serves that the file or folder lies under.
+  - field: path
+    type: text
+    label: Path
+    help: The file or folder inside the root; left out, the bookmark is the root's top.
 
 entries:
 #  - { label: Manual, root: my-repo, path: docs/manual.md }
@@ -268,11 +282,28 @@ folders:
 
 # The hub whose .oculus/local.yml and own files this machine uses.
 primary: my-hub
+
+# The workspace's own values of oculus's options, keyed as oculus's config/defaults/ files key
+# them, with no file names. The Settings view writes them. A key of a hub's config.yml (the
+# wallpaper image, the scan folders and the other hub settings) is set there and not here.
+# A scalar or a list without a key field replaces oculus's value whole. A keyed list (rail by
+# `page`, floats by `view`, themes, latex.recipes and latex.tools by `name`,
+# focus.ticker_sources by `collection`) overrides oculus's entry with the same key, and
+# `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
+# overrides by its keys, and a key set to null takes oculus's key out.
+# settings:
+#   code_theme: vscode-dark-2026
+#   terminal: { font_px: 14 }
+#   rail:
+#     - { page: focus, label: Focus board }
+#     - { page: literature, removed: true }
+#   counts:
+#     hpc: null
 ```
 
 ## schedules.yml
 
-A list of schedules. Each runs one thing: an update task, a saved command, or a prompt.
+A list of schedules. Each runs one thing: an update task, a command of a repository's `commands.yml`, or a prompt.
 
 ```yaml
 # - name: Weekly radar
@@ -530,7 +561,7 @@ languages:
 
 ## commands.yml
 
-Named commands of one repository, run from the Repositories view, a project card or Run Command.
+Named commands of one repository, run from the Repositories view, a project card or Run Command. Add Command... on the repository's command bar adds an entry at the end of the list, and makes the file from this template when the repository has none; Edit and Delete on an entry with a `run` change only that entry and keep its other keys and your comments.
 
 ```yaml
 commands:

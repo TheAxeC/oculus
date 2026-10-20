@@ -1,0 +1,200 @@
+# ===========================================================================
+# options/layout.yml
+# Every option of defaults/layout.yml described once, in the shape the head of options/appearance.yml describes. layout.yml has no dotted options, so `groups:` is empty. loadConfig() reads it into the merged map's `options` and `option_groups` under layout.yml.
+# ===========================================================================
+
+options:
+    rail:
+        heading: rail
+        section: Rail buttons
+        help: "The rail's pages, one button per page, drawn in this order with the digits 1 to 9 showing the first nine. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list. A workspace file's settings: overrides a button by its page, adds a button for a new page, and takes one of oculus's buttons out with { page: <page>, removed: true }; the buttons it names come first, in its order."
+        key: page
+        fields:
+            label: the words of the button
+            glyph:
+                help: a glyph name of catalogs/glyphs.yml
+                control: glyph
+            page:
+                help: a key of arrangements, which is what the page is first made from and what the saved page stays tied to
+                control: choice
+                from: arrangements
+            chord:
+                help: the one-letter keyboard prefix of the page's group in the view catalogue, then a digit for the entry's place in the group; empty counts the group under direct_chord
+                control: choice
+                options:
+                    [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]
+                empty: no chord
+            group_glyph:
+                help: the glyph of the page's group heading in the view catalogue, one that no view of the group carries; without it the heading takes the glyph of the group's first view
+                control: glyph
+    nav_groups:
+        heading: rail
+        section: View catalogue
+        help: "The view catalogue's groups that are no rail page, listed after the groups of the rail pages, which take their heading, chord and glyph from their rail entry. The shipped one is the float. A group with no registered views is not listed. A workspace file's settings: overrides a group by its key, adds a group, and takes one of oculus's out with <group>: null."
+        fields:
+            key:
+                help: the key of the group, which a view registration and a document of docs name
+                control: text
+            label: the words of the group heading
+            glyph:
+                help: the heading's glyph name, one that no view of the group carries
+                control: glyph
+            chord:
+                help: the one-letter keyboard prefix of the group, then a digit for the entry's place in the group
+                control: choice
+                options:
+                    [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]
+    direct_chord:
+        heading: rail
+        section: View catalogue
+        help: The one lowercase letter that reaches, with a digit after it, the views of groups that name no chord and the views no group holds. A value that is not one lowercase letter means no such prefix.
+        control: choice
+        options: [a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z]
+        empty: no prefix
+    arrangements:
+        heading: rail
+        section: Page layouts
+        help: "What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout. An arrangement that does not add up makes no page. A workspace file's settings: overrides a page's arrangement by its page key, adds one for a new page, and takes one of oculus's out with <page>: null."
+        fields:
+            key: a page key that a rail entry names
+            root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+    workbench:
+        heading: rail
+        section: Page layouts
+        help: What every workbench page is made from, and what its Reset layout gives back. A workbench is a page that belongs to one folder, and each of its tabs is given the folder when the page is made. It is the shape of one entry of the page layouts, and no rail entry can name it. A layout that does not add up makes no workbench.
+        fields:
+            root: the workbench page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+    floats:
+        heading: rail
+        section: Floats
+        help: "The floats a workspace with no saved layout starts with, and what Reset all pages gives back. A float is a pane over every page, docked on an edge of the window or free. After the first load the floats are the reader's own, kept in the saved layout. An entry that does not add up is left out and the rest kept, and of two entries docked on one edge the first stays. A workspace file's settings: overrides a float by its view, adds a float for a new view, and takes one of oculus's out with { view: <view>, removed: true }; the floats it names come first, in its order."
+        key: view
+        fields:
+            view:
+                help: one view id or a list of tabs, as an arrangement's pane takes it
+                control: multi
+                from: views
+            dock:
+                help: left, right or bottom, for a float docked on that edge of the window
+                control: choice
+                options: [left, right, bottom]
+            size:
+                help: for a docked float, its share of the window's width, or of its height for bottom, from 0.1 to 0.6
+                control: number
+                min: 0.1
+                max: 0.6
+            x:
+                help: for a free float, its left edge as a fraction of the window's width
+                control: number
+                min: 0
+                max: 1
+            y:
+                help: for a free float, its top edge as a fraction of the window's height
+                control: number
+                min: 0
+                max: 1
+            w:
+                help: for a free float, its width as a fraction of the window's width, at least 0.1
+                control: number
+                min: 0.1
+                max: 1
+            h:
+                help: for a free float, its height as a fraction of the window's height, at least 0.1
+                control: number
+                min: 0.1
+                max: 1
+    docs:
+        heading: rail
+        section: View catalogue
+        help: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line. This is a setting of the hub, kept in the hub's .oculus/config.yml; the engine's list is empty.
+        fields:
+            label: the words of the tab
+            path:
+                help: the document's path relative to the research hub
+                control: file
+                allow_missing: true
+            group:
+                help: the group of the view catalogue, a rail page or the float of nav_groups
+                control: choice
+                from: catalogue_groups
+    boards:
+        heading: boards
+        section: Boards
+        help: "The project boards, by view id. A project opened from anywhere lands on the first board whose tier is its own, and on the first board when none is. A key that is no board view is never shown. A workspace file's settings: overrides a board by its view id, adds a board, and takes one of oculus's out with <view id>: null."
+        fields:
+            key:
+                help: the view id of the board, projects, coauthor, archive, personal or software
+                control: choice
+                options: [projects, coauthor, archive, personal, software]
+            tier:
+                help: the tier whose projects the board shows
+                control: choice
+                from: tiers
+            columns:
+                help: the columns of the board's list mode, in order
+                control: records
+                fields:
+                    cell:
+                        help: the cell the column draws
+                        control: choice
+                        options:
+                            [title, authors, venue, status, focus, next, domain, pillar, funding]
+                    label: the column's heading, the cell's name when it has none
+            search: the placeholder of the board's search box
+            label_mode:
+                help: how the board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title; any other value counts as short. The board's Aa toggle overrides it for the viewer
+                control: choice
+                options: [short, full]
+            groups:
+                help: the board's groups of cards, used by its filter (the category facet, its dot in the group's colour), a card's group and its tab count. A card lands in the first group whose keys hold its type or one of its status chips
+                control: records
+                fields:
+                    label: the words of the group, which also give its id
+                    keys:
+                        help: the project types and status chips the group catches
+                        control: multi
+                        from: [status_chips, project_types]
+                    color:
+                        help: the colour of the group's count and of its dot in the filter
+                        control: colour
+    counts:
+        heading: boards
+        section: Tab badges
+        help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts by its groups and gives the rail its first group's count; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
+        fields:
+            key:
+                help: the view id of a view that draws a count
+                control: text
+            tab:
+                help: whether the view's tabs and its catalogue entry draw its count
+                control: toggle
+            rail:
+                help: whether the rail button of the page the view is on adds the count to its badge and names it in its tooltip
+                control: toggle
+            match:
+                help: for a collection, the entry statuses that count, compared without regard to case
+                control: multi
+                from: entry_statuses
+            label: for a collection, the tooltip word for the count
+            tone:
+                help: for a collection, an urgency class, red, amber or green, used where a count means act; without it the count wears the colour of its first status
+                control: choice
+                options: [red, amber, green]
+            days:
+                help: for Position Leads, how many days ahead an open lead's deadline is counted
+                control: number
+                min: 0
+                whole: true
+    focus_label_mode:
+        heading: boards
+        section: Project labels
+        help: How the Focus board's lane cards and the week's ticker lines name a project. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The project tab opened from a card and the quick-add picker keep the short name. A lane card shows the full title on hover; a ticker line has no hover title.
+        control: choice
+        options: [short, full]
+    map_label_mode:
+        heading: boards
+        section: Project labels
+        help: How the Map names a project node. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short.
+        control: choice
+        options: [short, full]
+groups: {}

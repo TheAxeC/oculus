@@ -30,12 +30,12 @@ import {
     appsSettings
 } from '../../../../src/lib/data/sources/config.ts';
 import { behaviorFindings } from '../../../../src/lib/data/sources/config/catalogs.ts';
-import {
-    latexBuild,
-    paintLimit,
-    programApps,
-    type SettingProblem
-} from '../../../../src/lib/data/sources/config/settings.ts';
+
+/** Where the shipped config was read from: oculus's own files, no hub. */
+const SHIPPED_AT = { engine: engineDir(), hub: null, from: loadConfig(engineDir()).from };
+import { latexBuild } from '../../../../src/lib/data/sources/config/settings/latex.ts';
+import { paintLimit, programApps } from '../../../../src/lib/data/sources/config/settings/files.ts';
+import type { SettingProblem } from '../../../../src/lib/data/sources/config/settings/reader.ts';
 
 type Entries = Record<string, Record<string, unknown>>;
 
@@ -656,7 +656,7 @@ describe('appsSettings', () => {
     };
     const closed = (held: unknown) => {
         const apps = held === undefined ? {} : { closed_paths: held };
-        const found = behaviorFindings(engineDir(), mapWith({ apps }));
+        const found = behaviorFindings(SHIPPED_AT, mapWith({ apps }));
         return [
             appsSettings(mapWith({ apps })).closedPaths,
             found.filter((one) => one.key === 'apps.closed_paths').length
@@ -727,14 +727,14 @@ describe('appsSettings', () => {
             'the closed_paths finding, worded with the key and the file',
             () => {
                 const [found] = behaviorFindings(
-                    engineDir(),
+                    SHIPPED_AT,
                     mapWith({ apps: { closed_paths: 5 } })
                 );
                 return [
                     found.key,
-                    /config[\\/]behavior\.yml$/.test(found.file),
+                    /config[\\/]defaults[\\/]behavior\.yml$/.test(found.file),
                     found.message.includes('apps.closed_paths'),
-                    found.message.includes('config/behavior.yml')
+                    found.message.includes('config/defaults/behavior.yml')
                 ];
             },
             ['apps.closed_paths', true, true, true]

@@ -1,8 +1,8 @@
 // Layer 3, primitive. The editor's languages: the Shiki grammar each of the highlighter's names is
 // coloured with. The editor takes oculus's name for a language, the one the status bar shows, the
-// code window paints with and the map of config/sources.yml gives a file, and a model's Monaco
-// language is the Shiki id this table answers, so the tokens provider `shikiToMonaco` sets finds
-// the language registered under that same id.
+// code window paints with and the map of config/defaults/sources.yml gives a file, and a model's
+// Monaco language is the Shiki id this table answers, so the tokens provider `shikiToMonaco` sets
+// finds the language registered under that same id.
 //
 // Five names are spelt otherwise in Shiki (bash, fortran, fortran-fixed, lisp, makefile); the rest
 // are Shiki's own, and rite is the one id Shiki does not bundle: its grammar is carried in

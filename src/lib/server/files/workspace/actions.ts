@@ -12,10 +12,11 @@
 
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER, WORKSPACES_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { writeTextAtomic } from '../../core/json.ts';
-import { SCAN_DEPTH, scalarText, validName, valueText } from './folders.ts';
-import { WORKSPACES_FOLDER, openWorkspace, usable, type OpenWorkspace } from './open.ts';
+import { SCAN_DEPTH } from '../../../data/sources/config/merge/workspace-file.ts';
+import { scalarText, validName, valueText } from './folders.ts';
+import { openWorkspace, usable, type OpenWorkspace } from './open.ts';
 import { readState, withRecent, writeState } from './state.ts';
 
 /** Why an action was refused. */

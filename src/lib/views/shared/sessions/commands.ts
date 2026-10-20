@@ -2,14 +2,16 @@
 // command: how many buttons a bar draws before the rest go into its overflow menu, the key and the
 // words of a command, the tooltip of a command, and the items of its menu.
 //
-// A name can be held by two sources of one repository (the file and the saved commands), so a
-// command is told apart by its source and its name together: that pair is its key in every list
-// and the id of every pick, and a list that holds one name twice draws the source beside it.
+// A name can be held by two sources of one repository (the commands file and a build file the
+// commands are found in), so a command is told apart by its source and its name together: that
+// pair is its key in every list and the id of every pick, and a list that holds one name twice
+// draws the source beside it.
 //
-// A command saved through the form has Edit, Schedule... and Delete; a command read from a file of
-// the repository or found in one has Open File at its entry, which takes the reader to the line
-// that defines it. A command has no other item, so a saved command never offers to open a file and
-// a file command never offers to be deleted from the page.
+// A plain entry of the repository's `.oculus/commands.yml` (one with a `run`) has Edit, Schedule...
+// and Delete, which the form and the schedule dialog carry out, and Open File at its entry. A typed
+// entry (a task type of an app) and a command found in a build file have Open File alone, which
+// takes the reader to the line that defines it: the form writes only a plain entry, and a schedule
+// starts only one.
 
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import {
@@ -38,7 +40,6 @@ export function commandKey(command: Pick<ProjectCommand, 'source' | 'name'>): st
 function sourceWord(source: CommandSource): string {
     if (source === 'app') return t('commands.word_app');
     if (source === 'file') return t('commands.word_file');
-    if (source === 'saved') return t('commands.word_saved');
     return t('commands.word_found');
 }
 
@@ -58,7 +59,6 @@ export function commandLabel(
 function sourceWords(command: ProjectCommand): string {
     if (command.source === 'app') return t('commands.source_app', command.task?.appTitle ?? '');
     if (command.source === 'file') return t('commands.source_file');
-    if (command.source === 'saved') return t('commands.source_saved');
     return t('commands.source_found');
 }
 
@@ -69,14 +69,20 @@ export function commandTip(command: ProjectCommand): string {
 
 /** The items of a command's menu, for the repository it belongs to. */
 export function commandMenu(repo: string, command: ProjectCommand): MenuItem[] {
-    if (command.source === 'saved') {
-        return [
-            { id: EDIT, label: t('commands.edit') },
-            { id: SCHEDULE, label: t('app.tasks.schedule') },
-            { id: DELETE, label: t('commands.delete') }
-        ];
-    }
-    return entryPath(repo, command) === null ? [] : [{ id: OPEN, label: t('commands.open_entry') }];
+    const open: MenuItem[] =
+        entryPath(repo, command) === null ? [] : [{ id: OPEN, label: t('commands.open_entry') }];
+    if (!isPlainEntry(command)) return open;
+    return [
+        { id: EDIT, label: t('commands.edit') },
+        { id: SCHEDULE, label: t('app.tasks.schedule') },
+        { id: DELETE, label: t('commands.delete') },
+        ...open
+    ];
+}
+
+/** Whether a command is a plain entry of the commands file: one the form writes. */
+function isPlainEntry(command: ProjectCommand): boolean {
+    return command.source === 'file' && command.task === undefined;
 }
 
 /**
@@ -112,7 +118,7 @@ export function overflowMenu(
 /** The source and the name a command's key holds, or null for text that is not such a key. */
 export function keyOf(key: string): { source: CommandSource; name: string } | null {
     const [source, ...name] = key.split(':');
-    if (source !== 'file' && source !== 'saved' && source !== 'found' && source !== 'app') {
+    if (source !== 'file' && source !== 'found' && source !== 'app') {
         return null;
     }
     return { source, name: name.join(':') };

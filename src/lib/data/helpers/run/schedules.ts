@@ -2,16 +2,17 @@
 // `.oculus` folder, shared by the update tray's dialog, which checks an entry before it sends it,
 // and by the server, which reads the file and runs the timer by the same rule, so the two cannot
 // disagree on what runs. It looks at the shape and the values of an entry and nothing on the
-// machine: the checks that need the disk (a folder that exists, a saved command that is there, a
-// repository the file browser serves) are the server's (server/machine/runs/schedules/file.ts).
+// machine: the checks that need the disk (a folder that exists, a command the repository's
+// `.oculus/commands.yml` holds, a repository the file browser serves) are the server's
+// (server/machine/runs/schedules/file.ts).
 //
 // An entry is `{ name, runs, when, paused?, unattended? }`. `runs` holds exactly one of `task` (an
-// update task), `command` (a saved command's name, with the `folder` it is saved under) or `prompt`
-// (the first message of a Claude session, with the `folder` the session starts in). An entry that
-// is not a map, or whose name or `runs` has no readable shape, has no entry to edit; one whose
-// shape reads but whose value is refused keeps its entry, so its row can be edited, and says why it
-// does not run. Of several problems an entry has, the first in the order of the checks below is the
-// one it says.
+// update task), `command` (the name of a command of a repository's `.oculus/commands.yml`, with
+// that repository's `folder`) or `prompt` (the first message of a Claude session, with the
+// `folder` the session starts in). An entry that is not a map, or whose name or `runs` has no
+// readable shape, has no entry to edit; one whose shape reads but whose value is refused keeps its
+// entry, so its row can be edited, and says why it does not run. Of several problems an entry has,
+// the first in the order of the checks below is the one it says.
 
 import type {
     ScheduleEntry,

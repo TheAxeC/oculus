@@ -2,7 +2,7 @@
 // opened lately, and the folders of the unsaved workspace, in `workspace.json` of the state folder
 // (`~/.oculus`). Oculus alone writes it. A state that is missing, does not parse or is not this
 // shape reads as an unsaved workspace with no folders; a state that is there and does not parse is
-// never written over, so a write onto it is refused with the reason, as the saved commands file is.
+// never written over, so a write onto it is refused with the reason.
 //
 // The state folder is a dependency of the server context, so a test points it at a scratch folder
 // and the file of the person running the test is never read or written.

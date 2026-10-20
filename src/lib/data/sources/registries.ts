@@ -37,8 +37,8 @@ const NAMES = Object.keys(REGISTRY_LIST_KEYS) as RegistryName[];
 
 /**
  * The path of each registry: the file of the first entry of `listed` under the registry's key,
- * else the file of oculus's own list `defaults` under it (config/sources.yml, asked only when
- * `listed` leaves a key out), else the empty text.
+ * else the file of oculus's own list `defaults` under it (config/defaults/sources.yml, asked only
+ * when `listed` leaves a key out), else the empty text.
  */
 export function registryFiles(
     listed: readonly CollectionFile[],

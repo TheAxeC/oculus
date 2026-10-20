@@ -20,7 +20,6 @@ import {
     FIND,
     OPEN_FLOAT_WINDOW,
     PRINT_PDF,
-    SAVE_LAYOUT,
     STOP_FIND,
     TITLE_COLOURS
 } from '../../../src/desktop/decide/channels.ts';
@@ -60,19 +59,18 @@ describe('the desktop host decisions', () => {
         expect(
             senderOf({ ...top, pathname: '/find', origin: 'https://example.org' }, ORIGIN)
         ).toBeNull();
-        expect(mayCall('page', SAVE_LAYOUT)).toBe(true);
+        expect(mayCall('page', OPEN_FLOAT_WINDOW)).toBe(true);
         expect(mayCall('find-bar', FIND)).toBe(true);
         expect(mayCall('find-bar', STOP_FIND)).toBe(true);
         expect(mayCall('find-bar', CLOSE_FIND)).toBe(true);
         expect(mayCall('find-bar', OPEN_FLOAT_WINDOW)).toBe(false);
-        expect(mayCall('find-bar', SAVE_LAYOUT)).toBe(false);
         expect(mayCall(null, FIND)).toBe(false);
         expect(senderOf({ ...top, pathname: '/present/print' }, ORIGIN)).toBe('print');
         expect(senderOf({ ...top, pathname: '/present/print', isTop: false }, ORIGIN)).toBeNull();
         expect(
             senderOf({ ...top, pathname: '/present/print', origin: 'https://example.org' }, ORIGIN)
         ).toBeNull();
-        for (const channel of [SAVE_LAYOUT, FIND, OPEN_FLOAT_WINDOW, PRINT_PDF]) {
+        for (const channel of [FIND, OPEN_FLOAT_WINDOW, PRINT_PDF]) {
             expect(mayCall('print', channel), channel).toBe(false);
         }
         expect(mayCall('page', PRINT_PDF)).toBe(true);
@@ -140,7 +138,7 @@ describe('the desktop host decisions', () => {
         expect(senderOf({ ...top, isTop: false }, ORIGIN)).toBeNull();
         expect(senderOf({ ...top, origin: 'https://example.org' }, ORIGIN)).toBeNull();
         const named = Object.values(channels).filter((value) => typeof value === 'string');
-        expect(named).toContain(SAVE_LAYOUT);
+        expect(named).toContain(OPEN_FLOAT_WINDOW);
         for (const channel of named) {
             expect(mayCall('audience', channel), channel).toBe(false);
         }

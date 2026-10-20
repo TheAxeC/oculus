@@ -187,10 +187,9 @@ export function createWindows(deps: WindowsDeps): Windows {
     }
 
     /**
-     * Send every window to the server's new origin. A page that runs goes there itself, carrying
-     * its arrangement and settings across the change of origin as a page that follows its server
-     * does (workbench/layout/saved/carry.ts); a page that is loading or has crashed cannot, and is
-     * loaded at the new origin.
+     * Send every window to the server's new origin. A page that runs goes there itself, as a page
+     * that follows its server does, and reads its arrangement and settings from the same server
+     * there; a page that is loading or has crashed cannot, and is loaded at the new origin.
      */
     function moveTo(origin: string): void {
         for (const entry of list) {

@@ -14,7 +14,7 @@ import { below, realPath } from '../../core/paths.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
 export type AuditRules = {
-    /** The soft character limits per manifest field, `read_limits` of config/behavior.yml. */
+    /** The soft character limits per manifest field, `read_limits` of the merged config. */
     readLimits: Record<string, number>;
     /** Whole days a document may be ahead of its own manifest before the manifest is behind. */
     staleLagDays: number;
@@ -213,7 +213,7 @@ export const SIGNATURE = /^[0-9a-f]{12}$/;
 /** The signatures of a configured list, in the order the file lists them. */
 const signatureListShape = keeping(z.string().regex(SIGNATURE));
 
-/** The signatures config/behavior.yml's `audit_ignore:` holds, in the order the file lists them. */
+/** The signatures the merged config's `audit_ignore:` holds, in the order the list holds them. */
 export function mutedSignatures(config: Record<string, unknown>): string[] {
     const held = signatureListShape.safeParse(config.audit_ignore);
     return held.success ? held.data : [];
@@ -298,7 +298,8 @@ export const NO_FILE = '';
  * The scope a finding about a project is filed under: the project's hub-relative folder, and the
  * key of its root for a project read from a repository. A repository's folder is an absolute path
  * of this machine, and a muted signature, which reads the scope, is written to the `audit_ignore:`
- * list of config/behavior.yml, a tracked file that must hold no machine path.
+ * list of the open workspace file's `settings:`, a file that may be tracked and must hold no
+ * machine path.
  */
 export function scopeOf(project: Pick<Project, 'folder' | 'workspaceFolder'>): string {
     return project.workspaceFolder?.root ?? project.folder;

@@ -25,6 +25,7 @@ import { homedir } from 'node:os';
 import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import type { EngineConfigIn } from '../../../data/index.ts';
+import { SCAN_DEPTH } from '../../../data/sources/config/merge/workspace-file.ts';
 import { isHubFolder, projectFileIn } from '../../../data/sources/manifests.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import type { StateFolder } from './state.ts';
@@ -67,9 +68,6 @@ export type WorkspaceFolder = {
      */
     writtenDepth?: unknown;
 };
-
-/** The key of a workspace entry that sets how deep the folder is searched for repositories. */
-export const SCAN_DEPTH = 'repository_scan_depth';
 
 /** The least a scan depth may be: -1 is no limit. */
 const UNLIMITED = -1;

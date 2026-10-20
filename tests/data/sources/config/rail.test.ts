@@ -1,5 +1,5 @@
-// Layer 1, data tests. The rail list of config/layout.yml over values of the wrong type at every
-// place the readers look. Findings are compared whole, in order.
+// Layer 1, data tests. The rail list of config/defaults/layout.yml over values of the wrong type
+// at every place the readers look. Findings are compared whole, in order.
 
 import { describe, expect, it } from 'vitest';
 import { railFindings, readRail } from '../../../../src/lib/data/sources/config/rail.ts';
@@ -24,7 +24,8 @@ const ROWS = [
 ];
 
 describe('railFindings', () => {
-    const find = (config: Record<string, unknown>) => railFindings(config, 'layout.yml', CATALOG);
+    const find = (config: Record<string, unknown>) =>
+        railFindings(config, () => 'layout.yml', CATALOG);
     const at = (key: string, message: string) => ({ file: 'layout.yml', key, message });
 
     it('words each problem of the list against the arrangements and glyphs it holds', () => {

@@ -22,8 +22,8 @@
 // one instance, the file browser's ask, and the storage. None of them holds an arrangement in a
 // rune (the closed-tab list and the armed keep hold only their own lists), so none of them is a
 // second place an arrangement can change. Every operation is run under its own name, and the last
-// one that saved is run again on an arrangement another tab saved over it, its path arguments named
-// again there by what they held (layout/saved/rerun.ts).
+// one that saved is run again on an arrangement another page saved over it, its path arguments
+// named again there by what they held (layout/saved/rerun.ts).
 
 import { item } from '../../data/helpers/guards.ts';
 import {
@@ -40,6 +40,7 @@ import { createReopen, type Reopen } from './layout/tabs/reopen.svelte.ts';
 import type { Load } from './layout/saved/load.ts';
 import { createRuns } from './layout/saved/rerun.ts';
 import type { UiStore } from './ui.svelte.ts';
+import type { PageStateStore } from '../shared/stores/page-state.svelte.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
 import {
     clearPage,
@@ -97,7 +98,6 @@ import {
     type ShowInFiles,
     type Page,
     type Pages,
-    type SaveTurn,
     type Touched,
     type PlaceRule,
     type UniqueRule,
@@ -157,9 +157,7 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          * before.
          */
         loaded: () => boolean;
-        /**
-         * Stop taking the arrangement another browser tab saves, which a load with a source began.
-         */
+        /** Stop taking the arrangement another page saves, which a load began. */
         stopFollowing: () => void;
         /**
          * Show the page of one rail button, made from its arrangement the first time and switched
@@ -292,18 +290,14 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
     };
 
 /**
- * What the app gives the layout: the host's turn for a save of the arrangement. A page in a browser
- * is given none, and then every save is written directly.
- */
-export type LayoutDesktop = { turn: SaveTurn };
-
-/**
- * The layout store. `hubs` answers the collections the hubs of the workspace list, which decide
- * the tabs a pane draws and so which tab is the active one (layout/tabs/left-out.ts).
+ * The layout store. `state` is the page's copy of the page state the server keeps, which the
+ * arrangement is read from and saved to. `hubs` answers the collections the hubs of the workspace
+ * list, which decide the tabs a pane draws and so which tab is the active one
+ * (layout/tabs/left-out.ts).
  */
 export function createLayout(
     ui: UiStore,
-    desktop?: LayoutDesktop,
+    state: PageStateStore,
     hubs?: () => HubVocabs | null
 ): LayoutStore {
     /**
@@ -328,7 +322,7 @@ export function createLayout(
     let loaded = $state(false);
 
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
-    const storage = createStorage(desktop?.turn);
+    const storage = createStorage(state);
 
     // Everything below stays in the factory, which owns the arrangement as a whole: the page list
     // and what is on screen, the write path every change goes through, and the operations that
@@ -485,13 +479,9 @@ export function createLayout(
     });
     /**
      * The store operations run by name: the name is what the record of layout writes names as the
-     * call that wrote, and the last one that saved is run again on another tab's save.
+     * call that wrote, and the last one that saved is run again on another page's save.
      */
-    const runs = createRuns({
-        at,
-        write: () => savePages(store.current),
-        retake: () => load.retake()
-    });
+    const runs = createRuns({ at });
 
     const rail = createRailPages(access, {
         builds,

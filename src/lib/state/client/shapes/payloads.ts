@@ -127,6 +127,14 @@ const auditShape = unchangedAs<Payloads['audit']>(
     z.object({ findings: listShape, muted: listShape })
 );
 
+const stateShape = unchangedAs<Payloads['state']>(
+    z.object({
+        layouts: mapShape.optional(),
+        views: listShape.optional(),
+        debug: mapShape.optional()
+    })
+);
+
 const filesShape = unchangedAs<Payloads['files']>(
     z.object({
         root: z.string(),
@@ -278,6 +286,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     usage: usageShape,
     audit: auditShape,
     files: filesShape,
+    state: stateShape,
     apps: appsShape,
     debug: debugShape,
     'debug-console': debugConsoleShape,

@@ -4,8 +4,10 @@
 //
 // Reading is the shared rule of data/helpers/run/schedules.ts for the shape of an entry, with the
 // checks that need the disk on top: a folder that exists, a prompt's folder that the hub or a
-// served root holds, a command's repository the file browser serves and the saved command in it.
-// The names are compared over the whole list, so two entries of one name both carry `name-twice`.
+// served root holds, a command's repository the file browser serves and a plain entry of that
+// name in its `.oculus/commands.yml` (`scheduledCommands`), a file that does not read being
+// `commands-unread`. The names are compared over the whole list, so two entries of one name both
+// carry `name-twice`.
 // A file that does not parse, or whose top level is no list, is unread: no entry of it is read, and
 // no write touches it.
 //
@@ -41,11 +43,21 @@ import {
     YAMLMap,
     YAMLSeq,
     isMap as isYamlMap,
-    isNode,
     isScalar,
     isSeq,
     parseDocument
 } from 'yaml';
+import {
+    changedNode,
+    dashOf,
+    inLineEnds,
+    indented,
+    itemColumn,
+    itemText,
+    patchedMap,
+    replacedItem,
+    withoutItem
+} from '../../../../data/helpers/files/yaml/yaml-items.ts';
 import {
     nameKey,
     nameOf,
@@ -56,13 +68,13 @@ import type { ScheduleEntry, ScheduleProblem, UnchosenKey } from '../../../../da
 import { expandHome } from '../../../files/files.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
+import { fileUnread, readCommandsFile } from '../commands/files.ts';
 import { repositoryOf } from '../commands/repo.ts';
-import { readAllSaved } from '../commands/saved.ts';
 
 /** The mode of the file: it names the folders and the prompts of this machine. */
 const FILE_MODE = 0o600;
 
-/** What the checks that need the disk read: the hub, the served roots and the saved commands. */
+/** What the checks that need the disk read: the hub and the served roots. */
 export type Disk = {
     /**
      * The primary hub's folder, `hub` of a folder and the first place a prompt may start in; null
@@ -71,8 +83,6 @@ export type Disk = {
     hub: string | null;
     /** The directories the file browser serves. */
     roots: string[];
-    /** The saved commands file. */
-    commands: string;
 };
 
 /** One entry of the file as the page reads it. */
@@ -89,8 +99,7 @@ type Checked = {
 };
 
 /** What a read of the file gives: every entry in order, or that the file does not read. */
-export type Reading =
-    { ok: true; rows: Checked[]; commandsUnread: boolean } | { ok: false; line: number | null };
+export type Reading = { ok: true; rows: Checked[] } | { ok: false; line: number | null };
 
 /**
  * The folder a `folder` value names, `hub` being the primary hub and `~` the home folder; null for
@@ -122,18 +131,30 @@ export function promptFolder(
     return { cwd };
 }
 
-/** The checks of an entry that need the disk, over one read of the saved commands. */
+/**
+ * The commands a schedule can run in a repository: the names of the plain entries (one with a
+ * `run`) of its `.oculus/commands.yml`, or null when the file does not read. A typed entry is a
+ * task of an app, which a schedule does not start, and a found command is none of the reader's.
+ */
+export function scheduledCommands(repo: string): string[] | null {
+    const read = readCommandsFile(repo, new Set());
+    if (fileUnread(read)) return null;
+    return read.commands.filter((one) => one.task === undefined).map((one) => one.name);
+}
+
+/** The checks of an entry that need the disk, each repository's commands file read once. */
 export type DiskChecker = {
     /** The first problem the disk gives an entry, or null. */
     problem(entry: ScheduleEntry): ScheduleProblem | null;
-    /** Whether the saved commands file does not read. */
-    commandsUnread: boolean;
 };
 
 export function diskChecker(disk: Disk): DiskChecker {
-    const saved = readAllSaved(disk.commands);
+    const read = new Map<string, string[] | null>();
+    const commandsOf = (repo: string): string[] | null => {
+        if (!read.has(repo)) read.set(repo, scheduledCommands(repo));
+        return read.get(repo) ?? null;
+    };
     return {
-        commandsUnread: !saved.ok,
         problem(entry): ScheduleProblem | null {
             const runs = entry.runs;
             if ('task' in runs) return null;
@@ -143,11 +164,11 @@ export function diskChecker(disk: Disk): DiskChecker {
             }
             const found = repositoryOf(resolveFolder(runs.folder, disk.hub), disk.roots);
             if ('error' in found) return { word: 'bad-repo', names: [] };
-            if (!saved.ok) return { word: 'commands-unread', names: [] };
-            const held = saved.commands.some(
-                (one) => one.folder === found.repo && one.name === runs.command
-            );
-            return held ? null : { word: 'command-missing', names: [runs.command, runs.folder] };
+            const names = commandsOf(found.repo);
+            if (names === null) return { word: 'commands-unread', names: [runs.folder] };
+            return names.includes(runs.command)
+                ? null
+                : { word: 'command-missing', names: [runs.command, runs.folder] };
         }
     };
 }
@@ -210,7 +231,7 @@ export function readSchedules(path: string, disk: Disk): Reading {
         if (row.problem?.word === 'name-wrong') continue;
         row.problem = { word: 'name-twice', names: [row.name] };
     }
-    return { ok: true, rows, commandsUnread: checker.commandsUnread };
+    return { ok: true, rows };
 }
 
 /** The plain object an entry is written as: a key whose value is the default is not written. */
@@ -231,44 +252,6 @@ function entryNode(doc: Document, entry: ScheduleEntry): YAMLMap {
     const when = node.get('when', true);
     if (isScalar(when)) when.type = Scalar.QUOTE_DOUBLE;
     return node;
-}
-
-/** The text of one entry's node as a one-item block list, ending in a new line. */
-function entryText(node: YAMLMap): string {
-    const doc = new Document();
-    const seq = new YAMLSeq();
-    seq.items.push(node);
-    doc.contents = seq;
-    return doc.toString({ lineWidth: 0 });
-}
-
-/** The lines after the first indented by `width` spaces, for an item of an indented list. */
-function indented(text: string, width: number): string {
-    if (width === 0) return text;
-    const pad = ' '.repeat(width);
-    return text
-        .split('\n')
-        .map((line, at) => (at === 0 || line === '' ? line : pad + line))
-        .join('\n');
-}
-
-/** The offset of the `-` that opens item `at` of a block list, or null when it cannot be found. */
-function dashOf(seq: YAMLSeq, at: number): number | null {
-    const token = seq.srcToken;
-    if (token?.type !== 'block-seq') return null;
-    const mark = token.items[at]?.start.find((one) => one.type === 'seq-item-ind');
-    return mark === undefined ? null : mark.offset;
-}
-
-/** The end of item `at`'s node, where the next line of the file begins or the file ends. */
-function endOf(seq: YAMLSeq, at: number): number | null {
-    const item = seq.items[at];
-    return isNode(item) && item.range ? item.range[2] : null;
-}
-
-/** The column of an offset in the text. */
-function columnOf(text: string, offset: number): number {
-    return offset - (text.lastIndexOf('\n', offset - 1) + 1);
 }
 
 /** What a write of the file answers: the new text, or why it is refused. */
@@ -314,7 +297,7 @@ function rebuilt(parsed: Extract<Parsed, { ok: true }>, list: unknown[]): string
 /** The text with the entry's `node` written at position `at` (replaced) or after the last one. */
 function withEntry(parsed: Extract<Parsed, { ok: true }>, at: number | null, node: YAMLMap) {
     const { text, seq, doc } = parsed;
-    const rendered = entryText(node);
+    const rendered = itemText(node);
     if (seq === null) {
         // No list yet: comments and the like stay, the list follows them or replaces `null`.
         const top = doc.contents;
@@ -337,16 +320,15 @@ function withEntry(parsed: Extract<Parsed, { ok: true }>, at: number | null, nod
         else items[at] = node;
         return rebuilt(parsed, items);
     }
-    const first = dashOf(seq, 0);
-    const width = first === null ? 0 : columnOf(text, first);
-    const body = indented(rendered, width);
-    if (at === null) return (text.endsWith('\n') ? text : `${text}\n`) + ' '.repeat(width) + body;
-    const from = dashOf(seq, at);
-    const to = endOf(seq, at);
-    if (from === null || to === null) return rebuilt(parsed, withNode(seq, at, node));
-    const kept = text.slice(from, to);
-    const closed = kept.endsWith('\n') ? body : body.replace(/\n$/, '');
-    return text.slice(0, from) + closed + text.slice(to);
+    const width = itemColumn(text, seq);
+    if (at === null) {
+        return (
+            (text.endsWith('\n') ? text : `${text}\n`) +
+            ' '.repeat(width) +
+            indented(rendered, width)
+        );
+    }
+    return replacedItem(text, seq, at, node) ?? rebuilt(parsed, withNode(seq, at, node));
 }
 
 /** The items of a list with the one at `at` replaced by `node`. */
@@ -360,16 +342,8 @@ function withNode(seq: YAMLSeq, at: number, node: YAMLMap): unknown[] {
 function withoutEntry(parsed: Extract<Parsed, { ok: true }>, at: number): string {
     const { text, seq } = parsed;
     if (seq === null) return text;
-    if (seq.flow !== true) {
-        const from = dashOf(seq, at);
-        const to = endOf(seq, at);
-        if (from !== null && to !== null) {
-            // The indent in front of the `-` goes with the item, so the next item keeps its own.
-            const lineStart = text.lastIndexOf('\n', from - 1) + 1;
-            const begin = text.slice(lineStart, from).trim() === '' ? lineStart : from;
-            return text.slice(0, begin) + text.slice(to);
-        }
-    }
+    const spliced = seq.flow === true ? null : withoutItem(text, seq, at);
+    if (spliced !== null) return spliced;
     return rebuilt(
         parsed,
         seq.items.filter((_, index) => index !== at)
@@ -433,106 +407,6 @@ function valueNode(doc: Document, key: Key, value: unknown, old: unknown) {
     return node;
 }
 
-/** The text of a value's node on one line, with no new line after it. */
-function valueText(node: unknown): string {
-    const doc = new Document();
-    doc.contents = node as Document['contents'];
-    return doc.toString({ lineWidth: 0 }).replace(/\n$/, '');
-}
-
-/** The start of the line holding `offset`. */
-function lineStart(text: string, offset: number): number {
-    return text.lastIndexOf('\n', offset - 1) + 1;
-}
-
-/** The offset after the line that holds `offset`, or after the end of the text. */
-function afterLine(text: string, offset: number): number {
-    if (offset > 0 && text[offset - 1] === '\n') return offset;
-    const end = text.indexOf('\n', offset);
-    return end === -1 ? text.length : end + 1;
-}
-
-/** One replacement of a span of the file's text. */
-type Patch = { start: number; end: number; text: string };
-
-/**
- * The text with the changes written into the bytes of a block-style entry: a value is replaced in
- * its own range, a key that goes takes its line, and a new key follows the entry's last one.
- * Null when a change cannot be written that way (a key that opens the entry's first line, a value
- * that is a block, an empty value), and the node is rendered instead.
- */
-function patchedText(
-    parsed: Extract<Parsed, { ok: true }>,
-    map: YAMLMap,
-    changes: Change[]
-): string | null {
-    const { text, doc } = parsed;
-    if (map.flow === true || !map.range || map.items.length === 0) return null;
-    const firstKey = map.items[0].key;
-    if (!isNode(firstKey) || !firstKey.range) return null;
-    const indent = ' '.repeat(columnOf(text, firstKey.range[0]));
-    const patches: Patch[] = [];
-    let added = '';
-    for (const change of changes) {
-        const pair = map.items.find((one) => isScalar(one.key) && one.key.value === change.key);
-        if (pair === undefined) {
-            if (change.value !== undefined) {
-                added += `${indent}${change.key}: ${valueText(valueNode(doc, change.key, change.value, null))}\n`;
-            }
-            continue;
-        }
-        const { key, value } = pair;
-        if (!isNode(key) || !key.range || !isNode(value) || !value.range) return null;
-        if (change.value === undefined) {
-            const start = lineStart(text, key.range[0]);
-            if (pair === map.items[0] || text.slice(start, key.range[0]).trim() !== '') return null;
-            const end = afterLine(text, value.range[1]);
-            const noNewLine = end === text.length && !text.endsWith('\n');
-            const before = noNewLine ? (text[start - 2] === '\r' ? 2 : 1) : 0;
-            patches.push({ start: start - before, end, text: '' });
-            continue;
-        }
-        const single =
-            isScalar(value) || ((isYamlMap(value) || isSeq(value)) && value.flow === true);
-        if (!single || value.range[0] === value.range[1]) return null;
-        const node = valueNode(doc, change.key, change.value, value);
-        patches.push({
-            start: value.range[0],
-            end: value.range[1],
-            text: valueText(node)
-        });
-    }
-    if (added !== '') {
-        const end = map.range[1];
-        const open = end > 0 && text[end - 1] !== '\n';
-        patches.push({
-            start: end,
-            end,
-            text: open ? `\n${added.replace(/\n$/, '')}` : added
-        });
-    }
-    let next = text;
-    for (const patch of patches.sort((a, b) => b.start - a.start || b.end - a.end)) {
-        next = next.slice(0, patch.start) + patch.text + next.slice(patch.end);
-    }
-    return next;
-}
-
-/** The changes made on the entry's node, keeping each value's comment, for the node to render. */
-function changedNode(doc: Document, map: YAMLMap, changes: Change[]): YAMLMap {
-    for (const change of changes) {
-        if (change.value === undefined) {
-            map.delete(change.key);
-            continue;
-        }
-        const old = map.get(change.key, true);
-        const node = valueNode(doc, change.key, change.value, old);
-        if (isNode(old) && isNode(node)) node.comment = old.comment;
-        map.set(change.key, node);
-    }
-    return map;
-}
-
 /** The list the text holds, or null when it does not parse as one. */
 function listOf(text: string): unknown[] | null {
     const doc = parseDocument(text);
@@ -583,23 +457,19 @@ function changedEntry(
 ): Drafted {
     const next = changedRaw(parsed.list[at], changes);
     const texts: string[] = [];
-    const patched = patchedText(parsed, map, changes);
+    const nodeOf = (key: string, value: unknown, old: unknown) =>
+        valueNode(parsed.doc, key as Key, value, old);
+    const patched = patchedMap(parsed.text, map, changes, nodeOf);
     if (patched !== null) texts.push(patched);
     const dash = parsed.seq === null ? null : dashOf(parsed.seq, at);
     const opening = dash === null || !map.range ? '' : parsed.text.slice(dash, map.range[0]);
     if (!opening.includes('#')) map.commentBefore = undefined;
     try {
-        texts.push(withEntry(parsed, at, changedNode(parsed.doc, map, changes)));
+        texts.push(withEntry(parsed, at, changedNode(map, changes, nodeOf)));
     } catch {
         // an alias whose anchor is in another entry cannot be rendered on its own
     }
     return { texts, asked: listWith(parsed.list, at, next), after: next };
-}
-
-/** The text with every line it holds ended by `\r\n` when the file's lines all end that way. */
-function inLineEnds(file: string, text: string): string {
-    const crlf = file.includes('\r\n') && !/(^|[^\r])\n/.test(file);
-    return crlf ? text.replace(/\r?\n/g, '\r\n') : text;
 }
 
 /** The change an edit makes, or the refusal or the answer that it changes nothing. */
@@ -679,8 +549,13 @@ export function planEdit(path: string, edit: Edit): Planned {
     return refused(409, 'entry-unwritable', [name]);
 }
 
-/** Whether the file holds exactly this text now; a file that cannot be read does not. */
+/**
+ * Whether the file holds exactly this text now. A file that does not exist holds the empty text, as
+ * `parseFile` reads it, so the first entry of a hub with no schedules file is written; a file that
+ * cannot be read holds no text.
+ */
 export function holdsText(path: string, text: string): boolean {
+    if (!existsSync(path)) return text === '';
     try {
         return readFileSync(path, 'utf8') === text;
     } catch {

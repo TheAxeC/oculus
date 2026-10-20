@@ -77,6 +77,11 @@ text:
         commands:
             held_file: '{0} is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
             held_found: '{0} is already a command found in this repository, so it cannot be saved under that name'
+            no-template: 'The commands.yml template of docs/templates.md could not be read, so no commands file was made'
+            not-held: '.oculus/commands.yml of this repository holds no command {0} that runs a line, so it was not changed'
+            unread: '{0} {1}, so nothing was written to it'
+            unwritable: 'The entry {0} of .oculus/commands.yml could not be changed in place, so the file was left as it is; edit it by hand'
+            write_failed: '{0} could not be written: {1}'
             task_not_resolved: 'The app that defines the task type {0} did not resolve the entry, so it is left out'
             task_provider_failed: 'The provider of the task type {0} gave no tasks'
             task_required: 'The task type {0} requires the property {1}, so the entry is left out'
@@ -84,6 +89,7 @@ text:
         config_key:
             local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no option of that name in a tracked config file
+            no_workspace: No workspace file is open, so there is no file to keep this setting in; save the workspace to a file first
             not_single: This option is a list or a family, so it is not set one key at a time
             not_boolean: This option takes true or false
             not_number: This option takes a finite number
@@ -187,7 +193,7 @@ text:
         config_value:
             local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file
-            own_write: The rail and the arrangements are set from the rail editor and the pages, and the workbench layout in config/layout.yml, not from here
+            own_write: The rail and the arrangements are set from the rail editor and the pages, and the workbench layout in the workspace file, not from here
             single: This option is one value, so it is set one key at a time
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a list or a map written in place
@@ -493,6 +499,10 @@ text:
             needs_zenity: the folder panel of Add Folder to Workspace and Open Folder
             port_in_use: 'oculus: port {0} is in use'
             workspace_unsaved: an unsaved workspace
+        state:
+            bad_write: The page state write names no kind this route takes, or a field of the wrong type
+            unreadable: '{0} does not read, so nothing is written over it; fix or remove the file and the page keeps its state again'
+            unwritable: '{0} cannot be written: {1}'
         task:
             name: 'Task: {0}'
             seed_deadline: 'Deadline: {0}'

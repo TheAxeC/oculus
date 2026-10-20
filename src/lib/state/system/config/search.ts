@@ -1,8 +1,9 @@
 // Layer 2, client state. The Settings view's search over its groups: the query split on white
 // space, where `@modified` (in any case) keeps only the Modified rows, `@id:<text>` keeps the rows
 // whose key path holds the text and `@id:` alone keeps every row, and every other word, an unknown
-// `@word` included, must occur in the row's title, key path, section or description or in the
-// words of the heading it is listed under, whatever the case. An empty query keeps every row. The
+// `@word` included, must occur in the row's title, key path, section or description, in the words
+// of the heading it is listed under, or inside the row's entries or Fields list (view/fold.ts,
+// which unfolds the part it is found in), whatever the case. An empty query keeps every row. The
 // result carries the count of the rows kept and the groups and sections that still hold one.
 //
 // Under an empty query a group that says why it holds no row (its files are loading, unreadable,
@@ -12,6 +13,7 @@
 // it.
 
 import { saysWhyEmpty, type Group, type Row, type Section } from './groups.ts';
+import { partTexts } from './view/fold.ts';
 
 /** The prefix of the filter that looks at the key path alone. */
 const ID_FILTER = '@id:';
@@ -41,7 +43,9 @@ function answers(row: Row, query: Query, heading: string): boolean {
     if (query.modified && !row.modified) return false;
     const path = row.path.toLowerCase();
     if (!query.ids.every((text) => path.includes(text))) return false;
-    const fields = [row.title, row.path, row.section, row.help, heading].map((field) =>
+    const inside =
+        row.kind === 'config' ? [...partTexts(row, 'entries'), ...partTexts(row, 'fields')] : [];
+    const fields = [row.title, row.path, row.section, row.help, heading, ...inside].map((field) =>
         field.toLowerCase()
     );
     return query.words.every((word) => fields.some((field) => field.includes(word)));

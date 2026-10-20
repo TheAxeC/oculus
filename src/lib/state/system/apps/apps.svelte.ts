@@ -42,7 +42,7 @@ import type {
     Message,
     Project
 } from '../../../data/model/index.ts';
-import type { AppsSettings } from '../../../data/sources/config/settings.ts';
+import type { AppsSettings } from '../../../data/sources/config/settings/machine.ts';
 import { t } from '../../shared/words/text.ts';
 import type { EntitiesStore, NoticeSink, WritesStore } from '../../shared/stores/shapes.ts';
 import { connectFrame, type FrameLink, type FrameOptions } from './frame/bridge.ts';

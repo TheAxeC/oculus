@@ -1,25 +1,24 @@
-// Layer 2, client state. The rows of the Settings view for one config file: what the file's text
-// says about each option the options catalog describes, in catalog order, each with its catalog
-// entry, so the control a row is drawn with is the entry's. The text is parsed once with `yaml`, so
-// a row's value and the line of its key come from one parse, and each key path is walked through
-// the parsed map's own keys, so a segment named like an object member (`__proto__`, `constructor`)
-// reads the file's key or nothing.
+// Layer 2, client state. The rows of the Settings view for one defaults file: each option the
+// options catalog describes, in catalog order, with its catalog entry, so the control a row is
+// drawn with is the entry's.
 //
-// A row is `set` when the file holds a plain, quoted or collection value at its key path, and
-// `missing` when the key is absent or holds a null or empty value, an alias, an anchored or tagged
-// node or a block scalar: the cases the write refuses as not in the file (server/edit/writes/
-// config-key.ts), since a write there would be a guess. It is Modified when it is `set` and its
-// value differs from the catalog's default by deep equality, a list item by item; a family, which
-// has no default, a `local.yml` row and a missing row are never Modified. A value its control
-// cannot show (a toggle holding "yes", a number holding "20" as text) is kept as the file has it
-// and flagged `mismatch`, for the view to word. A word outside the list a choice offers is not a
-// mismatch: the lists come from the portfolio and the page, so the view marks it where the list is
-// known (editors/fields.ts).
+// A row shows the value in force, read from the merged configuration the page holds (oculus's
+// defaults file, then the primary hub's settings file, then the open workspace file's `settings:`),
+// and its default is the defaults file's value (the entry's `default`, which the options reader
+// fills from that file). It is Modified when the two differ by deep equality, a list item by item
+// and a family key by key. A row is `missing` when no layer gives the key a value, and `set`
+// otherwise. A value its control cannot show (a toggle holding "yes", a number holding "20" as
+// text) is kept as the layers have it and flagged `mismatch`, for the view to word. A word outside
+// the list a choice offers is not a mismatch: the lists come from the portfolio and the page, so
+// the view marks it where the list is known (editors/fields.ts).
 //
-// A key of the hub list (data/helpers/hub-names.ts) is read from the hub's own settings file,
-// `.oculus/config.yml`, and is named by that file: its value and its line are the settings file's
-// when the file holds the key, else the engine's general value, and a write of it goes to the
-// settings file, which it creates when the file or the key is not there (the row's `hub`).
+// The user's value of an option lives in one file, the row's place: the primary hub's settings
+// file, `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), the open
+// workspace file's `settings:` map for any other. The row says whether that file holds the key
+// (`own`, which is what Reset takes out) and the line of the key's name there. The file is parsed
+// once with `yaml`, and each key path is walked through the parsed map's own keys, so a segment
+// named like an object member (`__proto__`, `constructor`) reads the file's key or nothing; the
+// value in force is walked the same way through the merged configuration's own keys.
 //
 // The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
 // Every sentence is a message (messages.ts) for the view to word; nothing here holds one.
@@ -27,16 +26,11 @@
 import { isEqual } from 'lodash-es';
 import {
     LineCounter,
-    isAlias,
     isMap as isYamlMap,
     isScalar,
-    isSeq,
     parseDocument,
     type Document,
-    type Pair,
-    type Scalar,
-    type YAMLMap,
-    type YAMLSeq
+    type Pair
 } from 'yaml';
 import { z } from 'zod';
 import { HUB_FILE, hubKeysOf } from '../../../data/helpers/hub-names.ts';
@@ -46,26 +40,42 @@ import type {
     FieldSpec
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
-import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
 import { LOCAL_NAME } from './config-files.ts';
 import { readField } from './editors/fields.ts';
 import { message, type Message } from './messages.ts';
 
+/** The key of the workspace file's map of options. */
+const SETTINGS = 'settings';
+
 /** What every row carries, whichever kind it is, which is what a search reads. */
 export type RowBase = {
-    /** `<file>:<key path>`, or `this-browser:<name>`: the row's identity in the markup. */
+    /** `<file>:<key path>`: the row's identity in the markup. */
     id: string;
     title: string;
     help: string;
-    /** The key path, or the name of a per-browser value: what `@id:` looks in. */
+    /** The key path: what `@id:` looks in. */
     path: string;
     /** The heading the row is shown under. */
     section: string;
     modified: boolean;
 };
 
-/** One option of a tracked config file. */
+/**
+ * The file a row's user value lives in: the primary hub's settings file (`hub`) or the open
+ * workspace file (`workspace`). `root` and `path` are the served root and the path the file is read
+ * and opened at, the root `PRIMARY_ROOT` for the hub's file; `root` is null when no folder of the
+ * workspace serves the workspace file, and `path` null for the unsaved workspace, which has no
+ * file. `present` says whether the file is there.
+ */
+type UserPlace = {
+    layer: 'hub' | 'workspace';
+    root: string | null;
+    path: string | null;
+    present: boolean;
+};
+
+/** One option of a defaults file. */
 export type ConfigRow = RowBase & {
     kind: 'config';
     file: string;
@@ -75,19 +85,18 @@ export type ConfigRow = RowBase & {
     entry: CatalogEntry;
     /** A family's fields, each with its help line and control. */
     fields: Record<string, FieldSpec>;
+    /** The defaults file's value, `undefined` when it holds none. */
     default: unknown;
-    /** The value the file holds, `undefined` for a missing row. */
+    /** The value in force, `undefined` for a missing row. */
     value: unknown;
-    /** The 1-based line of the key's own name, `undefined` when the file has no such key. */
+    /** The 1-based line of the key's name in the user's file, `undefined` when it has none. */
     line: number | undefined;
+    /** Whether the user's file holds the key, which Reset takes out. */
+    own: boolean;
     state: 'set' | 'missing';
-    /** Whether the file's value is one the row's control cannot show. */
+    /** Whether the value in force is one the row's control cannot show. */
     mismatch: boolean;
-    /**
-     * The hub's settings file for a key of the hub list: its path under the hub, and whether the
-     * file is there. null for a key the engine's file alone holds.
-     */
-    hub: { path: string; present: boolean } | null;
+    place: UserPlace;
 };
 
 /**
@@ -125,14 +134,20 @@ export type LocalRow = RowBase & {
     refused: Message | null;
 };
 
-/** Why a file draws no rows, or `rows` when it does. */
+/** What became of the read of a user's file: read (`rows`), or why its lines are not known. */
 export type FileStatus = 'rows' | 'loading' | 'unreadable' | 'cut' | 'unparsed';
 
-/** The hub's settings file as it was read, and whether the file is there. */
+/** A user's file as it was read, and whether the file is there. */
 export type HubFile = { text: FileText; present: boolean };
 
-/** The hub's settings file, as the line under a heading shows it. */
-export type HubFileResult = {
+/**
+ * The open workspace file for the rows: the served root and path it is read at (`root` null when no
+ * folder of the workspace serves it), and its text. Null for the unsaved workspace.
+ */
+type WorkspaceText = { root: string | null; path: string; text: FileText } | null;
+
+/** One user's file as a heading's line shows it: its path, whether it is there, and its read. */
+export type UserFileResult = {
     path: string;
     present: boolean;
     status: FileStatus;
@@ -140,25 +155,23 @@ export type HubFileResult = {
 };
 
 /**
- * The rows of one file, or the sentence saying why it has none. `hubFile` is the hub's settings
- * file when the file has keys of the hub list among its rows.
+ * The rows of one defaults file, with what became of the reads of the two user's files: `hubFile`
+ * when the file has keys of the hub list, `workspace` when a workspace file is open.
  */
 export type FileResult = {
-    status: FileStatus;
     rows: ConfigRow[];
-    said?: Message;
-    hubFile?: HubFileResult;
+    hubFile?: UserFileResult;
+    workspace?: UserFileResult;
 };
 
 /**
- * The root and the path of the file a row is read from and written to: the primary hub's settings
- * file for a key of the hub list (`PRIMARY_ROOT`), oculus's own config file for any other
- * (`OCULUS_CONFIG_ROOT`). Where either is opened in an editor is `openTarget`'s.
+ * The root and the path of the user's file a row is written to and opened in, or null when it has
+ * none to open: the unsaved workspace, or a workspace file no folder of the workspace serves. Where
+ * the file is opened in an editor is `openTarget`'s.
  */
-export function placeOf(row: ConfigRow): { root: string; file: string } {
-    return row.hub === null
-        ? { root: OCULUS_CONFIG_ROOT, file: row.file }
-        : { root: PRIMARY_ROOT, file: row.hub.path };
+export function placeOf(row: ConfigRow): { root: string; file: string } | null {
+    const { root, path } = row.place;
+    return root === null || path === null ? null : { root, file: path };
 }
 
 /** One word of a key path as a title: underscores read as spaces, the first letter capital. */
@@ -201,22 +214,18 @@ function pairAt(doc: Document, path: string): Pair | null {
     return found;
 }
 
-/**
- * Whether a node is a value the write could replace in place: a plain or quoted scalar that is not
- * null, or a map or a list, none of them an alias, anchored or tagged.
- */
-function usable(node: unknown): node is Scalar | YAMLMap | YAMLSeq {
-    if (isAlias(node)) return false;
-    if (isScalar(node)) {
-        const block = node.type === 'BLOCK_LITERAL' || node.type === 'BLOCK_FOLDED';
-        const bare = node.anchor === undefined && node.tag === undefined;
-        return bare && !block && node.value !== null && node.value !== undefined;
+/** The value a dotted key path names in a map, walking each segment through its own keys. */
+function valueAt(config: Record<string, unknown>, path: string): unknown {
+    let node: unknown = config;
+    for (const segment of path.split('.')) {
+        if (typeof node !== 'object' || node === null || Array.isArray(node)) return undefined;
+        if (!Object.hasOwn(node, segment)) return undefined;
+        node = (node as Record<string, unknown>)[segment];
     }
-    if (isYamlMap(node) || isSeq(node)) return node.anchor === undefined && node.tag === undefined;
-    return false;
+    return node;
 }
 
-/** What a text, a word and a list read as when a row shows or words a value the file holds. */
+/** What a text, a word and a list read as when a row shows or words a value. */
 const choiceShape = z.string() satisfies z.ZodType<string>;
 export const listShape = z.array(z.unknown()) satisfies z.ZodType<unknown[]>;
 export const textShape = z.union([z.string(), z.number(), z.boolean()]) satisfies z.ZodType<
@@ -230,29 +239,27 @@ function cannotShow(control: Control | 'family', entry: CatalogEntry, value: unk
     return readField(entry, value).kind !== 'value';
 }
 
-/** A parsed file with its line counter: what a row's value and line are read from. */
+/** A parsed file with its line counter: what a row's line is read from. */
 type Parsed = { doc: Document; lines: LineCounter };
 
-/**
- * The hub's settings file: its path, whether it is there, and its text parsed or null.
- */
-type ParsedHubFile = { path: string; present: boolean; parsed: Parsed | null };
+/** A user's file as the rows read it: where it lies, and its text parsed or null. */
+type ReadFile = { place: UserPlace; parsed: Parsed | null; prefix: string };
 
-/**
- * The row of one catalog entry over a parsed file, and over the hub's settings file for a hub key.
- */
+/** The row of one catalog entry over the value in force and the user's file of its key. */
 function rowOf(
     file: string,
     key: string,
     entry: CatalogEntry,
-    engine: Parsed,
-    hubFile: ParsedHubFile | null
+    config: Record<string, unknown>,
+    user: ReadFile
 ): ConfigRow {
     const control: ConfigRow['control'] =
         entry.fields === undefined ? (entry.control ?? 'text') : 'family';
-    const hubbed = hubKeysOf(file)?.includes(key) === true ? hubFile : null;
-    const base = {
-        kind: 'config' as const,
+    const pair = user.parsed === null ? null : pairAt(user.parsed.doc, `${user.prefix}${key}`);
+    const value = valueAt(config, key);
+    const missing = value === undefined || value === null;
+    return {
+        kind: 'config',
         id: `${file}:${key}`,
         file,
         key,
@@ -264,32 +271,13 @@ function rowOf(
         entry,
         fields: entry.fields ?? {},
         default: entry.default,
-        hub: hubbed === null ? null : { path: hubbed.path, present: hubbed.present }
-    };
-    // The settings file's value when it holds the key, else the engine's general value.
-    const held = hubbed?.parsed ? pairAt(hubbed.parsed.doc, key) : null;
-    const from = held !== null && usable(held.value) ? (hubbed?.parsed ?? engine) : engine;
-    const pair = pairAt(from.doc, key);
-    const line = pair === null ? undefined : lineOf(pair, from.lines);
-    const node = pair?.value;
-    if (pair === null || !usable(node)) {
-        return {
-            ...base,
-            value: undefined,
-            line,
-            state: 'missing',
-            mismatch: false,
-            modified: false
-        };
-    }
-    const value: unknown = isScalar(node) ? node.value : node.toJS(from.doc);
-    return {
-        ...base,
-        value,
-        line: from === engine && hubbed !== null ? undefined : line,
-        state: 'set',
-        mismatch: cannotShow(control, entry, value),
-        modified: control !== 'family' && !isEqual(value, entry.default)
+        value: missing ? undefined : value,
+        line: pair === null || user.parsed === null ? undefined : lineOf(pair, user.parsed.lines),
+        own: pair !== null,
+        state: missing ? 'missing' : 'set',
+        mismatch: !missing && cannotShow(control, entry, value),
+        modified: !missing && !isEqual(value, entry.default),
+        place: user.place
     };
 }
 
@@ -313,53 +301,85 @@ function parsed(
 }
 
 /**
- * The hub's settings file read for the rows of a file: parsed when it is there and sound, and the
- * status and sentence that tell the line under the heading what became of it. A file that is not
- * there is an empty file, so every key reads the engine's value; one that is not sound reads the
- * engine's values too and says why.
+ * A user's file read for the rows: parsed when it is there and sound, and the status and sentence
+ * that tell the line under the heading what became of it. A file that is not there holds no key;
+ * one that is not sound gives no line and says why.
  */
-function readHubFile(hubFile: HubFile): { read: ParsedHubFile; result: HubFileResult } {
-    const path = HUB_FILE;
-    if (!hubFile.present) {
+function readUserFile(
+    place: UserPlace,
+    text: FileText,
+    prefix: string
+): { read: ReadFile; result: UserFileResult } {
+    const path = place.path ?? '';
+    if (!place.present) {
         return {
-            read: { path, present: false, parsed: null },
+            read: { place, parsed: null, prefix },
             result: { path, present: false, status: 'rows', said: message('hubFileAbsent', path) }
         };
     }
-    const made = parsed(path, hubFile.text);
+    const made = parsed(path, text);
     if ('ok' in made) {
         return {
-            read: { path, present: true, parsed: made.ok },
+            read: { place, parsed: made.ok, prefix },
             result: { path, present: true, status: 'rows', said: null }
         };
     }
     return {
-        read: { path, present: true, parsed: null },
+        read: { place, parsed: null, prefix },
         result: { path, present: true, status: made.status, said: made.said }
     };
 }
 
+/** The text of a file that is not read: nothing, with nothing to say. */
+const NO_TEXT: FileText = { text: '', truncated: false, error: '', loading: false };
+
+/** The user's two files of the rows: the primary hub's settings file and the workspace file. */
+export type UserFiles = { hubFile?: HubFile; workspace: WorkspaceText };
+
 /**
- * The rows of one tracked file over its text, in catalog order. A file still being read, one the
- * file browser could not read, one cut at the window's limit and one that does not parse have no
- * rows and say why; the parser's message is its first line, which names the place. `hubFile` is
- * the hub's settings file, given for a file that has keys of the hub list.
+ * The rows of one defaults file, in catalog order, over the merged configuration (`config`) and the
+ * user's files. With no primary hub (`hubFile` not given) a key of the hub list has no file; with
+ * the unsaved workspace (`workspace` null) no other key has one, and a write of it is refused.
  */
 export function fileRows(
     file: string,
     entries: Record<string, CatalogEntry>,
-    held: FileText,
-    hubFile?: HubFile
+    config: Record<string, unknown>,
+    user: UserFiles
 ): FileResult {
-    const made = parsed(file, held);
-    if (!('ok' in made)) return { status: made.status, rows: [], said: made.said };
-    const read = hubFile === undefined ? null : readHubFile(hubFile);
+    const hubPlace: UserPlace = {
+        layer: 'hub',
+        root: user.hubFile === undefined ? null : PRIMARY_ROOT,
+        path: HUB_FILE,
+        present: user.hubFile?.present === true
+    };
+    const hubRead = readUserFile(hubPlace, user.hubFile?.text ?? NO_TEXT, '');
+    const open = user.workspace;
+    const workspacePlace: UserPlace = {
+        layer: 'workspace',
+        root: open?.root ?? null,
+        path: open?.path ?? null,
+        present: open !== null
+    };
+    const workspaceRead =
+        open?.root == null ? null : readUserFile(workspacePlace, open.text, `${SETTINGS}.`);
+    const listed = hubKeysOf(file) ?? [];
     const rows = Object.entries(entries).map(([key, entry]) =>
-        rowOf(file, key, entry, made.ok, read?.read ?? null)
+        rowOf(
+            file,
+            key,
+            entry,
+            config,
+            listed.includes(key)
+                ? hubRead.read
+                : (workspaceRead?.read ?? { place: workspacePlace, parsed: null, prefix: '' })
+        )
     );
-    return read === null
-        ? { status: 'rows', rows }
-        : { status: 'rows', rows, hubFile: read.result };
+    return {
+        rows,
+        ...(user.hubFile !== undefined && listed.length > 0 ? { hubFile: hubRead.result } : {}),
+        ...(workspaceRead === null ? {} : { workspace: workspaceRead.result })
+    };
 }
 
 /**
@@ -406,7 +426,7 @@ function shown(value: unknown): string {
     return word.success ? word.data : JSON.stringify(value);
 }
 
-/** The message saying a row's file value is one its control cannot show, or null when it can. */
+/** The message saying a row's value is one its control cannot show, or null when it can. */
 export function mismatchMessage(row: ConfigRow): Message | null {
     if (!row.mismatch) return null;
     const text = shown(row.value);

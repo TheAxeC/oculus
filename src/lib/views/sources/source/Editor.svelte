@@ -5,15 +5,17 @@
     // indentation, the gutter's quick diff marks and blame, and the caret said on every move for
     // the status bar. The editor's actions over the marks take their labels from the view's words.
     //
-    // A file over `editor.paint_limit_kb` of config/behavior.yml opens as plaintext, which the
-    // editor does not colour, as does any file before the configuration has delivered the limit.
+    // A file over `editor.paint_limit_kb` of config/defaults/behavior.yml opens as plaintext, which
+    // the editor does not colour, as does any file before the configuration has delivered the
+    // limit.
     //
     // The word wrap and the rulers are the tab's, resolved in Source.svelte; the minimap, the
     // whitespace and sticky scroll are the configured ones, which every source editor takes alike.
     // The actions the tab owns (Alt+Z's toggle of word wrap among them) are handed to the editor,
     // which binds their keys and lists them to the palette. Show Suggestions, Monaco's own action,
     // takes its label from the view's words, and the suggest list's description panel is the ui
-    // store's: the reader's own choice, else `editor.suggest_details` of config/behavior.yml.
+    // store's: the reader's own choice, else `editor.suggest_details` of
+    // config/defaults/behavior.yml.
     //
     // The editor holds the theme and the font as values, so it is handed a look that changes with
     // the theme, the text size and every pick of a code theme (the ui store's editorLook()), and

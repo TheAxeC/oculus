@@ -12,24 +12,28 @@ import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { isMap } from '../../helpers/guards.ts';
 import type { Finding } from '../../model/index.ts';
-import { standInShape } from '../../shapes/catalog-files.ts';
+import { standInShape } from '../../shapes/catalog-files/glyphs.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { mustBe } from './catalog/value-words.ts';
 import { readEditorOptions, type EditorProblem } from './editor-options.ts';
-import { configDir } from './folder.ts';
+import { configDir, engineFile } from './folder.ts';
 import type { LocalProblem } from './local.ts';
 import type { MachineProblem } from './machine.ts';
-import { CATALOGS_DIR, TEXT_KEY, textCatalog } from './merge.ts';
+import { CATALOGS_DIR, keyFile, type ConfigWhere } from './merge/merge.ts';
+import { TEXT_KEY, textCatalog } from './merge/text.ts';
 import { catalogOf } from './catalog/options.ts';
-import { closedPaths, settingProblems } from './settings.ts';
+import { closedPaths } from './settings/machine.ts';
+import { settingProblems } from './settings/problems.ts';
 import { focusFindings } from './sections/focus.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
- * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the wallpaper and the
- * CRT default, the code theme, and the pane strip's three settings state/shared/words/appearance.ts
- * reads. `themes`, `wallpaper`, `crt`, `code_theme`, `file_icons`, `show_tabs`, `editor_actions`,
- * `wrap_tabs` and `terminal` are config/appearance.yml's. The research domains and the venue and
+ * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the theme, the text
+ * size, the terminal themes' toggles, the wallpaper, the CRT overlay, the code theme, the pane
+ * strip's three settings and the status bar's values state/shared/words/appearance.ts reads.
+ * `themes`, `theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`, `file_icons`,
+ * `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are options of the appearance defaults
+ * file, and `status_bar` of the behavior defaults file. The research domains and the venue and
  * dataset themes are each hub's own, read from its registry files (`hubVocabOf` of data/index.ts).
  */
 export const VOCAB_KEYS = [
@@ -38,6 +42,10 @@ export const VOCAB_KEYS = [
     'types',
     'data_access',
     'themes',
+    'theme',
+    'text_size',
+    'rice',
+    'status_bar',
     'wallpaper',
     'crt',
     'code_theme',
@@ -174,19 +182,21 @@ function writtenKeys(file: string): string[] {
  * not read, which is ignored where it stands (`chat.skip_permissions` and `tasks.skip_permissions`,
  * whose place is a schedule's Run unattended choice); and an `apps.closed_paths` that is missing,
  * is no list of strings or holds an entry that is no folder path, since the default of the entry
- * does not stand in for it; and what is wrong with the `focus:` block (sections/focus.ts). It is
- * worded from the merged catalog, as iconFindings' are.
+ * does not stand in for it; and what is wrong with the `focus:` block (sections/focus.ts). The
+ * unknown keys are those of oculus's config/defaults/behavior.yml (the workspace file's own are the
+ * merge's findings); every other finding names the file its value was read from. It is worded from
+ * the merged catalog, as iconFindings' are.
  */
-export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const file = join(configDir(engine), 'behavior.yml');
+export function behaviorFindings(where: ConfigWhere, config: Record<string, unknown>): Finding[] {
+    const shipped = engineFile(where.engine, 'behavior.yml');
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
     const named = Object.keys(catalogOf(config)['behavior.yml'] ?? {});
     const read = new Set(named.map((path) => path.split('.')[0]));
-    for (const key of writtenKeys(file)) {
+    for (const key of writtenKeys(shipped)) {
         if (key === TEXT_KEY || read.has(key)) continue;
         findings.push({
-            file,
+            file: shipped,
             key,
             message: findingText(catalog, 'findings.config.shape_unknown', key)
         });
@@ -196,13 +206,14 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
         if (keys === null || !('skip_permissions' in keys)) continue;
         const key = `${group}.skip_permissions`;
         findings.push({
-            file,
+            file: keyFile(where, key),
             key,
             message: findingText(catalog, 'findings.config.skip_permissions_retired', key)
         });
     }
-    findings.push(...focusFindings(config, file, catalog));
+    findings.push(...focusFindings(config, (key) => keyFile(where, key), catalog));
     if (!closedPaths(config).shaped) {
+        const file = keyFile(where, 'apps.closed_paths');
         findings.push({
             file,
             key: 'apps.closed_paths',
@@ -210,7 +221,7 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
                 catalog,
                 'findings.apps.closed_paths_shape',
                 'apps.closed_paths',
-                'config/behavior.yml'
+                file
             )
         });
     }
@@ -260,14 +271,13 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
 
 /**
  * One finding for each setting of `behavior.yml`, and each option of the editor, whose value the
- * options catalog's rule refuses (and the repository scan depth of sources.yml, which names that
- * file): it names the file and the key, and the reader uses the entry's default. A key the catalog
- * holds no entry for gives none (options.yml's own findings name that file), and neither does a
- * configuration whose merge dropped behavior.yml, which holds no key to be wrong. They are worded
+ * options catalog's rule refuses (and the repository scan depth of sources.yml): it names the file
+ * the value was read from and the key, and the reader uses the entry's default. A key the catalog
+ * holds no entry for gives none (the options files' own findings name that file), and neither does
+ * a configuration whose merge dropped behavior.yml, which holds no key to be wrong. They are worded
  * from the merged catalog, as iconFindings' are.
  */
-export function settingFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const dir = configDir(engine);
+export function settingFindings(where: ConfigWhere, config: Record<string, unknown>): Finding[] {
     const catalog = textCatalog(config);
     const problems: EditorProblem[] = settingProblems(config);
     try {
@@ -280,8 +290,7 @@ export function settingFindings(engine: string, config: Record<string, unknown>)
         const once = `${problem.where}:${problem.key}${problem.where === 'repeat' ? problem.name : ''}`;
         if (named.has(once)) return [];
         named.add(once);
-        const held = problem.where === 'value' ? problem.file : undefined;
-        const file = join(dir, held ?? 'behavior.yml');
+        const file = keyFile(where, problem.key);
         return [{ file, key: problem.key, message: settingText(catalog, problem) }];
     });
 }

@@ -1,7 +1,8 @@
 // Layer 2, server. The one shell line that runs a press's chain in a task terminal: the commands
-// resolveChain (resolve.ts) ordered, each after the one before it. Before each command the line
-// prints a marker, the run's token and the command's name, which the page reads its output by: the
-// token is minted at each start, so a command's own output never prints the marker of the next.
+// resolveChain (data/helpers/run/chain.ts) ordered, each after the one before it. Before each
+// command the line prints a marker, the run's token and the command's name, which the page reads
+// its output by: the token is minted at each start, so a command's own output never prints the
+// marker of the next.
 
 import type { ProjectCommand } from '../../../../data/model/index.ts';
 import { MARKER_FORMAT, chainMarker } from '../../../../data/helpers/run/marker.ts';

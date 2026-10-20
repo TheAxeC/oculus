@@ -1,7 +1,7 @@
 // Layer 2, server (the desktop host). What a page may ask of the host over the bridge the preload
 // exposes (preload.cjs). Every handler first finds who sent the call: the top frame of a window's
 // page or of its find bar's view, on the origin of the server the window shows
-// (decide/sender.ts); any other call does nothing, and a save it does not answer is refused. The
+// (decide/sender.ts); any other call does nothing, and a print it does not answer is refused. The
 // arguments are read before they are used, since a page is not trusted with the shape of what it
 // sends.
 
@@ -24,7 +24,6 @@ import {
     OPEN_FLOAT_WINDOW,
     PRINT_PDF,
     RECENT_WORKSPACES,
-    SAVE_LAYOUT,
     SHOW_FIND,
     STOP_FIND,
     TITLE_COLOURS,
@@ -32,19 +31,11 @@ import {
 } from '../decide/channels.ts';
 import { windowAt } from '../decide/drop.ts';
 import { rectOf, type Rect } from '../decide/place.ts';
-import type { SaveTurn } from '../decide/save-turn.ts';
 import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
 import { overlayColours, titleAction } from '../decide/window-options.ts';
 import type { RecentEntry } from '../../lib/data/helpers/keys/oculus/menu-commands.ts';
-import type {
-    FindOptions,
-    PrintAnswer,
-    SaveAnswer
-} from '../../lib/state/shared/stores/desktop.ts';
+import type { FindOptions, PrintAnswer } from '../../lib/state/shared/stores/desktop.ts';
 import type { Entry, Windows } from './windows.ts';
-
-/** The answer to a save the bridge does not answer: refused, with no envelope to take. */
-const REFUSED: SaveAnswer = { admitted: false, held: null };
 
 /**
  * The answer to a print the bridge does not answer or for an address that is not the print route.
@@ -126,7 +117,6 @@ function addressOf(url: string): { origin: string; pathname: string } | null {
  */
 export function registerBridge(
     windows: Windows,
-    turn: SaveTurn,
     print: Printer,
     recent: (entries: RecentEntry[]) => void
 ): void {
@@ -148,18 +138,6 @@ export function registerBridge(
         if (who === null || who !== found.who || !mayCall(who, channel)) return null;
         return { entry: found.entry, who };
     }
-
-    ipcMain.on(SAVE_LAYOUT, (event, key: unknown, next: unknown, from: unknown) => {
-        const caller = callerOf(event, SAVE_LAYOUT);
-        const valid =
-            typeof key === 'string' &&
-            key !== '' &&
-            typeof next === 'string' &&
-            (from === null || typeof from === 'string');
-        // A call the bridge does not answer, or one with invalid arguments, is refused: the page
-        // writes only with the turn.
-        event.returnValue = caller !== null && valid ? turn(key, next, from) : REFUSED;
-    });
 
     ipcMain.on(OPEN_FLOAT_WINDOW, (event, id: unknown, bounds: unknown, owner: unknown) => {
         const caller = callerOf(event, OPEN_FLOAT_WINDOW);

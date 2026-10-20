@@ -2,7 +2,7 @@
 // `lint.writing` of the merged configuration the page holds. The reader is the data layer's, the
 // one every setting is read through; a configuration that holds no catalog yet offers nothing.
 
-import { lintSettings } from '../../../../data/sources/config/settings.ts';
+import { lintSettings } from '../../../../data/sources/config/settings/lint.ts';
 
 /** Whether `lint.writing` is on, false for a configuration the setting cannot be read from. */
 export function writingFixOffered(config: Record<string, unknown>): boolean {

@@ -14,7 +14,7 @@ export type { AuditFinding, AuditKind };
 export type AuditStore = {
     /** Every finding the scan reported, muted ones included, in the order it reported them. */
     findings: () => AuditFinding[];
-    /** The signatures config/behavior.yml parks. */
+    /** The signatures the merged config's `audit_ignore:` parks. */
     muted: () => string[];
     /** The findings the reader has not parked. */
     open: () => AuditFinding[];

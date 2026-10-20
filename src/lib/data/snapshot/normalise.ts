@@ -76,11 +76,11 @@ export function isFeedCollection(key: string): key is (typeof FEED_COLLECTION_KE
 }
 
 /**
- * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
- * that name a registry with a dedicated view and the two that name a feed's file. They ship as the
- * page's data and the page registers the collection view once per key and again on every config
- * push, so a collection is added through sources.yml and its owner catalog file; the collection
- * registration supplies its group and order.
+ * The keys of the `collections:` list of config/defaults/sources.yml, in the file's order, minus
+ * the four that name a registry with a dedicated view and the two that name a feed's file. They
+ * ship as the page's data and the page registers the collection view once per key and again on
+ * every config push, so a collection is added through sources.yml and its owner catalog file; the
+ * collection registration supplies its group and order.
  */
 export function collectionKeys(config: Record<string, unknown>): string[] {
     const keys: string[] = [];

@@ -112,7 +112,7 @@ text:
         make_hub_detail: 'Oculus writes the ticked files into .oculus/ in {0}, each from its template in its docs/templates.md with every key commented out at its default. A file that is there already stops the make, and nothing is written.'
         make_hub_line_config: "The hub's own settings: where projects are found, the collections it keeps and the values it sets for oculus."
         make_hub_line_local: "This machine's own values: the port, the programs, the accounts and the keys, with the .gitignore that keeps it out of git."
-        make_hub_line_schedules: 'The schedules of the update tray: an update task, a saved command or a prompt, each run at its time.'
+        make_hub_line_schedules: 'The schedules of the update tray: an update task, a command of a repository or a prompt, each run at its time.'
         make_hub_title: Make {0} a Hub
         make_refused_exists: '{0} is there already, so nothing was written.'
         make_refused_failed: 'The files could not all be written. Written: {0}.'

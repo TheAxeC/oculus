@@ -194,7 +194,7 @@ export function diskRelation(
 
 /**
  * The folder, relative to a hub, that holds the hub's collection files at oculus's default paths
- * (config/sources.yml), one subfolder per kind.
+ * (config/defaults/sources.yml), one subfolder per kind.
  */
 export const DATA_FOLDER = '.oculus/data';
 
@@ -211,6 +211,9 @@ export function tierOf(value: unknown): Tier | undefined {
 
 /** The folder of a repository that holds its project manifest. */
 export const ROOT_FOLDER = '.oculus';
+
+/** The folder of a hub that holds its workspace files, under `.oculus/`. */
+export const WORKSPACES_FOLDER = 'workspaces';
 
 /**
  * The hub's own settings file, `<hub>/.oculus/config.yml`: one map of the keys of HUB_LIST, read
@@ -311,15 +314,17 @@ export function offerAlong(
 }
 
 /**
- * The keys the hub's settings file may set, each with the config file of the engine it belongs to
- * (named relative to config/), which is the group the Settings view draws it in. Each key is a
- * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's
- * value whole, and a key outside the list is a finding and is not applied. They are the keys that
- * describe this hub rather than the engine: its folders and the files of its records, the cluster
- * its jobs run on, the files its writing rules skip or let draw arrows, the values its apps'
- * settings hold, the counts its tabs draw, its status words, and its own words, which oculus ships
- * none of: the career card's host statuses, score axes and score hues, and the fit colours of its
- * Position Leads. Its domains and theme words are its own registry files'.
+ * The keys the hub's settings file may set, each with the name of oculus's config file it belongs
+ * to (`sources.yml` for config/defaults/sources.yml, `catalogs/vocab.yml` for a catalog), which is
+ * the group the Settings view draws it in. Each key is a dotted path into the hub file; a value the
+ * file holds at one of these paths replaces oculus's value whole, and a key outside the list is a
+ * finding and is not applied. They are the keys that describe this hub rather than the engine: its
+ * folders and the files of its records, where the reader's bookmarks, the schedules and the
+ * machine's apps are kept, the cluster its jobs run on, the files its writing rules skip or let
+ * draw arrows, the values its apps' settings hold, the counts its tabs draw, its status words, and
+ * its own words, which oculus ships none of: the career card's host statuses, score axes and score
+ * hues, and the fit colours of its Position Leads. Its domains and theme words are its own registry
+ * files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -331,6 +336,9 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'career_file', file: 'sources.yml' },
     { key: 'memories_dir', file: 'sources.yml' },
     { key: 'wallpaper_dir', file: 'sources.yml' },
+    { key: 'bookmarks', file: 'sources.yml' },
+    { key: 'schedules', file: 'sources.yml' },
+    { key: 'apps_dir', file: 'sources.yml' },
     { key: 'wallpaper.image', file: 'appearance.yml' },
     { key: 'docs', file: 'layout.yml' },
     { key: 'counts', file: 'layout.yml' },

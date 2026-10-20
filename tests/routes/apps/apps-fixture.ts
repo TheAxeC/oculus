@@ -73,7 +73,7 @@ export function plant(planted: Planted, prefix = 'oculus-apps-'): Fixture {
         workspace: workspaceKey(''),
         scan: (approved, kept = new Map()) =>
             scanApps({
-                machine: { dir: machine, localFile: join(base, 'local.yml') },
+                machine: { dir: machine, settingsFile: join(base, 'config.yml') },
                 appearanceFile: join(base, 'appearance.yml'),
                 primary: null,
                 roots,

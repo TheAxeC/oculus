@@ -64,11 +64,11 @@ export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): stri
 
 /**
  * Register the generic Collection view once per configured collection key, and drop the views of
- * every key the list no longer holds, so a collection taken out of config/sources.yml leaves the
- * rail and the palette with the keys that took it out rather than at the next reload. The tabs of
- * a key oculus's pages place stay in their panes, which leave them out while no hub lists the key
- * and draw them again when one does (state/workbench/layout/tabs/left-out.ts); the tabs of any
- * other key close with its view.
+ * every key the list no longer holds, so a collection taken out of config/defaults/sources.yml
+ * leaves the rail and the palette with the keys that took it out rather than at the next reload.
+ * The tabs of a key oculus's pages place stay in their panes, which leave them out while no hub
+ * lists the key and draw them again when one does (state/workbench/layout/tabs/left-out.ts); the
+ * tabs of any other key close with its view.
  *
  * A key that is the id of a view a module registers as its own is left out, so a `collections:`
  * entry named `debug` or `files` never replaces a built-in view.

@@ -1,8 +1,8 @@
 // Layer 1, data. The letters that start a chord of the rail: the `chord` of each `rail:` entry and
-// of each group of `nav_groups`, and the `direct_chord` of config/layout.yml. The page reads the
-// same letters into the keys of the rail's `chords` (state/workbench/navigation/catalogue.ts), and
-// the workbench holds a bare press of one as the start of a chord (resolve.ts), so an app's key on
-// one is a key oculus takes.
+// of each group of `nav_groups`, and the `direct_chord` of config/defaults/layout.yml. The page
+// reads the same letters into the keys of the rail's `chords`
+// (state/workbench/navigation/catalogue.ts), and the workbench holds a bare press of one as the
+// start of a chord (resolve.ts), so an app's key on one is a key oculus takes.
 
 import { z } from 'zod';
 import { isMap } from '../../guards.ts';

@@ -1,98 +1,30 @@
-// Layer 2, route tests. What the /api/write route does with an audit mute: one finding parked.
+// Layer 2, route tests. What the /api/write route does with an audit mute: one finding parked, the
+// `audit_ignore:` list the reader sees written whole into the `settings:` map of the open workspace
+// file, since the list has no `key:` field and replaces oculus's list whole.
 //
-// The behavior file is a copy under the system temporary directory, asserted to be inside it before
-// anything is written, so no case here writes the engine's own configuration.
-//
-// A hook loads the configuration once, since the first load costs more than a later one, so no case
-// pays for it.
+// The engine is a scratch copy of the checkout's config/ folder and the workspace file is under the
+// fixture's hub (write-fixture.ts `configTarget`), so no case here writes the engine's own
+// configuration.
+// @module-tag slow: its case takes 500 ms or more in a run of its own. The time is the write's own
+// checks: the write reads the whole configuration of the scratch engine before and after it writes
+// (`loadConfig`, about 220 ms a read), and no case waits.
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';
-import { warmConfig } from './write-fixture.ts';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-
-const TOKEN = mintToken();
-const HOST = '127.0.0.1:8791';
-const URL_ = `http://${HOST}/api/write`;
-
-/** One POST of this application's own page, carrying the process token. */
-function request(body: unknown): Request {
-    return new Request(URL_, {
-        method: 'POST',
-        headers: {
-            host: HOST,
-            origin: `http://${HOST}`,
-            'sec-fetch-site': 'same-origin',
-            'content-type': 'application/json',
-            'x-oculus-token': TOKEN
-        },
-        body: JSON.stringify(body)
-    });
-}
-
-/** A behavior.yml of the same shape as the engine's, with comments the edit must keep. */
-const BEHAVIOR = `# The thresholds and horizons.
-read_limits: { status.line: 220, next: 300 }
-
-
-# The parked audit findings, by signature.
-audit_ignore: []
-
-
-focus:
-  stale_lag_days: 1
-`;
+import { loadLayers, layersOf } from '../../../src/lib/server/edit/writes/config/config-place.ts';
+import { it } from '../../fixtures/scratch.ts';
+import { TOKEN, configTarget, defaultsFile, request, workspaceFileOf } from './write-fixture.ts';
 
 const SIGNATURE = '0123456789ab';
 
-/**
- * A target whose behavior.yml is a copy under the system temporary directory, so no case here
- * writes the engine's own config/behavior.yml.
- */
-function muteTarget(body = BEHAVIOR): WriteTarget {
-    const dir = scratchDir('oculus-mute-');
-    const file = join(dir, 'behavior.yml');
-    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-    writeFileSync(file, body);
-    const merged = loadConfig(engineDir()).config;
-    return {
-        hub: dir,
-        primary: 'hub',
-        config: portfolioConfigFrom(merged),
-        engine: engineDir(),
-        engineConfig: () => loadConfig(engineDir()).config,
-        career: careerRules(merged),
-        projects: () => [],
-        bookmarks: join(dir, 'bookmarks.yml'),
-        behaviorFile: file,
-        layoutFile: join(dir, 'layout.yml'),
-        glyphs: []
-    };
-}
-
-/** What the behavior file of a target holds now. */
-function behaviorOf(into: WriteTarget): string {
-    return readFileSync(into.behaviorFile, 'utf8');
-}
-
-/** The parked signatures the file holds now. */
-function parked(into: WriteTarget): unknown {
-    return (parse(behaviorOf(into)) as { audit_ignore: unknown }).audit_ignore;
-}
-
-test.beforeAll(warmConfig);
-
-describe('the audit mute write', () => {
-    it('parks one signature and keeps every other byte of the file', async () => {
-        const into = muteTarget();
+describe('the audit mute write', { tags: ['slow'] }, () => {
+    it('parks one signature in the workspace file, keeps its other bytes and leaves the defaults file', async () => {
+        const into = configTarget(undefined, 'settings:\n  # mine\n  code_theme: nord\n');
+        const file = workspaceFileOf(into);
+        const before = readFileSync(file, 'utf8');
+        const defaults = readFileSync(defaultsFile(into.engine, 'behavior.yml'), 'utf8');
         const response = await handleWrite(
             request({ kind: 'audit-mute', signature: SIGNATURE, muted: true }),
             TOKEN,
@@ -101,17 +33,14 @@ describe('the audit mute write', () => {
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({
             ok: true,
-            changed: ['audit_ignore'],
+            changed: ['behavior.yml:audit_ignore'],
             refused: []
         });
-        const written = behaviorOf(into);
-        expect(parked(into)).toEqual([SIGNATURE]);
-        expect(written).toContain('# The thresholds and horizons.\n');
-        expect(written).toContain('# The parked audit findings, by signature.\n');
-        expect(written).toContain('focus:\n  stale_lag_days: 1\n');
-        expect((parse(written) as { read_limits: unknown }).read_limits).toEqual({
-            'status.line': 220,
-            next: 300
-        });
+        const written = readFileSync(file, 'utf8');
+        expect(written.startsWith(before)).toBe(true);
+        const parsed = parse(written) as { settings: Record<string, unknown> };
+        expect(parsed.settings).toEqual({ code_theme: 'nord', audit_ignore: [SIGNATURE] });
+        expect(loadLayers(into.engine, layersOf(into)).config.audit_ignore).toEqual([SIGNATURE]);
+        expect(readFileSync(defaultsFile(into.engine, 'behavior.yml'), 'utf8')).toBe(defaults);
     });
 });

@@ -1,13 +1,13 @@
 // Layer 2, server. What the configuration stores that belongs to the apps, judged against what the
-// apps declare: the values of `app_settings:` in config/behavior.yml and the file icon theme
-// `file_icons:` of config/appearance.yml names. Only the watcher holds the declarations, so the
-// findings are made here, after every app is read.
+// apps declare: the values of `app_settings:` (a key of the hub list) and the file icon theme the
+// option `file_icons:` names. Only the watcher holds the declarations, so the findings are made
+// here, after every app is read.
 //
 // A stored value is judged against the setting of an approved, enabled app that declares its key.
 // A key no such app declares is a finding, and so is a value that breaks its declaration (its type,
 // its list of values or its bounds); the app reads its default for it. A `file_icons` value of an
 // app's icon theme is a finding when no approved, enabled app offers that theme, and the file icons
-// are Seti then. Both findings are keyed by the file they are about.
+// are Seti then. Each finding names the file the value was read from and the key it is at.
 
 import { findingText, type TextCatalog } from '../../../../../data/helpers/finding-text.ts';
 import { appActive } from '../../../../../data/helpers/files/apps/apps.ts';
@@ -51,16 +51,16 @@ function settingFindings(held: AppsHeld, input: StoredInput): Finding[] {
     const stored = appSettingValues(input.config);
     const apps = settingApps(held);
     const found: Finding[] = [];
-    const note = (text: string, ...args: string[]): void => {
+    const note = (key: string, text: string, ...args: string[]): void => {
         found.push({
             file: input.settingsFile,
-            key: 'config/behavior.yml',
+            key: `app_settings.${key}`,
             message: findingText(input.catalog, text, ...args)
         });
     };
     for (const key of Object.keys(stored)) {
         if (!apps.some((app) => declaredBy(app).some((one) => one.key === key))) {
-            note('findings.apps.setting_undeclared', key);
+            note(key, 'findings.apps.setting_undeclared', key);
         }
     }
     for (const app of apps) {
@@ -70,7 +70,9 @@ function settingFindings(held: AppsHeld, input: StoredInput): Finding[] {
                 .map((one) => [one.key, stored[one.key]])
         );
         for (const read of readSettings(declaredBy(app), own)) {
-            if (read.flaw !== null) note(FLAW_TEXT[read.flaw], read.key, app.row.title);
+            if (read.flaw !== null) {
+                note(read.key, FLAW_TEXT[read.flaw], read.key, app.row.title);
+            }
         }
     }
     return found;
@@ -90,7 +92,7 @@ function iconFindings(held: AppsHeld, input: StoredInput): Finding[] {
     return [
         {
             file: input.appearanceFile,
-            key: 'config/appearance.yml',
+            key: 'file_icons',
             message: findingText(input.catalog, 'findings.apps.icon_theme_unavailable', saved)
         }
     ];

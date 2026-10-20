@@ -30,7 +30,7 @@
 import { untrack } from 'svelte';
 import type { LintId, LintState } from '../../../data/model/index.ts';
 import type { Caret, Indent, LineEnding } from './editor-text.ts';
-import { findInstance } from '../layout/instance.ts';
+import { findInstance, instanceText } from '../layout/instance.ts';
 import { paneAt } from '../layout/tree.ts';
 import type { Layout } from '../layout/model.ts';
 
@@ -199,6 +199,33 @@ export function sourceKept(
     if (found?.instance.view !== 'source' || paneAt(tree, found.path)?.active !== kept) return null;
     const said = statusOf(kept);
     return said === null ? null : { instance: kept, status: said };
+}
+
+/**
+ * The caret of the source tab on screen, or else of the one whose editor was focused last, with the
+ * file it is in: the library file the tab shows when it shows one, else its own path. Null with no
+ * such tab or no caret. F8 and the Problems view step from it.
+ */
+export function caretHere(
+    tab: { id: string; view: string } | null,
+    status: {
+        statusOf: (instance: string) => EditorStatus | null;
+        focused: () => FocusedSource | null;
+    },
+    stateOf: (instance: string) => unknown
+): { instance: string; root: string; path: string; line: number; column: number } | null {
+    const on = sourceOnScreen(tab, status.statusOf) ?? status.focused();
+    const caret = on?.status?.caret;
+    if (on === null || caret === null || caret === undefined) return null;
+    const state = stateOf(on.instance);
+    const library = instanceText(state, 'library');
+    return {
+        instance: on.instance,
+        root: instanceText(state, 'root'),
+        path: library === '' ? instanceText(state, 'path') : library,
+        line: caret.line,
+        column: caret.column
+    };
 }
 
 /** The views whose tab lists editor actions for the palette: a source tab and a diff pane. */

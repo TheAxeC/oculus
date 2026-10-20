@@ -1,7 +1,7 @@
 // Layer 1, data. The words oculus's own YAML files are written in, held where both the readers of
 // the files (data/sources) and the whole-file shapes the editor's schemas come from
-// (data/shapes/catalog-files.ts) can import them: the controls, headings, sources and forms of the
-// options catalog, and the agents and flags of agents.yml.
+// (data/shapes/catalog-files/) can import them: the controls, headings, sources and forms of the
+// options files, and the agents and flags of agents.yml.
 
 import type { AgentId } from '../model/index.ts';
 
@@ -63,6 +63,7 @@ export const SOURCES = [
     'code_themes',
     'views',
     'theme_classes',
+    'themes',
     'file_icon_themes',
     'usage_tiers',
     'bundle_ids'

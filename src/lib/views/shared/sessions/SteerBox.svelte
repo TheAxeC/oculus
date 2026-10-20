@@ -176,7 +176,7 @@
         background: none;
     }
 
-    /* The monospace face, while the rice theme's Monospace toggle is on. */
+    /* The monospace face, while the rice theme's option `rice.monospace` is on. */
     :global(body.rice:where(:not(.rice-sans))) .box {
         font-family: var(--font-mono);
     }

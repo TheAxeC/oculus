@@ -11,10 +11,11 @@
 // project's own documents, its id `<hub name>:<id>` for a project of a hub other than the primary;
 // the documents of a project read from a repository (a project folder holding its own manifest) are
 // read from the repository; `path` is a path relative to a hub, which is what the `docs:` list of
-// config/layout.yml lists in the view catalogue, and `hub` beside it names the hub it is relative
-// to (the primary when it is missing, and nothing with no primary); `engine` is a Markdown file of
-// oculus's own folder, named by a path relative to that folder, wherever the folder sits; `manual`
-// is the engine's own HELP.md and takes no path. Everything else is a 404 naming what was wrong.
+// config/defaults/layout.yml lists in the view catalogue, and `hub` beside it names the hub it is
+// relative to (the primary when it is missing, and nothing with no primary); `engine` is a Markdown
+// file of oculus's own folder, named by a path relative to that folder, wherever the folder sits;
+// `manual` is the engine's own HELP.md and takes no path. Everything else is a 404 naming what was
+// wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -65,7 +66,7 @@ import type { MarkedExtension, Token, Tokens } from 'marked';
 import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
 import { renderDocumentParts } from '../../data/prose/markdown/markdown.ts';
-import { configDir } from '../../data/sources/config.ts';
+import { keyFile, type ConfigWhere } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/documents/docs.ts';
 import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
@@ -591,11 +592,12 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
 
 /**
  * One Markdown document of the hub, named by a path relative to it: the documents the `docs:` list
- * of config/layout.yml lists in the view catalogue and the Markdown files of the folder an entry's
- * page shows (views/boards/entry/Entry.svelte). Only a Markdown file is served, since nothing
- * else renders, and the joined path is checked against the hub again before the file is opened, so
- * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
- * to this page by api/file under the hub's folder name; this is the same ground, rendered as prose.
+ * of config/defaults/layout.yml lists in the view catalogue and the Markdown files of the folder an
+ * entry's page shows (views/boards/entry/Entry.svelte). Only a Markdown file is served, since
+ * nothing else renders, and the joined path is checked against the hub again before the file is
+ * opened, so a path climbing out of it is a 404 and nothing is opened. The hub's own files are
+ * already served to this page by api/file under the hub's folder name; this is the same ground,
+ * rendered as prose.
  */
 export function renderHubDoc(target: DocTarget, path: string, held = '', hub = ''): Response {
     const root = hub === '' ? (target.primary?.key ?? '') : hub;
@@ -691,14 +693,6 @@ function renderEngineDoc(into: DocTarget, path: string, held = ''): Response {
     return answer(ctx, found.file, held, (text) => renderMarkdown(text, base, own), found.at);
 }
 
-/**
- * The file config/layout.yml sits in, which is what a document's finding names. The config
- * directory rather than the engine's own folder, so a run pointed at a copy names the file it read.
- */
-export function layoutFile(engine: string): string {
-    return join(configDir(engine), 'layout.yml');
-}
-
 /** A document of the `docs:` list: a label, a path and a group, each a text with a character. */
 const docShape = z.object({
     label: z.string().min(1),
@@ -717,20 +711,16 @@ const docEntryShape = z.looseObject({
 const docListShape = z.array(z.unknown());
 
 /**
- * The ways the `docs:` list of config/layout.yml fails to draw, as findings: an entry that is not a
- * map of three strings, a group that is neither a rail page nor a group of `nav_groups`
- * (`catalogueGroupIds`), a path that leaves the hub, a path with
- * no file at it, a directory, and a file that is not Markdown, which is all this route renders. It
+ * The ways the `docs:` list of the merged configuration fails to draw, as findings naming `file`:
+ * an entry that is not a map of three strings, a group that is neither a rail page nor a group of
+ * `nav_groups` (`catalogueGroupIds`), a path that leaves the hub, a path with no file at it, a
+ * directory, and a file that is not Markdown, which is all this route renders. It
  * is the same rule readRoots applies to a root whose directory is not on this machine: what the
  * config names and what is on the disk are checked where the disk is, and a finding is reported and
  * never repaired, so a document whose file has moved shows up in the Findings view rather than as a
  * rail button that opens an empty tab.
  */
-export function docFindings(
-    config: Record<string, unknown>,
-    hub: string | null,
-    file: string
-): Finding[] {
+function docFindings(config: Record<string, unknown>, hub: string | null, file: string): Finding[] {
     const findings: Finding[] = [];
     // The list is the primary hub's, so a workspace with no primary hub has none to check.
     if (hub === null) return findings;
@@ -805,6 +795,14 @@ export function docFindings(
         }
     }
     return findings;
+}
+
+/**
+ * The findings of the `docs:` list of a merged configuration, over the primary hub of `where`,
+ * naming the file the list was read from.
+ */
+export function docsFindings(where: ConfigWhere, config: Record<string, unknown>): Finding[] {
+    return docFindings(config, where.hub, keyFile(where, 'docs'));
 }
 
 /**

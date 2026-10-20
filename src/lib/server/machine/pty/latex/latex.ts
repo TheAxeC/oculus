@@ -37,7 +37,7 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, extname, join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import { textCatalog } from '../../../../data/sources/config.ts';
-import { latexBuild } from '../../../../data/sources/config/settings.ts';
+import { latexBuild } from '../../../../data/sources/config/settings/latex.ts';
 import type {
     BuildOutcome,
     LatexJobTarget,

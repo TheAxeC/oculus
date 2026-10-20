@@ -1,9 +1,10 @@
-// Layer 3, shared graph helper. Which node labels the graph draws (Graph.svelte, the Map's and the
-// Notes Graph's). The labels the pointer or the keyboard is on are drawn first, whatever they
-// overlap; then the pillars' labels, so a project's label never hides its pillar's; then every
-// other label in the graph's own order. A label after the leading ones is left out when it overlaps
-// a label already drawn, any node but its own (a project or a note is its circle, a pillar or a
-// collaborator its square) or any edge's line as it is drawn, so no label is drawn across an edge.
+// Layer 3, shared graph helper. Which node labels the graph draws (Labels.svelte, the label layer
+// of Graph.svelte, the Map's and the Notes Graph's). The labels the pointer or the keyboard is on
+// are drawn first, whatever they overlap; then the pillars' labels, so a project's label never
+// hides its pillar's; then every other label in the graph's own order. A label after the leading
+// ones is left out when it overlaps a label already drawn, any node but its own (a project or a
+// note is its circle, a pillar or a collaborator its square) or any edge's line as it is drawn, so
+// no label is drawn across an edge.
 //
 // A label is drawn to the right of its node, and on its left, ending at the node, when the box on
 // the right would reach past the right edge of the part of the graph the SVG shows (labelBox()), so

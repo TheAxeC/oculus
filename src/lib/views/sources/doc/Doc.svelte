@@ -16,9 +16,9 @@
 
 <script lang="ts">
     // Layer 3, view. One Markdown document as its own tab: a document of the research hub, which
-    // the `docs:` list of config/layout.yml names, one instance per path and the entry's label on
-    // the tab, or a document of oculus's own folder (the Apps guide and the other guides), which
-    // no list needs to name.
+    // the `docs:` list of config/defaults/layout.yml names, one instance per path and the entry's
+    // label on the tab, or a document of oculus's own folder (the Apps guide and the other guides),
+    // which no list needs to name.
     //
     // The document is fetched rather than selected, as a project's README is: the wire model keeps
     // documents out of the snapshot, so state/system/docs.svelte.ts asks api/docs for this path and

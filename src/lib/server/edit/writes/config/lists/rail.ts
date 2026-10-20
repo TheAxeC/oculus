@@ -1,126 +1,67 @@
-// Layer 2, server. The rail's list of pages, written into the `rail:` list of config/layout.yml by
-// the Settings view.
+// Layer 2, server. The rail's list of pages, as the rail's drag and Hide and the Settings view's
+// rail list save it: written into the `settings:` map of the open workspace file.
 //
-// It is an engine file like the deck's and the audit's, since the rail is oculus's own
-// configuration. The list is checked by the rule the page and the Settings view read it with,
-// data/sources/config/rail.ts, against the arrangements the same file holds and the glyph names of
-// the merged config, so a list the page would draw with a button missing is refused whole. The
-// edit is over the bytes through server/edit/list-edit.ts, every other line of the file kept, and
-// the result is read back and compared with the original before anything is written.
+// The list is checked by the rule the page and the Settings view read it with,
+// data/sources/config/rail.ts, against the arrangements and the glyph names of the merged config,
+// so a list the page would draw with a button missing is refused whole. The list the reader sees is
+// then written through the value write (config-value.ts), which lays it over oculus's rail by each
+// entry's `page`: every entry of the list in its order, then `{ page: x, removed: true }` for each
+// of oculus's pages the list does not hold, so a hidden button stays hidden and the order of a drag
+// stays as it was dragged. With no workspace file open the write is refused with the sentence that
+// says so.
 //
-// The watcher watches `config/`, so the file this writes is pushed on the `config` channel within a
-// second and the rail redraws from it; there is no build step and nothing to invalidate.
+// The watcher follows the workspace file, so the file this writes is pushed on the `config` channel
+// within a second and the rail redraws from it.
 
-import { readFileSync } from 'node:fs';
-import { isDeepStrictEqual } from 'node:util';
-import { parse } from 'yaml';
-import { z } from 'zod';
 import {
     arrangementKeys,
-    railRows,
     readRail,
     type RailEntry
 } from '../../../../../data/sources/config/rail.ts';
-import { writeTextAtomic } from '../../../../core/json.ts';
-import { entryText, othersThan, readBack, setItems } from '../../../list-edit.ts';
-import type { ChangeRecord } from '../../../../core/changes.ts';
+import { writeConfigValue } from '../config-value.ts';
+import { loadLayers, type ConfigKeyOutcome, type ConfigLayers } from '../config-place.ts';
+import { mergedAt } from '../config-checks.ts';
 
-/** The top-level key of config/layout.yml the rail's list lives under. */
+/** The option the rail's list is, and the defaults file it belongs to. */
 export const RAIL = 'rail';
+const LAYOUT = 'layout.yml';
 
-/** The two keys of config/layout.yml the rail write reads: its list, and the arrangements. */
-const layoutShape = z
-    .object({ [RAIL]: z.unknown().optional(), arrangements: z.unknown().optional() })
-    .catch(() => ({ [RAIL]: undefined, arrangements: undefined }));
+/** What a rail write answers with: what it changed or why it was refused, or `invalid`. */
+export type RailOutcome = ConfigKeyOutcome | { error: 'invalid' };
 
-/** What a rail write answers with: what it changed, or the one word saying what was wrong. */
-export type RailOutcome =
-    | { changed: string[]; refused: []; records?: ChangeRecord[] }
-    | { error: 'invalid' | 'unwritable' };
-
-/**
- * The list one text of the file holds, every entry as five strings whether or not the rule keeps
- * it, which is what the change log records and what an undo compares against.
- */
-export function railLists(source: string): RailEntry[] {
-    let parsed: unknown;
-    try {
-        parsed = parse(source);
-    } catch {
-        return [];
-    }
-    return railRows(layoutShape.parse(parsed)[RAIL]) ?? [];
-}
-
-/** The list the file holds now, or null when it is gone or does not parse; a file it may not read
- * throws. */
-export function railNow(file: string): RailEntry[] | null {
-    try {
-        return railLists(readFileSync(file, 'utf8'));
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
-        return null;
-    }
-}
-
-/**
- * One entry as the line the file carries: a flow map, its label always quoted, and its chord and
- * group glyph only when it has them.
- */
-function itemText(entry: RailEntry): string {
-    const label = JSON.stringify(entry.label);
-    const group = [
-        entry.chord === '' ? '' : `, chord: ${entryText(entry.chord)}`,
-        entry.group_glyph === '' ? '' : `, group_glyph: ${entryText(entry.group_glyph)}`
-    ].join('');
-    return `{ label: ${label}, glyph: ${entryText(entry.glyph)}, page: ${entryText(entry.page)}${group} }`;
-}
-
-/**
- * Whether the edited source still says what the original said, with the one list replaced: it must
- * parse, it must hold exactly the entries asked for, and every other top-level key must be
- * unchanged.
- */
-function kept(source: string, edited: string, wanted: RailEntry[]): boolean {
-    const read = readBack(source, edited);
-    if (read === null) return false;
-    if (othersThan(read.before, [RAIL]) !== othersThan(read.after, [RAIL])) return false;
-    return isDeepStrictEqual(railRows(read.after[RAIL] ?? []), wanted);
-}
-
-/**
- * Write the rail's list. Every entry must be one the rule keeps, against the arrangements this
- * file holds and the glyph names given, or nothing is written; a list the file already holds
- * writes nothing and answers so.
- */
-export function writeRail(file: string, rail: RailEntry[], glyphs: string[]): RailOutcome {
-    let source: string;
-    try {
-        source = readFileSync(file, 'utf8');
-    } catch {
-        return { error: 'unwritable' };
-    }
-    let parsed: z.output<typeof layoutShape>;
-    try {
-        parsed = layoutShape.parse(parse(source));
-    } catch {
-        return { error: 'invalid' };
-    }
-    const read = readRail(rail, arrangementKeys(parsed.arrangements), glyphs);
-    if (read.problems.length > 0) return { error: 'invalid' };
-    const wanted = read.entries;
-    const edited = setItems(source, null, RAIL, wanted.map(itemText));
-    if (!kept(source, edited, wanted)) return { error: 'invalid' };
-    if (edited === source) return { changed: [], refused: [] };
-    const before = railLists(source);
-    try {
-        writeTextAtomic(file, edited);
-    } catch {
-        return { error: 'unwritable' };
-    }
+/** One entry as the file holds it: its chord and group glyph only when it has them. */
+function written(entry: RailEntry): Record<string, string> {
     return {
-        changed: [RAIL],
-        refused: [],
-        records: [{ file, key: RAIL, field: RAIL, before, after: wanted, undo: 'field' }]
+        label: entry.label,
+        glyph: entry.glyph,
+        page: entry.page,
+        ...(entry.chord === '' ? {} : { chord: entry.chord }),
+        ...(entry.group_glyph === '' ? {} : { group_glyph: entry.group_glyph })
     };
+}
+
+/**
+ * Write the rail's list over the layers. Every entry must be one the rule keeps, against the
+ * arrangements and the glyph names of the merged config, or nothing is written (`invalid`); a list
+ * equal to the rail in force writes nothing and answers so.
+ */
+export function writeRail(
+    engine: string,
+    layers: ConfigLayers,
+    rail: RailEntry[],
+    glyphs: string[],
+    hubs: readonly string[] = []
+): RailOutcome {
+    const merged = loadLayers(engine, layers).config;
+    const read = readRail(rail, arrangementKeys(merged.arrangements), glyphs);
+    if (read.problems.length > 0) return { error: 'invalid' };
+    return writeConfigValue(
+        engine,
+        LAYOUT,
+        RAIL,
+        read.entries.map(written),
+        mergedAt(merged, RAIL),
+        layers,
+        { hubs, own: true }
+    );
 }

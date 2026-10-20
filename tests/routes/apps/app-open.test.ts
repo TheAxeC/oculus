@@ -55,7 +55,7 @@ function world(over: { closedPaths?: () => readonly string[] | null } = {}) {
                     'letter.docx': 'PK\u0003\u0004',
                     'paper.pdf': '%PDF-1.4',
                     'A.PDF': '%PDF-1.4',
-                    'tools/oculus/config/local.yml': 'secret: yes',
+                    'tools/oculus/config/options/local.yml': 'secret: yes',
                     '.oculus/apps/todo/app.yml': TODO,
                     '.oculus/apps/todo/index.html': PAGE
                 },
@@ -136,13 +136,19 @@ const FILES: [string, string, string, string, string][] = [
     ],
     ['a root whose key holds the word engine', 'app:notes', 'game-engine', 'x.txt', 'ok'],
     [
-        'the local file of the config folder',
+        'the local options file of the config folder',
         'app:notes',
         'hub',
-        'tools/oculus/config/local.yml',
+        'tools/oculus/config/options/local.yml',
         'closed'
     ],
-    ['that file spelt in capitals', 'app:notes', 'hub', 'TOOLS/OCULUS/CONFIG/local.yml', 'closed'],
+    [
+        'that file spelt in capitals',
+        'app:notes',
+        'hub',
+        'TOOLS/OCULUS/CONFIG/OPTIONS/local.yml',
+        'closed'
+    ],
     ['a closed folder', 'app:notes', 'hub', 'secrets/a.txt', 'closed'],
     ['a closed folder spelt in capitals', 'app:notes', 'hub', 'SECRETS/a.txt', 'closed'],
     ['a name that only starts like a closed folder', 'app:notes', 'hub', 'secrets-notes.md', 'ok'],
@@ -185,7 +191,7 @@ const ROWS: Row[] = [
             const result = await answer(
                 'app:notes',
                 'hub',
-                'tools/oculus/config/local.yml',
+                'tools/oculus/config/options/local.yml',
                 context
             );
             return [

@@ -8,7 +8,6 @@ import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sou
 import { TEXT_LIMIT } from '../../../../src/lib/data/file-ops.ts';
 import { LIFETIME, type SourceDraft } from '../../../../src/lib/state/sessions/source/draft.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
-import { noop } from '../../../fixtures/doubles.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
 import { hashOf, server } from './source-server.ts';
 
@@ -16,18 +15,14 @@ let client: ClientState;
 let editSourceDraft: ClientState['source']['editSourceDraft'];
 let sourceDraft: ClientState['source']['sourceDraft'];
 let sourceDirty: ClientState['source']['sourceDirty'];
-let loadUi: ClientState['ui']['loadUi'];
 
 beforeEach(() => {
     client = createClientState();
     ({ editSourceDraft, sourceDraft, sourceDirty } = client.source);
-    ({ loadUi } = client.ui);
 });
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);
-
-beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 
 describe('an untitled source tab', () => {
     it('is unsaved once the reader types, which is what closing it asks about', () => {

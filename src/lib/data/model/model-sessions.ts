@@ -757,7 +757,7 @@ export type UsageDay = {
 export type UsagePayload = { accounts: UsageAccount[]; days: UsageDay[]; builtAt: string };
 
 /** Where a command was read from, in the order they are listed. */
-export type CommandSource = 'file' | 'saved' | 'found' | 'app';
+export type CommandSource = 'file' | 'found' | 'app';
 
 /** The two roles a command may hold for a repository, each on a key. */
 export type CommandDefault = 'build' | 'test';

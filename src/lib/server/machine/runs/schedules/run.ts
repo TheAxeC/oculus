@@ -1,15 +1,17 @@
 // Layer 2, server. Start what a schedule runs, for a due time or a Run now. An update task starts
 // as the tray's press starts it (schedules/task.ts) with the entry's `unattended` as its flag. A
-// saved command starts as the command route starts it (commands/run.ts `runCommand`), from the
-// repository the entry names, with an empty context. A prompt starts a Claude session in its
-// folder with the prompt as the one argument after `--`, which tmux hands to the process as it is,
-// so no shell reads it.
+// command of a repository's `.oculus/commands.yml` starts as the command route starts it
+// (commands/run.ts `runCommand`), from the repository the entry names, with an empty context. A
+// prompt starts a Claude session in its folder with the prompt as the one argument after `--`,
+// which tmux hands to the process as it is, so no shell reads it.
 //
 // The answer is the terminal or the word that refused the start with the names its sentence is
 // about, and nothing is thrown for a start the system refused. A command chain that needs the
 // reader's approval starts nothing and is refused with `needs-approval`: a schedule is no place to
-// ask. The folder of a prompt and the prompt itself are checked again here, since the file or the
-// roots the file browser serves may have changed since the entry was read.
+// ask, and the chain is approved by a save of the schedule or of the command (Schedule... or Edit
+// in the repository's command bar). The folder of a prompt and the prompt itself are checked again
+// here, since the file or the roots the file browser serves may have changed since the entry was
+// read.
 
 import { readEntry } from '../../../../data/helpers/run/schedules.ts';
 import type { ScheduleEntry, Terminal } from '../../../../data/model/index.ts';
@@ -32,8 +34,6 @@ export type RunEntryOptions = StartOptions & {
     text: Record<string, string>;
     /** The directories the file browser serves, read at the call. */
     rootsFor: () => string[];
-    /** The saved commands file. */
-    commands: string;
     /**
      * The approvals file a command chain is checked against. Defaults to ~/.oculus/approvals.json.
      */
@@ -49,7 +49,7 @@ export async function runEntry(
     size: { cols: number; rows: number },
     options: RunEntryOptions
 ): Promise<RunAnswer> {
-    const { hub, claudeBin, text, rootsFor, commands, approvalsFor, ...tmux } = options;
+    const { hub, claudeBin, text, rootsFor, approvalsFor, ...tmux } = options;
     const runs = entry.runs;
     try {
         if ('task' in runs) {
@@ -64,11 +64,10 @@ export async function runEntry(
         if ('command' in runs) {
             const folder = resolveFolder(runs.folder, hub);
             if (folder === null) return { refused: 'no-primary', names: [] };
-            const started = await runCommand(folder, runs.command, 'saved', {}, size, {
+            const started = await runCommand(folder, runs.command, 'file', {}, size, {
                 ...tmux,
                 rootsFor,
-                approvalsFor,
-                savedFile: commands
+                approvalsFor
             });
             if ('approve' in started) return { refused: 'needs-approval', names: [runs.command] };
             return started;

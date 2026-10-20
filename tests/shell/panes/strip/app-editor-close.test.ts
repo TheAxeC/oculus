@@ -12,15 +12,13 @@ import { describe, expect } from 'vitest';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { createCloseQuestion } from '../../../../src/lib/shell/panes/strip/close-question.svelte.ts';
-import { serialiseLayout } from '../../../../src/lib/state/workbench/layout/index.ts';
 import type { FrameOptions } from '../../../../src/lib/state/system/apps/frame/bridge.ts';
 import type { Methods } from '../../../../src/lib/state/system/apps/frame/methods.ts';
-import { createClientState } from '../../../fixtures/client.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import {
-    fakeStorage,
-    openLayout,
+    admittedPage,
     heldPages,
+    openSaved,
     pageAround
 } from '../../../state/workbench/layout/layout-fixture.ts';
 
@@ -48,7 +46,7 @@ const LINK = {
  * its mark does.
  */
 function tabs(saving: (methods: Methods) => Promise<unknown> = () => Promise.resolve()) {
-    const client = createClientState();
+    const client = admittedPage();
     client.entities.receive({
         channel: 'config',
         version: 1,
@@ -69,10 +67,7 @@ function tabs(saving: (methods: Methods) => Promise<unknown> = () => Promise.res
         ],
         active: 'editor'
     };
-    openLayout(
-        client.layout,
-        fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
-    );
+    openSaved(client, heldPages([pageAround('main', pane)], []));
     const page = client.layout.currentPage().id;
     const instances = () =>
         client.layout.layout(page).kind === 'pane'

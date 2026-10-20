@@ -19,9 +19,9 @@
 // The folder is made when it is not there, since there is nothing else to watch: a handle over a
 // folder that is not there cannot be opened, and the first bookmark would then be written into a
 // folder nothing is watching and reach no other page until the server was started again. It is the
-// primary hub's own `.oculus` folder unless a local.yml moves the file, and an empty directory is
-// the whole of what is made; the bookmarks file itself is written by the first bookmark and not
-// here. A workspace with no primary has no bookmarks file and this watches nothing.
+// primary hub's own `.oculus` folder unless the hub's config.yml moves the file, and an empty
+// directory is the whole of what is made; the bookmarks file itself is written by the first
+// bookmark and not here. A workspace with no primary has no bookmarks file, and nothing is watched.
 
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';

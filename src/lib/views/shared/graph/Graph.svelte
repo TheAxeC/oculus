@@ -25,25 +25,16 @@
     //
     // The nodes are one layer of their own, Nodes.svelte, which draws them and reports a press, the
     // node under the pointer and the node holding the keyboard back here. The labels are one layer
-    // over every node. By the rule of labels.ts beside this file a label is drawn on its node's
-    // left when the right has no room inside the part of the graph the SVG shows, and is hidden
-    // when it would overlap a label already drawn, any node but its own or any edge's line, or
-    // would be cut by the SVG's edge on either side of its node or at the top or the bottom, the
-    // pillars' labels placed first, until its node is hovered or holds the keyboard; those labels
-    // are drawn whatever they overlap, and last, so they sit on top.
+    // of their own over every node, Labels.svelte, which places and hides them by the rule of
+    // labels.ts beside this file inside the part of the graph the SVG shows; this file has the
+    // layer measure them again (its measure()) once the words, the text size or the placement
+    // change and once a hidden tab shows.
 
     import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { onShown } from '$lib/ui/shown';
-    import {
-        LABEL_DROP,
-        UNBOUNDED,
-        UNMEASURED,
-        labelBox,
-        labelSize,
-        shownLabels,
-        type LabelSize
-    } from './labels';
+    import { UNBOUNDED } from './labels';
+    import Labels from './Labels.svelte';
     import Nodes from './Nodes.svelte';
     import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
     import { followSimulation } from './follow.svelte';
@@ -159,21 +150,8 @@
     let hovered: string | null = $state(null);
     let focused: string | null = $state(null);
 
-    /**
-     * Each drawn label element by node id, which is where a label's width is measured. It is state
-     * because `bind:this` writes into it; `measure` reads it after a tick, outside any effect.
-     */
-    const texts: Record<string, SVGTextElement | null> = $state({});
-
-    /** Each label's measured size by node id; a label not yet measured has none. */
-    let measured: Partial<Record<string, LabelSize>> = $state({});
-
-    /** The labels drawn on top of the rest: the hovered node's and the selected node's. */
-    const leading = $derived.by(() =>
-        [hovered, focused, linkSource?.id ?? null, linkTarget?.id ?? null].filter(
-            (id): id is string => id !== null
-        )
-    );
+    /** The label layer, whose measure() reads each drawn label's size from the page. */
+    let labels: { measure: () => void } | null = $state(null);
 
     /** The part of the graph the SVG shows under the pan and the zoom, where a label must fit. */
     const view = $derived(
@@ -187,39 +165,12 @@
               }
     );
 
-    /** Each label's box and the side of its node it is drawn on, by node id. */
-    const boxes = $derived(
-        new Map(
-            positions.map((node) => [
-                node.id,
-                labelBox(node, measured[node.id] ?? UNMEASURED, view)
-            ])
-        )
-    );
+    /** Each edge's line as it is drawn, which a label is kept off. */
+    const edgeLines = $derived(lines.map((line) => line.points));
 
-    /** The labels drawn, by node id. An unmeasured label has no width and so overlaps nothing. */
-    const shown = $derived(
-        shownLabels(
-            [...boxes.values()],
-            leading,
-            positions,
-            lines.map((line) => line.points)
-        )
-    );
-
-    /** The nodes in the order their labels are drawn: the leading labels last, so on top. */
-    const labelled = $derived([
-        ...positions.filter((node) => !leading.includes(node.id)),
-        ...positions.filter((node) => leading.includes(node.id))
-    ]);
-
-    /** Read every drawn label's box from the page, so the box follows the node as it moves. */
+    /** Have the label layer read every drawn label's size from the page. */
     function measure(): void {
-        const next: Record<string, LabelSize> = {};
-        for (const [id, text] of Object.entries(texts)) {
-            if (text?.isConnected === true) next[id] = labelSize(text);
-        }
-        measured = next;
+        labels?.measure();
     }
 
     $effect(() => {
@@ -407,23 +358,15 @@
                 onpress={nodeDown}
                 {onopen}
             />
-            <g class="labels">
-                {#each labelled as node (node.id)}
-                    {@const box = boxes.get(node.id)}
-                    <text
-                        class:line-label={node.kind === 'line'}
-                        class:hidden={!shown.has(node.id)}
-                        class:archived={node.archived !== undefined}
-                        data-label={node.id}
-                        bind:this={texts[node.id]}
-                        x={box?.side === 'left' ? box.right : (box?.left ?? node.x)}
-                        y={node.y + LABEL_DROP}
-                        text-anchor={box?.side === 'left' ? 'end' : 'start'}
-                    >
-                        {node.label}
-                    </text>
-                {/each}
-            </g>
+            <Labels
+                bind:this={labels}
+                nodes={positions}
+                lines={edgeLines}
+                {view}
+                {hovered}
+                {focused}
+                linking={[linkSource?.id ?? null, linkTarget?.id ?? null]}
+            />
         </g>
     </svg>
 </div>
@@ -492,25 +435,6 @@
     line.mutual {
         stroke: var(--map-mutual);
         stroke-width: 2.8;
-    }
-
-    text {
-        fill: var(--ink-txt, var(--ink));
-        font-size: var(--fs-xs);
-        pointer-events: none;
-    }
-
-    text.line-label {
-        font-size: var(--fs-sm);
-    }
-
-    /* An archived node's label is dimmed with its node, which it no longer sits inside. */
-    text.archived {
-        opacity: 0.6;
-    }
-
-    text.hidden {
-        visibility: hidden;
     }
 
     path {

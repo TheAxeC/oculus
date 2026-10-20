@@ -1,6 +1,6 @@
 // Layer 2, client state. An arrangement, which is a saved layout written by hand: the
-// `arrangements:` of config/layout.yml read into the workbench state/workbench/layout holds. It is
-// its own module because it is its own concern and a hand-written shape read once.
+// `arrangements:` of config/defaults/layout.yml read into the workbench state/workbench/layout
+// holds. It is its own module because it is its own concern and a hand-written shape read once.
 //
 // The shape of a node is read by the zod schemas below; what the workbench checks of a tree, the
 // sizes adding up among them, is checkWorkbench's. The `floats:` list beside the arrangements is
@@ -87,9 +87,9 @@ const arrangementNodeShape: z.ZodType<Layout> = z.discriminatedUnion('kind', [
 const arrangementShape = z.object({ root: arrangementNodeShape });
 
 /**
- * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
- * for every tab. It is the same tree as a saved envelope with the instances left out: the
- * arrangement carries `root`, and a node is `{ kind: split, dir, sizes, children }` or
+ * One arrangement of `arrangements:` in config/defaults/layout.yml as a workbench, with a fresh
+ * instance id for every tab. It is the same tree as a saved envelope with the instances left out:
+ * the arrangement carries `root`, and a node is `{ kind: split, dir, sizes, children }` or
  * `{ kind: pane, view }`, where `view` is one view id or a list of them, and a tab of the list may
  * be `{ view, state }`, `{ view, pinned: true }` or `{ view, state, pinned: true }`, a pinned tab
  * coming first in its pane. Anything the shape or checkWorkbench refuses is null, so a hand edit
@@ -122,10 +122,10 @@ const freeEntryShape = z
 const floatEntryShape = z.union([dockedEntryShape, freeEntryShape]);
 
 /**
- * The `floats:` list of config/layout.yml as floats before they have ids: each is `{ view, dock,
- * size }` or `{ view, x, y, w, h }`, `view` being one view id or a list of tabs as in an
- * arrangement's pane. An entry that does not read, holds no tab or does not fit the window is
- * dropped and the rest kept, and of two entries docked on one edge the first stays. Every tab
+ * The `floats:` list of config/defaults/layout.yml as floats before they have ids: each is
+ * `{ view, dock, size }` or `{ view, x, y, w, h }`, `view` being one view id or a list of tabs as
+ * in an arrangement's pane. An entry that does not read, holds no tab or does not fit the window
+ * is dropped and the rest kept, and of two entries docked on one edge the first stays. Every tab
  * gets a fresh instance id each time the list is read.
  */
 export function parseFloats(value: unknown): FloatSpec[] {

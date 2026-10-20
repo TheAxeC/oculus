@@ -1,40 +1,101 @@
 <script lang="ts">
-    // Layer 3, view partial. "Edit in <file>": the control that opens a config file in a source
-    // tab, at the line of the key when there is one. Settings that are lists, families and keys
-    // missing from the file are set there. The file is oculus's own, or the primary hub's settings
-    // file for a key of the hub list (`root` and `file` name it), and it is opened through the
-    // workspace folder that holds it; with no such folder the control says so instead.
+    // Layer 3, view partial. "Edit in <file>": the control that opens the file the user's value of
+    // a setting lives in, in a source tab at the line of the key. Settings whose value the Settings
+    // view cannot draw are set there. The file is the open workspace file, or the primary hub's
+    // settings file for a key of the hub list (the row's place), and it is opened through the
+    // workspace folder that holds it; with no such folder the control says so instead, and with the
+    // unsaved workspace it offers Save Workspace As... in its place.
+    //
+    // A key the file does not hold yet is first added holding a copy of the value in force (a write
+    // with `copy`, which adds the key even though the value does not change), and the file opens at
+    // the key's line once the config channel's push has brought the row's new line; a refusal of
+    // that write is said under the control and nothing opens.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { openTarget } from '$lib/state/system/config/config-files';
+    import { placeOf, type ConfigRow } from '$lib/state/system/config/rows';
     import { useState } from '$lib/state/client/use';
 
     const {
         fs: { workspaces },
-        layout: { openView }
+        layout: { openView },
+        ui: { requestPalette },
+        writes: { writeConfigKey, writeConfigValue }
     } = useState();
 
-    let { root, file, line }: { root: string; file: string; line?: number } = $props();
+    let { row }: { row: ConfigRow } = $props();
 
-    const target = $derived(openTarget(root, file, workspaces()));
+    /** The controls whose value is written whole, as a list or a family. */
+    const WHOLE = ['list', 'multi', 'parked', 'family'];
+
+    const place = $derived(placeOf(row));
+    const target = $derived(
+        place === null ? null : openTarget(place.root, place.file, workspaces())
+    );
+
+    /** Whether the copy of the key was written and the file waits for its line to open. */
+    let waiting = $state(false);
+
+    /** The reason the copy of the key was refused, or the empty string. */
+    let refused = $state('');
+
+    function open(line?: number): void {
+        if (target !== null) openView('source', sourceTabState(target.root, target.path, line));
+    }
+
+    async function edit(): Promise<void> {
+        if (row.own || row.value === undefined) {
+            open(row.line);
+            return;
+        }
+        refused = '';
+        const answer = WHOLE.includes(row.control)
+            ? await writeConfigValue(row.file, row.key, row.value, row.value, true)
+            : await writeConfigKey(row.file, row.key, row.value, true);
+        if (answer.ok) waiting = true;
+        else refused = answer.refused.map((one) => one.reason).join('; ') || (answer.error ?? '');
+    }
+
+    // The push of the config channel brings the line of the key the copy added.
+    $effect(() => {
+        if (!waiting || row.line === undefined) return;
+        waiting = false;
+        open(row.line);
+    });
 </script>
 
-{#if target !== null}
+{#if row.place.path === null}
     <ToolButton
-        label={t('workbench.settings_edit_in', file)}
+        label={t('settings.save_workspace')}
+        glyph="save"
+        title={t('settings.save_workspace_tip')}
+        onclick={() => requestPalette(':workspace-save ')}
+    />
+{:else if target !== null}
+    <ToolButton
+        label={t('workbench.settings_edit_in', row.place.path)}
         glyph="edit"
-        title={t('workbench.settings_edit_in_tip', file)}
-        onclick={() => openView('source', sourceTabState(target.root, target.path, line))}
+        title={t('workbench.settings_edit_in_tip', row.place.path)}
+        onclick={() => void edit()}
     />
 {:else}
-    <span class="unavailable">{t('workbench.settings_open_unavailable', file)}</span>
+    <span class="unavailable">{t('workbench.settings_open_unavailable', row.place.path)}</span>
+{/if}
+{#if refused !== ''}
+    <p class="refused" role="status">{t('workbench.settings_refused', refused)}</p>
 {/if}
 
 <style>
     .unavailable {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    .refused {
+        margin: 6px 0 0;
+        color: var(--c-red-txt);
+        font-size: var(--fs-md);
     }
 </style>

@@ -28,8 +28,8 @@ type Row = {
     same: boolean;
 };
 
-const CONFIG_FILE: FileName = { root: 'config', path: 'layout.yml' };
-const HUB_COPY: FileName = { root: 'hub', path: 'tools/oculus/config/layout.yml' };
+const CONFIG_FILE: FileName = { root: 'config', path: 'defaults/layout.yml' };
+const HUB_COPY: FileName = { root: 'hub', path: 'tools/oculus/config/defaults/layout.yml' };
 
 const rows: Row[] = [
     {

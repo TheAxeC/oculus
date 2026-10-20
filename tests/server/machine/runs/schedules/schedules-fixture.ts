@@ -1,13 +1,19 @@
 // Layer 4, test helper. A scratch folder for the schedule suites: the schedules file, the run
-// record and the saved commands file at scratch paths, a scratch repository holding one saved
-// command, the text of an entry that runs each of the three things a schedule runs, and the
-// watcher built over the real start with a recording tmux. Nothing here reads `local.yml`, the
-// machine's home folder or a real `claude`; the only paths are the ones the folder holds.
+// record and the approvals file at scratch paths, a scratch repository whose `.oculus/commands.yml`
+// holds one command with its chain approved, the text of an entry that runs each of the three
+// things a schedule runs, and the watcher built over the real start with a recording tmux. Nothing
+// here reads `local.yml`, the machine's home folder or a real `claude`; the only paths are the
+// ones the folder holds.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { expect } from 'vitest';
 import type { Hub } from '../../../../../src/lib/server/core/channels.ts';
 import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
+import {
+    approveTexts,
+    chainText
+} from '../../../../../src/lib/server/machine/approvals/approvals.ts';
 import { stopTerminal } from '../../../../../src/lib/server/machine/pty/sessions.ts';
 import type { SchedulesRouteOptions } from '../../../../../src/lib/server/machine/runs/schedules/routes.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
@@ -20,7 +26,7 @@ import { noop } from '../../../../fixtures/doubles.ts';
 import { scratchDir } from '../../../../fixtures/scratch.ts';
 import { TEXT } from '../../../text.ts';
 import { type tmux } from '../../../../routes/sessions/terminal-fixture.ts';
-import { plantRepo } from '../commands/commands-fixture.ts';
+import { commandsYml, plantRepo } from '../commands/commands-fixture.ts';
 
 /** The stand-in `claude` every run is started with: a path, never run. */
 export const CLAUDE = '/stub/claude';
@@ -28,17 +34,26 @@ export const CLAUDE = '/stub/claude';
 /** The three things a schedule runs. */
 export type Kind = 'task' | 'command' | 'prompt';
 
-/** A scratch folder's paths: the three files, the repository, and the hub folder. */
+/** The command `sync` of the world's repository, as its `.oculus/commands.yml` lists it. */
+export const SYNC = '  - name: sync\n    run: echo synced\n';
+
+/** A scratch folder's paths: the two files, the approvals, the repository and the hub folder. */
 export type World = {
-    files: { schedules: string; record: string; commands: string };
-    /** A repository under the scratch folder, a served root holding the saved command `sync`. */
+    files: { schedules: string; record: string };
+    /** The approvals file every command start is checked against. */
+    approvals: string;
+    /**
+     * A repository under the scratch folder, a served root whose `.oculus/commands.yml` holds the
+     * command `sync`, its chain approved.
+     */
     repo: string;
     /** The hub folder of every run, a folder of the scratch folder no other path of it lies in. */
     hub: string;
 };
 
 /**
- * The options the schedules route is called with over a world: its files, its root and the watcher.
+ * The options the schedules route is called with over a world: its files, its root, its approvals
+ * file and the watcher.
  */
 export function routeOptions(w: World, schedules: SchedulesWatcher): SchedulesRouteOptions {
     return {
@@ -46,31 +61,39 @@ export function routeOptions(w: World, schedules: SchedulesWatcher): SchedulesRo
         rootsFor: () => [w.repo],
         hubFor: () => w.hub,
         text: () => TEXT,
+        approvalsFor: () => w.approvals,
         writes: fsWrites(),
         schedules
     };
 }
 
+/** Write the repository's `.oculus/commands.yml` with the entries written as YAML lines. */
+export function plantCommands(w: World, entries: string): void {
+    mkdirSync(join(w.repo, '.oculus'), { recursive: true });
+    writeFileSync(join(w.repo, '.oculus', 'commands.yml'), commandsYml(entries));
+}
+
 /**
- * A scratch folder with its repository, its saved command, a hub holding the Lit Watch task file
- * and no schedules file.
+ * A scratch folder with its repository, the repository's command `sync` with its chain approved, a
+ * hub holding the Lit Watch task file and no schedules file.
  */
 export function world(): World {
     const dir = scratchDir('oculus-schedules-');
     const repo = plantRepo();
     const files = {
         schedules: join(dir, 'schedules.yml'),
-        record: join(dir, 'schedule.json'),
-        commands: join(dir, 'commands.json')
+        record: join(dir, 'schedule.json')
     };
-    writeFileSync(
-        files.commands,
-        JSON.stringify({ [repo]: [{ name: 'sync', run: 'echo synced' }] })
-    );
     const hub = join(dir, 'hub');
     mkdirSync(join(hub, '.oculus', 'tasks'), { recursive: true });
     writeFileSync(join(hub, '.oculus', 'tasks', 'litwatch.md'), '# Lit Watch\n');
-    return { files, repo, hub };
+    const w = { files, approvals: join(dir, 'approvals.json'), repo, hub };
+    plantCommands(w, SYNC);
+    const approved = approveTexts(w.approvals, [
+        chainText(repo, [{ folder: '.', run: 'echo synced' }])
+    ]);
+    expect(approved).toEqual({ ok: true });
+    return w;
 }
 
 /** The YAML of the entry `Weekly radar` that runs what `kind` says, on `when`. */
@@ -130,8 +153,7 @@ export function watcherOver(
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor,
-                commands: w.files.commands,
-                approvalsFor: () => join(w.files.commands, '..', 'approvals.json')
+                approvalsFor: () => w.approvals
             }),
         stop: (terminal) => stopTerminal(terminal, { run: driver.run }),
         table,

@@ -81,9 +81,10 @@ export function createArgumentList(input: ArgumentListInput): ArgumentList {
 
 /**
  * The choices of the four lists: the themes and file icon themes the acting apps add among them,
- * the theme this browser chose (which a preview does not change) and the file icon theme
- * config/appearance.yml names, the views, the hub's projects by id and short title, and the view
- * and the project of the tab on screen.
+ * the theme the option `theme` names (the Settings view's option, written into the workspace
+ * file's `settings:`, which a preview does not change) and the file icon theme the option
+ * `file_icons` names, the views, the hub's projects by id and short title, and the view and the
+ * project of the tab on screen.
  */
 export function argumentChoices(
     client: Pick<ClientState, 'appShell' | 'ui'>,
@@ -95,7 +96,7 @@ export function argumentChoices(
     const projects = Object.values(hub);
     return {
         themes: themes(offers).map((one) => ({ name: one.name, label: one.label })),
-        theme: client.ui.chosen().theme,
+        theme: client.ui.chosenTheme(),
         fileIcons: fileIconThemes(offers),
         fileIcon: client.appShell.fileIcons(),
         views,

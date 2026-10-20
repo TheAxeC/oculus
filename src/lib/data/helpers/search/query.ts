@@ -365,10 +365,10 @@ function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery {
 const searchCapShape = z.number().positive().transform(Math.floor);
 
 /**
- * The hit cap of config/behavior.yml's `search:` block, which the page reads off the configuration
- * the config channel carries. Zero until that push has landed; the server clamps a query's `max` to
- * its own cap when it arrives, so a query sent before then is answered at the configured cap rather
- * than at a number written here.
+ * The hit cap of config/defaults/behavior.yml's `search:` block, which the page reads off the
+ * configuration the config channel carries. Zero until that push has landed; the server clamps a
+ * query's `max` to its own cap when it arrives, so a query sent before then is answered at the
+ * configured cap rather than at a number written here.
  */
 export function searchCap(config: Record<string, unknown>): number {
     return searchCapShape.safeParse(fields(config.search).max_hits).data ?? 0;

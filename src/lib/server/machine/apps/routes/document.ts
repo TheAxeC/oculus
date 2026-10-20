@@ -88,7 +88,6 @@ export async function handleDocumentPost(
     if (bytes.length > options.limits().bytes) return refusal('too_large');
     const saved = saveBytes(
         options.roots(),
-        options.configDir,
         { root: body.data.root, path: body.data.path, bytes, base: body.data.base },
         options.history()
     );

@@ -191,10 +191,24 @@ export type RailWrite = {
 };
 
 /**
- * One option of a tracked config file set to a value: the file's name, the dotted key path and the
- * value, which the writer checks against the option's control.
+ * One option of a defaults file set to a value: the file's name, the dotted key path and the value,
+ * which the writer checks against the option's control. `copy` adds the key to the file it is
+ * written in even when the value is the one in force, which Edit in a file sends before it opens
+ * the file at the key.
  */
-export type ConfigKeyWrite = { kind: 'config-key'; file: string; key: string; value: unknown };
+export type ConfigKeyWrite = {
+    kind: 'config-key';
+    file: string;
+    key: string;
+    value: unknown;
+    copy?: true;
+};
+
+/**
+ * One option's value taken out of the file it was set in, so oculus's own value is in force again:
+ * the defaults file's name and the dotted key path.
+ */
+export type ConfigResetWrite = { kind: 'config-reset'; file: string; key: string };
 
 /**
  * One setting an app declares set to a value: the setting's whole key and the value, which the
@@ -203,9 +217,9 @@ export type ConfigKeyWrite = { kind: 'config-key'; file: string; key: string; va
 export type AppSettingWrite = { kind: 'app-setting'; key: string; value: unknown };
 
 /**
- * One list option or one family of a tracked config file set to a whole value: the file's name,
- * the dotted key path, the value, and the value the page read there (`base`), which the file must
- * still hold for the write to land.
+ * One list option or one family of a defaults file set to a whole value: the file's name, the
+ * dotted key path, the value, and the value the page read there (`base`), which must still be the
+ * value in force for the write to land. `copy` is as for a config-key write.
  */
 export type ConfigValueWrite = {
     kind: 'config-value';
@@ -213,6 +227,7 @@ export type ConfigValueWrite = {
     key: string;
     value: unknown;
     base: unknown;
+    copy?: true;
 };
 
 /** A string that is not empty, which is what every id, name and key of a body is. */
@@ -446,8 +461,15 @@ const configKeyShape = z.object({
     kind: z.literal('config-key'),
     file: wordShape,
     key: wordShape,
-    value: z.unknown()
+    value: z.unknown(),
+    copy: z.literal(true).optional()
 }) satisfies z.ZodType<ConfigKeyWrite>;
+
+const configResetShape = z.object({
+    kind: z.literal('config-reset'),
+    file: wordShape,
+    key: wordShape
+}) satisfies z.ZodType<ConfigResetWrite>;
 
 /** The `value` key must be there, whatever it holds; an absent one is not a write. */
 const appSettingShape = z.object({
@@ -462,7 +484,8 @@ const configValueShape = z.object({
     file: wordShape,
     key: wordShape,
     value: z.unknown(),
-    base: z.unknown()
+    base: z.unknown(),
+    copy: z.literal(true).optional()
 }) satisfies z.ZodType<ConfigValueWrite>;
 
 /** The body as a manifest write, or null when it is not one. */
@@ -617,6 +640,14 @@ export function rootsWrite(body: unknown): RootsWrite | null {
  */
 export function configKeyWrite(body: unknown): ConfigKeyWrite | null {
     return readAs(configKeyShape, body);
+}
+
+/**
+ * The body as a config-reset write, or null when it is not one: a file and a key that are non-empty
+ * strings. Whether they name an option is the writer's to say.
+ */
+export function configResetWrite(body: unknown): ConfigResetWrite | null {
+    return readAs(configResetShape, body);
 }
 
 /**

@@ -51,7 +51,7 @@ function world(keys: string, over: { approve?: boolean } = {}) {
             hub: HUB,
             one: TODO,
             two: { 'y.txt': 'y' },
-            oculus: { 'config/layout.yml': 'x: 1\n', 'README.md': 'readme' },
+            oculus: { 'config/defaults/layout.yml': 'x: 1\n', 'README.md': 'readme' },
             lab: { '.oculus/local.yml': 'port: 8801\n' }
         }
     });
@@ -76,8 +76,8 @@ function reachOf(fixture: ReturnType<typeof plant>, scanEntries: number) {
         closedPaths: ['secrets'],
         privateReal: closedToApps({
             home: join(fixture.base, 'home'),
-            config: join(fixture.base, 'roots', 'oculus', 'config'),
             local: localDefaults(),
+            perOculus: { bookmarks: null, schedules: null, appsDir: null },
             roots: [{ key: 'lab', dir: join(fixture.base, 'roots', 'lab'), hub: true }]
         }),
         fs: diskFs,
@@ -160,7 +160,7 @@ const ROWS: Row[] = [
             [
                 'the config folder of oculus, through the folder that holds it',
                 'files: [oculus]\n',
-                '.fs/oculus/config/layout.yml',
+                '.fs/oculus/config/defaults/layout.yml',
                 [403, 'closed']
             ],
             [

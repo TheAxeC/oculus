@@ -1,7 +1,7 @@
 // Layer 4, test. The Deposit tab of a workbench page, made from the shipped `workbench:` key of
-// config/layout.yml: present, after Repositories and set to its project, for a project with a
-// deposit; absent for a project with none and for a folder opened for no project; present again
-// when Reset layout remakes the page of a project that has one.
+// config/defaults/layout.yml: present, after Repositories and set to its project, for a project
+// with a deposit; absent for a project with none and for a folder opened for no project; present
+// again when Reset layout remakes the page of a project that has one.
 
 import { describe, expect, it } from 'vitest';
 import type { Project } from '../../../../src/lib/data/model/index.ts';

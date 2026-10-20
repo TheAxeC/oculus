@@ -6,7 +6,7 @@
 import type { watch } from 'node:fs';
 import type { ChangeLog } from '../../../core/changes.ts';
 import type { Root } from '../../../files/files.ts';
-import type { LatexBuilding } from '../../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../../data/sources/config/settings/latex.ts';
 import type { SchemaFeed } from '../schema-feed.ts';
 import type { Run } from '../adapters/pyright/interpreter.ts';
 import type { Spawn } from '../held/process.ts';

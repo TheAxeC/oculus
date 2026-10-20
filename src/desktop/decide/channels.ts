@@ -2,9 +2,6 @@
 // preload and the host. preload.cjs spells the same names: a sandboxed preload is one file and
 // cannot import this module, so the two lists are kept side by side and read together.
 
-/** A page sending to the host: the arrangement to save, answered at once. */
-export const SAVE_LAYOUT = 'oculus:save-layout';
-
 /** A page asking the host for something, nothing answered. */
 export const OPEN_FLOAT_WINDOW = 'oculus:open-float-window';
 export const CLOSE_SELF = 'oculus:close-self';

@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Inbox opens the Incoming page's group. The view's badge is how
     // many threads of the live plate are still waiting on an answer or an action, in red; its row
-    // of `counts` in config/layout.yml says where the count is drawn.
+    // of `counts` in config/defaults/layout.yml says where the count is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {

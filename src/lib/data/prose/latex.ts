@@ -17,10 +17,10 @@
 // would send the server into a file the text may not name.
 //
 // It also holds the words around a LaTeX file that both sides name: the programs latexmk builds
-// with, the formatters Format Document can run (`latex.formatter` of config/behavior.yml, as LaTeX
-// Workshop's `latex-workshop.formatting.latex` offers them), and the words the LaTeX endpoint and
-// the LaTeX terminal action refuse with beyond the file operations' own. A refusal is answered as
-// a word, never as a sentence, and the page says the sentence the catalog holds for it
+// with, the formatters Format Document can run (`latex.formatter` of config/defaults/behavior.yml,
+// as LaTeX Workshop's `latex-workshop.formatting.latex` offers them), and the words the LaTeX
+// endpoint and the LaTeX terminal action refuse with beyond the file operations' own. A refusal is
+// answered as a word, never as a sentence, and the page says the sentence the catalog holds for it
 // (state/shared/answers/answers.ts); a refusal these words do not name is one of the file
 // operations' words (data/file-ops.ts).
 

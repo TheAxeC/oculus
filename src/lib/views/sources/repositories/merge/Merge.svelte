@@ -30,12 +30,12 @@
     // and the choice goes with it: the conflict reads open again, as it did before; the Result
     // editor says whether an edit was its undo, its redo or typing. The Result offers Show
     // Suggestions and opens its suggest list with the description panel as a source tab's does:
-    // the reader's own choice, else `editor.suggest_details` of config/behavior.yml. The count of
-    // conflicts still open is the status at the end of the pane's bar; Complete Merge and Accept
-    // Deletion are icon actions on its header. Complete Merge writes the Result over the file and
-    // stages it, which is what tells git the conflict is resolved; with conflicts still open it
-    // asks first. Where a side deleted the file, the pane says which, Accept Deletion takes the
-    // deletion (the file leaves the index and the worktree) after a confirm, and Complete Merge
+    // the reader's own choice, else `editor.suggest_details` of config/defaults/behavior.yml. The
+    // count of conflicts still open is the status at the end of the pane's bar; Complete Merge and
+    // Accept Deletion are icon actions on its header. Complete Merge writes the Result over the
+    // file and stages it, which is what tells git the conflict is resolved; with conflicts still
+    // open it asks first. Where a side deleted the file, the pane says which, Accept Deletion takes
+    // the deletion (the file leaves the index and the worktree) after a confirm, and Complete Merge
     // over an empty Result does the same, since an empty Result is the deleted side.
     //
     // The three versions are read again whenever the repository's git state moves

@@ -20,6 +20,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import {
     CATALOGS,
+    DEFAULTS,
     LOCAL_NAME,
     SCHEMAS
 } from '../../../src/lib/state/system/config/config-files.ts';
@@ -82,13 +83,12 @@ const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 /**
  * Server interpolation takes the catalog before its key: `words` of server/core/words.ts, which
  * names the chat terminals and the LaTeX terminals and writes the chat instruction and the
- * transcript export. Every
- * `words(` call in a file under WORDS_DIR is read, whatever its first argument is spelled, and its
- * declaration is left out by the `function` rule CALL uses. Outside that folder a `words` is
- * another module's own helper (the data layer's `words(catalog)` in sources/config/merge.ts, the
- * state and present modules' `words` of a value) and is not a catalog read. A call whose key is not
- * a literal is held to COMPUTED_PREFIXES like every other reader, and none of those is a `words`
- * call.
+ * transcript export. Every `words(` call in a file under WORDS_DIR is read, whatever its first
+ * argument is spelled, and its declaration is left out by the `function` rule CALL uses. Outside
+ * that folder a `words` is another module's own helper (the data layer's `words(catalog)` in
+ * sources/config/merge/text.ts, the state and present modules' `words` of a value) and is not a
+ * catalog read. A call whose key is not a literal is held to COMPUTED_PREFIXES like every other
+ * reader, and none of those is a `words` call.
  */
 const WORDS = /(?<![\w$.])words\(/g;
 
@@ -244,15 +244,15 @@ const COMPUTED_PREFIXES = [
             ])
     },
     {
-        // One description per file of the engine's config folder and of its catalogs and schemas
-        // folders, keyed by the file's own name. The machine's own file is named whether or not
-        // this checkout holds one, since it is described for every machine and a clone that has
-        // not made one still reads the key. The hub's settings file has one of its own.
+        // One description per file of the engine's defaults, catalogs and schemas folders, keyed
+        // by the file's own name. The machine's own file is named whether or not this checkout
+        // holds one, since it is described for every machine and a clone that has not made one
+        // still reads the key. The hub's settings file has one of its own.
         file: 'lib/state/system/config/config-files.ts',
         start: 'lookup(descriptionKey(',
         keys: () => {
             const names = [
-                ...readdirSync(join(engineDir(), 'config')),
+                ...readdirSync(join(engineDir(), 'config', DEFAULTS)),
                 ...readdirSync(join(engineDir(), 'config', CATALOGS)),
                 ...readdirSync(join(engineDir(), 'config', SCHEMAS))
             ].filter((name) => name.endsWith('.yml'));

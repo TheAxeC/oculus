@@ -650,7 +650,7 @@ const ROWS: Row[] = [
         },
         {
             apps: [],
-            findings: [['/local.yml', 'apps_dir', words('apps_dir_not_folder', '/machine')]]
+            findings: [['/config.yml', 'apps_dir', words('apps_dir_not_folder', '/machine')]]
         }
     ]
 ];

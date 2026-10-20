@@ -3,7 +3,7 @@
 
 import { workspaceVocabs } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
-import { latexBuild } from '../../../src/lib/data/sources/config/settings.ts';
+import { latexBuild } from '../../../src/lib/data/sources/config/settings/latex.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/read/held.ts';
@@ -26,7 +26,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { idleDriver, noop } from '../../fixtures/doubles.ts';
-import { hubOption } from '../../../src/lib/server/files/workspace/paths.ts';
+import { configOptions } from '../../../src/lib/server/files/workspace/paths.ts';
 import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 import { hostsFixture } from '../machine/apps/world/hosts-fixture.ts';
 
@@ -160,7 +160,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             createConfigCache({
                 engine,
                 hub: () => workspace.open().primaryDir,
-                load: () => loadConfig(engine, hubOption(workspace.open().primaryDir)),
+                workspace: () => workspace.open().file,
+                load: () => loadConfig(engine, configOptions(workspace.open())),
                 loadHub: (dir) => loadConfig(engine, dir === null ? {} : { hub: dir }),
                 report: () => undefined,
                 primary: () => workspace.open().primary,

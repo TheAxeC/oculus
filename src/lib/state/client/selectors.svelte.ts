@@ -36,7 +36,7 @@ import {
     parseRepoSettings,
     type RepoSettings
 } from '../../data/sources/config/editor-options.ts';
-import { paintLimit, programApps } from '../../data/sources/config/settings.ts';
+import { paintLimit, programApps } from '../../data/sources/config/settings/files.ts';
 import { appDefaults } from '../../data/helpers/files/apps/tools/editor-defaults.ts';
 import { joinedFor } from '../../data/helpers/files/apps/tools/languages.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
@@ -236,15 +236,17 @@ export function createSelectors(
 
     /**
      * The size in bytes above which the source editor opens a file as plaintext, without colour,
-     * `editor.paint_limit_kb` of config/behavior.yml, and null until the config channel has spoken.
+     * `editor.paint_limit_kb` of config/defaults/behavior.yml, and null until the config channel
+     * has spoken.
      */
     function editorPaintLimit(): number | null {
         return paintLimit(configMap());
     }
 
     /**
-     * The editor's options out of the merged config (`editor:` of config/behavior.yml), each
-     * missing or bad value the catalog's default, and null until the config channel has spoken.
+     * The editor's options out of the merged config (`editor:` of config/defaults/behavior.yml),
+     * each missing or bad value the catalog's default, and null until the config channel has
+     * spoken.
      */
     const editorOptionsNow = $derived.by((): EditorOptions | null => {
         const options = editorOptions(configMap());
@@ -255,8 +257,8 @@ export function createSelectors(
 
     /**
      * Each extension a file may carry to be offered to its program, with the application it opens
-     * in: `open.program_ext` of config/behavior.yml, and nothing until the config channel has
-     * spoken.
+     * in: `open.program_ext` of config/defaults/behavior.yml, and nothing until the config channel
+     * has spoken.
      */
     function programAppsOf(): ProgramApps {
         return programApps(configMap());
@@ -268,10 +270,10 @@ export function createSelectors(
     }
 
     /**
-     * The map from a file name to its language, `languages` of config/sources.yml, and an empty
-     * map until the config channel has spoken, joined with the file rules of the languages the
-     * acting apps declare (`joinedFor`), so a tab and the server read one map. It is parsed once
-     * per config message and per apps message.
+     * The map from a file name to its language, `languages` of config/defaults/sources.yml, and an
+     * empty map until the config channel has spoken, joined with the file rules of the languages
+     * the acting apps declare (`joinedFor`), so a tab and the server read one map. It is parsed
+     * once per config message and per apps message.
      */
     const languageMapNow = $derived(
         joinedFor(languageMap(configMap()), entities.apps()?.rows ?? [])
@@ -301,8 +303,8 @@ export function createSelectors(
     }
 
     /**
-     * `stale_lag_days` under `focus:` of config/behavior.yml: how far behind its documents a
-     * manifest may be.
+     * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind its documents
+     * a manifest may be.
      */
     function staleLag(): number {
         return focusSetting(configMap(), 'stale_lag_days') ?? STALE_LAG;
@@ -482,7 +484,10 @@ export function createSelectors(
     // bare record. Every session of the payload is in the tree, so nothing is lost by reading it
     // there.
 
-    /** The context window a meter measures against, `context_window` in config/behavior.yml. */
+    /**
+     * The context window a meter measures against, `context_window` in
+     * config/defaults/behavior.yml.
+     */
     function contextWindow(): number {
         return readAs(contextWindowShape, configMap().context_window) ?? 0;
     }

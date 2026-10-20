@@ -8,7 +8,7 @@ text:
         toolbar: Memories controls
         add: add photo
         add_tip: Add a picture to the wall. JPEG and PNG.
-        empty: 'No pictures on the wall yet. Add one, or drop a JPEG or PNG into the memories folder of a hub (.oculus/memories unless sources.yml names another).'
+        empty: 'No pictures on the wall yet. Add one, or drop a JPEG or PNG into the memories folder of a hub (.oculus/memories unless the option memories_dir names another).'
         empty_glyph: circle_empty
         open: 'Enlarge {0} ({1})'
         tile: 'Memory {0} ({1})'

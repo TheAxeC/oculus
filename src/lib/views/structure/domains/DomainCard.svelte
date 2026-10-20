@@ -44,8 +44,22 @@
 </div>
 
 <style>
+    /* A dormant domain is faded as archival; while the pointer is over it or the keyboard focus is
+       inside it the fade lifts, so it is read at full strength. */
     .dormant {
         opacity: 0.62;
+        transition: opacity 120ms ease;
+    }
+
+    .dormant:hover,
+    .dormant:focus-within {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dormant {
+            transition: none;
+        }
     }
 
     p {

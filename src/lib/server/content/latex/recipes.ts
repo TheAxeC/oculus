@@ -1,7 +1,7 @@
 // Layer 2, server. What one LaTeX build runs: the recipe chosen for a main file, its tools with the
 // placeholders filled in, and the folders it writes to. The recipes and tools are `latex.recipes`
-// and `latex.tools` of config/behavior.yml as LaTeX Workshop's `latex.recipes` and `latex.tools`
-// read, so a build here is the one LaTeX Workshop would run.
+// and `latex.tools` of config/defaults/behavior.yml as LaTeX Workshop's `latex.recipes` and
+// `latex.tools` read, so a build here is the one LaTeX Workshop would run.
 //
 // The placeholders are LaTeX Workshop's: `%DOC%` is the main's absolute path without its extension,
 // `%DOC_EXT%` with it, `%DOCFILE%` and `%DOCFILE_EXT%` its file name without and with the
@@ -27,7 +27,7 @@ import type {
     LatexBuilding,
     LatexRecipe,
     LatexTool
-} from '../../../data/sources/config/settings.ts';
+} from '../../../data/sources/config/settings/latex.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import type { Folders } from '../latex.ts';
 import { magicComments } from './reader.ts';

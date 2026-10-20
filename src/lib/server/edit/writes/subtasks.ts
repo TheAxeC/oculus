@@ -165,7 +165,7 @@ export type CareerRules = { file: string; statuses: string[] };
 
 /**
  * The career file and the host statuses of the merged config. A `career_file` that is not text is
- * oculus's own path of config/sources.yml, and the statuses are the own keys of a
+ * oculus's own path of config/defaults/sources.yml, and the statuses are the own keys of a
  * `career_host_status` map in the order written, none for anything else.
  */
 const careerRulesShape = z

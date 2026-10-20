@@ -1,9 +1,9 @@
 <script module lang="ts">
     // Layer 3, view registration. One board component owns the five portfolio board registrations,
     // the Projects page's group. A board's tab counts its cards and each of its `groups` in
-    // `boards` of config/layout.yml, and its count, the count of its first group (the cards in
-    // work) in that group's tone, or its cards when it has no groups, goes to the rail where the
-    // board's row of `counts` says `rail: true`.
+    // `boards` of config/defaults/layout.yml, and its count, the count of its first group (the
+    // cards in work) in that group's tone, or its cards when it has no groups, goes to the rail
+    // where the board's row of `counts` says `rail: true`.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const boardRegistration = (id: string, order: number): ViewRegistration => ({

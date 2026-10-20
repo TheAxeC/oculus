@@ -31,7 +31,7 @@ function problemSentence(word: ScheduleWord, names: readonly string[]): string {
         case 'command-missing':
             return catalogText('app.schedules.problem_command_missing', first, second);
         case 'commands-unread':
-            return catalogText('app.schedules.problem_commands_unread');
+            return catalogText('app.schedules.problem_commands_unread', first);
         case 'folder-empty':
             return catalogText('app.schedules.problem_folder_empty');
         case 'folder-wrong':
@@ -57,7 +57,11 @@ function problemSentence(word: ScheduleWord, names: readonly string[]): string {
         case 'unattended-command':
             return catalogText('app.schedules.problem_unattended_command');
         case 'needs-approval':
-            return catalogText('app.schedules.problem_needs_approval', first);
+            return catalogText('app.schedules.problem_chain_unapproved', first);
+        case 'approval-unwritten':
+            return catalogText('app.schedules.problem_approval_unwritten');
+        case 'chain-changed':
+            return catalogText('app.schedules.problem_chain_changed', first);
         case 'no-primary':
             return catalogText('app.schedules.problem_no_primary');
         case 'record-locked':

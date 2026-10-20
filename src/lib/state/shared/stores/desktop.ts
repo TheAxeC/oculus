@@ -30,12 +30,6 @@ type DropHere = TabDrop & { request: number };
 /** What the spell checker says of one word. */
 type Spelling = { misspelled: boolean; suggestions: string[] };
 
-/**
- * The host's answer to a save of the arrangement: taken, or refused with the envelope it holds, or
- * refused with none (`held` null) when the host did not answer the call.
- */
-export type SaveAnswer = { admitted: true } | { admitted: false; held: string | null };
-
 export { READY_WAIT_MS } from '../../../data/file-ops.ts';
 
 /**
@@ -81,8 +75,6 @@ export type DesktopBridge = {
     dropOutside: (drop: TabDrop) => Promise<boolean>;
     /** Tell the host whether this window took the tab it was handed, under its request number. */
     answerDrop: (request: number, taken: boolean) => void;
-    /** Save the arrangement `next` under `key`, made from the arrangement `from`. */
-    saveLayout: (key: string, next: string, from: string | null) => SaveAnswer;
     /** Show the find bar over the window. */
     showFind: () => void;
     /** Run a find of the window's page, or step it. */

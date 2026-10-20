@@ -12,7 +12,7 @@ import {
     chainText,
     defaultApprovalsPath
 } from '../../../../../src/lib/server/machine/approvals/approvals.ts';
-import { resolveChain } from '../../../../../src/lib/server/machine/runs/commands/resolve.ts';
+import { resolveChain } from '../../../../../src/lib/data/helpers/run/chain.ts';
 import type { CommandSource } from '../../../../../src/lib/data/model/index.ts';
 import { listCommands } from '../../../../../src/lib/server/machine/runs/commands/list.ts';
 import {

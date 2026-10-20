@@ -30,6 +30,7 @@ import type { InboxStore } from '../../feeds/inbox.svelte.ts';
 import type { LatexActions } from '../../sessions/latex/actions.ts';
 import type { LatexStore } from '../../sessions/latex/latex.svelte.ts';
 import type { Desktop } from '../../shared/stores/desktop.ts';
+import type { PageStateStore } from '../../shared/stores/page-state.svelte.ts';
 import type { Windows } from '../../workbench/layout/open/float/browser.ts';
 import type { LayoutStore } from '../../workbench/layout.svelte.ts';
 import type { LinesStore } from '../../system/lines.svelte.ts';
@@ -98,6 +99,8 @@ export type ClientState = {
     latexReader: LatexReader;
     entities: EntitiesStore;
     writes: WritesStore;
+    /** The arrangements, view states and debugger's record the server keeps for the page. */
+    pageState: PageStateStore;
     socket: SocketStore;
     ui: UiStore;
     layout: LayoutStore;

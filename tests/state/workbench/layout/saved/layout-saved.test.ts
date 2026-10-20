@@ -3,7 +3,7 @@
 // and a Files or LaTeX tab keeps the state it was saved with, in a workbench page and in a kept
 // layout.
 //
-// Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
+// Nothing here touches the page state or the DOM: every case reads a hand-built envelope.
 
 import { describe, expect, it } from 'vitest';
 import {

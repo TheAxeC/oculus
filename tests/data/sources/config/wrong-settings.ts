@@ -1,6 +1,6 @@
-// Layer 4, test helper. A wrong value for every setting of config/behavior.yml the readers read by
-// the options catalog's rule, as a hand edit would leave them, laid over the shipped merged map by
-// the tests of the setting readers and of their findings.
+// Layer 4, test helper. A wrong value for every setting of config/defaults/behavior.yml the
+// readers read by the options catalog's rule, as a hand edit would leave them, laid over the
+// shipped merged map by the tests of the setting readers and of their findings.
 
 /** The blocks and keys outside the editor's block, each holding a value its entry refuses. */
 export const WRONG_SETTINGS: Record<string, unknown> = {

@@ -6,13 +6,14 @@
 // deck made in a folder) names none, since no tab can hold unsaved text of a file not yet written,
 // and neither does a write whose file the page cannot name from what the write carries: the session
 // overrides, the open workspace's folders and the git, open and deposit endpoints. A file of the
-// primary hub is named under the primary's folder name, and a file of oculus's own config folder
-// under the workspace folder that holds it, so a workspace with no primary names no hub file and a
-// workspace with no folder over oculus's config names no config file.
+// primary hub is named under the primary's folder name, so a workspace with no primary names no hub
+// file. A Settings write lands where the server places it (server/edit/writes/config/
+// config-place.ts): a key of the hub list in the primary hub's settings file, any other option, the
+// rail and the audit's mute list in the open workspace file, which is named under the workspace
+// folder of its hub, so the unsaved workspace and a workspace file outside every folder name none.
 
 import { fields } from '../../../data/helpers/guards.ts';
-import { joinPath } from '../../../data/helpers/files/paths.ts';
-import { MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, MANIFEST, ROOT_FOLDER, hubFileOf } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
@@ -21,8 +22,8 @@ import { viewSourceFile, type ViewSource } from '../view-source.ts';
 export type FileLookups = {
     /** The folder name of the open workspace's primary hub, or null when it names none. */
     primary: () => string | null;
-    /** The workspace folder that holds oculus's config folder and the path to it, or null. */
-    engine: () => { root: string; path: string } | null;
+    /** The open workspace file under the workspace folder that holds it, or null. */
+    workspaceFile: () => ViewSource | null;
     /**
      * The manifest file of a project by its id, under the root that holds it (its hub, or its
      * workspace folder); null when none has it.
@@ -64,7 +65,7 @@ export function manifestOfProject(
  */
 export const NO_LOOKUPS: Readonly<FileLookups> = Object.freeze({
     primary: () => null,
-    engine: () => null,
+    workspaceFile: () => null,
     projectManifest: () => null,
     collectionFile: () => null,
     feeds: () => null,
@@ -83,12 +84,13 @@ function inHub(path: string, look: FileLookups): ViewSource | null {
     return path === '' || primary === null ? null : { root: primary, path };
 }
 
-/** A file of oculus's config folder, or null for an empty name and when no folder holds it. */
-function inConfig(path: string, look: FileLookups): ViewSource | null {
-    const place = look.engine();
-    return path === '' || place === null
-        ? null
-        : { root: place.root, path: joinPath(place.path, path) };
+/**
+ * The file a Settings write of the option `key` of the defaults file `file` lands in: the primary
+ * hub's settings file for a key of the hub list, the open workspace file for any other.
+ */
+function settingsFile(file: string, key: string, look: FileLookups): ViewSource | null {
+    if (file === '' || key === '') return null;
+    return hubFileOf(key) === file ? inHub(HUB_FILE, look) : look.workspaceFile();
 }
 
 /** The file a feed's entries live in, by the feed's name. */
@@ -206,13 +208,14 @@ export function writtenFile(
                 ? { root: text(body.root), path: text(body.path) }
                 : null;
         case 'rail':
-            return inConfig('layout.yml', look);
+        case 'audit-mute':
+            return look.workspaceFile();
         case 'config-key':
         case 'config-value':
-            return inConfig(text(body.file), look);
-        case 'audit-mute':
+        case 'config-reset':
+            return settingsFile(text(body.file), text(body.key), look);
         case 'app-setting':
-            return inConfig('behavior.yml', look);
+            return inHub(HUB_FILE, look);
         case 'undo':
             return look.changeFile(text(body.at));
         default:

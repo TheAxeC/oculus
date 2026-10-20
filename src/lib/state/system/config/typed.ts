@@ -78,8 +78,8 @@ export function withTypedText(
 
 /**
  * Whether a state holds work no write has taken: an unsent field text or a list or family draft
- * (editors/slots.ts). The tab asked is a Settings tab, which state/client/context.ts checks before
- * asking.
+ * (editors/slots.ts). The tab asked is a Settings tab, which `settingsUnsaved` of
+ * state/workbench/navigation/rail.ts checks before asking.
  */
 export function settingsTyped(state: unknown): boolean {
     return typedList(state).length > 0 || draftsHeld(state) > 0;

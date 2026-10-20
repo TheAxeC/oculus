@@ -25,8 +25,9 @@ import { BOOKMARKS, ensureBookmarksFile } from './bookmarks.ts';
  * The file one collection key names, or null when sources.yml does not name it inside the hub.
  *
  * `own` is the reader's own bookmarks file, which is a collection edited by the same writers while
- * living in the hub's `.oculus` folder (or where local.yml puts it). It is resolved before the
- * hub's own list so that a hub file keyed `bookmarks` could never take the reader's own one over.
+ * living in the hub's `.oculus` folder (or where `bookmarks` of the hub's config.yml puts it). It
+ * is resolved before the hub's own list so that a hub file keyed `bookmarks` could never take the
+ * reader's own one over.
  */
 export function collectionFile(
     hub: string,

@@ -1,4 +1,4 @@
-// Layer 1, data. The languages the apps add joined to the map of `config/sources.yml`: the
+// Layer 1, data. The languages the apps add joined to the map of `config/defaults/sources.yml`: the
 // server's `onLanguage:` events and the page's tabs read the same join, so they cannot disagree
 // about the language of a file. The order is the user's `languages:` first, then oculus's own
 // (both are the merged configuration's map), then the apps' in the Views list's order. A language

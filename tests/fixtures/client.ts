@@ -19,10 +19,9 @@ import GroupContexts from '../ui/menu/GroupContexts.svelte';
 
 export { createClientState, type ClientState };
 
-/** A fresh client whose ui store is loaded from an empty storage and whose page holds no tab. */
+/** A fresh client whose page state holds nothing and whose page holds no tab. */
 export function emptyClient(): ClientState {
     const client = createClientState();
-    client.ui.loadUi({ getItem: () => null, setItem: () => undefined });
     client.layout.apply({ root: { kind: 'pane', tabs: [], active: '' } });
     return client;
 }

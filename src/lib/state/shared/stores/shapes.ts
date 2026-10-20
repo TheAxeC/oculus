@@ -32,6 +32,7 @@ import type {
     SchedulePayload,
     SessionsPayload,
     Snapshot,
+    StatePayload,
     UsagePayload
 } from '../../../data/model/index.ts';
 
@@ -51,6 +52,7 @@ export type Payloads = {
     usage: UsagePayload;
     audit: AuditPayload;
     files: FilesPayload;
+    state: StatePayload;
     apps: AppsPayload;
     debug: DebugPayload;
     'debug-console': DebugConsoleAppend;
@@ -345,19 +347,31 @@ export type WritesStore = {
         rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[],
         said?: boolean
     ) => Promise<WriteAnswer>;
-    /** Set one option of a tracked config file, by its file name and dotted key path. */
-    writeConfigKey: (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
+    /**
+     * Set one option of a defaults file, by the file's name and the dotted key path, in the file
+     * the user's value of it lives in; `copy` adds the key even when the value is the one in force.
+     */
+    writeConfigKey: (
+        file: string,
+        key: string,
+        value: unknown,
+        copy?: boolean
+    ) => Promise<WriteAnswer>;
     /** Set one setting an app declares, by its whole key. */
     writeAppSetting: (key: string, value: unknown) => Promise<WriteAnswer>;
     /**
-     * Set one list option or family of a tracked config file whole, if the file still holds `base`.
+     * Set one list option or family of a defaults file whole, if `base` is still the value in
+     * force.
      */
     writeConfigValue: (
         file: string,
         key: string,
         value: unknown,
-        base: unknown
+        base: unknown,
+        copy?: boolean
     ) => Promise<WriteAnswer>;
+    /** Take one option out of the file the user's value of it lives in, back to oculus's value. */
+    resetConfig: (file: string, key: string) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: {

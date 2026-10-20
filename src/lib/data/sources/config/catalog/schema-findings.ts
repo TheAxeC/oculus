@@ -11,7 +11,8 @@ import type { Finding } from '../../../model/index.ts';
 import { problemText } from '../../../snapshot/schema/record.ts';
 import { schemaFileProblems } from '../../../snapshot/schema/static.ts';
 import { configDir } from '../folder.ts';
-import { SCHEMAS_DIR, textCatalog } from '../merge.ts';
+import { SCHEMAS_DIR } from '../merge/merge.ts';
+import { textCatalog } from '../merge/text.ts';
 
 /** One finding for each field of a schema file whose `from`, `when` or `map` is wrong. */
 export function schemaFindings(engine: string, config: Record<string, unknown>): Finding[] {

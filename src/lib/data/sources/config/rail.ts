@@ -1,6 +1,6 @@
-// Layer 1, data. The rule over the `rail:` list of config/layout.yml: which entries are rail pages
-// and what is wrong with the ones that are not, and the one reading of a list as rows of five
-// strings. Pure, over parsed YAML, and read by every caller: the page drawing the rail, the
+// Layer 1, data. The rule over the `rail:` list of config/defaults/layout.yml: which entries are
+// rail pages and what is wrong with the ones that are not, and the one reading of a list as rows of
+// five strings. Pure, over parsed YAML, and read by every caller: the page drawing the rail, the
 // Settings view listing the rows and checking them before it sends them, and the server refusing a
 // write, recording and undoing one, and reporting a hand edit as a finding. Each checks glyphs
 // against the same names, glyphNames below, so an entry the finding says is not drawn is not
@@ -174,26 +174,33 @@ function groupOf(
 }
 
 /**
- * The rail list's problems as findings of config/layout.yml, one per entry the rail leaves out and
- * one for a `rail:` that is not a list. Each is reported and never repaired: a hand edit that
- * breaks an entry shows up in the Findings view rather than as a button that is not there.
+ * The rail list's problems as findings, one per entry the rail leaves out and one for a `rail:`
+ * that is not a list, each naming the file `fileOf` gives for its key (the open workspace file when
+ * its `settings:` sets the rail, else config/defaults/layout.yml). Each is reported and never
+ * repaired: a hand edit that breaks an entry shows up in the Findings view rather than as a button
+ * that is not there.
  */
 export function railFindings(
     config: Record<string, unknown>,
-    file: string,
+    fileOf: (key: string) => string,
     catalog: TextCatalog
 ): Finding[] {
     const raw = config.rail;
     if (raw === undefined) return [];
     if (readAs(itemsShape, raw) === null) {
-        return [{ file, key: 'rail', message: findingText(catalog, 'findings.rail.not_a_list') }];
+        return [
+            {
+                file: fileOf('rail'),
+                key: 'rail',
+                message: findingText(catalog, 'findings.rail.not_a_list')
+            }
+        ];
     }
     const read = readRail(raw, arrangementKeys(config.arrangements), glyphNames(config));
-    return read.problems.map((problem) => ({
-        file,
-        key: `rail[${problem.index}]`,
-        message: whyText(catalog, problem)
-    }));
+    return read.problems.map((problem) => {
+        const key = `rail[${problem.index}]`;
+        return { file: fileOf(key), key, message: whyText(catalog, problem) };
+    });
 }
 
 /** The finding sentence for one reason an entry is left out, naming the page it gave. */

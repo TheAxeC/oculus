@@ -1,14 +1,17 @@
-// Layer 1, data. The options catalog, config/catalogs/options.yml: every option of every config
-// file described once, and the walk that says which key paths of a config file are options.
+// Layer 1, data. The options catalog, the files of config/options/: every option of every config
+// file described once, the help line of each group of dotted options, and the walk that says which
+// key paths of a config file are options.
 //
-// The catalog's one top-level key, `options:`, rides in the merged config beside the other
-// catalogs' keys. It maps a config file's name (`behavior.yml`, and `local.yml` for the machine's
-// own keys) to a map of dotted key path to an entry: what the option does, its `default` (the value
-// the Settings view's Reset writes and its Modified filter compares with, and, for a setting
-// settings.ts reads, the value used when the key is missing or wrong), the heading and section the
-// Settings view lists it under, and the control it is set with. It is there for an editor of the
-// settings and a write of one key to look an option up, so a key path has one meaning wherever it
-// is used.
+// loadConfig reads the folder into two keys of the merged config. `options` maps a config file's
+// name (`behavior.yml`, and `local.yml` for the machine's own keys) to a map of dotted key path to
+// an entry: what the option does, its `default` (the value config/defaults/ holds at the path,
+// which the Settings view's Modified filter compares with and, for a setting the readers of
+// settings/ read, the value used when the key is missing or wrong), the heading and section the
+// Settings view lists it under, the control it is set with, and for a list of records the field
+// (`key`) a workspace file's `settings:` overrides one row by. `option_groups` maps the same name
+// to the help line of each group (`slurm` of `slurm.poll_min`), which the editor's schema puts on
+// the group's map. It is there for an editor of the settings and a write of one key to look an
+// option up, so a key path has one meaning wherever it is used.
 //
 // An option is a leaf of a config file: a scalar, a null, or a list. The walk descends into every
 // map and never into a list, so a list is set as a whole. It stops at a family, a list of records
@@ -101,13 +104,15 @@ export type FieldSpec = {
 };
 
 /**
- * One option, or one family. A leaf option carries `default`, the value the Settings view's Reset
- * writes and its Modified filter compares with and, for a setting settings.ts reads, the value used
- * when the key is missing or wrong, and a `control`; a family carries `fields` and no control. A
- * `local.yml` key has a help line, and a `control` only where it takes a number or a choice. A
- * key/value family (fields `key` and `value`) may carry `holds: lists`, meaning each key of the map
- * holds a list of values; the reader refuses it on any other entry, and a family without it takes
- * no list at a key.
+ * One option, or one family. An option of a defaults file carries `default`, the value
+ * config/defaults/ holds at its path, which the Settings view's Modified filter compares with and,
+ * for a setting the readers of settings/ read, the value used when the key is missing or wrong. A
+ * leaf option carries a `control`; a family carries `fields` and no control, and a family that is a
+ * list of records may carry `key`, the field a workspace file's `settings:` tells its rows apart
+ * by. A `local.yml` key has a help line, and a `control` only where it takes a number or a choice.
+ * A key/value family (fields `key` and `value`) may carry `holds: lists`, meaning each key of the
+ * map holds a list of values; the reader refuses it on any other entry, and a family without it
+ * takes no list at a key.
  * `heading` is the subject the option is listed under (`unheaded` when it names none a HEADINGS
  * word is), and `section` the group inside that heading, the first segment of the key path when
  * absent.
@@ -118,6 +123,7 @@ export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     heading?: Heading | typeof UNHEADED;
     section?: string;
     holds?: 'lists';
+    key?: string;
 };
 
 /** The sources a field's `from` lists, offered together; none when it picks by another field. */
@@ -156,14 +162,28 @@ export type OptionProblem = {
         | 'slots'
         | 'holds'
         | 'heading_missing'
-        | 'heading_unknown';
+        | 'heading_unknown'
+        | 'key'
+        | 'groups'
+        | 'group_missing'
+        | 'group_unknown';
     file: string;
+    /** The entry's key path, or for a group problem the group's (`groups` itself for `groups`). */
     path: string;
     /** The dotted path of the field inside the entry, null for the entry itself. */
     field: string | null;
-    /** The word the problem is about: the control, the source, the form or the heading. */
+    /** The word the problem is about: the control, the source, the form, the heading or the key. */
     word: string;
 };
+
+/** Whether a problem is about a line of the file's `groups:` rather than an entry. */
+export function groupProblem(problem: OptionProblem): boolean {
+    return (
+        problem.kind === 'groups' ||
+        problem.kind === 'group_missing' ||
+        problem.kind === 'group_unknown'
+    );
+}
 
 /** Where in the catalog a spec is read from. */
 type Spot = { file: string; path: string; field: string | null };
@@ -197,10 +217,10 @@ function valuesByOf(value: unknown, flag: (word: string) => void): ValuesBy | un
 
 /**
  * One entry or field read into its typed form. `top` is an entry of the file's map (it may carry a
- * heading, a section, a default and `holds`), `local` an entry of `local.yml` (a control only where
- * it takes a number or a choice, no heading). Everything wrong is pushed to `problems`; a problem
- * with the control reads the control as `text`, one with the heading puts the entry under
- * `unheaded`.
+ * heading, a section, a default, `holds` and `key`), `local` an entry of `local.yml` (a control
+ * only where it takes a number or a choice, no heading). Everything wrong is pushed to `problems`;
+ * a problem with the control reads the control as `text`, one with the heading puts the entry under
+ * `unheaded`, and one with the key leaves the entry without it.
  */
 function readSpec(
     raw: unknown,
@@ -214,7 +234,11 @@ function readSpec(
     const wrong = { any: false };
     const flag = (kind: OptionProblem['kind'], word = ''): void => {
         problems.push({ ...spot, kind, word });
-        if (kind !== 'heading_missing' && kind !== 'heading_unknown') wrong.any = true;
+        // A heading or a key read wrong costs the entry its place or its row-by-row override, and
+        // leaves its control as it is.
+        if (kind !== 'heading_missing' && kind !== 'heading_unknown' && kind !== 'key') {
+            wrong.any = true;
+        }
     };
     const entry: CatalogEntry = { help: '' };
     const help = str(map.help);
@@ -296,6 +320,13 @@ function readSpec(
         if (Object.hasOwn(map, 'default')) entry.default = map.default;
         const section = str(map.section);
         if (section !== undefined) entry.section = section;
+        // A record list's key names one of its fields; any other word leaves the list replaced
+        // whole by a workspace file.
+        if (Object.hasOwn(map, 'key')) {
+            const key = map.key;
+            if (typeof key === 'string' && Object.hasOwn(entry.fields ?? {}, key)) entry.key = key;
+            else flag('key', typeof key === 'string' ? key : JSON.stringify(key));
+        }
         // Only a key/value family takes `holds: lists`: a map of lists of records is no shape.
         if (map.holds === 'lists') {
             const names = Object.keys(entry.fields ?? {});
@@ -314,13 +345,65 @@ function readSpec(
     return entry;
 }
 
-/** The catalog read into its typed form, with everything wrong in it. */
-export type ReadCatalog = { catalog: Catalog; problems: OptionProblem[] };
+/** Config file name, then group path, then the group's help line. */
+export type Groups = Record<string, Record<string, string>>;
 
-/** Every entry of the merged config's `options` key, read as readSpec says. */
+/**
+ * The catalog read into its typed form, the help lines of the groups that have one, and everything
+ * wrong with either.
+ */
+export type ReadCatalog = { catalog: Catalog; groups: Groups; problems: OptionProblem[] };
+
+/** Every group of a file's options: each proper prefix of a dotted key path, in the order met. */
+function groupPaths(paths: readonly string[]): string[] {
+    const groups = new Set<string>();
+    for (const path of paths) {
+        const steps = path.split('.');
+        for (let at = 1; at < steps.length; at += 1) groups.add(steps.slice(0, at).join('.'));
+    }
+    return [...groups];
+}
+
+/**
+ * The help lines of one file's groups, read against its option paths. A group with no line or an
+ * empty one, a line whose path is no group (no option lies under it, or it is an option itself),
+ * and a `groups:` that is no map are problems; a line that is no text counts as no line, and with
+ * no `groups:` at all every group is a problem of its own.
+ */
+function readGroups(
+    file: string,
+    paths: readonly string[],
+    raw: unknown,
+    problems: OptionProblem[]
+): Record<string, string> {
+    const spot = { file, field: null, word: '' };
+    if (raw !== undefined && !isMap(raw)) {
+        problems.push({ ...spot, kind: 'groups', path: 'groups' });
+        return {};
+    }
+    const lines = raw ?? {};
+    const groups = groupPaths(paths);
+    const read: Record<string, string> = {};
+    for (const group of groups) {
+        const line = byKey(lines, group);
+        if (typeof line === 'string' && line.trim() !== '') read[group] = line;
+        else problems.push({ ...spot, kind: 'group_missing', path: group });
+    }
+    for (const path of Object.keys(lines)) {
+        if (!groups.includes(path)) problems.push({ ...spot, kind: 'group_unknown', path });
+    }
+    return read;
+}
+
+/**
+ * Every entry of the merged config's `options` key, read as readSpec says, and every file's group
+ * help lines of `option_groups`, read as readGroups says.
+ */
 export function readCatalog(config: Record<string, unknown>): ReadCatalog {
     const catalog: Catalog = {};
+    const groups: Groups = {};
     const problems: OptionProblem[] = [];
+    const lines = readOr(mapShape, config.option_groups, {});
     for (const [file, entries] of Object.entries(readOr(mapShape, config.options, {}))) {
         if (!isMap(entries)) continue;
         const read: Record<string, CatalogEntry> = {};
@@ -334,8 +417,9 @@ export function readCatalog(config: Record<string, unknown>): ReadCatalog {
             );
         }
         catalog[file] = read;
+        groups[file] = readGroups(file, Object.keys(entries), byKey(lines, file), problems);
     }
-    return { catalog, problems };
+    return { catalog, groups, problems };
 }
 
 /**

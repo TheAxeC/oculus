@@ -1,9 +1,10 @@
-// Layer 1, data. What is wrong with the `focus:` block of config/behavior.yml, as findings of that
-// file: a block that is no map, a value its options-catalog entry refuses (a horizon that is no
-// number, a list of statuses that is no list of words), and a row of `focus.ticker_sources` that
-// the Command Center cannot read. The page reads the block itself (state/boards/ticker.ts,
-// focus.ts, focus-lanes.ts) and passes over what it cannot read, so each finding says the value,
-// the row or the field is not read. They are worded from the merged catalog, as iconFindings' are.
+// Layer 1, data. What is wrong with the `focus:` block of the merged config, as findings of the
+// file each value was read from: a block that is no map, a value its options-catalog entry refuses
+// (a horizon that is no number, a list of statuses that is no list of words), and a row of
+// `focus.ticker_sources` that the Command Center cannot read. The page reads the block itself
+// (state/boards/ticker.ts, focus.ts, focus-lanes.ts) and passes over what it cannot read, so each
+// finding says the value, the row or the field is not read. They are worded from the merged
+// catalog, as iconFindings' are.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { focusBlock, isMap } from '../../../helpers/guards.ts';
@@ -45,20 +46,26 @@ function fieldProblem(name: string, spec: CatalogEntry, value: unknown): Worded 
  * list of rows that is no list, for each row of it that is no map or lacks a needed field (the
  * Command Center reads no such row), and for each other field of a row that is wrong (the row is
  * read without it). A block that is no map is one finding, and a key the block does not hold gives
- * none.
+ * none. Each finding names the file `fileOf` gives for the option it is about.
  */
 export function focusFindings(
     config: Record<string, unknown>,
-    file: string,
+    fileOf: (key: string) => string,
     catalog: TextCatalog
 ): Finding[] {
     if (config[FOCUS] === undefined) return [];
     if (!isMap(config[FOCUS])) {
-        return [{ file, key: FOCUS, message: findingText(catalog, 'findings.config.focus_block') }];
+        return [
+            {
+                file: fileOf(FOCUS),
+                key: FOCUS,
+                message: findingText(catalog, 'findings.config.focus_block')
+            }
+        ];
     }
     const block = focusBlock(config);
     const value = (key: string, spec: CatalogEntry, problem: Worded): Finding => ({
-        file,
+        file: fileOf(key),
         key,
         message: findingText(
             catalog,
@@ -67,8 +74,8 @@ export function focusFindings(
             mustBe(catalog, spec, problem)
         )
     });
-    const row = (key: string, spec: CatalogEntry, problem: Worded): Finding => ({
-        file,
+    const row = (key: string, spec: CatalogEntry, problem: Worded, option: string): Finding => ({
+        file: fileOf(option),
         key,
         message: findingText(
             catalog,
@@ -77,8 +84,8 @@ export function focusFindings(
             mustBe(catalog, spec, problem)
         )
     });
-    const field = (key: string, spec: CatalogEntry, problem: Worded): Finding => ({
-        file,
+    const field = (key: string, spec: CatalogEntry, problem: Worded, option: string): Finding => ({
+        file: fileOf(option),
         key,
         message: findingText(
             catalog,
@@ -105,14 +112,14 @@ export function focusFindings(
         held.forEach((one: unknown, index) => {
             const at = `${key}[${String(index)}]`;
             if (!isMap(one)) {
-                found.push(row(at, { ...spec, control: 'records' }, { kind: 'records' }));
+                found.push(row(at, { ...spec, control: 'records' }, { kind: 'records' }, key));
                 return;
             }
             for (const [name, spec] of Object.entries(entries[key].fields ?? {})) {
                 const problem = fieldProblem(name, spec, one[name]);
                 if (problem === null) continue;
                 const say = ROW_NEEDS.includes(name) ? row : field;
-                found.push(say(`${at}.${name}`, spec, problem));
+                found.push(say(`${at}.${name}`, spec, problem, key));
                 if (ROW_NEEDS.includes(name)) break;
             }
         });

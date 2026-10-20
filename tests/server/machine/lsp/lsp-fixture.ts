@@ -25,7 +25,7 @@ import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts
 import {
     latexBuild,
     type LatexBuilding
-} from '../../../../src/lib/data/sources/config/settings.ts';
+} from '../../../../src/lib/data/sources/config/settings/latex.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { scratchDir } from '../../../fixtures/scratch.ts';
 

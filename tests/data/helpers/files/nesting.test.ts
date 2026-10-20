@@ -4,7 +4,8 @@
 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, nestingFindings } from '../../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
+import { nestingFindings } from '../../../../src/lib/data/sources/config/catalog/nesting.ts';
 
 describe('the findings', () => {
     const ENGINE = engineDir();

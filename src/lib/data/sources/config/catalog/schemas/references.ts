@@ -1,9 +1,9 @@
 // Layer 1, data. The options catalog as the places that name a hub key, for the reference index
 // (data/snapshot/references/): an option or a field of an options family whose `from` names a list
 // of the hub (`domains`, `clusters`) or a vocabulary list the catalog reads from vocab.yml
-// (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is written. A file
-// of oculus's own configuration that has such an option is read as a record of those places; a
-// file with none is not read.
+// (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is written. A
+// defaults file of oculus (config/defaults/) that has such an option is read as a record of those
+// places; a file with none is not read.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -11,6 +11,8 @@
 
 import { VOCAB_SOURCE, recordOf } from '../../../../snapshot/references/specs.ts';
 import type { FieldNode, OptionFile } from '../../../../snapshot/references/model.ts';
+import { DEFAULTS_DIR } from '../../folder.ts';
+import { LOCAL_NAME } from '../../local.ts';
 import type { Catalog, CatalogEntry, FieldSpec } from '../options.ts';
 import { isPairs, withoutKey } from './options.ts';
 
@@ -110,12 +112,16 @@ function optionsRecord(entries: Record<string, CatalogEntry>): FieldNode | null 
     return recordOf(held);
 }
 
-/** The files of the options catalog that name a hub key, each with the node that reads it. */
+/**
+ * The defaults files whose options name a hub key, each by its path under config/ with the node
+ * that reads it. A hub's local.yml has no defaults file, so its options name no file here.
+ */
 export function optionFiles(catalog: Catalog): OptionFile[] {
     const files: OptionFile[] = [];
-    for (const [path, entries] of Object.entries(catalog)) {
+    for (const [name, entries] of Object.entries(catalog)) {
+        if (name === LOCAL_NAME) continue;
         const spec = optionsRecord(entries);
-        if (spec !== null) files.push({ path, spec });
+        if (spec !== null) files.push({ path: `${DEFAULTS_DIR}/${name}`, spec });
     }
     return files;
 }

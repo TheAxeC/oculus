@@ -1,7 +1,10 @@
-// Layer 1, data. The JSON Schema of one config file of oculus (its `config/*.yml`), made
-// from its section of the options catalog: each entry's control says what its key may hold, the
-// entry's `help` is the key's description, and a family describes the records of a list or the
-// values of a map once.
+// Layer 1, data. The JSON Schema of one defaults file of oculus (its `config/defaults/*.yml`), made
+// from its options file (`config/options/*.yml`): each entry's control says what its key may hold,
+// the entry's `help` is the key's description, a group of dotted options takes its help line from
+// the file's `groups:`, and a family describes the records of a list or the values of a map once.
+// The same schema, with every option of every defaults file, describes a workspace file's
+// `settings:`, where a keyed list also takes a row `{ <key>: x, removed: true }` and a map family
+// a key set to null (merge/keyed.ts).
 //
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
 // marks what the Settings view refuses: a toggle holds a flag, a number its range, a choice the
@@ -20,7 +23,18 @@ export type OptionLists = {
     merged: Record<string, unknown>;
     /** The items of a source, or null when the build does not hold them. */
     items: (source: Source) => string[] | null;
+    /**
+     * True for the schema of a workspace file's `settings:`, whose keyed lists and map families
+     * take the rows and keys that take oculus's entries out.
+     */
+    overrides?: boolean;
 };
+
+/** The description of the field that takes oculus's entry of a keyed list out. */
+const REMOVED_HELP = "true takes oculus's entry with this row's key out of the list.";
+
+/** The description of a key of a map family set to null. */
+const NULL_HELP = "null takes oculus's entry of this key out of the map.";
 
 /**
  * The families whose records hold a value the options catalog cannot describe, a layout tree, and
@@ -206,12 +220,31 @@ function fieldSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
     return described(controlSchema(spec, lists), spec.help);
 }
 
+/**
+ * A family's schema as a workspace file's `settings:` takes it: a row of a keyed list may hold
+ * `removed: true`, and a key of a map family may hold null.
+ */
+function withOverrides(schema: JsonSchema, entry: CatalogEntry): void {
+    const fields = entry.fields ?? {};
+    const rows = schema.items as { properties?: Record<string, JsonSchema> } | undefined;
+    if (entry.key !== undefined && rows?.properties !== undefined) {
+        rows.properties.removed = { const: true, description: REMOVED_HELP };
+    }
+    const member: unknown = schema.additionalProperties;
+    if ('key' in fields && typeof member === 'object' && member !== null) {
+        schema.additionalProperties = {
+            anyOf: [member as JsonSchema, { type: 'null', description: NULL_HELP }]
+        };
+    }
+}
+
 /** The schema of one option or family of a config file. */
 function entrySchema(path: string, entry: CatalogEntry, lists: OptionLists): JsonSchema {
     const schema =
         entry.fields === undefined
             ? controlSchema({ ...entry, control: entry.control ?? 'text' }, lists)
             : familySchema(entry, lists, OWN_READER.includes(path));
+    if (lists.overrides === true && entry.fields !== undefined) withOverrides(schema, entry);
     if (Object.hasOwn(entry, 'default')) schema.default = entry.default;
     return described(schema, entry.help);
 }
@@ -220,25 +253,26 @@ function entrySchema(path: string, entry: CatalogEntry, lists: OptionLists): Jso
 type Branch = { properties: Record<string, JsonSchema> };
 
 /**
- * The schema of a config file from its section of the options catalog, with the top-level keys of
- * `extra` after the catalog's own.
+ * The schema of a config file from its options, each group of dotted options described by its
+ * help line in `groups` (group path to line), with the top-level keys of `extra` after the
+ * options' own.
  */
 export function optionsSchema(
     entries: Record<string, CatalogEntry>,
     lists: OptionLists,
-    extra: Record<string, JsonSchema> = {}
+    extra: Record<string, JsonSchema> = {},
+    groups: Record<string, string> = {}
 ): JsonSchema {
     const root: JsonSchema = { type: 'object', properties: {}, additionalProperties: false };
     for (const [path, entry] of Object.entries(entries)) {
         const names = path.split('.');
         let at: Branch = root as Branch;
-        for (const name of names.slice(0, -1)) {
+        for (const [step, name] of names.slice(0, -1).entries()) {
             if (!Object.hasOwn(at.properties, name)) {
-                at.properties[name] = {
-                    type: 'object',
-                    properties: {},
-                    additionalProperties: false
-                };
+                at.properties[name] = described(
+                    { type: 'object', properties: {}, additionalProperties: false },
+                    groups[names.slice(0, step + 1).join('.')] ?? ''
+                );
             }
             at = at.properties[name] as Branch;
         }
@@ -249,15 +283,20 @@ export function optionsSchema(
 }
 
 /**
- * The schema of the `app_settings:` map of config/behavior.yml: a value for each whole key of a
- * setting an app declares, a flag, a number, a text or a list of texts. Which keys exist and what
- * each takes depends on the apps that are installed, which the file's schema does not know, so the
- * apps watcher judges each value against its declaration.
+ * The schema of the `app_settings:` map of a hub's settings file and of
+ * config/defaults/behavior.yml: a value for each whole key of a setting an app declares, a flag, a
+ * number, a text or a list of texts. Which keys exist and what each takes depends on the apps that
+ * are installed, which the file's schema does not know, so the apps watcher judges each value
+ * against its declaration.
  */
 export function appSettingsSchema(): JsonSchema {
     return {
         type: 'object',
+        description:
+            "The values of the settings the installed apps declare, by each setting's whole key (`notes.width` is one key). The Settings view writes them, and each value is checked against the app's declaration.",
         additionalProperties: {
+            description:
+                'The value of one app setting: a flag, a number, a text or a list of texts, as the app declares it.',
             anyOf: [
                 { type: 'boolean' },
                 { type: 'number' },

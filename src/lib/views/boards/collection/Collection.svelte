@@ -38,10 +38,10 @@
     // entry, the pinned ones first. The title of a card opens the entry's page, the `entry` view's
     // tab, where the entry is edited and deleted.
     //
-    // It is registered once per collection key of config/sources.yml and reads which collection it
-    // is from the id of the instance it was mounted as, exactly as Projects.svelte reads which
-    // board it is. Nothing here knows what an event or a scheme is: the fields a card draws and
-    // their order come from the file's own `schema:`, through the pure functions of
+    // It is registered once per collection key of config/defaults/sources.yml and reads which
+    // collection it is from the id of the instance it was mounted as, exactly as Projects.svelte
+    // reads which board it is. Nothing here knows what an event or a scheme is: the fields a card
+    // draws and their order come from the file's own `schema:`, through the pure functions of
     // state/boards/collection.ts.
     //
     // The funding collection carries one thing of its own, its file joined to the projects rather
@@ -61,7 +61,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
+    import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import FieldFilters from './FieldFilters.svelte';

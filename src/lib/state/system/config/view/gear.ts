@@ -1,39 +1,18 @@
-// Layer 2, client state. What the gear of a Settings item offers. Reset Setting writes the default
-// back: it is offered on a Modified single value, on a Modified list, multi or parked list (whose
-// default is the shipped list), and on a Modified "This browser" value, whose reset makes the
-// browser forget its own. A family has no default and no Reset. Copy Setting ID is offered on a row
-// of a config file and on a setting an app declares, which alone have a key to copy. A setting an
-// app declares is reset by writing its default.
+// Layer 2, client state. What the gear of a Settings item offers. Reset Setting takes the user's
+// value of an option out of the file it lives in (the open workspace file, or the primary hub's
+// settings file for a key of the hub list), so the defaults file's value is in force again: it is
+// offered on every row whose file holds the key, a list or a family as much as a single value.
+// Copy Setting ID is offered on a row of a defaults file and on a setting an app declares, which
+// alone have a key to copy. A setting an app declares is reset by writing its default.
 
 import type { Row } from '../groups.ts';
 
 /** One entry of the gear. */
 export type GearEntry = 'reset' | 'copy';
 
-/** The controls whose rows hold one value with a default. */
-const SINGLE = [
-    'toggle',
-    'number',
-    'text',
-    'long',
-    'choice',
-    'glyph',
-    'hue',
-    'colour',
-    'folder',
-    'file',
-    'path'
-];
-
-/** The controls whose rows hold a list with a default, which the editors' write resets. */
-const LISTED = ['list', 'multi', 'parked'];
-
 /** The entries of a row's gear, in the order they are drawn; none draws no gear. */
 export function gearEntries(row: Row): GearEntry[] {
-    if (row.kind === 'browser') return row.modified ? ['reset'] : [];
     if (row.kind === 'app') return row.modified ? ['reset', 'copy'] : ['copy'];
     if (row.kind !== 'config') return [];
-    const resettable =
-        row.state === 'set' && (SINGLE.includes(row.control) || LISTED.includes(row.control));
-    return row.modified && resettable ? ['reset', 'copy'] : ['copy'];
+    return row.own ? ['reset', 'copy'] : ['copy'];
 }

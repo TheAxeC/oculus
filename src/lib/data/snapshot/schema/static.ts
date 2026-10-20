@@ -11,10 +11,10 @@ import type { PortfolioConfig, RegistryName, SchemaField } from '../../model/ind
 import { fieldsOf } from './field.ts';
 import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
-import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
+import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files/vocab.ts';
 import { vocabSource } from '../../shapes/vocab-keys.ts';
 import { REGISTRIES, VOCAB_PREFIX } from './lists.ts';
-import { manifestSchema } from './manifest.ts';
+import { manifestGroupProblems, manifestSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
 import type { NamedSchema } from './set.ts';
 
@@ -38,8 +38,9 @@ export const SCHEMA_FILES = [
 
 /**
  * What is wrong with the schema files themselves: a `from` that names no registry, `projects` or
- * vocab list, and a `when` that names a field its record does not declare. Which keys a source
- * holds on disk does not matter here, so the check needs the merged configuration alone.
+ * vocab list, a `when` that names a field its record does not declare, and in the manifest schema
+ * file a map of dotted fields with no help line in `groups:` or a line for no such map. Which keys
+ * a source holds on disk does not matter here, so the check needs the merged configuration alone.
  */
 export function schemaFileProblems(
     merged: Record<string, unknown>
@@ -53,8 +54,10 @@ export function schemaFileProblems(
     return SCHEMA_FILES.map(({ key, file }) => {
         const problems: SchemaProblem[] = [];
         const ctx: Context = { lists, problems, at: '' };
-        if (key === 'manifest_schema') manifestSchema(merged[key], ctx);
-        else sections(merged[key], lists, problems);
+        if (key === 'manifest_schema') {
+            manifestSchema(merged[key], ctx);
+            problems.push(...manifestGroupProblems(merged[key], merged.groups));
+        } else sections(merged[key], lists, problems);
         return { file, problems };
     });
 }

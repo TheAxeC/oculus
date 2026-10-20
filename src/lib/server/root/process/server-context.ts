@@ -74,7 +74,8 @@ export type ServerContext = {
     usageRefresh: UsageRefreshWatcher;
     /**
      * The schedule watcher, each call handed to the one in force, so a route reaches the watcher
-     * built again after a change of local.yml's `schedules` or `schedule_record`.
+     * built again after a change of the hub config.yml's `schedules` or local.yml's
+     * `schedule_record`.
      */
     schedules: SchedulesWatcher;
     /** The apps found in the machine's folder and in the roots, and the keeping of an app. */

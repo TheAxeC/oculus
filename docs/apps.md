@@ -88,7 +88,7 @@ The write changes the project's `project.yml`, and History undoes it. Take `subt
 
 ## Where the files go
 
-- A machine app: `<hub>/.oculus/apps/<name>/` (or the folder `apps_dir` of `local.yml` names). A root app: `<folder>/.oculus/apps/<name>/`.
+- A machine app: `<hub>/.oculus/apps/<name>/` (or the folder `apps_dir` of the primary hub's `.oculus/config.yml` names). A root app: `<folder>/.oculus/apps/<name>/`.
 - The folder name matches `^[a-z][a-z0-9-]{0,39}$` and holds `app.yml`. Subfolders are fine. Names starting with a dot, and links, are not part of the app.
 - At most 500 files and 20 MB (`max_files`, `max_mb`).
 - The app's store is one file outside its folder: `~/.oculus/app-data/<name>.json` for a machine app, `<folder>/.oculus/app-data/<name>.json` for a root app.
@@ -756,7 +756,7 @@ Reasons:
 
 ## Limits
 
-The `apps:` block of `config/behavior.yml`, each a row of Settings.
+The `apps:` block of `config/defaults/behavior.yml`, each a row of Settings, which writes a changed value into the open workspace file's `settings:`.
 
 | Key | Default | What it limits |
 |-----|---------|----------------|
@@ -785,7 +785,7 @@ The `apps:` block of `config/behavior.yml`, each a row of Settings.
 - Serve a file type other than `.html`, `.js`, `.mjs`, `.css`, `.json`, `.svg`, `.png`, `.jpg`, `.gif`, `.webp`, `.woff`, `.woff2`, `.ttf`, `.otf`, `.txt` and `.wasm`.
 - Reach another app's terminals, source controls or debug sessions.
 - Replace oculus's own debugger, languages or grammars, or bind a key oculus takes.
-- Read or write `~/.oculus`, a hub's `secrets` folder, any `local.yml`, oculus's `config/` folder, or the state files `local.yml` places elsewhere.
+- Read or write `~/.oculus`, a hub's `secrets` folder, any `local.yml`, oculus's `config/` folder, or the state files `local.yml` or the hub's `config.yml` (`bookmarks`, `schedules`, `apps_dir`) places elsewhere.
 - Edit your bookmarks.
 
 Your approval of the files and of `connects` is the boundary against an app sending what it read elsewhere. An address passed to `open({ url })` can carry data too, which is why the question shows the whole address.

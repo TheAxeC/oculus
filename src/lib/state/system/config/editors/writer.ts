@@ -1,10 +1,11 @@
 // Layer 2, client state. The write sequence of the list and family editors of one view. A Save
-// sends one `config-value` with the whole value and the row's value as its base; the file then
-// answers, and the watcher pushes the file's new text, which the view hands to `pushed`. An answer
-// that the file holds the value sent ends the draft and marks the row saved, which the editor says
-// until the row is edited or sent again, as the rail list's Save says it; the editor shows the
-// value sent (`shown`) until the push brings it. A refusal or a failure keeps the draft and says
-// why.
+// sends one `config-value` with the whole value and the row's value in force as its base, and a
+// Reset one `config-reset`, which takes the user's value out of its file so the default is in
+// force; the server then answers, and the config channel pushes the new value in force, which the
+// view hands to `pushed`. An answer that the value sent is in force ends the draft and marks the
+// row saved, which the editor says until the row is edited or sent again, as the rail list's Save
+// says it; the editor shows the value sent (`shown`, the default for a Reset) until the push brings
+// it. A refusal or a failure keeps the draft and says why.
 //
 // While a write is out the editor shows the draft and a second Save waits. A push that lands before
 // the answer carrying the value sent ends the draft and marks the row saved as the answer does. A
@@ -21,7 +22,7 @@ import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import { message, type Message } from '../messages.ts';
 import type { ConfigRow } from '../rows.ts';
-import { answered } from '../write.ts';
+import { answered, type ResetConfig } from '../write.ts';
 import { draftValue, type Draft } from './draft.ts';
 import type { Lists } from './sources.ts';
 import { drawsEditor } from './slots.ts';
@@ -35,10 +36,11 @@ export type WriteConfigValue = (
 ) => Promise<WriteAnswer>;
 
 /**
- * What the view gives the sequence: a redraw, the end of a row's draft, whether one is held and the
- * lists the controls draw from.
+ * What the view gives the sequence: the reset, a redraw, the end of a row's draft, whether one is
+ * held and the lists the controls draw from.
  */
 export type EditorHooks = {
+    reset: ResetConfig;
     changed: () => void;
     ended: (row: ConfigRow) => void;
     held: (row: ConfigRow) => boolean;
@@ -49,7 +51,7 @@ export type EditorHooks = {
 export type EditorWriter = {
     /** Send the draft of a row, unless it is equal to the file, does not read back or is out. */
     save: (row: ConfigRow, draft: Draft) => Promise<void>;
-    /** Write the catalog default of a Modified list, multi or parked list. */
+    /** Take the user's value of a list, multi, parked list or family out of its file. */
     reset: (row: ConfigRow) => Promise<void>;
     /** The row as the file holds it now: ends the draft the file has taken, overtaken or left. */
     pushed: (row: ConfigRow) => void;
@@ -85,7 +87,8 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     /** Whether the sequence was closed, read afresh after every wait. */
     const stopped = (): boolean => closed;
 
-    async function send(row: ConfigRow, value: unknown): Promise<void> {
+    /** Send a whole value, or with `resetting` the reset, whose value in force is the default. */
+    async function send(row: ConfigRow, value: unknown, resetting = false): Promise<void> {
         if (closed || out.has(row.id)) return;
         turns += 1;
         const turn = turns;
@@ -94,7 +97,9 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         saying.delete(row.id);
         taken.delete(row.id);
         hooks.changed();
-        const answer = await write(row.file, row.key, value, row.value);
+        const answer = resetting
+            ? await hooks.reset(row.file, row.key)
+            : await write(row.file, row.key, value, row.value);
         if (stopped() || out.get(row.id)?.turn !== turn) return;
         const said = answered(answer, row);
         if (said !== null) {
@@ -119,9 +124,9 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     }
 
     async function reset(row: ConfigRow): Promise<void> {
-        const collection = ['list', 'multi', 'parked'].includes(row.control);
-        if (!collection || row.state !== 'set' || !row.modified) return;
-        return send(row, row.default);
+        const collection = ['list', 'multi', 'parked', 'family'].includes(row.control);
+        if (!collection || !row.own) return;
+        return send(row, row.default, true);
     }
 
     function pushed(row: ConfigRow): void {

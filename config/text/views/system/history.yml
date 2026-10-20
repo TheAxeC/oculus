@@ -63,6 +63,7 @@ text:
         kind_app_setting: app setting
         kind_config_key: setting
         kind_config_value: list or family
+        kind_config_reset: setting reset
         kind_files: file operation
         kind_roots: workspace folder
         kind_app_store: app store

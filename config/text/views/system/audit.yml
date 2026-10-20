@@ -27,7 +27,7 @@ text:
         unmute_glyph: refresh
         unmute_tip: Show this finding with the open ones again.
         failed_invalid: The mute was not saved. The signature or the configuration file was not one the write could take.
-        failed_file: 'config/behavior.yml could not be read or written on this machine.'
+        failed_file: 'The open workspace file could not be read or written on this machine.'
         failed_network: The mute did not reach the server.
         failed_other: The mute was not saved.
         open_findings: Findings

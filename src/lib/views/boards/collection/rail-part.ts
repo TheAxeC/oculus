@@ -1,8 +1,8 @@
 // Layer 3, view registration of Collection.svelte, its count. What a collection counts:
 // Applications its open applications in green, by its own rule, and every other collection the
-// entries whose status is one of the `match` of its `counts` row in config/layout.yml, in the tone
-// its tab has. Whether its tabs draw the count and whether the rail sums it is that row's `tab`
-// and `rail`.
+// entries whose status is one of the `match` of its `counts` row in config/defaults/layout.yml, in
+// the tone its tab has. Whether its tabs draw the count and whether the rail sums it is that row's
+// `tab` and `rail`.
 
 import type { Registration } from '$lib/state/workbench/navigation/registry';
 

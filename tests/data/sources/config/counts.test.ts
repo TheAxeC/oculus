@@ -1,6 +1,6 @@
-// Layer 1, data tests. The `counts` map of config/layout.yml as the config check reads it: the
-// shipped map gives no finding, and each row the brief names as wrong gives one finding naming the
-// row or the field. Findings are compared whole, in order.
+// Layer 1, data tests. The `counts` map of config/defaults/layout.yml as the config check reads it:
+// the shipped map gives no finding, and each row the brief names as wrong gives one finding naming
+// the row or the field. Findings are compared whole, in order.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';

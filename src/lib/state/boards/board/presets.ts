@@ -1,7 +1,7 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
 // configuration changes independently of items, filters and statistics. What each board is (its
 // tier, its list columns, its search words, its label mode and its groups of cards) is its row of
-// `boards` in config/layout.yml; this module holds no table of boards.
+// `boards` in config/defaults/layout.yml; this module holds no table of boards.
 
 import { z } from 'zod';
 import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -34,7 +34,7 @@ export type BoardPreset = {
     id: string;
     /** The tiers whose projects the board shows: the one its row names, or none. */
     tiers: string[];
-    /** The list mode's columns in order, with the words config/layout.yml gives them. */
+    /** The list mode's columns in order, with the words config/defaults/layout.yml gives them. */
     columns: BoardColumn[];
     /** The groups of cards of this board, in the config's order. */
     rollup: RollupBucket[];
@@ -48,7 +48,8 @@ export type BoardPreset = {
     /** The label mode the board starts in, from its row's `label_mode`. */
     labels: LabelMode;
     /**
-     * The search box's placeholder from config/layout.yml, or the empty string when it has none.
+     * The search box's placeholder from config/defaults/layout.yml, or the empty string when it has
+     * none.
      */
     search: string;
 };
@@ -175,8 +176,8 @@ export type VenueCount = {
     name: string;
     count: number;
     /**
-     * True from `venue_conc_warn` under `focus:` of config/behavior.yml up: too much of the board
-     * on one venue.
+     * True from `venue_conc_warn` under `focus:` of config/defaults/behavior.yml up: too much of
+     * the board on one venue.
      */
     warn: boolean;
 };
@@ -189,7 +190,10 @@ export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
     hiddenTypes?: string[];
-    /** `stale_lag_days` under `focus:` of config/behavior.yml: how far behind counts as behind. */
+    /**
+     * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind counts as
+     * behind.
+     */
     staleLag?: number;
 };
 
@@ -224,7 +228,7 @@ export const CODE_VALUES = ['deposited', 'review-anon', 'none', NONE];
 export const REPRODUCED_VALUES = ['1', '0'];
 
 /**
- * A number under `focus:` of the merged config (config/behavior.yml), and the fallback
+ * A number under `focus:` of the merged config (config/defaults/behavior.yml), and the fallback
  * behavior.yml's own comment names for one that is absent or no finite number.
  */
 export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
@@ -292,8 +296,8 @@ const columnShape = z
 const columnsShape = rowsShape(columnShape) satisfies z.ZodType<BoardColumn[]>;
 
 /**
- * The boards of `boards` of config/layout.yml, each id with its row, in the file's order. A row
- * that is not a map is no board.
+ * The boards of `boards` of config/defaults/layout.yml, each id with its row, in the file's order.
+ * A row that is not a map is no board.
  */
 function boardRows(config: Record<string, unknown>): [string, Record<string, unknown>][] {
     return Object.entries(fields(config.boards)).flatMap(([id, row]) =>

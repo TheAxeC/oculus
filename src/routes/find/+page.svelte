@@ -3,9 +3,9 @@
     // window's top right as a view of its own, since the browser's find counts the text of a box in
     // the page it searches and a bar in the window's document would be counted as a match of the
     // query it holds. It draws the query box, the count `{0} of {1}`, previous, next, match case
-    // and close, from the primitives and the catalog's words, in the window's theme, and holds no
-    // client state, socket or rail: the app runs the find (`find`, `stopFind`, `closeFind` of the
-    // bridge) on the window's page and tells this page the count (`on('found', ...)`).
+    // and close, from the primitives and the catalog's words, in the theme the config names, and
+    // holds no client state, socket or rail: the app runs the find (`find`, `stopFind`, `closeFind`
+    // of the bridge) on the window's page and tells this page the count (`on('found', ...)`).
     //
     // Enter finds the next match and Shift+Enter the previous one, Escape closes the bar, which
     // gives the keyboard back to the window's page.
@@ -13,10 +13,9 @@
     import { onMount } from 'svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { savedTheme } from '$lib/state/shared/words/appearance';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { drawSavedTheme } from '$lib/ui/theme/app-theme';
+    import { drawConfiguredTheme } from '$lib/ui/theme/app-theme';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
 
     provideTipIds(createTipIds());
@@ -57,8 +56,7 @@
     }
 
     onMount(() => {
-        const theme = savedTheme(localStorage.getItem('oculus.ui.v1'));
-        void drawSavedTheme(document, theme);
+        void drawConfiguredTheme(document, true);
         input?.focus();
         const stop = [
             bridge?.on('found', (count) => {

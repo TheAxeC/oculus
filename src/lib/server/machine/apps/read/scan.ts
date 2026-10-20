@@ -42,14 +42,15 @@ import { readStore, ROOT_DATA, storeFile } from '../store/store.ts';
 /** What a read needs of the install around the folders. */
 export type ScanInput = {
     /**
-     * The machine's apps folder with the primary hub's `.oculus/local.yml`, the file `apps_dir` is
-     * written in, which the finding for a machine folder that is no folder names; null when there
-     * is no folder to read, as in a workspace with no primary.
+     * The machine's apps folder with the file its `apps_dir` was read from (the primary hub's
+     * `.oculus/config.yml`, else oculus's config/defaults/sources.yml), which the finding for a
+     * machine folder that is no folder names; null when there is no folder to read, as in a
+     * workspace with no primary and a relative `apps_dir`.
      */
-    machine: { dir: string; localFile: string } | null;
+    machine: { dir: string; settingsFile: string } | null;
     /**
-     * Oculus's own `config/appearance.yml`, which the findings about `file_icons` name:
-     * `file_icons` is not a key of the hub list, so the primary hub's settings file never holds it.
+     * The file `file_icons` was read from, which the findings about it name: the open workspace
+     * file when its `settings:` sets it, else oculus's config/defaults/appearance.yml.
      */
     appearanceFile: string;
     /** The folders of the open workspace, in its order. */
@@ -78,7 +79,7 @@ export type ScanInput = {
     privateFolders: readonly string[];
     /**
      * The file the `app_settings:` values were read from, which a finding about them names: the
-     * primary hub's `.oculus/config.yml`, else oculus's own `config/behavior.yml`.
+     * primary hub's `.oculus/config.yml`, else oculus's own config/defaults/behavior.yml.
      */
     settingsFile: string;
 };
@@ -280,7 +281,7 @@ export function scanApps(input: ScanInput): AppsHeld {
                 'findings.apps.apps_dir_not_folder',
                 input.machine.dir
             );
-            note('apps_dir', input.machine.localFile, message);
+            note('apps_dir', input.machine.settingsFile, message);
         }
     }
 

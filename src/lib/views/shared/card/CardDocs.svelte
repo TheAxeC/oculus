@@ -4,10 +4,10 @@
     //
     // A file row is one of three things, decided by its name. A name READABLE matches (a Markdown
     // file, a script, a LaTeX source) opens in the document view. A name whose extension
-    // `open.program_ext` of config/behavior.yml names an application for (a `.docx`, an `.xlsx`) is
-    // `shared/links/ProgramButton.svelte`, which hands the file to that application, since a link
-    // to it would only download it; a refused or failed open is said through the card's own message
-    // line. Every other file is a link the browser opens or downloads.
+    // `open.program_ext` of config/defaults/behavior.yml names an application for (a `.docx`, an
+    // `.xlsx`) is `shared/links/ProgramButton.svelte`, which hands the file to that application,
+    // since a link to it would only download it; a refused or failed open is said through the
+    // card's own message line. Every other file is a link the browser opens or downloads.
     //
     // The files of the project are the Files view's tree rooted at the project's folder
     // (shared/explorer/ProjectTree.svelte), under a finder box. While the box holds text the

@@ -1,14 +1,15 @@
 // Layer 2, client state. The debugger of a page: the session the server holds (the `debug` channel,
 // replaced whole by each message) and its console (the `debug-console` channel, appended to), the
-// breakpoints, function breakpoints and watch expressions the reader keeps in the browser, the
-// launch configurations of the repository on screen, and the calls that start, step and stop.
+// breakpoints, function breakpoints and watch expressions the reader keeps, the launch
+// configurations of the repository on screen, and the calls that start, step and stop.
 //
-// What the browser keeps is `oculus.debug.v1` (debug.ts), read through zod and read again when
-// another tab of the page writes it; during a session every change of a list is posted to the
-// server, and a launch carries the lists as they stand, each breakpoint with the condition, hit
-// condition and log message it is set with. The lists belong to files by absolute path and only a
-// file under a served root whose language takes breakpoints takes one: `rite`, and the languages
-// the acting apps name under `contributes.breakpoints`.
+// What the reader keeps is the debugger's record of the page state (`debug.json` of the state
+// folder, state/shared/stores/page-state.svelte.ts), read through zod (debug.ts) whenever it
+// changes, by this page or by another page's save; during a session every change of a list is
+// posted to the server, and a launch carries the lists as they stand, each breakpoint with the
+// condition, hit condition and log message it is set with. The lists belong to files by absolute
+// path and only a file under a served root whose language takes breakpoints takes one: `rite`, and
+// the languages the acting apps name under `contributes.breakpoints`.
 //
 // Start saves every unsaved tab of a language that takes breakpoints first, as Cmd+S does, and
 // stops with the tab's own message when one is not saved. A configuration that names a `before`
@@ -45,7 +46,7 @@ import {
     type ConfigurationChoice
 } from '../../../../data/helpers/files/apps/tools/debuggers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../../shared/stores/shapes.ts';
-import { followKey } from '../../../shared/stores/storage-events.ts';
+import type { PageStateStore } from '../../../shared/stores/page-state.svelte.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { ServedRoot } from '../../../sources/repositories/file-git.ts';
 import { filesNamed } from '../../../shared/answers/files-named.ts';
@@ -61,17 +62,14 @@ import { createLists } from './debug-lists.ts';
 import {
     consoleAfter,
     consoleOfSession,
-    DEBUG_KEY,
     EMPTY_CONSOLE,
     enabledSpecs,
     functionSpecs,
-    loadSaved,
-    nothingSaved,
+    readSaved,
     repoOfFile,
+    savedRecord,
     stateWords,
-    writeSaved,
-    type SavedDebug,
-    type Storable
+    type SavedDebug
 } from './debug.ts';
 
 /** How long a `before` command may run before the reader is offered to go on without it. */
@@ -148,6 +146,8 @@ type DebugCommands = {
 
 /** What the store needs of the other stores and of the page. */
 export type DebugDeps = {
+    /** The page state, whose debugger's record holds what the reader keeps. */
+    state: Pick<PageStateStore, 'debug' | 'setDebug'>;
     entities: EntitiesStore;
     writes: WritesStore;
     queries: Queries;
@@ -186,7 +186,6 @@ export type DebugStore = ReturnType<typeof createDebug>;
 export function createDebug(deps: DebugDeps) {
     const { entities, writes, queries, notices, commands } = deps;
     const held: {
-        saved: SavedDebug;
         console: DebugConsole;
         asking: DebugAsking | null;
         waiting: Waiting | null;
@@ -195,7 +194,6 @@ export function createDebug(deps: DebugDeps) {
         /** The configurations Add Configuration offers, once asked for. */
         choosing: { repo: string; choices: ConfigurationChoice[] } | null;
     } = $state({
-        saved: nothingSaved(),
         console: EMPTY_CONSOLE,
         asking: null,
         waiting: null,
@@ -203,8 +201,8 @@ export function createDebug(deps: DebugDeps) {
         watching: {},
         choosing: null
     });
-    let storage: Storable | undefined;
-    let stopFollowing: () => void = () => undefined;
+    /** What the reader keeps, as the page state's record of the debugger holds it. */
+    const saved = $derived(readSaved(deps.state.debug()));
     let last: Target | null = null;
     let starting = false;
     let restarting = false;
@@ -235,34 +233,20 @@ export function createDebug(deps: DebugDeps) {
     });
     const { capabilities } = adapter;
 
-    // ---- what the browser keeps ----------------------------------------------------------
+    // ---- what the reader keeps -----------------------------------------------------------
 
-    function keep(saved: SavedDebug): void {
-        held.saved = saved;
-        writeSaved(storage, saved);
+    function keep(next: SavedDebug): void {
+        deps.state.setDebug(savedRecord(next));
     }
 
     const lists = createLists({
-        saved: () => held.saved,
+        saved: () => saved,
         keep,
         active,
         paused,
         payload,
         writes
     });
-
-    function load(from: Storable, source?: EventTarget): void {
-        storage = from;
-        held.saved = loadSaved(from);
-        stopFollowing();
-        stopFollowing =
-            source === undefined
-                ? () => undefined
-                : followKey(source, DEBUG_KEY, () => {
-                      // The tab that wrote the lists has posted them; this one only draws them.
-                      held.saved = loadSaved(from);
-                  });
-    }
 
     // ---- the console ---------------------------------------------------------------------
 
@@ -386,12 +370,12 @@ export function createDebug(deps: DebugDeps) {
     /** The configuration chosen for a repository: the kept one if it is listed, else the first. */
     function chosen(path: string, listed: DebugLaunches | null): DebugConfiguration | null {
         const configurations = listed?.configurations ?? [];
-        const kept = held.saved.chosen[path];
+        const kept = saved.chosen[path];
         return configurations.find((one) => one.name === kept) ?? configurations.at(0) ?? null;
     }
 
     function choose(path: string, name: string): void {
-        keep({ ...held.saved, chosen: { ...held.saved.chosen, [path]: name } });
+        keep({ ...saved, chosen: { ...saved.chosen, [path]: name } });
     }
 
     // ---- start ---------------------------------------------------------------------------
@@ -483,11 +467,11 @@ export function createDebug(deps: DebugDeps) {
     /** The files under a served root that hold breakpoints the adapter takes. */
     function launchFiles(): { path: string; lines: ReturnType<typeof enabledSpecs> }[] {
         const roots = deps.served();
-        return Object.keys(held.saved.breakpoints)
+        return Object.keys(saved.breakpoints)
             .filter(
                 (path) => takes(path) && deepestHolding(roots, (root) => root.dir, path) !== null
             )
-            .map((path) => ({ path, lines: enabledSpecs(held.saved.breakpoints[path] ?? []) }))
+            .map((path) => ({ path, lines: enabledSpecs(saved.breakpoints[path] ?? []) }))
             .filter((file) => file.lines.length > 0);
     }
 
@@ -503,8 +487,8 @@ export function createDebug(deps: DebugDeps) {
                     : {}),
                 context: target.file === '' ? {} : { file: target.file },
                 breakpoints: launchFiles(),
-                functions: functionSpecs(held.saved.functions, held.saved.functionOptions),
-                watch: held.saved.watch
+                functions: functionSpecs(saved.functions, saved.functionOptions),
+                watch: saved.watch
             },
             writes
         );
@@ -694,7 +678,7 @@ export function createDebug(deps: DebugDeps) {
     /** Write the configuration to the launch file and choose it. */
     async function writeAndChoose(path: string, choice: ConfigurationChoice): Promise<void> {
         const name = await addConfiguration(deps, queries, path, choice, launches(path));
-        if (name !== null) keep({ ...held.saved, chosen: { ...held.saved.chosen, [path]: name } });
+        if (name !== null) keep({ ...saved, chosen: { ...saved.chosen, [path]: name } });
     }
 
     /** The reader picked the offered configuration at this place. */
@@ -778,12 +762,10 @@ export function createDebug(deps: DebugDeps) {
     // ---- the toolbar and the status ------------------------------------------------------
 
     function moveToolbar(x: number): void {
-        keep({ ...held.saved, toolbar: Math.max(0, Math.round(x)) });
+        keep({ ...saved, toolbar: Math.max(0, Math.round(x)) });
     }
 
     return {
-        load,
-        stopFollowing: () => stopFollowing(),
         payload,
         status,
         active,
@@ -834,7 +816,7 @@ export function createDebug(deps: DebugDeps) {
         choice,
         waiting: () => held.waiting?.name ?? null,
         ran: () => payload().session !== null,
-        toolbar: () => held.saved.toolbar,
+        toolbar: () => saved.toolbar,
         moveToolbar
     };
 }

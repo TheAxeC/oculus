@@ -2,15 +2,16 @@
 text:
     commands:
         add: Add Command...
-        add_tip: Save a command for this repository on this machine
+        add_tip: Add a command to this repository's .oculus/commands.yml
         approve_ask: Run {0}?
         approve_in: '{0} (in {1})'
         approve_yes: Approve and Run
+        chain_heading: 'A press runs these lines in this order; Save approves them:'
         default_build: Build
         default_none: None
         default_test: Test
         delete: Delete
-        delete_ask: Delete the command {0}?
+        delete_ask: Delete the command {0} from .oculus/commands.yml?
         edit: Edit...
         failed_glyph: fail
         field_cwd: Folder
@@ -45,10 +46,8 @@ text:
         source_app: task of the app {0}
         source_file: from .oculus/commands.yml
         source_found: found in the repository
-        source_saved: saved on this machine
         tip: '{0} ({1})'
         unreadable: The server's answer could not be read.
         word_app: app
         word_file: file
         word_found: found
-        word_saved: saved

@@ -394,7 +394,7 @@
     }
 
     /* A terminal palette draws the button as a bracketed word, and no separator, while the
-       Brackets toggle is on. */
+       option `rice.brackets` is on. */
     :global(body.rice:where(:not(.rice-plain))) .tool.primary.joined::after {
         display: none;
     }
@@ -461,8 +461,9 @@
     }
 
     /* The terminal shape: a bracketed word, and the one in force is the only one in ink. It is
-       the Brackets toggle's (Settings, This browser): with the toggle off, the body carries
-       `rice-plain` and the button keeps its box in the rice palette and shape. */
+       the option `rice.brackets`'s (the Settings view's option, written into the workspace file's
+       `settings:`): with the option off, the body carries `rice-plain` and the button keeps its
+       box in the rice palette and shape. */
     :global(body.rice:where(:not(.rice-plain))) .tool {
         border: 0;
         border-radius: 0;
@@ -494,8 +495,8 @@
 
     /* A terminal palette keeps the rail's box, and draws the one in force in its accent text as
        every terminal control in force is. A stand-in of three characters at the icon size would
-       fill the box, so a glyph drawn as text takes the size of the theme's controls; an icon, when
-       the reader asked for the icons, keeps the icon size. */
+       fill the box, so a glyph drawn as text takes the size of the theme's controls; an icon,
+       drawn while the option `rice.icons` is on, keeps the icon size. */
     :global(body.rice) .tool.rail-control {
         height: var(--rail-width);
         padding: 0;

@@ -15,7 +15,7 @@ export const TOKEN = mintToken();
 
 const HOST = '127.0.0.1:8791';
 
-/** `open.program_ext` of the checked-in config/behavior.yml. */
+/** `open.program_ext` of the checked-in config/defaults/behavior.yml. */
 const APPS: ProgramApps = openSettings(loadConfig(engineDir()).config).programApps;
 
 /** The map as the endpoint asks for it at every request: here, always the checked-in one. */

@@ -6,9 +6,10 @@
 //
 // The workspace, the machine's values and the write chain come off the ServerContext, which holds
 // the workspace and the values and reads them again only when a file of theirs changed, so a
-// request reads no workspace file. The bookmarks are kept in the primary hub's `.oculus` folder
-// unless its `local.yml` names another place, and a workspace with no primary has none; the notes
-// are each hub's own `.oculus/notes/` folder, read from the workspace's hubs.
+// request reads no workspace file. The bookmarks are kept where the merged config's `bookmarks`
+// names, by default the primary hub's `.oculus/bookmarks.yml`, and a workspace with no primary has
+// none at a relative place; the notes are each hub's own `.oculus/notes/` folder, read from the
+// workspace's hubs.
 
 import { textCatalog } from '$lib/data/sources/config';
 import { handleFs, handleFsWrite, type FsTarget } from '$lib/server/files/fs';
@@ -20,10 +21,11 @@ import type { RequestHandler } from './$types';
 const target = (locals: App.Locals): FsTarget => {
     const server = locals.server;
     const open = server.workspace.open();
-    const own = perOculus(open.primaryDir, server.machine());
+    const config = locals.config().config;
+    const own = perOculus(open.primaryDir, config);
     const set = server.machineSet();
     const lists = server.machineLists();
-    const text = textCatalog(locals.config().config);
+    const text = textCatalog(config);
     const defaults = machineDefaults(text);
     return {
         engine: server.engine,

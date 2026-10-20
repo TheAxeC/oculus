@@ -31,6 +31,7 @@ describe('the apps watcher with no primary hub', () => {
                 approvals: join(base, 'approvals.json')
             }),
             config: () => loadConfig(engineDir()).config,
+            from: () => loadConfig(engineDir()).from,
             open: () => workspace.open(),
             appData: join(base, 'app-data'),
             home: base,
@@ -61,6 +62,7 @@ describe('the apps watcher with no primary hub', () => {
             secret: 'a secret',
             local: () => ({ ...localDefaults(), approvals: join(base, 'approvals.json') }),
             config: () => loadConfig(engineDir()).config,
+            from: () => loadConfig(engineDir()).from,
             open: () => workspace.open(),
             appData: join(base, 'app-data'),
             home: base,

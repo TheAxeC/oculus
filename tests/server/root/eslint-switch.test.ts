@@ -17,7 +17,7 @@ import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { lintSettings } from '../../../src/lib/data/sources/config/settings.ts';
+import { lintSettings } from '../../../src/lib/data/sources/config/settings/lint.ts';
 import {
     createServerContext,
     type ContextDependencies
@@ -36,9 +36,9 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-/** Set `lint.eslint` in the scratch engine's behavior.yml. */
+/** Set `lint.eslint` in the scratch engine's defaults/behavior.yml. */
 function switchEslint(engine: string, on: boolean): void {
-    const file = join(engine, 'config', 'behavior.yml');
+    const file = join(engine, 'config', 'defaults', 'behavior.yml');
     const text = readFileSync(file, 'utf8');
     const block = /(^lint:\n(?:[ ]+.*\n)*?[ ]+eslint: )(true|false)/m;
     expect(block.test(text)).toBe(true);

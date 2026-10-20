@@ -7,7 +7,7 @@
 import type { LspCode, LspToPage, LspToServer } from '../../../../data/model/index.ts';
 import type { ReferenceIndex } from '../../../../data/snapshot/references/model.ts';
 import type { FileText } from '../../../../data/snapshot/references/rename.ts';
-import type { LatexBuilding } from '../../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../../data/sources/config/settings/latex.ts';
 import type { ServedRoot } from '../uris.ts';
 import type { DiagnosticView, Introduction, Registration, ServerAsk } from './asks.ts';
 

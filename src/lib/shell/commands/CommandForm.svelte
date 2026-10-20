@@ -1,11 +1,14 @@
 <script lang="ts">
-    // Layer 3, shell. The form that saves a command for a repository: its name, its line, an
-    // optional folder inside the repository, an optional list of the commands it depends on, and an
-    // optional default (build, test or none). A command is saved on this machine under
-    // `~/.oculus/commands.json`, so it is the reader's own text and needs no approval to run.
-    // Editing a command keeps its place when the name is unchanged; a changed name saves the
-    // command under the new name and removes the old one. The server's refusal is shown in the form
-    // and the form stays open; a save that lands closes it.
+    // Layer 3, shell. The form that writes an entry of a repository's `.oculus/commands.yml`, the
+    // repository whose command bar opened it: its name, its line, an optional folder inside the
+    // repository, an optional list of the commands it depends on, and an optional default (build,
+    // test or none). Under the fields it lists the chain a press of the command would run, the
+    // commands it depends on first, each line with its folder when that is not the repository; Save
+    // approves that chain, so the reader's own command runs without a question until its text
+    // changes. A new command is added at the end of the file's list, which is made from its
+    // template when the repository has none; an edit rewrites the entry in its place, keeping the
+    // keys the form does not show. The server's refusal is shown in the form and the form stays
+    // open; a write that lands closes it.
 
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
@@ -33,8 +36,11 @@
     let { repo, edit, onclose }: Props = $props();
 
     const {
-        commands: { remove, save }
+        commands: { draftLines, edit: change, save, watch }
     } = useState();
+
+    // The repository's list is held while the form is open, so the chain is drawn over it.
+    $effect(() => watch(repo));
 
     // The fields begin with what the command holds, once; after that what is typed is the form's.
     /* svelte-ignore state_referenced_locally */
@@ -71,12 +77,22 @@
         if (!ready) return;
         saving = true;
         const made = draft();
-        let done = await save(repo, made);
-        if (done.ok && edit !== null && edit.name !== made.name)
-            done = await remove(repo, edit.name);
+        const done = edit === null ? await save(repo, made) : await change(repo, edit.name, made);
         saving = false;
         if (done.ok) onclose();
         else failure = done.error;
+    }
+
+    /** The chain the fields describe, once they hold a name and a line; null before. */
+    const chain = $derived(
+        name.trim() === '' || run.trim() === ''
+            ? null
+            : draftLines(repo, draft(), edit?.name ?? null)
+    );
+
+    /** A line of the chain, worded as the line and, when it is not the repository's, its folder. */
+    function worded(line: { folder: string; run: string }): string {
+        return line.folder === '.' ? line.run : t('commands.approve_in', line.run, line.folder);
     }
 
     /** The heading of the form: adding a command, or editing one. */
@@ -134,6 +150,20 @@
                         onchange={(v: string) => (role = v)}
                     />
                 </Field>
+                {#if chain !== null}
+                    <div class="chain" data-command-chain>
+                        {#if 'lines' in chain}
+                            <p class="note">{t('commands.chain_heading')}</p>
+                            <ol class="lines">
+                                {#each chain.lines as line, at (at)}
+                                    <li><code>{worded(line)}</code></li>
+                                {/each}
+                            </ol>
+                        {:else}
+                            <p class="failure">{chain.refused}</p>
+                        {/if}
+                    </div>
+                {/if}
                 {#if failure !== ''}
                     <p class="failure" role="alert">{failure}</p>
                 {/if}
@@ -178,6 +208,31 @@
     .message {
         margin: 0 0 4px;
         font-size: var(--fs-md);
+    }
+
+    .chain {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 4px;
+    }
+
+    .note {
+        margin: 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
+    }
+
+    .lines {
+        margin: 0;
+        padding-left: 1.4em;
+        font-size: var(--fs-xs);
+    }
+
+    .lines code {
+        font-family: var(--font-mono);
+        white-space: pre-wrap;
+        word-break: break-all;
     }
 
     .failure {

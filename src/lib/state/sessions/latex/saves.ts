@@ -14,7 +14,7 @@
 // the newest of the same file is dropped, so a run of saves builds the newest one.
 
 import { isLatexFile } from '../../../data/prose/latex.ts';
-import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../data/sources/config/settings/latex.ts';
 import type { LatexTarget } from '../terminal/latex-target.ts';
 import type { LatexCalls } from './calls.ts';
 

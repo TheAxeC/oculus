@@ -6,18 +6,21 @@ export type TokenSource = { writeToken: () => string; renewToken: () => Promise<
 
 /**
  * Post a JSON body to an endpoint with the write token. A 403 renews the token and posts once more;
- * the answer is the response of the last post, and a failed request throws.
+ * the answer is the response of the last post, and a failed request throws. `keepalive` lets the
+ * request outlive the page, as a write sent while the page goes away needs.
  */
 export async function postWithToken(
     url: string,
     body: unknown,
-    writes: TokenSource
+    writes: TokenSource,
+    keepalive = false
 ): Promise<Response> {
     const send = (): Promise<Response> =>
         fetch(url, {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-oculus-token': writes.writeToken() },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            ...(keepalive ? { keepalive } : {})
         });
     const response = await send();
     if (response.status !== 403) return response;

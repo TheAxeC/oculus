@@ -13,7 +13,7 @@
 // which texlab cannot be told, so the key is left out and texlab keeps its default.
 
 import { posix } from 'node:path';
-import type { LatexBuilding } from '../../../../../data/sources/config/settings.ts';
+import type { LatexBuilding } from '../../../../../data/sources/config/settings/latex.ts';
 
 /** Where texlab reads the folders from: the two settings of the LaTeX building. */
 type Folders = Pick<LatexBuilding, 'outDir' | 'auxDir'>;

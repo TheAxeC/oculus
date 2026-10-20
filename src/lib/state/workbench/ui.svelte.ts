@@ -1,34 +1,28 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
-// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, the code theme of the
-// editors, and one blob of state per view instance, keyed by the instance id the layout gives it.
-// Two instances of the same view therefore remember different things. A view may also keep a record
-// under a fixed id of its own that no instance has, as the file view keeps the places of the PDFs
-// it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts).
+// CRT overlay, the wallpaper, the glyph mode, the text and terminal sizes, the code theme of the
+// editors, the status bar's own values, and one record of state per view instance, keyed by the
+// instance id the layout gives it. Two instances of the same view therefore remember different
+// things. A view may also keep a record under a fixed id of its own that no instance has, as the
+// file view keeps the places of the PDFs it has shown under `pdf-place`
+// (state/sources/explorer/pdf-place.ts).
 //
-// The nine appearance values save together under the one key, so what a browser was left looking
-// like comes back whole, and so do the status bar's own three: the items the reader hid from it,
-// whether its notifications are kept quiet and the repository the reader last chose in its
-// repository item (a root of the `git` channel, or none), and so does whether the editors' suggest
-// list shows its description panel, once the reader has toggled it; until then
-// `editor.suggest_details` of config/behavior.yml says, as the source view reads it. What the
-// theme, the overlay and the code theme start as is config/appearance.yml's, read through
-// state/shared/words/appearance.ts, and never a literal here; the rice toggles (Brackets and
-// Monospace) start on, which is the rice themes' own look.
+// The look is the options' (state/shared/words/appearance.ts, `configuredLook`): the `theme`,
+// `text_size`, `rice`, `wallpaper.show`, `crt.on`, `code_theme` and `terminal.font_px` options of
+// the appearance defaults and the `status_bar` and `editor.suggest_details` options of the behavior
+// defaults, as the open workspace file sets them or oculus's defaults hold them. A control that
+// changes one writes the option through the Settings write path, so every page of the server shows
+// the new value from the config push that follows the write. Until that push arrives, the value
+// written is held over the configured one (`pending`), so the control answers at once; a write
+// that does not land drops it, and the writes store says why. With no workspace file open (the
+// unsaved workspace) a control writes nothing and the page offers Save Workspace instead
+// (`noWorkspace`).
 //
-// It saves the same way the layout store does, under its own key and through the same small slice
-// of Storage, so a test hands it a plain object and no test touches localStorage. A theme or a file
-// icon theme the palette's `:theme` and `:file-icons` lists preview is held beside the saved values
-// and never saved (`preview`), so moving through a list draws each choice and leaving it draws the
-// chosen one again.
-//
-// Every browser tab of one server writes the one key, and the appearance is each tab's own while
-// the instance records are the views' state that belongs with the arrangement the layout store
-// shares. A save therefore reads the saved value first and writes the saved records with the ones
-// this tab changed or removed laid over them, so it never drops a record another tab saved; and the
-// store listens for the browser's `storage` event and takes the saved records when another tab
-// saves, leaving the appearance as this tab has it (`takeSavedInstances`).
+// The records are the page state's view states (state/shared/stores/page-state.svelte.ts), which
+// the server keeps in `views.json` of the state folder: every page of the server sees a record
+// another page set, and a record outlives a reload. A theme or a file icon theme the palette's
+// `:theme` and `:file-icons` lists preview is held beside them and never written (`preview`), so
+// moving through a list draws each choice and leaving it draws the chosen one again.
 
-import { z } from 'zod';
 import type { BusyTerminal } from '../sessions/terminal/pty/pty-io.ts';
 import {
     createCloseHooks,
@@ -36,103 +30,18 @@ import {
     type OwnedInstance,
     type TerminalOwner
 } from './layout/tabs/close-hooks.ts';
-import { mapOfShape, mapShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
-import { isMap } from '../../data/helpers/guards.ts';
 import { NO_OFFERS, type AppOffers } from '../../data/helpers/files/apps/choices.ts';
-import { followKey } from '../shared/stores/storage-events.ts';
-import type { BrowserValues } from '../system/config/other-rows/browser.ts';
+import type { WriteAnswer } from '../shared/stores/shapes.ts';
+import type { PageStateStore } from '../shared/stores/page-state.svelte.ts';
+import { configGeneration } from '../shared/words/generation.svelte.ts';
 import {
+    boundedTextSize,
     codeThemeDefault,
-    crtDefault,
-    isCodeTheme,
+    configuredLook,
+    terminalFontPx,
     themeFor,
     wallpaperOnTheme
 } from '../shared/words/appearance.ts';
-
-/** The key the appearance and the per-instance state are saved under. */
-export const UI_KEY = 'oculus.ui.v1';
-
-/** The envelope version saveUi writes, and the one loadUi reads; any other reads as nothing. */
-export const UI_VERSION = 2;
-
-/**
- * The saved envelope, a field at a time. A field of the wrong type reads as the value the viewer
- * never set: absent for a choice, none for a list, off for the quiet flag. The theme, the text
- * scale and the code theme are read as they came, since each is checked against the lists the
- * appearance config holds. The instance records are a fresh map of the saved ones, an own
- * `__proto__` key included.
- */
-const savedUiShape = z.object({
-    version: z.literal(UI_VERSION),
-    theme: z.unknown().optional(),
-    crt: z.boolean().optional().catch(undefined),
-    wallpaper: z.boolean().optional().catch(undefined),
-    icons: z.boolean().optional().catch(undefined),
-    brackets: z.boolean().optional().catch(undefined),
-    monospace: z.boolean().optional().catch(undefined),
-    textScale: z.unknown().optional(),
-    terminalFont: z.number().optional().catch(undefined),
-    codeTheme: z.unknown().optional(),
-    statusHidden: rowsShape(z.string().min(1))
-        .transform((items) => [...new Set(items)])
-        .catch(() => []),
-    statusQuiet: z.boolean().catch(false),
-    statusRepository: z.string().min(1).nullable().catch(null),
-    suggestDetails: z.boolean().nullable().catch(null),
-    instances: mapShape.transform((records) => ({ ...records })).catch(() => ({}))
-});
-
-/** A saved envelope as `savedUiShape` reads it. */
-type SavedUi = z.infer<typeof savedUiShape>;
-
-/** A number that is not `NaN` or an infinity: a text scale that can be rounded. */
-const finiteNumberShape = z.number();
-
-/**
- * The instance records of the storage with an own `__proto__` key left out, because assigning to
- * it would replace the prototype of the map a save builds instead of adding a record.
- */
-const savedRecordsShape = mapOfShape(z.unknown());
-
-/** What the store needs of a Storage, so a test can hand it a plain object. */
-type Storable = Pick<Storage, 'getItem' | 'setItem'>;
-
-type Ui = {
-    theme: string;
-    crt: boolean;
-    /** The toggle's own value, or null wherever a wallpaper shows, which is the theme's answer. */
-    wallpaper: boolean | null;
-    /** Whether a terminal theme keeps the icons rather than drawing the ASCII stand-ins. */
-    icons: boolean;
-    /** Whether a rice theme draws its buttons, chips and tags in brackets. */
-    brackets: boolean;
-    /** Whether a rice theme draws its interface in the monospace font. */
-    monospace: boolean;
-    textScale: number | null;
-    terminalFont: number | null;
-    /**
-     * The code theme the viewer picked (`tokens` or a listed Shiki theme id), or null until they
-     * pick one, so a save of any other field never freezes config/appearance.yml's `code_theme:`
-     * into the envelope and an edit of that key reaches a browser that has not picked.
-     */
-    codeTheme: string | null;
-    /** The status bar items the reader hid, by the id the bar gives each. */
-    statusHidden: string[];
-    /** Whether Do Not Disturb is on: a notification goes into the list and shows no toast. */
-    statusQuiet: boolean;
-    /** The repository last chosen in the status bar's repository item, by its root, or none. */
-    statusRepository: string | null;
-    /**
-     * Whether the editors' suggest list shows its description panel, as the reader last left it,
-     * or null until they toggle it, when `editor.suggest_details` of config/behavior.yml holds.
-     */
-    suggestDetails: boolean | null;
-    /**
-     * One entry per view instance, by instance id, and one for each fixed id a view keeps a record
-     * under. The shape of the value is the view's own.
-     */
-    instances: Record<string, unknown>;
-};
 
 /**
  * One reorder the keyboard asked a view for: which instance was focused, which card its cursor
@@ -144,14 +53,6 @@ export type CardMove = { instance: string; card: string; step: -1 | 1; seq: numb
 export type { BusyTerminal, OwnedInstance, TerminalOwner };
 
 /**
- * The nine appearance values as this browser holds them of its own: a value that is null is one
- * this browser has not chosen, which the config's answer stands in for. `initial()` gives what a
- * browser that saved nothing holds, so a value that differs from it is one this browser chose.
- * The Settings rows of This browser read them in this shape.
- */
-export type Chosen = BrowserValues;
-
-/**
  * The theme and the file icon theme a palette list draws while its selection rests on one, before
  * Enter keeps it; null for one it does not preview.
  */
@@ -160,39 +61,104 @@ export type Preview = { theme: string | null; fileIcons: string | null };
 /** No preview: the chosen theme and file icon theme are drawn. */
 export const NO_PREVIEW: Preview = { theme: null, fileIcons: null };
 
+/** The two pane strip options that say what a pane's top row draws. */
+export type PaneStripKey = 'show_tabs' | 'editor_actions';
+
+/** The writes of the Settings write path the store sends an option through. */
+type OptionWrites = {
+    writeConfigKey: (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
+    writeConfigValue: (
+        file: string,
+        key: string,
+        value: unknown,
+        base: unknown
+    ) => Promise<WriteAnswer>;
+    resetConfig: (file: string, key: string) => Promise<WriteAnswer>;
+};
+
+/** What the store reads and writes through, each with a stand-in for a store given none. */
+export type UiDeps = {
+    /** The view states of the page state, which the records are. */
+    state: Pick<PageStateStore, 'views' | 'changeViews'>;
+    writes: OptionWrites;
+    /** Whether the page is in the desktop app's window, which starts on the app's dark theme. */
+    inApp: boolean;
+    /** The colour and icon themes the acting apps offer. */
+    offers: () => AppOffers;
+    /**
+     * Whether a workspace file is open to write an option into: false for the unsaved workspace,
+     * null while the workspace answer has not come.
+     */
+    workspaceFile: () => boolean | null;
+    /** Say that a setting has no file to go to, and offer to save the workspace to one. */
+    noWorkspace: () => void;
+};
+
+/** A view state store held in the page alone, for a store given no page state. */
+function localViews(): UiDeps['state'] {
+    const held: { views: Record<string, unknown> } = $state({ views: {} });
+    return {
+        views: () => held.views,
+        changeViews: (set, remove) => {
+            const views = { ...held.views, ...set };
+            for (const id of remove) Reflect.deleteProperty(views, id);
+            held.views = views;
+        }
+    };
+}
+
+/** The answer a store given no writes takes from each: refused, with nothing written. */
+const NOT_WRITTEN: WriteAnswer = { ok: false, changed: [], refused: [] };
+
+/** The writes of a store given none: each answers that nothing was written. */
+const NO_WRITES: OptionWrites = {
+    writeConfigKey: () => Promise.resolve(NOT_WRITTEN),
+    writeConfigValue: () => Promise.resolve(NOT_WRITTEN),
+    resetConfig: () => Promise.resolve(NOT_WRITTEN)
+};
+
+/** The appearance defaults file and the behavior defaults file, by the names the writes take. */
+const APPEARANCE = 'appearance.yml';
+const BEHAVIOR = 'behavior.yml';
+
+/**
+ * A value written and not yet in the config the page holds: the value, and the configuration's
+ * generation when its write was answered, null while it is on its way. It stands until a push of a
+ * later generation arrives, which carries it or a later change.
+ */
+type Pending = { value: unknown; settled: number | null };
+
 /**
  * What the page looks like and what each open view remembers, for one client, and the
  * registrations a close asks about a tab (layout/tabs/close-hooks.ts).
  */
 export type UiStore = CloseHooks & {
-    /** The theme drawn: the one a palette list previews, else the one this browser chose. */
+    /** The theme drawn: the one a palette list previews, else the one the `theme` option names. */
     theme: () => string;
+    /** The theme the `theme` option names, whatever a palette list previews. */
+    chosenTheme: () => string;
     /** What a palette list previews: a theme and a file icon theme, each null for none. */
     preview: () => Preview;
-    /** Draw a theme or a file icon theme without saving it; NO_PREVIEW draws the chosen ones. */
+    /** Draw a theme or a file icon theme without writing it; NO_PREVIEW draws the chosen ones. */
     setPreview: (next: Preview) => void;
     crt: () => boolean;
     wallpaper: () => boolean;
     icons: () => boolean;
     brackets: () => boolean;
     monospace: () => boolean;
+    /** The text size, or null at one, the size of the theme's own tokens. */
     textScale: () => number | null;
+    /** The terminal grid's size in CSS pixels, or null where it follows the page's text size. */
     terminalFont: () => number | null;
     codeTheme: () => string;
-    /**
-     * A value that changes whenever the editors' look does: with the theme, with the text size and
-     * with every pick of a code theme, the theme already chosen included, so a pick after a paint
-     * that failed to load its theme paints again.
-     */
+    /** A value that changes with the editors' look: the theme, the text size and the code theme. */
     editorLook: () => string;
     statusHidden: () => string[];
     statusQuiet: () => boolean;
     /** The repository last chosen in the status bar's repository item, by its root, or null. */
     statusRepository: () => string | null;
-    /** The reader's own choice of the suggest list's description panel, or null with none. */
+    /** The suggest list's description panel as just toggled, or null to read the option. */
     suggestDetails: () => boolean | null;
-    chosen: () => Chosen;
-    initial: () => Chosen;
     instanceState: (id: string) => unknown;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
@@ -202,127 +168,122 @@ export type UiStore = CloseHooks & {
     paletteRequested: () => { seq: number; text: string };
     requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
     cardMoveRequested: (instance: string) => CardMove | null;
-    loadUi: (storage?: Storable, source?: EventTarget) => boolean;
-    stopFollowing: () => void;
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
-    setWallpaper: (on: boolean | null) => void;
-    setIcons: (on: boolean) => void;
-    setBrackets: (on: boolean) => void;
-    setMonospace: (on: boolean) => void;
-    setTextScale: (scale: number | null) => void;
-    stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
-    setCodeTheme: (id: string | null) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
     /** Keep the repository chosen in the status bar's repository item; null forgets it. */
     setStatusRepository: (root: string | null) => void;
-    /** Keep the reader's choice of the suggest list's description panel. */
+    /** Write the reader's choice of the suggest list's description panel. */
     setSuggestDetails: (shown: boolean) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
-    /** Write the file icon theme to `file_icons` of config/appearance.yml, for every page. */
+    /** Write the file icon theme to the `file_icons` option, for every page. */
     setFileIcons: (name: string) => Promise<boolean>;
     setInstanceState: (id: string, state: unknown) => void;
     /**
-     * Change a record from what the storage holds for it at this moment, which another browser
-     * tab may have written since this one last heard of it: `change` is given the saved record,
-     * or this tab's when none is saved, and what it returns is kept and saved.
+     * Change a record from what the page holds for it at this moment, which another page may have
+     * set since: `change` is given the record held, and what it returns is kept.
      */
     updateInstanceState: (id: string, change: (held: unknown) => unknown) => void;
     clearInstanceState: (id: string) => void;
     /** The ids of the instance records whose id starts with a prefix. */
     instanceKeys: (prefix: string) => string[];
-    /** Forget every instance record whose id starts with a prefix, in one save. */
+    /** Forget every instance record whose id starts with a prefix, in one change. */
     clearInstanceStates: (prefix: string) => void;
 };
 
-/** The two keys of config/appearance.yml that say what a pane's top row draws. */
-export type PaneStripKey = 'show_tabs' | 'editor_actions';
+/** The store of the page's look and of the views' records. */
+export function createUi(given: Partial<UiDeps> = {}): UiStore {
+    const deps: UiDeps = {
+        state: given.state ?? localViews(),
+        writes: given.writes ?? NO_WRITES,
+        inApp: given.inApp ?? false,
+        offers: given.offers ?? (() => NO_OFFERS),
+        workspaceFile: given.workspaceFile ?? (() => null),
+        noWorkspace: given.noWorkspace ?? (() => undefined)
+    };
 
-/**
- * The store of the page's look. `writeConfigKey` is the client writes store's: the two pane strip
- * settings live in config/appearance.yml, so a pick of the strip menu is written there rather than
- * saved in the browser, and the store given none ignores the pick.
- */
-export function createUi(
-    writeConfigKey: (file: string, key: string, value: unknown) => Promise<unknown> = () =>
-        Promise.resolve(null),
-    inApp = false,
-    offers: () => AppOffers = () => NO_OFFERS
-): UiStore {
-    /**
-     * What a browser that has saved nothing starts on. Two of the nine come from
-     * config/appearance.yml rather than from a literal here: the theme is the first of its list
-     * (the app's dark theme in the desktop app) and the overlay is its `crt.default`. The wallpaper
-     * starts on none, which wallpaper() answers from the theme in force, so it shows wherever one
-     * is configured until the toggle says otherwise, and the code theme starts on none the same
-     * way, answered by codeTheme() from the config's `code_theme:` until a pick is made. The glyphs
-     * start as the theme's own, which is the ASCII stand-ins on a terminal palette; `icons` is what
-     * turns that off and keeps the icons. Brackets and Monospace start on, the rice look.
-     */
-    function defaultUi(): Ui {
-        const theme = themeFor(null, inApp, NO_OFFERS);
-        return {
-            theme,
-            crt: crtDefault(),
-            wallpaper: null,
-            icons: false,
-            brackets: true,
-            monospace: true,
-            textScale: null,
-            terminalFont: null,
-            codeTheme: null,
-            statusHidden: [],
-            statusQuiet: false,
-            statusRepository: null,
-            suggestDetails: null,
-            instances: {}
-        };
-    }
-
-    const store: { current: Ui } = $state({ current: defaultUi() });
+    /** The values written and not yet in the config the page holds, by option path. */
+    const pending: Partial<Record<string, Pending>> = $state({});
 
     /** A transient signal from a view to the shell that owns the Update tray. */
     const updateTray = $state({ requested: 0 });
-    /** How many code theme picks this page has made, which editorLook() reads. */
-    const codePicks = $state({ made: 0 });
     const palette = $state({ seq: 0, text: '' });
 
     const cardMove = $state<{ held: CardMove | null }>({ held: null });
 
-    /** What a palette list shows while its selection rests on it, which nothing saves. */
+    /** What a palette list shows while its selection rests on it, which nothing writes. */
     let previewing = $state<Preview>(NO_PREVIEW);
-
-    /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
-    let backing: Storable | null = null;
-
-    /**
-     * The instance records as last read from or written to the storage, each as its JSON text: what
-     * a save compares this tab's records with to tell the ones this tab changed or removed.
-     */
-    let synced: Record<string, string> = {};
-
-    /** Stops listening for another browser tab's save, once loadUi was given a window. */
-    let unfollow: () => void = () => undefined;
 
     /** What the stores holding a tab's work registered, which a close asks about the tab. */
     const hooks = createCloseHooks();
 
-    /**
-     * The name of the theme drawn: the one a palette list previews, else the one this browser
-     * chose, one of the names config/appearance.yml lists.
-     */
-    function theme(): string {
-        return previewing.theme ?? store.current.theme;
+    /** An option's value as shown: the one written and not yet pushed, else the config's. */
+    function held<T>(key: string, configured: T): T {
+        const one = pending[key];
+        if (one !== undefined && (one.settled === null || one.settled === configGeneration())) {
+            return one.value as T;
+        }
+        return configured;
     }
 
-    /** What a palette list previews. */
+    /**
+     * Write one option through the Settings write path, and hold the value until the push that
+     * carries it. A list is written whole, refused unless the place still holds `base`, the list
+     * the page showed. With the unsaved workspace nothing is sent and the offer to save the
+     * workspace is made. Answers whether the write landed.
+     */
+    async function writeOption(
+        file: string,
+        key: string,
+        value: unknown,
+        base?: unknown
+    ): Promise<boolean> {
+        if (deps.workspaceFile() === false) {
+            deps.noWorkspace();
+            return false;
+        }
+        pending[key] = { value, settled: null };
+        const answer = Array.isArray(value)
+            ? await deps.writes.writeConfigValue(file, key, value, base)
+            : await deps.writes.writeConfigKey(file, key, value);
+        if (answer.ok && answer.refused.length === 0) {
+            pending[key] = { value, settled: configGeneration() };
+            return true;
+        }
+        Reflect.deleteProperty(pending, key);
+        return false;
+    }
+
+    /** Take an option out of the open workspace file, so oculus's value is in force again. */
+    function resetOption(file: string, key: string): void {
+        if (deps.workspaceFile() === false) {
+            deps.noWorkspace();
+            return;
+        }
+        Reflect.deleteProperty(pending, key);
+        void deps.writes.resetConfig(file, key);
+    }
+
+    /** A theme name the config lists, and the start for one it does not. */
+    function known(name: unknown): string {
+        return themeFor(name, deps.inApp, deps.offers());
+    }
+
+    /** The name of the theme the `theme` option names, as the page draws it. */
+    function chosenTheme(): string {
+        return known(held('theme', configuredLook().theme));
+    }
+
+    function theme(): string {
+        return previewing.theme ?? chosenTheme();
+    }
+
     function preview(): Preview {
         return previewing;
     }
 
-    /** Draw a theme or a file icon theme without saving it; NO_PREVIEW draws the chosen ones. */
     function setPreview(next: Preview): void {
         previewing = {
             theme: next.theme === null ? null : known(next.theme),
@@ -330,107 +291,79 @@ export function createUi(
         };
     }
 
-    /** Whether the CRT overlay is on. */
     function crt(): boolean {
-        return store.current.crt;
+        return held('crt.on', configuredLook().crt);
     }
 
     /**
-     * Whether the viewer wants the wallpaper. A browser that has never pressed the toggle holds
-     * none, and the answer is then the theme's: on wherever a wallpaper shows, so a save of any
-     * other field cannot put it out. Whether one is actually drawn is this and the theme together:
-     * the shell asks appearance.wallpaperOnTheme() as well, so switching to a theme the wallpaper
-     * does not show under hides it without forgetting the choice.
+     * Whether the wallpaper shows: `shown` and `hidden` say so, and the empty value is the theme's
+     * answer, on wherever a wallpaper shows. Whether one is actually drawn is this and the theme
+     * together: the shell asks appearance.wallpaperOnTheme() as well, so switching to a theme the
+     * wallpaper does not show under hides it without changing the option.
      */
     function wallpaper(): boolean {
-        const picked = store.current.wallpaper;
-        return picked ?? wallpaperOnTheme(store.current.theme, offers());
+        const show = held('wallpaper.show', configuredLook().wallpaper);
+        if (show === 'shown') return true;
+        if (show === 'hidden') return false;
+        return wallpaperOnTheme(chosenTheme(), deps.offers());
     }
 
-    /** Whether the icons are kept on a terminal theme instead of their ASCII stand-ins. */
     function icons(): boolean {
-        return store.current.icons;
+        return held('rice.icons', configuredLook().icons);
     }
 
-    /** Whether a rice theme draws its buttons, chips and tags in brackets. */
     function brackets(): boolean {
-        return store.current.brackets;
+        return held('rice.brackets', configuredLook().brackets);
     }
 
-    /** Whether a rice theme draws its interface in the monospace font. */
     function monospace(): boolean {
-        return store.current.monospace;
+        return held('rice.monospace', configuredLook().monospace);
     }
 
-    /** The app-wide multiplier, or null when the default multiplier of one is in force. */
     function textScale(): number | null {
-        return store.current.textScale;
+        const size = boundedTextSize(held('text_size', configuredLook().textSize));
+        return size === 1 ? null : size;
     }
 
-    /** The terminal grid size chosen by the viewer, or null when the config default is in force. */
     function terminalFont(): number | null {
-        return store.current.terminalFont;
+        return held('terminal.font_px', terminalFontPx());
     }
 
-    /** The code theme of the editors: the viewer's pick, else the config's `code_theme:`. */
     function codeTheme(): string {
-        return store.current.codeTheme ?? codeThemeDefault();
+        return held('code_theme', codeThemeDefault());
     }
 
     function editorLook(): string {
-        return `${theme()} ${String(textScale() ?? 1)} ${String(codePicks.made)}`;
+        return `${theme()} ${String(textScale() ?? 1)} ${codeTheme()}`;
     }
 
-    /** The status bar items the reader hid. */
     function statusHidden(): string[] {
-        return store.current.statusHidden;
+        return held('status_bar.hidden', configuredLook().statusHidden);
     }
 
-    /** Whether Do Not Disturb is on. */
     function statusQuiet(): boolean {
-        return store.current.statusQuiet;
+        return held('status_bar.quiet', configuredLook().statusQuiet);
     }
 
-    /** The repository last chosen in the status bar's repository item, or null. */
     function statusRepository(): string | null {
-        return store.current.statusRepository;
+        const root = held('status_bar.repository', configuredLook().statusRepository);
+        return root === '' ? null : root;
     }
 
-    /** The reader's own choice of the suggest list's description panel, or null with none. */
+    /**
+     * The suggest list's description panel as the reader just toggled it, while the write is on its
+     * way, else null: the editors read the `editor.suggest_details` option otherwise.
+     */
     function suggestDetails(): boolean | null {
-        return store.current.suggestDetails;
+        const one = pending['editor.suggest_details'];
+        if (one === undefined || (one.settled !== null && one.settled !== configGeneration())) {
+            return null;
+        }
+        return one.value === true;
     }
 
-    /** The nine appearance values of one record. */
-    function appearanceOf(held: Ui): Chosen {
-        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = held;
-        const { brackets, monospace } = held;
-        return {
-            theme,
-            codeTheme,
-            textScale,
-            terminalFont,
-            crt,
-            wallpaper,
-            icons,
-            brackets,
-            monospace
-        };
-    }
-
-    /** The nine appearance values as this browser holds them of its own. */
-    function chosen(): Chosen {
-        return appearanceOf(store.current);
-    }
-
-    /** The nine appearance values of a browser that saved nothing, given the config. */
-    function initial(): Chosen {
-        return appearanceOf(defaultUi());
-    }
-
-    /** What a view instance saved, or undefined when it has saved nothing yet. */
     function instanceState(id: string): unknown {
-        return store.current.instances[id];
+        return deps.state.views()[id];
     }
 
     /** Ask the shell to open the Update tray. Every request changes the observed value. */
@@ -461,307 +394,98 @@ export function createUi(
 
     /** The reorder asked of one instance, or null when the last request was for another. */
     function cardMoveRequested(instance: string): CardMove | null {
-        const held = cardMove.held;
-        return held !== null && held.instance === instance ? held : null;
+        const one = cardMove.held;
+        return one !== null && one.instance === instance ? one : null;
     }
 
-    /** A theme name config/appearance.yml lists, and the start for one it does not. */
-    function known(name: unknown): string {
-        return themeFor(name, inApp, offers());
+    /** Switch to a theme: one the config does not list is written as the start, the empty name. */
+    function setTheme(name: string): void {
+        const named = known(name) === name ? name : '';
+        void writeOption(APPEARANCE, 'theme', named);
     }
 
-    /**
-     * Read the saved appearance and make it current, falling back to the default for anything the
-     * saved value does not hold or holds wrongly. Returns whether a saved value was read at all.
-     * The default argument is evaluated at the call and not at the import, so a test that never
-     * calls this touches no localStorage.
-     */
-    function loadUi(storage: Storable = localStorage, source?: EventTarget): boolean {
-        backing = storage;
-        unfollow();
-        unfollow =
-            source === undefined ? () => undefined : followKey(source, UI_KEY, takeSavedInstances);
-        store.current = defaultUi();
-        synced = {};
-        const held = savedHeld(storage);
-        if (held === null) return false;
-
-        const { instances } = held;
-        const started = defaultUi();
-        store.current = {
-            theme: known(held.theme),
-            crt: held.crt ?? started.crt,
-            wallpaper: held.wallpaper ?? null,
-            icons: held.icons ?? started.icons,
-            brackets: held.brackets ?? started.brackets,
-            monospace: held.monospace ?? started.monospace,
-            textScale: boundedTextScale(held.textScale),
-            terminalFont:
-                held.terminalFont === undefined
-                    ? null
-                    : Math.min(40, Math.max(6, held.terminalFont)),
-            codeTheme: isCodeTheme(held.codeTheme) ? held.codeTheme : null,
-            statusHidden: held.statusHidden,
-            statusQuiet: held.statusQuiet,
-            statusRepository: held.statusRepository,
-            suggestDetails: held.suggestDetails,
-            instances
-        };
-        synced = textsOf(instances);
-        return true;
+    function setCrt(on: boolean): void {
+        void writeOption(APPEARANCE, 'crt.on', on);
     }
 
-    /**
-     * The saved envelope of a storage when it holds one of a version this store reads, else null:
-     * nothing saved, a storage that refuses to be read, a value that does not parse, or another
-     * shape.
-     */
-    function savedHeld(storage: Storable): SavedUi | null {
-        let raw: string | null;
-        try {
-            raw = storage.getItem(UI_KEY);
-        } catch {
-            // A browser with storage refused still runs; it just forgets the theme.
-            return null;
-        }
-        if (raw === null) return null;
-        let saved: unknown;
-        try {
-            saved = JSON.parse(raw);
-        } catch {
-            return null;
-        }
-        return readAs(savedUiShape, saved);
-    }
-
-    /** Each record as its JSON text. */
-    function textsOf(instances: Record<string, unknown>): Record<string, string> {
-        return Object.fromEntries(
-            Object.entries(instances).map(([id, state]) => [
-                id,
-                (JSON.stringify(state) as string | undefined) ?? ''
-            ])
-        );
-    }
-
-    /**
-     * The records a save writes: the ones the storage holds, with the ones this tab changed or
-     * added laid over them and the ones this tab removed taken out. A record this tab holds as it
-     * last read or wrote it is left as the storage has it, so another tab's newer record stands and
-     * one it removed stays removed. Where the storage holds nothing readable, every record this tab
-     * holds is written.
-     */
-    function mergedInstances(mine: Record<string, unknown>): Record<string, unknown> {
-        const held = backing === null ? null : savedHeld(backing);
-        if (held === null) return mine;
-        const saved = readAs(savedRecordsShape, held.instances) ?? {};
-        const own = readAs(savedRecordsShape, mine) ?? {};
-        const texts = textsOf(mine);
-        const merged: Record<string, unknown> = {};
-        for (const [id, state] of Object.entries(saved)) {
-            if (id in mine || !(id in synced)) merged[id] = state;
-        }
-        for (const [id, state] of Object.entries(own)) {
-            if (texts[id] !== synced[id]) merged[id] = state;
-        }
-        return merged;
-    }
-
-    /**
-     * Another browser tab saved: take the instance records it left in the storage. The appearance
-     * stays as this tab has it, and nothing is written back.
-     */
-    function takeSavedInstances(): void {
-        if (backing === null) return;
-        const held = savedHeld(backing);
-        if (held === null) return;
-        const { instances } = held;
-        store.current = { ...store.current, instances };
-        synced = textsOf(instances);
-    }
-
-    function save(next: Ui): void {
-        if (backing === null) {
-            store.current = next;
+    /** A terminal grid size between 6 and 40 CSS pixels; null puts oculus's size back. */
+    function setTerminalFont(size: number | null): void {
+        if (size === null || !Number.isFinite(size)) {
+            resetOption(APPEARANCE, 'terminal.font_px');
             return;
         }
-        const instances = mergedInstances(next.instances);
-        store.current = { ...next, instances };
-        try {
-            backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...store.current }));
-            synced = textsOf(instances);
-        } catch {
-            // A full or refused storage loses the appearance at the next load and nothing else; the
-            // records stay as they were last saved, so the next save writes them again.
-        }
-    }
-
-    /** Switch to a theme. A name config/appearance.yml does not list is the default theme. */
-    function setTheme(name: string): void {
-        save({ ...store.current, theme: known(name) });
-    }
-
-    /** Turn the CRT overlay on or off. */
-    function setCrt(on: boolean): void {
-        save({ ...store.current, crt: on });
-    }
-
-    /**
-     * Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice;
-     * null forgets the choice, and the theme's answer applies again.
-     */
-    function setWallpaper(on: boolean | null): void {
-        save({ ...store.current, wallpaper: on });
-    }
-
-    /** Keep the icons on a terminal theme, or let it use the ASCII stand-ins. */
-    function setIcons(on: boolean): void {
-        save({ ...store.current, icons: on });
-    }
-
-    /** Draw a rice theme's buttons, chips and tags in brackets, or without them. */
-    function setBrackets(on: boolean): void {
-        save({ ...store.current, brackets: on });
-    }
-
-    /** Draw a rice theme's interface in the monospace font, or in the default sans font. */
-    function setMonospace(on: boolean): void {
-        save({ ...store.current, monospace: on });
-    }
-
-    /** A tenth-step app-wide multiplier from 0.7 to 1.6, or the null default at one. */
-    function setTextScale(scale: number | null): void {
-        save({ ...store.current, textScale: boundedTextScale(scale) });
-    }
-
-    /** Move the app-wide multiplier by one tenth in either direction. */
-    function stepTextScale(by: -1 | 1): void {
-        setTextScale((textScale() ?? 1) + by / 10);
-    }
-
-    /** Normalise saved and chosen scale values to the ten supported steps and the null default. */
-    function boundedTextScale(scale: unknown): number | null {
-        const finite = readAs(finiteNumberShape, scale);
-        if (finite === null) return null;
-        const bounded = Math.min(1.6, Math.max(0.7, Math.round(finite * 10) / 10));
-        return bounded === 1 ? null : bounded;
-    }
-
-    /** Choose a terminal grid size between 6 and 40 CSS pixels, or restore the config default. */
-    function setTerminalFont(size: number | null): void {
-        const bounded =
-            size === null || !Number.isFinite(size) ? null : Math.min(40, Math.max(6, size));
-        save({ ...store.current, terminalFont: bounded });
-    }
-
-    /**
-     * Pick the code theme of the editors: `tokens` or the id of a Shiki theme. The only writer of
-     * the field, so the value saved is a choice; null, and anything else, the empty string
-     * included, clears the pick and the config's `code_theme:` answers again. Every pick moves
-     * editorLook(), so a pick of the theme already chosen still paints it, which loads its file
-     * again after a load that failed.
-     */
-    function setCodeTheme(id: string | null): void {
-        codePicks.made += 1;
-        save({ ...store.current, codeTheme: isCodeTheme(id) ? id : null });
+        void writeOption(APPEARANCE, 'terminal.font_px', Math.min(40, Math.max(6, size)));
     }
 
     /** Hide one status bar item, or show it again. */
     function setStatusHidden(item: string, hidden: boolean): void {
         if (item === '') return;
-        const others = store.current.statusHidden.filter((one) => one !== item);
-        save({ ...store.current, statusHidden: hidden ? [...others, item] : others });
+        const shown = statusHidden();
+        const others = shown.filter((one) => one !== item);
+        void writeOption(BEHAVIOR, 'status_bar.hidden', hidden ? [...others, item] : others, shown);
     }
 
-    /** Turn Do Not Disturb on or off. */
     function setStatusQuiet(on: boolean): void {
-        save({ ...store.current, statusQuiet: on });
+        void writeOption(BEHAVIOR, 'status_bar.quiet', on);
     }
 
     /** Keep the repository chosen in the status bar, or forget it with null or the empty text. */
     function setStatusRepository(root: string | null): void {
-        const next = root === '' ? null : root;
-        if (next === store.current.statusRepository) return;
-        save({ ...store.current, statusRepository: next });
+        const next = root ?? '';
+        if (next === (statusRepository() ?? '')) return;
+        void writeOption(BEHAVIOR, 'status_bar.repository', next);
     }
 
     /**
-     * Keep the reader's choice of the suggest list's description panel; every editor of the page
-     * tells it, so a choice already kept saves nothing.
+     * Write the reader's choice of the suggest list's description panel; a choice already on its
+     * way writes nothing again.
      */
     function setSuggestDetails(shown: boolean): void {
-        if (shown === store.current.suggestDetails) return;
-        save({ ...store.current, suggestDetails: shown });
-    }
-
-    /** Stop taking another browser tab's saved records, which `loadUi` given a window started. */
-    function stopFollowing(): void {
-        unfollow();
-        unfollow = () => undefined;
+        if (shown === suggestDetails()) return;
+        void writeOption(BEHAVIOR, 'editor.suggest_details', shown);
     }
 
     /** What a view instance wants remembered. */
     function setInstanceState(id: string, state: unknown): void {
-        save({ ...store.current, instances: { ...store.current.instances, [id]: state } });
+        deps.state.changeViews({ [id]: state }, []);
     }
 
-    /**
-     * Change one record from the value the storage holds for it now. The storage is read here and
-     * not taken from the last `storage` event, so an entry another browser tab saved in between is
-     * in what `change` is given. The record is saved even when this tab's copy already reads the
-     * same, since the storage's differs. Two tabs that write within the same instant can still
-     * overwrite one another, as the storage has no lock.
-     */
     function updateInstanceState(id: string, change: (held: unknown) => unknown): void {
-        const saved = backing === null ? null : savedHeld(backing);
-        const held =
-            saved !== null && id in saved.instances ? saved.instances[id] : instanceState(id);
-        synced = Object.fromEntries(Object.entries(synced).filter(([key]) => key !== id));
-        setInstanceState(id, change(held));
+        setInstanceState(id, change(instanceState(id)));
     }
 
     /**
      * Forget an instance's state when its tab closes, so a closed editor's draft does not linger.
      */
     function clearInstanceState(id: string): void {
-        if (!(id in store.current.instances)) return;
-        const instances = { ...store.current.instances };
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        delete instances[id];
-        save({ ...store.current, instances });
+        if (!Object.hasOwn(deps.state.views(), id)) return;
+        deps.state.changeViews({}, [id]);
     }
 
-    /** The ids of the instance records whose id starts with a prefix. */
     function instanceKeys(prefix: string): string[] {
-        return Object.keys(store.current.instances).filter((id) => id.startsWith(prefix));
+        return Object.keys(deps.state.views()).filter((id) => id.startsWith(prefix));
     }
 
     /**
-     * Forget every instance record whose id starts with a prefix, in one save: the records a view
+     * Forget every instance record whose id starts with a prefix, in one change: the records a view
      * keeps under an owner of its own beside the instance's, as a project card keeps its tree.
      */
     function clearInstanceStates(prefix: string): void {
         const gone = instanceKeys(prefix);
-        if (gone.length === 0) return;
-        const instances = Object.fromEntries(
-            Object.entries(store.current.instances).filter(([id]) => !gone.includes(id))
-        );
-        save({ ...store.current, instances });
+        if (gone.length > 0) deps.state.changeViews({}, gone);
     }
 
-    /** Write one pane strip setting to config/appearance.yml. */
     function setPaneStrip(key: PaneStripKey, value: string): void {
-        void writeConfigKey('appearance.yml', key, value);
+        void writeOption(APPEARANCE, key, value);
     }
 
-    /** Write the file icon theme to config/appearance.yml; whether the write was accepted. */
     async function setFileIcons(name: string): Promise<boolean> {
-        const answer = await writeConfigKey('appearance.yml', 'file_icons', name);
-        return isMap(answer) && answer.ok === true;
+        return writeOption(APPEARANCE, 'file_icons', name);
     }
 
     return {
         theme,
+        chosenTheme,
         preview,
         setPreview,
         crt,
@@ -777,8 +501,6 @@ export function createUi(
         statusQuiet,
         statusRepository,
         suggestDetails,
-        chosen,
-        initial,
         instanceState,
         ...hooks,
         requestUpdateTray,
@@ -787,18 +509,9 @@ export function createUi(
         paletteRequested,
         requestCardMove,
         cardMoveRequested,
-        loadUi,
-        stopFollowing,
         setTheme,
         setCrt,
-        setWallpaper,
-        setIcons,
-        setBrackets,
-        setMonospace,
-        setTextScale,
-        stepTextScale,
         setTerminalFont,
-        setCodeTheme,
         setStatusHidden,
         setStatusQuiet,
         setStatusRepository,

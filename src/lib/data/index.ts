@@ -261,9 +261,9 @@ const pathShape = z.string();
  * paths, each registry being the first entry of the list under its fixed key
  * (`REGISTRY_LIST_KEYS`), and the two YAML feeds' paths, under the keys `leads` and `radar`, which
  * are no collection. A registry, feed or career file the merged config does not name is read from
- * oculus's own path in config/sources.yml (`engineDefaults`, read only then), so a config that has
- * moved on in one place still builds. The text catalog travels with it, since every reader words
- * its findings from config/text/findings.yml.
+ * oculus's own path in config/defaults/sources.yml (`engineDefaults`, read only then), so a config
+ * that leaves one of them out builds. The text catalog travels with it, since every reader
+ * words its findings from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,

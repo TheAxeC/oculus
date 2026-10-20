@@ -1,9 +1,9 @@
-// Layer 1, data. The `counts` map of config/layout.yml: for each view that draws a count, whether
-// its tabs draw it and whether the rail sums it, and what a collection, or Position Leads, counts.
-// countsFindings words what is wrong with the map as findings of the file it came from, worded
-// from the merged catalog, and each says the row or the field is not read. The page reads a row
-// through countRow in state/workbench/rail-badges/rail-badges.ts, which takes each field the way
-// the options catalog's rule here takes it.
+// Layer 1, data. The `counts` map of config/defaults/layout.yml: for each view that draws a count,
+// whether its tabs draw it and whether the rail sums it, and what a collection, or Position Leads,
+// counts. countsFindings words what is wrong with the map as findings of the file it came from,
+// worded from the merged catalog, and each says the row or the field is not read. The page reads a
+// row through countRow in state/workbench/rail-badges/rail-badges.ts, which takes each field the
+// way the options catalog's rule here takes it.
 //
 // Which views draw a count is fixed by the views themselves: each one's registration has a count
 // hook. They are the boards of `boards`, the collections, which count by the `match` of their row
@@ -17,7 +17,7 @@ import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.t
 import { valueProblem } from '../catalog/value-rule.ts';
 import { mustBe } from '../catalog/value-words.ts';
 
-/** The top-level key of config/layout.yml the rows live under. */
+/** The top-level key of config/defaults/layout.yml the rows live under. */
 const COUNTS = 'counts';
 
 /** The views besides the boards and the collections whose count is computed in code. */

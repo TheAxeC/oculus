@@ -21,23 +21,23 @@ import { appActive } from '../../../../data/helpers/files/apps/apps.ts';
 import { APP_SETTINGS_KEY, settingFlaw } from '../../../../data/helpers/files/apps/settings.ts';
 import { fields, isMap } from '../../../../data/helpers/guards.ts';
 import type { AppSetting } from '../../../../data/model/index.ts';
-import { loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { textCatalog } from '../../../../data/sources/config.ts';
 import type { Change } from '../../../core/changes.ts';
 import { words } from '../../../core/words.ts';
 import type { AppsHeld } from '../../../machine/apps/read/held.ts';
-import { hubOption } from '../../../files/workspace/paths.ts';
 import type { WriteTarget } from '../../writes.ts';
 import { readBack } from '../../list-edit.ts';
+import { refusedBy, written } from './config-checks.ts';
 import {
+    layersOf,
+    loadLayers,
     placeOf,
     placeText,
-    refusedBy,
     refusing,
     removeMade,
-    written,
     type ConfigKeyOutcome,
     type OptionNow
-} from './config-checks.ts';
+} from './config-place.ts';
 
 /** The file the map lives in. */
 const FILE = 'behavior.yml';
@@ -98,9 +98,11 @@ function storedMap(parsed: unknown): unknown {
  * an undo compares it with the value the write left. A key the file does not hold is a found option
  * with no value, since there is nothing there for the write to have changed.
  */
-export function appSettingNow(engine: string, hub: string | undefined, key: string): OptionNow {
+export function appSettingNow(hub: string | undefined, key: string): OptionNow {
+    const place = placeOf(hub === undefined ? {} : { hub }, FILE, APP_SETTINGS_KEY);
+    if (place === null) return { found: false, value: null };
     try {
-        const text = placeText(placeOf(engine, hub, FILE, APP_SETTINGS_KEY)) ?? '';
+        const text = placeText(place) ?? '';
         const doc = parseDocument(text);
         if (doc.errors.length > 0) return { found: false, value: null };
         return { found: true, value: storedIn(doc.toJS(), key) ?? null };
@@ -120,7 +122,8 @@ export function writeAppSetting(
     value: unknown,
     declarations?: AppsHeld
 ): ConfigKeyOutcome {
-    const before = loadConfig(into.engine, hubOption(into.hub));
+    const layers = layersOf(into);
+    const before = loadLayers(into.engine, layers);
     const text = textCatalog(before.config);
     const refuse = refusing(FILE, `${APP_SETTINGS_KEY}.${key}`);
     if (declarations !== undefined) {
@@ -130,7 +133,8 @@ export function writeAppSetting(
         const flaw = settingFlaw(setting, value);
         if (flaw !== null) return refuse(flawText(text, setting, flaw));
     }
-    const place = placeOf(into.engine, into.hub ?? undefined, FILE, APP_SETTINGS_KEY);
+    const place = placeOf(layers, FILE, APP_SETTINGS_KEY);
+    if (place === null) return refuse(words(text, 'server.workspace.no_primary'));
     const onDisk = placeText(place);
     const source = onDisk ?? '';
     const doc = parseDocument(source);
@@ -164,7 +168,7 @@ export function writeAppSetting(
     if (read === null || !isDeepStrictEqual(read.after, expected)) {
         return refuse(words(text, 'server.config_key.not_kept'));
     }
-    const reason = refusedBy(into.engine, into.hub ?? undefined, FILE, edited, before, 'hub');
+    const reason = refusedBy(into.engine, layers, place, edited, before);
     if (reason !== null) return refuse(reason);
     return written(
         place.path,
@@ -188,8 +192,8 @@ export function undoAppSetting(
 ): ConfigKeyOutcome {
     const earlier = change.before === null ? undefined : change.before;
     const outcome = writeAppSetting(into, change.field, earlier);
-    const place = placeOf(into.engine, into.hub ?? undefined, FILE, APP_SETTINGS_KEY);
-    if (outcome.refused.length > 0 || !made.includes(place.path)) return outcome;
+    const place = placeOf(layersOf(into), FILE, APP_SETTINGS_KEY);
+    if (outcome.refused.length > 0 || place === null || !made.includes(place.path)) return outcome;
     const left = placeText(place);
     if (left === null || Object.keys(fields(parseDocument(left).toJS())).length > 0) return outcome;
     removeMade(place.path, made);

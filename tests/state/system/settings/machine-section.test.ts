@@ -8,7 +8,6 @@
 // answer (tests/routes/hubs/machine-answer.test.ts).
 
 import { describe, expect, it } from 'vitest';
-import { NO_TEXT } from '../../../../src/lib/state/sources/fs-transport.ts';
 import { openTarget } from '../../../../src/lib/state/system/config/config-files.ts';
 import { settingsGroups } from '../../../../src/lib/state/system/config/groups.ts';
 import type { LocalRow } from '../../../../src/lib/state/system/config/rows.ts';
@@ -17,8 +16,8 @@ import { shipped } from './fixture.ts';
 const DEFAULTS = { port: '8790', hpc_host: 'the cluster host', claude_bin: 'claude' };
 
 /** The group and rows of the section for the machine state given. */
-function machineGroup(machine: Parameters<typeof settingsGroups>[6]) {
-    const groups = settingsGroups(shipped, () => NO_TEXT, [], undefined, undefined, [], machine);
+function machineGroup(machine: Parameters<typeof settingsGroups>[5]) {
+    const groups = settingsGroups(shipped, {}, { workspace: null }, undefined, [], machine);
     const group = groups.find((one) => one.id === 'machine');
     if (group === undefined) throw new Error('the machine group is missing');
     const rows = group.sections.flatMap((section) => section.rows) as LocalRow[];
@@ -79,10 +78,11 @@ describe('the "This machine" section', () => {
         const [line] = group.lines;
         expect(line.file).toBe('.oculus/local.yml');
         const engine = { root: 'oculus', path: 'config' };
-        expect(openTarget(line.root, line.file, { primary: 'lab', engine })).toEqual({
+        const { root, path } = line.opens;
+        expect(openTarget(root, path, { primary: 'lab', engine })).toEqual({
             root: 'lab',
             path: '.oculus/local.yml'
         });
-        expect(openTarget(line.root, line.file, { primary: null, engine })).toBeNull();
+        expect(openTarget(root, path, { primary: null, engine })).toBeNull();
     });
 });

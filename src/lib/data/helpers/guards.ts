@@ -83,7 +83,7 @@ export function numericSetting(config: Record<string, unknown>, key: string): nu
 }
 
 /**
- * The map `focus:` of the merged config (config/behavior.yml): the Focus board's horizons,
+ * The map `focus:` of the merged config (config/defaults/behavior.yml): the Focus board's horizons,
  * thresholds, cadences and lists. A config whose `focus` is no map has an empty one.
  */
 export function focusBlock(config: Record<string, unknown>): Record<string, unknown> {

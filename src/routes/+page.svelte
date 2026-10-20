@@ -1,11 +1,12 @@
 <script lang="ts">
     // The page renders the workbench and nothing else. What it does on mount is the wiring the
-    // workbench cannot do for itself: fill the view registry, open the socket, and read the two
-    // saved stores. The rail's pages and the chords' groups come from the merged config the socket
-    // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself; the rail's own rewrite of its list, the git writes of the status
-    // bar's branch and sync items and the window's navigation history, which the title bar strip
-    // walks, are the page's to hand in for the same reason.
+    // workbench cannot do for itself: fill the view registry, hand the client the page state the
+    // load read, open the socket and start the saved arrangement. The rail's pages and the chords'
+    // groups come from the merged config the socket delivers, and so do the words of the status
+    // bar's items, which the page makes from stores the shell may not read itself; the rail's own
+    // rewrite of its list, the git writes of the status bar's branch and sync items and the
+    // window's navigation history, which the title bar strip walks, are the page's to hand in for
+    // the same reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
@@ -32,7 +33,6 @@
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
     import { problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { allRoots, readRoots } from '$lib/state/sources/fs-transport';
-    import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
     import { useBrowserWindows } from '$lib/shell/window/browser-windows.svelte';
     import { useDesktopWindows } from '$lib/shell/window/desktop-windows.svelte';
@@ -72,7 +72,6 @@
     provideSpelling(desktop?.bridge.spelling);
     const {
         apps: { findings: appFindings, rows: appRows },
-        debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { primary, workspaces },
         layout: {
@@ -83,18 +82,13 @@
             stopFollowing,
             workspaceAnswered
         },
+        notices,
+        pageState,
         problems,
         repositories,
         selectors: { waitingCount, rootsOfRepository },
         socket: { connect, disconnect, seedApps, seedConfig, status: socketStatus },
-        ui: {
-            instanceState,
-            loadUi,
-            setInstanceState,
-            setStatusRepository,
-            statusRepository,
-            stopFollowing: stopFollowingUi
-        },
+        ui: { instanceState, setInstanceState, statusRepository },
         writes: { setToken, writeRail }
     } = client;
 
@@ -105,18 +99,20 @@
         return mark === null ? null : { ...problemWords(mark), tone: mark.tone };
     });
 
-    // The views, and the collection views one per key of config/sources.yml's `collections:`, which
+    // The views, and the collection views one per key of the `collections:` option, which
     // the load function shipped with the catalog. It runs here in the script body rather than on
     // mount: the pane tabs and the catalogue draw what the registry holds on the first render, and
     // a collection registered after it would be missing from that frame. The write token goes in
     // with them, so the first write and the socket's first subscription both carry it, and so does
-    // the configuration this page was built from, which the socket keeps until a newer push. The
-    // page data is read once and not tracked; untrack says so, and is what keeps the read out of
-    // any effect.
+    // the configuration this page was built from, which the socket keeps until a newer push, and
+    // the page state the load read, which the first frame's arrangement and view states come from.
+    // The page data is read once and not tracked; untrack says so, and is what keeps the read out
+    // of any effect.
     untrack(() => {
         registerAll(client.registry);
         registerCollections(client.registry, data.collections);
         setToken(data.token);
+        pageState.install(data.pageState);
         seedConfig(data.seed.payload, data.seed.through);
         const { rows, findings, folders, version } = data.apps;
         seedApps({ rows, findings, folders }, version);
@@ -194,12 +190,9 @@
     /**
      * What the repository last chosen in the status bar comes to against the `git` channel and the
      * current workspace's roots. A choice that names a repository no root of the workspace holds
-     * is forgotten.
+     * is not used; the `status_bar.repository` option keeps it, so nothing is written for it.
      */
     const chosen = $derived(chosenState(statusRepository(), gitPayload(), workspaceRoots));
-    $effect(() => {
-        if (chosen === 'drop') setStatusRepository(null);
-    });
 
     /**
      * The words of the status bar's items whose stores the shell may not read, the repository being
@@ -285,24 +278,28 @@
             'debug',
             'debug-console',
             'jump',
-            'changes'
+            'changes',
+            'state'
         ]);
-        takeCarried(localStorage, window, location.origin);
-        loadUi(localStorage, window);
-        loadLayout(localStorage, window);
-        loadDebug(localStorage, window);
+        loadLayout();
+        // A record file of the state folder that does not read is said once, as the page opens.
+        for (const finding of pageState.findings()) {
+            notices.post(finding.message, { tone: 'warning' });
+        }
         // The browser's own menu stays only where a control owns the right-click
         // (context-guard.ts).
         const guard = (event: MouseEvent): void => {
             if (shouldCancel(event)) event.preventDefault();
         };
+        // A page going away sends the saves that wait with requests that outlive it.
+        const leave = (): void => pageState.flush();
         document.addEventListener('contextmenu', guard);
+        window.addEventListener('pagehide', leave);
         return () => {
             document.removeEventListener('contextmenu', guard);
+            window.removeEventListener('pagehide', leave);
             disconnect();
             stopFollowing();
-            stopFollowingUi();
-            stopFollowingDebug();
         };
     });
 

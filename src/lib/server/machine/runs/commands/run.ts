@@ -2,8 +2,9 @@
 //
 // `command` resolves the command a press names, by its name and its source, and the commands it
 // depends on, takes each placeholder's value from the context the page sent, and checks that the
-// chain has been approved when any command of it was not saved through the form. A chain not yet
-// approved is answered as `{ approve: [<the lines of the chain>] }` and nothing starts; once it is
+// chain has been approved: the command form approves the chain of the entry it writes, and any
+// other chain, or one whose text changed since, asks the reader. A chain not yet approved is
+// answered as `{ approve: [<the lines of the chain>] }` and nothing starts; once it is
 // approved, one shell terminal starts, named after the command, running the whole chain as one
 // line, and it is a task terminal: tmux keeps it after its line ended, with the status of the line.
 // Each placeholder of the line is `"$OCULUS_ARG_<n>"` and its value is set in the terminal's
@@ -47,7 +48,7 @@ import {
     type StartOptions
 } from '../../pty/sessions.ts';
 import type { StreamTerminalSet } from '../../apps/tools/run/stream-terminals.ts';
-import { resolveChain } from './resolve.ts';
+import { resolveChain } from '../../../../data/helpers/run/chain.ts';
 import {
     chainLines,
     chainText,
@@ -65,8 +66,6 @@ export type CommandRunOptions = StartOptions & {
     rootsFor?: () => string[];
     /** The approvals file. Defaults to ~/.oculus/approvals.json. */
     approvalsFor?: () => string;
-    /** The saved commands file. Defaults to ~/.oculus/commands.json. */
-    savedFile?: string;
     /** Re-read the terminal manager after a write. */
     refresh?: () => void;
     /** The apps, whose tasks are commands too. */
@@ -95,7 +94,7 @@ const contextShape = z
     })
     .catch({}) satisfies z.ZodType<CommandContext>;
 
-const sourceShape = z.enum(['file', 'saved', 'found', 'app']);
+const sourceShape = z.enum(['file', 'found', 'app']);
 
 /** What a run of a command answers: its terminal, the chain that needs approval, or a refusal. */
 export type CommandStart =
@@ -123,7 +122,7 @@ export async function runCommand(
     if (typeof name !== 'string' || name === '') return { refused: 'bad-terminal', names: [] };
     const source = sourceShape.safeParse(sourceName);
     if (!source.success) return { refused: 'bad-terminal', names: [] };
-    const listed = await listAll(repo, options.savedFile, options.tasks);
+    const listed = await listAll(repo, options.tasks);
     const resolved = resolveChain(listed.commands, name, source.data);
     if ('error' in resolved) return { refused: resolved.error, names: resolved.names };
     const root = resolved.chain[resolved.chain.length - 1];
@@ -139,8 +138,7 @@ export async function runCommand(
     if ('error' in filled) return { refused: filled.error, names: filled.names };
     const approvals = options.approvalsFor?.() ?? defaultApprovalsPath();
     const lines = chainLines(repo, resolved.chain);
-    const asks = resolved.chain.some((command) => command.source !== 'saved');
-    if (asks && !isApproved(approvals, chainText(repo, lines))) return { approve: lines };
+    if (!isApproved(approvals, chainText(repo, lines))) return { approve: lines };
     const token = randomBytes(TOKEN_BYTES).toString('hex');
     const lined = resolved.chain.map((command, at) => ({ ...command, run: filled.lines[at] }));
     const terminal = await startTerminal(
@@ -203,7 +201,7 @@ async function appAgain(
 ): Promise<Response> {
     const job = terminal.job;
     if (job === null || options.tasks === undefined) return refusal('task-gone', [terminal.name]);
-    const listed = await listAll(job.repo, undefined, options.tasks);
+    const listed = await listAll(job.repo, options.tasks);
     const command = listed.commands.find(
         (one) => one.name === job.name && one.source === job.source
     );

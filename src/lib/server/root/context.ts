@@ -45,6 +45,7 @@ import { LiteratureDesk } from '../content/literature/desk.ts';
 import { target, type Carried } from '../edit/writes.ts';
 import { hubDirs } from '../../data/helpers/files/private-folders.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
+import { registerStateChannel } from '../files/workspace/page-state/routes.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
 import { ignoredCache } from '../files/fs.ts';
@@ -55,7 +56,6 @@ import { createRunningGit } from '../core/git/running.ts';
 import { expandHome } from '../files/workspace/folders.ts';
 import { wallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
-import { savedPath } from '../machine/runs/commands/saved.ts';
 import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { debugControl } from '../machine/debug/session/start.ts';
@@ -79,7 +79,7 @@ import { HookStore, recoverPlaces } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
 import type { OpenWorkspace } from '../files/workspace/open.ts';
-import { hubOption, perOculus } from '../files/workspace/paths.ts';
+import { configOptions, perOculus } from '../files/workspace/paths.ts';
 import { stateFileOf } from '../files/workspace/state.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
@@ -94,7 +94,7 @@ import { appFeed } from './process/context/app-feed.ts';
 import type { AutofetchWatcher } from './watch/autofetch.ts';
 import type { GitWatcher } from './watch/git.ts';
 import { nestedFound, startAutofetch, startGit } from './watch/repos/git-start.ts';
-import { changedKeys, rebuiltBy, type ChangedKey } from './watch/local.ts';
+import { changedKeys, changedPaths, rebuiltBy, type ChangedKey } from './watch/local.ts';
 import { startPollers, usageStarters } from './watch/pollers.ts';
 import type { PortfolioWatcher, Watcher } from './watch/portfolio.ts';
 import type { SessionsWatcher } from './watch/sessions.ts';
@@ -170,12 +170,13 @@ export function createServerContext(
         };
     };
     const load = (): ReturnType<typeof loadConfig> =>
-        make.loadConfig(engine, hubOption(open().primaryDir));
+        make.loadConfig(engine, configOptions(open()));
     // The parse the start, a request, a finding or a move of the workspace takes while neither
     // config folder changed, so the folders are parsed once for all of them until a file changes.
     const configCache = createConfigCache({
         engine,
         hub: () => open().primaryDir,
+        workspace: () => open().file,
         load,
         loadHub: (dir) => make.loadConfig(engine, dir === null ? {} : { hub: dir }),
         report: reportFindings,
@@ -204,6 +205,7 @@ export function createServerContext(
     const processesConfig = processesSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
+    registerStateChannel(hub);
     const streamTerminals = new StreamTerminalSet();
     const terminals = make.createTerminals(hub, streamTerminals, () =>
         textCatalog(configCache.quiet().config)
@@ -306,6 +308,7 @@ export function createServerContext(
                     built.live?.hostChanged();
                     relay.settingsChanged();
                     if (!lintSettings(configCache.quiet().config).on.eslint) eslint.endAll();
+                    followPaths?.();
                 },
                 schemas: (set, references) => schemas.publish(set, references),
                 repositories: () => nested.repositories
@@ -341,7 +344,13 @@ export function createServerContext(
         );
     const startAutofetchWatcher = (): AutofetchWatcher =>
         startAutofetch(make, hub, () => owned().git);
-    const paths = () => perOculus(open().primaryDir, local);
+    const paths = () => perOculus(open().primaryDir, configCache.quiet().config);
+    // The per-oculus paths the watchers were built with. Every rebuild of the portfolio compares
+    // them with the merged config's, so a change of `bookmarks`, `schedules` or `apps_dir` in the
+    // primary hub's settings file builds again what reads it; the comparison is set once the
+    // watchers and their rebuild exist.
+    let heldPaths = paths();
+    let followPaths: (() => void) | null = null;
     // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
     // them: this one carries a bookmark written outside oculus to every open page.
     const startBookmarks = (): Watcher => make.watchBookmarks(hub, { file: paths().bookmarks });
@@ -352,8 +361,7 @@ export function createServerContext(
     const startSchedules = (): SchedulesWatcher => {
         const files = {
             schedules: paths().schedules,
-            record: local.scheduleRecord ?? defaultRecordPath(),
-            commands: savedPath()
+            record: local.scheduleRecord ?? defaultRecordPath()
         };
         const rootsFor = (): string[] => open().roots.map((root) => expandHome(root.dir));
         return make.watchSchedules(hub, {
@@ -366,7 +374,6 @@ export function createServerContext(
                     claudeBin: local.claudeBin,
                     text: textCatalog(configCache.quiet().config),
                     rootsFor,
-                    commands: files.commands,
                     approvalsFor: () => local.approvals ?? defaultApprovalsPath()
                 }),
             stop: (terminal) => stopTerminal(terminal),
@@ -383,6 +390,7 @@ export function createServerContext(
         secret: appsSecret,
         local: () => local,
         config: () => configCache.quiet().config,
+        from: () => configCache.quiet().from,
         open,
         follow: (listener) => workspace.subscribe(() => listener())
     });
@@ -642,6 +650,16 @@ export function createServerContext(
         }
     });
 
+    followPaths = () => {
+        if (closed) return;
+        const now = paths();
+        const changed = changedPaths(heldPaths, now);
+        heldPaths = now;
+        if (changed.length === 0) return;
+        rebuild(rebuiltBy(changed));
+        if (changed.includes('appsDir')) apps.follow();
+    };
+
     /** Hold a port the server listens on now: the address every page is sent, and the portfolio. */
     function listeningOn(port: number): void {
         local.port = port;
@@ -730,6 +748,9 @@ export function createServerContext(
         const kept = local.port;
         for (const key of Object.keys(local)) Reflect.deleteProperty(local, key);
         Object.assign(local, next, { port: kept });
+        // A move of the primary builds again what the per-oculus paths name, so they are held as
+        // the new primary places them.
+        if (changed.includes('workspace')) heldPaths = paths();
         rebuild(rebuiltBy(changed), previous);
         if (changed.includes('lsp')) relay.reload();
         if (changed.includes('openBin')) context.opener = machineOpener(local);
@@ -742,11 +763,7 @@ export function createServerContext(
             context.mailDir = local.mailDir ?? defaultConnectDir('mail');
             polled.mail.setAccounts(local.mail, context.mailDir);
         }
-        if (
-            changed.some((key) => key === 'appsDir' || key === 'approvals' || key === 'workspace')
-        ) {
-            apps.follow();
-        }
+        if (changed.some((key) => key === 'approvals' || key === 'workspace')) apps.follow();
         mover.want(next.port);
     }
 

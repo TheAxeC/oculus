@@ -1,29 +1,30 @@
 // Layer 4, tree check. The readers of the config folder (loadConfig, behaviorFindings,
 // settingFindings, themeFindings, vocabCatalog, optionFindings) over synthetic files in a temporary
 // directory, and the one real config they are run over for no finding. The sentences checkLocal
-// answers, and readLocal's problems, are rows of tests/data/sources/config/local.test.ts, and the
-// join of the hubs' local.yml files is tests/data/sources/config/machine.test.ts. The config folder
-// oculus ships is read by tests/checks/config/config-folder.test.ts.
+// answers, and readLocal's problems, are rows of tests/data/sources/config/local/local.test.ts, and
+// the join of the hubs' local.yml files is tests/data/sources/config/local/machine.test.ts. The
+// config folder oculus ships is read by tests/checks/config/config-folder.test.ts.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
-    LOCAL_NAME,
-    behaviorFindings,
     checkLocal,
     engineDir,
     loadConfig,
     sourceFile,
-    optionFindings,
-    settingFindings,
     textCatalog,
-    themeFindings,
-    vocabCatalog
+    vocabCatalog,
+    type ConfigWhere
 } from '../../../src/lib/data/sources/config.ts';
+import {
+    behaviorFindings,
+    settingFindings
+} from '../../../src/lib/data/sources/config/catalogs.ts';
+import { optionFindings } from '../../../src/lib/data/sources/config/catalog/option-findings.ts';
+import { themeFindings } from '../../../src/lib/data/sources/config/sections/themes.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
-import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -71,12 +72,24 @@ describe('checkLocal', () => {
     });
 });
 
+/** Write one defaults file into <engine>/config/defaults. */
+function writeDefaults(engine: string, name: string, body: string): string {
+    return writeConfig(engine, join('defaults', name), body);
+}
+
+/** Where a merged config of `engine` was read from, named as the shipped config's `from` does. */
+const SHIPPED_FROM = loadConfig(engineDir()).from;
+
+function shippedAt(engine: string): ConfigWhere {
+    return { engine, hub: null, from: SHIPPED_FROM };
+}
+
 describe('the config folder of an engine', () => {
     it('is that engine own folder, so a run over a copy reads and writes the copy', () => {
         const engine = scratch();
-        writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
+        writeDefaults(engine, 'behavior.yml', 'stale_days: 30\n');
         const copy = scratch();
-        writeConfig(copy, 'behavior.yml', 'stale_days: 7\n');
+        writeDefaults(copy, 'behavior.yml', 'stale_days: 7\n');
         expect(loadConfig(engine).config.stale_days).toBe(30);
         expect(loadConfig(copy).config.stale_days).toBe(7);
     });
@@ -84,21 +97,26 @@ describe('the config folder of an engine', () => {
     it('is the folder a finding about one of its keys names', () => {
         // A run over a copy never reaches the checkout's own folder.
         const engine = scratch();
-        writeConfig(engine, 'sources.yml', 'scan: []\n');
+        writeDefaults(engine, 'sources.yml', 'scan: []\n');
         expect(sourceFile(engine, engine, loadConfig(engine).from, 'scan')).toBe(
-            join(engine, 'config', 'sources.yml')
+            join(engine, 'config', 'defaults', 'sources.yml')
         );
-        expect(layoutFile(engine)).toBe(join(engine, 'config', 'layout.yml'));
+    });
+
+    it('reads a .yml file at the top of config/ as no defaults file', () => {
+        const engine = scratch();
+        writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
+        expect(loadConfig(engine).config.stale_days).toBeUndefined();
     });
 });
 
 describe('loadConfig', () => {
     it('merges the top-level keys of every file in name order', () => {
         const engine = scratch();
-        writeConfig(engine, 'behavior.yml', 'stale_days: 30\nread_limits: { lines: 400 }\n');
-        writeConfig(engine, 'vocab.yml', 'palette: [teal, amber]\n');
+        writeDefaults(engine, 'behavior.yml', 'stale_days: 30\nread_limits: { lines: 400 }\n');
+        writeDefaults(engine, 'vocab.yml', 'palette: [teal, amber]\n');
         // Not a .yml file, so it is not merged.
-        writeConfig(engine, 'notes.md', 'palette: ignored\n');
+        writeDefaults(engine, 'notes.md', 'palette: ignored\n');
 
         const { config, findings } = loadConfig(engine);
         expect(Object.keys(config).sort()).toEqual(['palette', 'read_limits', 'stale_days']);
@@ -111,8 +129,8 @@ describe('loadConfig', () => {
     it('reports a top-level key two files define and takes the value from the later one', () => {
         const engine = scratch();
         withSentences(engine);
-        writeConfig(engine, 'a-first.yml', 'palette: [teal]\nonly_here: 1\n');
-        const later = writeConfig(engine, 'b-later.yml', 'palette: [amber]\n');
+        writeDefaults(engine, 'a-first.yml', 'palette: [teal]\nonly_here: 1\n');
+        const later = writeDefaults(engine, 'b-later.yml', 'palette: [amber]\n');
 
         const { config, findings } = loadConfig(engine);
         expect(config.palette).toEqual(['amber']);
@@ -149,42 +167,31 @@ describe('loadConfig', () => {
     it('reports a file that does not parse and merges the rest', () => {
         const engine = scratch();
         withSentences(engine);
-        writeConfig(engine, 'broken.yml', 'title: "unterminated\n  - [\n');
-        writeConfig(engine, 'good.yml', 'text: { app: { title: oculus } }\n');
+        writeDefaults(engine, 'broken.yml', 'title: "unterminated\n  - [\n');
+        writeDefaults(engine, 'good.yml', 'text: { app: { title: oculus } }\n');
 
         const { config, findings } = loadConfig(engine);
         expect(config.text).toEqual({ ...SENTENCES, 'app.title': 'oculus' });
         expect(findings.length).toBe(1);
-        expect(findings[0].file).toBe(join(engine, 'config', 'broken.yml'));
+        expect(findings[0].file).toBe(join(engine, 'config', 'defaults', 'broken.yml'));
         expect(findings[0].message).toMatch(/^does not parse: /);
     });
 
     it('reports a file that is not a map and treats an empty file as no keys', () => {
         const engine = scratch();
         withSentences(engine);
-        writeConfig(engine, 'listy.yml', '- one\n- two\n');
-        writeConfig(engine, 'nothing.yml', '');
+        writeDefaults(engine, 'listy.yml', '- one\n- two\n');
+        writeDefaults(engine, 'nothing.yml', '');
 
         const { config, findings } = loadConfig(engine);
         expect(config).toEqual({ text: SENTENCES });
         expect(findings).toEqual([
             {
-                file: join(engine, 'config', 'listy.yml'),
+                file: join(engine, 'config', 'defaults', 'listy.yml'),
                 key: '',
                 message: 'is not a map of keys'
             }
         ]);
-    });
-
-    it('leaves a local.yml in the config folder out of the merge, clashing key and all', () => {
-        const engine = scratch();
-        writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
-        writeConfig(engine, LOCAL_NAME, 'port: 8800\nstale_days: 7\n');
-
-        const { config, findings } = loadConfig(engine);
-        expect(Object.keys(config)).toEqual(['stale_days']);
-        expect(config.stale_days).toBe(30);
-        expect(findings).toEqual([]);
     });
 
     // With no config directory there is no catalog to word the finding from, so it is written as
@@ -242,12 +249,9 @@ describe('loadConfig', () => {
     // its own finding and every other is worded by key and arguments rather than thrown on.
     it('names a sentence file that does not parse by its key and arguments, without throwing', () => {
         const engine = scratch();
-        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
-            recursive: true,
-            filter: (source) => !source.endsWith(LOCAL_NAME)
-        });
+        cpSync(join(engineDir(), 'config'), join(engine, 'config'), { recursive: true });
         const broken = writeConfig(engine, join('text', 'findings.yml'), 'text: [\n');
-        const listy = writeConfig(engine, 'listy.yml', '- one\n');
+        const listy = writeDefaults(engine, 'listy.yml', '- one\n');
 
         const { config, findings } = loadConfig(engine);
         expect(findings.map((one) => one.file)).toEqual([listy, broken]);
@@ -259,15 +263,10 @@ describe('loadConfig', () => {
 });
 
 describe("loadConfig with the hub's settings file", () => {
-    /**
-     * A copy of the checkout's config folder as an engine, with the machine's own file left out.
-     */
+    /** A copy of the checkout's config folder as an engine. */
     function engineCopy(): string {
         const engine = scratch();
-        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
-            recursive: true,
-            filter: (source) => !source.endsWith(LOCAL_NAME)
-        });
+        cpSync(join(engineDir(), 'config'), join(engine, 'config'), { recursive: true });
         return engine;
     }
 
@@ -396,12 +395,16 @@ describe('behaviorFindings', () => {
         ['chat.skip_permissions', { chat: { skip_permissions: true } }],
         ['tasks.skip_permissions', { tasks: { skip_permissions: true } }]
     ])(
-        'says a retired key is not read and names the Run unattended choice, against behavior.yml: %s',
+        'says a retired key is not read and names the Run unattended choice, against the file it was read from: %s',
         (key, retired) => {
             const engine = scratch();
-            expect(behaviorFindings(engine, { ...WORDS, ...retired })).toEqual([
+            const where = {
+                ...shippedAt(engine),
+                from: { ...SHIPPED_FROM, tasks: 'behavior.yml' }
+            };
+            expect(behaviorFindings(where, { ...WORDS, ...retired })).toEqual([
                 {
-                    file: join(engine, 'config', 'behavior.yml'),
+                    file: join(engine, 'config', 'defaults', 'behavior.yml'),
                     key,
                     message: `${key} is not read; a schedule in the update tray runs unattended through its Run unattended choice`
                 }
@@ -439,21 +442,23 @@ describe('behaviorFindings', () => {
     ])('words a focus block of the form %j', (focus, expected) => {
         const engine = scratch();
         const shipped = loadConfig(engineDir()).config;
-        const found = behaviorFindings(engine, { ...shipped, focus }).filter((one) =>
+        const found = behaviorFindings(shippedAt(engine), { ...shipped, focus }).filter((one) =>
             one.key.startsWith('focus')
         );
         expect(found.map((one) => one.key)).toEqual(expected.map(([key]) => key));
         found.forEach((one, at) => {
-            expect(one.file).toBe(join(engine, 'config', 'behavior.yml'));
+            expect(one.file).toBe(join(engine, 'config', 'defaults', 'behavior.yml'));
             expect(one.message).toContain(expected[at][1]);
         });
     });
 
     it('says nothing about a configuration whose keys are all under their own names', () => {
         const engine = scratch();
-        expect(behaviorFindings(engine, { ...WORDS, chat: { model: 'opus' } })).toEqual([]);
-        expect(behaviorFindings(engine, { ...WORDS, chat: 'opus' })).toEqual([]);
-        expect(behaviorFindings(engine, loadConfig(engineDir()).config)).toEqual([]);
+        expect(behaviorFindings(shippedAt(engine), { ...WORDS, chat: { model: 'opus' } })).toEqual(
+            []
+        );
+        expect(behaviorFindings(shippedAt(engine), { ...WORDS, chat: 'opus' })).toEqual([]);
+        expect(behaviorFindings(shippedAt(engine), loadConfig(engineDir()).config)).toEqual([]);
     });
 });
 
@@ -461,12 +466,12 @@ describe('settingFindings', () => {
     const engine = engineDir();
     const shipped = loadConfig(engine).config;
     const WRONG: Record<string, unknown> = { ...WRONG_SETTINGS, editor: WRONG_EDITOR };
-    const file = join(engine, 'config', 'behavior.yml');
+    const file = join(engine, 'config', 'defaults', 'behavior.yml');
     const said = (config: Record<string, unknown>) =>
-        settingFindings(engine, config).map((one) => `${one.key}: ${one.message}`);
+        settingFindings(shippedAt(engine), config).map((one) => `${one.key}: ${one.message}`);
 
     it('words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files', () => {
-        const findings = settingFindings(engine, { ...shipped, ...WRONG });
+        const findings = settingFindings(shippedAt(engine), { ...shipped, ...WRONG });
         expect(new Set(findings.map((one) => one.file))).toEqual(new Set([file]));
         const keys = findings.map((one) => one.key);
         expect(new Set(keys).size).toBe(keys.length);
@@ -599,7 +604,7 @@ describe('settingFindings', () => {
             'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
         );
         expect(lines).toContain('slurm.resource: slurm.resource must be text; the default is used');
-        expect(settingFindings(engine, shipped)).toEqual([]);
+        expect(settingFindings(shippedAt(engine), shipped)).toEqual([]);
     });
 
     it('reads an empty slurm.resource as no cluster, with no finding', () => {
@@ -610,8 +615,8 @@ describe('settingFindings', () => {
         const dropped = Object.fromEntries(
             Object.entries({ ...shipped, ...WRONG }).filter(([key]) => !(key in WRONG))
         );
-        expect(settingFindings(engine, dropped)).toEqual([]);
-        expect(settingFindings(engine, { text: shipped.text, ...WRONG })).toEqual([]);
+        expect(settingFindings(shippedAt(engine), dropped)).toEqual([]);
+        expect(settingFindings(shippedAt(engine), { text: shipped.text, ...WRONG })).toEqual([]);
     });
 });
 
@@ -621,7 +626,7 @@ describe('themeFindings', () => {
 
     /** The findings over these theme rows, each as its key and its sentence. */
     function said(themes: unknown): string[] {
-        return themeFindings(scratch(), { ...BASE, themes }).map(
+        return themeFindings(shippedAt(scratch()), { ...BASE, themes }).map(
             (one) => `${one.key}: ${one.message}`
         );
     }
@@ -658,7 +663,7 @@ describe('themeFindings', () => {
 
     /** The findings over this `code_theme` value, each as its file's name, key and sentence. */
     function codeSaid(config: Record<string, unknown>): string[] {
-        return themeFindings(scratch(), { ...BASE, ...config }).map(
+        return themeFindings(shippedAt(scratch()), { ...BASE, ...config }).map(
             (one) => `${basename(one.file)} ${one.key}: ${one.message}`
         );
     }
@@ -700,12 +705,12 @@ describe('themeFindings', () => {
     });
 
     it('says nothing about the shipped list, a row with no name, or a config with no list', () => {
-        expect(themeFindings(scratch(), loadConfig(engineDir()).config)).toEqual([]);
+        expect(themeFindings(shippedAt(scratch()), loadConfig(engineDir()).config)).toEqual([]);
         expect(said([{ glyph: 'sun' }, 'light'])).toEqual([]);
-        expect(themeFindings(scratch(), BASE)).toEqual([]);
-        expect(themeFindings(scratch(), { ...BASE, themes: [{ name: 'a' }] })[0].file).toMatch(
-            /config[/\\]appearance\.yml$/
-        );
+        expect(themeFindings(shippedAt(scratch()), BASE)).toEqual([]);
+        expect(
+            themeFindings(shippedAt(scratch()), { ...BASE, themes: [{ name: 'a' }] })[0].file
+        ).toMatch(/config[/\\]defaults[/\\]appearance\.yml$/);
     });
 });
 

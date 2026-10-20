@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, shell. The top row of one pane, drawn under the two settings of
-    // config/appearance.yml (strip-shape.ts): the tab strip of every tab (`show_tabs: multiple`) or
+    // Layer 3, shell. The top row of one pane (strip-shape.ts), drawn under the two settings of
+    // config/defaults/appearance.yml: the tab strip of every tab (`show_tabs: multiple`) or
     // of the active tab alone (`single`), or with `none` no row but a title row naming the active
     // tab while the pane is locked. The actions are the Split Right button, the lock mark of a
     // locked pane, and the pane menu's `...` opener; `editor_actions: hidden` leaves out the first

@@ -37,7 +37,8 @@ export type Appearance = {
     /**
      * The layer's style: the image's address, which names the `wallpaper.image` value (a pick's
      * while its write is out, else the config's), so a new choice is a new address the browser
-     * fetches rather than the picture it holds, and the image's
+     * fetches rather than the picture it holds, and no address while the value is empty, which
+     * names no image, and the image's
      * own two numbers, as the properties its layer's filter reads: the dim is how much light is
      * taken out of the picture, so the brightness left is what the filter wants.
      */
@@ -63,14 +64,16 @@ export function useAppearance({
     const paper = $derived(wallpaperSettings());
     const chosen = $derived(wallpapers.shown(entities.config()?.config));
     const image = $derived(
-        `background-image: url("/api/wallpaper?v=${encodeURIComponent(chosen)}"); ` +
-            `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
+        (chosen === ''
+            ? ''
+            : `background-image: url("/api/wallpaper?v=${encodeURIComponent(chosen)}"); `) +
+            `--wall-dim:${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
     );
 
     $effect(() => {
         document.documentElement.style.setProperty('--text-scale', String(textScale() ?? 1));
         applyWallpaper(document, paper, wall);
-        // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the icons;
+        // The terminal palettes draw the ASCII stand-ins unless the option `rice.icons` is on;
         // every other theme draws the icon config/catalogs/icons.yml maps each glyph name to.
         setGlyphMode(terminalTheme(theme(), appShell.offers()) && !icons() ? 'ascii' : 'icon');
     });

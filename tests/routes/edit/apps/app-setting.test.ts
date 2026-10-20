@@ -182,7 +182,7 @@ describe('the stored values the apps watcher judges', () => {
     it('names a value set by hand below the minimum, with the setting and the app', () => {
         expect(judged({ 'notes.width': 10 })).toEqual([
             [
-                'config/behavior.yml',
+                'app_settings.notes.width',
                 findingText(CATALOG, 'findings.apps.setting_minimum', 'notes.width', 'Notes')
             ]
         ]);
@@ -191,7 +191,7 @@ describe('the stored values the apps watcher judges', () => {
     it('names a key no app declares', () => {
         expect(judged({ 'gone.x': 1 })).toEqual([
             [
-                'config/behavior.yml',
+                'app_settings.gone.x',
                 findingText(CATALOG, 'findings.apps.setting_undeclared', 'gone.x')
             ]
         ]);

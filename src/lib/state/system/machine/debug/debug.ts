@@ -1,11 +1,12 @@
-// Layer 2, client state. The pure parts of the debug store: what is kept in the browser's storage
-// and how it is read back, the breakpoint lists and how they move, the console a page holds and how
-// an append continues it, the console's rows with identical neighbours drawn once, the earlier
-// inputs offered under the console's input, and the value a hover shows.
+// Layer 2, client state. The pure parts of the debug store: the record the page state keeps of the
+// debugger (`debug.json` of the state folder) and how it is read back, the breakpoint lists and how
+// they move, the console a page holds and how an append continues it, the console's rows with
+// identical neighbours drawn once, the earlier inputs offered under the console's input, and the
+// value a hover shows.
 //
 // Nothing here reads the page: each function takes its values and answers a new one, so a test
-// hands it plain objects. The storage is read through zod, so a value of another shape, a storage
-// that throws, or no storage gives empty lists.
+// hands it plain objects. The record is read through zod, so a value of another shape, or none,
+// gives empty lists.
 
 import { z } from 'zod';
 import {
@@ -20,12 +21,6 @@ import {
 import { deepestHolding } from '../../../../data/helpers/files/paths.ts';
 import { mapOfShape, rowsShape } from '../../../../data/shapes/shapes.ts';
 import type { ServedRoot } from '../../../sources/repositories/file-git.ts';
-
-/** The key the breakpoints, watch expressions, chosen configurations and toolbar are kept under. */
-export const DEBUG_KEY = 'oculus.debug.v1';
-
-/** What the store needs of a Storage, so a test can hand it a plain object. */
-export type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
 /** How a breakpoint is drawn: the adapter holds it, has not yet, or the reader turned it off. */
 export type MarkerState = 'verified' | 'unverified' | 'disabled';
@@ -54,7 +49,7 @@ export function filled(text: string | undefined): string | undefined {
 /** The condition and hit condition a function breakpoint is set with. */
 export type FunctionOptions = { condition?: string | undefined; hitCondition?: string | undefined };
 
-/** What the browser keeps of the debugger. */
+/** What the page state keeps of the debugger. */
 export type SavedDebug = {
     /** The breakpoints of each file, by absolute path, in line order. */
     breakpoints: Record<string, Point[]>;
@@ -93,8 +88,8 @@ const savedShape = z.object({
     toolbar: z.number().nullable().catch(null)
 });
 
-/** What a browser that kept nothing holds. */
-export function nothingSaved(): SavedDebug {
+/** What the debugger keeps when nothing is saved. */
+function nothingSaved(): SavedDebug {
     return {
         breakpoints: {},
         functions: [],
@@ -105,27 +100,17 @@ export function nothingSaved(): SavedDebug {
     };
 }
 
-/** What the storage holds, or nothing for a value that does not read or a storage that throws. */
-export function loadSaved(storage: Storable | undefined): SavedDebug {
-    try {
-        const raw = storage?.getItem(DEBUG_KEY) ?? null;
-        if (raw === null) return nothingSaved();
-        const read = savedShape.safeParse(JSON.parse(raw));
-        if (!read.success) return nothingSaved();
-        const { version: _version, ...kept } = read.data;
-        return kept;
-    } catch {
-        return nothingSaved();
-    }
+/** The record the page state holds, or nothing for none or a value that does not read. */
+export function readSaved(record: unknown): SavedDebug {
+    const read = savedShape.safeParse(record);
+    if (!read.success) return nothingSaved();
+    const { version: _version, ...kept } = read.data;
+    return kept;
 }
 
-/** Write what is kept; a storage that throws keeps nothing and the page goes on. */
-export function writeSaved(storage: Storable | undefined, saved: SavedDebug): void {
-    try {
-        storage?.setItem(DEBUG_KEY, JSON.stringify({ version: 1, ...saved }));
-    } catch {
-        // The breakpoints are kept for this page only.
-    }
+/** The record the page state saves for what the debugger keeps. */
+export function savedRecord(saved: SavedDebug): Record<string, unknown> {
+    return { version: 1, ...saved };
 }
 
 /** The lines in order, one breakpoint to a line, the first of two on a line kept. */

@@ -21,10 +21,10 @@
     // the hub for any other document (doc-link.ts, `openingOf`). The manual opens the Help view at
     // the heading the link names, a file of the engine folder opens as the engine's document
     // whichever document linked to it, and any other document opens as a doc tab of the hub, which
-    // says so when the `docs:` list of config/layout.yml does not name it. A link of the engine's
-    // documents that climbs out of the engine folder is read in the hub when the folder lies in
-    // it. A link that leaves the hub, and any link of a document outside the hub (the answer's
-    // `path` is then the empty path), opens nothing and the page stays where it is.
+    // says so when the `docs:` list of config/defaults/layout.yml does not name it. A link of the
+    // engine's documents that climbs out of the engine folder is read in the hub when the folder
+    // lies in it. A link that leaves the hub, and any link of a document outside the hub (the
+    // answer's `path` is then the empty path), opens nothing and the page stays where it is.
     //
     // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
     // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the

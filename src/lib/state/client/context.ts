@@ -46,6 +46,7 @@ import { createRecover } from '../system/machine/recover.svelte.ts';
 import { createDocs } from '../system/docs.svelte.ts';
 import { createDrag } from '../workbench/drag.svelte.ts';
 import {
+    caretHere,
     createEditorStatus,
     sessionFocusKeeper,
     sourceOnScreen
@@ -63,13 +64,7 @@ import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
 import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
 import { createSchedule } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox } from '../feeds/inbox.svelte.ts';
-import {
-    instanceMap,
-    instanceText,
-    isInstanceOf,
-    stateId,
-    tabsOf
-} from '../workbench/layout/instance.ts';
+import { instanceMap, isInstanceOf, stateId, tabsOf } from '../workbench/layout/instance.ts';
 import { fileOfTab } from '../workbench/navigation/pages.ts';
 import { paneAt } from '../workbench/layout/index.ts';
 import { pageOpen } from '../workbench/layout/saved/storage.ts';
@@ -78,7 +73,7 @@ import { createLatex, type LatexStore } from '../sessions/latex/latex.svelte.ts'
 import type { Desktop } from '../shared/stores/desktop.ts';
 import { createWindows } from '../workbench/layout/open/float/browser.ts';
 import { createLayout } from '../workbench/layout.svelte.ts';
-import { appsSettings } from '../../data/sources/config/settings.ts';
+import { appsSettings } from '../../data/sources/config/settings/machine.ts';
 import { createLines } from '../system/lines.svelte.ts';
 import { createFormDraft } from '../forms/form-draft.ts';
 import { createPages, pageDraftTarget } from '../forms/page-entry.ts';
@@ -90,8 +85,7 @@ import { createNotices } from '../workbench/navigation/notices.svelte.ts';
 import { createNoticeSources } from '../workbench/navigation/notice-sources.ts';
 import { createPaletteSource } from '../workbench/palette-source.svelte.ts';
 import { createPresent } from '../life/present.svelte.ts';
-import { SETTINGS_VIEW, configRail, railTyped } from '../workbench/navigation/rail.ts';
-import { settingsTyped } from '../system/config/typed.ts';
+import { settingsUnsaved } from '../workbench/navigation/rail.ts';
 import { createRailBadges } from '../workbench/rail-badges/rail-badges.svelte.ts';
 import { createHistory } from '../workbench/history/history.svelte.ts';
 import { createRepositories, DIFF_VIEW } from '../sources/repositories/repositories.svelte.ts';
@@ -117,7 +111,7 @@ import { readRoots, readText } from '../sources/fs-transport.ts';
 import { watchServedRoots } from '../shared/stores/served-roots.svelte.ts';
 import { createLspEdits } from '../system/machine/lsp/edits.ts';
 import { REFACTOR_VIEW, createRefactor } from '../system/machine/refactor/preview.svelte.ts';
-import { isPrivateFile } from '../system/config/config-files.ts';
+import { isPrivateFile, workspaceFilePlace } from '../system/config/config-files.ts';
 import { WRITE_MAX_BYTES } from '../../data/file-ops.ts';
 import { createWorkspaceSymbols } from '../system/machine/lsp/workspace-symbols.ts';
 import { createLinkRewrite } from '../system/machine/refactor/link-rewrite.ts';
@@ -137,6 +131,12 @@ import { createCommands } from '../sessions/terminal/commands.svelte.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts } from '../sessions/transcript.svelte.ts';
 import { createUi } from '../workbench/ui.svelte.ts';
+import {
+    createPageState,
+    hearStateChannel,
+    httpStateTransport,
+    type StateTransport
+} from '../shared/stores/page-state.svelte.ts';
 import { createDebug } from '../system/machine/debug/debug.svelte.ts';
 import { createUsageRefresh } from '../system/machine/usage/usage-refresh.svelte.ts';
 import { createQueryScope } from './queries/tab-scope.ts';
@@ -148,13 +148,15 @@ export type { ClientState, TabScopeStore };
 
 /**
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
- * handed those instances here. Nothing else wires one store to another.
+ * handed those instances here. Nothing else wires one store to another. `transport` is the page
+ * state's way to the server, the HTTP route unless a test hands a server of its own.
  */
 export function createClientState(
     desktop?: Desktop,
     float: string | null = desktop?.float ?? null,
     pageId = 'main',
-    owner: string | null = desktop?.owner ?? null
+    owner: string | null = desktop?.owner ?? null,
+    transport?: StateTransport
 ): ClientState {
     // Every store that fetches an answer holds it in this one query client, and a store handed
     // `queries` is recorded where it is made, so a tab's copy replaces it (queries/tab-scope.ts).
@@ -180,7 +182,10 @@ export function createClientState(
         (file) => source.unsavedFile(file.root, file.path),
         {
             primary: () => fs.primary(),
-            engine: () => fs.workspaces().engine,
+            workspaceFile: () => {
+                const place = workspaceFilePlace(fs.workspaces());
+                return place?.root == null ? null : { root: place.root, path: place.path };
+            },
             projectManifest: (id) =>
                 manifestOfProject(entities.portfolio()?.entities.projects[id], fs.primary()),
             collectionFile: (id) => {
@@ -198,7 +203,19 @@ export function createClientState(
         pages.settle
     );
     const socket = createSocket(entities, writes);
-    const ui = createUi(writes.writeConfigKey, desktop !== undefined, () => appShell.offers());
+    // The arrangement, the view states and the debugger's record live in the server's state folder;
+    // the page's copy hears other pages' saves on the `state` channel. An option a control sets is
+    // written to the open workspace file; with none open, the page offers to save the workspace.
+    const pageState = createPageState(transport ?? httpStateTransport(writes), pageId);
+    hearStateChannel(pageState, entities);
+    const ui = createUi({
+        state: pageState,
+        writes,
+        inApp: desktop !== undefined,
+        offers: () => appShell.offers(),
+        workspaceFile: () => (fs.workspaces().loading ? null : fs.workspaces().open !== null),
+        noWorkspace: () => sources.noWorkspace()
+    });
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The project cards an
     // instance draws keep their file trees in records under its id, so the layout is handed a
@@ -212,7 +229,7 @@ export function createClientState(
                 search.forgetSearch(id);
             }
         },
-        desktop === undefined ? undefined : { turn: desktop.bridge.saveLayout },
+        pageState,
         () => entities.config()?.hubs ?? null
     );
     const drag = createDrag(layout, desktop);
@@ -499,20 +516,10 @@ export function createClientState(
     // A file browser's root or workspace line is text no save has taken, asked by the instance's
     // view.
     ui.registerUnsaved((id) => filesLineTyped(layout.instanceView(id), ui.instanceState(id)));
-    // A Settings tab's rail list differing from the one config/layout.yml holds is text no save has
-    // taken, asked against the config the page holds now.
+    // A Settings tab's rail list, typed field text or editor draft is work no write has taken,
+    // asked against the config the page holds now.
     ui.registerUnsaved((id) =>
-        railTyped(
-            layout.instanceView(id),
-            ui.instanceState(id),
-            configRail(entities.config()?.config)
-        )
-    );
-    // A Settings tab holding text typed into a field, or an editor draft of a list or a family,
-    // that is not yet written holds work no write has taken, which the tab's state keeps beside the
-    // rail list.
-    ui.registerUnsaved(
-        (id) => layout.instanceView(id) === SETTINGS_VIEW && settingsTyped(ui.instanceState(id))
+        settingsUnsaved(layout.instanceView(id), ui.instanceState(id), entities.config()?.config)
     );
     const paletteSource = createPaletteSource(entities, feeds, {
         writeConfigValue: writes.writeConfigValue,
@@ -615,22 +622,7 @@ export function createClientState(
         source
     };
     const problems = createProblems({
-        here: () => {
-            const on =
-                sourceOnScreen(layout.activeInstance(), editorStatus.statusOf) ??
-                editorStatus.focused();
-            const caret = on?.status.caret;
-            if (on === null || caret === null || caret === undefined) return null;
-            const state = layout.instanceLayoutState(on.instance);
-            const library = instanceText(state, 'library');
-            return {
-                instance: on.instance,
-                root: instanceText(state, 'root'),
-                path: library === '' ? instanceText(state, 'path') : library,
-                line: caret.line,
-                column: caret.column
-            };
-        },
+        here: () => caretHere(layout.activeInstance(), editorStatus, layout.instanceLayoutState),
         open: (row, { kept, focus, leaving }) => {
             const target = problemTarget(row);
             if (target === null) return;
@@ -656,6 +648,7 @@ export function createClientState(
     const debug = withQueries(
         'debug',
         createDebug({
+            state: pageState,
             entities,
             writes,
             queries,
@@ -703,17 +696,17 @@ export function createClientState(
     );
     // The notifications the channels and the writes post: a session that starts waiting, a job
     // that ends, an update task whose results land, each heard once per message the entities store
-    // keeps, and a write that does not land, heard from the writes store.
+    // keeps, a write that does not land, heard from the writes store, a save of the page state the
+    // server refused, and the offer to save the workspace an option without a file to go to makes.
     const sources = createNoticeSources(notices, {
-        openSession: (id, title) => {
-            layout.openView('session-detail', { session: id, label: title });
-        },
-        openView: (view) => {
-            layout.openView(view);
-        }
+        openSession: (id, title) =>
+            void layout.openView('session-detail', { session: id, label: title }),
+        openView: (view) => void layout.openView(view),
+        saveWorkspace: () => ui.requestPalette(':workspace-save ')
     });
     entities.afterReceive(sources.heard);
     writes.onUnwritten(sources.unwritten);
+    pageState.onRefused(sources.stateRefused);
     const registry = createRegistry(layout);
     // A view registered with no catalogue group is one opened for something (a project, a
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
@@ -810,6 +803,7 @@ export function createClientState(
         latexReader: createLatexReader(),
         entities,
         writes,
+        pageState,
         socket,
         ui,
         layout,

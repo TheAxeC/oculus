@@ -8,6 +8,12 @@
     //
     // A save that the rule refuses lists every sentence it gives and stays open; one the server
     // refuses shows the server's sentence and stays open; one that lands puts the dialog away.
+    //
+    // For a command, the dialog lists under its fields the chain the entry runs, the lines the
+    // command form lists for an Edit of it, while it holds the repository's list; Save sends those
+    // lines and approves them, so the schedule's due run starts until the chain's text changes, and
+    // a save whose lines are not the ones the file runs is refused, and the dialog then lists
+    // the lines the file runs.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
@@ -20,12 +26,19 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
-    const { schedule } = useState();
+    const { schedule, commands } = useState();
 
     let problems: string[] = $state([]);
     let saving = $state(false);
 
     const draft = $derived(schedule.dialog());
+
+    /** The repository of the chosen command, whose list is held while the dialog shows it. */
+    const folder = $derived(draft === null ? null : schedule.commandFolder(draft));
+    $effect(() => (folder === null ? undefined : commands.watch(folder)));
+
+    /** The chain the chosen command runs, or null before the list is held. */
+    const chain = $derived(draft === null ? null : schedule.chainOf(draft, commands));
 
     /** Put the dialog away and forget what a save said. */
     function close(): void {
@@ -39,7 +52,8 @@
         problems = found;
         if (found.length > 0) return;
         saving = true;
-        const answer = await schedule.save(draft);
+        const listed = chain !== null && 'chain' in chain ? chain.chain : null;
+        const answer = await schedule.save(draft, listed);
         saving = false;
         if (!answer.ok) problems = [answer.error];
         else problems = [];
@@ -182,6 +196,20 @@
                         </p>
                     {/if}
                 {/if}
+                {#if chain !== null}
+                    <div class="chain" data-command-chain>
+                        {#if 'lines' in chain}
+                            <p class="preview">{t('app.schedules.chain_heading')}</p>
+                            <ol class="lines">
+                                {#each chain.lines as line, at (at)}
+                                    <li><code>{line}</code></li>
+                                {/each}
+                            </ol>
+                        {:else}
+                            <p class="problem">{chain.refused}</p>
+                        {/if}
+                    </div>
+                {/if}
                 {#each problems as problem (problem)}
                     <p class="problem" data-problem>{problem}</p>
                 {/each}
@@ -261,6 +289,24 @@
     .problem {
         color: var(--c-red-txt, var(--c-red));
         font-size: var(--fs-sm);
+    }
+
+    .chain {
+        display: grid;
+        gap: 2px;
+    }
+
+    /* The list's numbers stand where the text of the lines around it begins. */
+    .lines {
+        margin: 0;
+        padding-left: calc(10px + 1.4em);
+        font-size: var(--fs-sm);
+    }
+
+    .lines code {
+        font-family: var(--font-mono);
+        white-space: pre-wrap;
+        word-break: break-all;
     }
 
     .buttons {

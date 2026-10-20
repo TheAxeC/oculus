@@ -226,9 +226,26 @@
 {/if}
 
 <style>
+    /* An expired lead is faded and greyed as archival; while the pointer is over it or the keyboard
+       focus is inside it both lift, so it is read at full strength. */
     .expired {
         opacity: 0.62;
         filter: grayscale(0.55);
+        transition:
+            opacity 120ms ease,
+            filter 120ms ease;
+    }
+
+    .expired:hover,
+    .expired:focus-within {
+        opacity: 1;
+        filter: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .expired {
+            transition: none;
+        }
     }
 
     .deadline,

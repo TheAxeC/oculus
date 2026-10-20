@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Usage is a tab beside Live HPC in the float docked at the right
-    // edge that config/layout.yml ships, and the second entry of the catalogue's Float group, which
-    // `w` then `2` opens.
+    // edge that config/defaults/layout.yml ships, and the second entry of the catalogue's Float
+    // group, which `w` then `2` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -20,9 +20,9 @@
     // Claude sessions and seven-day token totals.
     //
     // A healthy refresher's line names its last refresh and its next one. The next is the last plus
-    // `usage_refresh_min` of config/behavior.yml (its default when the file's value is refused),
-    // read off the config channel the page already holds, so the refresher's payload carries no
-    // time it can be computed from.
+    // `usage_refresh_min` of config/defaults/behavior.yml (its default when the file's value is
+    // refused), read off the config channel the page already holds, so the refresher's payload
+    // carries no time it can be computed from.
     //
     // A Claude account's card carries Refresh, whose glyph turns from the reader's press until that
     // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own

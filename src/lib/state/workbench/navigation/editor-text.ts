@@ -92,8 +92,8 @@ export function lineCount(text: string): number {
 
 /**
  * The language the editor opens a text under: the one asked for, or plaintext for a text over the
- * paint limit (`editor.paint_limit_kb` of config/behavior.yml, in bytes), which the editor does not
- * colour, and for any text before the configuration has delivered a limit.
+ * paint limit (`editor.paint_limit_kb` of config/defaults/behavior.yml, in bytes), which the editor
+ * does not colour, and for any text before the configuration has delivered a limit.
  */
 export function shownLanguage(language: string, text: string, limit: number | null): string {
     return limit !== null && text.length <= limit ? language : PLAIN;

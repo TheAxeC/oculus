@@ -1,6 +1,6 @@
-// Layer 1, data tests. The `boards` map of config/layout.yml as the config check reads it: the
-// shipped map gives no finding, and each malformed form gives one finding naming the board, the
-// field or the record. Findings are compared whole, in order.
+// Layer 1, data tests. The `boards` map of config/defaults/layout.yml as the config check reads
+// it: the shipped map gives no finding, and each malformed form gives one finding naming the
+// board, the field or the record. Findings are compared whole, in order.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
@@ -11,14 +11,14 @@ const CATALOG = textCatalog(SHIPPED);
 
 /** The findings over the shipped config with `boards` replaced, each as its key and sentence. */
 function said(boards: unknown): string[] {
-    return boardsFindings({ ...SHIPPED, boards }, 'layout.yml', CATALOG).map(
+    return boardsFindings({ ...SHIPPED, boards }, () => 'layout.yml', CATALOG).map(
         (one) => `${one.key}: ${one.message}`
     );
 }
 
 describe('boardsFindings', () => {
     it('reads the shipped boards with no finding', () => {
-        expect(boardsFindings(SHIPPED, 'layout.yml', CATALOG)).toEqual([]);
+        expect(boardsFindings(SHIPPED, () => 'layout.yml', CATALOG)).toEqual([]);
     });
 
     it.each([

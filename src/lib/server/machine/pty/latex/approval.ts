@@ -24,7 +24,7 @@ import { lstatSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import type { LatexApproval } from '../../../../data/model/index.ts';
-import type { LatexBuilding, LatexTool } from '../../../../data/sources/config/settings.ts';
+import type { LatexBuilding, LatexTool } from '../../../../data/sources/config/settings/latex.ts';
 import type { Step } from '../../../content/latex/recipes.ts';
 import { realPath } from '../../../core/paths.ts';
 import { isApproved, isConfigApproved } from '../../approvals/approvals.ts';

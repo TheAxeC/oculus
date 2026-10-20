@@ -1,30 +1,24 @@
-// Layer 2, client state. Running a store operation again on an arrangement another tab or window
+// Layer 2, client state. Running a store operation again on an arrangement another page or window
 // saved. The layout factory runs every operation under its own name (`named`), so a save inside it
-// is recorded as written by that operation, and keeps the last operation that saved. When another
-// browser tab's save crossed this tab's own (`again` of saved/load.ts), or the desktop host refused
-// a save made from an envelope another window had moved on from (`retake`), the operation is run
-// again on the arrangement now current, so both changes are kept.
+// is recorded as written by that operation, and keeps the last operation that saved. When the
+// server refused this page's save, made from an envelope another page had moved on from, or
+// another page's save replaced a change of this page not yet sent (`again` of saved/load.ts), the
+// operation is run again on the arrangement now current, so both changes are kept.
 //
 // An operation is one save: the arrangement it makes current is written once, when the operation
-// returns, however many steps of it changed the pages. Another tab tells that a save crossed its
-// own by the envelope the two were made from, and an operation that wrote twice would leave its
-// last save made from its own first one, which no other tab's save is made from.
+// returns, however many steps of it changed the pages, so the server is asked one turn for it.
 //
 // A path argument names a node of the tree the operation first ran on, and in the arrangement the
-// other tab saved the same path can name another node. So the node a path names is described when
+// other page saved the same path can name another node. So the node a path names is described when
 // the operation first runs, by what it held, and named again in the new arrangement by that
 // description before the operation runs there: a pane by its tabs (the pane holding the most of
 // them, the one holding the pane's active tab among equals), a page shown in the tree by the page,
 // a split by the set of tabs and pages under it, and a pane with no tab by its place, while the
-// same empty pane stands there. An operation whose node the other tab removed finds none and is
-// dropped, never applied to another node, and the arrangement taken is saved as it stands, since
-// the other tab, which took this tab's save when the two crossed, waits for the save made after.
+// same empty pane stands there. An operation whose node the other page removed finds none and is
+// dropped, never applied to another node, and the arrangement taken is saved as it stands.
 
 import { nodeAt } from '../tree.ts';
 import type { Host, Layout } from '../model.ts';
-
-/** How many times an operation is run again on the envelope the host refused its save with. */
-const MAX_TURNS = 8;
 
 /**
  * Where an operation's arguments name a node: the index of the path, of the page or float it
@@ -153,19 +147,9 @@ function againWith(name: string, args: unknown[], at: (page?: string) => Host | 
     };
 }
 
-/**
- * What the runs read of the factory: the host an operation addresses, the save of the pages now
- * current and the load's retake.
- */
+/** What the runs read of the factory: the host an operation addresses. */
 export type RunsDeps = {
     at: (page?: string) => Host | null;
-    /** Save the pages now current, as an operation that changed them does. */
-    write: () => void;
-    /**
-     * Take the envelope the desktop host answered a refused save with; true when there was one,
-     * which is the cue to run the operation again.
-     */
-    retake: () => boolean;
 };
 
 /** The store's operations run by name, and the last one that saved, run again on request. */
@@ -227,16 +211,8 @@ export function createRuns(deps: RunsDeps): Runs {
                     const before = saves;
                     try {
                         const again = againWith(name, args, deps.at);
-                        let answer = run(...args);
+                        const answer = run(...args);
                         flush();
-                        // The app's host refused a save made from an envelope another window had
-                        // moved on from; the load took the envelope it holds, and the operation
-                        // runs again on it.
-                        for (let turn = 0; turn < MAX_TURNS && deps.retake(); turn++) {
-                            const done = rerun(run, again);
-                            if (!done.ran) break;
-                            answer = done.answer;
-                        }
                         if (saves !== before) {
                             lastSaving = { name, again: () => rerun(run, again).ran };
                         }
@@ -262,9 +238,8 @@ export function createRuns(deps: RunsDeps): Runs {
             if (lastSaving === null || writing !== '') return;
             writing = lastSaving.name;
             try {
-                // A dropped operation still saves the arrangement taken, since the tab whose save
-                // crossed this one waits for the save this tab makes after it.
-                if (!lastSaving.again()) deps.write();
+                // An operation whose node is gone is dropped, and the arrangement taken stands.
+                lastSaving.again();
             } finally {
                 flush();
                 writing = '';

@@ -22,10 +22,10 @@
     // that has stopped being a glance, and the public website's list against the portfolio.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
-    // control writes its signature into the `audit_ignore:` list of config/behavior.yml, the
-    // watcher pushes the file back within a second, and the row is drawn in the muted section at
-    // the end with the control that brings it back. A parked finding is still true; muting only
-    // says the reader has chosen to leave it.
+    // control writes its signature into the `audit_ignore:` list of the open workspace file's
+    // `settings:`, the watcher pushes the file back within a second, and the row is drawn in the
+    // muted section at the end with the control that brings it back. A parked finding is still
+    // true; muting only says the reader has chosen to leave it.
     //
     // Each section is a list of rows drawn as the Findings view draws its rows: one line of the
     // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row

@@ -7,7 +7,7 @@
 // ServerContext's cache of the parse, and the roots are the open workspace the ServerContext holds,
 // so a request reads no workspace file.
 
-import { configDir, textCatalog } from '$lib/data/sources/config';
+import { textCatalog } from '$lib/data/sources/config';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleSource, handleSourceInfo } from '$lib/server/files/source/source';
 import type { RequestHandler } from './$types';
@@ -24,6 +24,5 @@ export const POST: RequestHandler = ({ request, locals }) =>
         locals.token,
         () => textCatalog(locals.config().config),
         roots(locals),
-        configDir(locals.server.engine),
         locals.server.local.history ?? defaultHistoryDir()
     );

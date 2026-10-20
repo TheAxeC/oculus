@@ -77,7 +77,7 @@ export type RailBadge = { text: string; glyph: string; tone?: string; title: str
 
 /**
  * The tones that say a count means "act", most urgent first (the comment of `counts` in
- * config/layout.yml); any other tone ranks after them.
+ * config/defaults/layout.yml); any other tone ranks after them.
  */
 const URGENT_TONES: readonly string[] = ['red', 'amber', 'green'];
 

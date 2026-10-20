@@ -7,7 +7,7 @@
 // `codeColour`, and the page paints the read-only code window the source tab draws
 // (views/shared/prose/Code.svelte) and a preview's Markdown, the window reaching it through
 // state/shared/words/languages.ts, which re-exports it for the page layers. The file browser's
-// state reads the extension-to-language map of config/sources.yml
+// state reads the extension-to-language map of config/defaults/sources.yml
 // (data/helpers/files/languages.ts), whose languages are the names registered here. Its names are
 // also the languages the source tab's editor opens a file under and the status bar lists; the
 // editor colours them through Shiki's grammars (ui/controls/editor/kit/languages/grammars.ts), not
@@ -126,7 +126,7 @@ export function registered(): string[] {
  * resolves none: `ts` and `tsx` are typescript's aliases, and the name a language was registered
  * under is the one whose definition is the same object. The lookup is highlight.js's own table of
  * names and aliases, which is what a Markdown fence asks for a language by; a file's language is
- * the map of config/sources.yml's.
+ * the map of config/defaults/sources.yml's.
  */
 export function languageNamed(alias: string): string | null {
     if (alias === '') return null;

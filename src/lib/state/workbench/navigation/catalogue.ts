@@ -28,10 +28,11 @@ import { t } from '../../shared/words/text.ts';
 export type NavGroup = { id: string; label: string; glyph?: string; chord?: string };
 
 /**
- * One entry of the `docs:` list of config/layout.yml: a Markdown document of the hub, listed inside
- * the group it names and opened by the `doc` view over api/docs. An entry with `engine` is a
- * document of oculus's own folder that a rail page's arrangement shows as a tab, listed in that
- * page's group (arrangement.ts `arrangedDocs`), its path relative to the engine folder.
+ * One entry of the `docs:` list of config/defaults/layout.yml: a Markdown document of the hub,
+ * listed inside the group it names and opened by the `doc` view over api/docs. An entry with
+ * `engine` is a document of oculus's own folder that a rail page's arrangement shows as a tab,
+ * listed in that page's group (arrangement.ts `arrangedDocs`), its path relative to the engine
+ * folder.
  */
 export type DocEntry = { label: string; path: string; group: string; engine?: true };
 
@@ -276,7 +277,8 @@ const navGroupShape = z.object({
  * The view catalogue's groups of a merged config, in the order the Views view lists them: one per
  * rail page the rail rule keeps, in rail order, keyed by the page, headed by the button's label and
  * carrying the entry's `chord` and `group_glyph`, then each group of `nav_groups` of
- * config/layout.yml (the float), which is no rail page. Registrations name each group by id.
+ * config/defaults/layout.yml (the float), which is no rail page. Registrations name each group by
+ * id.
  */
 export function readGroups(config: Record<string, unknown> | undefined): NavGroup[] {
     if (config === undefined) return [];
@@ -301,9 +303,9 @@ export function readGroups(config: Record<string, unknown> | undefined): NavGrou
 }
 
 /**
- * The `direct_chord` of config/layout.yml: the one letter a digit after it counts into the views
- * of the groups that name no chord and the views no group holds. Anything but a single lowercase
- * letter leaves the chord unset.
+ * The `direct_chord` of config/defaults/layout.yml: the one letter a digit after it counts into the
+ * views of the groups that name no chord and the views no group holds. Anything but a single
+ * lowercase letter leaves the chord unset.
  */
 export function readChord(raw: unknown): string | undefined {
     return readAs(chordShape, raw) ?? undefined;
@@ -320,9 +322,9 @@ const docEntryShape = z.object({
 const docsShape = rowsShape(docEntryShape);
 
 /**
- * The `docs` list of config/layout.yml, in order: one Markdown document of the hub per entry,
- * listed in the group it names. An entry that is not three non-empty strings is dropped rather
- * than drawn half-formed; the server reports it as a finding.
+ * The `docs` list of config/defaults/layout.yml, in order: one Markdown document of the hub per
+ * entry, listed in the group it names. An entry that is not three non-empty strings is dropped
+ * rather than drawn half-formed; the server reports it as a finding.
  */
 export function readDocs(raw: unknown): DocEntry[] {
     return readAs(docsShape, raw) ?? [];

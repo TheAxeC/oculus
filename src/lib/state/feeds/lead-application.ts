@@ -14,7 +14,7 @@ import type { LeadEntry } from './leads.ts';
 /** The feed a lead is written through, the key the feed writes name it by. */
 export const LEADS_FEED = 'leads';
 
-/** The collection the lead is turned into an entry of, config/sources.yml's key. */
+/** The collection the lead is turned into an entry of, a key of the `collections:` list. */
 export const APPLICATIONS = 'applications';
 
 /** One field of a lead as text, or the empty string for a field the lead does not hold. */

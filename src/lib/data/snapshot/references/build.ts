@@ -4,9 +4,9 @@
 // The files are the ones the build reads. The hub's data files and the manifests come as the texts
 // `runSchemas` read, so no file is read twice; the decks (the portfolio deck's `present.yml` and
 // each project's `present/present.yml`) and oculus's own configuration files that carry a reference
-// (`behavior.yml`, `sources.yml` and the others the options catalog describes, and
-// `catalogs/vocab.yml`) are read here. A file under the hub's `secrets` folder and the manifest of
-// a workspace folder outside the hub are never read.
+// (`defaults/behavior.yml`, `defaults/sources.yml` and the other defaults files whose options name
+// a hub list, and `catalogs/vocab.yml`) are read here. A file under the hub's `secrets` folder and
+// the manifest of a workspace folder outside the hub are never read.
 //
 // What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
 // manifest its `id:` line, vocab.yml the items of the lists some reference names, and a hub file

@@ -139,7 +139,7 @@ function appAdapter(info: AppServerInfo): Adapter {
 }
 
 /** The registry entry of one registered server. */
-function appEntry(info: AppServerInfo, feed: AppServersFeed, config: string): ServerEntry {
+function appEntry(info: AppServerInfo, feed: AppServersFeed): ServerEntry {
     const options = (info.initializationOptions ?? {}) as Record<string, unknown>;
     return {
         id: appEntryId(info),
@@ -164,8 +164,7 @@ function appEntry(info: AppServerInfo, feed: AppServersFeed, config: string): Se
         refuses: (real, roots) =>
             isMachineFile(
                 real,
-                roots.map((root) => ({ dir: root.real, hub: root.hub })),
-                config
+                roots.map((root) => ({ dir: root.real, hub: root.hub }))
             ) || isPrivateFile(real, roots)
     };
 }
@@ -173,12 +172,10 @@ function appEntry(info: AppServerInfo, feed: AppServersFeed, config: string): Se
 /** The entries of the registered servers, kept stable while a server stays registered. */
 export class AppEntries {
     readonly #feed: AppServersFeed;
-    readonly #config: string;
     #made = new Map<string, { text: string; entry: ServerEntry }>();
 
-    constructor(feed: AppServersFeed, config: string) {
+    constructor(feed: AppServersFeed) {
         this.#feed = feed;
-        this.#config = config;
     }
 
     /** Every registered server's entry, apps in the Views list's order. */
@@ -191,7 +188,7 @@ export class AppEntries {
             const text = JSON.stringify([info, this.#feed.languages().size]);
             let held = this.#made.get(id);
             if (held?.text !== text) {
-                const entry = appEntry(info, this.#feed, this.#config);
+                const entry = appEntry(info, this.#feed);
                 held = { text, entry };
                 this.#made.set(id, held);
             }

@@ -1,7 +1,8 @@
 // Layer 4, test helper. An open workspace for a case, made of a scratch state folder that holds the
-// unsaved workspace the case names, so a server object under test reads folders the same way the
-// server reads them: from `workspace.json` of a state folder, never from the machine of the person
-// running the test. A folder is a hub when it holds `.oculus/config.yml`, as it is for the server.
+// unsaved workspace the case names, or opens a saved workspace file the case plants, so a server
+// object under test reads folders the same way the server reads them: from `workspace.json` of a
+// state folder, never from the machine of the person running the test. A folder is a hub when it
+// holds `.oculus/config.yml`, as it is for the server.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +12,7 @@ import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
-import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
+import { openWorkspace, type OpenWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
 import {
     workspacesAnswer as readWorkspaces,
@@ -60,6 +61,26 @@ export function plantHub(dir: string, settings?: string): string {
         writeFileSync(join(dir, HUB_FILE), settings ?? '{}\n');
     }
     return dir;
+}
+
+/** A saved workspace a case opens: its file, the state folder that opens it, and the workspace. */
+export type SavedWorkspace = { file: string; state: string; open: OpenWorkspace };
+
+/**
+ * A saved workspace over one hub: the hub planted (`plantHub`), the workspace file
+ * `<hub>/.oculus/workspaces/main.yml` naming the hub as its one folder and its primary, followed by
+ * `settings` (the file's `settings:` block as YAML text, or nothing), and a state folder whose
+ * state opens that file.
+ */
+export function plantSaved(hub: string, settings = ''): SavedWorkspace {
+    plantHub(hub);
+    const folder = join(hub, '.oculus', 'workspaces');
+    mkdirSync(folder, { recursive: true });
+    const file = join(folder, 'main.yml');
+    writeFileSync(file, `folders:\n  - { name: hub, path: ${hub} }\nprimary: hub\n${settings}`);
+    const state = scratchDir('oculus-workspace-state-');
+    writeState(state, { open: file, recent: [file], unsaved: { folders: [] } });
+    return { file, state, open: openWorkspace(state) };
 }
 
 /**

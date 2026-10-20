@@ -12,6 +12,7 @@ export const SETTINGS_MESSAGES = {
     unparsed: 'workbench.settings_unparsed',
     missing: 'workbench.settings_missing',
     hubFileAbsent: 'workbench.settings_hub_file_absent',
+    noWorkspace: 'workbench.settings_no_workspace',
     mismatchToggle: 'workbench.settings_mismatch_toggle',
     mismatchNumber: 'workbench.settings_mismatch_number',
     mismatchText: 'workbench.settings_mismatch_text',

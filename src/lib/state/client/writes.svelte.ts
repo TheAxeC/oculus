@@ -522,8 +522,9 @@ export function createWrites(
     }
 
     /**
-     * Save the rail list: the endpoint rewrites the `rail:` list of config/layout.yml and the
-     * watcher pushes the config, which is what redraws the rail.
+     * Save the rail list as the reader sees it: the endpoint writes it into the open workspace
+     * file's `settings:`, over oculus's rail entry by entry, and the watcher pushes the config,
+     * which is what redraws the rail.
      */
     async function writeRail(
         rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[],
@@ -533,13 +534,20 @@ export function createWrites(
     }
 
     /**
-     * Set one option of a tracked config file: the endpoint writes the value over the key's own
-     * bytes in `file` (`behavior.yml`) at the dotted `key` (`changes.keep`), and answers a refusal
-     * as `refused: [{ field: '<file>:<key>', reason }]` with nothing written. The change is
-     * recorded in History and can be taken back.
+     * Set one option of a defaults file (`behavior.yml`) at the dotted `key` (`changes.keep`): the
+     * endpoint writes the value into the open workspace file's `settings:`, or into the primary
+     * hub's .oculus/config.yml for a key of the hub list, and answers a refusal as
+     * `refused: [{ field: '<file>:<key>', reason }]` with nothing written. `copy` adds the key even
+     * when the value is the one in force, which Edit in a file sends before it opens the file. The
+     * change is recorded in History and can be taken back.
      */
-    async function writeConfigKey(file: string, key: string, value: unknown): Promise<WriteAnswer> {
-        return send({ kind: 'config-key', file, key, value });
+    async function writeConfigKey(
+        file: string,
+        key: string,
+        value: unknown,
+        copy = false
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'config-key', file, key, value, ...(copy ? { copy: true } : {}) });
     }
 
     /**
@@ -553,24 +561,42 @@ export function createWrites(
     }
 
     /**
-     * Set one list option or one family of a tracked config file as a whole: the endpoint rewrites
-     * the key's lines in `file` at the dotted `key` with `value`, and refuses, writing nothing,
-     * unless the file still holds `base` there (the value the caller read). A refusal is answered
-     * as for `writeConfigKey`. The change is recorded in History and can be taken back.
+     * Set one list option or one family of a defaults file as a whole, in the file `writeConfigKey`
+     * writes in, and refuse, writing nothing, unless the value in force is still `base` (the value
+     * the caller read). A refusal and `copy` are as for `writeConfigKey`. The change is recorded in
+     * History and can be taken back.
      */
     async function writeConfigValue(
         file: string,
         key: string,
         value: unknown,
-        base: unknown
+        base: unknown,
+        copy = false
     ): Promise<WriteAnswer> {
-        return send({ kind: 'config-value', file, key, value, base });
+        return send({
+            kind: 'config-value',
+            file,
+            key,
+            value,
+            base,
+            ...(copy ? { copy: true } : {})
+        });
+    }
+
+    /**
+     * Take one option out of the file the user's value of it lives in (the open workspace file's
+     * `settings:`, or the primary hub's .oculus/config.yml for a key of the hub list), so oculus's
+     * value is in force again. A refusal is answered as for `writeConfigKey`. The change is
+     * recorded in History and can be taken back.
+     */
+    async function resetConfig(file: string, key: string): Promise<WriteAnswer> {
+        return send({ kind: 'config-reset', file, key });
     }
 
     /**
      * Park one audit finding, or bring it back. The signature is the scan's own; the endpoint
-     * writes it into the `audit_ignore:` list of config/behavior.yml and the watcher pushes the
-     * scan again.
+     * writes the `audit_ignore:` list in force, with it added or taken out, into the open workspace
+     * file's `settings:`, and the watcher pushes the scan again.
      */
     async function muteFinding(signature: string, muted: boolean): Promise<WriteAnswer> {
         return send({ kind: 'audit-mute', signature, muted });
@@ -823,6 +849,7 @@ export function createWrites(
         writeConfigKey,
         writeAppSetting,
         writeConfigValue,
+        resetConfig,
         muteFinding,
         addMemory,
         newIdea,

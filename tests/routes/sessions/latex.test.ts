@@ -13,7 +13,10 @@ import {
 } from '../../../src/lib/server/content/latex/endpoint.ts';
 import type { Formatter } from '../../../src/lib/data/prose/latex.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { latexBuild, type LatexFormatting } from '../../../src/lib/data/sources/config/settings.ts';
+import {
+    latexBuild,
+    type LatexFormatting
+} from '../../../src/lib/data/sources/config/settings/latex.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
 

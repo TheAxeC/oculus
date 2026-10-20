@@ -7,12 +7,12 @@
 // the file, and a write from a view reaches the listeners every refused write reaches. An app's
 // write is answered to the app, which says it itself.
 //
-// The rail reorder row runs the whole chain: a source store over a fake server with a dirty tab of
-// `hub:tools/oculus/config/layout.yml`, the write store asking that store, and `writeRail` for the
-// file `layout.yml` of oculus's config folder under the workspace folder that holds it. Whether
-// that file and the tab's are one depends on where the workspace places the config folder, so the
-// same reorder is refused when the folder is the hub's own `tools/oculus/config`, sent when it is a
-// worktree's, and sent when no workspace folder holds the config folder.
+// The Settings rows run the whole chain: a source store over a fake server with a dirty tab of a
+// file of the hub, the write store asking that store, and a Settings write for the file the server
+// places it in. The rail, the audit's mute list and every option outside the hub list land in the
+// open workspace file, under the workspace folder that holds it, so they are refused when the tab
+// holds that file and sent when it holds another or no folder holds the workspace file; a key of
+// the hub list lands in the primary hub's `.oculus/config.yml`.
 //
 // A write made while the roots are not read and a tab holds unsaved text of some file is refused
 // with the sentence of `app.folders_loading`, since the tab cannot be told from the write's file;
@@ -218,19 +218,24 @@ describe('a write to an entry of a hub other than the primary', () => {
     });
 });
 
-describe('a rail reorder over a layout file a source tab holds unsaved text of', () => {
-    const TAB = 'hub/tools/oculus/config/layout.yml';
+describe('a Settings write over a file a source tab holds unsaved text of', () => {
+    const WORKSPACE = '.oculus/workspaces/main.yml';
     const HUB = '/work/hub';
     const RAIL = [{ label: 'Files', glyph: 'files', page: 'files', chord: '', group_glyph: '' }];
 
-    /** A dirty tab over the hub name of the layout file, and a rail reorder sent after it. */
-    async function reorder(
-        engine: { root: string; path: string } | null
+    /**
+     * A dirty tab of `held` in the hub, the open workspace file at `open` (null when no workspace
+     * folder holds it), and one Settings write sent after it.
+     */
+    async function settingsWrite(
+        held: string,
+        open: { root: string; path: string } | null,
+        write: (writes: Writes) => Promise<{ error?: string }>
     ): Promise<{ posted: unknown[]; error?: string }> {
         const env = server({ roots: () => [{ key: 'hub', dir: HUB, real: HUB }] });
-        env.files.set(TAB, 'rail: []\n');
-        await env.source.loadSourceDraft('one', 'hub', 'tools/oculus/config/layout.yml');
-        env.source.editSourceDraft('one', 'rail: [x]\n');
+        env.files.set(`hub/${held}`, 'settings: {}\n');
+        await env.source.loadSourceDraft('one', 'hub', held);
+        env.source.editSourceDraft('one', 'settings: { code_theme: x }\n');
         await env.settled();
         const posted: unknown[] = [];
         vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
@@ -244,31 +249,55 @@ describe('a rail reorder over a layout file a source tab holds unsaved text of',
         const writes = createWrites(
             () => ({}),
             (file) => env.source.unsavedFile(file.root, file.path),
-            { ...NO_LOOKUPS, primary: () => 'hub', engine: () => engine }
+            { ...NO_LOOKUPS, primary: () => 'hub', workspaceFile: () => open }
         );
-        const answer = await writes.writeRail(RAIL);
+        const answer = await write(writes);
         return { posted, error: answer.error };
     }
 
-    it('sends the write when the config folder lies in the hub as a worktree config folder', async () => {
-        const out = await reorder({
-            root: 'hub',
-            path: '.agents/worktrees/feature/tools/oculus/config'
-        });
+    const OPEN = { root: 'hub', path: WORKSPACE };
+
+    it.each([
+        ['a rail reorder', (w: Writes) => w.writeRail(RAIL)],
+        ['a park of an audit finding', (w: Writes) => w.muteFinding('sig', true)],
+        [
+            'a write of the code theme',
+            (w: Writes) => w.writeConfigKey('appearance.yml', 'code_theme', 'x')
+        ],
+        ['a Reset of the code theme', (w: Writes) => w.resetConfig('appearance.yml', 'code_theme')]
+    ])(
+        'refuses %s and posts nothing when the tab holds the open workspace file',
+        async (_, write) => {
+            const out = await settingsWrite(WORKSPACE, OPEN, write);
+            expect(out.posted).toEqual([]);
+            expect(out.error).toBe(t('app.file_unsaved', 'main.yml'));
+        }
+    );
+
+    it('sends a rail reorder when the tab holds another workspace file', async () => {
+        const out = await settingsWrite('.oculus/workspaces/other.yml', OPEN, (w) =>
+            w.writeRail(RAIL)
+        );
         expect(out.posted).toHaveLength(1);
         expect(out.error).toBeUndefined();
     });
 
-    it('sends the write when no workspace folder holds the config folder', async () => {
-        const out = await reorder(null);
+    it('sends a rail reorder when no workspace folder holds the open workspace file', async () => {
+        const out = await settingsWrite(WORKSPACE, null, (w) => w.writeRail(RAIL));
         expect(out.posted).toHaveLength(1);
         expect(out.error).toBeUndefined();
     });
 
-    it('refuses the write and posts nothing when the config folder is the hub own tools/oculus/config', async () => {
-        const out = await reorder({ root: 'hub', path: 'tools/oculus/config' });
+    it("refuses a write of a key of the hub list when the tab holds the hub's settings file", async () => {
+        const out = await settingsWrite('.oculus/config.yml', OPEN, (w) =>
+            w.writeConfigKey('appearance.yml', 'wallpaper.image', 'x.jpg')
+        );
         expect(out.posted).toEqual([]);
-        expect(out.error).toBe(t('app.file_unsaved', 'layout.yml'));
+        expect(out.error).toBe(t('app.file_unsaved', 'config.yml'));
+        const other = await settingsWrite('.oculus/config.yml', OPEN, (w) =>
+            w.writeConfigKey('appearance.yml', 'code_theme', 'x')
+        );
+        expect(other.posted).toHaveLength(1);
     });
 });
 
@@ -276,8 +305,8 @@ describe('a write while the roots are not read and a source tab holds unsaved te
     it('is refused with the folders-loading sentence and posts nothing, and goes out once the roots are read', async () => {
         let roots = [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }];
         const env = server({ roots: () => roots });
-        env.files.set('hub/tools/oculus/config/layout.yml', 'rail: []\n');
-        await env.source.loadSourceDraft('one', 'hub', 'tools/oculus/config/layout.yml');
+        env.files.set('hub/tools/oculus/config/defaults/layout.yml', 'rail: []\n');
+        await env.source.loadSourceDraft('one', 'hub', 'tools/oculus/config/defaults/layout.yml');
         env.source.editSourceDraft('one', 'rail: [x]\n');
         await env.settled();
         const posted: unknown[] = [];

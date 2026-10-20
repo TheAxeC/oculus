@@ -12,6 +12,7 @@
 // text. What the disk says of the file meanwhile is disk.svelte.ts's.
 
 import { tick, untrack } from 'svelte';
+import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
 import { diskRelation, type RootFolder } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
@@ -386,7 +387,8 @@ export function createSource(
             const held = sourceDraft(id);
             const edited = held.loaded && held.text !== held.saved && held.text !== answer.content;
             updateDraft(id, edited ? keptEdits(held, answer, readonly) : taken(answer, readonly));
-            if (head === undefined) disk.track(id, root, path);
+            // Oculus's own config folder is no served root, so no channel follows its files.
+            if (head === undefined && root !== OCULUS_CONFIG_ROOT) disk.track(id, root, path);
         });
     }
 
