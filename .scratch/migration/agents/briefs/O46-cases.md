@@ -27,3 +27,15 @@ Case 20 then reads, and the builder's tests check: `settings: { arrangements: { 
 ## The builder's other points
 
 The first run of the 29 cases is accepted as the report gives it. The probes stay under `$TMPDIR/o46first/` and are rerun for the after values.
+
+## Collapsible lists and families in the Settings view (Axel, 2026-10-20)
+
+Axel's addition to O46: the whole themes list, and every other large value, can be collapsed in the Settings view. The rule:
+
+1. Every row that draws an editor of entries (`editors/Editor.svelte`: a `list`, `multi`, `parked` or `records` control and a family, `themes`, `floats`, `latex.recipes`, `latex.tools`, `focus.ticker_sources`, `nav_groups`, `editor.languages`, `boards`, `counts` among them), the rail row's `RailEditor.svelte`, and the "Fields" list a family, rail, arrangements or workbench row shows (`Item.svelte`) has a disclosure line above it: a chevron, the row's title, and the number of entries (or fields) it holds. Pressing the line, or Enter or Space on it, folds or unfolds the editor; the line carries `aria-expanded` and the editor's id in `aria-controls`.
+2. A row holding more than five entries starts folded; five or fewer start unfolded; the "Fields" list starts folded.
+3. What a reader folds or unfolds is kept per row in the Settings tab's view state, which item 4 saves to `views.json`, so it holds across a reload and a second page.
+4. A search whose match lies inside a folded row unfolds it while the search is in the box; clearing the search puts back the kept state.
+5. A folded row keeps its Modified bar, its gear menu, its message lines and its default line; Reset on it works without unfolding.
+
+Cases added: the `themes` row with its shipped themes starts folded, shows its count, unfolds on a press and on Enter, and folds again; a reload keeps it unfolded; a row of three entries starts unfolded; a search for a theme's name unfolds `themes` and clearing it folds it again; Reset on a folded `themes` row writes as before. Each is a test of the view or the state layer, seen failing on the unchanged tree first. The paths are already in the write list (`src/lib/views/system/workbench/`, `src/lib/state/system/config/`).
