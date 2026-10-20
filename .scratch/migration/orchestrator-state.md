@@ -45,6 +45,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worker: ordo-high, opus
   launched: 2026-10-20
   report: agents/reviews/O46-report.md
+  builder_usage: "first run, stopped at case 20: 338,643 tokens, 77 tool uses, 12.4 min"
   base: a28047138
   worktree: .agents/worktrees/migration-O46
   round: 0

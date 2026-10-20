@@ -4737,3 +4737,10 @@ Where it applies: O46. Booked in `plan.md` Rulings.
 - Not chosen: taking them back off the surface, which leaves shell text over the picture that ruling 177 puts on a surface; leaving the choice open for Axel, the lazy option, which holds the step for a choice the ruling already answers.
 
 Where it applies: O44. Booked in `plan.md` Rulings.
+
+## Z959 (2026-10-20, O46's first run, the orchestrator, automode): how a workspace overrides, orders and removes entries of oculus's lists
+
+- Chosen: a keyed list in a workspace file's `settings:` is merged by its key with the workspace's entries first in the workspace's order, then oculus's other entries in oculus's order; `{ <key>: x, removed: true }` takes oculus's entry out, and `x: null` takes a family's key out; every write of such a value (the rail's drag and Hide, the Settings editors' Remove and Move) writes the reader's list with those markers; decision 4 of O46's brief replaced, ruling 180's point 3 kept.
+- Not chosen: a list or family in `settings:` replacing oculus's value whole, which reverses ruling 180's point 3 and is Axel's to rule; decision 4 as written with Hide and Remove refused on a shipped entry, the lazy option, which breaks two working features and G96's case.
+
+Where it applies: O46, through `agents/briefs/O46-cases.md`. Booked in `plan.md` Rulings.
