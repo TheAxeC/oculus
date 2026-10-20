@@ -4793,3 +4793,10 @@ Where it applies: O46, fixed at landing. Booked in `plan.md` Rulings.
 - Not chosen: keeping every new test under entries written to fit them; leaving tests that no entry names, the lazy option.
 
 Where it applies: O46, at landing. Booked in `plan.md` Rulings.
+
+## Z967 (2026-10-21, O39's /spec, the brief check's finding on the new repository's instructions, the orchestrator, automode): the rules file of the new repository
+
+- Chosen: part A's builder writes `tools/oculus/CLAUDE.md` with an `AGENTS.md` symlink beside it, holding the hub rules that bind work on oculus (git, reports and claims, the working rules for code, the plan rules, the writing rules) and no research rule; the new repository's `.claude/settings.local.json` and the copy of the oculus memories into the memory folder of sessions started in `~/workspace/oculus` are made in part C on Axel's yes, since they live outside the repository and decide what a session may do.
+- Not chosen: the permission file and the memory copy written by the builder in part A; keeping every oculus session started from the hub folder so the hub's `CLAUDE.md` and memory load, the lazy option.
+
+Where it applies: O39, part A item 4 and part C items 15 and 16. Booked in `plan.md` Rulings.

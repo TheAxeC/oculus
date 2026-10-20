@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O39 (oculus in its own repository): part A, the new repository's own files, its `CLAUDE.md`, and the theme groups and theme data in config, being prepared for its builder; parts B and C by the orchestrator after part A's landing.
 
-Queued, in order (1 step):
-- O39 (oculus in its own repository, with its own `.agents/plan.yaml` and `.oculus/project.yml`): next.
+Queued, in order: none.
 
 Owed looks: none.
 
