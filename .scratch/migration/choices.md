@@ -4702,3 +4702,31 @@ Where it applies: O46. Booked in `plan.md` Rulings.
 - Not chosen: a group entry inside `options:`, which every reader of the options would take for a setting (the Settings view would list it, and a write of a whole group would be allowed); or the help lines kept in code, the lazy option, which puts text for a reader where no other help line lives.
 
 Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z954 (2026-10-20, O46's brief, the orchestrator, automode): the names of the settings that leave browser storage
+
+- Chosen: `theme`, `text_size`, `icons`, `brackets`, `monospace`, `wallpaper.show` in `appearance.yml`; `status_bar.hidden`, `status_bar.quiet`, `status_bar.repository` in `behavior.yml`; `crt.default` renamed `crt.on`, since it no longer means what a browser starts on.
+- Not chosen: names copied from the old browser fields (`textScale`, `statusQuiet`), which break the files' lower-case underscore naming; keeping `crt.default`, the lazy option, which leaves a key whose name says the opposite of what it now does.
+
+Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z955 (2026-10-20, O46's brief, the orchestrator, automode): where an options file keeps its group help lines, and the manifest schema its prefix help lines
+
+- Chosen: each `config/options/<file>.yml` holds `options:` (its entries, without a file-name level) and `groups:` (each group path to its help line); `config/schemas/manifest-schema.yml` gets a `groups:` of the same shape for the `project.yml` prefixes `status`, `followup`, `code_availability`, `repository`, `reproduced`.
+- Not chosen: a group entry inside `options:`, which every reader of the options would take for a setting; the help lines kept in code, the lazy option.
+
+Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z956 (2026-10-20, O46's brief, the orchestrator, automode): which field a record list in the workspace file's `settings:` is overridden by
+
+- Chosen: an options entry names it under `key:`: `rail` by `page`, `floats` by `view`, `latex.recipes`, `latex.tools` and `themes` by `name`, `focus.ticker_sources` by `collection`; a map family by its keys; a record list without `key:` replaced whole.
+- Not chosen: the first field of each record taken as its key, which is a guess the reader cannot see; every list replaced whole, the lazy option, which makes a workspace copy every rail entry to change one.
+
+Where it applies: O46. Booked in `plan.md` Rulings.
+
+## Z957 (2026-10-20, O46's brief, the orchestrator, automode): the state files under `~/.oculus` and how a page reaches them
+
+- Chosen: `layouts.json` (each workspace's arrangement and its unread copy), `layout-writes.json` (the last 500 layout writes per workspace), `views.json` (each tab's view state), `debug.json` (breakpoints and watches), JSON written only by the server; one route under `src/routes/api/(machine)/` and a channel `state` on the existing socket; the server is the one save turn for every page and window.
+- Not chosen: one file for all of it, which makes every view-state change rewrite the arrangement; keeping the desktop host's turn beside the server's, the lazy option, which leaves two turns for one file.
+
+Where it applies: O46. Booked in `plan.md` Rulings.
