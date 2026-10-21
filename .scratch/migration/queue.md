@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O39 (oculus in its own repository): part A, the new repository's own files, its `CLAUDE.md`, and the theme groups and theme data in config, reviewed over repair round 1, waiting on open items 185, 186 and 187; parts B and C by the orchestrator after part A's landing.
+- O39 (oculus in its own repository): part A, the new repository's own files, its `CLAUDE.md`, and the theme groups and theme data in config, in repair round 2 (rulings 186, 187 and 188); parts B and C by the orchestrator after part A's landing.
 
 Queued, in order: none.
 

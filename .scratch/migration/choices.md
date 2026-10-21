@@ -4812,6 +4812,7 @@ Where it applies: O39, part A item 5. Booked in `plan.md` Rulings.
 
 - Chosen: the code theme choice keeps each VS Code code theme under its shipped row's `group`, while the UI theme list draws the workspace file's row, since ruling VS Code list in config reads the code themes from oculus's shipped rows and never from the list a workspace file makes; the brief's sentence that the two lists cannot disagree holds for the shipped config.
 - Not chosen: the code list following a workspace file's group, which reverses that ruling for groups.
+- Withdrawn (2026-10-21): raised to Axel as open item 188 at his question.
 
 Where it applies: O39, part A item 5. Booked in `plan.md` Rulings.
 
