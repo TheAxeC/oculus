@@ -7,8 +7,10 @@
 // (src/hooks.server.ts) and the tab the page opens for an `ok` answer.
 
 import { symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { foldsCase } from '../../../src/lib/server/core/paths.ts';
 import { appById } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { checkOpen, diskFs, type OpenFs } from '../../../src/lib/server/machine/apps/reach/open.ts';
 import { handleOpenGet } from '../../../src/lib/server/machine/apps/routes/routes.ts';
@@ -17,6 +19,12 @@ import { it } from '../../fixtures/scratch.ts';
 import { notesFiles, PAGE, routeSetup } from './apps-fixture.ts';
 
 const TODO = 'name: todo\ntitle: Todo\nbridge: 1\n';
+
+/**
+ * Whether the scratch folders' file system reads a path in another letter case as the same path. On
+ * one that does not, the config folder spelt in capitals names no file, so the path is `missing`.
+ */
+const FOLDS = foldsCase(tmpdir());
 
 /** The roots of every case: a hub with hidden, closed and ordinary files, and two more roots. */
 function world(over: { closedPaths?: () => readonly string[] | null } = {}) {
@@ -147,7 +155,7 @@ const FILES: [string, string, string, string, string][] = [
         'app:notes',
         'hub',
         'TOOLS/OCULUS/CONFIG/OPTIONS/local.yml',
-        'closed'
+        FOLDS ? 'closed' : 'missing'
     ],
     ['a closed folder', 'app:notes', 'hub', 'secrets/a.txt', 'closed'],
     ['a closed folder spelt in capitals', 'app:notes', 'hub', 'SECRETS/a.txt', 'closed'],

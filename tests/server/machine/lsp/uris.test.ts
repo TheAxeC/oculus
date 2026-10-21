@@ -3,7 +3,7 @@
 // language server, and which addresses of a message are refused or dropped on the way to a server
 // and to the page. One table, a row for each input that gives a different outcome.
 
-import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect } from 'vitest';
@@ -115,9 +115,10 @@ const ROWS: Row[] = [
         want: (world) => [join(world.roots[1].real, 'inner.py'), 'inner', 'repo']
     },
     {
-        name: 'resolves a name written decomposed to the file written composed on disk',
+        name: 'resolves a name written decomposed to the file written composed on disk where the file system reads the two forms as one name, and refuses it where it does not',
         got: (world) => resolved('oculus-file:///repo/src/cafe%CC%81.py', world)?.[1],
-        want: () => 'repo'
+        want: (world) =>
+            existsSync(join(world.roots[0].real, 'src', 'cafe\u0301.py')) ? 'repo' : undefined
     },
     {
         name: 'is written with every part percent-encoded and resolves back to the file',

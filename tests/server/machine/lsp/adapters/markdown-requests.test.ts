@@ -10,14 +10,16 @@
 // the relay calls it, over a scratch hub and a scratch home folder that `os.homedir` answers
 // through `HOME`.
 //
-// What this does NOT cover: that the letter case `SECRETS` is refused by the disk's own folding
-// (on a case-sensitive disk that path names no file, so the read is refused for being absent), and
-// the answers of the real server, which the relay's wire tests do not start.
+// The entry refuses a file under `SECRETS` where the disk folds letter case, since that is then the
+// `secrets` folder, and gives it on a disk that does not, where it names another folder. What this
+// does NOT cover: the answers of the real server, which the relay's wire tests do not start.
 
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect } from 'vitest';
+import { foldsCase } from '../../../../../src/lib/server/core/paths.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 import { markdownDiagnostics } from '../../../../../src/lib/server/machine/lsp/adapters/markdown/diagnostics.ts';
 import { markdownRequests } from '../../../../../src/lib/server/machine/lsp/adapters/markdown/requests.ts';
@@ -30,6 +32,9 @@ import { servedRoots } from '../../../../../src/lib/server/machine/lsp/uris.ts';
 import { entryFiles } from '../../../../../src/lib/server/machine/lsp/held/watch.ts';
 import { TEXT } from '../../../text.ts';
 import { shippedLatex } from '../lsp-fixture.ts';
+
+/** Whether the scratch folders' file system reads a path in another letter case as the same. */
+const FOLDS = foldsCase(tmpdir());
 
 /** The `HOME` the run had, which `os.homedir` answers first, put back after the file. */
 const realHome = process.env.HOME;
@@ -270,9 +275,9 @@ describe('the Markdown server may not be given the machine or the outside', () =
                 true
             ],
             [
-                'refuses a Markdown file under SECRETS',
+                'refuses a Markdown file under SECRETS where the disk folds letter case',
                 () => join(planted.hub, 'SECRETS', 'key.md'),
-                true
+                FOLDS
             ],
             [
                 'refuses a Markdown file under ~/.oculus',
