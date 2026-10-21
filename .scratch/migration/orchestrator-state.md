@@ -30,8 +30,8 @@ dispatch:         # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   launched: 2026-10-21
-  session_id: a5f47cf57f964e076 (claude-opus-5-5)
-  report: .scratch/migration/agents/reviews/O39-partD-report.md
+  session_id: a5f47cf57f964e076 (claude-opus-5-5), stopped by Axel 2026-10-21 at 13:46 before its report; its 87 changed paths are kept in the worktree unread by any review (open item 200)
+  report: .scratch/migration/agents/reviews/O39-partD-report.md (not written)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O39-partD-brief-check.md (abc0742eebc9814e2, claude-opus-5-5, 205,748 tokens, 73 tool uses, 9.5 min)
   landing: not-started
@@ -177,6 +177,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 199. Where the two layout defects Axel reported on 2026-10-21 are built (Axel: "timeline / bookmarks weird layout => The horizontal lines, and height is not quite correct? There is also a horizontal line missing between editors and the files/workspace title." and "margins for editor and terminal => margins are too large (the actual viewport for the terminal/editor compared to the pane)"). The two defects: (1) the Timeline and Bookmarks sections of the side bar draw their horizontal rules and their heights wrong, and no rule separates the Editors section from the Files/Workspace title; (2) the editor and the terminal draw their viewport with a margin too large inside their pane. Options: (a) a step of their own, O48, built inline by the orchestrator after O47 with the look on TEST before and after; pro: O47 stays the follow-up and picture work it was named for, and the look of a layout fix is taken on its own; con: one more ledger line. (b) folded into O47; pro: no new step; con: O47 then carries side-bar and editor layout, a different concern from its four rulings, and its review and look grow. (c) booked for later; this is the lazy option. Recommendation: (a).
+- 200. What happens to O39 part D, whose builder Axel stopped. What its worktree holds (read 2026-10-21 by `git status --short` and a comparison of each changed file's removed and added text with `docs/` taken out): `HELP.md` and `DESIGN.md` moved to `docs/`, a new `docs/reference.md`, the README rewritten; 72 files whose only change is `DESIGN.md` or `HELP.md` turned into `docs/DESIGN.md` or `docs/HELP.md` in a comment, with the comment paragraph reflowed; 9 files with other changes, each named by the brief (`CLAUDE.md`, `docs/apps.md`, `src/desktop/release.ts`, `src/lib/data/places/shipped.ts`, `src/lib/server/content/docs.ts`, `src/lib/views/shared/prose/doc-link.ts` and three tests). No report was written. Its last 40 minutes went to checks of its own over the reflowed comments, written with awk and perl, which the brief did not ask for. Options: (a) keep the work, send it to /refute and /land as it stands, the orchestrator writing the missing report sections from the diff; pro: the work matches ruling 194 (a) as offered ("every reference updated ... 73 files, mostly code comments"); con: 72 files change for a path in a comment. (b) narrow ruling 194: a comment keeps the bare name `DESIGN.md` and only paths that code opens, links and the documents change (about 12 files); the 72 comment-only files are restored from main; pro: a small diff; con: a comment no longer names a path a reader can open. (c) discard the worktree and do nothing; this is the lazy option. Recommendation: (b), since the comment rewrites are the part Axel saw as not asked for, and the rest is what he asked.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
