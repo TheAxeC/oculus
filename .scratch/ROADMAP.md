@@ -100,6 +100,7 @@ Work agreed on 2026-09-09. Reasoning and design detail live in `design/SESSIONS.
 - [x] H1 done 2026-09-10: the three machine-written feeds (`inbox.yml`, `literature-radar.yml`, `position-leads.yml`) moved to hub-root `feeds/`; the litwatch runbook and the position-leads search spec moved beside the skill that reads them (`.agents/skills/research-cockpit/`); `email-tracker.md` deleted (a 2026-07-01 triage output nothing read, superseded by `inbox.yml`); `AUDIT_AUTO.md` generated beside `cockpit.html`; `tools/cockpit/data/` holds only `cockpit.yml`, `config/`, `HELP.md`
 - [x] superseded 2026-09-10: genericising the cockpit's `HELP.md` and `text.yml` for publication no longer applies; the cockpit is frozen and retires, and oculus carries its own catalog
 - [x] superseded 2026-09-10: the cockpit is not being published; oculus is the thing that may be
+- [ ] before the oculus repository at `~/workspace/oculus` is made public, `git filter-repo --path .scratch/ --invert-paths` takes the ledger out of its history, since the ledger holds Axel's words and the hub's private paths (ruling O33 ledger)
 
 ## I. Shell, after the tab is in use
 

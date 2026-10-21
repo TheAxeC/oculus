@@ -31,12 +31,12 @@ land_script=$script_dir/land.sh
 
 write_tool_stub() {
     stub_root=$1
-    mkdir -p "$stub_root/tools/oculus/src" "$stub_root/tools/oculus/tests" "$stub_root/tools/oculus/bin" "$stub_root/tools/oculus/config"
-    printf 'source\n' >"$stub_root/tools/oculus/src/source.txt"
-    printf 'test\n' >"$stub_root/tools/oculus/tests/test.txt"
-    printf 'bin\n' >"$stub_root/tools/oculus/bin/bin.txt"
-    printf 'config\n' >"$stub_root/tools/oculus/config/config.txt"
-    cat >"$stub_root/tools/oculus/package.json" <<'JSON'
+    mkdir -p "$stub_root/src" "$stub_root/tests" "$stub_root/bin" "$stub_root/config"
+    printf 'source\n' >"$stub_root/src/source.txt"
+    printf 'test\n' >"$stub_root/tests/test.txt"
+    printf 'bin\n' >"$stub_root/bin/bin.txt"
+    printf 'config\n' >"$stub_root/config/config.txt"
+    cat >"$stub_root/package.json" <<'JSON'
 {
     "name": "landing-test",
     "private": true,
@@ -60,7 +60,7 @@ initialise_repo() {
         git init -q -b main
         git config user.name "Landing Test"
         git config user.email "landing-test@example.invalid"
-        git add tools/oculus
+        git add src tests bin config package.json
         git commit -q -m "Initial fixture"
         mkdir -p .agents/worktrees
     ) || fail "could not initialise scratch repository"
@@ -111,13 +111,13 @@ clean_base=$(cd "$clean_repo" && git rev-parse HEAD) || fail "could not read cle
     cd "$clean_repo" || exit 1
     git worktree add -q -b clean .agents/worktrees/clean "$clean_base"
 ) || fail "could not create clean worktree"
-printf 'committed\n' >"$clean_repo/.agents/worktrees/clean/tools/oculus/committed.txt"
+printf 'committed\n' >"$clean_repo/.agents/worktrees/clean/committed.txt"
 (
     cd "$clean_repo/.agents/worktrees/clean" || exit 1
-    git add tools/oculus/committed.txt
+    git add committed.txt
     git commit -q -m wip
 ) || fail "could not create clean package commit"
-printf 'pending\n' >"$clean_repo/.agents/worktrees/clean/tools/oculus/pending.txt"
+printf 'pending\n' >"$clean_repo/.agents/worktrees/clean/pending.txt"
 clean_runs=$test_root/clean-runs
 write_events "$clean_runs"
 
@@ -133,7 +133,7 @@ if [ "$clean_status" -ne 0 ]; then
 fi
 
 clean_staged=$(cd "$clean_repo" && git diff --cached --name-only) || fail "could not read clean staged paths"
-clean_expected=$(printf '%s\n%s' 'tools/oculus/committed.txt' 'tools/oculus/pending.txt')
+clean_expected=$(printf '%s\n%s' 'committed.txt' 'pending.txt')
 if [ "$clean_staged" != "$clean_expected" ]; then
     fail "clean staged paths differ: [$clean_staged]"
 fi
@@ -146,16 +146,16 @@ case "$clean_output" in
 esac
 assert_contains "$clean_output" "Orchestrator row (2026-09-16T12:00:00+02:00 to " "orchestrator row window"
 assert_contains "$clean_output" "): 2 messages, 30 output tokens, 100 cache-write tokens, 3000 cache-read tokens, 8 fresh input tokens, " "orchestrator row"
-assert_contains "$clean_output" "tools/oculus/committed.txt" "booking paths"
-assert_contains "$clean_output" "tools/oculus/pending.txt" "booking paths"
+assert_contains "$clean_output" "committed.txt" "booking paths"
+assert_contains "$clean_output" "pending.txt" "booking paths"
 printf 'clean: exit 0, staged paths, usage rows and the orchestrator row verified\n'
 
 conflict_repo=$test_root/conflict
 initialise_repo "$conflict_repo"
-printf 'base\n' >"$conflict_repo/tools/oculus/conflict.txt"
+printf 'base\n' >"$conflict_repo/conflict.txt"
 (
     cd "$conflict_repo" || exit 1
-    git add tools/oculus/conflict.txt
+    git add conflict.txt
     git commit -q -m "Add conflict fixture"
 ) || fail "could not add conflict fixture"
 conflict_base=$(cd "$conflict_repo" && git rev-parse HEAD) || fail "could not read conflict base"
@@ -163,17 +163,17 @@ conflict_base=$(cd "$conflict_repo" && git rev-parse HEAD) || fail "could not re
     cd "$conflict_repo" || exit 1
     git worktree add -q -b conflict .agents/worktrees/conflict "$conflict_base"
 ) || fail "could not create conflict worktree"
-printf 'package\n' >"$conflict_repo/.agents/worktrees/conflict/tools/oculus/conflict.txt"
+printf 'package\n' >"$conflict_repo/.agents/worktrees/conflict/conflict.txt"
 (
     cd "$conflict_repo/.agents/worktrees/conflict" || exit 1
-    git add tools/oculus/conflict.txt
+    git add conflict.txt
     git commit -q -m wip
 ) || fail "could not create conflicting package commit"
-printf 'pending\n' >"$conflict_repo/.agents/worktrees/conflict/tools/oculus/pending.txt"
-printf 'main\n' >"$conflict_repo/tools/oculus/conflict.txt"
+printf 'pending\n' >"$conflict_repo/.agents/worktrees/conflict/pending.txt"
+printf 'main\n' >"$conflict_repo/conflict.txt"
 (
     cd "$conflict_repo" || exit 1
-    git add tools/oculus/conflict.txt
+    git add conflict.txt
     git commit -q -m "Change main fixture"
 ) || fail "could not create conflicting main commit"
 conflict_runs=$test_root/conflict-runs
@@ -191,7 +191,7 @@ if [ "$conflict_status" -ne 2 ]; then
 fi
 assert_contains "$conflict_output" "worktree git cherry-pick failed" "conflict step"
 assert_contains "$conflict_output" "Conflicting paths:" "conflict heading"
-assert_contains "$conflict_output" "tools/oculus/conflict.txt" "conflict path"
+assert_contains "$conflict_output" "conflict.txt" "conflict path"
 conflict_branch=$(cd "$conflict_repo/.agents/worktrees/conflict" && git branch --show-current) || fail "could not read conflict branch"
 if [ "$conflict_branch" != "conflict-land" ]; then
     fail "conflict worktree is on $conflict_branch, expected conflict-land"

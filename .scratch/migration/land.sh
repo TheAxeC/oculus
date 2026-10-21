@@ -68,7 +68,7 @@ fi
 
 landing_root=$(pwd -P)
 landing_worktree=$landing_root/.agents/worktrees/$landing_pkg
-landing_tool=$landing_root/tools/oculus
+landing_tool=$landing_root
 
 if [ ! -d "$landing_root/.git" ]; then
     fail "preflight failed: run this script from the repository root"
@@ -209,7 +209,7 @@ wait_for_index "$landing_root"
 run_step "main git cherry-pick" git cherry-pick -n "main..$landing_pkg-land"
 # A package that changed the lockfile brings a dependency main does not hold yet, so the checks
 # would fail on a missing package rather than on the package's own work.
-if git diff --cached --name-only | grep -qx "tools/oculus/package-lock.json"; then
+if git diff --cached --name-only | grep -qx "package-lock.json"; then
     run_step "main npm ci" sh -c 'cd "$1" && npm ci --silent' sh "$landing_tool"
 fi
 
