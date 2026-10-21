@@ -1,6 +1,7 @@
 /* Gruvbox (morhetz/gruvbox, MIT): dark, then light. One block per palette, each a set of
    overrides on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in
-   themes.css, and the picker rows are the `themes:` list of config/defaults/appearance.yml. */
+   themes.css, and the theme list's rows are the `themes:` rows of
+   config/defaults/appearance.yml. */
 
 /* --- Gruvbox dark -------------------------------------------------------- */
 body.gruvbox {

@@ -24,21 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:         # steps in flight, up to six (Z632)
-- step: O39
-  base: e9fd29162
-  worktree: .agents/worktrees/migration-O39
-  executor: agent
-  worker: claude:opus
-  session_id: a2e8810ef4785fd47
-  builder_usage: "first run, stopped on a red G25 check: 317,021 tokens, 508 tool uses, 65.7 min; resumed with ruling Overview drawing (Z968); the resumed run: 366,349 tokens, 42 tool uses, 5.0 min; round 1: 252,462 tokens, 331 tool uses, 43.5 min"
-  model: claude-opus-5-5
-  launched: 2026-10-21
-  report: tools/oculus/.scratch/migration/agents/reviews/O39-report.md
-  reviewer_report: "tools/oculus/.scratch/migration/agents/reviews/O39-refuter.md (a32b6d70ea5cdc87a, claude-opus-5-5, 365,215 tokens, 99 tool uses, 18.4 min); over round 1: a9bd27380cac16947, claude-opus-5-5, 286,977 tokens, 68 tool uses, 13.1 min"
-  round: 2
-  landing: not-started
-  brief_check: "aeebe0d3e26943120, claude-opus-5-5, 235,565 tokens, 82 tool uses, 13.4 min; ac49a900edbdff4fe, claude-opus-5-5, stopped on Axel's word, a second brief check the rules forbid, nothing it found used"
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -171,26 +157,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -357,6 +323,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-21 (O39 part A landed). O39 part A, the new repository's own files and the theme lists, groups and first paint, landed on main with twelve fixes at landing, the last one ending the Electron second-start hang (the host read the stylesheets from the `--engine` folder); `agents/reviews/O39-landing.md`. Its worktree, branches, round snapshots and base copy removed. The look on TEST owed (no Chrome connected), in `agents/reviews/owed-looks.md`. Open items: none. In flight (0 of 6 agents): none; O39 parts B and C are the orchestrator's. Next: O39 part B (the filtered clone, the checks, the GitHub repository, the Release, the Lima run), then part C path by path on Axel's yes.
+- 2026-10-21 (O39 part A, ruling 192). Axel ruled 192 (b): the Shiki code themes are the rows of `code_themes.shiki`, carried out at landing. No open item left. Next: /land O39 part A.
+- 2026-10-21 (O39 part A reviewed over round 2; a name needed before landing). The reviewer over round 2 ad8fb318e8e3d6926 (110,615 tokens, 86 tool uses, 15.1 min) appended "Repair round 2, refuted" to `agents/reviews/O39-refuter.md`; the section "Repair round 1, refuted" there, which held the wrong agent's text, is replaced by O39's round 1 review from a9bd27380cac16947's transcript. Every finding is fixed at landing. Open item 192 raised: ruling 185 needs the name of the field that says which Shiki theme a VS Code code theme duplicates. Next: Axel's name, then /land O39 part A.
+- 2026-10-21 (O39 part A, round 2 reported, review started). The builder a2e8810ef4785fd47 reported round 2 (355,147 tokens, 810 tool uses, 124.0 min), saved in `agents/reviews/O39-report.md` from line 462; it ran the quick tier four times and one vitest run started the slow `start.test.ts` (Electron on port 8817, no process left after). The reviewer over round 2 ad8fb318e8e3d6926 runs on claude-opus-5-5. Next: its report, the findings fixed at landing or raised, then /land O39 part A.
 - 2026-10-21 (O39 part A, repair round 2 sent). Axel ruled open item 191 (a): one more builder round for rulings 186, 187 and 188 only. Brief `agents/briefs/O39-round2.md`; snapshot `.agents/worktrees/migration-O39-round-2` (73 paths in `files.txt`); builder a2e8810ef4785fd47 resumed, served claude-opus-5-5. Next: the builder's report, /refute over round 2, then /land O39 part A with rulings 185, 189 and 190 and the fixes at landing.
 - 2026-10-21 (O39 part A, the list's name ruled; a clash raised). Axel ruled 188 (a), `code_themes.vscode`. Open item 191 raised: 186, 187 and 188 are larger than a fix at landing. Next: Axel's ruling on 191.
 - 2026-10-21 (O39 part A, rulings on 187, 188 and 190). Axel ruled 187 (a), 190 with the three recommendations, and for 188 that the code themes have their own list; open item 188 now holds only that list's name. Next: Axel's name for the list, then /land O39 part A.

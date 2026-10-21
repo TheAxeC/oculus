@@ -5,6 +5,7 @@
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../../data/accounts/chat.ts';
+import type { HubSettings } from '../../../../data/index.ts';
 import { textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../../sessions/overrides.ts';
@@ -38,6 +39,11 @@ export type ChatOptions = StartOptions & {
     localFor: () => LocalConfig;
     /** The open workspace: the primary hub the portfolio chat runs in, and the other hubs. */
     openFor: () => OpenWorkspace;
+    /**
+     * The settings of a hub of the workspace other than the primary, by its folder: the server's
+     * kept parse of them, which a hub task and the chat's context of the primary's projects read.
+     */
+    hubSettings: HubSettings;
 };
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */
@@ -115,7 +121,8 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    writeTextAtomic(index, portfolioContext(home, primaryConfig(config, open)), 0o600);
+    const primary = primaryConfig(config, open, options.hubSettings);
+    writeTextAtomic(index, portfolioContext(home, primary), 0o600);
     try {
         return await startTerminal(
             {

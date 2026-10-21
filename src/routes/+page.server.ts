@@ -4,9 +4,11 @@ import {
     vocabCatalog,
     workspaceCollectionKeys
 } from '$lib/data/sources/config';
+import { vscodeRuleIds } from '$lib/data/places/code-rules';
 import { platformText } from '$lib/data/places/platform';
 import { pageStateRead } from '$lib/server/files/workspace/page-state/routes';
 import { payloadOf } from '$lib/server/machine/apps/read/held';
+import { firstAppThemes } from '$lib/server/machine/apps/routes/theme';
 import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
 
@@ -27,6 +29,13 @@ import type { PageServerLoad } from './$types';
 //
 // The vocabulary of every hub of the workspace rides with them, so the first frame draws a record
 // of any hub in its own hub's words.
+//
+// The classes a VS Code code theme may name ride with them and in the seed, the keys of the
+// TextMate rules this checkout ships (data/places/code-rules.ts), which the page cannot read; so do
+// the files of the colour themes of apps the `theme` and `app_theme` options name, read as GET
+// /api/app-theme reads them (server/machine/apps/routes/theme.ts, `firstAppThemes`), which the page
+// hands its workbench, so a page whose theme is an app's draws it from its first paint instead of
+// waiting for that route.
 //
 // The collection keys ride with them for the same reason: the page registers the collection view
 // once per key before it renders, and the registry is filled in the page's script body rather than
@@ -51,17 +60,21 @@ export const load: PageServerLoad = ({ locals }) => {
     const text = platformText(textCatalog(config));
     const icons = locals.server.icons.set;
     const hubs = locals.server.configCache.vocab();
+    const codeThemeClasses = vscodeRuleIds();
     return {
         text,
         glyphs: glyphCatalog(config),
         icons,
         vocab: vocabCatalog(config),
         hubs,
+        codeThemeClasses,
+        appThemes: firstAppThemes(locals.server.apps.held(), config),
         collections: workspaceCollectionKeys(config, hubs),
         seed: configSeed(locals.server.hub, read, {
             hubs,
             text,
             icons,
+            codeThemeClasses,
             host: locals.server.host
         }),
         apps: {

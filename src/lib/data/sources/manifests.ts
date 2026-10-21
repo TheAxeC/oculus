@@ -10,6 +10,9 @@
 // A project is a folder holding `project.yml` at its top or `.oculus/project.yml`, in a scan folder
 // and in a workspace folder alike. A folder holding both is read from its top file and the other is
 // a finding naming both. A folder that is a hub (it holds `.oculus/config.yml`) is never a project.
+// A manifest is read once, by its real path: a workspace folder whose manifest a hub's scan reads
+// is that scan project, and every other workspace folder's manifest is read as its project wherever
+// the folder lies, inside a hub, inside a scan folder or holding a hub.
 //
 // A folder that is a clone of another project is not a project of its own: when the `origin` of the
 // folder's repository is the `repository.url` of another project read in the same pass, the folder
@@ -328,6 +331,38 @@ function settle(
     return manifests;
 }
 
+/** A project folder the scan rules reach: where it lies, its path in the scan folder, its file. */
+type Reached = { dir: string; segments: string[]; placed: ProjectFile };
+
+/**
+ * The project folders the scan rules reach, in the order the walk meets them, each folder once
+ * however many rules reach it, with no manifest read. `missing` is told the folder of each rule
+ * whose folder is not there and that is not `optional`.
+ */
+function reachedBy(hub: string, scan: ScanRule[], missing: (base: string) => void): Reached[] {
+    const found: Reached[] = [];
+    const reached = new Set<string>();
+
+    for (const rule of scan) {
+        const base = join(hub, rule.dir);
+        if (!isDir(base)) {
+            if (rule.optional !== true) missing(base);
+            continue;
+        }
+
+        const paths: string[][] = projectFileIn(base) !== null ? [[]] : nestedProjects(base);
+        for (const segments of paths) {
+            const dir = join(base, ...segments);
+            const place = placeOf(dir);
+            if (reached.has(place)) continue;
+            reached.add(place);
+            const placed = projectFileIn(dir);
+            if (placed !== null) found.push({ dir, segments, placed });
+        }
+    }
+    return found;
+}
+
 /** The project folders the scan rules reach, read in the order the walk meets them. */
 function scanned(
     hub: string,
@@ -335,37 +370,28 @@ function scanned(
     catalog: TextCatalog,
     findings: Finding[]
 ): Found[] {
-    const found: Found[] = [];
-    const reached = new Set<string>();
+    const missing = (base: string): void => {
+        findings.push({
+            file: base,
+            key: 'scan',
+            message: findingText(catalog, 'findings.manifests.scan_missing')
+        });
+    };
+    return reachedBy(hub, scan, missing).map(({ dir, segments, placed }) => {
+        const category = segments.length > 1 ? segments[0] : undefined;
+        const place = { folder: hubPath(hub, dir), id: basename(dir), dir, category };
+        return foundAt(placed, place, catalog);
+    });
+}
 
-    for (const rule of scan) {
-        const base = join(hub, rule.dir);
-        if (!isDir(base)) {
-            if (rule.optional !== true) {
-                findings.push({
-                    file: base,
-                    key: 'scan',
-                    message: findingText(catalog, 'findings.manifests.scan_missing')
-                });
-            }
-            continue;
-        }
-
-        const paths: string[][] = projectFileIn(base) !== null ? [[]] : nestedProjects(base);
-        for (const segments of paths) {
-            const folderPath = join(base, ...segments);
-            const place = placeOf(folderPath);
-            if (reached.has(place)) continue;
-            reached.add(place);
-            const placed = projectFileIn(folderPath);
-            if (placed === null) continue;
-            const category = segments.length > 1 ? segments[0] : undefined;
-            const folder = hubPath(hub, folderPath);
-            const id = basename(folderPath);
-            found.push(foundAt(placed, { folder, id, dir: folderPath, category }, catalog));
-        }
-    }
-    return found;
+/**
+ * The real paths of the manifests the scan rules of a hub reach, with no manifest read: the files a
+ * reader of the workspace's folders compares a folder's manifest with, since a folder whose
+ * manifest a hub's scan reads is that hub's project and is not read a second time.
+ */
+export function scannedFiles(hub: string, scan: ScanRule[]): Set<string> {
+    const reached = reachedBy(hub, scan, () => undefined);
+    return new Set(reached.map((one) => placeOf(one.placed.file)));
 }
 
 /**
@@ -398,15 +424,21 @@ export function readManifests(
 
 /**
  * The project folders of the workspace the roots name, one per root that is a project: a root
- * without a manifest, or whose directory is not on this machine, is no project and no finding. The
- * record is a scan project's, read from the same kind of file under the same checks, with the
- * root's key for its id and `workspaceFolder` naming the root and its folder.
+ * without a manifest, or whose directory is not on this machine, is no project and no finding, and
+ * a root whose manifest's real path is in `read` (a manifest the scan of the hub reads) is the
+ * scan's project, which is read once, so it is left out here with no finding. The record is a scan
+ * project's, read from the same kind of file under the same checks, with the root's key for its id
+ * and `workspaceFolder` naming the root and its folder.
  */
-function workspaceFound(roots: RepositoryRoot[], catalog: TextCatalog): Found[] {
+function workspaceFound(
+    roots: RepositoryRoot[],
+    catalog: TextCatalog,
+    read: ReadonlySet<string>
+): Found[] {
     const found: Found[] = [];
     for (const root of roots) {
         const placed = projectFileIn(root.dir);
-        if (placed === null) continue;
+        if (placed === null || read.has(placeOf(placed.file))) continue;
         found.push(
             foundAt(placed, { folder: root.dir, id: root.key, dir: root.dir, root }, catalog)
         );
@@ -417,10 +449,11 @@ function workspaceFound(roots: RepositoryRoot[], catalog: TextCatalog): Found[] 
 /**
  * Every project manifest of the primary hub: the scan folders' and those of the project folders of
  * the workspace. It is the one reader of the primary hub's projects, so the build and every reader
- * that finds a project to read or write it see the same set. The scan folders are read before the
- * project folders, so a project folder whose name a scan project holds is the one that is not read;
- * a project folder that is a clone of a project of the scan folders is not read either, and raises
- * no finding (see `settle`).
+ * that finds a project to read or write it see the same set. A project folder whose manifest is, by
+ * its real path, one the scan reads is the scan's project: one record, the scan's, and no finding,
+ * wherever the folder lies. The scan folders are read before the project folders, so a project
+ * folder whose name a scan project holds is the one that is not read; a project folder that is a
+ * clone of a project of the scan folders is not read either, and raises no finding (see `settle`).
  */
 export function readHubManifests(
     hub: string,
@@ -429,7 +462,9 @@ export function readHubManifests(
     catalog: TextCatalog
 ): { manifests: RawManifest[]; findings: Finding[] } {
     const findings: Finding[] = [];
-    const found = [...scanned(hub, scan, catalog, findings), ...workspaceFound(roots, catalog)];
+    const fromScan = scanned(hub, scan, catalog, findings);
+    const read = new Set(fromScan.map((one) => placeOf(one.file)));
+    const found = [...fromScan, ...workspaceFound(roots, catalog, read)];
     const manifests = settle(found, claimer(catalog, findings), catalog, findings);
     const inScan = manifests.filter((one) => one.workspaceFolder === undefined);
     inScan.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));

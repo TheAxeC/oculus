@@ -1,11 +1,13 @@
 // Layer 2, server (the desktop host). The oculus server as a utility process of the app. It is
 // `src/server.ts` forked with the engine, the default port and the handler, never run in the main
 // process, so a long read of the config never stops the window's menus or its move. The process
-// tells the app each port it listens on and a first listen that failed
-// (lib/server/root/process/parent.ts), and asks it for the folder panel. Its output is printed on
-// the app's own, under a prefix.
+// tells the app each port it listens on, a first listen that failed and the colour themes of apps
+// the theme options name (lib/server/root/process/parent.ts), which this holds for the colours of
+// a new window, and asks it for the folder panel. Its output is printed on the app's own, under a
+// prefix.
 
 import { utilityProcess, type UtilityProcess } from 'electron';
+import type { AppThemeFiles } from '../../lib/data/helpers/files/apps/choices.ts';
 import {
     readServerMessage,
     type MainMessage,
@@ -45,6 +47,10 @@ export type ServerProcess = {
     port: () => number | null;
     /** Called with each port it reports listening on, the first and each move. */
     onListening: (listener: (port: number) => void) => () => void;
+    /**
+     * The colour themes of apps the theme options name, as it last told them; none before it has.
+     */
+    appThemes: () => AppThemeFiles;
     /** Called when it exits without being stopped, after its first listen. */
     onLost: (listener: (code: number, reason: string) => void) => void;
     /** Send it a message. */
@@ -87,6 +93,7 @@ export function forkServer(options: ForkOptions): ServerProcess {
         { env: options.env, stdio: 'pipe', serviceName: options.name }
     );
     let port: number | null = null;
+    let appThemes: AppThemeFiles = {};
     const reason = errorReason();
     let stopping = false;
     let first = false;
@@ -115,6 +122,8 @@ export function forkServer(options: ForkOptions): ServerProcess {
             for (const listener of listeners) listener(message.port);
         } else if (message.kind === 'failed') {
             settle({ kind: 'failed', reason: message.reason, port: message.port });
+        } else if (message.kind === 'app-themes') {
+            appThemes = message.files;
         } else {
             options.onPick(message.id, { start: message.start, single: message.single });
         }
@@ -135,6 +144,7 @@ export function forkServer(options: ForkOptions): ServerProcess {
             listeners.add(listener);
             return () => void listeners.delete(listener);
         },
+        appThemes: () => appThemes,
         onLost: (listener) => void lost.push(listener),
         send: (message) => {
             if (!exited) child.postMessage(message);

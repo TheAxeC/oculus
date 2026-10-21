@@ -33,6 +33,7 @@ export function configSeed(
         hubs: HubVocabs;
         text: Record<string, string>;
         icons: Record<string, string>;
+        codeThemeClasses: string[];
         host: HostInfo;
     }
 ): ConfigSeed {

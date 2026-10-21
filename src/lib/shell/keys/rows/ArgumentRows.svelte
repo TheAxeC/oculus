@@ -11,9 +11,17 @@
     // palette, another query) draws the one in force again, and a press keeps the one chosen. A
     // file icon theme stays previewed until its write has answered, so the icons do not go back to
     // the old theme while the write is out, and a refused write draws the one in force again.
+    //
+    // The rows of `:theme` are drawn under a heading per group, the `group` of each theme row of
+    // the config and the title of the app that offers an app's theme, in the order the Settings
+    // view's choice draws them (`choiceGroups`), the rows with no group first. The list's rows come
+    // in that order already (palette-modes.ts `argumentRows`), so the arrow keys move through them
+    // as drawn; a group the typed words filter out whole has no row and draws no heading.
 
+    import { Command } from 'bits-ui';
     import { onDestroy } from 'svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import { choiceGroups } from '$lib/ui/forms/choice/choices';
     import { landOn } from '$lib/shell/keys/palette-open';
     import type { ArgumentList } from '$lib/shell/keys/lists/argument-list.svelte';
     import type { ArgumentRow } from '$lib/shell/keys/palette-modes';
@@ -42,6 +50,21 @@
     let kept = false;
 
     const under = $derived(list.rows.find((row) => row.value === selected) ?? null);
+
+    /** The rows split for drawing: the ones with no group, then each group under its heading. */
+    const drawn = $derived(choiceGroups(list.rows));
+
+    /** The row as PaletteRow draws it, a press picking its choice. */
+    function shown(row: ArgumentRow) {
+        return {
+            value: row.value,
+            kind: row.kind,
+            label: row.label,
+            hint: row.hint,
+            active: row.active,
+            pick: () => pick(row)
+        };
+    }
 
     // The theme or the file icon theme under the selection is drawn while the list shows.
     $effect(() => {
@@ -79,15 +102,35 @@
     }
 </script>
 
-{#each list.rows as row (row.value)}
-    <PaletteRow
-        row={{
-            value: row.value,
-            kind: row.kind,
-            label: row.label,
-            hint: row.hint,
-            active: row.active,
-            pick: () => pick(row)
-        }}
-    />
+{#each drawn.loose as row (row.value)}
+    <PaletteRow row={shown(row)} />
 {/each}
+{#each drawn.groups as group (group.name)}
+    <Command.Group value={`group:${group.name}`}>
+        <Command.GroupHeading>
+            {#snippet child({ props })}
+                <div {...props} class="heading">{group.name}</div>
+            {/snippet}
+        </Command.GroupHeading>
+        <Command.GroupItems>
+            {#each group.choices as row (row.value)}
+                <PaletteRow row={shown(row)} />
+            {/each}
+        </Command.GroupItems>
+    </Command.Group>
+{/each}
+
+<style>
+    /* A group's heading is a line of its words at the hint's size and colour over a rule across the
+       list, as VS Code's Color Theme list draws its separators; it is no row, so the arrow keys
+       pass over it and a press on it runs nothing. */
+    .heading {
+        margin-top: 4px;
+        padding: 2px 6px 0;
+        border-top: 1px solid var(--line);
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
+        text-align: right;
+    }
+</style>

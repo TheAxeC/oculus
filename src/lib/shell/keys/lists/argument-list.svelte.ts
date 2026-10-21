@@ -1,7 +1,8 @@
 // Layer 3, shell, partial of Palette.svelte. The list of `:theme`, `:file-icons`, `:tab` and
 // `:goto`: the choices their argument picks from, narrowed by the words typed after the command,
-// the one in force marked (palette-modes.ts `argumentRows`), and what the palette says when Enter
-// is pressed on a list with no row, in the words a typed argument naming nothing is refused with
+// the one in force marked and the themes in their groups (palette-modes.ts `argumentRows`), the row
+// the selection starts on (palette-modes.ts `startRow`), and what the palette says when Enter is
+// pressed on a list with no row, in the words a typed argument naming nothing is refused with
 // (state/workbench/palette.ts `argumentRefusal`).
 
 import {
@@ -14,7 +15,7 @@ import {
 import type { ClientState } from '$lib/state/client/context';
 import { fileIconThemes, themes } from '$lib/state/shared/words/appearance';
 import { instanceText } from '$lib/state/workbench/layout';
-import { argumentRows, type ArgumentChoices, type ArgumentRow } from '../palette-modes';
+import { argumentRows, startRow, type ArgumentChoices, type ArgumentRow } from '../palette-modes';
 
 /** What the list is made over: the query, the choices, and the hint of each command. */
 export type ArgumentListInput = {
@@ -32,8 +33,8 @@ export type ArgumentList = {
     readonly active: boolean;
     readonly rows: ArgumentRow[];
     /**
-     * The value of the row the selection starts on: the one in force while nothing is typed after
-     * the command, else the first; null when the query is none of the four or the list is empty.
+     * The value of the row the selection starts on (`startRow`); null when the query is none of the
+     * four or the list is empty.
      */
     readonly start: string | null;
     /** What Enter on the list says when it holds no row; the empty string while it holds one. */
@@ -44,10 +45,7 @@ export function createArgumentList(input: ArgumentListInput): ArgumentList {
     const command = $derived(argumentCommandOf(input.parsed()));
     const argument = $derived(input.parsed()?.argument ?? '');
     const rows = $derived(command === null ? [] : argumentRows(command, input.choices(), argument));
-    const start = $derived(
-        ((argument === '' ? rows.find((row) => row.active) : undefined) ?? rows.at(0))?.value ??
-            null
-    );
+    const start = $derived(startRow(rows, argument)?.value ?? null);
     const refusal = $derived.by(() => {
         if (command === null || rows.length > 0) return '';
         const choices = input.choices();
@@ -95,7 +93,11 @@ export function argumentChoices(
     const offers = client.appShell.offers();
     const projects = Object.values(hub);
     return {
-        themes: themes(offers).map((one) => ({ name: one.name, label: one.label })),
+        themes: themes(offers).map((one) => ({
+            name: one.name,
+            label: one.label,
+            group: one.group
+        })),
         theme: client.ui.chosenTheme(),
         fileIcons: fileIconThemes(offers),
         fileIcon: client.appShell.fileIcons(),

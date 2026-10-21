@@ -24,6 +24,7 @@ import {
     DECK_PATH,
     deckOf,
     deckTarget,
+    insideHubTarget,
     manifestOf,
     overridesOf,
     REPOSITORY_ID,
@@ -330,6 +331,56 @@ describe('taking a change back', () => {
             expect(response.status, row.name).toBe(200);
             expect(readFileSync(file, 'utf8'), row.name).toBe(original);
             expect(readFileSync(hubFile, 'utf8'), row.name).toBe(hubOriginal);
+        }
+    );
+
+    /**
+     * The writes to the project of a folder of the workspace that lies inside a hub and outside
+     * every scan folder: a field of the manifest editor, a snooze, a follow-up done, Pin, a tick
+     * and an added line, each made with the folder inside the primary hub and inside a second hub.
+     */
+    const INSIDE_ROWS = [
+        {
+            name: 'a field of the manifest editor',
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { 'status.line': 'a new line' } }
+        },
+        {
+            name: 'a snooze set',
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
+        },
+        {
+            name: 'a follow-up done',
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { followup: '' } }
+        },
+        { name: 'Pin', body: { kind: 'manifest', id: REPOSITORY_ID, fields: { pin: true } } },
+        {
+            name: 'a tick',
+            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
+        },
+        {
+            name: 'an added line',
+            body: { kind: 'subtask-add', target: { id: REPOSITORY_ID }, fields: { do: 'test it' } }
+        }
+    ];
+
+    const PLACED_ROWS = INSIDE_ROWS.flatMap((row) => [
+        { ...row, hub: 'the primary hub', second: false },
+        { ...row, hub: 'a second hub', second: true }
+    ]);
+
+    it.each(PLACED_ROWS)(
+        'writes the project of a folder of the workspace inside $hub and outside every scan folder in its own file, and takes it back: $name',
+        async (row) => {
+            const { into, file } = insideHubTarget(undefined, row.second);
+            const original = readFileSync(file, 'utf8');
+            const change = await made(into, row.body, row.name);
+            expect(resolve(change.file), row.name).toBe(resolve(file));
+            expect(readFileSync(file, 'utf8'), row.name).not.toBe(original);
+
+            const response = await undone(into, change);
+            expect(response.status, row.name).toBe(200);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(original);
+            expect(changesOf(into)[0], row.name).toMatchObject({ undoes: change.at });
         }
     );
 

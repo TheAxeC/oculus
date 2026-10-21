@@ -91,10 +91,12 @@ export type DesktopBridge = {
      */
     titleDoubleClick: () => void;
     /**
-     * The colours the title bar strip is drawn in, its background and its words, each a hex
-     * colour: off macOS the host draws the window buttons over the strip in them.
+     * The colours of the theme the page drew: the title bar strip's background and its words, in
+     * which the host draws the window buttons over the strip off macOS, and the theme's own
+     * background, which the host fills the window with on every system. Each is a hex colour; a
+     * value that is none changes nothing.
      */
-    titleColours: (color: string, symbolColor: string) => void;
+    titleColours: (color: string, symbolColor: string, background: string) => void;
     /** Whether this page's window is in full screen now. */
     fullScreen: () => Promise<boolean>;
     /** Whether the spell checker holds a word wrong, and what it suggests. */

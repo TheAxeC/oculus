@@ -33,6 +33,7 @@ const configShape = unchangedAs<Payloads['config']>(
         hubs: z.object({ primary: z.string().nullable(), lists: mapShape }),
         text: mapShape,
         icons: mapShape,
+        codeThemeClasses: listShape,
         host: mapShape,
         findings: listShape
     })

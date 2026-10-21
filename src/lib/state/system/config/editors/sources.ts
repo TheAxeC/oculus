@@ -24,7 +24,7 @@ import {
 import type { FsEntry } from '../../../sources/explorer/view/place.ts';
 import { glyphNames } from '../../../../data/sources/config/rail.ts';
 import type { AppOffers } from '../../../../data/helpers/files/apps/choices.ts';
-import { fileIconThemes, themeClassLabel, themes } from '../../../shared/words/appearance.ts';
+import { fileIconThemes, themes } from '../../../shared/words/appearance.ts';
 import { t } from '../../../shared/words/text.ts';
 
 /** The items of one list, or why there are none. */
@@ -53,6 +53,11 @@ export type ListInputs = {
     tiers: string[] | null;
     /** The classes the theme sheets hold a block for. */
     themeClasses: string[];
+    /**
+     * The classes a VS Code code theme may name, the keys of the checkout's TextMate rules the
+     * `config` channel carries; empty before the channel has sent anything.
+     */
+    codeThemeClasses: readonly string[];
     /** The themes the acting apps offer. */
     offers: AppOffers;
     /** One hub folder, by its path under the hub (the empty string is the hub itself). */
@@ -77,44 +82,48 @@ export type Lists = {
 const READY = (items: string[]): SourceItems => ({ state: 'ready', items });
 
 /**
- * The code themes in the order a choice draws them: the VS Code themes, then Shiki's, each the
- * dark ones first, each with its words (a VS Code theme's from the UI theme list by its class,
- * else its own) and the words of its group.
+ * The code themes in the order a choice draws them: the VS Code themes in the order of the rows of
+ * `code_themes.vscode`, then the Shiki themes in the order of the rows of `code_themes.shiki`, each
+ * with its row's words and in its row's group. A row with no group gives an empty group, which
+ * draws the theme before the groups, and a VS Code row whose class is not among `classes` gives no
+ * theme. The UI theme list is not read: Theme and Code theme are two options.
  */
-function codeThemes(): { id: string; label: string; group: string }[] {
-    const all = codeThemeInfo();
-    const of = (vscode: boolean, dark: boolean, group: string) =>
-        all
-            .filter((theme) => theme.vscode === vscode && theme.dark === dark)
-            .map((theme) => ({
-                id: theme.id,
-                label: vscode ? themeClassLabel(theme.id) : theme.label,
-                group
-            }));
-    return [
-        ...of(true, true, t('settings.code_themes_vscode_dark')),
-        ...of(true, false, t('settings.code_themes_vscode_light')),
-        ...of(false, true, t('settings.code_themes_shiki_dark')),
-        ...of(false, false, t('settings.code_themes_shiki_light'))
-    ];
+function codeThemes(
+    config: Record<string, unknown>,
+    classes: readonly string[]
+): { id: string; label: string; group: string }[] {
+    return codeThemeInfo(config, new Set(classes)).map((theme) => ({
+        id: theme.id,
+        label: theme.label,
+        group: theme.group
+    }));
+}
+
+/** The group of each item that has one, which is what a choice reads its headings from. */
+function groupsOf(items: { id: string; group: string }[]): ReadonlyMap<string, string> {
+    return new Map(items.filter((one) => one.group !== '').map((one) => [one.id, one.group]));
 }
 
 /** The lists of one render, over the inputs the page holds. */
 export function listsOf(inputs: ListInputs): Lists {
     const { config, portfolio } = inputs;
-    const code = codeThemes();
+    const code = codeThemes(config, inputs.codeThemeClasses);
+    const ui = themes(inputs.offers);
     const none: ReadonlyMap<string, string> = new Map();
     const labels: Partial<Record<Source, ReadonlyMap<string, string>>> = {
         file_icon_themes: new Map(
             fileIconThemes(inputs.offers).map((one) => [one.name, one.label])
         ),
-        themes: new Map(themes(inputs.offers).map((one) => [one.name, one.label])),
+        themes: new Map(ui.map((one) => [one.name, one.label])),
         code_themes: new Map([
             [CODE_TOKENS, t('ui.code_theme_tokens')],
             ...code.map((one): [string, string] => [one.id, one.label])
         ])
     };
-    const codeGroups: ReadonlyMap<string, string> = new Map(code.map((one) => [one.id, one.group]));
+    const groups: Partial<Record<Source, ReadonlyMap<string, string>>> = {
+        themes: groupsOf(ui.map((one) => ({ id: one.name, group: one.group }))),
+        code_themes: groupsOf(code)
+    };
     const items = (source: Source): SourceItems => {
         const derived = configItems(source, config);
         if (derived !== null) return READY(derived);
@@ -144,7 +153,7 @@ export function listsOf(inputs: ListInputs): Lists {
             case 'file_icon_themes':
                 return READY(fileIconThemes(inputs.offers).map((one) => one.name));
             case 'themes':
-                return READY(themes(inputs.offers).map((one) => one.name));
+                return READY(ui.map((one) => one.name));
             default:
                 return { state: 'failed', error: source };
         }
@@ -154,7 +163,7 @@ export function listsOf(inputs: ListInputs): Lists {
         items,
         glyphs: glyphNames(config) ?? [],
         labels: (source) => labels[source] ?? none,
-        groups: (source) => (source === 'code_themes' ? codeGroups : none),
+        groups: (source) => groups[source] ?? none,
         hues: hueNames(config),
         folder: inputs.folder
     };

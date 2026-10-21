@@ -11,7 +11,12 @@
 // (themes/tokens.css) matches. What a double press on the strip's empty part does is read from
 // macOS's own setting, as its title bar reads it. Off macOS the window buttons the system draws
 // over the strip's right end are drawn in the strip's own colours, which the page sends at load and
-// at each change of theme (`overlayColours`); until it does, they take the colours below.
+// at each change of theme (`overlayColours`); until it does, they take the colours of the theme the
+// window starts on, which the host reads from that theme's stylesheet block (`windowFrame`). The
+// window's fill is that start theme's background when the window is made (`windowFill`), and the
+// background of the theme its page drew from the page's first send on (`drawnFill`).
+
+import { isHexColour, type WindowColours } from '../../lib/themes/parse.ts';
 
 /** The web preferences of a window, the subset the app sets. */
 export type WindowPreferences = {
@@ -40,11 +45,22 @@ export function windowPreferences(preload: string): WindowPreferences {
 }
 
 /**
- * The colour a window and the find bar's view are filled with before the page paints: the
- * background of the app's dark theme (vscode.css, `vscode-dark-modern`), so no white shows while a
- * page loads.
+ * The fill of a window or of the find bar's view before the page paints, as BrowserWindow takes
+ * it: the background of the theme the window starts on (windows/start-colours.ts), so no white
+ * shows while a page loads, and nothing when the theme gives none, which leaves Electron's own.
  */
-export const WINDOW_BACKGROUND = '#181818';
+export function windowFill(colours: WindowColours | null): { backgroundColor?: string } {
+    return colours === null ? {} : { backgroundColor: colours.background };
+}
+
+/**
+ * The fill a window takes, as `setBackgroundColor` takes it, once its page has drawn a theme: the
+ * background of that theme as the page sent it, on every system; null for a value that is not a
+ * hex colour, which leaves the fill as it is.
+ */
+export function drawnFill(background: unknown): string | null {
+    return isHexColour(background) ? background : null;
+}
 
 /** The height of the strip the page draws across a window's top, in points: VS Code's title bar. */
 export const TITLEBAR_HEIGHT = 35;
@@ -64,20 +80,19 @@ export type WindowFrame = {
     /** On macOS, the first press on an inactive window reaches its page as well as raising it. */
     acceptFirstMouse?: true;
     trafficLightPosition?: { x: number; y: number };
-    titleBarOverlay?: { height: number; color: string; symbolColor: string };
+    titleBarOverlay?: { height: number; color?: string; symbolColor?: string };
 };
-
-/** The colour of the window buttons' symbols where the system draws them over the strip. */
-const SYMBOLS = '#cccccc';
 
 /**
  * The frame of a main window and of a float's window on `platform`: no title bar of the system's.
  * On macOS the window buttons are placed inside the strip, and the first press on an inactive
  * window reaches its page, so a tab drag or a click started there acts at once, as it does in VS
  * Code; elsewhere the buttons are drawn over the strip's right end at its height, since a hidden
- * title bar there takes them away otherwise.
+ * title bar there takes them away otherwise, on the background of the theme the window starts on
+ * and with its symbols in that theme's title bar words (`colours`), the system's own colours when
+ * the theme gives none.
  */
-export function windowFrame(platform: string): WindowFrame {
+export function windowFrame(platform: string, colours: WindowColours | null): WindowFrame {
     if (platform === 'darwin') {
         return {
             titleBarStyle: 'hidden',
@@ -85,14 +100,10 @@ export function windowFrame(platform: string): WindowFrame {
             trafficLightPosition: { ...TRAFFIC_LIGHTS }
         };
     }
-    return {
-        titleBarStyle: 'hidden',
-        titleBarOverlay: { height: TITLEBAR_HEIGHT, color: WINDOW_BACKGROUND, symbolColor: SYMBOLS }
-    };
+    const painted =
+        colours === null ? {} : { color: colours.background, symbolColor: colours.symbol };
+    return { titleBarStyle: 'hidden', titleBarOverlay: { height: TITLEBAR_HEIGHT, ...painted } };
 }
-
-/** A colour the host takes from a page: `#` and 3, 4, 6 or 8 hex digits. */
-const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /** The colours of the window buttons drawn over the strip, as `setTitleBarOverlay` takes them. */
 export type OverlayColours = { color: string; symbolColor: string };
@@ -107,10 +118,8 @@ export function overlayColours(
     color: unknown,
     symbolColor: unknown
 ): OverlayColours | null {
-    if (platform === 'darwin' || typeof color !== 'string' || typeof symbolColor !== 'string') {
-        return null;
-    }
-    return HEX.test(color) && HEX.test(symbolColor) ? { color, symbolColor } : null;
+    if (platform === 'darwin' || !isHexColour(color) || !isHexColour(symbolColor)) return null;
+    return { color, symbolColor };
 }
 
 /** What a double press on a window's title bar does. */

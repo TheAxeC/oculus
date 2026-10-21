@@ -15,6 +15,7 @@ import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AppThemeFiles } from '../lib/data/helpers/files/apps/choices.ts';
 import type { RecentEntry } from '../lib/data/helpers/keys/oculus/menu-commands.ts';
 import { engineDir } from '../lib/data/sources/config.ts';
 import { wordsOf } from '../lib/server/root/process/words.ts';
@@ -28,7 +29,7 @@ import { ZOOM_LEAST, ZOOM_MOST } from './decide/window-file.ts';
 import { say as showDialog } from './dialogs.ts';
 import { dropClosed, guardOutput } from './output.ts';
 import { buildServer, type Build } from './server/build.ts';
-import { oculusAnswers } from './server/health.ts';
+import { fetchAppThemes, oculusAnswers } from './server/health.ts';
 import { loginEnvironment } from './server/login-env.ts';
 import { forkServer, type ServerProcess } from './server/process.ts';
 import { registerBridge } from './windows/bridge.ts';
@@ -36,6 +37,7 @@ import { printPdf } from './windows/print.ts';
 import { buildMenu } from './windows/menu.ts';
 import { commandWindow, openInBrowser, type MenuActions } from './windows/menu-template.ts';
 import { createPicker } from './windows/pick.ts';
+import { startColours, startThemeNames } from './windows/start-colours.ts';
 import { createWindowStore } from './windows/window-state.ts';
 import { createWindows, type Entry } from './windows/windows.ts';
 
@@ -125,8 +127,14 @@ async function run(
     if (existsSync(icon)) app.dock?.setIcon(nativeImage.createFromPath(icon));
 
     const preload = fileURLToPath(new URL('./preload.cjs', import.meta.url));
+    // A window onto an oculus this app did not start has no server here to tell it the app themes,
+    // so the host asks that oculus for them before the window opens (`attachedThemes`).
+    let attachedThemes: AppThemeFiles = {};
+    const colours = () =>
+        startColours(args.engine, checkout, server?.appThemes() ?? attachedThemes);
     const windows = createWindows({
         preload,
+        colours,
         store: createWindowStore(join(home, '.oculus', 'window.json')),
         log: (line) => print(`[app] ${line}`),
         ownPort: (port) => server?.port() === port,
@@ -139,7 +147,7 @@ async function run(
     let recent: RecentEntry[] = [];
     registerBridge(
         windows,
-        (address) => printPdf(address, { preload }),
+        (address) => printPdf(address, { preload, colours: colours() }),
         (entries) => {
             recent = entries;
             setMenu();
@@ -305,6 +313,11 @@ async function run(
         ]);
         if (pressed === 0) {
             origin = `http://${LISTEN_HOST}:${port}`;
+            attachedThemes = await fetchAppThemes(
+                port,
+                startThemeNames(args.engine),
+                HEALTH_WAIT_MS
+            );
             windows.openMain(origin);
         } else {
             app.quit();

@@ -24,6 +24,9 @@ import {
 import { optionFindings } from '../../../src/lib/data/sources/config/catalog/option-findings.ts';
 import { themeFindings } from '../../../src/lib/data/sources/config/sections/themes.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
+import { NO_OFFERS } from '../../../src/lib/data/helpers/files/apps/choices.ts';
+import { setAppearance, themes } from '../../../src/lib/state/shared/words/appearance.ts';
+import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
 import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
@@ -621,8 +624,16 @@ describe('settingFindings', () => {
 });
 
 describe('themeFindings', () => {
-    /** The merged catalog the findings are worded from, and a vocabulary of two glyph names. */
-    const BASE = { text: loadConfig(engineDir()).config.text, glyphs: { sun: '(o)', box: '<>' } };
+    /**
+     * The merged catalog the findings are worded from, the shipped code theme lists, which hold the
+     * VS Code code themes, and a vocabulary of two glyph names.
+     */
+    const SHIPPED = loadConfig(engineDir()).config;
+    const BASE = {
+        text: SHIPPED.text,
+        code_themes: SHIPPED.code_themes,
+        glyphs: { sun: '(o)', box: '<>' }
+    };
 
     /** The findings over these theme rows, each as its key and its sentence. */
     function said(themes: unknown): string[] {
@@ -661,6 +672,134 @@ describe('themeFindings', () => {
         ).toEqual(['themes[2]: a second theme row names a; only the first is offered']);
     });
 
+    it('names a theme row whose group is a number or empty, and draws it before the groups', () => {
+        expect(
+            said([
+                { name: 'a', glyph: 'sun', group: 5 },
+                { name: 'b', glyph: 'sun', group: '' },
+                { name: 'c', glyph: 'sun', group: 'VS Code, dark' },
+                { name: 'd', glyph: 'sun' }
+            ])
+        ).toEqual([
+            'themes[0]: the theme a names a group that is not words; it is drawn before the groups',
+            'themes[1]: the theme b names a group that is not words; it is drawn before the groups'
+        ]);
+        setAppearance(
+            {
+                ...SHIPPED,
+                themes: [
+                    { name: 'a', glyph: 'sun', group: 5 },
+                    { name: 'b', glyph: 'sun', group: '' }
+                ]
+            },
+            vscodeRuleIds()
+        );
+        expect(themes(NO_OFFERS).map((one) => [one.name, one.group])).toEqual([
+            ['a', ''],
+            ['b', '']
+        ]);
+        setAppearance(SHIPPED, vscodeRuleIds());
+    });
+
+    it('names a code_themes.shiki that is no list, and each row with no id, a repeated id or an id Shiki does not bundle', () => {
+        const lists = SHIPPED.code_themes as Record<string, unknown>;
+        const SHIKI = (key: string, message: string): string =>
+            `appearance.yml code_themes.shiki${key}: ${message}`;
+        expect(codeSaid({ code_themes: { ...lists, shiki: 'nord' } })).toEqual([
+            SHIKI('', 'code_themes.shiki is not a list of rows; no Shiki code theme is offered')
+        ]);
+        expect(
+            codeSaid({
+                code_themes: {
+                    ...lists,
+                    shiki: [
+                        { id: 'nord', label: 'Nord' },
+                        { label: 'No id' },
+                        { id: 'nord', label: 'Again' },
+                        { id: 'nope' },
+                        { id: 'tokens' }
+                    ]
+                }
+            })
+        ).toEqual([
+            SHIKI('[1]', 'the row 1 of code_themes.shiki has no id; it makes no code theme'),
+            SHIKI(
+                '[2]',
+                'a second row of code_themes.shiki names nord; only the first makes a code theme'
+            ),
+            SHIKI(
+                '[3]',
+                'code_themes.shiki names nope, which is no theme Shiki bundles; it makes no code theme'
+            ),
+            SHIKI(
+                '[4]',
+                'code_themes.shiki names tokens, which is no theme Shiki bundles; it makes no code theme'
+            )
+        ]);
+        expect(codeSaid({ code_themes: { ...lists, shiki: [] } })).toEqual([]);
+        expect(
+            codeSaid({ code_theme: 'github-light', code_themes: { ...lists, shiki: [] } })
+        ).toEqual([CODE('"github-light"')]);
+    });
+
+    it('names a code_themes.vscode that is no list, and each row with no class, a repeated class, tokens or a class with no rules', () => {
+        const lists = SHIPPED.code_themes as Record<string, unknown>;
+        const VSCODE = (key: string, message: string): string =>
+            `appearance.yml code_themes.vscode${key}: ${message}`;
+        expect(codeSaid({ code_themes: { ...lists, vscode: 'vscode-dark-plus' } })).toEqual([
+            VSCODE('', 'code_themes.vscode is not a list of rows; no VS Code code theme is offered')
+        ]);
+        expect(
+            codeSaid({
+                code_themes: {
+                    ...lists,
+                    vscode: [
+                        { class: 'vscode-dark-plus', label: 'Dark+' },
+                        { label: 'No class' },
+                        { class: 'vscode-dark-plus', label: 'Again' },
+                        { class: 'tokens' },
+                        { class: 'vscode-nowhere' }
+                    ]
+                }
+            })
+        ).toEqual([
+            VSCODE('[1]', 'the row 1 of code_themes.vscode has no class; it makes no code theme'),
+            VSCODE(
+                '[2]',
+                'a second row of code_themes.vscode names vscode-dark-plus; only the first makes a code theme'
+            ),
+            VSCODE(
+                '[3]',
+                "a row of code_themes.vscode names tokens, which takes the UI theme's own code tokens; it makes no code theme"
+            ),
+            VSCODE(
+                '[4]',
+                'code_themes.vscode names vscode-nowhere, which has no TextMate rules in src/lib/themes/vscode-rules.json; it makes no code theme'
+            )
+        ]);
+        expect(codeSaid({ code_theme: 'vscode-nowhere', code_themes: lists })).toEqual([
+            CODE('"vscode-nowhere"')
+        ]);
+    });
+
+    it("names an app_theme that is not words or names no theme, and nothing for a row's or an app's theme", () => {
+        const APP = (shown: string): string =>
+            `appearance.yml app_theme: app_theme is ${shown}, which names neither a theme of themes nor an app's theme; a window of the desktop app whose theme names no theme it can draw starts on the first theme of themes`;
+        const rows = [
+            { name: 'a', glyph: 'sun' },
+            { name: 'a', glyph: 'box' }
+        ];
+        const repeated =
+            'appearance.yml themes[1]: a second theme row names a; only the first is offered';
+        expect(codeSaid({ themes: rows, app_theme: 'a' })).toEqual([repeated]);
+        expect(codeSaid({ themes: rows, app_theme: 'app:rice-pack/paper' })).toEqual([repeated]);
+        expect(codeSaid({ themes: rows, app_theme: 'gone' })).toEqual([repeated, APP('"gone"')]);
+        expect(codeSaid({ themes: rows, app_theme: 'A' })).toEqual([repeated, APP('"A"')]);
+        expect(codeSaid({ themes: rows, app_theme: '' })).toEqual([repeated, APP('""')]);
+        expect(codeSaid({ themes: rows, app_theme: 5 })).toEqual([repeated, APP('5')]);
+        expect(codeSaid({ themes: undefined, app_theme: 'a' })).toEqual([APP('"a"')]);
+    });
+
     /** The findings over this `code_theme` value, each as its file's name, key and sentence. */
     function codeSaid(config: Record<string, unknown>): string[] {
         return themeFindings(shippedAt(scratch()), { ...BASE, ...config }).map(
@@ -669,7 +808,7 @@ describe('themeFindings', () => {
     }
 
     const CODE = (shown: string): string =>
-        `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens, a VS Code theme nor the id of a Shiki theme; the editor colours code from the tokens instead`;
+        `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens, a VS Code theme nor the id of a Shiki theme the choice offers; the editor colours code from the tokens instead`;
 
     it('names a code theme that is no listed id, one finding per value, case included', () => {
         expect(codeSaid({ code_theme: 'not-a-theme' })).toEqual([CODE('"not-a-theme"')]);

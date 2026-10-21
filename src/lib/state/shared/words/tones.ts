@@ -193,7 +193,7 @@ export function domainTone(domain: unknown): string {
 /**
  * A research domain's words, the `label` of its `domains` entry ("Cardiology | ECG"), which is the
  * `title` of its entry in the hub's domains registry, and the domain's own key for one the registry
- * does not list. This is the label a project card carries; a UI theme's name in the picker is
+ * does not list. This is the label a project card carries; a UI theme's name in the theme list is
  * themeLabel() of state/shared/words/appearance.ts, which is another thing.
  */
 export function domainLabel(domain: unknown): string {

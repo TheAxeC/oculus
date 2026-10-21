@@ -362,10 +362,12 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      * Install a config push into the stores the page draws from. The colours and the chip
      * vocabulary ride the same push as the strings: they are keys of the merged config, so an edit
      * to config/catalogs/vocab.yml recolours the page without a reload, an edit to
-     * config/defaults/appearance.yml changes the theme picker's list, and the glyph vocabulary,
-     * each name with its ASCII stand-in, arrives the same way. The icons are the one part not read
-     * out of the merged config: the config carries the icon names and the server turns them into
-     * the drawings this installs.
+     * config/defaults/appearance.yml changes the theme list, and the glyph vocabulary, each name
+     * with its ASCII stand-in, arrives the same way. The icons and the classes a VS Code code theme
+     * may name are the parts not read out of the merged config: the config carries the icon names
+     * and the server turns them into the drawings this installs, and the classes are the keys of
+     * the TextMate rules of the checkout, which the appearance reads the code theme in force
+     * against.
      *
      * The configuration's generation is raised once at the end, after every store took its part, so
      * a component that draws again sees the new strings and the new tones together and never half
@@ -377,7 +379,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         followServer(payload.host);
         setCatalog(payload.text);
         setVocab(payload.config, payload.hubs);
-        setAppearance(payload.config);
+        setAppearance(payload.config, payload.codeThemeClasses);
         const glyphs = readAs(stringMapShape, payload.config.glyphs);
         if (glyphs !== null) setGlyphs(glyphs);
         const icons = readAs(stringMapShape, payload.icons);

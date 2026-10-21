@@ -4,7 +4,7 @@
 // editor takes them for a body class string that carries the app theme's class. Monaco keeps one
 // theme for the page, so the rules are held once for the page.
 
-import { APP_THEME_CLASS } from '$lib/state/shared/words/appearance';
+import { APP_THEME_CLASS } from '$lib/data/helpers/files/apps/choices';
 import type { OutRule } from '$lib/themes/vscode-map';
 
 let held: OutRule[] | null = null;

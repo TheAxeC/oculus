@@ -270,10 +270,12 @@ export type HostInfo = { name: string; address: string };
 
 /**
  * The payload of the `config` channel: the merged map, the flat catalog, the drawing of every glyph
- * the icon map names, the machine the server runs on, and what was wrong. The icons ride here
- * rather than being fetched by the page because they are read from the config the same way every
- * other vocabulary is; the machine rides here because this is the channel every page has from its
- * first message.
+ * the icon map names, the classes a VS Code code theme may name, the machine the server runs on,
+ * and what was wrong. The icons ride here rather than being fetched by the page because they are
+ * read from the config the same way every other vocabulary is; the classes ride beside the map
+ * because a row of `code_themes.vscode` whose class is not among them is no code theme, which the
+ * page tells each time it installs the map; the machine rides here because this is the channel
+ * every page has from its first message.
  */
 export type ConfigPayload = {
     config: Record<string, unknown>;
@@ -281,6 +283,8 @@ export type ConfigPayload = {
     hubs: HubVocabs;
     text: Record<string, string>;
     icons: Record<string, string>;
+    /** The keys of the checkout's TextMate rules (data/places/code-rules.ts, `vscodeRuleIds`). */
+    codeThemeClasses: string[];
     host: HostInfo;
     findings: Finding[];
 };

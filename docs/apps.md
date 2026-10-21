@@ -280,7 +280,7 @@ A host calls `oculus.window.createStatusBarItem(id, alignment, priority)`; a pag
 
 ### Themes and file icon themes
 
-- `themes` name a VS Code colour theme file; it shows in the theme picker as `<label> (<app title>)`.
+- `themes` name a VS Code colour theme file; it is drawn under a heading of the app's title in the Settings view's choice of theme and in Cmd-K's `:theme`, its row reading `<label> (<app title>)`.
 - `iconThemes` name a VS Code file icon theme file; choose it as File Icon Theme in Settings or with `:file-icons`.
 - When the app stops acting, both fall back to the default.
 

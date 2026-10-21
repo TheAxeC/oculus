@@ -51,14 +51,18 @@ export type SelectChoice = { id: string; label: string; group?: string };
 
 /**
  * A pick's choices split for drawing: the ones with no group in their order, then each group once,
- * in the order its first choice comes, with its choices in their order.
+ * in the order its first choice comes, with its choices in their order. The Settings view's choice
+ * draws a plain pick's choices by it, and Cmd-K draws the rows of `:theme` by it
+ * (shell/keys/palette-modes.ts), so the two lists draw their groups in one order.
  */
-export function choiceGroups(choices: SelectChoice[]): {
-    loose: SelectChoice[];
-    groups: { name: string; choices: SelectChoice[] }[];
+export function choiceGroups<T extends { group?: string }>(
+    choices: T[]
+): {
+    loose: T[];
+    groups: { name: string; choices: T[] }[];
 } {
-    const loose: SelectChoice[] = [];
-    const groups: { name: string; choices: SelectChoice[] }[] = [];
+    const loose: T[] = [];
+    const groups: { name: string; choices: T[] }[] = [];
     for (const choice of choices) {
         if (choice.group === undefined) {
             loose.push(choice);

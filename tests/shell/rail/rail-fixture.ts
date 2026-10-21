@@ -13,6 +13,7 @@ import {
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import { setAppearance } from '../../../src/lib/state/shared/words/appearance.ts';
+import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
 import type {
     Registration,
     ViewProps
@@ -30,7 +31,7 @@ setGlyphs(glyphCatalog(config));
 
 setVocab(vocabCatalog(config), hubVocabs(null, null, []));
 
-setAppearance(config);
+setAppearance(config, vscodeRuleIds());
 
 /** A stand-in for a view component; the registry stores it and the rail never mounts it. */
 const component = noop as unknown as Component<ViewProps>;

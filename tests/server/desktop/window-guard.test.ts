@@ -1,16 +1,20 @@
 // Layer 4, server test. The decisions the desktop host makes before it lets a window do anything,
 // each a pure function of its inputs that imports nothing from electron: where an address goes,
-// which sender the bridge answers, which permission a page is granted, and the web preferences
-// every window is made with.
+// which sender the bridge answers, which permission a page is granted, the web preferences every
+// window is made with, the colours a window takes before its page paints, and the fill it takes
+// from its page once a theme is drawn.
 
-import { describe, expect, it } from 'vitest';
+import { cpSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, describe, expect } from 'vitest';
 import { linkDecision, movedPort } from '../../../src/desktop/decide/links.ts';
 import { permissionGranted } from '../../../src/desktop/decide/permissions.ts';
 import { mayCall, printTarget, senderOf } from '../../../src/desktop/decide/sender.ts';
 import {
+    drawnFill,
     overlayColours,
     TITLEBAR_HEIGHT,
-    WINDOW_BACKGROUND,
+    windowFill,
     windowFrame,
     windowPreferences
 } from '../../../src/desktop/decide/window-options.ts';
@@ -23,8 +27,24 @@ import {
     STOP_FIND,
     TITLE_COLOURS
 } from '../../../src/desktop/decide/channels.ts';
+import { startColours } from '../../../src/desktop/windows/start-colours.ts';
+import { windowStart } from '../../../src/lib/data/helpers/editor/start-theme.ts';
+import { fileOffers, NO_OFFERS } from '../../../src/lib/data/helpers/files/apps/choices.ts';
+import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import {
+    configuredTheme,
+    setAppearance,
+    startClass,
+    themeClass
+} from '../../../src/lib/state/shared/words/appearance.ts';
+import { plantSaved } from '../../fixtures/hubs/workspace.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const ORIGIN = 'http://127.0.0.1:8817';
+
+/** Two colours a window's frame is handed, which it passes on as they are. */
+const COLOURS = { background: '#123456', symbol: '#abcdef' };
 
 describe('the desktop host decisions', () => {
     it('sends each address where the link decision says', () => {
@@ -176,6 +196,26 @@ describe('the desktop host decisions', () => {
         }
     });
 
+    it('fills the window with the background of the theme its page drew, a hex colour on every system', () => {
+        expect(drawnFill('#1e1e2e')).toBe('#1e1e2e');
+        expect(drawnFill('#F1F5F9')).toBe('#F1F5F9');
+        for (const wrong of [
+            'red',
+            'rgb(30, 30, 46)',
+            '#12345',
+            '#1e1e2g',
+            ' #1e1e2e',
+            '#1e1e2e; color: red',
+            '',
+            30,
+            null,
+            undefined,
+            ['#1e1e2e']
+        ]) {
+            expect(drawnFill(wrong), String(wrong)).toBeNull();
+        }
+    });
+
     it("grants clipboard and full screen to the server's page alone and denies every other ask", () => {
         for (const permission of ['clipboard-read', 'clipboard-sanitized-write', 'fullscreen']) {
             expect(permissionGranted(permission, ORIGIN, ORIGIN)).toBe(true);
@@ -220,17 +260,153 @@ describe('the desktop host decisions', () => {
                 titleBarStyle: 'hidden',
                 titleBarOverlay: {
                     height: TITLEBAR_HEIGHT,
-                    color: WINDOW_BACKGROUND,
-                    symbolColor: '#cccccc'
+                    color: COLOURS.background,
+                    symbolColor: COLOURS.symbol
                 }
             }
         }))
     ])(
         "makes the frame of a main window and a float's window on $platform that $row",
         ({ platform, keys, frame }) => {
-            const made = windowFrame(platform);
+            const made = windowFrame(platform, COLOURS);
             expect(Object.keys(made).sort()).toEqual(keys);
             expect(made).toMatchObject(frame);
         }
     );
+
+    it('leaves the colours to the system and Electron when the start theme gives none', () => {
+        expect(windowFrame('linux', null)).toEqual({
+            titleBarStyle: 'hidden',
+            titleBarOverlay: { height: TITLEBAR_HEIGHT }
+        });
+        expect(windowFill(null)).toEqual({});
+        expect(windowFill(COLOURS)).toEqual({ backgroundColor: COLOURS.background });
+    });
+});
+
+// The colours a window takes before its page paints, read from the checkout's theme sheets: the
+// background and the title bar words of the theme the window starts on, for the workspace a state
+// folder opens, with the config read from the folder `--engine` names, which may hold config/
+// alone. The values below are the ones the blocks of src/lib/themes/ set: `vscode-dark-modern` in
+// vscode.css, `mocha` in rice/catppuccin.css (which sets no title bar words, so its ink is taken)
+// and `:root` in tokens.css for the light theme.
+describe('the colours of the theme a window starts on', () => {
+    const engine = engineDir();
+    const DARK_MODERN = { background: '#181818', symbol: '#cccccc' };
+    const LIGHT = { background: '#f1f5f9', symbol: '#0f172a' };
+
+    /** The start colours for a saved workspace whose file's `settings:` block is `settings`. */
+    const startWith = (settings: string) =>
+        startColours(
+            engine,
+            engine,
+            {},
+            plantSaved(scratchDir('oculus-start-hub-'), settings).state
+        );
+
+    it('reads the start theme app_theme names when theme is empty, from its stylesheet block', () => {
+        const config = loadConfig(engine).config;
+        expect([config.theme, config.app_theme]).toEqual(['', 'vscode-dark-modern']);
+        expect(startColours(engine, engine, {}, scratchDir('oculus-start-state-'))).toEqual(
+            DARK_MODERN
+        );
+        expect(startWith('')).toEqual(DARK_MODERN);
+    });
+
+    it("reads the theme the workspace file's theme names, and the start for an app's theme the server told no file of", () => {
+        expect(startWith('settings:\n  theme: mocha\n')).toEqual({
+            background: '#181825',
+            symbol: '#cdd6f4'
+        });
+        expect(startWith('settings:\n  theme: app:rice-pack/paper\n')).toEqual(DARK_MODERN);
+        expect(startWith('settings:\n  theme: light\n  app_theme: mocha\n')).toEqual(LIGHT);
+    });
+
+    it("reads the workspace file's app_theme, and the first theme listed when it names none", () => {
+        expect(startWith('settings:\n  app_theme: mocha\n')).toEqual({
+            background: '#181825',
+            symbol: '#cdd6f4'
+        });
+        expect(startWith('settings:\n  app_theme: gone\n')).toEqual(LIGHT);
+    });
+
+    it('reads the sheets from the code folder when the config folder holds config/ alone', () => {
+        const configOnly = scratchDir('oculus-start-engine-');
+        cpSync(join(engine, 'config'), join(configOnly, 'config'), { recursive: true });
+        const state = scratchDir('oculus-start-state-');
+        expect(startColours(configOnly, engine, {}, state)).toEqual(DARK_MODERN);
+    });
+
+    it("keeps oculus's app_theme for an empty or a wrong one in a workspace file, and reads the first of two rows of a name", () => {
+        expect(startWith('settings:\n  app_theme: ""\n')).toEqual(DARK_MODERN);
+        expect(startWith('settings:\n  app_theme: 5\n')).toEqual(DARK_MODERN);
+        const twice = [
+            { name: 'x', class: 'mocha' },
+            { name: 'x', class: 'latte' }
+        ];
+        expect(windowStart({ themes: twice, theme: '', app_theme: 'x' }, [])).toEqual({
+            cls: 'mocha'
+        });
+        expect(windowStart({ themes: 'none', theme: 'x', app_theme: 'x' }, [])).toEqual({
+            cls: ''
+        });
+    });
+});
+
+// The page in the desktop app's window starts on the theme by the rule the host fills the window
+// by (data/helpers/editor/start-theme.ts): the class of the page's start theme is the class the
+// host reads from the same config, for the configs whose start theme is a row of `themes:`.
+describe('the theme the page and the host start a window on', () => {
+    const shipped = loadConfig(engineDir()).config;
+    const classes = vscodeRuleIds();
+
+    afterEach(() => {
+        setAppearance(shipped, classes);
+    });
+
+    it.each([
+        { row: 'the shipped config', settings: {} },
+        { row: 'an empty app_theme', settings: { app_theme: '' } },
+        { row: 'an app_theme that is no words', settings: { app_theme: 5 } },
+        { row: 'an app_theme naming no theme', settings: { app_theme: 'gone' } },
+        { row: 'a theme naming a row', settings: { theme: 'mocha' } },
+        {
+            row: "a theme naming an app's theme the first load carries no file of",
+            settings: { theme: 'app:rice-pack/paper' },
+            files: { 'app:rice-pack/paper': null }
+        },
+        {
+            row: 'two rows of one name',
+            settings: {
+                themes: [
+                    { name: 'x', class: 'mocha', glyph: 'theme_base' },
+                    { name: 'x', class: 'latte', glyph: 'theme_base' }
+                ],
+                app_theme: 'x'
+            }
+        }
+    ])('starts both on one class with $row', ({ settings, files }) => {
+        const merged = { ...shipped, ...settings };
+        setAppearance(merged, classes);
+        const offers = fileOffers(files ?? {});
+        expect({ cls: themeClass(configuredTheme(true, offers), offers, true) }).toEqual(
+            windowStart(merged, [])
+        );
+    });
+
+    it("draws an app's theme no acting app offers, or the first load carries no file of, in the start theme of its page", () => {
+        const choice = 'app:rice-pack/paper';
+        const offered = { themes: [], icons: [] };
+        expect([startClass(true), startClass(false)]).toEqual(['vscode-dark-modern', '']);
+        expect(themeClass(choice, offered, true)).toBe('vscode-dark-modern');
+        expect(themeClass(choice, offered, false)).toBe('');
+        const carried = fileOffers({ [choice]: null });
+        expect(themeClass(choice, carried, true)).toBe('vscode-dark-modern');
+        expect(themeClass(choice, carried, false)).toBe('');
+    });
+
+    it("reads an app's theme in the start theme's class while the page knows no app yet", () => {
+        expect(themeClass('app:rice-pack/paper', NO_OFFERS, true)).toBe('vscode-dark-modern');
+        expect(themeClass('app:rice-pack/paper', NO_OFFERS, false)).toBe('');
+    });
 });

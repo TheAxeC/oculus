@@ -7,14 +7,23 @@
 //
 // A theme is loaded by the name the `theme` option holds it under (data/helpers/files/apps/
 // choices.ts), so a page that holds only that name, the find page and the presenter's pages, loads
-// it the same way the workbench does.
+// it the same way the workbench does. The theme a page starts on comes with the page's first load
+// instead, which the page hands its draw (`ThemeDraw.file`), converted here before the first
+// paint, in the browser and in the desktop app's window alike; the route serves every theme chosen
+// after it.
 
-import { NO_OFFERS } from '$lib/data/helpers/files/apps/choices';
 import {
     APP_THEME_CLASS,
+    fileOffers,
+    themeAnswer,
+    type AppThemeFile,
+    type AppThemeFiles
+} from '$lib/data/helpers/files/apps/choices';
+import {
     appThemeState,
     configuredLook,
     configuredTheme,
+    startClass,
     themeClass
 } from '$lib/state/shared/words/appearance';
 import {
@@ -56,14 +65,14 @@ function convertAppTheme(theme: ResolvedTheme, ui: UiTheme): AppThemeSheet {
     return { css: `body.${APP_THEME_CLASS} {\n${body}\n}`, rules: mapped.rules, dark: mapped.dark };
 }
 
-/** The shape of the server's answer. */
-type Answer = {
-    ok?: unknown;
-    theme?: { colors?: Record<string, string>; tokenColors?: unknown[] };
-    uiTheme?: UiTheme;
-    label?: unknown;
-    app?: unknown;
-};
+/** A theme file the server read, converted, with the words that name it. */
+function loadOf(file: AppThemeFile): AppThemeLoad {
+    const theme = {
+        colors: file.theme.colors,
+        tokenColors: file.theme.tokenColors
+    } as ResolvedTheme;
+    return { sheet: convertAppTheme(theme, file.uiTheme), label: file.label, app: file.app };
+}
 
 /** Load the theme saved under `choice`, converted, or null when the server does not serve it. */
 async function loadAppTheme(
@@ -72,19 +81,8 @@ async function loadAppTheme(
 ): Promise<AppThemeLoad | null> {
     try {
         const response = await get(`/api/app-theme?choice=${encodeURIComponent(choice)}`);
-        const body = (await response.json()) as Answer;
-        if (body.ok !== true || body.theme === undefined || body.uiTheme === undefined) {
-            return null;
-        }
-        const theme = {
-            colors: body.theme.colors ?? {},
-            tokenColors: body.theme.tokenColors ?? []
-        } as ResolvedTheme;
-        return {
-            sheet: convertAppTheme(theme, body.uiTheme),
-            label: typeof body.label === 'string' ? body.label : choice,
-            app: typeof body.app === 'string' ? body.app : ''
-        };
+        const file = themeAnswer(await response.json(), choice);
+        return file === null ? null : loadOf(file);
     } catch {
         return null;
     }
@@ -128,13 +126,51 @@ export type ThemeDraw = BodyLooks & {
     classes: string;
     /** Classes put beside an app theme's own, such as the wallpaper's. */
     extra?: string;
+    /** The file of the app's theme the page's first load carries, drawn without a load. */
+    file?: AppThemeFile;
 };
 
+/** The files of the app themes the `theme` and `app_theme` options name, by saved name. */
+export type FirstThemeFiles = AppThemeFiles;
+
 /**
- * Put a theme on the document. A theme of the configuration is its classes; an app's is loaded,
- * its block put in the document and its tokens derived from it. Answers false when an app's theme
- * could not be loaded and the page drew `classes` instead, which is the default theme's.
- * `current` says whether the draw is still wanted once the load has returned.
+ * The file of an app's theme a page's first load carries, for the first draw of the theme that
+ * asks for it, over the files `files` answers; undefined for a later draw of the same theme, which
+ * loads its file from the server, so a theme whose file changed after the first load is drawn as
+ * it is now, and for a theme the first load carries no file of.
+ */
+export function firstDrawFile(
+    files: () => FirstThemeFiles
+): (choice: string) => AppThemeFile | undefined {
+    const drawn = new Set<string>();
+    return (choice) => {
+        const held = files();
+        const file = Object.hasOwn(held, choice) ? held[choice] : null;
+        if (file === null || drawn.has(choice)) return undefined;
+        drawn.add(choice);
+        return file;
+    };
+}
+
+/** Put a converted app theme on the document: its block, and the tokens derived from it. */
+function paintLoad(
+    document: Themeable & AppThemeDocument,
+    draw: ThemeDraw,
+    load: AppThemeLoad
+): void {
+    const css = paintAppTheme(document, load.sheet);
+    const classes = [APP_THEME_CLASS, draw.extra ?? ''].join(' ');
+    applyTheme(document, classes, draw, undefined, `${THEME_SHEETS}\n${css}`);
+}
+
+/**
+ * Put a theme on the document. A theme of the configuration is its classes; an app's is converted,
+ * its block put in the document and its tokens derived from it. An app's theme the draw hands the
+ * file of (`file`, which the page's first load carries) is drawn from that file at once, before
+ * the page paints; any other draw of an app's theme loads its file from the server. Answers false
+ * when an app's theme could not be loaded and the page drew `classes` instead, which for an app's
+ * theme is the start theme's. `current` says whether the draw is still wanted once the load has
+ * returned.
  */
 export async function drawTheme(
     document: Themeable & AppThemeDocument,
@@ -146,6 +182,10 @@ export async function drawTheme(
         applyTheme(document, draw.classes, draw);
         return true;
     }
+    if (draw.file !== undefined) {
+        paintLoad(document, draw, loadOf(draw.file));
+        return true;
+    }
     const load = await loadAppTheme(draw.choice);
     if (!current()) return load !== null;
     if (load === null) {
@@ -153,30 +193,34 @@ export async function drawTheme(
         applyTheme(document, draw.classes, draw);
         return false;
     }
-    const css = paintAppTheme(document, load.sheet);
-    const classes = [APP_THEME_CLASS, draw.extra ?? ''].join(' ');
-    applyTheme(document, classes, draw, undefined, `${THEME_SHEETS}\n${css}`);
+    paintLoad(document, draw, load);
     return true;
 }
 
 /**
  * Draw the theme the config names on a page that holds no `apps` channel (the find page and the
- * presenter's pages): an app's theme is loaded from the server, which answers for the name alone.
- * The terminal themes' `rice.brackets` and `rice.monospace` are the config's too; such a page
- * draws no CRT overlay, which belongs to the workbench.
+ * presenter's pages), over the files of the app themes the `theme` and `app_theme` options name
+ * that the page's first load carries (`files`): an app's theme whose file resolved is drawn from
+ * that file, and one whose app is not approved and enabled or whose file does not resolve gives
+ * the start theme. The terminal themes' `rice.brackets` and `rice.monospace` are the config's too;
+ * such a page draws no CRT overlay, which belongs to the workbench.
  */
 export function drawConfiguredTheme(
     document: Themeable & AppThemeDocument,
-    inApp: boolean
+    inApp: boolean,
+    files: AppThemeFiles
 ): Promise<boolean> {
-    const choice = configuredTheme(inApp);
+    const offers = fileOffers(files);
+    const choice = configuredTheme(inApp, offers);
     const { brackets, monospace } = configuredLook();
+    const state = appThemeState(choice, offers);
     return drawTheme(document, {
         choice,
-        app: appThemeState(choice, NO_OFFERS) !== 'none',
-        classes: themeClass(choice, NO_OFFERS),
+        app: state === 'ready',
+        classes: state === 'none' ? themeClass(choice, offers, inApp) : startClass(inApp),
         crt: false,
         brackets,
-        monospace
+        monospace,
+        file: Object.hasOwn(files, choice) ? (files[choice] ?? undefined) : undefined
     });
 }

@@ -4,8 +4,11 @@
 // parseBlocks reads `:root` and every `body.<name>` block; resolveTheme merges the blocks a body
 // class string names over `:root`, in the order the sheet declares them, which is the order the
 // browser resolves them in when two blocks set the same token. deriveTokens then turns that map
-// into the readable foregrounds. Nothing here touches the document or the filesystem: the caller
-// passes the stylesheet text, so this runs in the browser, in a test, and on the server alike.
+// into the readable foregrounds, and windowColours reads from it the two colours a window of the
+// desktop app takes before its page paints, which the host reads; the page sends the same `--bg`
+// token of the theme it drew once it has drawn one (shell/window/strip-colours.ts). Nothing here
+// touches the document or the filesystem: the caller passes the stylesheet text, so this runs in
+// the browser, in a test, on the server and in the desktop host alike.
 
 /** Tokens by block: the key is `:root` or the body class name (`dark`, `mocha`, `rice`). */
 export type ThemeBlocks = Record<string, Record<string, string>>;
@@ -85,4 +88,31 @@ export function resolveTheme(blocks: ThemeBlocks, classes: string): Record<strin
         if (name !== ':root' && wanted.has(name)) Object.assign(merged, tokens);
     }
     return merged;
+}
+
+/**
+ * The colours a window of the desktop app takes before its page paints: `background`, which fills
+ * the window under the page, and `symbol`, which the system draws the window buttons' symbols in
+ * where it draws them over the page's title bar strip.
+ */
+export type WindowColours = { background: string; symbol: string };
+
+/** A colour as a window takes it: `#` and 3, 4, 6 or 8 hex digits. */
+const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+/** Whether a value is a colour as a window takes it, which the desktop host checks a page's by. */
+export function isHexColour(value: unknown): value is string {
+    return typeof value === 'string' && HEX.test(value);
+}
+
+/**
+ * The window colours of the theme a body carrying `classes` draws: its `--bg`, and its title bar
+ * words `--titlebar-txt`, or its `--ink` for a theme that sets none, each as the sheet writes it.
+ * Null when either is not a hex colour, which a window cannot take.
+ */
+export function windowColours(blocks: ThemeBlocks, classes: string): WindowColours | null {
+    const tokens = resolveTheme(blocks, classes);
+    const background = tokens['--bg'];
+    const symbol = tokens['--titlebar-txt'] ?? tokens['--ink'];
+    return isHexColour(background) && isHexColour(symbol) ? { background, symbol } : null;
 }

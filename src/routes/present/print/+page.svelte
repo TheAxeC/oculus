@@ -69,7 +69,7 @@
     }
 
     onMount(() => {
-        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined);
+        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);
         void (async () => {
             const held = await read();
             if (typeof held === 'string') {

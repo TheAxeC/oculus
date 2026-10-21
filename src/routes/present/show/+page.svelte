@@ -180,7 +180,7 @@
     }
 
     onMount(() => {
-        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined);
+        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);
         const asked = new URLSearchParams(window.location.search);
         ref = { root: asked.get('root') ?? '', path: asked.get('path') ?? '' };
         name = presentName(ref);

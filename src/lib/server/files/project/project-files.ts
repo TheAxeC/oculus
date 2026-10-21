@@ -247,7 +247,7 @@ export function filesTarget(
             open.primary === null || open.primaryDir === null
                 ? null
                 : { key: open.primary, dir: open.primaryDir },
-        config: primaryConfig(settings, open),
+        config: primaryConfig(settings, open, hubSettings),
         hubs: hubTargets(open, hubSettings),
         settings
     };

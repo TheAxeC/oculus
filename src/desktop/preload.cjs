@@ -32,8 +32,8 @@ const bridge = {
     closeFind: () => ipcRenderer.send('oculus:close-find'),
     printPdf: (address) => ipcRenderer.invoke('oculus:print-pdf', address),
     titleDoubleClick: () => ipcRenderer.send('oculus:title-double-click'),
-    titleColours: (color, symbolColor) =>
-        ipcRenderer.send('oculus:title-colours', color, symbolColor),
+    titleColours: (color, symbolColor, background) =>
+        ipcRenderer.send('oculus:title-colours', color, symbolColor, background),
     fullScreen: () => ipcRenderer.invoke('oculus:full-screen'),
     recentWorkspaces: (entries) => ipcRenderer.send('oculus:recent-workspaces', entries),
     spelling: (word) =>

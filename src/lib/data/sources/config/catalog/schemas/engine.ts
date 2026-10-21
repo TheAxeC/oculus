@@ -18,6 +18,7 @@
 import type { z } from 'zod';
 import { codeThemeIds, CODE_TOKENS } from '../../../../helpers/editor/code-themes.ts';
 import type { PortfolioConfig, RawPortfolio } from '../../../../model/index.ts';
+import { vscodeRuleIds } from '../../../../places/code-rules.ts';
 import { registered } from '../../../../prose/languages.ts';
 import { hubLists } from '../../../../snapshot/schema/lists.ts';
 import { CATALOG_FILES } from '../../../../shapes/catalog-files.ts';
@@ -91,7 +92,7 @@ function optionSource(
             case 'languages':
                 return registered();
             case 'code_themes':
-                return [CODE_TOKENS, ...codeThemeIds()];
+                return [CODE_TOKENS, ...codeThemeIds(config.merged, new Set(vscodeRuleIds()))];
             case 'domains':
                 return hub.domains;
             case 'clusters':

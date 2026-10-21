@@ -382,7 +382,7 @@
 <g id="node38" class="node">
 <title>folder ui/theme to layer data</title>
 <polygon fill="none" stroke="none" points="192.1,-242.84 181.9,-242.84 181.9,-230.36 192.1,-230.36 192.1,-242.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="187" y="-234.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="187" y="-234.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
 </g>
 <!-- folder ui/theme&#45;&gt;folder ui/theme to layer data -->
 <g id="edge65" class="edge">
@@ -393,7 +393,7 @@
 <g id="node39" class="node">
 <title>folder ui/theme to layer state</title>
 <polygon fill="none" stroke="none" points="125.1,-185.24 114.9,-185.24 114.9,-172.76 125.1,-172.76 125.1,-185.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="120" y="-176.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">2</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="120" y="-176.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder ui/theme&#45;&gt;folder ui/theme to layer state -->
 <g id="edge67" class="edge">

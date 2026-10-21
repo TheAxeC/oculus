@@ -50,13 +50,7 @@ export type Workspace = {
 function shape(open: OpenWorkspace): unknown {
     return {
         file: open.file,
-        folders: open.folders.map((one) => [
-            one.name,
-            one.dir,
-            one.hub,
-            one.noProject ?? false,
-            one.scanDepth ?? null
-        ]),
+        folders: open.folders.map((one) => [one.name, one.dir, one.hub, one.scanDepth ?? null]),
         primary: open.primary,
         findings: open.findings,
         unreadable: open.unreadable

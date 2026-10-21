@@ -7,7 +7,8 @@
 
 import { WebContentsView, type BrowserWindow, type WebContents } from 'electron';
 import type { FindOptions } from '../../lib/state/shared/stores/desktop.ts';
-import { TITLEBAR_HEIGHT, WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
+import type { WindowColours } from '../../lib/themes/parse.ts';
+import { TITLEBAR_HEIGHT, windowPreferences } from '../decide/window-options.ts';
 import { FIND_PATH } from '../decide/sender.ts';
 import { EVENT } from '../decide/channels.ts';
 
@@ -39,12 +40,14 @@ export type FindBarOptions = {
     /** The origin of the server the window shows, read each time the bar is shown. */
     origin: () => string;
     preload: string;
+    /** The colours of the theme the window started on, whose background fills the bar's view. */
+    colours: WindowColours | null;
 };
 
 export function createFindBar(options: FindBarOptions): FindBar {
     const { window: win } = options;
     const view = new WebContentsView({ webPreferences: windowPreferences(options.preload) });
-    view.setBackgroundColor(WINDOW_BACKGROUND);
+    if (options.colours !== null) view.setBackgroundColor(options.colours.background);
     let shown = false;
     let address = '';
 

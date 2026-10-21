@@ -4822,3 +4822,10 @@ Where it applies: O39, part A item 5. Booked in `plan.md` Rulings.
 - Not chosen: taking the change back out at landing, which leaves the page and the host on two themes while an app theme loads.
 
 Where it applies: O39, part A item 5 and round item 1. Booked in `plan.md` Rulings.
+
+## Z971 (2026-10-21, O39 part A's landing, the guarded entries the builder's report proposed, the orchestrator, automode): the entries the new theme tests stand under
+
+- Chosen: two new entries, G118 (a page and a desktop window start on one theme from the first paint; an app's theme the `theme` or `app_theme` option names is drawn from the file the first load carries, and the host fills the window from the same file, read through its own server or fetched from an oculus it did not start; a theme that cannot be drawn is passed over to the start theme by both) and G119 (Theme and Code theme are two lists that never read each other; each theme is drawn under its row's group with its row's words; every theme Shiki bundles has a shipped row but a duplicate of a VS Code theme; Cmd-K's `:theme` follows the Settings order). The new tests of the workspace folder projects, the undo of their manifests, the code theme list findings and the closed app themes are named under G32, G9, G13 and G77.
+- Not chosen: leaving the tests under no entry, which the guarded page does not allow, and folding the window colours into G47, which guards the window's safety and not its colours.
+
+Where it applies: O39, part A. Booked in `plan.md` Rulings.

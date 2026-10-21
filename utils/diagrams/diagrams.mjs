@@ -11,16 +11,17 @@
 // declares), the `publish(` calls and the reads of each channel on the page, and the calls made
 // inside the functions the write route reaches. graphs.mjs reads the imports and the channels,
 // writes.mjs the write chain, drawing/labels.mjs draws an arrow's words and checks where they land,
-// drawing/apart.mjs draws the channel and write diagrams so no two arrows run along each other,
-// drawing/stack.mjs sets the parts the write diagram is cut into in rows, parsed.mjs computes each
-// file's imports and its code once per generation for all of them, and source.mjs holds what they
-// share. A module no layer row places is drawn in a dashed group named "not placed"; so is, with
-// its file and line, an import, a publish, a channel read or comparison, a re-export of a whole
-// module, or a call the write reader cannot follow (writes.mjs says which). The write diagram draws
-// only the modules on a path to the disk or to a call it cannot follow. Every count and every call
-// list is a small node of words standing on its arrow (drawing/labels.mjs), which every other arrow
-// is drawn around. A channel or write diagram the rule of drawing/apart.mjs cannot clear is an
-// error naming each pair, so the run writes nothing and exits non-zero.
+// drawing/apart.mjs draws the layers overview and the channel and write diagrams so no two arrows
+// run along each other, drawing/stack.mjs sets the parts the write diagram is cut into in rows,
+// parsed.mjs computes each file's imports and its code once per generation for all of them, and
+// source.mjs holds what they share. A module no layer row places is drawn in a dashed group named
+// "not placed"; so is, with its file and line, an import, a publish, a channel read or comparison,
+// a re-export of a whole module, or a call the write reader cannot follow (writes.mjs says which).
+// The write diagram draws only the modules on a path to the disk or to a call it cannot follow.
+// Every count and every call list is a small node of words standing on its arrow
+// (drawing/labels.mjs), which every other arrow is drawn around. An overview, channel or write
+// diagram the rule of drawing/apart.mjs cannot clear is an error naming each pair, so the run
+// writes nothing and exits non-zero.
 //
 // The render is @viz-js/viz, Graphviz compiled to WebAssembly, so no system install is needed and
 // one input gives the same bytes on every machine. The drawing has no background and every line
@@ -134,13 +135,12 @@ async function drawer() {
 }
 
 /**
- * Every diagram as the source gives it now, the channel and write diagrams drawn by
- * drawing/apart.mjs's drawnApart(), which throws where it cannot keep every arrow apart. A layer
- * of LAYER_NAMES the order file does not list is an error, since its diagram would have no
- * folders to draw. Every diagram reads
- * the files through one reader over `cache`, so each file's imports and its code are each computed
- * once; a caller that generates again over a tree that differs in a few files passes the same
- * cache, and only those files are parsed again.
+ * Every diagram as the source gives it now, the layers overview and the channel and write diagrams
+ * drawn by drawing/apart.mjs's drawnApart(), which throws where it cannot keep every arrow apart.
+ * A layer of LAYER_NAMES the order file does not list is an error, since its diagram would have no
+ * folders to draw. Every diagram reads the files through one reader over `cache`, so each file's
+ * imports and its code are each computed once; a caller that generates again over a tree that
+ * differs in a few files passes the same cache, and only those files are parsed again.
  *
  * @param {string} engine The engine directory.
  * @param {Map<string, import('./parsed.mjs').Parsed>} [cache] The parses kept by path.
@@ -159,9 +159,11 @@ export async function generate(engine, cache = new Map()) {
         dots.set(`layer-${layer}`, layerDot(sources, layers, layer, folders, read));
     }
     const renderer = await drawer();
+    const overview = drawnApart('layers', dots.get('layers') ?? '', renderer);
     const channels = drawnApart('channels', channelsDot(sources, read), renderer);
     const writes = writesDrawn(sources, renderer, WRITE_ROUTE, read);
     return NAMES.map((name) => {
+        if (name === 'layers') return { name, ...overview };
         if (name === 'channels') return { name, ...channels };
         if (name === 'writes') return { name, ...writes };
         const dot = dots.get(name) ?? '';

@@ -4,6 +4,7 @@
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { catalogOf } from '../../../../src/lib/data/sources/config/catalog/options.ts';
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
+import { vscodeRuleIds } from '../../../../src/lib/data/places/code-rules.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import type { FsEntry } from '../../../../src/lib/state/sources/fs.ts';
 
@@ -12,7 +13,7 @@ const config = loadConfig(engineDir()).config;
 export const shipped = catalogOf(config);
 
 setCatalog(textCatalog(config));
-setAppearance(config);
+setAppearance(config, vscodeRuleIds());
 
 /** A file the file browser lists. */
 export function file(name: string): FsEntry {

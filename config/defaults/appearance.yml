@@ -1,63 +1,66 @@
 # ===========================================================================
 # appearance.yml
-# oculus's shipped values of what the chrome looks like: the UI theme picker's list and the theme drawn, the page's text size, the glyphs and the look of the terminal themes, the wallpaper behind the panels, the CRT overlay, the code theme of the editors, and the terminal grid's text size, cursor and Option key. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/appearance.yml describe every key. Nothing writes this file.
+# oculus's shipped values of what the chrome looks like: the UI theme list, the theme drawn and the theme a desktop window starts on, the page's text size, the glyphs and the look of the terminal themes, the wallpaper behind the panels, the CRT overlay, the code theme of the editors and the lists that shape its choice, and the terminal grid's text size, cursor and Option key. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/appearance.yml describe every key. Nothing writes this file.
 # ===========================================================================
 
 
-# The UI themes in picker order. `name` is saved, `class` lands on <body>, `glyph` is the glyph name drawn before the words, and `label` is the words shown.
+# The UI themes, in the order the Settings view's choice and `:theme` in Cmd-K list them. `name` is saved, `class` lands on <body>, `glyph` is the glyph name drawn before the words, `label` is the words shown, and `group` is the words of the heading the row is drawn under in both lists.
 themes:
-  - { name: light,        class: "",                   glyph: theme_base, label: "light" }
-  - { name: dark,         class: "dark",               glyph: theme_base, label: "dark" }
-  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  glyph: theme_base, label: "vscode dark modern" }
-  - { name: vscode-light-modern, class: "vscode-light-modern", glyph: theme_base, label: "vscode light modern" }
-  - { name: vscode-light-2026, class: "vscode-light-2026", glyph: theme_base, label: "vscode light 2026" }
-  - { name: vscode-light-plus, class: "vscode-light-plus", glyph: theme_base, label: "vscode light+" }
-  - { name: vscode-light-visual-studio, class: "vscode-light-visual-studio", glyph: theme_base, label: "vscode light (visual studio)" }
-  - { name: vscode-quiet-light, class: "vscode-quiet-light", glyph: theme_base, label: "vscode quiet light" }
-  - { name: vscode-solarized-light, class: "vscode-solarized-light", glyph: theme_base, label: "vscode solarized light" }
-  - { name: vscode-abyss, class: "vscode-abyss", glyph: theme_base, label: "vscode abyss" }
-  - { name: vscode-dark-2026, class: "vscode-dark-2026", glyph: theme_base, label: "vscode dark 2026" }
-  - { name: vscode-dark-plus, class: "vscode-dark-plus", glyph: theme_base, label: "vscode dark+" }
-  - { name: vscode-dark-visual-studio, class: "vscode-dark-visual-studio", glyph: theme_base, label: "vscode dark (visual studio)" }
-  - { name: vscode-kimbie-dark, class: "vscode-kimbie-dark", glyph: theme_base, label: "vscode kimbie dark" }
-  - { name: vscode-monokai, class: "vscode-monokai", glyph: theme_base, label: "vscode monokai" }
-  - { name: vscode-monokai-dimmed, class: "vscode-monokai-dimmed", glyph: theme_base, label: "vscode monokai dimmed" }
-  - { name: vscode-red, class: "vscode-red", glyph: theme_base, label: "vscode red" }
-  - { name: vscode-solarized-dark, class: "vscode-solarized-dark", glyph: theme_base, label: "vscode solarized dark" }
-  - { name: vscode-tomorrow-night-blue, class: "vscode-tomorrow-night-blue", glyph: theme_base, label: "vscode tomorrow night blue" }
-  - { name: vscode-dark-high-contrast, class: "vscode-dark-high-contrast", glyph: theme_base, label: "vscode dark high contrast" }
-  - { name: vscode-light-high-contrast, class: "vscode-light-high-contrast", glyph: theme_base, label: "vscode light high contrast" }
-  - { name: mocha,           class: "rice mocha",           glyph: theme_rice, label: "mocha" }
-  - { name: macchiato,       class: "rice macchiato",       glyph: theme_rice, label: "macchiato" }
-  - { name: frappe,          class: "rice frappe",          glyph: theme_rice, label: "frappe" }
-  - { name: gruvbox,         class: "rice gruvbox",         glyph: theme_rice, label: "gruvbox" }
-  - { name: nord,            class: "rice nord",            glyph: theme_rice, label: "nord" }
-  - { name: synthwave,       class: "rice synthwave",       glyph: theme_rice, label: "synthwave '84" }
-  - { name: tokyoneon,       class: "rice tokyoneon",       glyph: theme_rice, label: "tokyo neon" }
-  - { name: tokyonight,      class: "rice tokyonight",      glyph: theme_rice, label: "tokyo night" }
-  - { name: tokyostorm,      class: "rice tokyostorm",      glyph: theme_rice, label: "tokyo night storm" }
-  - { name: rosepine,        class: "rice rosepine",        glyph: theme_rice, label: "rose pine" }
-  - { name: rosepinemoon,    class: "rice rosepinemoon",    glyph: theme_rice, label: "rose pine moon" }
-  - { name: everforest,      class: "rice everforest",      glyph: theme_rice, label: "everforest" }
-  - { name: dracula,         class: "rice dracula",         glyph: theme_rice, label: "dracula" }
-  - { name: onedark,         class: "rice onedark",         glyph: theme_rice, label: "one dark" }
-  - { name: oxocarbon,       class: "rice oxocarbon",       glyph: theme_rice, label: "oxocarbon" }
-  - { name: flexoki,         class: "rice flexoki",         glyph: theme_rice, label: "flexoki" }
-  - { name: phosphor,        class: "rice phosphor",        glyph: theme_rice, label: "phosphor" }
-  - { name: phosphoramber,   class: "rice phosphoramber",   glyph: theme_rice, label: "phosphor amber" }
-  - { name: kanagawa,        class: "rice kanagawa",        glyph: theme_rice, label: "kanagawa" }
-  - { name: kanagawadragon,  class: "rice kanagawadragon",  glyph: theme_rice, label: "kanagawa dragon" }
-  - { name: solarized,       class: "rice solarized",       glyph: theme_rice, label: "solarized" }
-  - { name: latte,           class: "rice latte",           glyph: theme_rice, label: "latte (light)" }
-  - { name: gruvboxlight,    class: "rice gruvboxlight",    glyph: theme_rice, label: "gruvbox light" }
-  - { name: rosepinedawn,    class: "rice rosepinedawn",    glyph: theme_rice, label: "rose pine dawn (light)" }
-  - { name: tokyolight,      class: "rice tokyolight",      glyph: theme_rice, label: "tokyo night light" }
-  - { name: kanagawalotus,   class: "rice kanagawalotus",   glyph: theme_rice, label: "kanagawa lotus (light)" }
-  - { name: everforestlight, class: "rice everforestlight", glyph: theme_rice, label: "everforest light" }
-  - { name: flexokilight,    class: "rice flexokilight",    glyph: theme_rice, label: "flexoki light" }
+  - { name: light,        class: "",                   glyph: theme_base, label: "Light", group: "Oculus" }
+  - { name: dark,         class: "dark",               glyph: theme_base, label: "Dark", group: "Oculus" }
+  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  glyph: theme_base, label: "Dark Modern", group: "VS Code, dark" }
+  - { name: vscode-light-modern, class: "vscode-light-modern", glyph: theme_base, label: "Light Modern", group: "VS Code, light" }
+  - { name: vscode-light-2026, class: "vscode-light-2026", glyph: theme_base, label: "Light 2026", group: "VS Code, light" }
+  - { name: vscode-light-plus, class: "vscode-light-plus", glyph: theme_base, label: "Light+", group: "VS Code, light" }
+  - { name: vscode-light-visual-studio, class: "vscode-light-visual-studio", glyph: theme_base, label: "Light (Visual Studio)", group: "VS Code, light" }
+  - { name: vscode-quiet-light, class: "vscode-quiet-light", glyph: theme_base, label: "Quiet Light", group: "VS Code, light" }
+  - { name: vscode-solarized-light, class: "vscode-solarized-light", glyph: theme_base, label: "Solarized Light", group: "VS Code, light" }
+  - { name: vscode-abyss, class: "vscode-abyss", glyph: theme_base, label: "Abyss", group: "VS Code, dark" }
+  - { name: vscode-dark-2026, class: "vscode-dark-2026", glyph: theme_base, label: "Dark 2026", group: "VS Code, dark" }
+  - { name: vscode-dark-plus, class: "vscode-dark-plus", glyph: theme_base, label: "Dark+", group: "VS Code, dark" }
+  - { name: vscode-dark-visual-studio, class: "vscode-dark-visual-studio", glyph: theme_base, label: "Dark (Visual Studio)", group: "VS Code, dark" }
+  - { name: vscode-kimbie-dark, class: "vscode-kimbie-dark", glyph: theme_base, label: "Kimbie Dark", group: "VS Code, dark" }
+  - { name: vscode-monokai, class: "vscode-monokai", glyph: theme_base, label: "Monokai", group: "VS Code, dark" }
+  - { name: vscode-monokai-dimmed, class: "vscode-monokai-dimmed", glyph: theme_base, label: "Monokai Dimmed", group: "VS Code, dark" }
+  - { name: vscode-red, class: "vscode-red", glyph: theme_base, label: "Red", group: "VS Code, dark" }
+  - { name: vscode-solarized-dark, class: "vscode-solarized-dark", glyph: theme_base, label: "Solarized Dark", group: "VS Code, dark" }
+  - { name: vscode-tomorrow-night-blue, class: "vscode-tomorrow-night-blue", glyph: theme_base, label: "Tomorrow Night Blue", group: "VS Code, dark" }
+  - { name: vscode-dark-high-contrast, class: "vscode-dark-high-contrast", glyph: theme_base, label: "Dark High Contrast", group: "VS Code, high contrast" }
+  - { name: vscode-light-high-contrast, class: "vscode-light-high-contrast", glyph: theme_base, label: "Light High Contrast", group: "VS Code, high contrast" }
+  - { name: mocha,           class: "rice mocha",           glyph: theme_rice, label: "Catppuccin Mocha", group: "Terminal, dark" }
+  - { name: macchiato,       class: "rice macchiato",       glyph: theme_rice, label: "Catppuccin Macchiato", group: "Terminal, dark" }
+  - { name: frappe,          class: "rice frappe",          glyph: theme_rice, label: "Catppuccin Frappé", group: "Terminal, dark" }
+  - { name: gruvbox,         class: "rice gruvbox",         glyph: theme_rice, label: "Gruvbox Dark Hard", group: "Terminal, dark" }
+  - { name: nord,            class: "rice nord",            glyph: theme_rice, label: "Nord", group: "Terminal, dark" }
+  - { name: synthwave,       class: "rice synthwave",       glyph: theme_rice, label: "Synthwave '84", group: "Terminal, dark" }
+  - { name: tokyoneon,       class: "rice tokyoneon",       glyph: theme_rice, label: "Tokyo Neon", group: "Terminal, dark" }
+  - { name: tokyonight,      class: "rice tokyonight",      glyph: theme_rice, label: "Tokyo Night", group: "Terminal, dark" }
+  - { name: tokyostorm,      class: "rice tokyostorm",      glyph: theme_rice, label: "Tokyo Night Storm", group: "Terminal, dark" }
+  - { name: rosepine,        class: "rice rosepine",        glyph: theme_rice, label: "Rosé Pine", group: "Terminal, dark" }
+  - { name: rosepinemoon,    class: "rice rosepinemoon",    glyph: theme_rice, label: "Rosé Pine Moon", group: "Terminal, dark" }
+  - { name: everforest,      class: "rice everforest",      glyph: theme_rice, label: "Everforest Dark", group: "Terminal, dark" }
+  - { name: dracula,         class: "rice dracula",         glyph: theme_rice, label: "Dracula Theme", group: "Terminal, dark" }
+  - { name: onedark,         class: "rice onedark",         glyph: theme_rice, label: "One Dark", group: "Terminal, dark" }
+  - { name: oxocarbon,       class: "rice oxocarbon",       glyph: theme_rice, label: "Oxocarbon", group: "Terminal, dark" }
+  - { name: flexoki,         class: "rice flexoki",         glyph: theme_rice, label: "Flexoki", group: "Terminal, dark" }
+  - { name: phosphor,        class: "rice phosphor",        glyph: theme_rice, label: "Phosphor", group: "Terminal, dark" }
+  - { name: phosphoramber,   class: "rice phosphoramber",   glyph: theme_rice, label: "Phosphor Amber", group: "Terminal, dark" }
+  - { name: kanagawa,        class: "rice kanagawa",        glyph: theme_rice, label: "Kanagawa Wave", group: "Terminal, dark" }
+  - { name: kanagawadragon,  class: "rice kanagawadragon",  glyph: theme_rice, label: "Kanagawa Dragon", group: "Terminal, dark" }
+  - { name: solarized,       class: "rice solarized",       glyph: theme_rice, label: "Solarized Dark", group: "Terminal, dark" }
+  - { name: latte,           class: "rice latte",           glyph: theme_rice, label: "Catppuccin Latte", group: "Terminal, light" }
+  - { name: gruvboxlight,    class: "rice gruvboxlight",    glyph: theme_rice, label: "Gruvbox Light Hard", group: "Terminal, light" }
+  - { name: rosepinedawn,    class: "rice rosepinedawn",    glyph: theme_rice, label: "Rosé Pine Dawn", group: "Terminal, light" }
+  - { name: tokyolight,      class: "rice tokyolight",      glyph: theme_rice, label: "Tokyo Night Light", group: "Terminal, light" }
+  - { name: kanagawalotus,   class: "rice kanagawalotus",   glyph: theme_rice, label: "Kanagawa Lotus", group: "Terminal, light" }
+  - { name: everforestlight, class: "rice everforestlight", glyph: theme_rice, label: "Everforest Light", group: "Terminal, light" }
+  - { name: flexokilight,    class: "rice flexokilight",    glyph: theme_rice, label: "Flexoki Light", group: "Terminal, light" }
 
-# The theme drawn: a name of `themes` above, or the saved name of a colour theme an approved app offers. Empty draws the first theme of the list, and the app's dark theme in the desktop app.
+# The theme drawn: a name of `themes` above, or the saved name of a colour theme an approved, enabled app offers, which the page draws from its first paint. Empty draws the first theme of the list, and the theme `app_theme` names in the desktop app; so does an app's theme whose app is not approved and enabled or whose file does not resolve.
 theme: ''
+
+# The theme a page in the desktop app's window starts on, and the one whose colours fill the window before its page paints, when `theme` names no theme it can draw: a name of `themes` above, or the saved name of a colour theme an approved, enabled app offers.
+app_theme: vscode-dark-modern
 
 # The size of the page's text, a multiplier of the theme's own sizes from 0.7 to 1.6 in tenths.
 text_size: 1
@@ -100,8 +103,97 @@ crt:
 
 
 # === Code theme =============================================================
-# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. The class name of any of the 19 VS Code themes (such as `vscode-dark-2026`, `vscode-light-modern`) takes that theme's TextMate rules under any UI theme, and any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme.
+# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. The class of a VS Code theme, a row of `code_themes.vscode` below (such as `vscode-dark-2026`, `vscode-light-modern`), takes that theme's TextMate rules under any UI theme, and the id of a Shiki theme, a row of `code_themes.shiki` below (such as `github-light`, `nord`), takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme.
 code_theme: tokens
+
+# The two lists of the choice of `code_theme`, in the order the choice lists them, each row's `label` the words shown and `group` the words of the heading the row is drawn under. `vscode` is the VS Code code themes, each row's `class` the value `code_theme` saves and the key of the theme's TextMate rules in src/lib/themes/vscode-rules.json. `shiki` is the themes Shiki bundles, each row's `id` the value `code_theme` saves and the id of the Shiki theme; a Shiki theme with no row is not offered, and six rows carry "(Shiki)" since a VS Code row of the same theme stands beside them (tests/data/helpers/code-theme-pairs.test.ts compares the pairs).
+code_themes:
+  vscode:
+    - { class: vscode-dark-modern, label: "Dark Modern", group: "VS Code, dark" }
+    - { class: vscode-light-modern, label: "Light Modern", group: "VS Code, light" }
+    - { class: vscode-light-2026, label: "Light 2026", group: "VS Code, light" }
+    - { class: vscode-light-plus, label: "Light+", group: "VS Code, light" }
+    - { class: vscode-light-visual-studio, label: "Light (Visual Studio)", group: "VS Code, light" }
+    - { class: vscode-quiet-light, label: "Quiet Light", group: "VS Code, light" }
+    - { class: vscode-solarized-light, label: "Solarized Light", group: "VS Code, light" }
+    - { class: vscode-abyss, label: "Abyss", group: "VS Code, dark" }
+    - { class: vscode-dark-2026, label: "Dark 2026", group: "VS Code, dark" }
+    - { class: vscode-dark-plus, label: "Dark+", group: "VS Code, dark" }
+    - { class: vscode-dark-visual-studio, label: "Dark (Visual Studio)", group: "VS Code, dark" }
+    - { class: vscode-kimbie-dark, label: "Kimbie Dark", group: "VS Code, dark" }
+    - { class: vscode-monokai, label: "Monokai", group: "VS Code, dark" }
+    - { class: vscode-monokai-dimmed, label: "Monokai Dimmed", group: "VS Code, dark" }
+    - { class: vscode-red, label: "Red", group: "VS Code, dark" }
+    - { class: vscode-solarized-dark, label: "Solarized Dark", group: "VS Code, dark" }
+    - { class: vscode-tomorrow-night-blue, label: "Tomorrow Night Blue", group: "VS Code, dark" }
+    - { class: vscode-dark-high-contrast, label: "Dark High Contrast", group: "VS Code, high contrast" }
+    - { class: vscode-light-high-contrast, label: "Light High Contrast", group: "VS Code, high contrast" }
+  shiki:
+    - { id: andromeeda, label: "Andromeeda", group: "Shiki, dark" }
+    - { id: aurora-x, label: "Aurora X", group: "Shiki, dark" }
+    - { id: ayu-dark, label: "Ayu Dark", group: "Shiki, dark" }
+    - { id: ayu-mirage, label: "Ayu Mirage", group: "Shiki, dark" }
+    - { id: catppuccin-frappe, label: "Catppuccin Frappé", group: "Shiki, dark" }
+    - { id: catppuccin-macchiato, label: "Catppuccin Macchiato", group: "Shiki, dark" }
+    - { id: catppuccin-mocha, label: "Catppuccin Mocha", group: "Shiki, dark" }
+    - { id: dark-plus, label: "Dark Plus (Shiki)", group: "Shiki, dark" }
+    - { id: dracula, label: "Dracula Theme", group: "Shiki, dark" }
+    - { id: dracula-soft, label: "Dracula Theme Soft", group: "Shiki, dark" }
+    - { id: everforest-dark, label: "Everforest Dark", group: "Shiki, dark" }
+    - { id: github-dark, label: "GitHub Dark", group: "Shiki, dark" }
+    - { id: github-dark-default, label: "GitHub Dark Default", group: "Shiki, dark" }
+    - { id: github-dark-dimmed, label: "GitHub Dark Dimmed", group: "Shiki, dark" }
+    - { id: gruvbox-dark-hard, label: "Gruvbox Dark Hard", group: "Shiki, dark" }
+    - { id: gruvbox-dark-medium, label: "Gruvbox Dark Medium", group: "Shiki, dark" }
+    - { id: gruvbox-dark-soft, label: "Gruvbox Dark Soft", group: "Shiki, dark" }
+    - { id: horizon, label: "Horizon", group: "Shiki, dark" }
+    - { id: houston, label: "Houston", group: "Shiki, dark" }
+    - { id: kanagawa-dragon, label: "Kanagawa Dragon", group: "Shiki, dark" }
+    - { id: kanagawa-wave, label: "Kanagawa Wave", group: "Shiki, dark" }
+    - { id: laserwave, label: "LaserWave", group: "Shiki, dark" }
+    - { id: material-theme, label: "Material Theme", group: "Shiki, dark" }
+    - { id: material-theme-darker, label: "Material Theme Darker", group: "Shiki, dark" }
+    - { id: material-theme-ocean, label: "Material Theme Ocean", group: "Shiki, dark" }
+    - { id: material-theme-palenight, label: "Material Theme Palenight", group: "Shiki, dark" }
+    - { id: min-dark, label: "Min Dark", group: "Shiki, dark" }
+    - { id: monokai, label: "Monokai (Shiki)", group: "Shiki, dark" }
+    - { id: night-owl, label: "Night Owl", group: "Shiki, dark" }
+    - { id: nord, label: "Nord", group: "Shiki, dark" }
+    - { id: one-dark-pro, label: "One Dark Pro", group: "Shiki, dark" }
+    - { id: plastic, label: "Plastic", group: "Shiki, dark" }
+    - { id: poimandres, label: "Poimandres", group: "Shiki, dark" }
+    - { id: red, label: "Red (Shiki)", group: "Shiki, dark" }
+    - { id: rose-pine, label: "Rosé Pine", group: "Shiki, dark" }
+    - { id: rose-pine-moon, label: "Rosé Pine Moon", group: "Shiki, dark" }
+    - { id: slack-dark, label: "Slack Dark", group: "Shiki, dark" }
+    - { id: solarized-dark, label: "Solarized Dark (Shiki)", group: "Shiki, dark" }
+    - { id: synthwave-84, label: "Synthwave '84", group: "Shiki, dark" }
+    - { id: tokyo-night, label: "Tokyo Night", group: "Shiki, dark" }
+    - { id: vesper, label: "Vesper", group: "Shiki, dark" }
+    - { id: vitesse-black, label: "Vitesse Black", group: "Shiki, dark" }
+    - { id: vitesse-dark, label: "Vitesse Dark", group: "Shiki, dark" }
+    - { id: ayu-light, label: "Ayu Light", group: "Shiki, light" }
+    - { id: catppuccin-latte, label: "Catppuccin Latte", group: "Shiki, light" }
+    - { id: everforest-light, label: "Everforest Light", group: "Shiki, light" }
+    - { id: github-light, label: "GitHub Light", group: "Shiki, light" }
+    - { id: github-light-default, label: "GitHub Light Default", group: "Shiki, light" }
+    - { id: gruvbox-light-hard, label: "Gruvbox Light Hard", group: "Shiki, light" }
+    - { id: gruvbox-light-medium, label: "Gruvbox Light Medium", group: "Shiki, light" }
+    - { id: gruvbox-light-soft, label: "Gruvbox Light Soft", group: "Shiki, light" }
+    - { id: horizon-bright, label: "Horizon Bright", group: "Shiki, light" }
+    - { id: kanagawa-lotus, label: "Kanagawa Lotus", group: "Shiki, light" }
+    - { id: light-plus, label: "Light Plus (Shiki)", group: "Shiki, light" }
+    - { id: material-theme-lighter, label: "Material Theme Lighter", group: "Shiki, light" }
+    - { id: min-light, label: "Min Light", group: "Shiki, light" }
+    - { id: night-owl-light, label: "Night Owl Light", group: "Shiki, light" }
+    - { id: one-light, label: "One Light", group: "Shiki, light" }
+    - { id: rose-pine-dawn, label: "Rosé Pine Dawn", group: "Shiki, light" }
+    - { id: slack-ochin, label: "Slack Ochin", group: "Shiki, light" }
+    - { id: snazzy-light, label: "Snazzy Light", group: "Shiki, light" }
+    - { id: solarized-light, label: "Solarized Light (Shiki)", group: "Shiki, light" }
+    - { id: vitesse-light, label: "Vitesse Light", group: "Shiki, light" }
+    - { id: github-dark-high-contrast, label: "GitHub Dark High Contrast", group: "Shiki, high contrast" }
+    - { id: github-light-high-contrast, label: "GitHub Light High Contrast", group: "Shiki, high contrast" }
 
 
 # === File icons =============================================================

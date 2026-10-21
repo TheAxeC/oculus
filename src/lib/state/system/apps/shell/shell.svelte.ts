@@ -402,11 +402,11 @@ export function createAppShell(deps: AppShellDeps) {
         return true;
     }
 
-    // The colour themes and file icon themes the acting apps offer; the readers of the picker and
-    // the theme take them from `offers()`. The value changes when the offers or the key of an app
-    // change, and not for any other change of the rows, so a theme file that changed is loaded
-    // again and a change of anything else leaves the theme as drawn. Until the first `apps`
-    // payload arrives there are none known, and no theme is told unavailable.
+    // The colour themes and file icon themes the acting apps offer; the readers of the theme list,
+    // the icon theme list and the theme take them from `offers()`. The value changes when the
+    // offers or the key of an app change, and not for any other change of the rows, so a theme file
+    // that changed is loaded again and a change of anything else leaves the theme as drawn. Until
+    // the first `apps` payload arrives there are none known, and no theme is told unavailable.
     const made = $derived.by(() => {
         const loaded = deps.entities.apps();
         return {

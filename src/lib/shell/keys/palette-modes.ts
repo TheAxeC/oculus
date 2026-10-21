@@ -36,6 +36,7 @@ import {
     type ChoicesView
 } from '$lib/state/system/machine/lsp/lsp.svelte';
 import { t } from '$lib/state/shared/words/text';
+import { choiceGroups } from '$lib/ui/forms/choice/choices';
 import {
     choiceOfCommand,
     choicesOfLanguage,
@@ -148,7 +149,10 @@ export function folderRemovals(
         .map((root) => ({ value: `folder:${root.key}`, key: root.key, dir: root.dir }));
 }
 
-/** One choice of an argument list: the argument a press runs the list's command with. */
+/**
+ * One choice of an argument list: the argument a press runs the list's command with, and the words
+ * of the group it is drawn under, absent for a choice drawn before the groups.
+ */
 export type ArgumentRow = {
     value: string;
     kind: string;
@@ -156,15 +160,16 @@ export type ArgumentRow = {
     hint: string;
     active: boolean;
     argument: string;
+    group?: string;
 };
 
 /**
- * What the argument lists are made of: the themes and the file icon themes the pickers offer and
- * the one of each in force, the views a tab opens and the view of the tab on screen, the hub's
- * projects and the project on screen.
+ * What the argument lists are made of: the themes, each with its group, and the file icon themes
+ * the Settings view offers and the one of each in force, the views a tab opens and the view of the
+ * tab on screen, the hub's projects and the project on screen.
  */
 export type ArgumentChoices = {
-    themes: { name: string; label: string }[];
+    themes: { name: string; label: string; group: string }[];
     theme: string;
     fileIcons: { name: string; label: string }[];
     fileIcon: string;
@@ -174,24 +179,47 @@ export type ArgumentChoices = {
     project: string | null;
 };
 
+/** Whether the text typed after the command names a row whole, by its words or its hint. */
+function namesRow(row: Pick<ArgumentRow, 'label' | 'hint'>, argument: string): boolean {
+    return [row.label, row.hint].some(
+        (word) => word.toLowerCase() === argument.trim().toLowerCase()
+    );
+}
+
 /**
  * The rows of an argument list for what is typed after the command: every choice whose words hold
  * every word typed, the one in force marked. A theme and a file icon theme are listed by their
  * words with the name beside them, a view by its label with its id, and a project by its id with
- * its short title. A choice the typed text names whole comes first, so Enter after a whole name
- * runs the command with that choice.
+ * its short title. The rows come in the order the list draws them: the rows with no group, then
+ * each group in the order its first row comes (`choiceGroups`, the order the Settings view's choice
+ * draws its groups in), so a group the typed words filter out whole has no row. Within the rows of
+ * no group and within each group, a choice the typed text names whole comes first, and the list
+ * starts on it (`startRow`), so Enter after a whole name runs the command with that choice.
  */
 export function argumentRows(
     command: ArgumentCommand,
     choices: ArgumentChoices,
     argument: string
 ): ArgumentRow[] {
-    const named = (row: Omit<ArgumentRow, 'value'>): boolean =>
-        [row.label, row.hint].some((word) => word.toLowerCase() === argument.trim().toLowerCase());
     const rows = everyChoice(command, choices)
         .filter((row) => wordsHold(`${row.label} ${row.hint}`, argument))
         .map((row) => ({ ...row, value: `${command}:${row.argument}` }));
-    return [...rows.filter(named), ...rows.filter((row) => !named(row))];
+    const { loose, groups } = choiceGroups(rows);
+    const namedFirst = (list: ArgumentRow[]): ArgumentRow[] => [
+        ...list.filter((row) => namesRow(row, argument)),
+        ...list.filter((row) => !namesRow(row, argument))
+    ];
+    return [...namedFirst(loose), ...groups.flatMap((group) => namedFirst(group.choices))];
+}
+
+/**
+ * The row an argument list's selection starts on (lists/argument-list.svelte.ts): the one in force
+ * while nothing is typed after the command, else the first row the typed text names whole, else
+ * the first row.
+ */
+export function startRow(rows: ArgumentRow[], argument: string): ArgumentRow | undefined {
+    const first = argument === '' ? rows.find((row) => row.active) : undefined;
+    return first ?? rows.find((row) => namesRow(row, argument)) ?? rows.at(0);
 }
 
 /** Every choice of an argument list, before what is typed narrows it. */
@@ -206,7 +234,8 @@ function everyChoice(
                 label: one.label,
                 hint: one.name,
                 active: one.name === choices.theme,
-                argument: one.name
+                argument: one.name,
+                ...(one.group === '' ? {} : { group: one.group })
             }));
         case 'file-icons':
             return choices.fileIcons.map((one) => ({

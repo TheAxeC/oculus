@@ -1,6 +1,7 @@
 // Layer 2, server. The lists a config write checks a choice, a multi or a suggestion against, as
 // the server reads them: the config-derived ones through options.ts (the page reads the same
-// function), the languages and code themes the data layer holds, and the domains, clusters and
+// function), the languages and code themes the data layer holds (the code themes held to the
+// TextMate rules the checkout ships, data/places/code-rules.ts), and the domains, clusters and
 // slides of the portfolio this server last published.
 //
 // A list the server does not hold answers null, and the check of a value drawn from it is its type
@@ -11,6 +12,7 @@
 
 import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
 import type { Project } from '../../../../data/model/index.ts';
+import { vscodeRuleIds } from '../../../../data/places/code-rules.ts';
 import { registered } from '../../../../data/prose/languages.ts';
 import {
     configItems,
@@ -48,7 +50,7 @@ export function sourcesFor(inputs: SourceInputs, config: Record<string, unknown>
             case 'languages':
                 return registered();
             case 'code_themes':
-                return [CODE_TOKENS, ...codeThemeIds()];
+                return [CODE_TOKENS, ...codeThemeIds(config, new Set(vscodeRuleIds()))];
             case 'domains': {
                 const domains = inputs.entities?.('domains') ?? null;
                 return domains === null ? null : Object.keys(domains);

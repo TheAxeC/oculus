@@ -9,3 +9,5 @@ release/
 .env*
 coverage/
 .vite/
+.agents/*
+!.agents/plan.yaml

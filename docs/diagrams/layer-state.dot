@@ -55,7 +55,7 @@ digraph layer_state {
         "folder state/sources to layer data" [label="76", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/forms to folder state/shared" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/forms to layer data" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/shared to layer data" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/shared to layer data" [label="24", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer data from folder state/client" [label="data", style=dashed];
     "layer data from folder state/workbench" [label="data", style=dashed];

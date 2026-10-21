@@ -55,6 +55,7 @@ function tabs(saving: (methods: Methods) => Promise<unknown> = () => Promise.res
             hubs: { primary: null, lists: {} },
             text: textCatalog(merged),
             icons: {},
+            codeThemeClasses: [],
             host: { name: 'host', address: '' },
             findings: []
         }

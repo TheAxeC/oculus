@@ -197,6 +197,7 @@
             views: registry.views().map((one) => one.id),
             tiers: usage()?.accounts.map((account) => account.tier) ?? null,
             themeClasses: classes,
+            codeThemeClasses: config()?.codeThemeClasses ?? [],
             offers: appShell.offers(),
             folder
         });

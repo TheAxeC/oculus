@@ -17,6 +17,9 @@
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
     import { drawConfiguredTheme } from '$lib/ui/theme/app-theme';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
+    import type { PageData } from './$types';
+
+    let { data }: { data: PageData } = $props();
 
     provideTipIds(createTipIds());
 
@@ -56,7 +59,7 @@
     }
 
     onMount(() => {
-        void drawConfiguredTheme(document, true);
+        void drawConfiguredTheme(document, true, data.appThemes);
         input?.focus();
         const stop = [
             bridge?.on('found', (count) => {

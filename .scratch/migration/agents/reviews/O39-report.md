@@ -458,3 +458,366 @@ Paths beyond the brief's list, each needed by an item:
 - The help texts of `code`, `app_theme`, `code_themes.high_contrast` and `code_themes.hidden` say the above.
 - `convert-vscode-themes.ts --check` names a breaking row with its `uiTheme` and its group, where it compared against fixed words before.
 - `CLAUDE.md` gains the credentials rule and names the perl gate.
+
+# Repair round 2
+
+Everything in round 2 is done. Three things the orchestrator must know before landing, each stated again below where it belongs:
+
+- Limits of the launch were broken twice by test runs. `test:quick -- --base e9fd29162` ran four times, where one run and one rerun were allowed (run 2 was red in `app-theme-start.test.ts`, a file this round adds; run 3 was green; run 4 followed the change that took the module-level state out of `appearance.ts`, see item 4). And one vitest run named the folder `tests/server/desktop`, which holds the slow-tier `start.test.ts`: that file starts the worktree's Electron under `app-harness.ts` (no window, a recorder for every screen call) on port 8817 with a scratch HOME. Its first row timed out at 600 s. `ps -axo pid,etime,command | grep -iE "electron|app-harness|oculus-|tmux -S"` afterwards shows no process of this worktree, and `lsof -nP -iTCP:8817 -sTCP:LISTEN` shows nothing listening. The run rewrote the gitignored `build-app/` (dated 10:53). Ports 8787 and 8790 were not touched.
+- `knip` names one new unused export, `vscodeRows` of `code-themes.ts`; its importer is `utils/migrations/convert-vscode-themes.ts:40`, which `--production` does not read.
+- The `config` channel's payload has a new field, `codeThemeClasses` (item 4). It is internal to oculus's server and page, and is listed as a decision.
+
+## Open items
+
+None raised by this round. Open items 185, 189 and 190 and the review's small findings are the orchestrator's at landing; this round did none of them.
+
+## Item 1: ruling 188, Theme and Code theme are separate
+
+What is there now:
+
+- `config/defaults/appearance.yml:111` holds `code_themes.vscode`, 19 rows `{ class, label, group }`. No `themes:` row carries `code`, and the head comment of `themes:` (`appearance.yml:7`) no longer speaks of code themes.
+- `src/lib/data/helpers/editor/code-themes.ts` reads only the merged `code_themes.vscode`: `vscodeRows` (`:104`), `vscodeProblems` (`:130`), `codeThemeInfo` (`:153`), `codeThemeIds` (`:178`) and `isCodeTheme` (`:186`) take the classes that have TextMate rules (`ruled`) from their caller. `VSCODE_CODE`, `shippedRows` and `shippedThemeOptions` are gone.
+- `src/lib/data/places/code-rules.ts` (new, 25 lines) reads the keys of `vscode-rules.json` for the server (`vscodeRuleIds`).
+- Findings (`config/text/findings.yml:61-65`, raised by `src/lib/data/sources/config/sections/themes.ts:40-49`): a value that is not a list, a row with no class, a repeated class, `tokens`, a class with no rules entry. `appearance.code` is gone.
+- `config/options/appearance.yml` drops the `code` field of `themes`, adds `code_themes.vscode` (`:159-167`), and rewrites `themes`, `code_theme` and `code_themes` help. `catalogs.ts` and `schemas/engine.ts` no longer read code themes out of the options catalog.
+- `utils/migrations/convert-vscode-themes.ts --check` compares `code_themes.vscode` with `vscode-rules.json` (`:377-382`).
+
+Command: `node utils/migrations/convert-vscode-themes.ts --check` prints `19 themes up to date`, exit 0.
+
+## Item 2: ruling 186, an app's theme is drawn from the first paint
+
+What is there now:
+
+- The first load carries the files. `firstAppThemes` (`src/lib/server/machine/apps/routes/theme.ts:52`) reads the file of the theme `theme` names and of the one `app_theme` names, through `appThemeOf` (`:32`), which returns before it opens a file for an app that is not approved and enabled (`heldChoice`, `choice.ts`). The four page loads carry the result as `appThemes` (`src/routes/+page.server.ts:71`, and the `find`, `present/show` and `present/print` loads).
+- The page converts it before first paint, on every page:
+  - The workbench: `+page.ts:31` hands `appThemes` on, `+page.svelte:329` gives it to `Workbench.svelte` (prop `appThemes`, `:158`), and `useAppearance` (`src/lib/shell/window/appearance.svelte.ts:77`, `:124`) hands the file to the first draw of the theme through `firstDrawFile` (`src/lib/ui/theme/app-theme.ts:158`). `drawTheme` draws a draw's `file` with no request (`app-theme.ts:201`). A later draw of the same theme loads it from the server.
+  - The find bar and the presenter's pages: `drawConfiguredTheme(document, inApp, files)` (`app-theme.ts:224`) draws from the offers the files make (`fileOffers`, `src/lib/data/helpers/files/apps/choices.ts:81`).
+- The host fills a new window with that theme's colours. The server tells the host the same files over the parent port (`{ kind: 'app-themes', files }`, `src/lib/server/root/process/parent.ts:28`, sent from `src/server.ts:121`), the host holds them (`src/desktop/server/process.ts:126`), and `startColours` (`src/desktop/windows/start-colours.ts:82`) converts the file with `vscode-map.ts`.
+- `app_theme` may name an app's theme. The start rule is `windowStart` (`src/lib/data/helpers/editor/start-theme.ts:39`). The finding text is at `findings.yml:57`, the help at `config/options/appearance.yml:42`, and `HELP.md:509` is rewritten.
+- The start theme is drawn only when the file does not resolve or the app is not approved and enabled: `themeClass` and `startChoice` in `src/lib/state/shared/words/appearance.ts`, and in `drawConfiguredTheme` an app's theme with no file is not offered.
+
+Command: `npx vitest run tests/server/desktop/app-theme-start.test.ts` (in the step 4 run below) passes 6 tests.
+
+## Item 3: ruling 187, the refusal of a workspace folder inside a hub is removed
+
+What is there now:
+
+- `noProject` and `project_in_hub` are gone from `folders.ts`, `follow.ts`, `roots.ts` and `findings.yml`.
+- A workspace folder whose manifest the hub's scan reads is that scan's one project, with no finding, matched by real path:
+  - For the primary hub, `readHubManifests` builds the set of real paths the scan read (`src/lib/data/sources/manifests.ts:466`), and `workspaceFound` (`:433`) skips a root whose manifest is in it.
+  - For the other hubs, `repositoriesOf` (`src/lib/server/files/roots.ts:130`) leaves out a root whose manifest another hub's scan reads. It uses `readElsewhere` (`:100`) and `scannedFiles` (`manifests.ts:392`), and walks only the scan rules whose real base holds a wanted manifest.
+- Writes go to the file the project was read from. `homeOf` accepts a workspace-folder project, and `holding` (`src/lib/server/edit/writes/hubs.ts:240`) takes, in order: the own hub by containment, the bookmarks, the primary's workspace-folder manifest by real path, then another hub by containment.
+- `primaryConfig` takes the hub settings (`roots.ts:154`), and its five callers pass them.
+- `DESIGN.md:709`, `HELP.md:533`, and the comments of `folders.ts`, `roots.ts`, `writes.ts` and `hubs.ts` are rewritten. The tests follow the new rule (table below).
+
+Commands: `npx vitest run tests/data/hubs tests/routes/edit/undo/undo.test.ts tests/data/sources/manifests/manifests.test.ts` (in the step 4 run).
+
+## Item 4: no module-level state for the code theme classes and the carried app themes
+
+`boundaries.test.ts` "holds no process-wide state under src" refuses a module-level binding not in `FROZEN`. The work of items 1 and 2 holds no such binding, and `FROZEN` is unchanged:
+
+- The classes ride the config:
+  - `setAppearance(config, classes)` (`appearance.ts:363`) computes the code theme in force against them.
+  - The classes come from the page data (`install.ts:37`) and from every `config` push (`socket.svelte.ts:382`). The push carries them as `ConfigPayload.codeThemeClasses` (`src/lib/data/model/index.ts:287`), filled by the watcher (`portfolio.ts:650`) and the seed (`+page.server.ts:77`), and checked by the payload schema (`payloads.ts:36`).
+  - The Settings view hands them to `listsOf` (`Settings.svelte:200`, `sources.ts:64`, `:127`).
+- The carried files are not installed anywhere:
+  - A page with no `apps` channel draws from `fileOffers(files)`.
+  - The workbench's once-per-theme record is a `Set` inside `firstDrawFile`'s closure, made once per `useAppearance` call.
+  - `setCodeThemeClasses`, `codeThemeClasses()`, `setAppThemeFiles` and `takeAppThemeFile` are gone.
+
+Command: `npx vitest run tests/checks/tree/boundaries.test.ts` passes, inside the step 4 run.
+
+## The cases, before the round and after
+
+Runs before the round are from the scratch copy `$TMPDIR/o39-r2-before-cases/oculus` (the base copy with the snapshot laid over, and this round's test files copied in). Commands:
+
+```
+npx vitest run tests/data/hubs/hub-folders.test.ts tests/data/hubs/workspace-findings.test.ts tests/data/hubs/workspace-projects.test.ts tests/routes/edit/undo/undo.test.ts tests/checks/config/config.test.ts tests/data/helpers/code-theme-pairs.test.ts
+npx vitest run tests/state/system/settings/theme-groups.test.ts tests/server/desktop/app-theme-start.test.ts tests/server/desktop/window-guard.test.ts tests/shell/keys/theme-rows.test.ts
+```
+
+Ruling 188 (`theme-groups.test.ts`, `config.test.ts`, `code-theme-pairs.test.ts`):
+
+- Cases: a rename, a theme row removed, a code row removed, a row with no rules entry, and the shipped 19 rows unchanged.
+- Before: every one of these files stops at its import: `Error: Cannot find module '../../../../src/lib/data/places/code-rules.ts' imported from .../tests/state/system/settings/theme-groups.test.ts`, and the same line for `config.test.ts` and `code-theme-pairs.test.ts`. No assertion line can be shown, because the module the cases read the rules through does not exist before the round.
+- After: they pass in the step 4 run.
+- The shipped rows: the 19 `code: vscode` rows of the snapshot's `appearance.yml` and the 19 `code_themes.vscode` rows of the worktree, as `{class, label, group}`, are identical. `theme-groups.test.ts` asserts the same against the config, with `expect(rows).toHaveLength(19)` and one group and label per class.
+
+Ruling 186 (`app-theme-start.test.ts`, 6 tests):
+
+- Cases: `theme` names an app's theme; `app_theme` names one with `theme` empty; the workbench's first draw from the file and a later draw that loads; an app not approved; an app disabled; an unresolved file.
+- Before: `Error: Cannot find module '/src/lib/data/places/code-rules.ts' imported from .../tests/server/desktop/app-theme-start.test.ts`.
+- After: 6 pass.
+- For "an app not approved or disabled reads no file", the test asserts `heldChoice(apps, choice) === 'closed'`, the answer on which `appThemeOf` returns before `resolveTheme` (`theme.ts:33-34`). A read of the file system is not spied on.
+
+Ruling 187 (before, on the scratch copy):
+
+- `hub-folders.test.ts`, 2 rows: `AssertionError: expected [ [ 'inner', ...(1) ] ] to deeply equal []`.
+- `workspace-findings.test.ts` "raises no finding and is a root of the workspace wherever it lies": `AssertionError: expected [ { ...(3) }, { ...(3) }, { ...(3) } ] to deeply equal []`.
+- `workspace-projects.test.ts`:
+  - The oculus case: `expected [ 'site', 'spark' ] to deeply equal [ 'oculus', 'site', 'spark' ]`.
+  - The folder holding a hub: `expected [ 'site', 'spark' ] to deeply equal [ 'holder', 'site', 'spark' ]`.
+  - The nested repository in a scan folder (named directly, and through a link) and the second hub's scan: `expected [ { ...(3) } ] to deeply equal []`, three times.
+- `undo.test.ts`, the write and undo of the oculus case: all 12 rows fail. The rows are 6 writes (manifest editor field, snooze, follow-up done, Pin, subtask tick, added line) in the primary hub and in a second hub. Each fails with `<label>: expected 404 to be 200`.
+- After: all pass in the step 4 run.
+
+## Greps of the removed names
+
+Command, after the round: `grep -rn --exclude=local.yml --exclude-dir=node_modules --exclude-dir=.svelte-kit --exclude-dir=.svelte-kit-app --exclude-dir=build-app --exclude-dir=.scratch "<name>" .`
+
+| Name | Before the round (files) | After the round |
+|---|---|---|
+| `code: vscode` | HELP.md, DESIGN.md, appearance.yml (defaults), convert-vscode-themes.ts, code-themes.ts | none; the rows moved to `code_themes.vscode`, and the texts are rewritten |
+| `VSCODE_CODE` | sections/themes.ts, code-themes.ts | none; the finding `appearance.code` is removed |
+| `shippedRows` | code-themes.ts | none |
+| `shippedThemeOptions` | catalogs.ts, code-themes.ts | none; the catalog reads no code themes |
+| `noProject` | DESIGN.md, workspace-findings.test.ts, roots.ts, folders.ts, follow.ts, deposit-routes.ts | `deposit-routes.ts:130,208,220,240` only, an unrelated function of the deposit route, kept |
+| `project_in_hub` | DESIGN.md, findings.yml, hub-folders.test.ts, workspace-findings.test.ts, folders.ts | none |
+| `setCodeThemeClasses`, `codeThemeClasses()`, `setAppThemeFiles`, `takeAppThemeFile` | none | none |
+
+## Paragraphs of the pages and catalogs
+
+- `DESIGN.md:248` (themes): rewritten for `code_themes.vscode`, `app_theme` naming an app's theme, the first paint, the parent port and the classes carried by the first load and the `config` channel.
+- `DESIGN.md:709` (workspace folders): rewritten for the real-path rule and the writes.
+- `HELP.md:509` (theme list): rewritten.
+- `HELP.md:533`: a new bullet on a workspace folder as a project.
+- `HELP.md:498`: still true.
+- `README.md`: not touched. There is no README.md in the snapshot, and the worktree's was not changed this round.
+- `docs/apps.md`: not touched. `diff` with the snapshot is empty.
+- `docs/diagrams/`: `layers`, `layer-data`, `layer-server` and `layer-ui` are regenerated by `npm run diagrams`, with import counts only.
+- `config/options/appearance.yml`:
+  - Rewritten: `themes` (`:18`), `theme` (`:35`), `app_theme` (`:42`), `code_theme` (`:156`) and the `code_themes` group text (`:206`).
+  - Added: `code_themes.vscode` (`:159-167`).
+  - Removed: the `code` field.
+  - Still true: `code_themes.high_contrast` and `code_themes.hidden`.
+- `config/text/findings.yml`:
+  - Removed: `project_in_hub` and `appearance.code`.
+  - Rewritten: `app_theme` (`:57`).
+  - Added: the five `code_themes_vscode_*` texts (`:61-65`).
+
+## Edited assertions of existing tests
+
+| File | Before | After |
+|---|---|---|
+| `tests/data/hubs/hub-folders.test.ts`, 2 rows | `findings: [['inner', 'findings.workspace.project_in_hub']]` | `findings: []`; the row reads "...lies inside a hub as a project, with no finding" |
+| `tests/data/hubs/workspace-findings.test.ts` | three `project_in_hub` findings for a folder inside, holding or lying in a hub | `workspaceFindings` is `[]`, and the roots list holds every folder |
+| `tests/checks/config/config.test.ts` | "names a theme row whose code is empty, not words or not vscode": three `appearance.code` findings | "names a code_themes.vscode that is no list, and each row with no class, a repeated class, tokens or a class with no rules": five `code_themes.vscode` findings, and `code_theme: vscode-nowhere` read as a wrong `code_theme` |
+| `tests/checks/config/config.test.ts`, `app_theme` row | "...a window of the desktop app starts on the first theme" | "...a window of the desktop app whose theme names no theme it can draw starts on the first theme of themes" |
+| `tests/server/desktop/window-guard.test.ts` | `themeClass(configuredTheme(true), NO_OFFERS, true)` is `windowThemeClass(merged)` | `{ cls: themeClass(configuredTheme(true, offers), offers, true) }` equals `windowStart(merged, [])`, with `offers = fileOffers(files ?? {})` and a row for an app's theme carried with no file |
+| `tests/server/desktop/window-guard.test.ts` | `themeClass(choice, NO_OFFERS, true)` is `vscode-dark-modern` (an app's theme not yet known) | `themeClass(choice, fileOffers({ [choice]: null }), true)` is `vscode-dark-modern`; a new row asserts `themeClass(choice, NO_OFFERS, true)` is `app-theme`, a theme the page loads |
+| `tests/server/desktop/window-guard.test.ts`, start colours | `startColours(engine, state)` | `startColours(engine, {}, state)`, the same expected colours |
+| `tests/data/helpers/code-theme-pairs.test.ts` | `codeThemeIds(config)` | `codeThemeIds(config, new Set(vscodeRuleIds()))`, the same expectation |
+| `tests/data/sources/manifests/manifests.test.ts` | `repositoriesOf(open)` imported | a local `repositoriesOf` over `primaryConfig(MERGED, open, settings).repositories`, the same expectations |
+
+Call sites with no assertion change pass the classes or the new payload field: `setAppearance(config, vscodeRuleIds())` in `rail-fixture.ts`, `settings/fixture.ts`, `workbench-fixture.ts`, `look/themes.ts` and `theme-rows.test.ts`, and `codeThemeClasses: []` in `app-editor-close.test.ts` and `options-pages.test.ts`.
+
+## Checks
+
+1. `npm run format`: it rewrote `tests/checks/config/config.test.ts` and `tests/shell/keys/theme-rows.test.ts` (the wrapping of a `setAppearance` call). Every other file is unchanged.
+2. `npm run diagrams && npm run test:quick -- --base e9fd29162` (run 4, see the first lines): every command passed.
+   ```
+   ok      ASCII gate (0.9 s)
+   ok      prettier (1.4 s): All matched files use Prettier code style!
+   ok      svelte-kit sync (2.2 s)
+   ok      eslint (18.3 s)
+   ok      svelte-check (43.8 s): ... COMPLETED 531 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+   ok      vitest (100.9 s): Duration  91.06s ...
+   test:quick: 103.3 s (limit 45.0 s); every command passed
+   test:quick: over the time limit
+   test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+               build, lint of unchanged files; npm run test:landing runs them
+   ```
+3. `npm run check`: `COMPLETED 4252 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+4. The step 4 vitest run. It covers every changed test file and fixture, `tests/checks/tree/boundaries.test.ts`, `tests/checks/diagrams`, `tests/checks/config`, `tests/data/helpers/code-theme-pairs.test.ts` and `tests/checks/look`, with `--testTimeout 0 --hookTimeout 0`:
+   ```
+    Test Files  27 passed (27)
+         Tests  439 passed | 9 skipped (448)
+   ```
+   The 9 skipped are the real-hub rows behind `skipIf(!REAL.asked)` in `integrity.test.ts` and `config-folder.test.ts`, present in the base copy (`grep -c "skipIf(!REAL.asked)"` gives 1 and 2 there).
+5. `node utils/migrations/convert-vscode-themes.ts --check`: `19 themes up to date`, exit 0.
+6. `sh utils/unused-exports.sh`, compared with `diff` against `.agents/worktrees/O39-base/unused-exports.txt`:
+   ```
+   < Unused exports (229)
+   > Unused exports (230)
+   > src/lib/data/helpers/editor/code-themes.ts: vscodeRows
+   ```
+   `vscodeRows` is imported by `utils/migrations/convert-vscode-themes.ts:40`, which `knip --production` does not read. Every other new export has a production importer.
+7. The perl gate of `spec.md` over the 82 changed files that are not `.svg` printed nothing. The same gate over `find src tests config -type f ! -name local.yml` also printed nothing.
+
+YAML: `yaml.safe_load` was run on `config/text/findings.yml` and both `appearance.yml` files after their last change, and all loaded. Those files did not change after that.
+
+## Files changed in the round
+
+The line counts are against the snapshot. A file the snapshot does not hold is counted against the base copy, and the diagrams against the main checkout.
+
+Config and pages:
+
+| File | Lines |
+|---|---|
+| `config/defaults/appearance.yml` | 127 -> 147 |
+| `config/options/appearance.yml` | 201 -> 206 |
+| `config/text/findings.yml` | 380 -> 383 |
+| `DESIGN.md` | 768 -> 768 |
+| `HELP.md` | 543 -> 544 |
+| `utils/migrations/convert-vscode-themes.ts` | 433 -> 458 |
+
+Diagrams (regenerated):
+
+| File | Lines |
+|---|---|
+| `docs/diagrams/layers.dot` / `.svg` | 95 / 522, unchanged in length |
+| `docs/diagrams/layer-data.dot` / `.svg` | 94 -> 97 / 465 -> 482 |
+| `docs/diagrams/layer-server.dot` / `.svg` | 159 / 781, unchanged in length |
+| `docs/diagrams/layer-ui.dot` / `.svg` | 143 / 684, unchanged in length |
+
+Source, desktop and data:
+
+| File | Lines |
+|---|---|
+| `src/desktop/app.ts` | 383 -> 385 |
+| `src/desktop/server/process.ts` | 152 -> 162 |
+| `src/desktop/windows/start-colours.ts` | 50 -> 99 |
+| `src/server.ts` | 149 -> 166 |
+| `src/lib/data/helpers/editor/code-themes.ts` | 167 -> 208 |
+| `src/lib/data/helpers/editor/start-theme.ts` | 44 -> 59 |
+| `src/lib/data/helpers/files/apps/choices.ts` | 71 -> 111 |
+| `src/lib/data/model/index.ts` | 862 -> 866 |
+| `src/lib/data/places/code-rules.ts` | new, 25 |
+| `src/lib/data/sources/config/catalog/schemas/engine.ts` | 232 -> 233 |
+| `src/lib/data/sources/config/catalogs.ts` | 375 -> 374 |
+| `src/lib/data/sources/config/sections/themes.ts` | 130 -> 175 |
+| `src/lib/data/sources/manifests.ts` | 450 -> 485 |
+
+Source, server:
+
+| File | Lines |
+|---|---|
+| `src/lib/server/edit/writes.ts` | 752 -> 753 |
+| `src/lib/server/edit/writes/config/config-sources.ts` | 69 -> 71 |
+| `src/lib/server/edit/writes/hubs.ts` | 251 -> 258 |
+| `src/lib/server/files/project/project-files.ts` | 260 -> 260 |
+| `src/lib/server/files/roots.ts` | 121 -> 170 |
+| `src/lib/server/files/workspace/folders.ts` | 294 -> 283 |
+| `src/lib/server/files/workspace/follow.ts` | 130 -> 124 |
+| `src/lib/server/machine/apps/routes/choice.ts` | 28 -> 41 |
+| `src/lib/server/machine/apps/routes/theme.ts` | 41 -> 73 |
+| `src/lib/server/machine/pty/routes.ts` | 516 -> 510 |
+| `src/lib/server/machine/pty/start/chat.ts` | 135 -> 142 |
+| `src/lib/server/machine/runs/seeds/task-start.ts` | 126 -> 126 |
+| `src/lib/server/root/config-seed.ts` | 48 -> 49 |
+| `src/lib/server/root/process/parent.ts` | 131 -> 171 |
+| `src/lib/server/root/watch/portfolio.ts` | 838 -> 840 |
+
+Source, page:
+
+| File | Lines |
+|---|---|
+| `src/lib/shell/window/appearance.svelte.ts` | 144 -> 163 |
+| `src/lib/shell/Workbench.svelte` | 449 -> 456 |
+| `src/lib/state/client/shapes/payloads.ts` | 298 -> 299 |
+| `src/lib/state/client/socket.svelte.ts` | 453 -> 455 |
+| `src/lib/state/shared/page/install.ts` | 29 -> 39 |
+| `src/lib/state/shared/words/appearance.ts` | 638 -> 657 |
+| `src/lib/state/system/config/editors/sources.ts` | 184 -> 187 |
+| `src/lib/ui/theme/app-rules.ts` | 21 -> 21 |
+| `src/lib/ui/theme/app-theme.ts` | 182 -> 242 |
+| `src/lib/views/system/workbench/Settings.svelte` | 404 -> 405 |
+
+Routes:
+
+| File | Lines |
+|---|---|
+| `src/routes/+page.server.ts` | 78 -> 91 |
+| `src/routes/+page.svelte` | 329 -> 330 |
+| `src/routes/+page.ts` | 30 -> 34 |
+| `src/routes/find/+page.server.ts` | 17 -> 22 |
+| `src/routes/find/+page.svelte` | 131 -> 134 |
+| `src/routes/find/+page.ts` | 7 -> 10 |
+| `src/routes/present/print/+page.server.ts` | 18 -> 23 |
+| `src/routes/present/print/+page.svelte` | 142 -> 142 |
+| `src/routes/present/print/+page.ts` | 9 -> 10 |
+| `src/routes/present/show/+page.server.ts` | 18 -> 23 |
+| `src/routes/present/show/+page.svelte` | 289 -> 289 |
+| `src/routes/present/show/+page.ts` | 9 -> 10 |
+
+Tests:
+
+| File | Lines |
+|---|---|
+| `tests/checks/config/config.test.ts` | 833 -> 862 |
+| `tests/checks/look/themes.ts` | 95 -> 96 |
+| `tests/checks/tree/boundaries.test.ts` | 848 -> 848 (one comment line; FROZEN and the rows unchanged) |
+| `tests/data/helpers/code-theme-pairs.test.ts` | 115 -> 116 |
+| `tests/data/hubs/hub-folders.test.ts` | 284 -> 284 |
+| `tests/data/hubs/workspace-findings.test.ts` | 46 -> 48 |
+| `tests/data/hubs/workspace-projects.test.ts` | new, 163 |
+| `tests/data/sources/manifests/manifests.test.ts` | 751 -> 757 |
+| `tests/routes/edit/undo/undo.test.ts` | 767 -> 818 |
+| `tests/routes/edit/write-fixture.ts` | 513 -> 546 |
+| `tests/server/desktop/app-theme-start.test.ts` | new, 270 |
+| `tests/server/desktop/window-guard.test.ts` | 376 -> 394 |
+| `tests/shell/keys/theme-rows.test.ts` | 124 -> 129 |
+| `tests/shell/panes/strip/app-editor-close.test.ts` | 175 -> 176 |
+| `tests/shell/rail/rail-fixture.ts` | 46 -> 47 |
+| `tests/state/system/settings/fixture.ts` | 25 -> 26 |
+| `tests/state/system/settings/theme-groups.test.ts` | 293 -> 344 |
+| `tests/state/workbench/options-pages.test.ts` | 167 -> 168 |
+| `tests/views/system/workbench/workbench-fixture.ts` | 59 -> 62 |
+
+Every source file is within 880 lines and every Svelte file within 520.
+
+Paths written beyond the brief's list, each needed by an item:
+
+- The pages and loads that carry and hand on the app theme files (item 2): `routes/find`, `routes/present/*`, `+page.ts` and `+page.svelte`.
+- The parent port (item 2): `server.ts`, `parent.ts`, `process.ts` and `app.ts`.
+- The `config` channel field (item 4): `model/index.ts`, `payloads.ts`, `socket.svelte.ts`, `config-seed.ts`, `portfolio.ts`, `Settings.svelte` and `sources.ts`.
+- `app-rules.ts`: the import of `APP_THEME_CLASS`, which now lives in `choices.ts`.
+- The callers of `primaryConfig` (item 3): `chat.ts`, `pty/routes.ts`, `task-start.ts`, `project-files.ts` and `writes.ts`.
+- The test fixtures named above.
+
+## Decisions taken that the brief does not name
+
+- `ConfigPayload.codeThemeClasses`, a field of the `config` channel's payload (internal to oculus's server and page). It carries the keys of `vscode-rules.json` with every push, so the page reads the code theme in force without a module-level store.
+- The message `{ kind: 'app-themes', files }` on the server's parent port.
+- `APP_THEME_CLASS` moves to `data/helpers/files/apps/choices.ts`, so the host and the page read one constant.
+- `repositoriesOf` is no longer exported. `primaryConfig` takes the hub settings.
+- `holding` takes the primary's workspace-folder manifest by real path before another hub's containment.
+- `appThemeOf` and the type `VscodeRow` are no longer exported.
+- `app-theme-start.test.ts` loads its modules after `vi.resetModules()`, so the quick tier's shared module graph does not hand it empty stylesheets.
+
+## Host- and user-visible changes
+
+- A theme in a workspace file:
+  - Before: a `themes:` row with `code: vscode` made a code theme.
+  - After: a code theme is a row of `code_themes.vscode`. Renaming or removing a code theme changes only the Code theme choice, and removing a theme row changes only the Theme choice.
+- New findings: `code_themes.vscode` not a list, a row with no class, a repeated class, `tokens`, a class with no rules. The finding `appearance.code` is gone.
+- `theme` or `app_theme` naming an app's theme:
+  - Before: the page loaded the file after first paint, and the host filled the window with the `app_theme` row's colours.
+  - After: the page draws it from the first paint, and the desktop app fills a new window with its colours. When the app is not approved and enabled, or the file does not resolve, the start theme is drawn.
+- `app_theme` naming an app's theme:
+  - Before: a finding.
+  - After: allowed, and only a name that is neither a theme of `themes` nor an app's theme is a finding.
+- An app's theme on the workbench before the `apps` channel has sent anything:
+  - Before: the start theme's class.
+  - After: the class `app-theme`, drawn from the carried file or loaded.
+- A workspace folder inside a hub:
+  - Before: a `project_in_hub` finding, and no project.
+  - After: a project with no finding. When the hub's scan reads its manifest, it is that scan's one project (no second card). An edit, and its undo, writes the manifest it was read from.
+
+## New tests and their guarded.md entries
+
+- `tests/server/desktop/app-theme-start.test.ts`:
+  - The two closed rows sit under G77 (an app's contribution acts only for an approved, enabled app).
+  - The first-paint rows need a new entry: "An app's colour theme the `theme` or `app_theme` option names is drawn from the page's first paint, and a new desktop window is filled with its colours, for an approved, enabled app whose file resolves; otherwise the start theme is drawn."
+- `tests/data/hubs/workspace-projects.test.ts`, and the rewritten `workspace-findings.test.ts` and hub-folders rows, sit under G32 (what the hub shows is what its files say). One manifest is one project, wherever its folder lies.
+- The 12 rows added to `tests/routes/edit/undo/undo.test.ts` sit under G9 (each write is logged, and its undo puts the file back).
+- The rows added to `tests/state/system/settings/theme-groups.test.ts` and `tests/checks/config/config.test.ts`:
+  - The `code_themes.vscode` findings sit under G13 (a wrong config value is a finding naming the key).
+  - The shipped rows reading with no finding sit under G12.
+  - The two lists' separation needs the theme-group entry proposed in round 1's report.
+
+## What the tests do not cover
+
+- `useAppearance` itself is not run by a test: it is an effect in a component. The test covers its parts: `firstDrawFile` hands the file to the first draw and to no later one, and `drawTheme` draws a handed file with no request. Whether `Workbench.svelte` passes `data.appThemes` through is verified by `npm run check` (types) and by reading `+page.svelte:329` and `Workbench.svelte:337`.
+- The desktop host's fill from an app's theme is covered by `startColours` in `app-theme-start.test.ts`. The parent-port message from `server.ts` to `process.ts` is not run by a test in this round.
+- `tests/server/desktop/start.test.ts` (slow tier) timed out on its first row in the run named above. Whether it passes on this tree is not verified.

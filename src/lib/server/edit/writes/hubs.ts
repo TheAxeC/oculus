@@ -14,7 +14,7 @@
 
 import { isAbsolute, resolve } from 'node:path';
 import { ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
-import { inside } from '../../core/paths.ts';
+import { inside, realPath } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import { engineLiteraturePath, literatureFile } from '../feeds/literature.ts';
@@ -230,10 +230,12 @@ export function routedOrder(
 }
 
 /**
- * The target of the hub whose folder holds the file a change names, the request's own for a file of
- * the primary hub, of the reader's bookmarks or of a workspace folder read as a project of the
- * primary (its manifest, which lies outside the hub's folder), and null for a file that no hub
- * holds: the hub it was written in has left the workspace.
+ * The target of the hub a change's file belongs to: the request's own for a file inside the primary
+ * hub's folder, for the reader's bookmarks and for the manifest of a workspace folder read as a
+ * project of the primary, wherever that folder lies, inside another hub's folder included; another
+ * hub's for any other file inside that hub's folder; and null for a file that no hub holds, since
+ * the hub it was written in has left the workspace. A manifest is matched by its real path, so a
+ * link or a second spelling of the path is the same file.
  */
 export function holding(into: WriteTarget, file: string): PrimaryTarget | null {
     if (!isAbsolute(file)) return null;
@@ -243,9 +245,14 @@ export function holding(into: WriteTarget, file: string): PrimaryTarget | null {
     if (own !== null && into.bookmarks !== undefined && path === resolve(into.bookmarks)) {
         return own;
     }
+    if (own !== null) {
+        const place = realPath(path) ?? path;
+        const repositories = hubManifests(own.hub, own.config).filter((one) => one.workspaceFolder);
+        const read = repositories.some(
+            (project) => (realPath(project.file) ?? project.file) === place
+        );
+        if (read) return own;
+    }
     const one = (into.hubs ?? []).find((held) => inside(path, held.hub));
-    if (one !== undefined) return within(into, one);
-    if (own === null) return null;
-    const repositories = hubManifests(own.hub, own.config).filter((one) => one.workspaceFolder);
-    return repositories.some((project) => resolve(project.file) === path) ? own : null;
+    return one === undefined ? null : within(into, one);
 }

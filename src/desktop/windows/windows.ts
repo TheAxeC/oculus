@@ -18,7 +18,8 @@
 import { BrowserWindow, screen, shell, type WebContents } from 'electron';
 import { linkDecision, movedPort } from '../decide/links.ts';
 import { placeWindow, rectOf, type Rect } from '../decide/place.ts';
-import { WINDOW_BACKGROUND, windowFrame, windowPreferences } from '../decide/window-options.ts';
+import { windowFill, windowFrame, windowPreferences } from '../decide/window-options.ts';
+import type { WindowColours } from '../../lib/themes/parse.ts';
 import {
     NO_ZOOM,
     recordWindow,
@@ -69,6 +70,8 @@ export type Entry = {
 /** What the windows need of the rest of the app. */
 export type WindowsDeps = {
     preload: string;
+    /** The colours of the theme a window starts on, read each time a window is made. */
+    colours: () => WindowColours | null;
     store: WindowStore;
     log: (line: string) => void;
     /** Whether this app's own server last reported `port`, so a window may follow it there. */
@@ -133,6 +136,7 @@ export function createWindows(deps: WindowsDeps): Windows {
     let quit = false;
     const audience = createAudience({
         preload: deps.preload,
+        colours: deps.colours,
         areas: () => displays().areas,
         route: (from, url) => route(from, url)
     });
@@ -359,6 +363,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         rect: Rect,
         content: boolean
     ): Entry {
+        const colours = deps.colours();
         const win = new BrowserWindow({
             x: rect.x,
             y: rect.y,
@@ -366,8 +371,8 @@ export function createWindows(deps: WindowsDeps): Windows {
             height: rect.h,
             useContentSize: content,
             show: false,
-            backgroundColor: WINDOW_BACKGROUND,
-            ...windowFrame(process.platform),
+            ...windowFill(colours),
+            ...windowFrame(process.platform, colours),
             webPreferences: windowPreferences(deps.preload)
         });
         const entry: Entry = {
@@ -378,7 +383,12 @@ export function createWindows(deps: WindowsDeps): Windows {
             page: null,
             origin,
             focusedAt: ++clock,
-            bar: createFindBar({ window: win, origin: () => entry.origin, preload: deps.preload }),
+            bar: createFindBar({
+                window: win,
+                origin: () => entry.origin,
+                preload: deps.preload,
+                colours
+            }),
             allowClose: false
         };
         list.push(entry);

@@ -288,7 +288,8 @@ primary: my-hub
 # wallpaper image, the scan folders and the other hub settings) is set there and not here.
 # A scalar or a list without a key field replaces oculus's value whole. A keyed list (rail by
 # `page`, floats by `view`, themes, latex.recipes and latex.tools by `name`,
-# focus.ticker_sources by `collection`) overrides oculus's entry with the same key, and
+# code_themes.vscode by `class`, code_themes.shiki by `id`, focus.ticker_sources by
+# `collection`) overrides oculus's entry with the same key, and
 # `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
 # overrides by its keys, and a key set to null takes oculus's key out.
 # settings:

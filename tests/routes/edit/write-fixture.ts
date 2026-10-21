@@ -30,7 +30,8 @@ import { scratchDir } from '../../fixtures/scratch.ts';
 import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
-import { plantSaved } from '../../fixtures/hubs/workspace.ts';
+import { plantHub, plantSaved, workspaceWith } from '../../fixtures/hubs/workspace.ts';
+import { hubTargets, primaryConfig } from '../../../src/lib/server/files/roots.ts';
 
 export const MANIFEST =
     'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
@@ -454,6 +455,38 @@ export function repositoryTarget(
     if (manifest) writeFileSync(file, REPOSITORY_MANIFEST);
     writeFileSync(join(dir, 'README.md'), '# A repository\n');
     return { into: { ...base, config: withRoot(base, { key: REPOSITORY_ID, dir }) }, dir, file };
+}
+
+/** The manifest of the folder `insideHubTarget` plants: the repository's, with a follow-up. */
+const INSIDE_MANIFEST = `${REPOSITORY_MANIFEST}followup:\n  do: "ask about the tool"\n`;
+
+/**
+ * The target with a folder of the workspace inside a hub and outside every scan folder, holding
+ * `.oculus/project.yml`, as oculus's own folder lies in a hub: `tools/oculus` of the primary hub,
+ * or with `second` of a second hub `two` of the workspace, listed under the name REPOSITORY_ID
+ * after the hubs. The folders the target reads as projects, and the other hubs, are the ones
+ * `primaryConfig` and `hubTargets` read from that workspace, as the server's writes do.
+ */
+export function insideHubTarget(base: PrimaryTarget = target(), second = false): RepositoryTarget {
+    const two = second ? plantHub(scratchDir('oculus-second-')) : null;
+    const holder = two ?? base.hub;
+    const dir = join(holder, 'tools', 'oculus');
+    const file = join(dir, '.oculus', 'project.yml');
+    expect(resolve(file).startsWith(resolve(holder) + sep)).toBe(true);
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(file, INSIDE_MANIFEST);
+    plantHub(base.hub);
+    const folders = [
+        { name: 'hub', dir: base.hub },
+        ...(two === null ? [] : [{ name: 'two', dir: two }]),
+        { name: REPOSITORY_ID, dir }
+    ];
+    const open = workspaceWith(folders, 'hub').open();
+    const settings = (hub: string): ReturnType<typeof loadConfig> =>
+        loadConfig(engineDir(), { hub });
+    const { repositories } = primaryConfig(loadConfig(engineDir()).config, open, settings);
+    const config = { ...base.config, repositories };
+    return { into: { ...base, config, hubs: hubTargets(open, settings) }, dir, file };
 }
 
 /** The path of the portfolio deck's file under the hub of a deck target. */

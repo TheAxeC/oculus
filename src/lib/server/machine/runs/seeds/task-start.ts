@@ -50,7 +50,7 @@ export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
     const home = owner?.hub ?? source.open.primaryDir;
     // A bare id belongs to the primary, so a workspace with no primary has no such task.
     if (home === null) throw new TerminalRefused('no-primary');
-    const config = owner?.config ?? primaryConfig(source.merged, source.open);
+    const config = owner?.config ?? primaryConfig(source.merged, source.open, source.settings);
     const bare: TaskRef = owner === undefined ? ref : withoutHub(ref, owner.key);
     const answer = taskSeed(bare, home, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);

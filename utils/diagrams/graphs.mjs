@@ -160,6 +160,11 @@ export function runtimeImports(sources, end, read = parseReader()) {
  * dashed node naming its file and line, with a dashed arrow from the node of the module that makes
  * it.
  *
+ * The overview is laid out left to right and drawn by the rule of drawing/apart.mjs, as the
+ * channel diagram is: each arrow leaves and reaches its layers at ports of their own and runs on an
+ * upright track of its own between two columns of boxes, so no two arrows run along each other
+ * however many end at one layer.
+ *
  * @param {Sources} sources
  * @param {string[]} layers
  * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
@@ -180,7 +185,7 @@ export function layersDot(sources, layers, read = parseReader()) {
     const lost = unread.filter((one) => one.from !== null);
     const joined = [...edges.keys()].flatMap((key) => key.split('\n'));
     const nodes = new Set([...joined, ...lost.map((one) => String(one.from))]);
-    const lines = header('layers', 'rankdir=TB, newrank=true');
+    const lines = header('layers', 'rankdir=LR, newrank=true');
     const order = [...new Set(layers.map((layer) => layer.split('/')[0])), 'routes', 'desktop'];
     for (const node of order.filter((one) => nodes.has(one))) lines.push(`    ${quote(node)};`);
     if (nodes.has('src')) lines.push(`    ${quote('src')} [label=${quote('entry')}];`);

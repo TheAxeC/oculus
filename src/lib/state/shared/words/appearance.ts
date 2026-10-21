@@ -1,20 +1,23 @@
 // Layer 2, client state. The appearance options as the page reads them out of the merged config:
-// the picker's order, the class string each theme puts on the body, the words it is offered under
-// and the glyph drawn before them, the wallpaper's numbers, the terminal grid's text size, cursor,
-// Option key and copy-on-selection settings, the code theme of the editors, what a pane's top row
-// draws (`show_tabs`, `editor_actions`), and the look (`configuredLook`): the theme, the text size,
-// the terminal themes' toggles, the wallpaper's and the CRT overlay's switches and the status bar's
-// three values. It is installed the way the tone vocabulary is: the server ships these keys as the
-// page's data at first load, and every later edit of oculus's defaults, the hub's settings file or
-// the workspace file's `settings:` arrives on the `config` channel, so a theme is added by editing
-// YAML and nothing else.
+// the theme list's order, the class string each theme puts on the body, the words it is offered
+// under, the glyph drawn before them and the group it is drawn in, the wallpaper's numbers, the
+// terminal grid's text size, cursor, Option key and copy-on-selection settings, the code theme of
+// the editors, what a pane's top row draws (`show_tabs`, `editor_actions`), and the look
+// (`configuredLook`): the theme, the theme a page in the desktop app's window starts on, the text
+// size, the terminal themes' three settings, the wallpaper's and the CRT overlay's switches and the
+// status bar's three values. It is installed the way the tone vocabulary is: the server ships these
+// keys as the page's data at first load, and every later edit of oculus's defaults, the hub's
+// settings file or the workspace file's `settings:` arrives on the `config` channel, so a theme is
+// added by editing YAML and nothing else.
 //
 // The colour themes the acting apps offer are not held here: the apps store holds the offers made
 // from the rows of the `apps` channel (null until the first payload arrives), and every reader that
 // lists or tells an app theme takes them as `offers`. An app theme is offered under its saved name
-// (data/helpers/files/apps/choices.ts), draws as the body class `app-theme` once the page has
-// converted its file (ui/theme/app-theme.ts), and draws as the configuration's first theme while
-// its app is not offering it or the payload has not arrived.
+// (data/helpers/files/apps/choices.ts) and draws as the body class `app-theme` once the page has
+// converted its file (ui/theme/app-theme.ts). A page with no `apps` channel takes its offers from
+// the files of the app themes the `theme` and `app_theme` options name, which its first load
+// carries (choices.ts, `fileOffers`). An app theme whose app is not approved and enabled, or whose
+// file does not resolve, draws as the start theme (`startChoice`).
 //
 // The file icon theme is the `file_icons` key, read from the configuration the caller holds
 // (`fileIconsOf`): `seti` or the saved name of an icon theme an acting app offers, which the
@@ -35,8 +38,9 @@ import { z } from 'zod';
 import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph, t } from './text.ts';
 import { CODE_TOKENS, isCodeTheme } from '../../../data/helpers/editor/code-themes.ts';
+import { startOf, startTheme } from '../../../data/helpers/editor/start-theme.ts';
 import {
-    NO_OFFERS,
+    APP_THEME_CLASS,
     splitAppChoice,
     type AppOffers,
     type IconThemeOffer,
@@ -48,14 +52,13 @@ import { anyNumberShape, readAs, rowsShape } from '../../../data/shapes/shapes.t
 /** The `file_icons` value that draws Seti, the default file icon theme. */
 const SETI_ICONS = 'seti';
 
-/** The body class an app's colour theme lands on the document as. */
-export const APP_THEME_CLASS = 'app-theme';
-
 /**
- * One theme of the picker: the name the store saves, the body class, the glyph name drawn before
- * the words (empty for a row that names none), and the words shown.
+ * One theme of the theme list: the name the store saves, the body class, the glyph name drawn
+ * before the words (empty for a row that names none), the words shown, and the words of the group
+ * the Settings view's choice and Cmd-K's `:theme` draw it under (empty for a row drawn before the
+ * groups).
  */
-export type Theme = { name: string; class: string; glyph: string; label: string };
+export type Theme = { name: string; class: string; glyph: string; label: string; group: string };
 
 /**
  * The wallpaper as the `wallpaper` options describe it, with every number already resolved: the
@@ -105,35 +108,34 @@ const RICE = 'rice';
 /** The theme a browser starts on when the `themes` option lists none at all. */
 const FALLBACK_THEME = 'light';
 
-/** The theme a page in the desktop app's window starts on when the `theme` option names none. */
-const APP_THEME = 'vscode-dark-modern';
-
 /**
- * The theme a page shows: the named one when the list holds it, else the start. The start is the
- * app's dark theme for a page in the desktop app's window when the list holds it, and the
- * `fallback` (the first theme listed) for a browser tab. A pure function of its arguments.
+ * The theme a page shows: the named one when `listed` holds it, or an app's theme while `pending`
+ * says the apps have sent nothing of it, else the start. The start is `start` (the `app_theme`
+ * option, for a page in the desktop app's window) when `listed` holds it, and the `fallback` (the
+ * first theme listed) otherwise: the rule `startTheme` of data/helpers/editor/start-theme.ts,
+ * which the desktop host reads the window's first colours by. A pure function of its arguments.
  */
 function chosenTheme(
     saved: unknown,
-    inApp: boolean,
+    start: string | undefined,
     listed: readonly string[],
     fallback: string,
     pending = false
 ): string {
-    if (typeof saved === 'string' && listed.includes(saved)) return saved;
     if (pending && typeof saved === 'string' && splitAppChoice(saved) !== null) return saved;
-    return inApp && listed.includes(APP_THEME) ? APP_THEME : fallback;
+    return startTheme(saved, listed, start, fallback);
 }
 
 /**
  * The look the options set, as the merged config holds them: the theme named (empty for the
- * start), the text size, the terminal themes' three toggles (`rice.icons`, `rice.brackets` and
- * `rice.monospace`), whether the wallpaper shows (`shown`, `hidden`, or empty for the theme's
- * answer), whether the CRT overlay is drawn, and the status bar's hidden items, Do Not Disturb and
- * the repository last chosen in it.
+ * start), the theme a page in the desktop app's window starts on (`app_theme`), the text size, the
+ * terminal themes' three settings (`rice.icons`, `rice.brackets` and `rice.monospace`), whether
+ * the wallpaper shows (`shown`, `hidden`, or empty for the theme's answer), whether the CRT overlay
+ * is drawn, and the status bar's hidden items, Do Not Disturb and the repository last chosen in it.
  */
 export type Look = {
     theme: string;
+    appTheme: string;
     textSize: number;
     icons: boolean;
     brackets: boolean;
@@ -148,6 +150,7 @@ export type Look = {
 /** The look of a config that sets none of its keys, which oculus's defaults files also hold. */
 const NO_LOOK: Look = {
     theme: '',
+    appTheme: '',
     textSize: 1,
     icons: false,
     brackets: true,
@@ -258,7 +261,10 @@ const wallpaperShape = z
         };
     });
 
-/** One row of the `themes` key: the name is a word that is not empty and not `__proto__`. */
+/**
+ * One row of the `themes` key: the name is a word that is not empty and not `__proto__`, and a
+ * group that is not words is none, so the row is drawn before the groups.
+ */
 const themeRowShape = z
     .object({
         name: z
@@ -267,13 +273,15 @@ const themeRowShape = z
             .refine((name) => name !== '__proto__'),
         class: z.string().catch(''),
         glyph: z.string().catch(''),
-        label: z.string().optional().catch(undefined)
+        label: z.string().optional().catch(undefined),
+        group: z.string().catch('')
     })
     .transform((row): Theme => ({
         name: row.name,
         class: row.class,
         glyph: row.glyph,
-        label: row.label ?? row.name
+        label: row.label ?? row.name,
+        group: row.group
     }));
 
 /** The rows of the `themes` key that are themes, in the config's order. */
@@ -298,6 +306,7 @@ export function boundedTextSize(value: unknown): number {
 const lookShape = z
     .object({
         theme: z.string().catch(NO_LOOK.theme),
+        app_theme: z.string().catch(NO_LOOK.appTheme),
         text_size: z.unknown().transform(boundedTextSize),
         rice: z
             .object({
@@ -326,6 +335,7 @@ const lookShape = z
     })
     .transform((node): Look => ({
         theme: node.theme,
+        appTheme: node.app_theme,
         textSize: node.text_size,
         icons: node.rice.icons,
         brackets: node.rice.brackets,
@@ -339,18 +349,25 @@ const lookShape = z
 
 /**
  * Install the theme list from the merged config's `themes` key. A row with no `name` is dropped,
- * and so is a row repeating a name an earlier row gave, since the picker keys its entries by the
- * name; a row with no `class` is the empty class, which is what the light theme carries. A key the
- * config does not hold installs as an empty list, so the lookups answer with their own fallbacks
- * rather than throwing and a half-read config still renders a page.
+ * and so is a row repeating a name an earlier row gave, since the theme list keys its entries by
+ * the name; a row with no `class` is the empty class, which is what the light theme carries. A key
+ * the config does not hold installs as an empty list, so the lookups answer with their own
+ * fallbacks rather than throwing and a half-read config still renders a page.
  * data/sources/config/sections/themes.ts reports the rows this drops or draws without a glyph.
+ *
+ * `classes` are the classes a VS Code code theme may name, the keys of the TextMate rules the
+ * checkout ships (data/places/code-rules.ts), which the server hands the page beside the config: a
+ * row of `code_themes.vscode` whose class is not among them makes no code theme
+ * (data/helpers/editor/code-themes.ts), so a `code_theme` naming it installs as `tokens`.
  */
-export function setAppearance(config: Record<string, unknown>): void {
+export function setAppearance(config: Record<string, unknown>, classes: readonly string[]): void {
     list = [];
     byName = {};
     paper = readAs(wallpaperShape, config.wallpaper);
     look = readAs(lookShape, config) ?? NO_LOOK;
-    codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
+    codeTheme = isCodeTheme(config.code_theme, config, new Set(classes))
+        ? config.code_theme
+        : CODE_TOKENS;
     tabBar = readAs(tabBarShape, config.show_tabs) ?? 'multiple';
     actionsAt = readAs(editorActionsShape, config.editor_actions) ?? 'strip';
     wrapping = config.wrap_tabs === true;
@@ -362,6 +379,11 @@ export function setAppearance(config: Record<string, unknown>): void {
     }
 }
 
+/** The saved names of the app themes the page can draw: the ones the offers hold. */
+function drawable(offers: AppOffers): string[] {
+    return (offers.themes ?? []).map((offer) => offer.choice);
+}
+
 /** The offer an app theme's saved name stands for, or undefined. */
 function offerOf(name: string, offers: AppOffers): ThemeOffer | undefined {
     return offers.themes?.find((offer) => offer.choice === name);
@@ -369,8 +391,8 @@ function offerOf(name: string, offers: AppOffers): ThemeOffer | undefined {
 
 /**
  * What the page knows of a saved theme name: `none` for a theme of the configuration, `pending`
- * for an app's theme while the `apps` channel has sent nothing, `ready` for one an acting app
- * offers and `missing` for one no acting app offers.
+ * for an app's theme while the offers hold no list, `ready` for one the offers hold and `missing`
+ * for one they do not.
  */
 export function appThemeState(
     name: string,
@@ -383,9 +405,10 @@ export function appThemeState(
 }
 
 /**
- * Every theme the picker offers, in the config's order and then the apps' themes. A copy, so a
- * caller cannot edit the list. A glyph the vocabulary does not hold, or none, is the empty name:
- * the row is drawn with its words alone rather than as a Glyph that throws.
+ * Every theme the theme list offers, in the config's order and then the apps' themes, each app's
+ * themes in the group of the app's title. A copy, so a caller cannot edit the list. A glyph the
+ * vocabulary does not hold, or none, is the empty name: the row is drawn with its words alone
+ * rather than as a Glyph that throws.
  */
 export function themes(offers: AppOffers): Theme[] {
     configGeneration();
@@ -398,29 +421,69 @@ export function themes(offers: AppOffers): Theme[] {
         name: offer.choice,
         class: APP_THEME_CLASS,
         glyph,
-        label: appThemeWords(offer)
+        label: appThemeWords(offer),
+        group: offer.appTitle
     }));
     return [...own, ...apps];
 }
 
-/** An app theme's words in the picker: its label, then the title of the app that offers it. */
+/** An app theme's words in the theme list: its label, then the title of the app that offers it. */
 function appThemeWords(offer: ThemeOffer): string {
     return `${offer.label} (${offer.appTitle})`;
 }
 
 /**
- * The body class string a theme lands on the document as. The light theme's is empty. An app's
- * theme is `app-theme` while an acting app offers it, and the first theme's class otherwise.
+ * The body class string a theme lands on the document as, on a page in the desktop app's window
+ * when `inApp` is true. The light theme's is empty. An app's theme is `app-theme` while it is
+ * `ready`; while it is `pending` (the apps are not known yet) or `missing` (its app is not approved
+ * and enabled, or its file does not resolve), it is the class of the start theme (`startChoice`),
+ * the theme the desktop host fills the window with in its window.
  */
-export function themeClass(name: string, offers: AppOffers): string {
+export function themeClass(name: string, offers: AppOffers, inApp: boolean): string {
     configGeneration();
     const state = appThemeState(name, offers);
     if (state === 'ready') return APP_THEME_CLASS;
-    if (state !== 'none') return byKey(byName, defaultTheme())?.class ?? '';
-    return byKey(byName, name)?.class ?? '';
+    if (state === 'none') return byKey(byName, name)?.class ?? '';
+    const start = startChoice(inApp, offers);
+    if (appThemeState(start, offers) === 'ready') return APP_THEME_CLASS;
+    return byKey(byName, start)?.class ?? '';
 }
 
-/** A theme's words in the picker, and the theme's own name for one the config does not list. */
+/**
+ * The offers less the colour themes `names` holds, which a page could not get the file of, so the
+ * page passes over each of them to the start theme as it passes over a theme no acting app offers.
+ */
+export function withoutThemes(offers: AppOffers, names: readonly string[]): AppOffers {
+    if (offers.themes === null || names.length === 0) return offers;
+    return { ...offers, themes: offers.themes.filter((one) => !names.includes(one.choice)) };
+}
+
+/**
+ * The name of the theme a page starts on, by startTheme over the theme list and the app themes the
+ * page can draw (`drawable`): the theme `app_theme` names in the desktop app's window when the page
+ * can draw it, an app's theme included, and the first theme of the list otherwise and elsewhere.
+ * The page draws it for an app's theme that is not `ready`.
+ */
+export function startChoice(inApp: boolean, offers: AppOffers): string {
+    configGeneration();
+    const names = [...list.map((theme) => theme.name), ...drawable(offers)];
+    return startTheme(undefined, names, inApp ? look.appTheme : undefined, defaultTheme());
+}
+
+/**
+ * The class of the theme of the list a page starts on, by `startOf` of
+ * data/helpers/editor/start-theme.ts, the lookup the desktop host's window start makes too: the
+ * theme `app_theme` names in the desktop app's window when the list holds it, and the first theme
+ * otherwise and elsewhere. The page draws it for an app's theme whose file it cannot load, the
+ * start of `startChoice` among them.
+ */
+export function startClass(inApp: boolean): string {
+    configGeneration();
+    const start = startOf(list, [], undefined, inApp ? look.appTheme : undefined);
+    return 'cls' in start ? start.cls : '';
+}
+
+/** A theme's words in the theme list, and the theme's own name for one the config does not list. */
 export function themeLabel(name: string, offers: AppOffers): string {
     configGeneration();
     const offer = offerOf(name, offers);
@@ -428,15 +491,15 @@ export function themeLabel(name: string, offers: AppOffers): string {
     return byKey(byName, name)?.label ?? name;
 }
 
-/** The words of the colour themes the acting apps offer, as the picker lists them. */
+/** The words of the colour themes the acting apps offer, as the theme list lists them. */
 export function appThemeLabels(offers: AppOffers): string[] {
     configGeneration();
     return (offers.themes ?? []).map(appThemeWords);
 }
 
 /**
- * The name of the theme a text stands for: a name the picker lists, or the words it lists one by
- * (an app's theme is `Paper (Notes)`), without regard to case. Null for a text naming none.
+ * The name of the theme a text stands for: a name the theme list holds, or the words it lists one
+ * by (an app's theme is `Paper (Notes)`), without regard to case. Null for a text naming none.
  */
 export function themeNamed(text: string, offers: AppOffers): string | null {
     const wanted = text.trim().toLowerCase();
@@ -445,16 +508,6 @@ export function themeNamed(text: string, offers: AppOffers): string | null {
         all.find((one) => one.name.toLowerCase() === wanted) ??
         all.find((one) => one.label.toLowerCase() === wanted);
     return found?.name ?? null;
-}
-
-/**
- * The words of the first theme row whose `class` is `cls`, and the class itself when no row carries
- * it: how the Settings view's choice of a code theme words a VS Code theme, whatever name the theme
- * row is saved under.
- */
-export function themeClassLabel(cls: string): string {
-    configGeneration();
-    return list.find((theme) => theme.class === cls)?.label ?? cls;
 }
 
 /** The theme a browser starts on when the `theme` option names none: the first the config lists. */
@@ -466,14 +519,16 @@ function defaultTheme(): string {
 /**
  * The theme a page shows given the name it is asked for (any value, since an option or a preview
  * may name anything) and whether the page is in the desktop app's window: `chosenTheme` over the
- * list the config installed.
+ * list the config installed and the app themes the page can draw (`drawable`), with the
+ * `app_theme` option as the start in the desktop app's window. An app's theme is kept while the
+ * offers hold no list.
  */
 export function themeFor(saved: unknown, inApp: boolean, offers: AppOffers): string {
     configGeneration();
     return chosenTheme(
         saved,
-        inApp,
-        [...list.map((theme) => theme.name), ...(offers.themes ?? []).map((offer) => offer.choice)],
+        inApp ? look.appTheme : undefined,
+        [...list.map((theme) => theme.name), ...drawable(offers)],
         defaultTheme(),
         offers.themes === null
     );
@@ -490,16 +545,18 @@ export function configuredLook(): Look {
 }
 
 /**
- * The theme the config names, or the start when it names none or one the config does not list. A
- * page with no `apps` channel, the find bar and the presenter's pages, draws it with no offers.
+ * The theme the config names, or the start when it names none or one neither the config nor the
+ * offers hold. A page with no `apps` channel, the find bar and the presenter's pages, draws it
+ * with the offers its first load's files make (choices.ts, `fileOffers`).
  */
-export function configuredTheme(inApp: boolean): string {
-    return themeFor(configuredLook().theme, inApp, NO_OFFERS);
+export function configuredTheme(inApp: boolean, offers: AppOffers): string {
+    return themeFor(configuredLook().theme, inApp, offers);
 }
 
 /**
- * The code theme the editors draw: the `code_theme` option when it is `tokens` or the id of a Shiki
- * theme, otherwise `tokens`, which data/sources/config/sections/themes.ts reports.
+ * The code theme the editors draw: the `code_theme` option when it is `tokens`, the class of a VS
+ * Code code theme or the id of a Shiki theme the choice offers, otherwise `tokens`, which
+ * data/sources/config/sections/themes.ts reports.
  */
 export function codeThemeDefault(): string {
     configGeneration();
@@ -547,11 +604,11 @@ export function wallpaperSettings(): Wallpaper | null {
  * under `themes: all` and only the terminal palettes under `themes: rice`, which is the class the
  * palettes that were built to be seen through carry.
  */
-export function wallpaperOnTheme(name: string, offers: AppOffers): boolean {
+export function wallpaperOnTheme(name: string, offers: AppOffers, inApp: boolean): boolean {
     configGeneration();
     if (paper === null) return false;
     if (paper.themes === 'all') return true;
-    return terminalTheme(name, offers);
+    return terminalTheme(name, offers, inApp);
 }
 
 /**
@@ -560,8 +617,8 @@ export function wallpaperOnTheme(name: string, offers: AppOffers): boolean {
  * stand-ins, since a drawn icon in the corner of a terminal screenshot is what they exist to
  * remove.
  */
-export function terminalTheme(name: string, offers: AppOffers): boolean {
-    return themeClass(name, offers).split(/\s+/).includes(RICE);
+export function terminalTheme(name: string, offers: AppOffers, inApp: boolean): boolean {
+    return themeClass(name, offers, inApp).split(/\s+/).includes(RICE);
 }
 
 /** The label of a saved app theme, or the saved name itself when it names none. */
@@ -591,7 +648,7 @@ export function fileIconsState(
     return offers.icons.some((offer) => offer.choice === choice) ? 'ready' : 'missing';
 }
 
-/** An icon theme's words in the picker: its label, then the title of the app that offers it. */
+/** An icon theme's words in the icon theme list: its label, then the title of its app. */
 function appIconWords(offer: IconThemeOffer): string {
     return `${offer.label} (${offer.appTitle})`;
 }

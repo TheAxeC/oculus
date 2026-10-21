@@ -127,11 +127,13 @@ describe("oculus's own config directory", () => {
         'defaults/appearance.yml': [
             'themes',
             'theme',
+            'app_theme',
             'text_size',
             'rice',
             'wallpaper',
             'crt',
             'code_theme',
+            'code_themes',
             'file_icons',
             'show_tabs',
             'editor_actions',

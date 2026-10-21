@@ -305,7 +305,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         const show = held('wallpaper.show', configuredLook().wallpaper);
         if (show === 'shown') return true;
         if (show === 'hidden') return false;
-        return wallpaperOnTheme(chosenTheme(), deps.offers());
+        return wallpaperOnTheme(chosenTheme(), deps.offers(), deps.inApp);
     }
 
     function icons(): boolean {

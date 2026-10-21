@@ -30,10 +30,6 @@ text:
         desc_vocab: "Words and their colours: the palette, the statuses, types and tiers with the flags that say what each word does, the publication kinds, the focus lanes, the venue tiers and the radar buckets. The research domains and the venue and dataset theme words are each hub's own, in its registry files."
         catalogs_about: The catalog files the configuration is merged from, in config/catalogs/.
         catalogs_title: Catalogs
-        code_themes_shiki_dark: Shiki, dark
-        code_themes_shiki_light: Shiki, light
-        code_themes_vscode_dark: VS Code, dark
-        code_themes_vscode_light: VS Code, light
         contents_hide: Hide the table of contents
         contents_show: Show the table of contents
         editor_add: Add

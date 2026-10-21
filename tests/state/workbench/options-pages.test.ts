@@ -1,5 +1,5 @@
 // Layer 2, client-state tests. The options the page's controls set, over two pages of one server:
-// the text size row of Settings, the theme picker and the status bar's Hide each write their option
+// the text size row of Settings, the theme list and the status bar's Hide each write their option
 // into the open workspace file's `settings:`, and the second page, which wrote nothing, shows the
 // new value once the config push that follows the write is installed. Before the push the page
 // that wrote shows the value it wrote and the other page the old one.
@@ -87,6 +87,7 @@ function world() {
                 hubs: { primary: null, lists: {} },
                 text: textCatalog(config),
                 icons: {},
+                codeThemeClasses: [],
                 host: { name: 'host', address: '' },
                 findings: []
             });
@@ -136,7 +137,7 @@ describe('an option set on one page, over two pages of one server', { tags: ['sl
         expect([one.ui.textScale(), two.ui.textScale()]).toEqual([1.2, 1.2]);
     });
 
-    it('writes the theme the picker chose, shown on the other page after the push', async () => {
+    it('writes the theme chosen in the theme list, shown on the other page after the push', async () => {
         const at = world();
         const [one, two] = at.pages;
         const before = at.defaults('appearance.yml');

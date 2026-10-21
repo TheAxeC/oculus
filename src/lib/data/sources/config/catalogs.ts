@@ -28,10 +28,11 @@ import { focusFindings } from './sections/focus.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
- * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the theme, the text
- * size, the terminal themes' toggles, the wallpaper, the CRT overlay, the code theme, the pane
- * strip's three settings and the status bar's values state/shared/words/appearance.ts reads.
- * `themes`, `theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`, `file_icons`,
+ * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the theme, the theme a
+ * desktop window starts on, the text size, the terminal themes' three settings, the wallpaper, the
+ * CRT overlay, the code theme and the lists that shape its choice, the pane strip's three settings
+ * and the status bar's values state/shared/words/appearance.ts reads. `themes`, `theme`,
+ * `app_theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`, `code_themes`, `file_icons`,
  * `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are options of the appearance defaults
  * file, and `status_bar` of the behavior defaults file. The research domains and the venue and
  * dataset themes are each hub's own, read from its registry files (`hubVocabOf` of data/index.ts).
@@ -43,12 +44,14 @@ export const VOCAB_KEYS = [
     'data_access',
     'themes',
     'theme',
+    'app_theme',
     'text_size',
     'rice',
     'status_bar',
     'wallpaper',
     'crt',
     'code_theme',
+    'code_themes',
     'file_icons',
     'show_tabs',
     'editor_actions',
@@ -57,10 +60,11 @@ export const VOCAB_KEYS = [
 ];
 
 /**
- * The slice of the merged config the tone lookups and the theme picker need, shipped as the page's
- * data beside the catalog and the glyphs. The whole merged config goes over the `config` channel
- * afterwards and setVocab and setAppearance read the same keys out of it, so this is the first load
- * only and carries no more than those keys.
+ * The slice of the merged config the tone lookups and the appearance store need, shipped as the
+ * page's data beside the catalog and the glyphs: the keys above, `code_themes` among them, which
+ * holds the VS Code code themes. The whole merged config goes over the `config` channel afterwards
+ * and setVocab and setAppearance read the same keys out of it, so this is the first load only and
+ * carries no more than those keys.
  */
 export function vocabCatalog(config: Record<string, unknown>): Record<string, unknown> {
     const vocab: Record<string, unknown> = {};

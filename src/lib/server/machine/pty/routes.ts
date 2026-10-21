@@ -26,7 +26,6 @@ import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
-import type { HubSettings } from '../../../data/index.ts';
 import { repositoryRoots } from '../../files/roots.ts';
 import { fallbackShell } from '../../../data/places/platform.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
@@ -102,11 +101,6 @@ export type TerminalOptions = StartOptions &
     ChatOptions & {
         /** The engine directory the configuration and the agents catalog are read from. */
         engine: string;
-        /**
-         * The settings of a hub of the workspace other than the primary, by its folder: the
-         * server's kept parse of them, which a hub task reads.
-         */
-        hubSettings: HubSettings;
         /**
          * The session record a resume is about, from the last published `sessions` payload.
          * Defaulted Tests and the route pass the source they own.

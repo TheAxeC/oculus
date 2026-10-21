@@ -11,6 +11,7 @@ import {
 } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
+import { vscodeRuleIds } from '../../../../src/lib/data/places/code-rules.ts';
 import { listsOf } from '../../../../src/lib/state/system/config/editors/sources.ts';
 import { createEditorWriter } from '../../../../src/lib/state/system/config/editors/writer.ts';
 import type { ConfigRow } from '../../../../src/lib/state/system/config/rows.ts';
@@ -24,7 +25,8 @@ export const catalog = textCatalog(config);
 
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
-setAppearance(config);
+const codeThemeClasses = vscodeRuleIds();
+setAppearance(config, codeThemeClasses);
 
 /** The markup of one row's item, drawn in the Settings tab `id` of the client's page. */
 export function drawnItem(row: ConfigRow, client: ClientState, id: string): string {
@@ -35,6 +37,7 @@ export function drawnItem(row: ConfigRow, client: ClientState, id: string): stri
         views: [],
         tiers: null,
         themeClasses: [],
+        codeThemeClasses,
         offers: { themes: [], icons: [] },
         folder: () => ({ state: 'ready', entries: [] })
     });

@@ -304,7 +304,7 @@ export function target(
     return {
         hub: open.primaryDir,
         primary: open.primary,
-        config: primaryConfig(merged, open),
+        config: primaryConfig(merged, open, settings),
         engine,
         engineConfig: () => defaults().config,
         career: careerRules(merged),
@@ -345,7 +345,8 @@ const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
 
 /**
  * Whether a write from `app` (null for the page) may name the project `id` of `into`. An app's
- * write does not reach a project read from a workspace folder: its manifest is outside the hub.
+ * write does not reach a project read from a workspace folder, wherever the folder lies: its
+ * manifest is the folder's, and no scan folder of the hub holds it.
  */
 function reaches(into: PrimaryTarget, id: string, app: HeldApp | null): boolean {
     if (app === null) return true;

@@ -1,11 +1,13 @@
-In flight (1 of 6 slots in use):
-- O39 (oculus in its own repository): part A, the new repository's own files, its `CLAUDE.md`, and the theme groups and theme data in config, in repair round 2 (rulings 186, 187 and 188); parts B and C by the orchestrator after part A's landing.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order: none.
+Queued, in order (1 step):
+- O39 (oculus in its own repository): part A landed; part B (the filtered clone, the checks, the GitHub repository, the Release, the Lima run) by the orchestrator next, then part C path by path on Axel's yes.
 
-Owed looks: none.
+Owed looks (1):
+- O39 part A: the Theme and Code theme choices with their groups, Cmd-K's `:theme`, the Oculus and `theaxec.github.io` cards, a desktop window on an app's theme from its first paint (`agents/reviews/owed-looks.md`, "To take").
 
 Landed, newest first:
+- O39 part A (the new repository's own files and `CLAUDE.md`; Theme and Code theme as two lists under their rows' groups, `code_themes.vscode` and `code_themes.shiki`; an app's colour theme from a window's first paint; no refusal of a workspace folder inside a hub), 2026-10-21, the commit "Land O39 part A".
 - O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; Add Command... into the repository's `.oculus/commands.yml`; Schedule... approving its chain), 2026-10-20, the commit "Land O46".
 - O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.
 - O45 (Recover places one folder of an archive, the key `folder`), 2026-10-20, 323841f59.

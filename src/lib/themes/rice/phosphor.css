@@ -2,7 +2,7 @@
    overlay. The ink, the accent and the muted text are the phosphor's colour; the other hues stay
    apart from it, so an error, a warning and a change still read as what they are. One block per
    palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the picker rows are the `themes:` list of
+   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Phosphor: a green phosphor monitor, pairs with the CRT overlay --- */

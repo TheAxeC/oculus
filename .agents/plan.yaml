@@ -1,0 +1,19 @@
+# The project specifics the plan skills read (/plan, /spec, /refute, /land, /ordo-help, plan-orchestration).
+# The repository holds oculus alone, so the keys stand at the top and a plan is named by its entry. Every path is relative to the repository root.
+roadmap: .scratch/ROADMAP.md # the roadmap beside the ledger: where each item lands in oculus; oculus's own roadmap replaces it when written
+verification: .scratch/migration/orchestrator-state.md # the verify block of the running migration plan is the page that defines the green check until oculus has a building page
+rules: .scratch/migration/agents/spec.md # the standing spec is the change standard until it is moved to a durable path
+standards: [.scratch/migration/agents/spec.md]
+ledger_root: .scratch
+archive_root: .scratch/archive
+worktree_root: .agents/worktrees
+worker: claude:sonnet
+reviewer: claude:opus
+libraries: check
+review: earned
+refute_after_repair: yes # yes: /refute runs again over each repair round; the last run's findings are fixed at landing or booked, never sent back
+repair_rounds: 1 # the most repair rounds a step gets; a refutation that finds nothing ends them early; the exception in plan-orchestration allows one beyond it
+review_minutes: 0 # the reviewer's time box in minutes; 0 is none
+look: 'the page named TEST on the running oculus server, shown from the Pages view on the Views and Settings page and made there with New page when missing, never a page the user works on' # where a changed view is opened at landing; empty means no look step
+workers_at_once: 6 # at most six steps in flight
+bench: []

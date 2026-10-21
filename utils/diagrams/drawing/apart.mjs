@@ -1,6 +1,6 @@
-// Layer 4, tool. The rule the channel and write diagrams are drawn by, so that no two arrows run
-// along each other and no words sit across an arrow, and each arrow can be followed from its tail
-// to its head.
+// Layer 4, tool. The rule the layers overview, the channel diagram and the write diagram are drawn
+// by, so that no two arrows run along each other and no words sit across an arrow, and each arrow
+// can be followed from its tail to its head.
 //
 // Graphviz's router draws the arrows of one node from one point and bends the arrows that pass
 // one obstacle round the same corner, so arrows that share an end or a corner run together for as
@@ -38,10 +38,10 @@
 // every pair arrowsAlong() and every label labelsAcross() finds in the last drawing, so no drawing
 // with either is ever written, and `npm run diagrams` exits with that error and writes nothing.
 //
-// The diagram is read one statement a line, in the shape channelsDot() and writesDot() write:
-// quoted ids, an arrow as `"tail" -> "head" [attributes];`, a group as `subgraph "cluster_..." {`,
-// and an arrow's words as a node of words (labels.mjs), never as an edge label, which the rule does
-// not place. A statement that reads as an arrow in another shape is an error.
+// The diagram is read one statement a line, in the shape layersDot(), channelsDot() and writesDot()
+// write: quoted ids, an arrow as `"tail" -> "head" [attributes];`, a group as `subgraph
+// "cluster_..." {`, and an arrow's words as a node of words (labels.mjs), never as an edge label,
+// which the rule does not place. A statement that reads as an arrow in another shape is an error.
 
 import { quote } from '../source.mjs';
 import { arrowsAlong, labelsAcross } from './labels.mjs';

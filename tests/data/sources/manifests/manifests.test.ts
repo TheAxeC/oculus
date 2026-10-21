@@ -19,11 +19,17 @@ import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sou
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../../src/lib/data/snapshot/schema/check.ts';
 import type { Snapshot } from '../../../../src/lib/data/model/index.ts';
-import { repositoriesOf } from '../../../../src/lib/server/files/roots.ts';
+import type { OpenWorkspace } from '../../../../src/lib/server/files/workspace/open.ts';
+import { primaryConfig } from '../../../../src/lib/server/files/roots.ts';
 import { it, plantFile, plantScratch } from '../../../fixtures/scratch.ts';
 import { plantHub, workspaceWith, type FolderSpec } from '../../../fixtures/hubs/workspace.ts';
 
 const MERGED = loadConfig(engineDir()).config;
+
+/** The folders of a workspace the primary reads as projects, each other hub with its settings. */
+function repositoriesOf(open: OpenWorkspace): ReturnType<typeof primaryConfig>['repositories'] {
+    return primaryConfig(MERGED, open, (hub) => loadConfig(engineDir(), { hub })).repositories;
+}
 
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */
 const HUB_FILES: Record<string, string> = {

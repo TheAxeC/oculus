@@ -17,8 +17,9 @@
 // a finding on the entry and the global `repository_scan_depth` applies to the folder.
 //
 // A folder that is no hub and holds `project.yml` or `.oculus/project.yml` is a project of the
-// workspace, unless it is, lies inside or holds a hub: its manifest is then not read, with a
-// finding, since the hub's own scan reads the project there.
+// workspace wherever it lies, inside a hub or holding one included; a manifest the scan of a hub
+// reads too is that hub's one project (`readHubManifests` of data/sources/manifests.ts for the
+// primary's scan, `repositoriesOf` of server/files/roots.ts for another hub's).
 
 import { statSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -26,8 +27,8 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import type { EngineConfigIn } from '../../../data/index.ts';
 import { SCAN_DEPTH } from '../../../data/sources/config/merge/workspace-file.ts';
-import { isHubFolder, projectFileIn } from '../../../data/sources/manifests.ts';
-import { below, inside, realPath } from '../../core/paths.ts';
+import { isHubFolder } from '../../../data/sources/manifests.ts';
+import { below, realPath } from '../../core/paths.ts';
 import type { StateFolder } from './state.ts';
 
 /** A finding before its words are known: the catalog id and the values its placeholders take. */
@@ -35,15 +36,14 @@ export type WorkspaceFinding = { file: string; key: string; id: string; args: st
 
 /**
  * One directory the server may serve files from: the name a URL names it by, and where it is. A
- * root marked `hub` holds `.oculus/config.yml`. A root whose `.oculus/project.yml` is there is a
- * project of the workspace unless `noProject` is set, which the reader of the workspace does for a
- * folder that overlaps a hub and which leaves the root served and read by nothing else.
+ * root marked `hub` holds `.oculus/config.yml`. A root that is no hub and holds `project.yml` or
+ * `.oculus/project.yml` is a project of the workspace, read once whether or not it lies in a hub
+ * (`readHubManifests` of data/sources/manifests.ts, `repositoriesOf` of server/files/roots.ts).
  */
 export type Root = {
     key: string;
     dir: string;
     hub?: true;
-    noProject?: true;
     /** The entry's own `repository_scan_depth`; the global depth applies when it is absent. */
     scanDepth?: number;
 };
@@ -59,7 +59,6 @@ export type WorkspaceFolder = {
     real: string;
     /** Whether the folder holds `.oculus/config.yml`. */
     hub: boolean;
-    noProject?: true;
     /** The entry's own `repository_scan_depth`, a whole number of at least -1. */
     scanDepth?: number;
     /**
@@ -191,15 +190,6 @@ export function readFolders(entries: unknown, primary: unknown, file: string): F
             ...(depth === undefined ? {} : { writtenDepth: depth })
         });
     });
-    for (const folder of folders) {
-        if (folder.hub || projectFileIn(folder.dir) === null) continue;
-        const overlaps = folders.some(
-            (one) => one.hub && (inside(folder.real, one.real) || inside(one.real, folder.real))
-        );
-        if (!overlaps) continue;
-        folder.noProject = true;
-        raise(folder.name, 'findings.workspace.project_in_hub');
-    }
     if (primary === undefined || primary === null) return { folders, primary: null, findings };
     const named = typeof primary === 'string' ? folders.find((one) => one.name === primary) : null;
     if (named === undefined || named === null) {
@@ -223,7 +213,6 @@ export function rootsOf(folders: readonly WorkspaceFolder[]): Root[] {
         key: one.name,
         dir: one.dir,
         ...(one.hub ? { hub: true as const } : {}),
-        ...(one.noProject === true ? { noProject: true as const } : {}),
         ...(one.scanDepth === undefined ? {} : { scanDepth: one.scanDepth })
     }));
 }

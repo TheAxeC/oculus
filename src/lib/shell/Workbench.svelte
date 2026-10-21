@@ -66,6 +66,7 @@
     import { provideStripActions } from './titlebar/strip-actions.svelte';
     import type { FloatSpec } from '$lib/state/workbench/layout';
     import type { PaletteKey } from '$lib/data/helpers/keys/oculus/palette-keys';
+    import type { FirstThemeFiles } from '$lib/ui/theme/app-theme';
     import { modeOf } from '$lib/state/workbench/palette';
     import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
     import {
@@ -150,6 +151,11 @@
         history?: HistoryWalk;
         /** Save every tab's unsaved edits, the menu's Save All; the page owns it. */
         saveAll?: () => void;
+        /**
+         * The files of the app themes the `theme` and `app_theme` options name, which the page's
+         * first load carries, so such a theme is drawn from the first paint.
+         */
+        appThemes?: FirstThemeFiles;
     };
 
     let {
@@ -165,7 +171,8 @@
         waiting = 0,
         walkProblem = () => false,
         history = NO_WALK,
-        saveAll = () => undefined
+        saveAll = () => undefined,
+        appThemes = {}
     }: Props = $props();
 
     const walk = provideWalk(() => history);
@@ -327,7 +334,7 @@
         openPalette(asked.text);
     });
 
-    const appearance = useAppearance(client);
+    const appearance = useAppearance(client, () => appThemes);
     useAppLanguages(client);
     const wall = $derived(appearance.wall());
     const image = $derived(appearance.image());

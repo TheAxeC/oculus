@@ -8,7 +8,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
-- None.
+- O39 part A (landing 2026-10-21; no Chrome was connected, `list_connected_browsers` returned an empty list): on 8790's TEST page, read only, once Axel's server has been restarted on the landed code: the Settings view's Theme choice and Code theme choice, each under its own groups (the VS Code groups, "Shiki, dark", "Shiki, light", "Shiki, high contrast"), the six labels ending " (Shiki)", the terminal labels by Shiki's names (Catppuccin Mocha, Rose Pine with its accent); Cmd-K's `:theme` rows in the Settings order of the groups, the arrow keys moving through them; the Projects view's Oculus card and the `theaxec.github.io` workspace folder's card, one card each and no `project_in_hub` finding. In the desktop app: a window started on an app's colour theme filled with that theme's background from the first paint.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 

@@ -1,7 +1,7 @@
-// Layer 4, test helper. Every theme the picker offers, read out of the stylesheets (tokens.css,
+// Layer 4, test helper. Every theme the theme list offers, read out of the stylesheets (tokens.css,
 // themes.css, the rice palettes of rice/ and the generated vscode.css) and derived the way
-// ui/theme/theme.ts derives it in the browser. A picker row with a class word that no block of the
-// sheets holds is refused by name, so no row is measured as another theme.
+// ui/theme/theme.ts derives it in the browser. A row of the theme list with a class word that no
+// block of the sheets holds is refused by name, so no row is measured as another theme.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -10,6 +10,7 @@ import { deriveTokens } from '../../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { NO_OFFERS } from '../../../src/lib/data/helpers/files/apps/choices.ts';
+import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
 import {
     setAppearance,
     themeClass,
@@ -72,9 +73,9 @@ export function resolveValue(
     return tokens[reference[1]] ?? resolveValue(reference[2], tokens);
 }
 
-setAppearance(loadConfig(engineDir()).config);
+setAppearance(loadConfig(engineDir()).config, vscodeRuleIds());
 
-/** The themes the picker offers, by name, in the picker's order. */
+/** The themes the theme list offers, by name, in the theme list's order. */
 export const NAMES = themes(NO_OFFERS).map((entry) => entry.name);
 
 /** One theme's authored tokens and the tokens derive.ts computes from them. */
@@ -82,7 +83,7 @@ export function themeTokens(name: string): {
     theme: Record<string, string>;
     derived: Record<string, string>;
 } {
-    const classes = themeClass(name, NO_OFFERS);
+    const classes = themeClass(name, NO_OFFERS, false);
     for (const word of classes.split(/\s+/).filter((one) => one !== '')) {
         if (!(word in blocks)) {
             throw new Error(

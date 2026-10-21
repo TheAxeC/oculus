@@ -1,8 +1,8 @@
 // Layer 2, server. The built Node entry composes one ServerContext, carries it on every request,
 // and attaches the process's WebSocket to the same Hub, token and terminal manager. Started by the
-// desktop host as a utility process it has a parent: it tells the parent each port it listens on
-// and a first listen that failed, and asks the parent to show the folder panel. Started from a
-// terminal it has none and prints.
+// desktop host as a utility process it has a parent: it tells the parent each port it listens on,
+// a first listen that failed and the colour themes of apps the theme options name, and asks the
+// parent to show the folder panel. Started from a terminal it has none and prints.
 //
 // It begins with the first-run checks (lib/server/root/process/start/first-run.ts): the Node
 // version and the installed packages before any package is loaded, then the programs oculus runs by
@@ -54,6 +54,7 @@ if (reportLacks(installLacks(engineDir(), process.versions.node), writeLack)) pr
 
 const { BODY_LIMIT_BYTES } = await import('./lib/server/content/memories.ts');
 const { createServerContext } = await import('./lib/server/root/context.ts');
+const { firstAppThemes } = await import('./lib/server/machine/apps/routes/theme.ts');
 const { readMachineWithDefault } = await import('./lib/server/root/process/start/port.ts');
 const { serveContext, withMissingFiles } = await import('./lib/server/root/process/serve.ts');
 const { wordsOf } = await import('./lib/server/root/process/words.ts');
@@ -105,7 +106,23 @@ const { context, socket } = serveContext(server, handler, (portMove) =>
         portMove
     )
 );
-if (parent !== null) context.folderPicker.ask = askParentToPick(parent);
+if (parent !== null) {
+    context.folderPicker.ask = askParentToPick(parent);
+    // The colour themes of apps the theme options name, read as a page's first load reads them,
+    // told before the first listen and again after each read of the apps that changes them, so the
+    // host fills a new window with the theme its page starts on, an app's theme included. A read
+    // follows every `config` push, so a change of either option is told too.
+    let told = '';
+    const tellThemes = (): void => {
+        const files = firstAppThemes(context.apps.held(), context.configCache.quiet().config);
+        const text = JSON.stringify(files);
+        if (text === told) return;
+        told = text;
+        parent.send({ kind: 'app-themes', files });
+    };
+    tellThemes();
+    context.apps.onRead(tellThemes);
+}
 
 // A stop signal closes the same things the `close` event closes, then the http server, and exits
 // when it has let go of its handles.

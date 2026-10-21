@@ -13,7 +13,8 @@
 import { BrowserWindow } from 'electron';
 import { READY_WAIT_MS } from '../../lib/data/file-ops.ts';
 import type { PrintAnswer } from '../../lib/state/shared/stores/desktop.ts';
-import { WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
+import type { WindowColours } from '../../lib/themes/parse.ts';
+import { windowFill, windowPreferences } from '../decide/window-options.ts';
 
 /** How often the host looks for the ready attribute. */
 const POLL_MS = 200;
@@ -29,8 +30,11 @@ const STATE =
 /** The frame the page lays its slides out in, in px: the window starts at the size of one. */
 const FRAME = { width: 1280, height: 720 } as const;
 
-/** What the printing needs of the app. */
-export type PrintOptions = { preload: string; wait?: number };
+/**
+ * What the printing needs of the app: the preload, the colours of the theme a window starts on,
+ * whose background fills the hidden window, and how long to wait for the page.
+ */
+export type PrintOptions = { preload: string; colours: WindowColours | null; wait?: number };
 
 function pause(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,7 +46,7 @@ export async function printPdf(address: string, options: PrintOptions): Promise<
     const win = new BrowserWindow({
         show: false,
         ...FRAME,
-        backgroundColor: WINDOW_BACKGROUND,
+        ...windowFill(options.colours),
         webPreferences: windowPreferences(options.preload)
     });
     const contents = win.webContents;

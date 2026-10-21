@@ -56,11 +56,12 @@ import {
 } from '../../../data/sources/config.ts';
 import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { platformText } from '../../../data/places/platform.ts';
+import { vscodeRuleIds } from '../../../data/places/code-rules.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { picturesOf } from '../../content/images.ts';
 import { wallpaperFindings } from '../../content/wallpaper.ts';
 import { placeClones } from '../../../data/sources/clones.ts';
-import { allHubs, primaryConfig, repositoriesOf } from '../../files/roots.ts';
+import { allHubs, primaryConfig } from '../../files/roots.ts';
 import { engineConfigIn } from '../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { configOptions } from '../../files/workspace/paths.ts';
@@ -620,7 +621,7 @@ export function watchPortfolio(
                 .map((one) =>
                     readOtherHub({ key: one.name, dir: one.dir }, paths.settings(one.dir))
                 );
-            const portfolio = primaryConfig(config, workspace, from);
+            const portfolio = primaryConfig(config, workspace, paths.settings, from);
             // Each hub's domains and theme words are read from its registry files, so a change of
             // one of them republishes the config channel that carries them, as a settings change
             // does.
@@ -646,6 +647,7 @@ export function watchPortfolio(
                     hubs,
                     text: platformText(textCatalog(config)),
                     icons: paths.icons.set,
+                    codeThemeClasses: vscodeRuleIds(paths.engine),
                     host: paths.host,
                     findings: [
                         ...findings,
@@ -692,7 +694,7 @@ export function watchPortfolio(
                 hub.publish('config', payload);
                 if (closed) return;
             }
-            const roots = repositoriesOf(workspace);
+            const roots = portfolio.repositories;
             const held = engineConfigIn(workspace.folders, engineConfig);
             const byHub =
                 primaryDir === null

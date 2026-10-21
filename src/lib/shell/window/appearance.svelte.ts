@@ -7,10 +7,20 @@
 // page's script body (Workbench.svelte), which draws the wallpaper's layer from the two values it
 // answers. In the desktop app the colours the title bar strip is drawn in go to the host each time
 // a theme is drawn, the first time included, for the window buttons the system draws over the strip
-// off macOS; a page in a browser has no host and sends nothing.
+// off macOS, with the drawn theme's background, which the host fills the window with; a page in a
+// browser has no host and sends nothing.
+//
+// The page's first load carries the files of the app themes the `theme` and `app_theme` options
+// name (`files`), and the first draw of each such theme is made from its file, so the theme is
+// drawn from the first paint (`firstDrawFile` of ui/theme/app-theme.ts). A later draw of the theme
+// loads its file from the server, so a theme whose file changed after the first load is drawn as
+// it is now. An app's theme whose file the first load carries as unresolved, or whose file the
+// server does not give, is passed over to the start theme, as the desktop host passes over it for
+// the window's fill and the pages with no `apps` channel pass over it, until the apps' offers
+// change, which is when a theme's file may have changed.
 
 import { WALL_CLASS, applyWallpaper } from '$lib/ui/theme/theme';
-import { drawTheme } from '$lib/ui/theme/app-theme';
+import { drawTheme, firstDrawFile, type FirstThemeFiles } from '$lib/ui/theme/app-theme';
 import {
     holdIconTheme,
     loadIconTheme,
@@ -22,10 +32,13 @@ import {
     appThemeLabel,
     appThemeState,
     fileIconsState,
+    startChoice,
+    startClass,
     terminalTheme,
     themeClass,
     wallpaperOnTheme,
-    wallpaperSettings
+    wallpaperSettings,
+    withoutThemes
 } from '$lib/state/shared/words/appearance';
 import type { ClientState } from '$lib/state/client/context';
 import { stripColours } from '$lib/shell/window/strip-colours';
@@ -45,22 +58,38 @@ export type Appearance = {
     image: () => string;
 };
 
-/** Put the viewer's appearance on the document, and keep it there as the choices change. */
-export function useAppearance({
-    ui,
-    notices,
-    appShell,
-    desktop,
-    entities,
-    wallpapers
-}: Pick<
-    ClientState,
-    'ui' | 'notices' | 'appShell' | 'desktop' | 'entities' | 'wallpapers'
->): Appearance {
+/**
+ * Put the viewer's appearance on the document, and keep it there as the choices change. `files`
+ * are the files of the app themes the page's first load carries, by saved name.
+ */
+export function useAppearance(
+    {
+        ui,
+        notices,
+        appShell,
+        desktop,
+        entities,
+        wallpapers
+    }: Pick<ClientState, 'ui' | 'notices' | 'appShell' | 'desktop' | 'entities' | 'wallpapers'>,
+    files: () => FirstThemeFiles
+): Appearance {
     const { brackets, crt, icons, monospace, textScale, theme, wallpaper } = ui;
+    const inApp = desktop !== undefined;
     /** The app themes the page said are unavailable, so a theme is told once. */
     const told = new Set<string>();
-    const wall = $derived(wallpaper() && wallpaperOnTheme(theme(), appShell.offers()));
+    /** The first load's file of an app's theme, for the first draw of that theme. */
+    const firstFile = firstDrawFile(files);
+    /**
+     * The app themes whose file the page could not get, under the offers they were found missing
+     * from: at the start those the first load carries no file of, then each whose load failed.
+     */
+    let unloaded = $state({
+        offers: appShell.offers(),
+        names: Object.entries(files())
+            .filter(([, file]) => file === null)
+            .map(([name]) => name)
+    });
+    const wall = $derived(wallpaper() && wallpaperOnTheme(theme(), appShell.offers(), inApp));
     const paper = $derived(wallpaperSettings());
     const chosen = $derived(wallpapers.shown(entities.config()?.config));
     const image = $derived(
@@ -75,33 +104,49 @@ export function useAppearance({
         applyWallpaper(document, paper, wall);
         // The terminal palettes draw the ASCII stand-ins unless the option `rice.icons` is on;
         // every other theme draws the icon config/catalogs/icons.yml maps each glyph name to.
-        setGlyphMode(terminalTheme(theme(), appShell.offers()) && !icons() ? 'ascii' : 'icon');
+        setGlyphMode(
+            terminalTheme(theme(), appShell.offers(), inApp) && !icons() ? 'ascii' : 'icon'
+        );
     });
 
     $effect(() => {
         const choice = theme();
-        const offers = appShell.offers();
+        const acting = appShell.offers();
+        const failed = unloaded.offers === acting ? unloaded.names : [];
+        const offers = withoutThemes(acting, failed);
         const state = appThemeState(choice, offers);
         const extra = wall ? WALL_CLASS : '';
         let current = true;
-        // A theme of an app is drawn when its file has been loaded. One that no acting app offers
-        // is the default theme, and the page says so once.
+        // A theme of an app is drawn from its file: the one the first load carries for the first
+        // draw, else the one the server serves, which is asked for a theme the page knows nothing
+        // of yet too. One whose app is not approved and enabled, or whose file does not resolve,
+        // is the start theme, `app_theme` in the desktop app's window (an app's theme too, when
+        // the page can draw it), and the page says so once. Should a file not load, the theme of
+        // the list the page starts on is drawn and the theme is passed over from then on, so the
+        // next draw is the start theme.
+        const shown = state === 'missing' ? startChoice(inApp, offers) : choice;
+        const shownState = appThemeState(shown, offers);
+        const app = shownState === 'ready' || shownState === 'pending';
+        const classes = app ? startClass(inApp) : themeClass(shown, offers, inApp);
         void drawTheme(
             document,
             {
-                choice,
-                app: state === 'ready',
-                classes: [themeClass(choice, offers), extra].join(' '),
+                choice: shown,
+                app,
+                classes: [classes, extra].join(' '),
                 extra,
                 crt: crt(),
                 brackets: brackets(),
-                monospace: monospace()
+                monospace: monospace(),
+                file: app ? firstFile(shown) : undefined
             },
             () => current
         ).then((drawn) => {
+            if (current && app && !drawn) unloaded = { offers: acting, names: [...failed, shown] };
             if (current) setIconsDark(getComputedStyle(document.body).colorScheme === 'dark');
             const strip = current && desktop !== undefined ? stripColours(document) : null;
-            if (strip !== null) desktop?.bridge.titleColours(strip.color, strip.symbolColor);
+            if (strip !== null)
+                desktop?.bridge.titleColours(strip.color, strip.symbolColor, strip.background);
             if (!current || (state !== 'missing' && drawn) || told.has(choice)) return;
             told.add(choice);
             notices.post(t('apps.theme_unavailable', appThemeLabel(choice)));

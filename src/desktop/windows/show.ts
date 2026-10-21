@@ -21,12 +21,15 @@
 
 import { BrowserWindow, type WebContents } from 'electron';
 import { audiencePlace, rectOf, type Rect } from '../decide/place.ts';
-import { WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
+import type { WindowColours } from '../../lib/themes/parse.ts';
+import { windowFill, windowPreferences } from '../decide/window-options.ts';
 import type { Entry } from './windows.ts';
 
 /** What the audience windows need of the rest of the app. */
 export type AudienceDeps = {
     preload: string;
+    /** The colours of the theme a window starts on, read each time a window is made. */
+    colours: () => WindowColours | null;
     /** The work areas of the attached displays. */
     areas: () => Rect[];
     /** Send an address a window of the app met to where the link decision says. */
@@ -92,7 +95,7 @@ export function createAudience(deps: AudienceDeps): Audience {
             width: rect.w,
             height: rect.h,
             show: false,
-            backgroundColor: WINDOW_BACKGROUND,
+            ...windowFill(deps.colours()),
             webPreferences: windowPreferences(deps.preload)
         });
         const shown: Shown = { win, key, from, origin: from.origin };

@@ -26,7 +26,6 @@ text:
             missing_dir: 'no directory at {0}; this folder serves nothing'
             bad_scan_depth: 'the folder {0} has a repository_scan_depth that is not a whole number of at least -1; the global repository_scan_depth applies to it'
             same_dir: the folder lies at the same place as the folder {0}; it is not served
-            project_in_hub: the folder is, lies inside or holds the folder of a hub, so its project.yml or .oculus/project.yml is not read as a project
             primary_unknown: primary names {0}, which is no folder of the workspace; the workspace has no primary
             primary_not_hub: primary names {0}, which holds no .oculus/config.yml; the workspace has no primary
             file_unreadable: 'the workspace file cannot be read: {0}'
@@ -54,7 +53,18 @@ text:
             glyph: the theme {0} names no glyph; it is offered with its words alone
             glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
             repeated: a second theme row names {0}; only the first is offered
-            code_theme: code_theme is {0}, which is neither tokens, a VS Code theme nor the id of a Shiki theme; the editor colours code from the tokens instead
+            group: the theme {0} names a group that is not words; it is drawn before the groups
+            app_theme: app_theme is {0}, which names neither a theme of themes nor an app's theme; a window of the desktop app whose theme names no theme it can draw starts on the first theme of themes
+            code_theme: code_theme is {0}, which is neither tokens, a VS Code theme nor the id of a Shiki theme the choice offers; the editor colours code from the tokens instead
+            code_themes_vscode_list: code_themes.vscode is not a list of rows; no VS Code code theme is offered
+            code_themes_vscode_class: 'the row {0} of code_themes.vscode has no class; it makes no code theme'
+            code_themes_vscode_repeated: 'a second row of code_themes.vscode names {0}; only the first makes a code theme'
+            code_themes_vscode_tokens: "a row of code_themes.vscode names tokens, which takes the UI theme's own code tokens; it makes no code theme"
+            code_themes_vscode_rules: 'code_themes.vscode names {0}, which has no TextMate rules in src/lib/themes/vscode-rules.json; it makes no code theme'
+            code_themes_shiki_list: code_themes.shiki is not a list of rows; no Shiki code theme is offered
+            code_themes_shiki_id: 'the row {0} of code_themes.shiki has no id; it makes no code theme'
+            code_themes_shiki_repeated: 'a second row of code_themes.shiki names {0}; only the first makes a code theme'
+            code_themes_shiki_unbundled: 'code_themes.shiki names {0}, which is no theme Shiki bundles; it makes no code theme'
         manifests:
             id_not_folder: id {0} is not the folder name {1}
             scan_missing: scan directory does not exist

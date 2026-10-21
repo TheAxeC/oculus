@@ -15,7 +15,7 @@ options:
     themes:
         heading: appearance
         section: Themes
-        help: "The UI themes of the theme picker, in picker order. A row with no name, or repeating a name an earlier row gave, is dropped. A workspace file's settings: overrides a theme by its name, adds a theme with a new name, and takes one of oculus's themes out with { name: <theme>, removed: true }; the themes it names come first, in its order."
+        help: "The UI themes, in the order the Settings view's choice of the theme and :theme in Cmd-K list them. Both lists draw the rows under their groups: the rows with no group first, then each group under a heading of its words, in the order its first row comes, and the themes of an app under the app's title. A row with no name, or repeating a name an earlier row gave, is dropped. A workspace file's settings: overrides a theme by its name, adds a theme with a new name, and takes one of oculus's themes out with { name: <theme>, removed: true }; the themes it names come first, in its order. The code themes of the editors are another list, code_themes.vscode, and neither list changes the other."
         key: name
         fields:
             name: the name the theme key saves the theme under
@@ -27,14 +27,21 @@ options:
             glyph:
                 help: the glyph name drawn before the label
                 control: glyph
-            label: the words the picker shows, the name when the row has none
+            label: the words the two lists show, the name when the row has none
+            group: the words of the heading the row is drawn under in the Settings view's choice and in :theme of Cmd-K; a row with no group is drawn before the groups, and a group that is not words is a finding
     theme:
         heading: appearance
         section: Themes
-        help: The UI theme the page is drawn in, a name of themes or the saved name of a colour theme an approved, enabled app offers. Empty draws the first theme of themes, and vscode-dark-modern in the desktop app; a name that is neither draws that same theme. The theme picker, :theme in Cmd-K and an app's theme command write this key.
+        help: The UI theme the page is drawn in, a name of themes or the saved name of a colour theme an approved, enabled app offers. Empty draws the first theme of themes, and the theme app_theme names in the desktop app; a name that is neither draws that same theme. An app's theme is drawn from the page's first paint, and in the desktop app a new window is filled with its background before then; an app's theme whose app is not approved and enabled, or whose file does not resolve, draws that same start theme. The Settings view's choice, :theme in Cmd-K and an app's theme command write this key.
         control: choice
         from: themes
         empty: the first theme of the list
+    app_theme:
+        heading: appearance
+        section: Themes
+        help: The theme a page in the desktop app's window starts on when theme names no theme it can draw, a name of themes or the saved name of a colour theme an approved, enabled app offers. The window is filled with this theme's background, and the window buttons drawn over the title bar strip off macOS take its words' colour, before the page paints; once the page has drawn its theme, the window is filled with that theme's background. An app's theme here is drawn from the page's first paint as well; one whose app is not approved and enabled, or whose file does not resolve, is passed over, and the window starts on the first theme of themes. An empty value or one that is not words in a workspace file is a finding, and oculus's value stands; a name that is neither a theme of themes nor the saved name of an app's theme is a finding, and a window then starts on the first theme of themes.
+        control: choice
+        from: themes
     text_size:
         heading: appearance
         section: Text size
@@ -45,17 +52,17 @@ options:
     rice.icons:
         heading: appearance
         section: Terminal themes
-        help: Whether a terminal theme keeps the icons. false draws the ASCII stand-ins of catalogs/glyphs.yml in their place, which is the terminal themes' own look. The Icons toggle of the theme picker writes this key.
+        help: Whether a terminal theme keeps the icons. false draws the ASCII stand-ins of catalogs/glyphs.yml in their place, which is the terminal themes' own look. The Settings view writes this key.
         control: toggle
     rice.brackets:
         heading: appearance
         section: Terminal themes
-        help: Whether a terminal theme draws its buttons, chips and tags in brackets. The Brackets toggle of the theme picker writes this key.
+        help: Whether a terminal theme draws its buttons, chips and tags in brackets. The Settings view writes this key.
         control: toggle
     rice.monospace:
         heading: appearance
         section: Terminal themes
-        help: Whether a terminal theme draws its interface in the monospace font. false draws it in the sans font. The Monospace toggle of the theme picker writes this key.
+        help: Whether a terminal theme draws its interface in the monospace font. false draws it in the sans font. The Settings view writes this key.
         control: toggle
     terminal.font_px:
         heading: terminal
@@ -146,9 +153,27 @@ options:
     code_theme:
         heading: appearance
         section: Code theme
-        help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class name of any of the 19 VS Code themes (for example vscode-dark-2026 or vscode-light-modern) takes that theme's TextMate rules under any UI theme, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. A value that is none of these is reported as a finding and read as tokens.
+        help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class of a VS Code theme, a row of code_themes.vscode (for example vscode-dark-2026 or vscode-light-modern), takes that theme's TextMate rules under any UI theme, and the id of a Shiki theme, a row of code_themes.shiki (for example github-light or nord), takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. The choice draws each code theme under the group of its row. A value that is none of these is reported as a finding and read as tokens.
         control: choice
         from: code_themes
+    code_themes.vscode:
+        heading: appearance
+        section: Code theme
+        help: "The VS Code code themes, in the order the choice of code_theme lists them, before the Shiki themes. A row's class is the value code_theme saves and the key of the theme's TextMate rules in src/lib/themes/vscode-rules.json. A row with no class, a row repeating a class an earlier row gave, a row whose class is tokens, a row whose class has no rules in that file, and a value that is not a list are findings, and such a row makes no code theme. The Shiki theme whose id a row's class takes is not offered. A workspace file's settings: overrides a row by its class, adds a row with a new class, and takes one of oculus's out with { class: <class>, removed: true }; the rows it names come first, in its order. The UI themes are another list, themes, and neither list changes the other."
+        key: class
+        fields:
+            class: the value code_theme saves, a key of the themes of src/lib/themes/vscode-rules.json
+            label: the words the choice shows, the class when the row has none
+            group: the words of the heading the row is drawn under in the choice; a row with no group is drawn before the groups
+    code_themes.shiki:
+        heading: appearance
+        section: Code theme
+        help: "The Shiki code themes, in the order the choice of code_theme lists them, after the VS Code code themes. A row's id is the value code_theme saves and the id of a theme Shiki bundles; a theme Shiki bundles with no row is not offered. A row with no id, a row repeating an id an earlier row gave, a row whose id Shiki does not bundle, and a value that is not a list are findings, and such a row makes no code theme. A row whose id a row of code_themes.vscode takes is not offered. A workspace file's settings: overrides a row by its id, adds a row with a new id, and takes one of oculus's out with { id: <id>, removed: true }; the rows it names come first, in its order."
+        key: id
+        fields:
+            id: the value code_theme saves, the id of a theme Shiki bundles
+            label: the words the choice shows, Shiki's own name of the theme when the row has none
+            group: the words of the heading the row is drawn under in the choice; a row with no group is drawn before the groups
     file_icons:
         heading: appearance
         section: File icons
@@ -177,3 +202,4 @@ groups:
     terminal: How the terminal grid draws its text and its cursor, what the Option key sends on macOS, and whether a selection is copied as soon as it is made.
     wallpaper: The picture behind the panels, whether it is drawn and under which themes, how far it is darkened and blurred, and how solid and how blurred the panels and popovers over it stay.
     crt: The cosmetic CRT overlay of scanlines and vignette drawn over the whole page.
+    code_themes: The two lists the choice of code_theme offers, the VS Code code themes and the Shiki code themes, each row with its words and its group.

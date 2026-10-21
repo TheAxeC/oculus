@@ -32,7 +32,7 @@ import {
 import { windowAt } from '../decide/drop.ts';
 import { rectOf, type Rect } from '../decide/place.ts';
 import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
-import { overlayColours, titleAction } from '../decide/window-options.ts';
+import { drawnFill, overlayColours, titleAction } from '../decide/window-options.ts';
 import type { RecentEntry } from '../../lib/data/helpers/keys/oculus/menu-commands.ts';
 import type { FindOptions, PrintAnswer } from '../../lib/state/shared/stores/desktop.ts';
 import type { Entry, Windows } from './windows.ts';
@@ -247,15 +247,21 @@ export function registerBridge(
         else if (action === 'zoom') win.maximize();
     });
 
-    // Off macOS the window buttons the system draws over the strip take the strip's colours, as
-    // the window's own page sent them; a call from any other sender, and a value that is not a hex
-    // colour, changes nothing.
-    ipcMain.on(TITLE_COLOURS, (event, color: unknown, symbolColor: unknown) => {
-        const caller = callerOf(event, TITLE_COLOURS);
-        const colours = overlayColours(process.platform, color, symbolColor);
-        if (caller === null || colours === null) return;
-        caller.entry.win.setTitleBarOverlay(colours);
-    });
+    // The window takes the background of the theme its own page drew as its fill, on every system,
+    // so the fill under the page and the one the page painted the strip's colours over are of one
+    // theme; off macOS the window buttons the system draws over the strip take the strip's colours.
+    // A call from any other sender, and a value that is not a hex colour, changes nothing.
+    ipcMain.on(
+        TITLE_COLOURS,
+        (event, color: unknown, symbolColor: unknown, background: unknown) => {
+            const caller = callerOf(event, TITLE_COLOURS);
+            if (caller === null) return;
+            const fill = drawnFill(background);
+            if (fill !== null) caller.entry.win.setBackgroundColor(fill);
+            const colours = overlayColours(process.platform, color, symbolColor);
+            if (colours !== null) caller.entry.win.setTitleBarOverlay(colours);
+        }
+    );
 
     ipcMain.on(RECENT_WORKSPACES, (event, value: unknown) => {
         const entries = recentOf(value);

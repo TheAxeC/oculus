@@ -8,10 +8,15 @@
 //
 // `--from` names VS Code's `extensions` folder (default: the installed macOS app's). `--check`
 // writes nothing: it exits 1 and names every block or theme whose file differs from what a run
-// would write, every `vscode-*` row of config/defaults/appearance.yml without a block or block
-// without a row, and every class that the list of VS Code themes in
-// src/lib/data/helpers/editor/code-themes.ts (the one layer 1 holds, since it cannot read themes/)
-// lacks or holds without a block. A run writes two files and a second run changes no byte of them:
+// would write, and checks the VS Code code themes against the rules a run writes. Those themes are
+// the rows of the `code_themes.vscode` list config/defaults/appearance.yml ships, read as
+// src/lib/data/helpers/editor/code-themes.ts reads them; the check names a problem of the list
+// itself (a row with no class, a repeated class, the class `tokens`, a value that is no list), a
+// row without an entry in vscode-rules.json, an entry without such a row, and a row whose `group`
+// does not follow the theme's `uiTheme`: the rows of one kind carry one group, the two high
+// contrast kinds share one, and the light, dark and high contrast groups differ (`groupProblems`).
+// The words of a group are read from the rows alone. A run writes two files and a second run
+// changes no byte of them:
 //
 //   - src/lib/themes/vscode.css, one `body.vscode-<slug>` block per theme;
 //   - src/lib/themes/vscode-rules.json, each theme's TextMate rules, which the editor takes in
@@ -32,8 +37,12 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { format, resolveConfig } from 'prettier';
-import { parse as parseYaml } from 'yaml';
-import { codeThemeInfo } from '../../src/lib/data/helpers/editor/code-themes.ts';
+import {
+    codeThemeInfo,
+    vscodeProblems,
+    type VscodeProblem
+} from '../../src/lib/data/helpers/editor/code-themes.ts';
+import { loadConfig } from '../../src/lib/data/sources/config/merge/merge.ts';
 import {
     GIT_DEFAULTS,
     basesOf,
@@ -52,7 +61,6 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CSS_PATH = join(ROOT, 'src', 'lib', 'themes', 'vscode.css');
 const JSON_PATH = join(ROOT, 'src', 'lib', 'themes', 'vscode-rules.json');
-const APPEARANCE_PATH = join(ROOT, 'config', 'defaults', 'appearance.yml');
 const DEFAULT_FROM = '/Applications/Visual Studio Code.app/Contents/Resources/app/extensions';
 
 /** The width a comment line may reach. */
@@ -228,7 +236,7 @@ function headOf(version: string): string {
     );
 }
 
-type Built = { cls: string; label: string; css: string; mapped: Mapped };
+type Built = { cls: string; label: string; ui: UiTheme; css: string; mapped: Mapped };
 
 async function pretty(text: string, file: string): Promise<string> {
     const config = (await resolveConfig(file)) ?? {};
@@ -248,7 +256,7 @@ function build(from: string): { built: Built[]; version: string } {
             const cls = slugOf(item.label);
             const file = relative(from, item.file);
             const css = blockOf(cls, mapped, describe(item.label, file, item.ui, mapped));
-            return { cls, label: item.label, css, mapped, group: groupOf(item.ui) };
+            return { cls, label: item.label, ui: item.ui, css, mapped, group: groupOf(item.ui) };
         })
         .sort((a, b) => a.group - b.group || a.cls.localeCompare(b.cls));
     const names = built.map((one) => one.cls);
@@ -300,43 +308,99 @@ function ruleSets(json: string): Map<string, unknown> {
     }
 }
 
-/** The `vscode-*` rows of appearance.yml against the classes of the blocks. */
-function rowProblems(built: Built[]): string[] {
-    const rows = (
-        (parseYaml(readFileSync(APPEARANCE_PATH, 'utf8')) as { themes?: { class?: string }[] })
-            .themes ?? []
-    )
-        .map((row) => row.class ?? '')
-        .filter((cls) => cls.startsWith('vscode-'));
-    const classes = built.map((one) => one.cls);
-    return [
-        ...rows
-            .filter((cls) => !classes.includes(cls))
-            .map((cls) => `appearance.yml row ${cls} has no block`),
-        ...classes
-            .filter((cls) => !rows.includes(cls))
-            .map((cls) => `block ${cls} has no appearance.yml row`)
-    ];
+/**
+ * The kinds of VS Code's `uiTheme` whose rows are drawn under one heading each: `vs`, `vs-dark`,
+ * and the two high contrast kinds together. Only the kinds are named here; the words of each
+ * heading are the rows' `group` in config/defaults/appearance.yml.
+ */
+const UI_KINDS: Record<UiTheme, string> = {
+    vs: 'vs',
+    'vs-dark': 'vs-dark',
+    'hc-black': 'hc-black and hc-light',
+    'hc-light': 'hc-black and hc-light'
+};
+
+/** A row of `code_themes.vscode` with the `uiTheme` of the theme a run converts for its class. */
+type KindRow = { id: string; group: string; ui: UiTheme };
+
+/**
+ * The rows whose `group` does not follow their theme's `uiTheme`, each named with its `uiTheme` and
+ * its group: a row with no group, a row of a kind of UI_KINDS whose rows carry more than one
+ * group, and a row whose group the rows of another kind carry too. The groups are compared with
+ * each other and never with words of their own, so a heading renamed in appearance.yml needs no
+ * edit here.
+ */
+function groupProblems(rows: KindRow[]): string[] {
+    const groupsOf = new Map<string, Set<string>>();
+    for (const row of rows) {
+        const kind = UI_KINDS[row.ui];
+        groupsOf.set(kind, (groupsOf.get(kind) ?? new Set<string>()).add(row.group));
+    }
+    return rows.flatMap((row) => {
+        const what = `appearance.yml code_themes.vscode row ${row.id} (uiTheme ${row.ui})`;
+        if (row.group === '') return [`${what} has no group`];
+        const named = `${what} has the group ${JSON.stringify(row.group)}`;
+        const kind = UI_KINDS[row.ui];
+        const groups = [...(groupsOf.get(kind) ?? [])];
+        const others = [...groupsOf]
+            .filter(([other, held]) => other !== kind && held.has(row.group))
+            .map(([other]) => other);
+        return [
+            ...(groups.length > 1
+                ? [
+                      `${named}; the rows of uiTheme ${kind} carry ${groups.map((one) => JSON.stringify(one)).join(', ')}`
+                  ]
+                : []),
+            ...(others.length > 0
+                ? [`${named}, which the rows of uiTheme ${others.join(', ')} carry too`]
+                : [])
+        ];
+    });
 }
 
-/** The VS Code classes of data/helpers/editor/code-themes.ts against the classes of the blocks. */
-function listProblems(built: Built[]): string[] {
-    const listed = codeThemeInfo()
-        .filter((theme) => theme.vscode)
-        .map((theme) => theme.id);
-    const classes = built.map((one) => one.cls);
+/** The words of a problem of the `code_themes.vscode` list or of one of its rows. */
+function listProblem(problem: VscodeProblem): string {
+    const row = `appearance.yml code_themes.vscode[${problem.at}]`;
+    switch (problem.kind) {
+        case 'list':
+            return 'appearance.yml code_themes.vscode is not a list of rows';
+        case 'class':
+            return `${row} has no class`;
+        case 'tokens':
+            return `${row} names tokens`;
+        case 'repeated':
+            return `${row} repeats the class ${problem.id}`;
+        case 'rules':
+            return `${row} names ${problem.id}, which has no entry in vscode-rules.json`;
+    }
+}
+
+/**
+ * The rows of `code_themes.vscode` in appearance.yml, as data/helpers/editor/code-themes.ts reads
+ * them out of oculus's own config, against the themes a run writes into vscode-rules.json
+ * (`rulesJson`): a problem of the list or of a row (`vscodeProblems`, a row without a rules entry
+ * among them), a rules entry without a row, and the rows whose `group` does not follow their
+ * theme's `uiTheme` (`groupProblems`).
+ */
+function rowProblems(built: Built[], rulesJson: string): string[] {
+    const config = loadConfig(ROOT).config;
+    const entries = [...ruleSets(rulesJson).keys()];
+    const rows = codeThemeInfo(config, new Set(entries)).filter((row) => row.vscode);
+    const ids = rows.map((row) => row.id);
+    const uiOf = new Map(built.map((one) => [one.cls, one.ui]));
+    const kinds = rows.flatMap((row): KindRow[] => {
+        const ui = uiOf.get(row.id);
+        return ui === undefined ? [] : [{ id: row.id, group: row.group, ui }];
+    });
     return [
-        ...classes
-            .filter((cls) => !listed.includes(cls))
-            .map((cls) => `data/helpers/editor/code-themes.ts does not list ${cls}`),
-        ...listed
-            .filter((cls) => !classes.includes(cls))
-            .map((cls) => `data/helpers/editor/code-themes.ts lists ${cls}, which has no block`),
-        ...(classes.length === listed.length && classes.some((cls, at) => cls !== listed[at])
-            ? [
-                  'data/helpers/editor/code-themes.ts lists the classes in another order than the blocks'
-              ]
-            : [])
+        ...vscodeProblems(config, new Set(entries)).map(listProblem),
+        ...entries
+            .filter((id) => !ids.includes(id))
+            .map(
+                (id) =>
+                    `vscode-rules.json entry ${id} has no row in appearance.yml code_themes.vscode`
+            ),
+        ...groupProblems(kinds)
     ];
 }
 
@@ -356,7 +420,7 @@ async function main(): Promise<number> {
     const from = values.from ?? DEFAULT_FROM;
     const { built, version } = build(from);
     const wanted = await files(built, version);
-    const problems = [...rowProblems(built), ...listProblems(built), ...gitProblems(from)];
+    const problems = [...rowProblems(built, wanted.json), ...gitProblems(from)];
     for (const one of built) {
         for (const line of one.mapped.unreadable) console.log(`${one.cls}: ${line}`);
     }

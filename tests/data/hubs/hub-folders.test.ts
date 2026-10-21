@@ -186,10 +186,10 @@ const ROWS: Row[] = [
         findings: []
     },
     {
-        name: 'a folder with a project manifest that lies inside a hub as no project, with a finding',
+        name: 'a folder with a project manifest that lies inside a hub as a project, with no finding',
         text: (at) => `folders:\n${entry('hub', at.hub)}\n${entry('inner', at.inside)}\n`,
         served: ['hub', 'inner'],
-        findings: [['inner', 'findings.workspace.project_in_hub']]
+        findings: []
     },
     {
         name: 'a folder with a top project.yml beside a hub as a project, with no finding',
@@ -198,10 +198,10 @@ const ROWS: Row[] = [
         findings: []
     },
     {
-        name: 'a folder with a top project.yml that lies inside a hub as no project, with a finding',
+        name: 'a folder with a top project.yml that lies inside a hub as a project, with no finding',
         text: (at) => `folders:\n${entry('hub', at.hub)}\n${entry('inner', at.insideTop)}\n`,
         served: ['hub', 'inner'],
-        findings: [['inner', 'findings.workspace.project_in_hub']]
+        findings: []
     }
 ];
 

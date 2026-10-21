@@ -3,6 +3,7 @@
 Read `orchestrator-state.md` first. This file holds what was raised and closed, the earlier positions, and the measurements kept for the record.
 
 ## Closed items (the log of what was raised and how it ended, newest first)
+- Open item 192 (2026-10-21): Axel ruled (b): `code_themes.shiki` rows for the Shiki themes, the six suffixes in config, `high_contrast` and `hidden` retired.
 - Open item 191 (2026-10-21): Axel ruled (a): one more builder round on O39 part A for rulings 186, 187 and 188.
 - Open item 188 (2026-10-21): Axel ruled (a), the list `code_themes.vscode`.
 - Open items 187, 188 and 190 (2026-10-21): Axel ruled 187 (a), the rule removed and every manifest read once; 188, Theme and Code theme separate everywhere, the code themes on a list of their own whose name waits for him; 190, Shiki's names with Dracula Theme, One Dark and Solarized Dark.
