@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the draft Release made); part C path by path on Axel's yes, starting with his server started from `~/workspace/oculus`.
+- O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C rows a to h and k and the memory done, rows i and j on open items 195 and 196; part D (the README rewrite, `HELP.md` and `DESIGN.md` into `docs/`) on rulings 193 and 194.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
