@@ -4,7 +4,7 @@ Queued, in order (1 step):
 - O39 (oculus in its own repository): part A landed; part B done but the Release, which waits for Axel's push of `main` to `TheAxeC/oculus`; then part C path by path on Axel's yes.
 
 Owed looks (1):
-- O39 part A: the Theme and Code theme choices with their groups, Cmd-K's `:theme`, the Oculus and `theaxec.github.io` cards, a desktop window on an app's theme from its first paint (`agents/reviews/owed-looks.md`, "To take").
+- O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
 
 Landed, newest first:
 - O39 part A (the new repository's own files and `CLAUDE.md`; Theme and Code theme as two lists under their rows' groups, `code_themes.vscode` and `code_themes.shiki`; an app's colour theme from a window's first paint; no refusal of a workspace folder inside a hub), 2026-10-21, the commit "Land O39 part A".
