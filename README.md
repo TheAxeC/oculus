@@ -4,6 +4,29 @@ Oculus is a workbench for a research hub. A hub is a folder that holds your proj
 
 Oculus runs on your own machine, in a browser tab or in its own window, on macOS and Linux, and on Windows through WSL2. The server listens on 127.0.0.1 only. Oculus writes to a hub only where a control says so: back into the file a value came from, and the files and folders you make. Its own state lives in `~/.oculus`.
 
+## Why a researcher would use it
+
+A researcher's work is spread over many places: manuscripts in LaTeX, code and data in repositories, grant deadlines in a spreadsheet, follow-ups in mail, papers to read in a reference manager. Oculus keeps all of it in one folder of plain text files that you own and can keep in git, and shows it in one window.
+
+- The Focus page lists what wants attention today: deadlines, the follow-ups that have come due, tasks, and the projects in each lane.
+- Each project is a card with its status, venue, next action and subtasks, and it opens the project's folder, manuscript and repository.
+- Funding, talks, teaching, position applications and joint work are each a YAML file that the views read and edit. Every write can be undone from History.
+- The Literature page searches the literature sources, watches for new papers, keeps the papers you save in a file of your hub, and copies their BibTeX.
+- A LaTeX manuscript builds in a terminal and opens in the PDF viewer, with SyncTeX between the source and the PDF and the errors listed in Problems.
+- The Claude Code sessions working on your projects show on the Sessions page, each with its transcript and the changes it made.
+- A talk is a folder of Markdown slides, shown with a presenter screen and exported to PDF.
+
+## Why a software engineer would use it
+
+Oculus is an editor in the style of VS Code that also follows the coding agents working on your repositories.
+
+- The Explorer page has the file tree, the Monaco editor with language servers, search across the files, and Source Control with every repository and worktree of the workspace.
+- Terminals run in tmux, so they keep running when the server or the window stops.
+- The Sessions page follows every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes, and an agent's worktree is listed under its repository.
+- A repository's build and test commands come from its `.oculus/commands.yml` and from what oculus finds: CMake presets, `package.json` scripts and `Makefile` targets.
+- Settings are YAML: oculus's defaults, overridden per workspace in the workspace file's `settings:`, and Ctrl+Space in a settings file completes each key with its description.
+- Apps add views, commands, themes, language servers and debuggers, declared with VS Code's contribution points. The [Apps guide](docs/apps.md) shows how to build one.
+
 ## What it shows
 
 Each button on the rail at the left opens a page:

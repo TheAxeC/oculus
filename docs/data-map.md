@@ -191,7 +191,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 | `map` | `true` on a `records` field that is a map from a name to a record |
 | `filter` | `true` on a `select`, `tags` or `text` field draws a filter of it beside the search of the field's view |
 
-The first field of the schema is the one a write finds the entry by. An empty value passes for every type. `snooze` and `subtasks` are written by oculus into any entry and need no line in a schema.
+The first field of the schema is the one a write finds the entry by. An empty value passes for every type. `snooze`, `subtasks` and `followup` are written by oculus into any entry and need no line in a schema.
 
 `project.yml`, `present.yml`, `settings.yml`, `commands.yml`, `launch.yml`, `cpp.yml` and `app.yml` have no `schema:` block of their own; their fields are in their templates.
 
