@@ -4800,3 +4800,24 @@ Where it applies: O46, at landing. Booked in `plan.md` Rulings.
 - Not chosen: the permission file and the memory copy written by the builder in part A; keeping every oculus session started from the hub folder so the hub's `CLAUDE.md` and memory load, the lazy option.
 
 Where it applies: O39, part A item 4 and part C items 15 and 16. Booked in `plan.md` Rulings.
+
+## Z968 (2026-10-21, O39 part A's build, the builder's stop on a red G25 check, the orchestrator, automode): how the layers overview is drawn
+
+- Chosen: the overview `docs/diagrams/layers.svg` is drawn by `drawnApart()` of `utils/diagrams/drawing/apart.mjs` with `rankdir=LR`, as the channels diagram is, so no two arrows run along each other by construction; DESIGN.md's overview figure changes from the curved top-to-bottom layout to the orthogonal left-to-right tracks of `channels.svg`.
+- Not chosen: a construction of its own for the overview, a design nothing names; a Graphviz `mclimit` value that passes this tree and may fail the next import, the lazy option.
+
+Where it applies: O39, part A item 5. Booked in `plan.md` Rulings.
+
+## Z969 (2026-10-21, O39 part A's review, a point declined, the orchestrator, automode): a workspace file that changes a VS Code row's group
+
+- Chosen: the code theme choice keeps each VS Code code theme under its shipped row's `group`, while the UI theme list draws the workspace file's row, since ruling VS Code list in config reads the code themes from oculus's shipped rows and never from the list a workspace file makes; the brief's sentence that the two lists cannot disagree holds for the shipped config.
+- Not chosen: the code list following a workspace file's group, which reverses that ruling for groups.
+
+Where it applies: O39, part A item 5. Booked in `plan.md` Rulings.
+
+## Z970 (2026-10-21, O39 part A's review over round 1, Finding 5, the orchestrator, automode): the page's start theme for an app theme not drawn
+
+- Chosen: the round's change is kept: in the desktop window, an app's theme that is pending, offered by no acting app, or whose file does not load is drawn in the start theme (`app_theme`), the same theme the host fills the window with, where the base drew the first theme or the class `app-theme` with no sheet; the reach of open item 186's ruling includes `themes.ts:79`, `findings.yml:59` and the `app_theme` help.
+- Not chosen: taking the change back out at landing, which leaves the page and the host on two themes while an app theme loads.
+
+Where it applies: O39, part A item 5 and round item 1. Booked in `plan.md` Rulings.

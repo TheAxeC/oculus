@@ -156,4 +156,5 @@ Each finding is closed in the brief `agents/briefs/O39.md` as rewritten after th
 - Cases: `check-ignore --no-index`; a manifest card note in "What is on the tree" and the look at landing; the first report line named as decision 11; the `git status` case narrowed to the step's paths; `OCULUS_TEST_HUB` set in item 10; a look at Axel's pages from the new server.
 - Implied inputs: Node 24.21.0 named in item 10; the VM's Node, npm, tmux and git and the copy onto its own disk in item 13; `/opt/homebrew` and `~/.lima` in the write list.
 - Instructions for a session in the new repository: ruling Z967 (self-rule), part A item 4 and part C items 15 and 16.
+- Added after the check, held by the orchestrator: the path list widened by ruling Overview drawing and by the paths the builder's report names; the premise on the sister repositories' rules files corrected to what `ls` shows.
 - Dictated text: the perl gate of `spec.md:101` replaces the grep form; the two negation-contrast sentences reworded; `title` left to prettier's quoting.
