@@ -7,7 +7,7 @@ standards: [.scratch/migration/agents/spec.md]
 ledger_root: .scratch
 archive_root: .scratch/archive
 worktree_root: .agents/worktrees
-worker: claude:sonnet
+worker: claude:opus # Opus 5.5 builders, the model the state file's configuration block names
 reviewer: claude:opus
 libraries: check
 review: earned
