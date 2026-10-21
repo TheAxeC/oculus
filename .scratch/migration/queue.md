@@ -1,7 +1,8 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use): O39 part D (the builder a5f47cf57f964e076 running); O47 (built inline by the orchestrator in `.agents/worktrees/migration-O47`).
 
-Queued, in order (1 step):
+Queued, in order (2 steps):
 - O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C rows a to h and k and the memory done, rows i and j on open items 195 and 196; part D (the README rewrite, `HELP.md` and `DESIGN.md` into `docs/`) on rulings 193 and 194.
+- O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).

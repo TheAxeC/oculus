@@ -35,6 +35,16 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O39-partD-brief-check.md (abc0742eebc9814e2, claude-opus-5-5, 205,748 tokens, 73 tool uses, 9.5 min)
   landing: not-started
+- step: O47
+  base: ad63b0b0
+  worktree: .agents/worktrees/migration-O47
+  executor: inline (the orchestrator, Axel's go 2026-10-21), one review agent before the landing
+  worker: claude:opus
+  launched: 2026-10-21
+  report: .scratch/migration/agents/reviews/O47-report.md
+  round: 0
+  brief_check: none, built inline from the rulings in plan.md
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -167,8 +177,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
-
-
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
