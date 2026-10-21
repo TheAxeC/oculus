@@ -46,15 +46,24 @@ export type Step = { program: string; args: string[] };
 /** The checkout this script lives in: the folder holding package.json, two levels above. */
 const checkout = resolve(import.meta.dirname, '..', '..');
 
-/** The value of a `--name <value>` argument, or undefined when the argument is absent. */
-export function argValue(argv: readonly string[], name: string): string | undefined {
-    const at = argv.indexOf(name);
-    if (at < 0) return undefined;
-    const given = argv.at(at + 1);
-    if (given === undefined || given.startsWith('--')) {
-        throw new Error(`${name} needs a value`);
+/**
+ * The `--name <value>` arguments of a script, by name. An argument that is not one of `names`, a
+ * name given twice and a name with no value are refused, so a misspelt name or two options a shell
+ * passed as one word stop the script instead of leaving it on its defaults.
+ */
+export function scriptArgs(argv: readonly string[], names: readonly string[]): Map<string, string> {
+    const read = new Map<string, string>();
+    for (let at = 0; at < argv.length; at += 2) {
+        const name = argv[at];
+        if (!names.includes(name)) throw new Error(`unknown argument ${name}`);
+        if (read.has(name)) throw new Error(`${name} is given twice`);
+        const given = argv.at(at + 1);
+        if (given === undefined || given.startsWith('--')) {
+            throw new Error(`${name} needs a value`);
+        }
+        read.set(name, given);
     }
-    return given;
+    return read;
 }
 
 /** The platform the app is packaged for on this machine, refusing one with no app. */
@@ -176,7 +185,7 @@ export function runSteps(steps: readonly Step[]): void {
 async function main(argv: readonly string[]): Promise<void> {
     const platform = appPlatform();
     const arch = appArch();
-    const out = resolve(argValue(argv, '--out') ?? defaultOut(platform));
+    const out = resolve(scriptArgs(argv, ['--out']).get('--out') ?? defaultOut(platform));
     const work = mkdtempSync(join(tmpdir(), 'oculus-package-'));
     try {
         const stub = join(work, 'stub');

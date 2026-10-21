@@ -32,10 +32,10 @@ import {
     appArch,
     appPlatform,
     archiveStep,
-    argValue,
     electronVersion,
     iconSteps,
     runSteps,
+    scriptArgs,
     signSteps,
     type AppArch,
     type AppPlatform
@@ -76,8 +76,9 @@ async function buildApp(): Promise<void> {
 }
 
 async function main(argv: readonly string[]): Promise<void> {
-    const platform = appPlatform(argValue(argv, '--platform') ?? process.platform);
-    const arch = appArch(argValue(argv, '--arch') ?? process.arch);
+    const args = scriptArgs(argv, ['--platform', '--arch']);
+    const platform = appPlatform(args.get('--platform') ?? process.platform);
+    const arch = appArch(args.get('--arch') ?? process.arch);
     if (platform === 'darwin' && process.platform !== 'darwin') {
         throw new Error('the macOS app is made on a Mac, which has sips, iconutil and codesign');
     }
