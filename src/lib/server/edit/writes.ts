@@ -19,16 +19,16 @@
 //
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
 // new idea, edit/feeds/feed-route.ts for the feed writes and Save to Literature
-// (edit/feeds/feeds.ts and edit/feeds/literature.ts write them), writes/entries.ts for a
-// collection file, writes/subtasks.ts for a subtask line and a career host, writes/bodies.ts for
-// the body parsers (one per kind of write), writes/file-undo.ts for taking back a file operation,
-// and the writers of configuration files, in writes/config/: deck.ts for a deck group's slides,
-// audit-mute.ts for the audit's mute list, rail.ts for the rail list, folders.ts for the open
-// workspace's folders, config-key.ts for one option of oculus's defaults files, config-value.ts for
-// one list or family of one and config-reset.ts for taking one out again, each written in the open
-// workspace file or the primary hub's settings file (config-place.ts). What an importer of this
-// module needs of them is re-exported here, so an importer may name this module or the one that
-// holds the function.
+// (edit/feeds/feeds.ts and edit/feeds/literature.ts write them), writes/entries.ts for a collection
+// file, writes/subtasks.ts for a subtask line, a follow-up note and a career host, writes/bodies.ts
+// for the body parsers (one per kind of write), writes/file-undo.ts for taking back a file
+// operation, and the writers of configuration files, in writes/config/: deck.ts for a deck group's
+// slides, audit-mute.ts for the audit's mute list, rail.ts for the rail list, folders.ts for the
+// open workspace's folders, config-key.ts for one option of oculus's defaults files,
+// config-value.ts for one list or family of one and config-reset.ts for taking one out again, each
+// written in the open workspace file or the primary hub's settings file (config-place.ts). What an
+// importer of this module needs of them is re-exported here, so an importer may name this module or
+// the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';
@@ -68,16 +68,20 @@ import { createEntry, removeEntry, reorderCollection, writeEntry } from './write
 import {
     careerRules,
     writeCareer,
+    writeFollowup,
     writeHost,
     writeSubtask,
     writeSubtaskAdd
 } from './writes/subtasks.ts';
+import { FOLLOWUP } from './entry-edit/index.ts';
 import { feedRoute } from './feeds/feed-route.ts';
 import {
     deckEditWrite,
     deleteEntryWrite,
     entryWrite,
     careerWrite,
+    followupAdd,
+    followupWrite,
     hostWrite,
     manifestWrite,
     newEntry,
@@ -209,7 +213,7 @@ export { coerce, createIdea, fieldTypes, writeManifest } from './writes/manifest
 export { writeDeckSlides } from './writes/config/lists/deck/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 export { collectionFile, identityField } from '../files/fs/collections.ts';
-export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
+export { writeFollowup, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/config/lists/audit-mute.ts';
 export { writeRail } from './writes/config/lists/rail.ts';
@@ -225,6 +229,8 @@ export {
     entryWrite,
     feedDeleteWrite,
     feedFieldWrite,
+    followupAdd,
+    followupWrite,
     hostWrite,
     manifestWrite,
     leadAddWrite,
@@ -422,7 +428,6 @@ export async function handleWrite(
                       write.fields,
                       'form',
                       undefined,
-                      undefined,
                       at.hubKey
                   );
         if (!outcome.found) {
@@ -490,6 +495,39 @@ export async function handleWrite(
             return json({ error: notFound(into.config.text, added.target) }, { status: 404 });
         }
         return answer(outcome, 'subtask-add', into, undefined, app ?? undefined);
+    }
+
+    const followup = followupWrite(body);
+    if (followup !== null) {
+        const at = routedTarget(into, followup.target, app);
+        const outcome =
+            at === null || !reaches(at.into, at.target.id, app)
+                ? NOT_FOUND
+                : writeFollowup(
+                      at.into.hub,
+                      at.into.config,
+                      at.target,
+                      followup.key,
+                      followup.action,
+                      followup.value
+                  );
+        if (!outcome.found) {
+            return json({ error: notFound(into.config.text, followup.target) }, { status: 404 });
+        }
+        return answer(outcome, 'followup', into, undefined, app ?? undefined);
+    }
+
+    const note = followupAdd(body);
+    if (note !== null) {
+        const at = routedTarget(into, note.target, app);
+        const outcome =
+            at === null || !reaches(at.into, at.target.id, app)
+                ? NOT_FOUND
+                : writeSubtaskAdd(at.into.hub, at.into.config, at.target, note.fields, FOLLOWUP);
+        if (!outcome.found) {
+            return json({ error: notFound(into.config.text, note.target) }, { status: 404 });
+        }
+        return answer(outcome, 'followup-add', into, undefined, app ?? undefined);
     }
 
     const host = hostWrite(body);

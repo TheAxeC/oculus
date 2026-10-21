@@ -6,9 +6,10 @@
 // The list is not in the snapshot: it is fetched from GET /api/wallpaper?list the first time the
 // picker asks and read again each time a picker opens (`reload`), since the folders of the
 // workspace and the files in them change. The answer is held in the client state's query client.
-// Only the file names come over; a tile draws its picture from the image route (`wallpaperUrl`),
-// which the browser scales, so nothing here or on the server resizes a picture. An answer that is
-// no list of hubs, each with a list of names, is held as a failed read naming what was wrong.
+// Only the file paths come over, each relative to its hub's folder; a tile draws its picture from
+// the image route (`wallpaperUrl`), which the browser scales, so nothing here or on the server
+// resizes a picture. An answer that is no list of hubs, each with a list of paths, is held as a
+// failed read naming what was wrong.
 
 import { z } from 'zod';
 import { wallpaperValue } from '../../../data/helpers/hub-names.ts';
@@ -17,7 +18,7 @@ import { failedAnswer } from '../../shared/answers/answers.ts';
 import { inBrowser } from '../../shared/stores/in-browser.ts';
 import type { Queries } from '../../shared/stores/shapes.ts';
 
-/** One hub's wallpaper images: the hub's name and the names of the files in its folder. */
+/** One hub's wallpaper images: the hub's name and the paths of the files in its folder. */
 type HubImages = { hub: string; images: string[] };
 
 /**
@@ -37,7 +38,7 @@ export const WALLPAPER_RANDOM = 'random';
 /** The address that lists the images of every hub. */
 const LIST_URL = '/api/wallpaper?list';
 
-/** The address of one image, as `<hub name>/<file name>`, which the browser draws at any size. */
+/** The address of one image, as `<hub name>/<file path>`, which the browser draws at any size. */
 export function wallpaperUrl(hub: string, file: string): string {
     return `/api/wallpaper?image=${encodeURIComponent(`${hub}/${file}`)}`;
 }

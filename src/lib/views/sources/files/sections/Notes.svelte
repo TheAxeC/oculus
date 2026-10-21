@@ -141,9 +141,3 @@
         onretry={retryNotes}
     />
 </div>
-
-<style>
-    .notes {
-        margin-top: 6px;
-    }
-</style>

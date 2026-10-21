@@ -2,6 +2,9 @@
 text:
     project:
         action:
+            add_followup: Add Follow-up
+            add_followup_glyph: followup
+            add_followup_tip: add a follow-up note
             add_subtask: Add Subtask
             add_subtask_glyph: tasks
             add_subtask_tip: add a subtask
@@ -12,6 +15,12 @@ text:
             del: del
             delete_subtask: delete subtask
             done: done
+            edit: edit
+            edit_followup: change the text or the date it waits for
+            edit_subtask: change the text or the deadline
+            followup_after: not before
+            followup_done_tip: done; takes the note out
+            followups: Follow-ups
             mark_done: mark done
             n_open: '{0} open'
             reopen: reopen
@@ -52,7 +61,6 @@ text:
             edit_manifest: Edit Manifest
             eli5: ELI5
             expand_glyph: expand
-            followup: Follow-up
             files_capped: showing the {0} most recent
             files_error: 'files: {0}'
             files_hdr: Files ({0})

@@ -7,31 +7,30 @@ import { z } from 'zod';
 import { compact } from '../compact.ts';
 import type { Followup, Subtask } from '../../model/index.ts';
 import {
+    itemsShape,
     keyedRowsShape,
-    listOrOneShape,
     optionalTextShape,
     readAs,
     readOr
 } from '../../shapes/shapes.ts';
 
-/** One note of a `followup:`: a string, or a map with its `do` and `after`. */
-const noteShape = z.union([
-    z.string().transform((text) => ({ do: text, after: undefined as string | undefined })),
-    z.object({ do: optionalTextShape, after: optionalTextShape })
-]);
+/** One note of a `followup:` list: a map with its `do` and its `after`. */
+const noteShape = z.object({ do: optionalTextShape, after: optionalTextShape });
 
 /**
- * The `followup:` notes of a manifest or of a collection entry. The key holds one note as a string,
- * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with
- * no `do` is dropped in silence, the way str() drops a value of the wrong type.
+ * The `followup:` notes of a manifest or of a collection entry: a list of `{ do, after }` maps, as
+ * the follow-up writes leave it. The key a note is addressed by is its position in the list, so a
+ * write knows which note it means. A value that is not a list holds no notes (validate.ts and
+ * hub.ts report it), and an item that is not such a map or has no `do` is dropped in silence, the
+ * way str() drops a value of the wrong type.
  */
 export function followups(value: unknown): Followup[] {
     const out: Followup[] = [];
-    for (const item of readOr(listOrOneShape, value, [])) {
+    readOr(itemsShape, value, []).forEach((item, at) => {
         const note = readAs(noteShape, item);
-        if (note?.do === undefined || note.do.trim() === '') continue;
-        out.push(compact({ do: note.do, after: note.after }));
-    }
+        if (note?.do === undefined || note.do.trim() === '') return;
+        out.push(compact({ key: String(at), do: note.do, after: note.after }));
+    });
     return out;
 }
 

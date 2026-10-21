@@ -4,12 +4,13 @@
 //
 // The rules the folders are read under are server/content/images.ts's, the same ones the wallpaper
 // route obeys: each folder is resolved under its hub and replaced by the standard one if it is not
-// inside it, a name carrying a path is refused, only the four picture extensions are served, and
-// every request is judged by where it came from. What is here is the wall's own half: the list the
-// view draws its tiles from, which holds the photo wall of every hub of the workspace, each
-// picture's hub and name with its width and height so a tile has its picture's shape before the
-// picture arrives, a picture served as `<hub name>/<file name>`, and the upload of one picture into
-// the primary hub's folder (the first hub's when the workspace has no primary).
+// inside it, a path that leaves the folder is refused, only the four picture extensions are served,
+// and every request is judged by where it came from. What is here is the wall's own half: the list
+// the view draws its tiles from, which holds the photo wall of every hub of the workspace with
+// every folder under it, each picture's hub and path in the folder with its width and height so a
+// tile has its picture's shape before the picture arrives, a picture served as
+// `<hub name>/<file path>`, and the upload of one picture into the primary hub's folder itself (the
+// first hub's when the workspace has no primary).
 //
 // An upload is behind the write token as well as the origin guard, and the name is reduced to its
 // last segment before anything is done with it, so a name that tried to reach out of the folder is
@@ -63,11 +64,11 @@ export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);
 export const BODY_LIMIT_BYTES = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 64 * 1024;
 
 /**
- * The pictures of every hub's photo wall, hubs in the workspace's order and each hub's pictures in
- * name order, each with the size the head of its file gives. The sizes are read on every listing
- * rather than kept, since a kept size would be stale the moment a picture of the same name replaced
- * it; a listing reads the head of each, READ_CAP bytes, and past it the heads of the segments or
- * chunks a walk steps over (images.ts).
+ * The pictures of every hub's photo wall and the folders under it, hubs in the workspace's order
+ * and each hub's pictures in path order, each with the size the head of its file gives. The sizes
+ * are read on every listing rather than kept, since a kept size would be stale the moment a picture
+ * of the same name replaced it; a listing reads the head of each, READ_CAP bytes, and past it the
+ * heads of the segments or chunks a walk steps over (images.ts).
  */
 export function pictures(hubs: readonly HubPictures[]): Picture[] {
     return hubs.flatMap((one) =>
@@ -145,7 +146,8 @@ export function listing(hubs: readonly HubPictures[]): Response {
 }
 
 /**
- * One picture of a photo wall, named `<hub name>/<file name>`, streamed. 404 for a hub the
+ * One picture of a photo wall, named `<hub name>/<file path>`, streamed. The hub is the part
+ * before the first `/`, so the file path may name a folder under the wall. 404 for a hub the
  * workspace does not list and for anything not there.
  */
 export function serve(hubs: readonly HubPictures[], asked: string | null): Response {

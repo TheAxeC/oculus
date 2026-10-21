@@ -357,7 +357,7 @@
 >
     {#snippet children(nav: TreeNav)}
         {#if header !== undefined}
-            {@render header(nav)}
+            <div class="head">{@render header(nav)}</div>
         {/if}
         <ul
             class="rows"
@@ -482,6 +482,12 @@
 </TreeView>
 
 <style>
+    /* A tree's header (the Files view's workspace header, the Notes section's head) is a section
+       head like the ones of ui/tree/TreeSection.svelte, so it takes the same line over it. */
+    .head {
+        border-top: 1px solid var(--line);
+    }
+
     /* VS Code's Explorer measures: each level is the 8px indent alone, the indent guide sits at
        the centre of the folder's twistie, and the status letter is 16px from the row's edge. */
     .rows {

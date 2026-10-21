@@ -464,7 +464,7 @@
     />
 {/snippet}
 
-<Pane {title} titled={false}>
+<Pane {title} titled={false} flush>
     <SourceBody
         instance={instance.id}
         {root}

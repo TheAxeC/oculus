@@ -88,10 +88,10 @@
         };
     });
 
-    /** The picture the overlay shows (`<hub>/<name>`), and the empty string when it shows none. */
+    /** The picture the overlay shows (`<hub>/<path>`), and the empty string when it shows none. */
     let open = $state('');
 
-    /** The hub and the file name of the picture the overlay shows. */
+    /** The hub and the file path of the picture the overlay shows, cut at the first `/`. */
     const openHub = $derived(open.slice(0, Math.max(open.indexOf('/'), 0)));
     const openName = $derived(open.slice(open.indexOf('/') + 1));
 

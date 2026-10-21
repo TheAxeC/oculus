@@ -6,9 +6,10 @@
 // block (or `<name>_schema:` key) describes those sections. Both kinds may hold `title:`, `intro:`,
 // `meta:` and the `schema:` block itself, which is checked against the field vocabulary.
 //
-// Two fields are written into the entries of a collection by oculus itself and are declared by no
-// file: `snooze` (a day, or a flag) and `subtasks` (a list of lines). They are added to the record
-// of every collection file with a help line from the text catalog.
+// Three fields are written into the entries of a collection by oculus itself and are declared by
+// no file: `snooze` (a day, or a flag), `subtasks` (a list of lines) and `followup` (a list of
+// notes, held to that list by schema/record.ts). They are added to the record of every collection
+// file with a help line from the text catalog.
 
 import type { SchemaField } from '../../model/index.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
@@ -36,6 +37,11 @@ export function writtenFields(catalog: TextCatalog): SchemaField[] {
             field: 'subtasks',
             type: 'raw',
             help: findingText(catalog, 'findings.schema.subtasks_help')
+        },
+        {
+            field: 'followup',
+            type: 'raw',
+            help: findingText(catalog, 'findings.schema.followup_help')
         }
     ];
 }

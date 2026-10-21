@@ -171,7 +171,9 @@ export function writtenFile(
         case 'reorder':
             return collection(body.collection, Array.isArray(body.order) ? body.order[0] : '');
         case 'subtask':
-        case 'subtask-add': {
+        case 'subtask-add':
+        case 'followup':
+        case 'followup-add': {
             const target = fields(body.target);
             if (text(target.collection) !== '') return collection(target.collection, target.id);
             return look.projectManifest(text(target.id));

@@ -241,7 +241,6 @@ text:
         edit:
             block_list: the field is a block list; this writes one line
             block_own: the field is a block of its own
-            comment_in_value: a comment inside the value cannot be kept; edit the file by hand
             entry_no_place: the entry has no place in the file
             entry_not_in_file: the entry is not in the file
             field_no_place: the field has no place in the file
@@ -250,6 +249,10 @@ text:
             file_has_key: 'the file already has a {0} key'
             file_no_key: 'the file has no {0} key'
             file_no_parse: the file does not parse
+            followup_block_is_map: the follow-ups are not a list; write them as one in the file
+            followup_needs_do: a follow-up note needs a do line
+            followup_no_do: a follow-up note with no do line is not a note
+            followup_not_flow: the follow-up note is not a one-line flow map
             host_no_field: the host line has no field to write after
             host_no_status: the host has no status value
             identity_field: the identity field is what the entry is found by
@@ -257,12 +260,12 @@ text:
             key_no_place: the key has no place in the file
             key_no_value: the key holds no value to write over
             key_not_there: the key is not there
-            lines_gone: the file no longer holds the lines the write left
             list_empty: the list would be left empty; clear the field instead
             manifest_no_parse: the manifest does not parse
             manifest_not_map: the manifest is not a map of keys
             map_no_place: the map has no place in the file
             no_entries_to_reorder: the file has no entries to reorder
+            no_followup: 'there is no follow-up note {0}'
             no_host: 'no host named {0}'
             no_hosts: the file has no hosts list
             no_last_key: the file has no last key to write after
@@ -270,12 +273,10 @@ text:
             not_a_block_list: '{0} is not a block list'
             not_a_field_name: a field is named by a key, or by a key and a child key joined by a dot
             not_a_field_value: a field takes a string, a number, a boolean, a list of strings, a list of maps of scalars, a map of scalars, lists and maps, or null
-            note_not_text: the note is not text; edit the file by hand
-            not_scalar: a subtask field takes a string, a number, a boolean or null
+            not_scalar: a field of the line takes a string, a number, a boolean or null
             order_not_every: the order does not name every entry exactly once
             parent_not_map: '{0} is not written as a map, so a key cannot be set under it'
             removed_no_fit: the removed text does not fit the file
-            replaced_no_fit: the replaced text does not fit the file
             row_no_key: the row would be left without a key
             subtask_block_is_map: the block is a map of keys; add the line in the file
             subtask_needs_do: a subtask needs a do line

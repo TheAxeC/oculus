@@ -33,6 +33,9 @@ export type EntryActionInput = {
     /** Whether the entry has no subtask, so adding the first is a control of the card. */
     firstSubtask: boolean;
     addingSubtask: boolean;
+    /** Whether the entry has no follow-up note, so adding the first is a control of the card. */
+    firstFollowup: boolean;
+    addingFollowup: boolean;
     /** The Show in Files controls and the controls the collection adds, drawn after the rest. */
     shows: CardAction[];
     extra: CardAction[];
@@ -41,6 +44,7 @@ export type EntryActionInput = {
     onedit: () => void;
     ondelete: () => void;
     onsubtask: () => void;
+    onfollowup: () => void;
 };
 
 /** The control that asks before an entry is deleted; disabled, with the reason, while blocked. */
@@ -136,6 +140,17 @@ export function entryActions(input: EntryActionInput): CardAction[] {
             active: input.addingSubtask,
             disabled: input.blocked !== '',
             onclick: input.onsubtask
+        });
+    }
+    if (input.firstFollowup) {
+        rows.push({
+            id: 'followup',
+            label: t('project.action.add_followup'),
+            title: titled(input, t('project.action.add_followup_tip')),
+            glyph: t('project.action.add_followup_glyph'),
+            active: input.addingFollowup,
+            disabled: input.blocked !== '',
+            onclick: input.onfollowup
         });
     }
     return rows.concat(input.shows, input.extra);

@@ -49,7 +49,7 @@ const statusWord = z.strictObject({
         "The status ends a project's own deadline (a terminal chip alone does not); compared trimmed and in lower case."
     ),
     live_subtasks: flag(
-        'A terminal entry whose subtasks still show on the radar; compared trimmed and in lower case.'
+        'A terminal entry whose subtasks and follow-up notes still show on the radar; compared trimmed and in lower case.'
     ),
     waiting: flag(
         "An entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case."

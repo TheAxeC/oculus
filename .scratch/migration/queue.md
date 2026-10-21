@@ -1,14 +1,13 @@
-In flight (2 of 6 slots in use): O39 part D (builder a5f47cf57f964e076 stopped by Axel before its report; waits on open item 200); O47 (built inline by the orchestrator in `.agents/worktrees/migration-O47`).
+In flight (1 of 6 slots in use): O39 part D (its builder's two repair rounds reported; next its landing).
 
-Queued, in order (2 steps):
+Queued, in order (1 step):
 - O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C rows a to h and k and the memory done, rows i and j on open items 195 and 196; part D (the README rewrite, `HELP.md` and `DESIGN.md` into `docs/`) on rulings 193 and 194.
-- O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents.
-- The two layout defects of open item 199 (the Timeline and Bookmarks rules and heights with the missing rule under Editors; the editor and terminal margins): placed by Axel's ruling on open item 199.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
 
 Landed, newest first:
+- O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents; with the Timeline and Bookmarks layout and the editor and terminal margins (ruling 199). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O39 part A (the new repository's own files and `CLAUDE.md`; Theme and Code theme as two lists under their rows' groups, `code_themes.vscode` and `code_themes.shiki`; an app's colour theme from a window's first paint; no refusal of a workspace folder inside a hub), 2026-10-21, the commit "Land O39 part A".
 - O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; Add Command... into the repository's `.oculus/commands.yml`; Schedule... approving its chain), 2026-10-20, the commit "Land O46".
 - O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.

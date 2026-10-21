@@ -1,5 +1,7 @@
-// Layer 2, server. Reading and editing subtask blocks lives here because checklist writes change
-// independently of collection entry fields.
+// Layer 2, server. Reading and editing the blocks of one-line flow maps a card edits line by line
+// lives here: the `subtasks:` checklist and the `followup:` notes, each a list of lines under a
+// manifest or a collection entry. They change independently of collection entry fields, and the
+// two blocks differ only in their key and in the fields a new line may carry (`LINE_FIELDS`).
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
 // node test is imported as `isYamlMap`.
@@ -14,6 +16,7 @@ import { lineAt, listOf } from '../../../data/helpers/files/yaml/collection-text
 import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { renderFlowMap } from './render.ts';
 import {
+    FOLLOWUP,
     LABEL,
     SUBTASKS,
     columnAt,
@@ -25,11 +28,42 @@ import {
     verified,
     type Change,
     type Host,
+    type LineBlock,
     type LineRange,
     type SubtaskBlock,
     type SubtaskLine
 } from './lines.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+
+/**
+ * The text fields a new line of each block carries besides its `do`: a subtask's deadline and
+ * snooze day, a follow-up note's date before which it stays hidden.
+ */
+const LINE_FIELDS: Record<LineBlock, string[]> = {
+    [SUBTASKS]: ['deadline', 'snooze'],
+    [FOLLOWUP]: ['after']
+};
+
+/** The refusals that name the block they are about, in the words of each block. */
+const BLOCK_REFUSALS: Record<
+    LineBlock,
+    { none: string; notFlow: string; noDo: string; needsDo: string; isMap: string }
+> = {
+    [SUBTASKS]: {
+        none: REFUSALS.noSubtask,
+        notFlow: REFUSALS.subtaskNotFlow,
+        noDo: REFUSALS.subtaskNoDo,
+        needsDo: REFUSALS.subtaskNeedsDo,
+        isMap: REFUSALS.subtaskBlockIsMap
+    },
+    [FOLLOWUP]: {
+        none: REFUSALS.noFollowup,
+        notFlow: REFUSALS.followupNotFlow,
+        noDo: REFUSALS.followupNoDo,
+        needsDo: REFUSALS.followupNeedsDo,
+        isMap: REFUSALS.followupBlockIsMap
+    }
+};
 
 function hostAt(source: string, range: LineRange | null): Host | null {
     const doc = document(source);
@@ -49,9 +83,9 @@ function hostAt(source: string, range: LineRange | null): Host | null {
     return null;
 }
 
-/** The `subtasks:` block of one host: its key line, its item lines, and what they are keyed by. */
-function blockOf(source: string, node: YAMLMap): SubtaskBlock {
-    const pair = pairOf(node, SUBTASKS);
+/** One block of one host: its key line, its item lines, and what they are keyed by. */
+function blockOf(source: string, node: YAMLMap, name: LineBlock): SubtaskBlock {
+    const pair = pairOf(node, name);
     const key = pair === undefined ? null : rangeOf(pair.key);
     const own = rangeOf(node);
     const fallback = own === null ? 0 : columnAt(source, own[0]) + 2;
@@ -71,9 +105,9 @@ function blockOf(source: string, node: YAMLMap): SubtaskBlock {
         map = true;
         for (const item of value.items as Pair<Scalar, Node>[]) {
             const at = rangeOf(item.key);
-            const name = (item.key as Scalar | undefined)?.value;
-            if (at !== null && typeof name === 'string') {
-                items.push({ key: name, line: lineAt(source, at[0]) });
+            const word = (item.key as Scalar | undefined)?.value;
+            if (at !== null && typeof word === 'string') {
+                items.push({ key: word, line: lineAt(source, at[0]) });
             }
         }
     }
@@ -82,28 +116,33 @@ function blockOf(source: string, node: YAMLMap): SubtaskBlock {
 }
 
 /**
- * The `subtasks:` block of a manifest (a null range) or of one collection entry (its line range),
- * or null when the range names no entry of the file. An absent block answers with a null key line
- * and no items, which is what addSubtask reads to know it has to make one.
+ * One block of a manifest (a null range) or of one collection entry (its line range), or null when
+ * the range names no entry of the file. An absent block answers with a null key line and no items,
+ * which is what addSubtask reads to know it has to make one.
  */
-export function subtaskLines(source: string, range: LineRange | null): SubtaskBlock | null {
+export function subtaskLines(
+    source: string,
+    range: LineRange | null,
+    name: LineBlock = SUBTASKS
+): SubtaskBlock | null {
     const host = hostAt(source, range);
-    return host === null ? null : blockOf(source, host.node);
+    return host === null ? null : blockOf(source, host.node, name);
 }
 
 /**
- * Every subtask line of one host as its own map, keyed the way the block keys it: the index as text
- * for a list, the name for a map. The change log reads the text before an edit and the text the
- * edit produced through this one reader, so the value it records as written and the value the file
- * will hold cannot disagree.
+ * Every line of one block of one host as its own map, keyed the way the block keys it: the index
+ * as text for a list, the name for a map. The change log reads the text before an edit and the text
+ * the edit produced through this one reader, so the value it records as written and the value the
+ * file will hold cannot disagree.
  */
 export function subtaskValues(
     source: string,
-    range: LineRange | null
+    range: LineRange | null,
+    name: LineBlock = SUBTASKS
 ): Record<string, Record<string, FieldValue>> {
     const host = hostAt(source, range);
     if (host === null) return {};
-    const block = blockOf(source, host.node);
+    const block = blockOf(source, host.node, name);
     const lines = source.split('\n');
     const values: Record<string, Record<string, FieldValue>> = {};
     for (const item of block.items) {
@@ -113,12 +152,17 @@ export function subtaskValues(
     return values;
 }
 
-/** The path one subtask line sits at in the parsed document. */
-function subtaskPath(host: Host, block: SubtaskBlock, key: string): (string | number)[] {
-    return [...host.path, SUBTASKS, block.map ? key : Number(key)];
+/** The path one line sits at in the parsed document. */
+function subtaskPath(
+    host: Host,
+    block: SubtaskBlock,
+    name: LineBlock,
+    key: string
+): (string | number)[] {
+    return [...host.path, name, block.map ? key : Number(key)];
 }
 
-/** One subtask line split into its lead (the `- ` or the key) and its flow map. */
+/** One line split into its lead (the `- ` or the key) and its flow map. */
 function flowLine(line: string): { lead: string; held: Record<string, FieldValue> } | null {
     const match = /^(\s*-\s*|\s*[A-Za-z0-9_.-]+:\s*)(\{.*\})\s*$/.exec(line);
     if (match === null) return null;
@@ -139,8 +183,8 @@ function flowLine(line: string): { lead: string; held: Record<string, FieldValue
 }
 
 /**
- * Set or clear fields of one subtask line, which is re-emitted whole: it is one line and there is
- * nothing else on it. An empty value, a null and a false all drop the field, so `done: false` is
+ * Set or clear fields of one line of a block, which is re-emitted whole: it is one line and there
+ * is nothing else on it. An empty value, a null and a false all drop the field, so `done: false` is
  * written as no `done` at all, which is how the tree holds an open line.
  */
 export function setSubtask(
@@ -148,19 +192,22 @@ export function setSubtask(
     range: LineRange | null,
     key: string,
     fields: Record<string, unknown>,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    name: LineBlock = SUBTASKS
 ): EditResult {
     const names = Object.keys(fields);
     const host = hostAt(source, range);
     if (host === null) return refuseAll(source, names, why(REFUSALS.entryNotInFile), catalog);
-    const block = blockOf(source, host.node);
+    const block = blockOf(source, host.node, name);
     const item = block.items.find((one) => one.key === key);
-    if (item === undefined) return refuseAll(source, names, why(REFUSALS.noSubtask, key), catalog);
+    if (item === undefined) {
+        return refuseAll(source, names, why(BLOCK_REFUSALS[name].none, key), catalog);
+    }
 
     const lines = source.split('\n');
     const split = flowLine(lines[item.line]);
     if (split === null) {
-        return refuseAll(source, names, why(REFUSALS.subtaskNotFlow), catalog);
+        return refuseAll(source, names, why(BLOCK_REFUSALS[name].notFlow), catalog);
     }
 
     const next: Record<string, FieldValue> = { ...split.held };
@@ -174,7 +221,7 @@ export function setSubtask(
         }
         const clears = wanted === null || wanted === '' || wanted === false;
         if (clears && field === LABEL) {
-            refused.push({ field, reason: said(catalog, why(REFUSALS.subtaskNoDo)) });
+            refused.push({ field, reason: said(catalog, why(BLOCK_REFUSALS[name].noDo)) });
             continue;
         }
         if (clears) {
@@ -191,26 +238,27 @@ export function setSubtask(
 
     lines[item.line] = `${split.lead}${renderFlowMap(next)}`;
     const text = lines.join('\n');
-    const change: Change = { path: subtaskPath(host, block, key), value: next };
+    const change: Change = { path: subtaskPath(host, block, name, key), value: next };
     if (!verified(source, text, [change])) {
         return refuseAll(source, names, why(REFUSALS.unverified), catalog);
     }
     return { text, changed, refused };
 }
 
-/** Remove one subtask line, and the `subtasks:` key with it when it was the last line. */
+/** Remove one line of a block, and the block's key with it when it was the last line. */
 export function deleteSubtask(
     source: string,
     range: LineRange | null,
     key: string,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    name: LineBlock = SUBTASKS
 ): EditResult {
     const host = hostAt(source, range);
-    if (host === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNotInFile), catalog);
-    const block = blockOf(source, host.node);
+    if (host === null) return refuseAll(source, [name], why(REFUSALS.entryNotInFile), catalog);
+    const block = blockOf(source, host.node, name);
     const item = block.items.find((one) => one.key === key);
     if (item === undefined || block.key === null) {
-        return refuseAll(source, [SUBTASKS], why(REFUSALS.noSubtask, key), catalog);
+        return refuseAll(source, [name], why(BLOCK_REFUSALS[name].none, key), catalog);
     }
 
     const lines = source.split('\n');
@@ -219,66 +267,66 @@ export function deleteSubtask(
     if (last) lines.splice(block.key, 1);
     const text = lines.join('\n');
     const change: Change = last
-        ? { path: [...host.path, SUBTASKS], remove: true }
-        : { path: subtaskPath(host, block, key), remove: true };
+        ? { path: [...host.path, name], remove: true }
+        : { path: subtaskPath(host, block, name, key), remove: true };
     if (!verified(source, text, [change])) {
-        return refuseAll(source, [SUBTASKS], why(REFUSALS.unverified), catalog);
+        return refuseAll(source, [name], why(REFUSALS.unverified), catalog);
     }
-    return { text, changed: [SUBTASKS], refused: [] };
+    return { text, changed: [name], refused: [] };
 }
 
 /**
- * Append one subtask line to a host's block, making the block when it has none. A block written as
- * a map of keys is not appended to: the key a new line would take is the file's own vocabulary and
+ * Append one line to a block of a host, making the block when it has none. A block written as a
+ * map of keys is not appended to: the key a new line would take is the file's own vocabulary and
  * nothing here may invent one.
  */
 export function addSubtask(
     source: string,
     range: LineRange | null,
     fields: Record<string, unknown>,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    name: LineBlock = SUBTASKS
 ): EditResult {
     const host = hostAt(source, range);
-    if (host === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNotInFile), catalog);
+    if (host === null) return refuseAll(source, [name], why(REFUSALS.entryNotInFile), catalog);
     const label = fields[LABEL];
     if (typeof label !== 'string' || label.trim() === '') {
-        return refuseAll(source, [LABEL], why(REFUSALS.subtaskNeedsDo), catalog);
+        return refuseAll(source, [LABEL], why(BLOCK_REFUSALS[name].needsDo), catalog);
     }
-    const block = blockOf(source, host.node);
+    const block = blockOf(source, host.node, name);
     if (block.map) {
-        return refuseAll(source, [SUBTASKS], why(REFUSALS.subtaskBlockIsMap), catalog);
+        return refuseAll(source, [name], why(BLOCK_REFUSALS[name].isMap), catalog);
     }
 
     const record: Record<string, FieldValue> = { do: label.trim() };
-    for (const field of ['deadline', 'snooze']) {
+    for (const field of LINE_FIELDS[name]) {
         const value = fields[field];
         if (typeof value === 'string' && value.trim() !== '') record[field] = value.trim();
     }
-    if (fields.done === true) record.done = true;
+    if (name === SUBTASKS && fields.done === true) record.done = true;
 
     const lines = source.split('\n');
     const line = `${' '.repeat(block.indent)}- ${renderFlowMap(record)}`;
     let held: unknown[] = [];
     if (block.key === null) {
         const own = rangeOf(host.node);
-        if (own === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNoPlace), catalog);
+        if (own === null) return refuseAll(source, [name], why(REFUSALS.entryNoPlace), catalog);
         const pad = ' '.repeat(columnAt(source, own[0]));
         const at =
             host.path.length === 0 ? lastKeyLine(source, host.node) : lastLineOf(source, host.node);
-        if (at === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNoPlace), catalog);
-        lines.splice(at, 0, `${pad}${SUBTASKS}:`, `${pad}  - ${renderFlowMap(record)}`);
+        if (at === null) return refuseAll(source, [name], why(REFUSALS.entryNoPlace), catalog);
+        lines.splice(at, 0, `${pad}${name}:`, `${pad}  - ${renderFlowMap(record)}`);
     } else {
         const at =
             block.items.length === 0 ? block.key + 1 : block.items[block.items.length - 1].line + 1;
-        const subtasks = pairOf(host.node, SUBTASKS)?.value;
-        held =
-            subtasks !== undefined && subtasks !== null && isSeq(subtasks) ? subtasks.toJSON() : [];
+        const value = pairOf(host.node, name)?.value;
+        held = value !== undefined && value !== null && isSeq(value) ? value.toJSON() : [];
         lines.splice(at, 0, line);
     }
     const text = lines.join('\n');
-    const change: Change = { path: [...host.path, SUBTASKS], value: [...held, record] };
+    const change: Change = { path: [...host.path, name], value: [...held, record] };
     if (!verified(source, text, [change])) {
-        return refuseAll(source, [SUBTASKS], why(REFUSALS.unverified), catalog);
+        return refuseAll(source, [name], why(REFUSALS.unverified), catalog);
     }
-    return { text, changed: [SUBTASKS], refused: [] };
+    return { text, changed: [name], refused: [] };
 }

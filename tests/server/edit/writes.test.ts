@@ -16,10 +16,12 @@ import {
     createEntry,
     createIdea,
     writeHost,
+    writeFollowup,
     writeManifest,
     writeSubtask,
     writeSubtaskAdd
 } from '../../../src/lib/server/edit/writes.ts';
+import { FOLLOWUP } from '../../../src/lib/server/edit/entry-edit/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { careerRules, writeCareer } from '../../../src/lib/server/edit/writes/subtasks.ts';
@@ -198,32 +200,103 @@ const LINE_ROWS: LineRow[] = [
 ];
 
 describe('writing one subtask line', () => {
-    it.each(LINE_ROWS)('ticks and reopens a line of a manifest', { tags: ['slow'] }, (row) => {
-        const world = personalWorld();
-        const file = fileOf(world, row.subject);
-        const original = readFileSync(file, 'utf8');
-        const into = [world.root, world.config] as const;
-        const host = { id: row.subject };
-        const key = String(row.first);
-        expect(writeManifest(...into, row.subject, {}).changed, row.name).toEqual([]);
-        const added = writeSubtaskAdd(...into, host, { do: 'write it' });
-        expect(added.changed, row.name).toEqual(['subtasks']);
-        expect(readFileSync(file, 'utf8'), row.name).toBe(original + row.added);
-        const done = writeSubtask(...into, host, key, 'done');
-        expect(done.changed, row.name).toEqual(['done']);
-        expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it, done: true }');
-        const open = writeSubtask(...into, host, key, 'reopen');
-        expect(open.changed, row.name).toEqual(['done']);
-        expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it }');
-        const removed = writeSubtask(...into, host, key, 'delete');
-        expect(removed.changed, row.name).toEqual(['subtasks']);
-        expect(readFileSync(file, 'utf8'), row.name).not.toContain('write it');
-        for (const one of SUBJECTS.filter((other) => other !== row.subject))
-            expect(readFileSync(fileOf(world, one), 'utf8'), `${row.name}: ${one}`).toBe(
-                one === 'alpha' ? MANIFEST : PERSONAL_MANIFEST
+    it.each(LINE_ROWS)(
+        'ticks, reopens, edits and removes a line of a manifest',
+        { tags: ['slow'] },
+        (row) => {
+            const world = personalWorld();
+            const file = fileOf(world, row.subject);
+            const original = readFileSync(file, 'utf8');
+            const into = [world.root, world.config] as const;
+            const host = { id: row.subject };
+            const key = String(row.first);
+            expect(writeManifest(...into, row.subject, {}).changed, row.name).toEqual([]);
+            const added = writeSubtaskAdd(...into, host, { do: 'write it' });
+            expect(added.changed, row.name).toEqual(['subtasks']);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(original + row.added);
+            const done = writeSubtask(...into, host, key, 'done');
+            expect(done.changed, row.name).toEqual(['done']);
+            expect(readFileSync(file, 'utf8'), row.name).toContain(
+                '- { do: write it, done: true }'
             );
-        if (row.subject !== 'alpha') expect(readFileSync(file, 'utf8'), row.name).toBe(original);
-    });
+            const open = writeSubtask(...into, host, key, 'reopen');
+            expect(open.changed, row.name).toEqual(['done']);
+            expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it }');
+            const dated = writeSubtask(...into, host, key, 'deadline', '2026-12-01');
+            expect(dated.changed, row.name).toEqual(['deadline']);
+            expect(readFileSync(file, 'utf8'), row.name).toContain(
+                '- { do: write it, deadline: 2026-12-01 }'
+            );
+            const renamed = writeSubtask(...into, host, key, 'do', 'write it twice');
+            expect(renamed.changed, row.name).toEqual(['do']);
+            expect(readFileSync(file, 'utf8'), row.name).toContain(
+                '- { do: write it twice, deadline: 2026-12-01 }'
+            );
+            const blank = writeSubtask(...into, host, key, 'do', ' ');
+            expect([blank.changed, blank.refused.map((one) => one.field)], row.name).toEqual([
+                [],
+                ['do']
+            ]);
+            const undated = writeSubtask(...into, host, key, 'deadline', '');
+            expect(undated.changed, row.name).toEqual(['deadline']);
+            expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it twice }');
+            const removed = writeSubtask(...into, host, key, 'delete');
+            expect(removed.changed, row.name).toEqual(['subtasks']);
+            expect(readFileSync(file, 'utf8'), row.name).not.toContain('write it');
+            for (const one of SUBJECTS.filter((other) => other !== row.subject))
+                expect(readFileSync(fileOf(world, one), 'utf8'), `${row.name}: ${one}`).toBe(
+                    one === 'alpha' ? MANIFEST : PERSONAL_MANIFEST
+                );
+            if (row.subject !== 'alpha')
+                expect(readFileSync(file, 'utf8'), row.name).toBe(original);
+        }
+    );
+});
+
+describe('writing the follow-up notes of a manifest', () => {
+    it.each(LINE_ROWS)(
+        'adds notes to a list, changes one, takes one out when done, and the list with the last',
+        { tags: ['slow'] },
+        (row) => {
+            const world = personalWorld();
+            const file = fileOf(world, row.subject);
+            const original = readFileSync(file, 'utf8');
+            const into = [world.root, world.config] as const;
+            const host = { id: row.subject };
+            const first = writeSubtaskAdd(...into, host, { do: 'ask Ann' }, FOLLOWUP);
+            expect(first.changed, row.name).toEqual(['followup']);
+            const second = writeSubtaskAdd(
+                ...into,
+                host,
+                { do: 'chase the call', after: '2026-12-01', deadline: '2026-12-09' },
+                FOLLOWUP
+            );
+            expect(second.changed, row.name).toEqual(['followup']);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(
+                `${original}followup:\n  - { do: ask Ann }\n  - { do: chase the call, after: 2026-12-01 }\n`
+            );
+            const later = writeFollowup(...into, host, '0', 'after', '2026-11-30');
+            expect(later.changed, row.name).toEqual(['after']);
+            const renamed = writeFollowup(...into, host, '0', 'do', 'ask Ann again');
+            expect(renamed.changed, row.name).toEqual(['do']);
+            const blank = writeFollowup(...into, host, '0', 'do', ' ');
+            expect([blank.changed, blank.refused.map((one) => one.field)], row.name).toEqual([
+                [],
+                ['do']
+            ]);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(
+                `${original}followup:\n  - { do: ask Ann again, after: 2026-11-30 }\n  - { do: chase the call, after: 2026-12-01 }\n`
+            );
+            const done = writeFollowup(...into, host, '0', 'done');
+            expect(done.changed, row.name).toEqual(['followup']);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(
+                `${original}followup:\n  - { do: chase the call, after: 2026-12-01 }\n`
+            );
+            const last = writeFollowup(...into, host, '0', 'done');
+            expect(last.changed, row.name).toEqual(['followup']);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(original);
+        }
+    );
 });
 
 describe('writing one career host', () => {

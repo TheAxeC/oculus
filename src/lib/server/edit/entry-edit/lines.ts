@@ -24,19 +24,33 @@ import { isMap, scalar } from '../../../data/helpers/guards.ts';
 /** The key of a checklist, on a manifest and on a collection entry alike. */
 export const SUBTASKS = 'subtasks';
 
-/** The one field of a subtask line that is never cleared: without it there is no line. */
+/** The key of the follow-up notes, on a manifest and on a collection entry alike. */
+export const FOLLOWUP = 'followup';
+
+/**
+ * The two blocks of one-line flow maps a card edits line by line: the checklist and the follow-up
+ * notes.
+ */
+export type LineBlock = typeof SUBTASKS | typeof FOLLOWUP;
+
+/**
+ * The one field of a subtask line or a follow-up note that is never cleared: without it there is no
+ * line.
+ */
 export const LABEL = 'do';
 
 /** A half-open range of line numbers, zero based: the lines one entry occupies. */
 export type LineRange = { start: number; end: number };
 
-/** One line of a `subtasks:` block: the key it is addressed by, and where it is. */
+/**
+ * One line of a `subtasks:` or a `followup:` block: the key it is addressed by, and where it is.
+ */
 export type SubtaskLine = { key: string; line: number };
 
 /**
- * A `subtasks:` block as a write sees it. `key` is the line of the `subtasks:` key itself and is
- * null when the host has no block at all; `map` says the block is a map of keys rather than a list,
- * which is the shape normalise.ts addresses by the key rather than by the position.
+ * A `subtasks:` or `followup:` block as a write sees it. `key` is the line of the block's key and
+ * is null when the host has no block at all; `map` says the block is a map of keys rather than a
+ * list, which is the shape normalise.ts addresses by the key rather than by the position.
  */
 export type SubtaskBlock = {
     key: number | null;

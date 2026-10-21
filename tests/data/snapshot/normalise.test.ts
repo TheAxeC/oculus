@@ -95,7 +95,10 @@ function portfolio(): RawPortfolio {
                     pin: true,
                     priority: 'high',
                     'waiting-on': ['someone', 'A Free Name'],
-                    followup: [{ do: 'chase the coauthor', after: '2026-01-01' }, 'watch the call'],
+                    followup: [
+                        { do: 'chase the coauthor', after: '2026-01-01' },
+                        { do: 'watch the call' }
+                    ],
                     snooze: '2026-12-01',
                     subtasks: {
                         fig: { do: 'redraw figure 2', deadline: '2026-10-01' },
@@ -270,8 +273,8 @@ describe('normalise, the field mapping', () => {
             deadline: '2026-11-17',
             waitingOn: ['someone', 'A Free Name'],
             followups: [
-                { do: 'chase the coauthor', after: '2026-01-01' },
-                { do: 'watch the call' }
+                { key: '0', do: 'chase the coauthor', after: '2026-01-01' },
+                { key: '1', do: 'watch the call' }
             ],
             snooze: '2026-12-01',
             subtasks: [

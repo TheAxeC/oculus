@@ -1,17 +1,15 @@
 <script lang="ts">
     // Layer 3, shared view. Expanded manifest fields and related documents live here because the
-    // expanded card section changes independently of its collapsed frame. The subtasks block is the
-    // card's own, drawn under this section, since adding a first subtask is a control of the closed
-    // card too. Every prose field is drawn through CodeText, so a backticked word is code and a
-    // web address in the other words is a link. The
-    // follow-up field has one line per note, and a note dated after today says when it is held
-    // until, by the same rule the ticker uses to leave it out.
+    // expanded card section changes independently of its collapsed frame. The subtasks and the
+    // follow-up blocks are the card's own, drawn under this section, since adding a first subtask
+    // or a first follow-up note is a control of the closed card too. Every prose field is drawn
+    // through CodeText, so a backticked word is code and a web address in the other words is a
+    // link.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { dueFollowups } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import { goto } from '../card';
     import CardDocs from '../CardDocs.svelte';
@@ -30,13 +28,9 @@
         onsaid: (said: string) => void;
         /** Whether the project's documents are listed; a view that draws them itself says no. */
         documents: boolean;
-        /** The moment a follow-up date is measured from. */
-        now: number;
     };
-    let { item, onsaid, documents, now }: Props = $props();
+    let { item, onsaid, documents }: Props = $props();
     const shows = $derived(disseminatedFor(item.id));
-    /** The notes that are due, so a note outside this list is held until its date. */
-    const due = $derived(dueFollowups(item.project.followups, now).map((one) => one.note));
 </script>
 
 {#snippet field(name: string, value: string)}
@@ -77,23 +71,6 @@
     {#if item.project.next}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(t('project.card.next'), item.project.next)}
-    {/if}
-    {#if item.project.followups.length > 0}
-        <div class="field">
-            <span class="label">{t('project.card.followup')}</span>
-            <ul class="value">
-                {#each item.project.followups as note, at (`${at}:${note.do}`)}
-                    <li>
-                        <CodeText text={note.do} linked />
-                        {#if !due.includes(note)}
-                            <span class="until"
-                                >{t('project.card.not_until', note.after ?? '')}</span
-                            >
-                        {/if}
-                    </li>
-                {/each}
-            </ul>
-        </div>
     {/if}
     {#if item.project.ideas.length > 0}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -152,10 +129,6 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
-    }
-
-    .until {
-        color: var(--muted-txt, var(--muted));
     }
 
     ul.value {

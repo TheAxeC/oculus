@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view partial. One entry of one collection file as a card: the grip it is
     // dragged by, the pin mark, the title, the status chip, the controls, the fields the file's own
-    // schema names, the projects that name the entry, its links, and its subtasks. The collection
+    // schema names, the projects that name the entry, its links, its subtasks and its follow-up
+    // notes. The collection
     // view draws one per entry, and the entry's page draws one open, with no grip, so the card
     // lives here and not under either view. The fields and the line of the projects that name the
     // entry are EntryFields.svelte, which says how each field is drawn.
@@ -23,9 +24,9 @@
     // one line, and a hub path the entry's `link`, `url` or `folder` names is one of them: a path
     // that is a file is selected in the Files view of this page, and a path that is a folder opens
     // a Files tab rooted at it and offers Open Workbench, the workbench of that folder. The
-    // subtasks block is drawn only for an entry that has subtasks, adding the first being one of
-    // the controls. The card may draw past its own edge, so the More menu is not cut off at its
-    // foot.
+    // subtasks block is drawn only for an entry that has subtasks, and the follow-up block only for
+    // one that has follow-up notes, adding the first of each being one of the controls. The card
+    // may draw past its own edge, so the More menu is not cut off at its foot.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -37,10 +38,12 @@
     import Grip from './Grip.svelte';
     import RootChip from '../../../card/RootChip.svelte';
     import InPlace from '../../InPlace.svelte';
+    import Followups from '../../Followups.svelte';
     import Subtasks from '../../Subtasks.svelte';
     import EntryFields from './EntryFields.svelte';
     import {
         entryStatus,
+        entryFollowups,
         entrySubtasks,
         isPinned,
         identityValue,
@@ -123,6 +126,7 @@
     const status = $derived(entryStatus(entry));
     const pinned = $derived(isPinned(entry));
     const lines = $derived(entrySubtasks(entry));
+    const notes = $derived(entryFollowups(entry));
     const value = $derived(identityValue(entry, schema));
 
     /** A card carries its controls only where the file has a schema to write by. */
@@ -146,6 +150,9 @@
 
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
+
+    /** True while the add-follow-up form is open, from the block's own control or the card's. */
+    let addingFollowup = $state(false);
 
     /** The root of the hub the entry is of, which every path of its fields is under. */
     const root = $derived(rootOf(entry, primary()));
@@ -191,6 +198,8 @@
             pinned,
             firstSubtask: lines.length === 0,
             addingSubtask,
+            firstFollowup: notes.length === 0,
+            addingFollowup,
             shows,
             extra,
             onstatus: setStatus,
@@ -199,6 +208,9 @@
             ondelete: () => (deleting = true),
             onsubtask: () => {
                 addingSubtask = !addingSubtask;
+            },
+            onfollowup: () => {
+                addingFollowup = !addingFollowup;
             }
         })
     );
@@ -293,6 +305,14 @@
                     {onsaid}
                     adding={addingSubtask}
                     onadding={(next: boolean) => (addingSubtask = next)}
+                    {blocked}
+                />
+                <Followups
+                    target={{ id: entry.id, collection }}
+                    {notes}
+                    {onsaid}
+                    adding={addingFollowup}
+                    onadding={(next: boolean) => (addingFollowup = next)}
                     {blocked}
                 />
             {/if}

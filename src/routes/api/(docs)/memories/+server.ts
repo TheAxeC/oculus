@@ -1,7 +1,8 @@
 // The Memories wall's endpoint. A route module may export only its verbs, so everything it does
 // lives in lib/server/content/memories.ts and these are the two lines that join them: GET answers
-// the pictures of every hub's photo wall, or streams the one a `file=<hub name>/<file name>` names,
-// and POST adds one to the primary hub's photo wall (the first hub's with no primary).
+// the pictures of every hub's photo wall and the folders under it, or streams the one a
+// `file=<hub name>/<file path>` names, and POST adds one to the primary hub's photo wall (the
+// first hub's with no primary).
 
 import { textCatalog } from '$lib/data/sources/config';
 import { picturesOf } from '$lib/server/content/images';

@@ -4,11 +4,11 @@
 //
 // Each type accepts what its reader accepts. A `text` field takes a text and the integer a year is
 // written as, a `date` a day written YYYY-MM-DD, a `checkbox` a flag, `tags` a list, `metalist` a
-// list of label and value maps, `raw` anything. Every field also accepts null, which is what a bare
-// `key:` reads as. A `select` takes the keys of its `options` and of its `from` sources, and any
-// word when it has neither, a `tags` field each of them as an item; a `text` takes its `from` keys
-// as suggestions only. A record
-// allows no key it does not declare unless it is `open`.
+// list of label and value maps, `raw` anything but a `followup` field, which takes the list of
+// notes oculus writes there. Every field also accepts null, which is what a bare `key:` reads as. A
+// `select` takes the keys of its `options` and of its `from` sources, and any word when it has
+// neither, a `tags` field each of them as an item; a `text` takes its `from` keys as suggestions
+// only. A record allows no key it does not declare unless it is `open`.
 //
 // A `records` field holds a list of records, one record, or with `map: true` a map from a name to
 // one record (the groups of a deck). A condition (`when`, `required: { when }`) becomes an `if`
@@ -203,9 +203,32 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
     }
 }
 
+/**
+ * The `followup:` field oculus writes into a manifest and into every collection entry: a list of
+ * notes, each a map of what to do and the day before which it stays off the Focus board. Its
+ * widget (`keymap` in the manifest schema) and its written field (schema/hub.ts) are of the type
+ * `raw`, which takes anything, so the field is held to its list by its name.
+ */
+const FOLLOWUP = 'followup';
+
+/** The value of a `followup:` field: a list of `{ do, after }` notes, each with its `do`. */
+const FOLLOWUP_NOTES: JsonSchema = {
+    type: ['array', 'null'],
+    items: {
+        type: 'object',
+        properties: {
+            do: { type: TEXT_TYPES },
+            after: { type: ['string', 'null'], pattern: ISO_DATE.source }
+        },
+        required: ['do'],
+        additionalProperties: false
+    }
+};
+
 /** One field's schema: its value, the label as `title` and the help line as `description`. */
 export function fieldSchema(field: SchemaField, ctx: Context): JsonSchema {
-    const schema = valueSchema(field, ctx);
+    const notes = field.field === FOLLOWUP && field.type === 'raw';
+    const schema = notes ? structuredClone(FOLLOWUP_NOTES) : valueSchema(field, ctx);
     if (field.label !== undefined) schema.title = field.label;
     if (field.help !== undefined) schema.description = field.help;
     return schema;

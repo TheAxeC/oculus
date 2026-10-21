@@ -1,7 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count,
     // one row per line with what it says and when it is due, the buttons that move it, and the
-    // one-line form that adds another.
+    // one-line form that adds another (views/shared/forms/LineForm.svelte). A line's edit button
+    // turns the line into the same form, holding its text and deadline, and its save writes each of
+    // the two that changed.
     //
     // A card with no lines draws no block at all: adding its first line is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is
@@ -24,9 +26,8 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import TextInput from '$lib/ui/forms/TextInput.svelte';
+    import LineForm from './LineForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { SubtaskAction, SubtaskTarget } from '$lib/state/client/writes.svelte';
@@ -58,8 +59,8 @@
         return blocked === '' ? own : blocked;
     }
 
-    let text = $state('');
-    let due = $state('');
+    /** The key of the line being edited; null while no line is. */
+    let editing = $state<string | null>(null);
 
     const open = $derived(openSubtaskCount(subtasks));
 
@@ -84,17 +85,28 @@
         said(await writeSubtask(target, key, action, value));
     }
 
+    /**
+     * The edit form's save: the text, then the deadline, each written only when it changed, and the
+     * form closed when every write it made was taken. An emptied deadline clears it.
+     */
+    async function save(line: Subtask, text: string, due: string): Promise<void> {
+        const writes: [SubtaskAction, string][] = [];
+        if (text !== line.do) writes.push(['do', text]);
+        if (due !== (line.deadline ?? '')) writes.push(['deadline', due]);
+        for (const [action, value] of writes) {
+            const answer = await writeSubtask(target, line.key, action, value);
+            said(answer);
+            if (!answer.ok) return;
+        }
+        editing = null;
+    }
+
     /** The add form's save: one line, with the deadline when the form was given one. */
-    async function add(): Promise<void> {
-        if (text.trim() === '') return;
-        const fields = due === '' ? { do: text.trim() } : { do: text.trim(), deadline: due };
+    async function add(text: string, due: string): Promise<void> {
+        const fields = due === '' ? { do: text } : { do: text, deadline: due };
         const answer = await addSubtask(target, fields);
         said(answer);
-        if (answer.ok) {
-            onadding(false);
-            text = '';
-            due = '';
-        }
+        if (answer.ok) onadding(false);
     }
 </script>
 
@@ -116,108 +128,118 @@
         {/if}
 
         {#if adding}
-            <div class="form">
-                <TextInput
-                    value={text}
-                    label={t('project.action.subtask_do')}
-                    placeholder={t('project.action.subtask_do')}
-                    oninput={(next: string) => (text = next)}
-                />
-                <DateInput
-                    value={due}
-                    label={t('project.action.subtask_deadline')}
-                    oninput={(n: string) => (due = n)}
-                />
-                <ToolButton
-                    label={t('project.action.subtask_save')}
-                    title={why()}
-                    disabled={blocked !== ''}
-                    onclick={add}
-                />
-                <ToolButton
-                    label={t('project.action.subtask_cancel')}
-                    onclick={() => onadding(false)}
-                />
-            </div>
+            <LineForm
+                dateLabel={t('project.action.subtask_deadline')}
+                {blocked}
+                onsave={add}
+                oncancel={() => onadding(false)}
+            />
         {/if}
 
         {#each subtasks as line (line.key)}
-            <div class="line" class:done={line.done}>
-                <span class="box">
-                    <Glyph
-                        name={line.done
-                            ? t('project.action.box_on_glyph')
-                            : t('project.action.box_off_glyph')}
-                    />
-                </span>
-                <span class="do"><LinkedText text={line.do} /></span>
-                {#if line.deadline}
-                    <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
-                {/if}
-                <span class="acts">
-                    {#if line.done}
-                        <ToolButton
-                            small
-                            label={t('project.action.reopen')}
-                            title={why()}
-                            disabled={blocked !== ''}
-                            onclick={() => act(line.key, 'reopen')}
+            {#if editing === line.key}
+                <LineForm
+                    text={line.do}
+                    date={line.deadline}
+                    dateLabel={t('project.action.subtask_deadline')}
+                    {blocked}
+                    onsave={(text, due) => save(line, text, due)}
+                    oncancel={() => (editing = null)}
+                />
+            {:else}
+                <div class="line" class:done={line.done}>
+                    <span class="box">
+                        <Glyph
+                            name={line.done
+                                ? t('project.action.box_on_glyph')
+                                : t('project.action.box_off_glyph')}
                         />
-                    {:else}
-                        <ToolButton
-                            small
-                            label={t('project.action.done')}
-                            title={why(t('project.action.mark_done'))}
-                            disabled={blocked !== ''}
-                            onclick={() => act(line.key, 'done')}
-                        />
-                        {#if line.snooze}
+                    </span>
+                    <span class="do"><LinkedText text={line.do} /></span>
+                    {#if line.deadline}
+                        <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
+                    {/if}
+                    <span class="acts">
+                        {#if line.done}
                             <ToolButton
                                 small
-                                label={t('project.action.unsnooze')}
+                                label={t('project.action.reopen')}
                                 title={why()}
                                 disabled={blocked !== ''}
-                                onclick={() => act(line.key, 'snooze', '')}
+                                onclick={() => act(line.key, 'reopen')}
                             />
                         {:else}
                             <ToolButton
                                 small
-                                label={t('project.action.snooze_1w')}
-                                title={why(
-                                    t('project.action.snooze_tip', t('project.action.snooze_1w'))
-                                )}
+                                label={t('project.action.done')}
+                                title={why(t('project.action.mark_done'))}
                                 disabled={blocked !== ''}
-                                onclick={() => act(line.key, 'snooze', snoozeDate(7))}
+                                onclick={() => act(line.key, 'done')}
                             />
-                            <ToolButton
-                                small
-                                label={t('project.action.snooze_1mo')}
-                                title={why(
-                                    t('project.action.snooze_tip', t('project.action.snooze_1mo'))
-                                )}
-                                disabled={blocked !== ''}
-                                onclick={() => act(line.key, 'snooze', snoozeDate(30))}
-                            />
-                            <ToolButton
-                                small
-                                label={t('project.action.snooze_hide')}
-                                title={why(
-                                    t('project.action.snooze_tip', t('project.action.snooze_hide'))
-                                )}
-                                disabled={blocked !== ''}
-                                onclick={() => act(line.key, 'snooze', 'true')}
-                            />
+                            {#if line.snooze}
+                                <ToolButton
+                                    small
+                                    label={t('project.action.unsnooze')}
+                                    title={why()}
+                                    disabled={blocked !== ''}
+                                    onclick={() => act(line.key, 'snooze', '')}
+                                />
+                            {:else}
+                                <ToolButton
+                                    small
+                                    label={t('project.action.snooze_1w')}
+                                    title={why(
+                                        t(
+                                            'project.action.snooze_tip',
+                                            t('project.action.snooze_1w')
+                                        )
+                                    )}
+                                    disabled={blocked !== ''}
+                                    onclick={() => act(line.key, 'snooze', snoozeDate(7))}
+                                />
+                                <ToolButton
+                                    small
+                                    label={t('project.action.snooze_1mo')}
+                                    title={why(
+                                        t(
+                                            'project.action.snooze_tip',
+                                            t('project.action.snooze_1mo')
+                                        )
+                                    )}
+                                    disabled={blocked !== ''}
+                                    onclick={() => act(line.key, 'snooze', snoozeDate(30))}
+                                />
+                                <ToolButton
+                                    small
+                                    label={t('project.action.snooze_hide')}
+                                    title={why(
+                                        t(
+                                            'project.action.snooze_tip',
+                                            t('project.action.snooze_hide')
+                                        )
+                                    )}
+                                    disabled={blocked !== ''}
+                                    onclick={() => act(line.key, 'snooze', 'true')}
+                                />
+                            {/if}
                         {/if}
-                    {/if}
-                    <ToolButton
-                        small
-                        label={t('project.action.del')}
-                        title={why(t('project.action.delete_subtask'))}
-                        disabled={blocked !== ''}
-                        onclick={() => act(line.key, 'delete')}
-                    />
-                </span>
-            </div>
+                        <ToolButton
+                            small
+                            label={t('project.action.edit')}
+                            title={why(t('project.action.edit_subtask'))}
+                            disabled={blocked !== ''}
+                            onclick={() => (editing = line.key)}
+                        />
+                        <ToolButton
+                            small
+                            label={t('project.action.del')}
+                            title={why(t('project.action.delete_subtask'))}
+                            disabled={blocked !== ''}
+                            onclick={() => act(line.key, 'delete')}
+                        />
+                    </span>
+                </div>
+            {/if}
         {/each}
     </div>
 {/if}
@@ -231,7 +253,6 @@
     }
 
     .hdr,
-    .form,
     .line,
     .acts {
         display: flex;

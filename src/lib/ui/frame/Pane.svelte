@@ -36,6 +36,11 @@
          * draws outside them in `Surface`.
          */
         tinted?: boolean;
+        /**
+         * Whether the body is drawn without its inset, so a view that fills it with an editor or a
+         * terminal reaches the pane's edges, as VS Code's editors and terminals do.
+         */
+        flush?: boolean;
         /** The body. */
         children?: Snippet;
     };
@@ -47,6 +52,7 @@
         toolbar,
         bar,
         tinted = false,
+        flush = false,
         children
     }: Props = $props();
 </script>
@@ -68,7 +74,7 @@
     {#if bar}
         <div class="viewbar">{@render bar()}</div>
     {/if}
-    <div class="body" data-scroll>
+    <div class="body" class:flush data-scroll>
         {#if children}
             {@render children()}
         {/if}
@@ -219,6 +225,10 @@
         overflow: auto;
         padding: 10px 12px;
         box-sizing: border-box;
+    }
+
+    .body.flush {
+        padding: 0;
     }
 
     /* The terminal shape: the header row is a titlebar strip on the chip colour. */

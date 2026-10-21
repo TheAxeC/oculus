@@ -48,5 +48,6 @@
         flex: 1 1 auto;
         gap: 8px;
         min-width: 0;
+        padding: 6px 6px 0;
     }
 </style>

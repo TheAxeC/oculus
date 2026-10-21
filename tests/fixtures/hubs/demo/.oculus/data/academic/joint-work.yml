@@ -14,7 +14,6 @@ schema:
   - { field: tags,   type: tags }
   - { field: note,   type: textarea }
   - { field: deadline, type: date }
-  - { field: followup, type: text, help: "a standing reminder" }
 
 entries:
   - key: "rivera-lab"

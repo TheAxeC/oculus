@@ -54,6 +54,8 @@ text:
             entry: Edit an entry of a collection.
             subtask: Change a subtask of a project or an entry.
             subtask-add: Add a subtask to a project or an entry.
+            followup: Change or remove a follow-up note of a project or an entry.
+            followup-add: Add a follow-up note to a project or an entry.
             host: Edit a host of a project.
             new-entry: Add an entry to a collection.
             reorder: Reorder the entries of a collection.

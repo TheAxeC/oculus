@@ -10,8 +10,8 @@
 // The current values come from the snapshot's Project, which carries what the model declares and no
 // more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
-// The follow-up is in the model as a list of notes, and the two fields of the schema address one
-// note, so a project with two or more notes shows them read-only (followupWritable below).
+// The follow-up notes and the subtasks are lists the card writes line by line; the form shows them
+// read-only, each as one text.
 
 import { z } from 'zod';
 import {
@@ -81,46 +81,9 @@ export const NOT_IN_MODEL = [
     'paths'
 ];
 
-/** The two schema fields that address the one note of a manifest's `followup`. */
-const FOLLOWUP_FIELDS = ['followup.do', 'followup.after'];
-
-/**
- * Whether the two follow-up fields can write this project's notes. They address one note, so a
- * project that holds two or more shows them read-only and the notes are edited in the file.
- */
-export function followupWritable(project: Project): boolean {
-    return project.followups.length <= 1;
-}
-
-/**
- * Whether the date of the follow-up has no note to belong to: the project holds none and the text
- * of one is not typed in `edits`. A date alone is not a note, so the form keeps it read-only.
- */
-export function dateNeedsNote(
-    project: Project,
-    field: string,
-    edits: Record<string, unknown> = {}
-): boolean {
-    return (
-        field === 'followup.after' &&
-        project.followups.length === 0 &&
-        asText(edits['followup.do']).trim() === ''
-    );
-}
-
-/**
- * Whether the form may write a field of this project: not `id`, not a follow-up
- * note when the project has several, and not the date of a follow-up while no note exists to hold
- * it (`dateNeedsNote`). `edits` are the draft's, by field name.
- */
-export function writableField(
-    project: Project,
-    field: string,
-    edits: Record<string, unknown> = {}
-): boolean {
-    if (NOT_WRITTEN.includes(field)) return false;
-    if (dateNeedsNote(project, field, edits)) return false;
-    return !FOLLOWUP_FIELDS.includes(field) || followupWritable(project);
+/** Whether the form may write a field of a project: every field but `id`. */
+export function writableField(field: string): boolean {
+    return !NOT_WRITTEN.includes(field);
 }
 
 /** The word a value holds, and undefined for an empty text and for anything that is no text. */
@@ -314,38 +277,15 @@ function sourceChoices(
         : [];
 }
 
-/** A text with something in it, and undefined for an absent or empty one. */
-function someText(words: string | undefined): string | undefined {
-    return words === undefined || words === '' ? undefined : words;
-}
-
-/**
- * The values of the two follow-up fields. One note shows its text and its date. Two or more, which
- * the fields show read-only, show each note under its number with its own date after it, and the
- * date field each date under the number of its note, so no date reads as the date of every note.
- */
-function followupValues(project: Project): Record<string, string | undefined> {
-    const notes = project.followups;
-    if (notes.length <= 1) {
-        return {
-            'followup.do': someText(notes.at(0)?.do),
-            'followup.after': someText(notes.at(0)?.after)
-        };
-    }
-    const dated = notes.map((note, at) => {
-        const date = someText(note.after);
-        return date === undefined
-            ? t('editor.followup_note', at + 1, note.do)
-            : t('editor.followup_note_dated', at + 1, note.do, date);
-    });
-    const dates = notes.flatMap((note, at) => {
-        const date = someText(note.after);
-        return date === undefined ? [] : [t('editor.followup_date', at + 1, date)];
-    });
-    return {
-        'followup.do': dated.join('; '),
-        'followup.after': dates.length === 0 ? undefined : dates.join('; ')
-    };
+/** The follow-up notes, as one text with each note's date; the box that shows it is read-only. */
+function followupText(project: Project): string {
+    return project.followups
+        .map((note) =>
+            note.after === undefined
+                ? note.do
+                : t('editor.followup_note_dated', note.do, note.after)
+        )
+        .join('; ');
 }
 
 /** The lines of the checklist still open, as one text; the box that shows it is read-only. */
@@ -381,7 +321,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'waiting-on': project.waitingOn,
         snooze: project.snooze,
         subtasks: openSubtasks(project),
-        ...followupValues(project),
+        followup: followupText(project),
         pin: project.pin === true,
         venue_id: project.venueId,
         year: project.year,
@@ -448,45 +388,16 @@ export function fieldsOfSection(fields: FormField[], section: string): FormField
 }
 
 /**
- * What a save posts, and what the draft drops once the server took it. `dirty` names the fields
- * whose edit differs from the project; of those the one the write never touches and the follow-up
- * fields of a project with several notes are left out, so an edit kept from before the second note
- * was added is never sent. Emptying the text of the follow-up clears the whole follow-up, the date
- * edit with it, and a date with no note to hold it is not sent.
+ * What a save posts, and what the draft drops once the server took it: the fields of `dirty` the
+ * form writes, `id` left out.
  */
 export function manifestPayload(
-    project: Project,
     edits: Record<string, unknown>,
     dirty: string[]
 ): { body: Record<string, unknown>; taken: Record<string, unknown> } {
     const body: Record<string, unknown> = {};
-    const taken: Record<string, unknown> = {};
-    const own = dirty.filter((field) => writableField(project, field, edits));
-    const emptied =
-        own.includes('followup.do') &&
-        project.followups.length > 0 &&
-        asText(edits['followup.do']).trim() === '';
-    for (const field of own) {
-        if (FOLLOWUP_FIELDS.includes(field) && emptied) {
-            body.followup = null;
-            taken.followup = null;
-            for (const name of FOLLOWUP_FIELDS) if (name in edits) taken[name] = edits[name];
-        } else {
-            body[field] = edits[field];
-            taken[field] = edits[field];
-        }
-    }
-    return { body, taken };
-}
-
-/**
- * The fields of the draft a refusal covers: a refused `followup` is the clear of both follow-up
- * fields, so the edits it covered stay in the draft.
- */
-export function refusedEdits(refused: string[]): string[] {
-    return refused.flatMap((field) =>
-        field === 'followup' ? [field, ...FOLLOWUP_FIELDS] : [field]
-    );
+    for (const field of dirty.filter(writableField)) body[field] = edits[field];
+    return { body, taken: { ...body } };
 }
 
 /**
@@ -517,9 +428,6 @@ export function projectDraftTarget(
             return project === null ? null : settled(projectKey(name), fieldValues(project));
         },
         differs: (_name, _field, edit, value) => editDiffers(edit, value),
-        writable: (name, field, edits) => {
-            const project = projectOf(name);
-            return project === null || writableField(project, field, edits);
-        }
+        writable: (_name, field) => writableField(field)
     };
 }

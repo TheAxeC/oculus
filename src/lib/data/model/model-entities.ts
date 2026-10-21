@@ -310,11 +310,12 @@ export type DocPart =
 export type RenderedHeading = { level: number; text: string; id: string };
 
 /**
- * One standing "do this later" note, the manifest's `followup:` (manifest-schema.yml's
- * `followup.do` and `followup.after`). `after` is an ISO date the note is hidden until; a note
- * without one is always due.
+ * One standing "do this later" note, a line of the `followup:` list of a manifest or a collection
+ * entry. `key` is what the note is addressed by: its position in the list, or its own key in a map
+ * of notes. `after` is an ISO date the note is hidden until; a note without one is always due.
  */
 export type Followup = {
+    key: string;
     do: string;
     after?: string;
 };
@@ -382,7 +383,7 @@ export type Project = Rooted & {
      * reports a value that is neither, and the Focus strip draws each by the name it resolves to.
      */
     waitingOn: Id[];
-    /** The `followup:` notes. One note, a map, or a list of either all reach here as a list. */
+    /** The `followup:` notes, a list of `{ do, after }` maps. */
     followups: Followup[];
     /** An ISO date the project's own dates are hidden from the Focus ticker until. */
     snooze?: string;
@@ -857,7 +858,7 @@ export type Funding = Rooted & {
     url?: string;
     /** An ISO date the scheme's own deadline is hidden from the Focus ticker until. */
     snooze?: string;
-    /** The `followup:` notes of the scheme's entry, the same three shapes a manifest writes. */
+    /** The `followup:` notes of the scheme's entry, in the list a manifest writes them in. */
     followups: Followup[];
     /** The `subtasks:` checklist of the scheme's entry. */
     subtasks: Subtask[];

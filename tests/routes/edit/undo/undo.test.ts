@@ -336,8 +336,9 @@ describe('taking a change back', () => {
 
     /**
      * The writes to the project of a folder of the workspace that lies inside a hub and outside
-     * every scan folder: a field of the manifest editor, a snooze, a follow-up done, Pin, a tick
-     * and an added line, each made with the folder inside the primary hub and inside a second hub.
+     * every scan folder: a field of the manifest editor, a snooze, a follow-up done, Pin, a tick,
+     * an added line and an added follow-up, each made with the folder inside the primary hub and
+     * inside a second hub.
      */
     const INSIDE_ROWS = [
         {
@@ -350,7 +351,7 @@ describe('taking a change back', () => {
         },
         {
             name: 'a follow-up done',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { followup: '' } }
+            body: { kind: 'followup', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
         },
         { name: 'Pin', body: { kind: 'manifest', id: REPOSITORY_ID, fields: { pin: true } } },
         {
@@ -360,6 +361,14 @@ describe('taking a change back', () => {
         {
             name: 'an added line',
             body: { kind: 'subtask-add', target: { id: REPOSITORY_ID }, fields: { do: 'test it' } }
+        },
+        {
+            name: 'an added follow-up',
+            body: {
+                kind: 'followup-add',
+                target: { id: REPOSITORY_ID },
+                fields: { do: 'call Ann' }
+            }
         }
     ];
 

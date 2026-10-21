@@ -30,6 +30,7 @@ import {
     FILTERED_TYPES,
     optionLabel,
     type Entry,
+    type Followup,
     type Project,
     type SchemaField,
     type Subtask
@@ -37,6 +38,7 @@ import {
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
+import { followups } from '../../data/snapshot/normalise-parts/plans.ts';
 import { entryPageState } from '../forms/page-entry.ts';
 import { JOINT_WORK } from '../forms/referrers.ts';
 import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
@@ -694,6 +696,15 @@ export function entrySubtasks(entry: Entry): Subtask[] {
         lines.push(line);
     }
     return lines;
+}
+
+/**
+ * The `followup:` notes of one entry as the card and the Focus board read them, read by the one
+ * reader the snapshot uses (data/snapshot/normalise-parts/plans.ts), so the note a card shows and
+ * the note a write addresses are keyed alike.
+ */
+export function entryFollowups(entry: Pick<Entry, 'fields'>): Followup[] {
+    return followups(entry.fields.followup);
 }
 
 /** One member of a cross-link group. Its project type remains visible inside the broader group. */

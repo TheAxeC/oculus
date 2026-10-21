@@ -80,7 +80,7 @@ types:
 # - `chip`: a status chip a manifest's `status.chips` picks from (the status legend), offered by the project form in this order.
 # - `terminal`: the status ends a collection entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
 # - `deadline_met`: the status ends a project's own deadline (a terminal chip alone does not); compared trimmed and in lower case (`wordFlag`).
-# - `live_subtasks`: a terminal entry whose subtasks still show on the radar; compared trimmed and in lower case (`wordFlag`).
+# - `live_subtasks`: a terminal entry whose subtasks and follow-up notes still show on the radar; compared trimmed and in lower case (`wordFlag`).
 # - `waiting`: an entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case, untrimmed.
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `lead_closed`: a Position Lead that is closed, counted and listed as done; compared trimmed and in lower case (`wordFlag`).

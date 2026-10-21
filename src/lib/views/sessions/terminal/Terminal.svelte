@@ -396,7 +396,7 @@
     />
 {/snippet}
 
-<Pane title={t('sessions.view_terminal')} toolbar={tools} {bar} tinted>
+<Pane title={t('sessions.view_terminal')} toolbar={tools} {bar} tinted flush>
     <!-- The body takes a row dropped from another tab's list while this tab draws none. -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div

@@ -409,8 +409,10 @@ A record of a hub other than the primary carries `root` (the hub's name) and has
 |------|------|------------|
 | `manifest` | `{ kind, id, fields }` | no |
 | `entry` | `{ kind, collection, id, fields }` | no |
-| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done`, `reopen`, `snooze` or `delete` | no |
+| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done`, `reopen`, `snooze`, `delete`, `do` or `deadline`, the last two with the new text or date in `value` | no |
 | `subtask-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text | no |
+| `followup` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done` (takes the note out), `do` or `after`, the last two with the new text or date in `value` | no |
+| `followup-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text, `fields.after` the date it stays hidden until | no |
 | `host` | `{ kind, name, status }` for a career host | no |
 | `new-entry` | `{ kind, collection, fields, root? }`; `root` names the hub, which for an app is the primary hub alone | no |
 | `reorder` | `{ kind, collection, order }` | no |

@@ -2,8 +2,7 @@
 // a project.yml. The schema is the project.yml edit form as data, so each widget is read as the
 // type of value it writes: a `select` and a `chips` field are held to the keys of their `from`
 // sources and their `options`, `readonly` and `keymap` fields hold whatever the file has, and a
-// dotted name (`status.chips`) is a key inside a map the file holds under its first part. A map
-// such as `followup` may also be written as one line of text, and is then not looked into. Each
+// dotted name (`status.chips`) is a key inside a map the file holds under its first part. Each
 // such map is described by its help line in the file's top-level `groups:`.
 
 import { z } from 'zod';
@@ -42,8 +41,8 @@ const WIDGET_TYPES: Record<string, string> = {
     keymap: 'raw'
 };
 
-/** A map the file may also write as a single line, or leave empty. */
-const CONTAINER_TYPES = ['object', 'string', 'array', 'null'];
+/** A map the file holds, or a key it leaves empty. */
+const CONTAINER_TYPES = ['object', 'null'];
 
 /** The record type a widget word is read as, and `text` for a word the form does not know. */
 function recordType(widget: string): string {

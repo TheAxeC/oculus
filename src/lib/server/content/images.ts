@@ -6,10 +6,11 @@
 //
 // It is one module rather than a copy per route because the rules are the security of those routes:
 // the folder is resolved under its hub and replaced by the standard one if it is not inside it, the
-// chosen file is resolved and refused if it is not inside the folder, and a name that carries a
-// path rather than a file name is refused outright. A second copy of that would be a second place
-// for one of the four to go missing. server/content/wallpaper.ts and server/content/memories.ts are
-// the two readers.
+// chosen file is resolved and refused if it is not inside the folder, and a name that is not a
+// path `images` could list (a part that is empty, a dot name or `..`, a folder link on the way) is
+// refused outright. A second copy of that would be a second place for one of the four to go
+// missing. server/content/wallpaper.ts and server/content/memories.ts are the two readers. A folder
+// is read with every folder under it, so a picture is named by its path relative to the folder.
 //
 // A picture's width and height are read here too, since the Memories wall draws each tile at its
 // picture's proportions before the picture arrives. The head of the file, its first READ_CAP bytes
@@ -37,7 +38,16 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
-import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync } from 'node:fs';
+import {
+    closeSync,
+    createReadStream,
+    lstatSync,
+    openSync,
+    readdirSync,
+    readSync,
+    statSync
+} from 'node:fs';
+import type { Dirent } from 'node:fs';
 import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { imageSize } from 'image-size';
@@ -50,20 +60,33 @@ import type { HubTarget } from '../files/roots.ts';
 /** An hour: long enough that a reload does not re-read the file, short enough to swap a picture. */
 const CACHE = 'private, max-age=3600';
 
-/** The image files of a directory, by name, dotfiles and every other extension left out. */
+/**
+ * The image files of a directory and of every folder under it, each by its path relative to the
+ * directory with `/` between its parts, in path order. A file or folder whose name starts with a
+ * dot is left out, with everything under such a folder, and so is every other extension. A link to
+ * a folder is not followed, so a link that loops adds nothing; a link to a file is listed as the
+ * file.
+ */
 export function images(dir: string): string[] {
-    let names: string[];
+    const found: string[] = [];
+    walk(dir, '', found);
+    return found.sort();
+}
+
+/** Add the pictures of `dir`'s folder `under` (relative, '' for the folder itself) to `found`. */
+function walk(dir: string, under: string, found: string[]): void {
+    let entries: Dirent[];
     try {
-        names = readdirSync(dir);
+        entries = readdirSync(join(dir, under), { withFileTypes: true });
     } catch {
-        return [];
+        return;
     }
-    return names
-        .filter(
-            (name) =>
-                !name.startsWith('.') && PICTURE_EXTENSIONS.includes(extname(name).toLowerCase())
-        )
-        .sort();
+    for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue;
+        const path = under === '' ? entry.name : `${under}/${entry.name}`;
+        if (entry.isDirectory()) walk(dir, path, found);
+        else if (PICTURE_EXTENSIONS.includes(extname(entry.name).toLowerCase())) found.push(path);
+    }
 }
 
 /**
@@ -312,23 +335,45 @@ export function isName(name: string): boolean {
 }
 
 /**
- * One picture of a folder, its type and its cache header, streamed from disk. 404 covers every way
- * there is no image to send: no name, a name that leaves the folder, an extension that is not a
- * picture, a file that has gone since the listing. The origin guard has answered where it came
- * from.
+ * Whether `path` names a picture that `images` lists in `dir`: a path `isFilePath` accepts, a
+ * picture extension, every folder on the way a real folder rather than a link to one (`images`
+ * does not follow such a link, so neither does a request), and a regular file at its end. It is
+ * answered from the path alone, so a request does not walk the folder.
+ */
+export function holds(dir: string, path: string): boolean {
+    if (!isFilePath(path)) return false;
+    if (!PICTURE_EXTENSIONS.includes(extname(path).toLowerCase())) return false;
+    const parts = path.split('/');
+    try {
+        for (let at = 1; at < parts.length; at += 1) {
+            if (!lstatSync(join(dir, ...parts.slice(0, at))).isDirectory()) return false;
+        }
+        return inside(join(dir, path), dir) && statSync(join(dir, path)).isFile();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Whether a path names a file in a folder or in a folder under it, as `images` lists one: parts
+ * joined by `/`, each part a name `isName` accepts, so no part is empty, a dot name or `..`, and
+ * the path is not absolute.
+ */
+export function isFilePath(path: string): boolean {
+    return path !== '' && path.split('/').every(isName);
+}
+
+/**
+ * One picture of a folder or of a folder under it, its type and its cache header, streamed from
+ * disk. 404 covers every way there is no image to send: no name, a path that is not one `images`
+ * could list, a file that resolves outside the folder, an extension that is not a picture, a file
+ * that has gone since the listing. The origin guard has answered where it came from.
  */
 export function stream(dir: string, name: string | null): Response {
-    if (name === null || !isName(name)) return new Response(null, { status: 404 });
-    const extension = extname(name).toLowerCase();
-    const type = PICTURE_EXTENSIONS.includes(extension) ? mime.getType(extension) : null;
+    if (name === null || !holds(dir, name)) return new Response(null, { status: 404 });
+    const type = mime.getType(extname(name).toLowerCase());
     if (type === null) return new Response(null, { status: 404 });
     const path = join(dir, name);
-    if (!inside(path, dir)) return new Response(null, { status: 404 });
-    try {
-        if (!statSync(path).isFile()) return new Response(null, { status: 404 });
-    } catch {
-        return new Response(null, { status: 404 });
-    }
     // The bytes are streamed: a picture is megabytes and nothing here holds one in memory.
     const body = Readable.toWeb(createReadStream(path)) as ReadableStream;
     return new Response(body, {

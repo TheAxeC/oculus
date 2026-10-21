@@ -11,7 +11,8 @@
     // buttons, an overflow menu for the rest, the control that adds a command and the mark of a
     // file that was not read. The card's ELI5 is views/shared/card/Clamp.svelte wherever the caller
     // keeps an open state for it; its subtasks block is drawn only for a project that has subtasks,
-    // adding the first being one of the controls. The card is a positioned box whose content may
+    // and its follow-up block only for one that has follow-up notes, adding the first of each being
+    // one of the controls. The card is a positioned box whose content may
     // reach past its edge, so the More menu of its controls is not cut off at the foot of a short
     // card.
     //
@@ -36,6 +37,7 @@
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Clamp from '../Clamp.svelte';
+    import Followups from '../../forms/Followups.svelte';
     import Subtasks from '../../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
     import { placeOf } from '$lib/state/shared/page/hubs';
@@ -116,6 +118,8 @@
     let copied = $state(false);
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
+    /** True while the add-follow-up form is open, from the block's own control or the card's. */
+    let addingFollowup = $state(false);
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
@@ -231,6 +235,18 @@
                 active: addingSubtask,
                 onclick: () => {
                     addingSubtask = !addingSubtask;
+                }
+            });
+        }
+        if (item.project.followups.length === 0) {
+            rows.push({
+                id: 'followup',
+                label: t('project.action.add_followup'),
+                title: t('project.action.add_followup_tip'),
+                glyph: t('project.action.add_followup_glyph'),
+                active: addingFollowup,
+                onclick: () => {
+                    addingFollowup = !addingFollowup;
                 }
             });
         }
@@ -415,7 +431,7 @@
         {/if}
         <CardAddresses {item} />
         {#if open}
-            <CardDetails {item} {onsaid} {documents} {now} />
+            <CardDetails {item} {onsaid} {documents} />
         {/if}
         {#if open || addingSubtask}
             <Subtasks
@@ -424,6 +440,15 @@
                 {onsaid}
                 adding={addingSubtask}
                 onadding={(next: boolean) => (addingSubtask = next)}
+            />
+        {/if}
+        {#if open || addingFollowup}
+            <Followups
+                target={{ id: item.id }}
+                notes={item.project.followups}
+                {onsaid}
+                adding={addingFollowup}
+                onadding={(next: boolean) => (addingFollowup = next)}
             />
         {/if}
     </Card>

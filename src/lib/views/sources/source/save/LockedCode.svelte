@@ -45,6 +45,7 @@
         align-items: center;
         gap: 4px;
         margin: 0;
+        padding: 4px 12px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }

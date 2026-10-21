@@ -105,7 +105,7 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # schedules: .oculus/schedules.yml
 # apps_dir: .oculus/apps
 
-# The wallpaper: `<hub name>/<file name>`, `random`, or empty for none. Read from the primary hub.
+# The wallpaper: `<hub name>/<file path>` (the path inside that hub's wallpaper folder), `random`, or empty for none. Read from the primary hub.
 # wallpaper:
 #   image: ""
 

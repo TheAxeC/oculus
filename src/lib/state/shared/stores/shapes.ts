@@ -207,8 +207,13 @@ export type SessionFields = {
 /** What a subtask write hangs under: one project by its id, or one entry of one collection. */
 export type SubtaskTarget = { id: string; collection?: string };
 
-/** What one subtask button does to its line. */
-export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
+/** What one subtask button does to its line: `do` and `deadline` set that field to the value. */
+export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete' | 'do' | 'deadline';
+
+/**
+ * What one follow-up button does to its note: `done` takes it out, `do` and `after` set that field.
+ */
+export type FollowupAction = 'done' | 'do' | 'after';
 
 /**
  * What a caller says about one write it sends: `said` when it words a failure itself, `asked` the
@@ -296,6 +301,16 @@ export type WritesStore = {
     addSubtask: (
         target: SubtaskTarget,
         fields: { do: string; deadline?: string }
+    ) => Promise<WriteAnswer>;
+    writeFollowup: (
+        target: SubtaskTarget,
+        key: string,
+        action: FollowupAction,
+        value?: string
+    ) => Promise<WriteAnswer>;
+    addFollowup: (
+        target: SubtaskTarget,
+        fields: { do: string; after?: string }
     ) => Promise<WriteAnswer>;
     writeHost: (name: string, status: string) => Promise<WriteAnswer>;
     /** Set the changed sections of the career file, a section cleared by null. */

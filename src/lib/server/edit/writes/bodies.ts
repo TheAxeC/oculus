@@ -11,7 +11,7 @@
 
 import { z } from 'zod';
 import { anyNumberShape, mapShape, readAs, unchanged } from '../../../data/shapes/shapes.ts';
-import type { SubtaskAction, SubtaskTarget } from './subtasks.ts';
+import type { FollowupAction, SubtaskAction, SubtaskTarget } from './subtasks.ts';
 
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
 export type ManifestWrite = { kind: 'manifest'; id: string; fields: Record<string, unknown> };
@@ -53,6 +53,22 @@ export type SubtaskWrite = {
 /** One subtask line added to a host that may not have a block yet. */
 export type SubtaskAddWrite = {
     kind: 'subtask-add';
+    target: SubtaskTarget;
+    fields: Record<string, unknown>;
+};
+
+/** One follow-up note acted on: the host it hangs under, which note, and what the button does. */
+export type FollowupWrite = {
+    kind: 'followup';
+    target: SubtaskTarget;
+    key: string;
+    action: FollowupAction;
+    value?: string;
+};
+
+/** One follow-up note added to a host that may not have a `followup:` block yet. */
+export type FollowupAddWrite = {
+    kind: 'followup-add';
     target: SubtaskTarget;
     fields: Record<string, unknown>;
 };
@@ -277,7 +293,7 @@ const subtaskShape = z.object({
     kind: z.literal('subtask'),
     target: targetShape,
     key: wordShape,
-    action: z.enum(['done', 'reopen', 'snooze', 'delete']),
+    action: z.enum(['done', 'reopen', 'snooze', 'delete', 'do', 'deadline']),
     value: z.string().optional()
 }) satisfies z.ZodType<SubtaskWrite>;
 
@@ -287,6 +303,21 @@ const subtaskAddShape = z.object({
     target: targetShape,
     fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
 }) satisfies z.ZodType<SubtaskAddWrite>;
+
+const followupShape = z.object({
+    kind: z.literal('followup'),
+    target: targetShape,
+    key: wordShape,
+    action: z.enum(['done', 'do', 'after']),
+    value: z.string().optional()
+}) satisfies z.ZodType<FollowupWrite>;
+
+/** The fields of a follow-up add must carry a `do` that is more than blanks. */
+const followupAddShape = z.object({
+    kind: z.literal('followup-add'),
+    target: targetShape,
+    fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
+}) satisfies z.ZodType<FollowupAddWrite>;
 
 const hostShape = z.object({
     kind: z.literal('host'),
@@ -515,6 +546,16 @@ export function subtaskWrite(body: unknown): SubtaskWrite | null {
 /** The body as a subtask add, or null when it is not one. */
 export function subtaskAdd(body: unknown): SubtaskAddWrite | null {
     return readAs(subtaskAddShape, body);
+}
+
+/** The body as a follow-up write, or null when it is not one. */
+export function followupWrite(body: unknown): FollowupWrite | null {
+    return readAs(followupShape, body);
+}
+
+/** The body as a follow-up add, or null when it is not one. */
+export function followupAdd(body: unknown): FollowupAddWrite | null {
+    return readAs(followupAddShape, body);
 }
 
 /** The body as a host write, or null when it is not one. */

@@ -35,6 +35,8 @@ const WRITE: Record<string, (() => string) | undefined> = {
     entry: () => t('apps.write.entry'),
     subtask: () => t('apps.write.subtask'),
     'subtask-add': () => t('apps.write.subtask-add'),
+    followup: () => t('apps.write.followup'),
+    'followup-add': () => t('apps.write.followup-add'),
     host: () => t('apps.write.host'),
     'new-entry': () => t('apps.write.new-entry'),
     reorder: () => t('apps.write.reorder'),

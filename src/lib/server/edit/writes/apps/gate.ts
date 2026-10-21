@@ -46,6 +46,8 @@ import {
     sessionWrite,
     subtaskAdd,
     subtaskWrite,
+    followupAdd,
+    followupWrite,
     undoWrite
 } from '../bodies.ts';
 import { APP_STORE } from './store.ts';
@@ -68,6 +70,8 @@ function matchedKind(body: unknown): string | null {
         ['entry', entryWrite],
         ['subtask', subtaskWrite],
         ['subtask-add', subtaskAdd],
+        ['followup', followupWrite],
+        ['followup-add', followupAdd],
         ['host', hostWrite],
         ['new-entry', newEntry],
         ['reorder', reorderWrite],

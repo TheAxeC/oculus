@@ -41,6 +41,8 @@ text:
         kind_entry: entry field
         kind_subtask: subtask
         kind_subtask_add: subtask added
+        kind_followup: follow-up
+        kind_followup_add: follow-up added
         kind_host: career host
         kind_career: career section
         kind_new_entry: entry added
@@ -77,6 +79,7 @@ text:
         undid_radar_add: Lit Watch entry removed
         undid_literature_save: paper removed from Literature
         undid_subtask_add: subtask removed
+        undid_followup_add: follow-up removed
         undid_reorder: order put back
         undid_field: '{0} set back'
         by_app: 'by {0}'

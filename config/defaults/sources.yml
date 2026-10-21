@@ -55,10 +55,10 @@ publications_file: ''
 linkedin_dir: ''
 
 
-# The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
+# The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it or in a folder under it (a folder whose name starts with a dot aside) is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
 memories_dir: .oculus/memories
 
-# The folder of this hub's wallpaper images, relative to the hub and inside it. The `wallpaper.image` key of the primary hub's .oculus/config.yml names one of them as `<hub name>/<file name>`, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
+# The folder of this hub's wallpaper images, relative to the hub and inside it. Its pictures are read with those of every folder under it, a folder whose name starts with a dot aside. The `wallpaper.image` key of the primary hub's .oculus/config.yml names one of them as `<hub name>/<file path>`, the path relative to this folder, so a picture in a folder under it is named with its folders; the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
 wallpaper_dir: .oculus/wallpaper
 
 # Where the reader's own bookmarks, the schedules and the machine's apps live, each relative to the primary hub, under the home folder for a value of ~ or one starting with ~/, or an absolute path. A hub sets them in its .oculus/config.yml, and the primary hub's file is the one read.

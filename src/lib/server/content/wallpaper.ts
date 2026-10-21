@@ -9,16 +9,18 @@
 //
 // The choice is `wallpaper.image` in the primary hub's `.oculus/config.yml`: empty for
 // none, `random` for one image of any hub chosen once per server process, or
-// `<hub name>/<file name>` for one file of the wallpaper folder of that hub. A value that names a
-// hub the workspace does not list, a file the folder does not hold, a name that is a path rather
-// than a file, or neither form, serves no image and is a finding. The picker in Settings lists
-// every hub's images and serves each of them as `<hub name>/<file name>` (`?image=`).
+// `<hub name>/<file path>` for one file of the wallpaper folder of that hub, the file path relative
+// to the folder so that a picture in a folder under it is named by its folders too. A value that
+// names a hub the workspace does not list, a file the folder does not hold, a file path that is
+// not one the folder's listing could hold (a part that is empty, a dot name or `..`), or neither
+// form, serves no image and is a finding. The picker in Settings lists every hub's images and
+// serves each of them as `<hub name>/<file path>` (`?image=`).
 
 import { json } from '@sveltejs/kit';
 import { findingText, type TextCatalog } from '../../data/helpers/finding-text.ts';
 import { wallpaperValue } from '../../data/helpers/hub-names.ts';
 import type { Finding } from '../../data/model/index.ts';
-import { images, isName, stream, type HubPictures } from './images.ts';
+import { holds, images, isFilePath, stream, type HubPictures } from './images.ts';
 
 export { images } from './images.ts';
 
@@ -26,7 +28,7 @@ export { images } from './images.ts';
 const RANDOM = 'random';
 
 /**
- * What the owning server context remembers: the random pick, as `<hub name>/<file name>`, so one
+ * What the owning server context remembers: the random pick, as `<hub name>/<file path>`, so one
  * image is shown for the life of the process.
  */
 export type WallpaperMemory = { chosen: string | null };
@@ -35,10 +37,10 @@ export function wallpaperMemory(): WallpaperMemory {
     return { chosen: null };
 }
 
-/** One image of the wallpaper folders: its hub, its file name and the folder holding it. */
+/** One image of the wallpaper folders: its hub, its path in the folder and the folder. */
 type WallpaperImage = { hub: string; file: string; dir: string };
 
-/** Every image of every hub's wallpaper folder, hubs in the workspace's order, files by name. */
+/** Every image of every hub's wallpaper folder, hubs in the workspace's order, files by path. */
 function wallpaperImages(pictures: readonly HubPictures[]): WallpaperImage[] {
     return pictures.flatMap((one) =>
         images(one.wallpaper).map((file) => ({ hub: one.hub, file, dir: one.wallpaper }))
@@ -47,9 +49,10 @@ function wallpaperImages(pictures: readonly HubPictures[]): WallpaperImage[] {
 
 /**
  * The image a value names, or the id of the finding it is wrong by: `form` for a value that is
- * neither `random` nor `<hub name>/<file name>`, `name` for a file part that is a path, `hub` for a
- * hub the workspace does not list, `gone` for a file the folder does not hold. An empty value names
- * none and is no fault.
+ * neither `random` nor `<hub name>/<file path>`, `name` for a file path that leaves the folder or
+ * holds a dot name, `hub` for a hub the workspace does not list, `gone` for a file the folder does
+ * not hold. An empty value names none and is no fault. The hub is the part before the first `/`,
+ * so the file path may hold further ones.
  */
 function named(
     value: string,
@@ -60,10 +63,10 @@ function named(
     if (cut < 1) return { fault: 'form' };
     const hub = value.slice(0, cut);
     const file = value.slice(cut + 1);
-    if (!isName(file)) return { fault: 'name' };
+    if (!isFilePath(file)) return { fault: 'name' };
     const held = pictures.find((one) => one.hub === hub);
     if (held === undefined) return { fault: 'hub' };
-    return images(held.wallpaper).includes(file)
+    return holds(held.wallpaper, file)
         ? { hub, file, dir: held.wallpaper }
         : { fault: 'gone' };
 }
@@ -104,7 +107,7 @@ export function serve(
     return image === null ? new Response(null, { status: 404 }) : stream(image.dir, image.file);
 }
 
-/** One image asked for by `<hub name>/<file name>`, as the picker draws its thumbnails. */
+/** One image asked for by `<hub name>/<file path>`, as the picker draws its thumbnails. */
 export function serveImage(asked: string, pictures: readonly HubPictures[]): Response {
     const found = named(asked, pictures);
     return found === null || 'fault' in found

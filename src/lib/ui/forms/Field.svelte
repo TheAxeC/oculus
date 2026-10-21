@@ -13,15 +13,13 @@
         help?: string;
         /** A remark of the view's own, drawn beside the help. */
         note?: string;
-        /** A link drawn at the end of the note, to the place the note sends the reader. */
-        link?: { label: string; open: () => void };
         /** Draw the row as one the viewer has changed and not yet saved. */
         dirty?: boolean;
         /** The control. */
         children: Snippet;
     };
 
-    let { label, help, note, link, dirty = false, children }: Props = $props();
+    let { label, help, note, dirty = false, children }: Props = $props();
 </script>
 
 <div class="field" class:dirty>
@@ -31,12 +29,7 @@
         <p class="help">{help}</p>
     {/if}
     {#if note !== undefined && note !== ''}
-        <p class="note">
-            {note}
-            {#if link !== undefined}
-                <button type="button" class="link" onclick={link.open}>{link.label}</button>
-            {/if}
-        </p>
+        <p class="note">{note}</p>
     {/if}
 </div>
 
@@ -75,17 +68,6 @@
 
     .note {
         color: var(--accent-txt, var(--accent));
-    }
-
-    /* The link reads as words of the note, underlined, and takes the pointer as a link does. */
-    .link {
-        padding: 0;
-        border: 0;
-        background: none;
-        font: inherit;
-        color: inherit;
-        text-decoration: underline;
-        cursor: pointer;
     }
 
     :global(body.rice) .name {

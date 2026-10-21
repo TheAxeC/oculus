@@ -318,6 +318,51 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         }
     );
 
+    it.each(SUBTASK_ROWS)(
+        'records a follow-up note added, changed and taken out once done',
+        async (row) => {
+            const { into, files } = personalTarget(target());
+            const added = await written(
+                into,
+                { kind: 'followup-add', target: row.host, fields: { do: 'ask Ann' } },
+                row.name
+            );
+            expect(added[0], row.name).toMatchObject({
+                kind: 'followup-add',
+                file: row.file(files, into.hub),
+                key: row.key,
+                field: '0',
+                before: null,
+                after: { do: 'ask Ann' },
+                undo: 'create'
+            });
+            const dated = await written(
+                into,
+                {
+                    kind: 'followup',
+                    target: row.host,
+                    key: '0',
+                    action: 'after',
+                    value: '2026-12-01'
+                },
+                row.name
+            );
+            expect(dated[0], row.name).toMatchObject({
+                kind: 'followup',
+                field: '0',
+                before: { do: 'ask Ann' },
+                after: { do: 'ask Ann', after: '2026-12-01' },
+                undo: 'field'
+            });
+            const done = await written(
+                into,
+                { kind: 'followup', target: row.host, key: '0', action: 'done' },
+                row.name
+            );
+            expect(done[0], row.name).toMatchObject({ field: '0', after: null, undo: 'delete' });
+        }
+    );
+
     it('records a career host, a session override and a feed field', async () => {
         const into = target();
         const host = await written(into, { kind: 'host', name: 'Naesens', status: 'candidate' });

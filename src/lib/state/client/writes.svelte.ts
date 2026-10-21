@@ -38,6 +38,7 @@ import {
 import { isPageFeed, type Settle } from '../forms/page-entry.ts';
 import type {
     DeckEditAct,
+    FollowupAction,
     SendOptions,
     SessionFields,
     SubtaskAction,
@@ -47,7 +48,15 @@ import type {
     WritesStore
 } from '../shared/stores/shapes.ts';
 
-export type { SendOptions, SessionFields, SubtaskAction, SubtaskTarget, WriteAnswer, WritesStore };
+export type {
+    FollowupAction,
+    SendOptions,
+    SessionFields,
+    SubtaskAction,
+    SubtaskTarget,
+    WriteAnswer,
+    WritesStore
+};
 
 /** The endpoint that opens a file in its application or reveals a folder, behind the same token. */
 export const OPEN_PATH = '/api/open';
@@ -315,9 +324,9 @@ export function createWrites(
     }
 
     /**
-     * Tick one subtask line, reopen it, snooze it until a date, or delete it. `key` is what the
-     * reader addressed the line by: the key of the map the file writes, or the position in the
-     * list.
+     * Tick one subtask line, reopen it, snooze it until a date, change its text or its deadline, or
+     * delete it. `key` is what the reader addressed the line by: the key of the map the file
+     * writes, or the position in the list.
      */
     async function writeSubtask(
         target: SubtaskTarget,
@@ -343,6 +352,35 @@ export function createWrites(
         fields: { do: string; deadline?: string }
     ): Promise<WriteAnswer> {
         return send({ kind: 'subtask-add', target, fields });
+    }
+
+    /**
+     * Take one follow-up note out once it is done, or change its text or the date before which it
+     * stays hidden. `key` is the note's position in the `followup:` list.
+     */
+    async function writeFollowup(
+        target: SubtaskTarget,
+        key: string,
+        action: FollowupAction,
+        value?: string
+    ): Promise<WriteAnswer> {
+        return send({
+            kind: 'followup',
+            target,
+            key,
+            action,
+            ...(value === undefined ? {} : { value })
+        });
+    }
+
+    /**
+     * Add one follow-up note to a project or a collection entry, making the list when it has none.
+     */
+    async function addFollowup(
+        target: SubtaskTarget,
+        fields: { do: string; after?: string }
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'followup-add', target, fields });
     }
 
     /**
@@ -831,6 +869,8 @@ export function createWrites(
         writeEntry,
         writeSubtask,
         addSubtask,
+        writeFollowup,
+        addFollowup,
         writeHost,
         writeCareer,
         newEntry,

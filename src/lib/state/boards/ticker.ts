@@ -4,7 +4,6 @@
 import {
     optionKeys,
     type Collection,
-    type Followup,
     type Id,
     type Project,
     type Snapshot,
@@ -13,7 +12,8 @@ import {
 import { z } from 'zod';
 import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
 import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
-import { listOrOneShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
+import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import { entryFollowups } from './collection.ts';
 import { hasWord } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
@@ -212,9 +212,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     /**
      * A grant still waiting to be written. A submitted one has met its date and stops nagging. The
      * schemes are a registry entity rather than a collection (normalise leaves the collection out,
-     * since the registry already carries the file), so there is no collection tab to open and a
-     * funding line is read rather than clicked until the Funding view exists. The category is the
-     * one the `funding` row of `ticker_sources` gives.
+     * since the registry already carries the file), and a line of one opens the Funding view. The
+     * category is the one the `funding` row of `ticker_sources` gives.
      */
     const grant = categoryOf(sources, FUNDING);
     for (const scheme of Object.values(snapshot.entities.funding)) {
@@ -225,6 +224,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const days = daysUntil(isoOf(scheme.deadline), now);
         if (days === null || days > horizon) continue;
         const line = item(grant, GLYPHS[grant], scheme.title, days, {
+            entry: FUNDING,
             ...rootMark(scheme),
             target: { kind: 'funding', id: scheme.id }
         });
@@ -292,8 +292,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
 
     /**
-     * A conference's open call, by its exact date or, with none, by its usual month. The category
-     * is the one the `venues` row of `ticker_sources` gives.
+     * A conference's open call, by its exact date or, with none, by its usual month, which opens
+     * the Venues view. The category is the one the `venues` row of `ticker_sources` gives.
      */
     const call = categoryOf(sources, VENUES);
     for (const venue of Object.values(snapshot.entities.venues)) {
@@ -303,7 +303,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             if (days < 0 || days > horizon) continue;
             dated.push({
                 category: call,
-                line: item(call, GLYPHS[call], venueLabel(venue), days, rootMark(venue))
+                line: item(call, GLYPHS[call], venueLabel(venue), days, {
+                    entry: VENUES,
+                    ...rootMark(venue)
+                })
             });
             continue;
         }
@@ -313,12 +316,17 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             category: call,
             line: item(call, GLYPHS[call], venueLabel(venue), null, {
                 months: ahead,
+                entry: VENUES,
                 ...rootMark(venue)
             })
         });
     }
 
-    /** Follow-ups: a project's, then every collection entry's, oldest due first. */
+    /**
+     * Follow-ups: a project's, then every collection entry's, oldest due first. A note shows while
+     * its parent is open, or closed by a status that keeps its lines live (`live_subtasks`), as a
+     * subtask does. Each line names its note by its key, which is what Done takes out.
+     */
     const notes: { days: number | null; line: TickerItem }[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
         for (const { note, days } of dueFollowups(project.followups, now)) {
@@ -332,24 +340,23 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                     {
                         id: project.id,
                         ...rootMark(project),
-                        target: { kind: 'followup', id: project.id }
+                        target: { kind: 'followup', id: project.id, note: note.key }
                     }
                 )
             });
         }
     }
     for (const scheme of Object.values(snapshot.entities.funding)) {
-        if (terminal(config, scheme.status ?? '')) continue;
+        const status = scheme.status ?? '';
+        if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
                 days,
-                line: item(
-                    'followup',
-                    GLYPHS.followup,
-                    `${scheme.title} - ${note.do}`,
-                    days,
-                    rootMark(scheme)
-                )
+                line: item('followup', GLYPHS.followup, `${scheme.title} - ${note.do}`, days, {
+                    entry: FUNDING,
+                    ...rootMark(scheme),
+                    target: { kind: 'followup', id: scheme.id, collection: FUNDING, note: note.key }
+                })
             });
         }
     }
@@ -358,15 +365,16 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         // The funding collection's entries are the schemes read above.
         if (key === FUNDING) continue;
         for (const entry of collection.entries) {
-            if (terminal(config, str(entry.fields.status))) continue;
-            const held = followupsOf(entry.fields.followup);
+            const status = str(entry.fields.status);
+            if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
+            const held = entryFollowups(entry);
             for (const { note, days } of dueFollowups(held, now)) {
                 notes.push({
                     days,
                     line: item('followup', GLYPHS.followup, `${entry.title} - ${note.do}`, days, {
                         entry: key,
                         ...rootMark(entry),
-                        target: { kind: 'followup', id: entry.id, collection: key }
+                        target: { kind: 'followup', id: entry.id, collection: key, note: note.key }
                     })
                 });
             }
@@ -478,22 +486,6 @@ export function monthsAhead(month: string, now: number): number | null {
     const at = names.indexOf(month.trim().slice(0, 3).toLowerCase());
     if (at < 0) return null;
     return (at - new Date(now).getMonth() + 12) % 12;
-}
-
-/** One `followup:` note: a string, or a map with `do` and `after`; no words is no note. */
-const followupShape = z
-    .union([
-        z.string().transform((note) => ({ do: note, after: '' })),
-        z.object({ do: wordShape, after: wordShape })
-    ])
-    .refine((note) => note.do.trim() !== '')
-    .transform((note): Followup => (note.after === '' ? { do: note.do } : note));
-
-const followupsShape = rowsShape(followupShape);
-
-/** The `followup:` of a collection entry, in the three shapes a file may write it in. */
-function followupsOf(value: unknown): Followup[] {
-    return readAs(followupsShape, readAs(listOrOneShape, value)) ?? [];
 }
 
 /**

@@ -5,12 +5,7 @@ text:
         dirty: '{0} changed'
         empty_choice: (none)
         failed: 'not saved: {0}'
-        followup_needs_note: a date needs a note; type the text of the follow-up first
-        followup_date: '{0}. {1}'
-        followup_note: '{0}. {1}'
-        followup_note_dated: '{0}. {1} (not until {2})'
-        followup_open: open project.yml at followup
-        followup_several: 'this project has several follow-up notes, each shown under its number with its own date; the form edits one note, so edit them in the manifest:'
+        followup_note_dated: '{0} (not until {1})'
         more_choices: '{0} more; show all'
         no_choices: no choices
         none: No project chosen. Open the editor from a project card.

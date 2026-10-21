@@ -83,8 +83,8 @@ text:
             picture_folder_text: '{0} is no folder name; the folder {1} is used'
             picture_folder_outside: 'the folder {1} of {0} lies outside the hub; the folder {2} is used'
         wallpaper:
-            form: 'wallpaper.image is {0}, which is neither random nor a hub name and a file name joined by a slash; no wallpaper is shown'
-            name: 'wallpaper.image is {0}, whose file part is a path and not a file name; no wallpaper is shown'
+            form: 'wallpaper.image is {0}, which is neither random nor a hub name and a file path joined by a slash; no wallpaper is shown'
+            name: 'wallpaper.image is {0}, whose file part leaves the wallpaper folder or names a dot file or folder; no wallpaper is shown'
             hub: 'wallpaper.image is {0}, which names a hub the open workspace does not list; no wallpaper is shown'
             gone: 'wallpaper.image is {0}, and the wallpaper folder of that hub holds no such file; no wallpaper is shown'
         deck:
@@ -269,6 +269,7 @@ text:
             or: or
             snooze_help: A day, or true, until which the entry is kept off the ticker; oculus writes it when an entry is snoozed.
             subtasks_help: A checklist of lines, each with what to do, a deadline, whether it is done and a snooze day; oculus writes it from the card.
+            followup_help: Follow-up notes, each with what to do and the day before which it stays off the Focus board; oculus writes them from the card.
         validate:
             bad_cluster: 'paths.cluster must be ~/ or / followed by folder names of letters, digits, . _ and -, not {0}'
             related_itself: 'related names the project itself: {0}'

@@ -32,11 +32,9 @@
     // the one the save was made over replaces the held value, and of two saves in flight the
     // newest one's values are the ones held.
     //
-    // The two follow-up fields address one note. A project with two or more notes shows them
-    // read-only, each note with its own date, with a sentence whose link opens the manifest at its
-    // `followup` key, the one place both notes can be edited; what the draft kept for them from
-    // before is neither shown, counted nor posted (state/forms/schema.ts decides which fields
-    // write).
+    // The follow-up notes and the subtasks are shown read-only, each list as one text: the
+    // project's card adds, changes and removes them line by line (state/forms/schema.ts decides
+    // which fields write).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -44,17 +42,12 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from '../../shared/forms/entry/edit/EntryForm.svelte';
-    import { openAtKey } from '../../shared/forms/entry-file';
-    import { fileUnder } from '$lib/state/shared/page/hubs';
     import {
-        dateNeedsNote,
         editDiffers,
         fieldsOfSection,
         fieldValues,
-        followupWritable,
         manifestPayload,
         NOT_IN_MODEL,
-        refusedEdits,
         projectKey,
         writableField,
         type FormField
@@ -67,7 +60,6 @@
     const client = useState();
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
-        fs: { primary, roots },
         selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
         settled,
         writes: { writeManifest }
@@ -101,7 +93,7 @@
 
     /** Whether the form may write a field: a read-only one shows the project's value only. */
     function writable(field: string): boolean {
-        return project !== null && writableField(project, field, edits);
+        return project !== null && writableField(field);
     }
 
     /** The value a control shows: the edit when there is one, the project's value otherwise. */
@@ -159,7 +151,6 @@
             project === null
                 ? { body: {}, taken: {} }
                 : manifestPayload(
-                      project,
                       edits,
                       dirty.map((one) => one.field)
                   );
@@ -176,7 +167,7 @@
             if (mine === newest) result = [t('editor.failed', answer.error ?? '')];
             return;
         }
-        const refused = refusedEdits(answer.refused.map((one) => one.field));
+        const refused = answer.refused.map((one) => one.field);
         settled.record(
             projectKey(id),
             Object.fromEntries(Object.entries(taken).filter(([name]) => !refused.includes(name))),
@@ -191,43 +182,9 @@
         ];
     }
 
-    /** Whether a field is one of the follow-up fields of a project with two or more notes. */
-    function severalNotes(field: FormField): boolean {
-        return (
-            project !== null && !followupWritable(project) && field.field.startsWith('followup.')
-        );
-    }
-
     /** A field the schema names but the snapshot does not carry: the form opens it empty. */
     function noteFor(field: FormField): string | undefined {
-        if (severalNotes(field)) {
-            return t('editor.followup_several');
-        }
-        if (project !== null && dateNeedsNote(project, field.field, edits)) {
-            return t('editor.followup_needs_note');
-        }
         return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
-    }
-
-    /** The project's manifest as a file of a served root, or null when no root serves it. */
-    const manifest = $derived(
-        project === null ? null : fileUnder(project.file, roots(), primary())
-    );
-
-    /**
-     * The link of the follow-up sentence: the manifest opened at its `followup` key. A sentence the
-     * opening answers (a manifest that does not parse) is drawn under the form.
-     */
-    function linkFor(field: FormField): { label: string; open: () => void } | undefined {
-        const file = manifest;
-        if (file === null || !severalNotes(field)) return undefined;
-        return {
-            label: t('editor.followup_open'),
-            open: () =>
-                void openAtKey(client, file, 'followup').then((sentence) => {
-                    if (sentence !== '') result = [sentence];
-                })
-        };
     }
 </script>
 
@@ -277,7 +234,6 @@
                             {changed}
                             choices={(one: FormField) => fieldChoices(one, project)}
                             note={noteFor}
-                            link={linkFor}
                         />
                     </section>
                 {/if}

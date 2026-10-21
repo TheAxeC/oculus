@@ -1,7 +1,10 @@
-// Layer 2, server. The subtask half of the write path, and the two career writes beside it: a line
-// ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, one
-// host of the career file moved along its pipeline, and the sections of that file set from
-// the career editor.
+// Layer 2, server. The line half of the write path, and the two career writes beside it: a subtask
+// line ticked, reopened, snoozed, changed or taken out, a follow-up note changed or taken out, a
+// line of either block added to a host that may have no block yet, one host of the career file
+// moved along its pipeline, and the sections of that file set from the career editor.
+//
+// The subtask and the follow-up writes run the same line editor (entry-edit/subtasks.ts) over
+// their own block, `subtasks:` or `followup:`, and differ in the actions they take.
 //
 // A subtask hangs under one of two hosts, which is the whole of the difference between the two
 // views that draw the block: one manifest by its id, or one entry of one collection. subtaskHost
@@ -19,6 +22,8 @@ import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { engineDefaults } from '../../../data/sources/collections.ts';
 import {
+    FOLLOWUP,
+    SUBTASKS,
     addSubtask,
     deleteSubtask,
     entryRange,
@@ -36,7 +41,7 @@ import { identityOf, readCollection } from '../../files/fs/collections.ts';
 import { saved, typeRefusals } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
-import type { LineRange } from '../entry-edit/index.ts';
+import type { LineBlock, LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
@@ -74,11 +79,12 @@ function subtaskRecord(
     host: SubtaskHost,
     edit: EditResult,
     key: string,
-    target: SubtaskTarget
+    target: SubtaskTarget,
+    block: LineBlock
 ): ChangeRecord[] {
     if (edit.changed.length === 0) return [];
-    const before = subtaskValues(host.source, host.range);
-    const after = subtaskValues(edit.text, host.range);
+    const before = subtaskValues(host.source, host.range, block);
+    const after = subtaskValues(edit.text, host.range, block);
     const line = key === '' ? Object.keys(after).find((one) => !(one in before)) : key;
     if (line === undefined) return [];
     const had = line in before;
@@ -96,10 +102,14 @@ function subtaskRecord(
     ];
 }
 
-/** What one subtask button does to its line. */
-export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
+/** What one subtask button does to its line: `do` and `deadline` set that field to the value. */
+export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete' | 'do' | 'deadline';
 
-/** Tick one subtask line, reopen it, snooze it until a date, or take the line out. */
+/**
+ * Tick one subtask line, reopen it, snooze it until a date, change its text or its deadline, or
+ * take the line out. An empty deadline clears it; an empty text is refused, since a line is its
+ * text.
+ */
 export function writeSubtask(
     hub: string,
     config: PortfolioConfig,
@@ -113,11 +123,51 @@ export function writeSubtask(
     const edit =
         action === 'delete'
             ? deleteSubtask(host.source, host.range, key, config.text)
-            : action === 'snooze'
-              ? setSubtask(host.source, host.range, key, { snooze: value ?? null }, config.text)
+            : action === 'snooze' || action === 'do' || action === 'deadline'
+              ? setSubtask(
+                    host.source,
+                    host.range,
+                    key,
+                    { [action]: value?.trim() ?? null },
+                    config.text
+                )
               : setSubtask(host.source, host.range, key, { done: action === 'done' }, config.text);
     const out = saved(host.file, host.source, edit);
-    return { ...out, records: subtaskRecord(host, edit, key, target) };
+    return { ...out, records: subtaskRecord(host, edit, key, target, SUBTASKS) };
+}
+
+/**
+ * What one follow-up button does to its note: `done` takes it out, `do` and `after` set that field.
+ */
+export type FollowupAction = 'done' | 'do' | 'after';
+
+/**
+ * Take one follow-up note out once it is done, or change its text or the date before which it stays
+ * hidden. An empty date clears it; an empty text is refused, since a note is its text.
+ */
+export function writeFollowup(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: FollowupAction,
+    value?: string
+): WriteOutcome {
+    const host = subtaskHost(hub, config, target);
+    if (host === null) return { found: false, changed: [], refused: [] };
+    const edit =
+        action === 'done'
+            ? deleteSubtask(host.source, host.range, key, config.text, FOLLOWUP)
+            : setSubtask(
+                  host.source,
+                  host.range,
+                  key,
+                  { [action]: value?.trim() ?? null },
+                  config.text,
+                  FOLLOWUP
+              );
+    const out = saved(host.file, host.source, edit);
+    return { ...out, records: subtaskRecord(host, edit, key, target, FOLLOWUP) };
 }
 
 /**
@@ -130,34 +180,36 @@ export function restoreSubtask(
     config: PortfolioConfig,
     target: SubtaskTarget,
     key: string,
-    before: Record<string, unknown>
+    before: Record<string, unknown>,
+    block: LineBlock = SUBTASKS
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const now = subtaskValues(host.source, host.range)[key] ?? {};
+    const now = subtaskValues(host.source, host.range, block)[key] ?? {};
     const fields: Record<string, unknown> = {};
     for (const field of new Set([...Object.keys(now), ...Object.keys(before)])) {
         fields[field] = before[field] ?? null;
     }
-    const edit = setSubtask(host.source, host.range, key, fields, config.text);
+    const edit = setSubtask(host.source, host.range, key, fields, config.text, block);
     const out = saved(host.file, host.source, edit);
-    return { ...out, records: subtaskRecord(host, edit, key, target) };
+    return { ...out, records: subtaskRecord(host, edit, key, target, block) };
 }
 
-/** Add one subtask line to a manifest or to a collection entry. */
+/** Add one line of a block, a subtask or a follow-up note, to a manifest or a collection entry. */
 export function writeSubtaskAdd(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    block: LineBlock = SUBTASKS
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const edit = addSubtask(host.source, host.range, fields, config.text);
+    const edit = addSubtask(host.source, host.range, fields, config.text, block);
     const out = saved(host.file, host.source, edit);
     // The key the new line took is the one the edit added, which is why the record is asked for it
     // by the empty name rather than being told one this writer does not choose.
-    return { ...out, records: subtaskRecord(host, edit, '', target) };
+    return { ...out, records: subtaskRecord(host, edit, '', target, block) };
 }
 
 /** Where the career hosts are, and the statuses one may hold. */
@@ -199,16 +251,19 @@ function careerHost(data: unknown, name: string): Record<string, unknown> | unde
     return careerHostsShape.parse(data).find((one) => one.name === name);
 }
 
-/** The value one subtask line holds now, or null when the host or the line is no longer there. */
+/**
+ * The value one line of a block holds now, or null when the host or the line is no longer there.
+ */
 export function subtaskValue(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget,
-    key: string
+    key: string,
+    block: LineBlock = SUBTASKS
 ): { found: boolean; value: unknown } {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, value: null };
-    const values = subtaskValues(host.source, host.range);
+    const values = subtaskValues(host.source, host.range, block);
     return { found: true, value: key in values ? values[key] : null };
 }
 

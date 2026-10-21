@@ -174,9 +174,3 @@
 {#if renaming !== null}
     <Prompt request={renaming} cancel={t('ui.confirm_cancel')} oncancel={() => (renaming = null)} />
 {/if}
-
-<style>
-    .marks {
-        margin-top: 6px;
-    }
-</style>

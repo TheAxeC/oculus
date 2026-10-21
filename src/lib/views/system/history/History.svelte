@@ -133,12 +133,19 @@
     }
 
     /** The kinds of write that add a value, whose undo takes it out again. */
-    const ADDS = new Set(['new-entry', 'lead-add', 'radar-add', 'literature-save', 'subtask-add']);
+    const ADDS = new Set([
+        'new-entry',
+        'lead-add',
+        'radar-add',
+        'literature-save',
+        'subtask-add',
+        'followup-add'
+    ]);
 
     /**
-     * What an undo did, which its record names by the kind of the write it took back: an entry or
-     * a feed entry put back, an added entry or subtask removed, an order put back, and for any
-     * other write the field set back.
+     * What an undo did, which its record names by the kind of the write it took back: an entry or a
+     * feed entry put back, an added entry, subtask or follow-up removed, an order put back, and for
+     * any other write the field set back.
      */
     function undidOf(row: Change): string {
         switch (row.kind) {
@@ -156,6 +163,8 @@
                 return t('history.undid_literature_save');
             case 'subtask-add':
                 return t('history.undid_subtask_add');
+            case 'followup-add':
+                return t('history.undid_followup_add');
             case 'reorder':
                 return t('history.undid_reorder');
             default:

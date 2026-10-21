@@ -13,7 +13,6 @@ import {
     entryAt,
     entryAtIndex,
     entryStub,
-    keyPlace,
     type EntryRefusal,
     type TextPlace
 } from '../../../data/helpers/files/yaml/collection-text.ts';
@@ -103,18 +102,6 @@ export function findEntry(source: DraftSource, id: string, at: EntryAt): EntryAn
             line: null
         };
     }
-    if ('code' in found) return refused(found, draft.file);
-    return { ok: true, line: found.line, column: found.column };
-}
-
-/**
- * Where a key of the top level of the tab's text stands. A text that holds no such key is answered
- * with no sentence and no line, so the tab stays where it opened.
- */
-export function findKey(source: DraftSource, id: string, key: string): EntryAnswer {
-    const draft = source.sourceDraft(id);
-    const found = keyPlace(draft.text, key);
-    if (found === null) return { ok: false, sentence: '', line: null };
     if ('code' in found) return refused(found, draft.file);
     return { ok: true, line: found.line, column: found.column };
 }

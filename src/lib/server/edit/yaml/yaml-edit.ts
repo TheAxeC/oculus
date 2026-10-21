@@ -18,13 +18,6 @@
 // line tries only the places of that line. That is how an undo gives a cleared field back as it was
 // written, comments, quoting and block style included.
 //
-// A bare follow-up note or a list of one note that is written as the map it stands for keeps its
-// comments: one after the parent key stays on that line, one on a line of its own stays above the
-// key that follows it, and one after a value stays after that value. A comment inside a value
-// cannot go with it, and refuses the write. The text those lines replace is reported per field as
-// `replaced`, and insertReplaced (../writes/restore.ts) writes it back while the file still holds
-// those lines.
-//
 // The values a write may carry and how they are written as text are yaml-values.ts, and where a
 // node stands in its text is data/helpers/files/yaml/yaml-ranges.ts.
 //
@@ -35,11 +28,11 @@
 // node test is imported as `isYamlMap`.
 
 import { isDeepStrictEqual } from 'node:util';
-import { Parser, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
+import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { z } from 'zod';
-import { byKey, isMap } from '../../../data/helpers/guards.ts';
-import type { RemovedText, ReplacedText } from '../../core/changes.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
+import type { RemovedText } from '../../core/changes.ts';
 import { unchanged } from '../../../data/shapes/shapes.ts';
 import {
     isBlockMap,
@@ -79,43 +72,14 @@ export type EditResult = {
 };
 
 /**
- * What `setFields` answers: an `EditResult`, for each changed field whose edit took text out and
- * put none in the text it took out (`removed`), and for each field whose edit wrote a bare note or
- * a list of one note as a map the text it replaced (`replaced`), when the rest of the write left it
- * in the file as it wrote it. A field that was replaced or added has no entry in `removed`, and
- * nothing is reported when the write is refused.
+ * What `setFields` answers: an `EditResult`, and for each changed field whose edit took text out
+ * and put none in the text it took out (`removed`). A field that was replaced or added has no entry
+ * in `removed`, and nothing is reported when the write is refused.
  */
-export type SetFieldsResult = EditResult & {
-    removed: Record<string, RemovedText>;
-    replaced: Record<string, ReplacedText>;
-};
+export type SetFieldsResult = EditResult & { removed: Record<string, RemovedText> };
 
 /** The lists the tree writes in the block style; every other list is written flow. */
 export const BLOCK_LISTS = ['results', 'ideas'];
-
-/**
- * The one dual-shape field of the tree: `followup` is a map of `do` and `after` on two manifests
- * and a bare note on one, where the note means `do`; a list of exactly one note holds either.
- * Setting a key under a scalar or a one-note list would drop that note, so it is expanded into the
- * map it stands for and the new value written into that. A scalar parent this map does not name is
- * refused, since nothing says what its value is short for, and a list of two or more notes is
- * refused, since the two keys address one note.
- */
-const SHORTHAND: Record<string, string> = { followup: 'do' };
-
-/**
- * The map a dual-shape parent's value stands for: a map as it is, a bare note as its `do`, and a
- * list of one note as that note's map. Undefined for any other value, a list of two or more
- * included, and for a parent the tree gives no shorthand.
- */
-export function noteMapOf(parent: string, held: unknown): Record<string, unknown> | undefined {
-    const shorthand = byKey(SHORTHAND, parent);
-    if (shorthand === undefined) return undefined;
-    if (isMap(held)) return held;
-    if (typeof held === 'string') return { [shorthand]: held };
-    if (Array.isArray(held) && held.length === 1) return noteMapOf(parent, held[0]);
-    return undefined;
-}
 
 type Parsed = Record<string, unknown>;
 
@@ -127,10 +91,9 @@ type Splice = { from: number; to: number; length: number };
 
 /**
  * Either the new text with the splice that made it, or the reason there is none; every edit step
- * answers with one of the two. A bare note or a list of one note written as a map also answers the
- * text its lines replace, as `replaced`.
+ * answers with one of the two.
  */
-type Written = { text: string; splice: Splice; replaced?: string } | { why: Why };
+type Written = { text: string; splice: Splice } | { why: Why };
 
 /** One edit that was made, kept so the verification can apply it to the parsed source. */
 type Applied = { path: string[]; value: FieldValue };
@@ -164,7 +127,7 @@ export function pathOf(field: string): string[] | null {
 function currentValue(data: Parsed, path: string[]): unknown {
     const top = data[path[0]];
     if (path.length === 1) return top;
-    return (noteMapOf(path[0], top) ?? (isMap(top) ? top : undefined))?.[path[1]];
+    return isMap(top) ? top[path[1]] : undefined;
 }
 
 /** Whether a value is the one the manifest already holds; absent and null are one thing. */
@@ -362,198 +325,6 @@ function appendTop(
     return appendLines(text, root, `${name}: ${rendered}`);
 }
 
-/** One key of a note being rewritten as a map, with the comments that stood with it. */
-type NoteEntry = {
-    name: string;
-    text: string;
-    /** Where its value stood in the source, or null for a key the rewrite adds. */
-    at: { key: number; from: number; to: number } | null;
-    /** Comment lines that stood above it. */
-    above: string[];
-    /** The comment that followed its value on the same line, with the spaces before it. */
-    inline: string;
-    cleared: boolean;
-};
-
-/** One comment of the source: where it begins and its text, the `#` included. */
-type Comment = { offset: number; source: string };
-
-/** The comments of the source that begin in `from` up to `to`, in the order they stand. */
-function commentsIn(text: string, from: number, to: number): Comment[] {
-    const found: Comment[] = [];
-    const visit = (token: unknown): void => {
-        if (Array.isArray(token)) {
-            for (const one of token) visit(one);
-        } else if (isMap(token)) {
-            const { type, offset, source } = token;
-            if (type === 'comment' && typeof offset === 'number' && typeof source === 'string') {
-                if (offset >= from && offset < to) found.push({ offset, source });
-            } else {
-                for (const value of Object.values(token)) visit(value);
-            }
-        }
-    };
-    visit([...new Parser().parse(text)]);
-    return found.sort((one, other) => one.offset - other.offset);
-}
-
-/**
- * Hand each comment to the key it belongs with: one that follows a value on its line stays after
- * that value, one on the line of the parent key stays there (the returned text), and one on a line
- * of its own goes above the key that follows it. A comment that follows no key goes last.
- */
-function placeComments(
-    text: string,
-    keyLine: number,
-    comments: Comment[],
-    entries: NoteEntry[]
-): { keyComment: string; last: string[] } {
-    let keyComment = '';
-    const last: string[] = [];
-    for (const { offset, source } of comments) {
-        const before = text.slice(lineStart(text, offset), offset);
-        const gap = /[ \t]*$/.exec(before)?.[0] ?? '';
-        const own = before.trim() === '';
-        const same = entries.filter(
-            (one) =>
-                one.at !== null &&
-                one.at.to <= offset &&
-                !text.slice(one.at.to, offset).includes('\n')
-        );
-        if (!own && same.length > 0) {
-            same[same.length - 1].inline = `${gap}${source}`;
-        } else if (!own && lineStart(text, offset) === keyLine) {
-            keyComment = `${gap}${source}`;
-        } else {
-            const next = entries.find((one) => one.at !== null && one.at.key > offset);
-            if (next === undefined) last.push(source);
-            else next.above.push(source);
-        }
-    }
-    return { keyComment, last };
-}
-
-/**
- * A bare note or a list of one note written as the map it stands for, with one key set or cleared.
- * The text of every key the note already holds is copied as it stands, in its order, so the note
- * keeps its quoting and its comments; a key that is not there is added after them. A comment that
- * stands inside a value cannot go with it, and refuses the write. `end` is where the note's value
- * ends; a comment after it on that line goes with the last key. The text the lines replace is
- * handed back as `replaced`, so an undo can put the file's own shape back.
- */
-function expandNote(
-    text: string,
-    one: {
-        parent: string;
-        top: Pair<Scalar, Node>;
-        pad: string;
-        entries: NoteEntry[];
-        end: number;
-    },
-    child: string,
-    value: FieldValue
-): Written {
-    const { parent, top, pad, entries } = one;
-    const key = rangeOf(top.key);
-    if (key === null) return fail(REFUSALS.keyNoPlace);
-    const rest = text.indexOf('\n', one.end);
-    const limit = rest < 0 ? text.length : rest;
-    const comments = commentsIn(text, key[1], limit);
-    for (const { offset } of comments) {
-        if (
-            entries.some(
-                (entry) => entry.at !== null && offset >= entry.at.from && offset < entry.at.to
-            )
-        ) {
-            return fail(REFUSALS.commentInValue);
-        }
-    }
-    const { keyComment, last } = placeComments(text, lineStart(text, key[0]), comments, entries);
-    const end = Math.max(
-        one.end,
-        ...comments.filter((c) => c.offset >= one.end).map((c) => c.offset + c.source.length)
-    );
-
-    const at = entries.findIndex((entry) => entry.name === child);
-    if (value === null) {
-        if (at < 0) return fail(REFUSALS.keyNotThere);
-        entries[at].cleared = true;
-    } else {
-        const rendered = renderOneLine(value);
-        if (rendered === null) return fail(REFUSALS.valueOneLine);
-        if (at < 0) {
-            entries.push({
-                name: child,
-                text: rendered,
-                at: null,
-                above: [],
-                inline: '',
-                cleared: false
-            });
-        } else {
-            entries[at].text = rendered;
-        }
-    }
-    if (entries.every((entry) => entry.cleared)) return removePair(text, top);
-    const lines = [`${parent}:${keyComment}`];
-    for (const entry of entries) {
-        lines.push(...entry.above.map((source) => `${pad}${source}`));
-        if (!entry.cleared) lines.push(`${pad}${entry.name}: ${entry.text}${entry.inline}`);
-        else if (entry.inline !== '') lines.push(`${pad}${entry.inline.trimStart()}`);
-    }
-    lines.push(...last.map((source) => `${pad}${source}`));
-    const from = lineStart(text, key[0]);
-    return { ...spliced(text, from, end, lines.join('\n')), replaced: text.slice(from, end) };
-}
-
-/**
- * The keys of a note held as a bare string (`bare`) or as the one item of a list, with the span of
- * each value. A bare string that is not text holds no note. A list item that holds anything but
- * scalars is refused, since the two keys of the schema do not describe it.
- */
-function noteEntries(
-    text: string,
-    parent: string,
-    item: Node | null,
-    bare: boolean
-): { entries: NoteEntry[] } | { why: Why } {
-    const entry = (
-        name: string,
-        body: string,
-        node: Node | null,
-        pair?: Pair<Scalar, Node>
-    ): NoteEntry | null => {
-        const range = rangeOf(node);
-        const keyAt = rangeOf(pair?.key ?? node)?.[0];
-        if (range === null || keyAt === undefined) return null;
-        const at = { key: keyAt, from: range[0], to: range[1] };
-        return { name, text: body, at, above: [], inline: '', cleared: false };
-    };
-    if (isScalar(item)) {
-        if (bare && item.value === null) return { entries: [] };
-        if (typeof item.value !== 'string') {
-            return {
-                why: bare ? why(REFUSALS.noteNotText) : why(REFUSALS.parentNotMap, parent)
-            };
-        }
-        const only = entry(SHORTHAND[parent], renderScalar(item.value, item.type), item);
-        return only === null ? { why: why(REFUSALS.keyNoPlace) } : { entries: [only] };
-    }
-    if (!isYamlMap(item)) return { why: why(REFUSALS.parentNotMap, parent) };
-    const entries: NoteEntry[] = [];
-    for (const pair of item.items as Pair<Scalar, Node>[]) {
-        const name = pair.key.value;
-        const range = pair.value === null ? null : rangeOf(pair.value);
-        if (typeof name !== 'string' || range === null || !isScalar(pair.value)) {
-            return { why: why(REFUSALS.parentNotMap, parent) };
-        }
-        const made = entry(name, text.slice(range[0], range[1]), pair.value, pair);
-        if (made === null) return { why: why(REFUSALS.parentNotMap, parent) };
-        entries.push(made);
-    }
-    return { entries };
-}
-
 /**
  * One field written into the text, or the reason it was not. Every case of the write rule is here:
  * an existing scalar, an existing list in its own style, a nested key, a key that is not there, a
@@ -610,38 +381,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
         return replaceValue(text, pair.value, value);
     }
 
-    const shorthand = byKey(SHORTHAND, parent);
-    if (isSeq(holder) && holder.items.length === 1 && shorthand !== undefined) {
-        const item = holder.items[0] as Node | null;
-        const held = noteEntries(text, parent, item, false);
-        if ('why' in held) return held;
-        const last = holder.flow === true ? holder : item;
-        const end = last === null ? undefined : valueEnd(last);
-        if (end === undefined) return fail(REFUSALS.keyNoPlace);
-        return expandNote(text, { parent, top, pad, entries: held.entries, end }, child, value);
-    }
-
-    // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is
-    // kept.
-    if (!isScalar(holder) || shorthand === undefined) return fail(REFUSALS.parentNotMap, parent);
-    if (value === null) return fail(REFUSALS.keyNotThere);
-    const held = noteEntries(text, parent, holder, true);
-    if ('why' in held) return held;
-    const one = { parent, top, pad, entries: held.entries, end: valueEnd(holder) };
-    return expandNote(text, one, child, value);
-}
-
-/**
- * The parsed document with each dual-shape parent written as the map it stands for, so a bare note,
- * a map and a list of one note compare as the one note they hold.
- */
-export function normalised(data: Parsed): Parsed {
-    const out: Parsed = { ...data };
-    for (const parent of Object.keys(SHORTHAND)) {
-        const note = noteMapOf(parent, out[parent]);
-        if (note !== undefined) out[parent] = note;
-    }
-    return out;
+    return fail(REFUSALS.parentNotMap, parent);
 }
 
 /** The parsed document with one path set or cleared, which is what the new text must equal. */
@@ -655,9 +395,8 @@ export function expect(data: Parsed, path: string[], value: FieldValue): void {
     const [parent, child] = path;
     const held = data[parent];
     if (value === null) {
-        const note = isMap(held) ? held : noteMapOf(parent, held);
-        if (note === undefined) return;
-        const rest = { ...note };
+        if (!isMap(held)) return;
+        const rest = { ...held };
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete rest[child];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
@@ -669,7 +408,7 @@ export function expect(data: Parsed, path: string[], value: FieldValue): void {
         held[child] = value;
         return;
     }
-    data[parent] = { ...noteMapOf(parent, held), [child]: value };
+    data[parent] = { [child]: value };
 }
 
 /**
@@ -725,19 +464,6 @@ function moved(point: number, cut: Splice): number {
     return cut.from < point ? cut.from : point;
 }
 
-/**
- * Where the span a field's note was rewritten into stands after a later splice of the same write:
- * moved by the change in length when the splice lies wholly before it, as it was when the splice
- * lies wholly after it, and dropped when the splice touches it, since the file no longer holds the
- * lines as this field's edit left them.
- */
-function keptSpan(span: ReplacedText, cut: Splice): ReplacedText | null {
-    if (cut.to < span.offset) {
-        return { ...span, offset: span.offset + cut.length - (cut.to - cut.from) };
-    }
-    return cut.from > span.offset + span.after.length ? span : null;
-}
-
 /** The text of a file from an index to the end of its line, the line break not included. */
 export function lineFrom(text: string, at: number): string {
     const end = text.indexOf('\n', at);
@@ -772,14 +498,13 @@ export function setFields(
     const refused: Refusal[] = [];
     const applied: Applied[] = [];
     const points = new Map<string, { offset: number; text: string }>();
-    const spans = new Map<string, ReplacedText>();
 
     const base = safeParse(source);
     if (base === null) {
         for (const field of Object.keys(fields)) {
             refused.push({ field, reason: said(catalog, why(REFUSALS.manifestNoParse)) });
         }
-        return { text: source, changed, refused, removed: {}, replaced: {} };
+        return { text: source, changed, refused, removed: {} };
     }
 
     let text = source;
@@ -812,19 +537,7 @@ export function setFields(
             continue;
         }
         for (const point of points.values()) point.offset = moved(point.offset, out.splice);
-        for (const [name, span] of spans) {
-            const kept = keptSpan(span, out.splice);
-            if (kept === null) spans.delete(name);
-            else spans.set(name, kept);
-        }
         const { from, to, length } = out.splice;
-        if (out.replaced !== undefined) {
-            spans.set(field, {
-                offset: from,
-                before: out.replaced,
-                after: out.text.slice(from, from + length)
-            });
-        }
         if (length === 0 && to > from)
             points.set(field, { offset: from, text: text.slice(from, to) });
         text = out.text;
@@ -832,7 +545,7 @@ export function setFields(
         applied.push({ path, value });
     }
 
-    if (changed.length === 0) return { text: source, changed, refused, removed: {}, replaced: {} };
+    if (changed.length === 0) return { text: source, changed, refused, removed: {} };
 
     const after = safeParse(text);
     const wanted = safeParse(source);
@@ -845,7 +558,7 @@ export function setFields(
                     { ...point, next: lineFrom(text, point.offset) }
                 ])
             );
-            return { text, changed, refused, removed, replaced: Object.fromEntries(spans) };
+            return { text, changed, refused, removed };
         }
     }
     return {
@@ -855,7 +568,6 @@ export function setFields(
             field,
             reason: said(catalog, why(REFUSALS.unverified))
         })),
-        removed: {},
-        replaced: {}
+        removed: {}
     };
 }

@@ -158,7 +158,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `people`: `self: true` on exactly one entry, the hub owner's.
 - `resources`: `host` is needed for `slurm.resource` to poll the cluster.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
-- `project.yml`: `followup.after` hides `followup.do` until that date; `holding` as `focus` only on the tiers `projects` and `personal`.
+- `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date; `holding` as `focus` only on the tiers `projects` and `personal`.
 
 In a schema, `when:` allows a field only while the condition holds, and `required: { when: ... }` requires it only then.
 

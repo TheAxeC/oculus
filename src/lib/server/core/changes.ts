@@ -7,10 +7,9 @@
 // value it wrote at the point of the edit, and hands both back on its outcome, so nothing here
 // reads a file a second time and nothing compares one version of a file with another. A manifest
 // write that removed a field also hands back the text it removed, where it stood and the text that
-// followed it (`RemovedText`), which the record of that field keeps for the undo. One that wrote a
-// bare note or a list of one note as a map hands back the text it replaced (`ReplacedText`), which
-// the undo puts back while the file still holds the lines the write left, and so does an add or a
-// delete of a collection entry.
+// followed it (`RemovedText`), which the record of that field keeps for the undo. An add or a
+// delete of a collection entry hands back the text it replaced (`ReplacedText`), which the undo
+// puts back while the file still holds the lines the write left.
 //
 // The log is this machine's and not the researcher's data: git already holds the hub's history, and
 // what this answers is what oculus did here. It lives beside the other files under ~/.oculus, or
@@ -76,8 +75,7 @@ export type RemovedText = {
 
 /**
  * The text a write replaced and the text it put in its place, which is what an undo puts back
- * while the file still holds what the write left: a manifest write that wrote a bare note or a
- * list of one note as the map it stands for, and a `config-value` write, whose two texts differ
+ * while the file still holds what the write left: a `config-value` write, whose two texts differ
  * from the common prefix and suffix of the file before and after, and an add or a delete of a
  * collection entry, whose two texts are widened to whole lines and one line around them. Putting
  * `before` over `after` at `offset` gives the earlier text.
@@ -116,12 +114,11 @@ export type ChangeRecord = {
      */
     removed?: RemovedText;
     /**
-     * The text a write replaced: on the record of each manifest field whose edit rewrote a note as
-     * a map and left the rewritten lines in the file, on the record of a `config-value` write, on
-     * the record of a config write that added a key (the added text, with an empty `before`), on
-     * the record of a Lit Watch append and of a Save to Literature, on the record of an add or a
-     * delete of a collection entry (`new-entry`, `delete-entry`) and of the delete of a feed entry
-     * (`feed-delete`), and on the record of an undo that put text back; on no other record.
+     * The text a write replaced: on the record of a `config-value` write, on the record of a config
+     * write that added a key (the added text, with an empty `before`), on the record of a Lit Watch
+     * append and of a Save to Literature, on the record of an add or a delete of a collection entry
+     * (`new-entry`, `delete-entry`) and of the delete of a feed entry (`feed-delete`), and on the
+     * record of an undo that put text back; on no other record.
      */
     replaced?: ReplacedText;
     /**

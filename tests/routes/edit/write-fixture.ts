@@ -458,7 +458,7 @@ export function repositoryTarget(
 }
 
 /** The manifest of the folder `insideHubTarget` plants: the repository's, with a follow-up. */
-const INSIDE_MANIFEST = `${REPOSITORY_MANIFEST}followup:\n  do: "ask about the tool"\n`;
+const INSIDE_MANIFEST = `${REPOSITORY_MANIFEST}followup:\n  - { do: ask about the tool }\n`;
 
 /**
  * The target with a folder of the workspace inside a hub and outside every scan folder, holding

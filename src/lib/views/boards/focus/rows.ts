@@ -201,9 +201,9 @@ function unsnooze(): TickerAction {
 /**
  * The buttons one line carries, from its target alone. A subtask is ticked, snoozed and deleted; a
  * project, an entry or a scheme is snoozed; an entry also gets the lifecycle statuses of its own
- * collection, minus the one it is in; a follow-up is cleared. A lead opens the Leads view but
- * carries no write, and neither does a conference call, since the venue registry's schema has no
- * status field to write.
+ * collection, minus the one it is in; a follow-up's Done takes its one note out. A lead opens the
+ * Leads view but carries no write, and neither does a conference call, which opens the Venues view,
+ * since the venue registry's schema has no status field to write.
  */
 export function actionsFor(line: TickerItem): TickerAction[] | undefined {
     const target = line.target;
@@ -228,7 +228,7 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
             {
                 id: 'done',
                 label: t('project.action.done'),
-                title: t('project.action.mark_done')
+                title: t('project.action.followup_done_tip')
             }
         ];
     }
@@ -265,7 +265,7 @@ export function dateTail(line: TickerItem): string {
 
 /** The stable part of a row id for a line whose buttons write a target. */
 function targetId(target: TickerTarget): string {
-    return [target.kind, target.collection ?? '', target.id, target.subtask ?? '']
+    return [target.kind, target.collection ?? '', target.id, target.subtask ?? target.note ?? '']
         .map((part) => encodeURIComponent(part))
         .join(':');
 }
@@ -307,7 +307,8 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
 }
 
 /**
- * A ticker line opens what it names: a project's tab or the collection file's own tab.
+ * A ticker line opens what it names: a project's tab, or the view of its collection (a funding
+ * scheme's the Funding view, a conference call's the Venues view).
  */
 export function openLine(
     layout: LayoutStore,
@@ -328,7 +329,6 @@ function snoozeValue(action: string, now: number): string {
 /** The fields one button sets on the project, entry or scheme its line names. */
 function fieldsFor(action: string, now: number): Record<string, unknown> {
     if (action === 'unsnooze') return { snooze: '' };
-    if (action === 'done') return { followup: '' };
     if (action.startsWith(STATUS)) return { status: action.slice(STATUS.length) };
     return { snooze: snoozeValue(action, now) };
 }
@@ -348,12 +348,14 @@ async function write(
         if (action === 'unsnooze') return writes.writeSubtask(host, target.subtask, 'snooze', '');
         return writes.writeSubtask(host, target.subtask, 'snooze', snoozeValue(action, now));
     }
+    if (target.kind === 'followup') {
+        if (target.note === undefined || action !== 'done') return null;
+        const collection = target.collection;
+        const host = collection === undefined ? { id: target.id } : { id: target.id, collection };
+        return writes.writeFollowup(host, target.note, 'done');
+    }
     const fields = fieldsFor(action, now);
     if (target.kind === 'manifest') return writes.writeManifest(target.id, fields);
-    if (target.kind === 'followup') {
-        if (target.collection === undefined) return writes.writeManifest(target.id, fields);
-        return writes.writeEntry(target.collection, target.id, fields);
-    }
     if (target.kind === 'funding') return writes.writeEntry('funding', target.id, fields);
     if (target.kind === 'entry' && target.collection !== undefined) {
         return writes.writeEntry(target.collection, target.id, fields);

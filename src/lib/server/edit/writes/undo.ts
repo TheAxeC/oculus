@@ -12,11 +12,9 @@
 //
 // A manifest change that removed a field carries the removed text. The manifest writer puts it
 // back where it stood, and writes the value as any value is written only when it fits nowhere: on
-// a new line, or inside its line for text removed from a flow map. A change that rewrote a bare
-// note or a list of one note as a map carries the text it replaced, which the manifest writer puts
-// back over the lines the write left while the file still holds them. An add and a delete of a
-// collection entry, and the delete of a lead or a Lit Watch entry, carry the text they replaced
-// too, which goes back the same way, so the file is what it was byte for byte; a file changed there
+// a new line, or inside its line for text removed from a flow map. An add and a delete of a
+// collection entry, and the delete of a lead or a Lit Watch entry, carry the text they replaced,
+// which goes back in place, so the file is what it was byte for byte; a file changed there
 // since is put right by the writer the other way.
 
 import { existsSync } from 'node:fs';
@@ -71,10 +69,12 @@ import {
     restoreSubtask,
     subtaskValue,
     writeCareer,
+    writeFollowup,
     writeHost,
     writeSubtask,
     writeSubtaskAdd
 } from './subtasks.ts';
+import { FOLLOWUP } from '../entry-edit/index.ts';
 import { entryId, entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
@@ -197,7 +197,10 @@ function feedOf(into: PrimaryTarget, change: Change): FeedKind | null {
     return null;
 }
 
-/** What a subtask change hangs under: one manifest by its id, or one entry of one collection. */
+/**
+ * What a subtask or follow-up change hangs under: one manifest by its id, or one entry of one
+ * collection.
+ */
 function subtaskTarget(into: PrimaryTarget, change: Change): SubtaskTarget {
     const collection = collectionOf(into, change);
     return collection === null ? { id: change.key } : { id: change.key, collection };
@@ -262,6 +265,10 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(own.hub, own.config, subtaskTarget(own, change), change.field);
+    }
+    if (change.kind === 'followup' || change.kind === 'followup-add') {
+        const target = subtaskTarget(own, change);
+        return subtaskValue(own.hub, own.config, target, change.field, FOLLOWUP);
     }
     if (
         change.kind === 'feed-field' ||
@@ -361,6 +368,8 @@ const RECORD_KINDS: readonly string[] = [
     'manifest',
     'subtask',
     'subtask-add',
+    'followup',
+    'followup-add',
     'host',
     'career',
     'feed-field',
@@ -443,16 +452,14 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         if (own === null) return null;
         // The record holds the value the file had, so it is written as that value and not read as
         // a form, which would take an empty list, an empty text or `false` out of the file. A field
-        // the write removed also holds the lines it removed, which go back where they stood, and a
-        // note it rewrote as a map holds the text it replaced, which goes back over its lines.
+        // the write removed also holds the lines it removed, which go back where they stood.
         return writeManifest(
             own.hub,
             own.config,
             change.key,
             { [change.field]: change.before },
             'record',
-            change.removed,
-            change.replaced
+            change.removed
         );
     }
     if (change.kind === 'session') {
@@ -512,6 +519,18 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === 'subtask-add') {
         const target = subtaskTarget(own, change);
         return writeSubtask(own.hub, own.config, target, change.field, 'delete');
+    }
+    if (change.kind === 'followup') {
+        const target = subtaskTarget(own, change);
+        const before = mapBeforeShape.parse(change.before);
+        if (change.undo === 'delete') {
+            return writeSubtaskAdd(own.hub, own.config, target, before, FOLLOWUP);
+        }
+        return restoreSubtask(own.hub, own.config, target, change.field, before, FOLLOWUP);
+    }
+    if (change.kind === 'followup-add') {
+        const target = subtaskTarget(own, change);
+        return writeFollowup(own.hub, own.config, target, change.field, 'done');
     }
     if (
         change.kind === 'feed-field' ||

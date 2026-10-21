@@ -409,8 +409,9 @@ export type AuditPayload = {
 };
 
 /**
- * One picture of the Memories wall as GET /api/memories answers it: the file's name, and its width
- * and height in pixels as the browser draws it, both null when its header gave no size.
+ * One picture of the Memories wall as GET /api/memories answers it: the file's path in the wall's
+ * folder (`/` between the folders under the wall and the file name), and its width and height in
+ * pixels as the browser draws it, both null when its header gave no size.
  */
 export type Picture = {
     /** The name of the hub whose photo wall holds the picture. */

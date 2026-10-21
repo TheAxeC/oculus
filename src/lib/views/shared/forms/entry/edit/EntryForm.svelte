@@ -25,8 +25,6 @@
         choices: (field: FormField) => Choice[];
         /** A remark of the view's own on a field. */
         note?: (field: FormField) => string | undefined;
-        /** A link drawn after a field's notes, to the place its remark sends the reader. */
-        link?: (field: FormField) => { label: string; open: () => void } | undefined;
         /** Why the server refused each field of the last save, by field name. */
         refusals?: Record<string, string>;
         /** Whether the field holds nothing, which a required field is reminded of. */
@@ -41,7 +39,6 @@
         changed,
         choices,
         note,
-        link,
         refusals = {},
         empty
     }: Props = $props();
@@ -64,7 +61,6 @@
         label={field.label}
         help={field.help}
         note={notesOf(field)}
-        link={link?.(field)}
         dirty={changed(field.field)}
     >
         <FieldControl
