@@ -108,7 +108,7 @@ const CAPS: Partial<Record<KeyPress['code'], string>> = {
 /**
  * One press as a hint reads it, the modifiers in VS Code's order: Ctrl, Shift, Alt, Cmd on macOS,
  * and Ctrl, Shift, Alt elsewhere, where CtrlCmd is the Ctrl key. Alt keeps its name on macOS, as
- * HELP.md's key table writes it.
+ * docs/HELP.md's key table writes it.
  */
 function pressHint(press: KeyPress, mac: boolean): string {
     const parts: string[] = [];

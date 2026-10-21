@@ -7,7 +7,7 @@
 // VS Code restores what each editor showed; the next pick in the rail moves them all together
 // again. A remembered session the payload does not hold reads as none, the view's empty state.
 //
-// DESIGN.md, "sessions are six views, not one": the list sets this and the other five follow it, so
+// Sessions are six views, not one: the list sets this and the other five follow it, so
 // a click in the rail moves the detail, the timeline, the changes and the agents together. A view
 // whose own instance state pins a session (`{ session: <id> }`) reads that instead and stops
 // following, which is how two detail views show two sessions side by side.

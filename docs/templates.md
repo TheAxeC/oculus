@@ -1136,9 +1136,9 @@ schema:
   - { field: added,    type: date,     help: "The day it was saved." }
   - { field: note,     type: textarea, help: "Notes on the paper." }
 entries:
-#  - key: faes2024blockterm       # required; the citation key
+#  - key: smith2024blockterm      # required; the citation key
 #    title: "Block-term tensor regression for ECoG"   # required
-#    authors: [Axel Faes, Marc M. Van Hulle]
+#    authors: [John Smith, Marc M. Van Hulle]
 #    venue: Neurocomputing
 #    year: 2024
 #    doi: 10.1016/j.neucom.2024.127654

@@ -1,4 +1,4 @@
-// Layer 2, server. The approvals file DESIGN.md's "Approval" paragraph describes, as the project
+// Layer 2, server. The approvals file, as the project
 // commands use it: one file of the texts a reader approved to run on this machine, each under a key
 // made from its kind and the SHA-256 of the exact text, so a changed text asks again. The text a
 // project command is approved by is the whole chain a press runs, with the repository's path.

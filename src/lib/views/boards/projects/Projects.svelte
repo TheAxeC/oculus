@@ -39,7 +39,7 @@
     // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
     // cut are the pure functions of state/board. The strip is views/boards/projects/Stats.svelte
     // and the new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of
-    // DESIGN.md's boundary table: a view too large for one file is split into its own folder. The
+    // the boundary table: a view too large for one file is split into its own folder. The
     // card is views/shared/card/project/ProjectCard.svelte, since
     // views/boards/project/Project.svelte draws the same one. A web address written in a cell of
     // the table, the next line's among them, is a link (ui/display/text/LinkedText.svelte).

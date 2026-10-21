@@ -1,6 +1,6 @@
 // Layer 2, client state. The turns of a session, held per session while an instance is showing it.
 //
-// DESIGN.md's wire model keeps the turn text out of the snapshot, so the conversation is fetched
+// The wire model keeps the turn text out of the snapshot, so the conversation is fetched
 // rather than selected: turnsFor(id) asks api/transcript the first time a session is wanted and
 // holds the answer, the way state/system/docs.svelte.ts asks api/docs for a document. The answer is
 // held in the client state's query client, and the fetch is scheduled on a microtask by
@@ -37,7 +37,7 @@ import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
 // The views read a turn's shape through this module, as they read a session's through
-// state/client/selectors.svelte.ts: the boundary table of DESIGN.md gives `views/` no import of
+// state/client/selectors.svelte.ts: the boundary table gives `views/` no import of
 // `data/`.
 export type { Turn, TurnTool } from '../../data/model/index.ts';
 

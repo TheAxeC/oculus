@@ -409,13 +409,13 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             source: 'search',
             paper: {
                 title: 'Block-term tensor regression for ECoG',
-                authors: ['Axel Faes', 'Marc M. Van Hulle'],
+                authors: ['John Smith', 'Marc M. Van Hulle'],
                 year: 2024,
                 doi: '10.1016/j.neucom.2024.127654'
             }
         });
-        expect(rows[0]).toMatchObject({ kind: 'literature-save', file, key: 'faes2024blockterm' });
-        expect(readFileSync(file, 'utf8')).toContain('key: faes2024blockterm');
+        expect(rows[0]).toMatchObject({ kind: 'literature-save', file, key: 'smith2024blockterm' });
+        expect(readFileSync(file, 'utf8')).toContain('key: smith2024blockterm');
         expect(undoChange(into, rows[0])).not.toHaveProperty('error');
         expect(readFileSync(file, 'utf8')).toBe(before);
     });

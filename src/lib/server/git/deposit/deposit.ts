@@ -1,4 +1,4 @@
-// Layer 2, server. The deposit over one project, as DESIGN.md's decision on git writes and the
+// Layer 2, server. The deposit over one project, as the decision on git writes and the
 // deposit describes it: a project's `code/` is ordinary tracked content of the hub and never
 // carries a `.git` of its own, and the deposit is a mirror clone per deposit repo under the
 // machine-local state folder, into which each deposit syncs `code/` minus the deposit-exclude rules

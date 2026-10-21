@@ -39,8 +39,8 @@ export const SECRETS = {
 
 /** A `downloads` row of each service, with the secrets above. */
 export const DOWNLOADS: DownloadAccount[] = [
-    { service: 'physionet', user: 'axel', secret: SECRETS.physionet },
-    { service: 'kaggle', user: 'axelk', secret: SECRETS.kaggle },
+    { service: 'physionet', user: 'john', secret: SECRETS.physionet },
+    { service: 'kaggle', user: 'johnsmith', secret: SECRETS.kaggle },
     { service: 'synapse', secret: SECRETS.synapse }
 ];
 

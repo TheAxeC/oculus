@@ -1,4 +1,4 @@
-// Layer 1, data. The wire model of DESIGN.md: entities keyed by id, relations as id pairs, and the
+// Layer 1, data. The wire model: entities keyed by id, relations as id pairs, and the
 // findings, all JSON-safe. Pure, like validate: no file is read, nothing is thrown, and two runs
 // over one raw portfolio produce byte-identical JSON, because every map is filled in sorted id
 // order and every relation table is sorted by its pair.

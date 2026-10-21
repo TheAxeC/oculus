@@ -21,7 +21,7 @@ text:
         funding: 'Funding schemes: {0}'
         git: 'Workspaces with git state: {0}'
         nav:
-            host: axel@research
+            host: Oculus
             title_fmt: '{0}: ~/{1}'
         page_failed: 'This page could not be drawn because of an error: {0}'
         palette:

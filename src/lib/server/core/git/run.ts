@@ -8,7 +8,7 @@
 // can say, and that is state.ts: whether the root is a repository at all, the branch, the distance
 // from its upstream, and the staged, changed and untracked lists.
 //
-// DESIGN.md, "Git": exactly these read-only commands run here and no others, ever.
+// Exactly these read-only commands run here and no others, ever.
 //
 //     git -C <root> rev-parse --git-dir
 //     git -C <root> rev-parse --abbrev-ref HEAD
@@ -71,9 +71,9 @@
 // `--` is read as a literal name through GIT_LITERAL_PATHSPECS=1, so a `*` in a name matches
 // itself.
 //
-// Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
-// dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in its
-// head.
+// Nothing here may ever change a repository. Every writing subcommand belongs to the user alone,
+// and a dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in
+// its head.
 //
 // A repository on a slow mount must not stall the server, so each of the two call sites runs git as
 // a child process and answers a promise: the event loop goes on serving requests while git works,

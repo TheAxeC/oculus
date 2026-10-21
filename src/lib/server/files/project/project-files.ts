@@ -4,7 +4,7 @@
 // a route module may export only its verbs. The walk is here, and it is bounded the way
 // the merged config bounds it: only the extensions of `file_index.ext`, at most
 // `file_index.max_per_project` rows newest first, and the noise folders below skipped whole.
-// DESIGN.md's wire model keeps this out of the snapshot for the same reason documents are out of
+// The wire model keeps this out of the snapshot for the same reason documents are out of
 // it: a card asks for its own folder when it is opened, and a board of fifty projects reads
 // nothing.
 //

@@ -5,8 +5,8 @@
 //
 // Arguments: the absolute path of the app's host file, and the absolute path of `vscode-jsonrpc`'s
 // node entry in oculus's own `node_modules`. Standard input and standard output carry JSON-RPC 2.0
-// messages with `Content-Length` headers, the framing `vscode-jsonrpc` writes on both ends; the
-// methods are in DESIGN.md's "Apps added while oculus runs". The process ends when its standard
+// messages with `Content-Length` headers, the framing `vscode-jsonrpc` writes on both ends.
+// The process ends when its standard
 // input closes, so a server that is killed leaves no host running.
 //
 // The first `oculus/activate` request carries the app's name, the resolved values of the settings

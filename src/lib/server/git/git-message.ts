@@ -1,5 +1,5 @@
 // Layer 2, server. The suggested commit message: the staged diff read by `claude -p` once, and the
-// text it answers with handed to the page for Axel to edit. Nothing here commits anything. The
+// text it answers with handed to the page for the user to edit. Nothing here commits anything. The
 // program is the `claude_bin` of local.yml, which the route passes in, so one key names the Claude
 // CLI for every caller.
 //

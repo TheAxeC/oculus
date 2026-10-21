@@ -264,7 +264,7 @@ open:
 
 
 # === Apps ===================================================================
-# An app is a folder of web files that oculus finds while it runs and draws in a sandboxed frame once the reader has approved it (DESIGN.md, "Apps added while oculus runs"). These are the limits an app's frame is held to and the folders `open` never reaches for an app.
+# An app is a folder of web files that oculus finds while it runs and draws in a sandboxed frame once the reader has approved it. These are the limits an app's frame is held to and the folders `open` never reaches for an app.
 apps:
   # Seconds a frame is given to complete the bridge handshake before it is drawn as failed to load.
   connect_timeout_s: 10

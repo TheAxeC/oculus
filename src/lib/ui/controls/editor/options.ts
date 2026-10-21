@@ -10,7 +10,7 @@
 // editor's own on the document body, and every context view (the right-click menu, the code action
 // list, the select lists of Monaco's action bars) in one node for the page, both over the page and
 // over every float, since a pane, a split, the diff list or a float clips what is drawn inside it
-// and a blurred box is the containing block of what is fixed inside it (DESIGN.md, Theming). What
+// and a blurred box is the containing block of what is fixed inside it. What
 // Monaco places in the text on purpose stays in the editor's box (the find widget, the peek zone,
 // the lightbulb, CodeLens, inline completions, the sticky scroll), and so does the quick input (Go
 // to Line, Go to Symbol), which Monaco scopes to its editor. The nodes carry the class

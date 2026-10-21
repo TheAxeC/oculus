@@ -14,7 +14,7 @@ type Doc = { engine: boolean; engineAt: string; engineHub: string; hub: string; 
  * no hub when `engineAt` is empty.
  */
 function hubDoc(engineAt: string, hub = 'hub'): Doc {
-    const manual = engineAt === '' ? '' : `${engineAt}/HELP.md`;
+    const manual = engineAt === '' ? '' : `${engineAt}/docs/HELP.md`;
     return { engine: false, engineAt, engineHub: engineAt === '' ? '' : hub, hub, manual };
 }
 
@@ -27,7 +27,7 @@ function engineDoc(engineAt: string, engineHub = 'hub'): Doc {
         engineAt,
         engineHub: engineAt === '' ? '' : engineHub,
         hub: '',
-        manual: 'HELP.md'
+        manual: 'docs/HELP.md'
     };
 }
 
@@ -57,7 +57,7 @@ const ROWS = [
         row: 'a hub link to the manual opens the Help view',
         doc: hubDoc('tools/oculus'),
         from: 'docs/AGENT-APPROACH.md',
-        href: '../tools/oculus/HELP.md',
+        href: '../tools/oculus/docs/HELP.md',
         opens: { kind: 'help' }
     },
     {
@@ -71,14 +71,14 @@ const ROWS = [
         row: 'an engine link to the manual opens the Help view',
         doc: engineDoc('tools/oculus'),
         from: 'docs/apps.md',
-        href: '../HELP.md',
+        href: 'HELP.md',
         opens: { kind: 'help' }
     },
     {
         row: 'an engine link to an engine document opens it with the engine outside the hub',
         doc: engineDoc(''),
-        from: 'HELP.md',
-        href: 'docs/apps.md',
+        from: 'docs/HELP.md',
+        href: 'apps.md',
         opens: { kind: 'engine', path: 'docs/apps.md' }
     },
     {
@@ -119,8 +119,8 @@ const ROWS = [
     {
         row: 'an engine link into a dot folder opens nothing with the engine outside the hub',
         doc: engineDoc(''),
-        from: 'HELP.md',
-        href: '.scratch/x.md',
+        from: 'docs/HELP.md',
+        href: '../.scratch/x.md',
         opens: null
     }
 ];

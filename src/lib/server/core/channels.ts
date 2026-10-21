@@ -3,7 +3,7 @@
 // backpressure rule be tested by resolving a promise by hand rather than by stalling a real TCP
 // connection.
 //
-// The rule DESIGN.md names is latest only: if a page falls behind, the server keeps only the newest
+// The rule is latest only: if a page falls behind, the server keeps only the newest
 // payload per channel for it. A sink whose previous send has not completed therefore gets nothing
 // queued; the message is held as that channel's pending message, overwriting whatever was pending
 // for the same channel, and goes out when the send completes. A slow page sees the newest state and

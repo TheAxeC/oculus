@@ -1,9 +1,8 @@
 // Layer 2, server. The terminals as records: what `tmux list-sessions` says, the pane process of
 // every oculus session (`tmux list-panes`, which the Processes view walks down from), and the
-// commands that start, resize, stop, capture, steer and interrupt one. DESIGN.md's "PTY" puts a
-// session inside tmux so it outlives the server; the `oculus-` prefix is all that tells a session
-// oculus started from one Axel started in a terminal window, and the kind is the suffix of the same
-// name.
+// commands that start, resize, stop, capture, steer and interrupt one. Oculus puts a session inside
+// tmux so it outlives the server; the `oculus-` prefix is all that tells a session oculus started
+// from one the user started in a terminal window, and the kind is the suffix of the same name.
 //
 // Nothing the page sends is read by a shell on its way to tmux. A cwd is checked to be an absolute
 // existing directory, the geometry a small positive integer, and the id the shape start() gives it.
@@ -39,7 +38,7 @@ import { captureArgs } from './capture.ts';
 import { TerminalRefused } from './refusal.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
-/** The things a terminal runs: DESIGN.md's two agents and a shell, and a program an app started. */
+/** The things a terminal runs: the two agents and a shell, and a program an app started. */
 export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell', 'app'];
 
 /** Whether a value is one of the kinds a terminal runs. */

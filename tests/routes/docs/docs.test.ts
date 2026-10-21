@@ -25,8 +25,8 @@ function planted(): { dir: string; into: (hub: string) => DocTarget } {
     const dir = plantScratch(
         'oculus-docs-route-',
         {
-            'hub/engine/HELP.md': '# Manual\n',
-            'hub/engine/docs/guide.md': '# Guide\n\nSee [the manual](../HELP.md).\n',
+            'hub/engine/docs/HELP.md': '# Manual\n',
+            'hub/engine/docs/guide.md': '# Guide\n\nSee [the manual](HELP.md).\n',
             'hub/engine/docs/shout.MD': '# Shout\n',
             'hub/engine/.scratch/plan.md': '# Plan\n',
             'hub/engine/node_modules/pack/README.md': '# Pack\n',
@@ -71,7 +71,7 @@ describe('the engine read of the docs route', () => {
             const body = (await response.json()) as Record<string, unknown>;
             expect(body.engine, row).toBe(true);
             expect(body.path, row).toBe('docs/guide.md');
-            expect(body.manual, row).toBe('HELP.md');
+            expect(body.manual, row).toBe('docs/HELP.md');
             expect(body.engineAt, row).toBe(engineAt);
             expect(body.html, row).toContain('<h1');
         }
@@ -154,7 +154,7 @@ describe('the engine read of the docs route', () => {
 
         const both = ask(inHub, 'manual=1&engine=docs%2Fguide.md');
         expect(((await both.json()) as { path: string }).path, 'the manual wins over engine').toBe(
-            'HELP.md'
+            'docs/HELP.md'
         );
         const second = ask(inHub, 'engine=docs%2Fguide.md&hub=other.md');
         expect(((await second.json()) as { path: string }).path, 'engine wins over hub').toBe(

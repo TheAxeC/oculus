@@ -1,7 +1,7 @@
 // Source audit. A comment says what the code does and why, never when it was written, which package
 // or session wrote it, what bug came before it or what was reverted, and a document says what the
 // tool is and does. Every comment line under src, tests, utils and config, every line of a text
-// file there, and every line of the documents (HELP.md, DESIGN.md, README.md and the Apps guide,
+// file there, and every line of the documents (docs/HELP.md, README.md and the Apps guide,
 // docs/apps.md) is read and matched against the migration plan's id vocabulary, a date and the
 // session phrases below; every hit is printed with its file and line, so a failure names the lines
 // to rewrite rather than only the count of them.
@@ -18,8 +18,8 @@ import { treeFiles } from '../walk.ts';
 
 const ROOTS = ['src', 'tests', 'utils', 'config'];
 
-/** The documents, read whole: every line of one is prose a reader takes as the tool's present. */
-const DOCS = ['HELP.md', 'DESIGN.md', 'README.md'];
+/** The document at the root, read whole: every line is prose a reader takes as the tool's present. */
+const DOCS = ['README.md'];
 
 /** The folder holding the Apps guide and any other Markdown document, each read whole as well. */
 const GUIDES = 'docs';
@@ -125,7 +125,7 @@ function commentHits(base = '.'): string[] {
     return found;
 }
 
-/** The documents of a tree: the three at its root and every Markdown file under its `docs/`. */
+/** The documents of a tree: the README at its root and every Markdown file under its `docs/`. */
 function documentsOf(base: string): string[] {
     const folder = join(base, GUIDES);
     const guides = existsSync(folder)

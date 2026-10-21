@@ -1,6 +1,6 @@
 // Layer 2, server. The git and `gh` calls of the deposit, kept apart from server/git/git-write.ts.
 //
-// DESIGN.md's decision on git writes and the deposit: a project's `code/` is ordinary
+// The decision on git writes and the deposit: a project's `code/` is ordinary
 // tracked content of the hub and never carries a `.git` of its own, and the deposit lives outside
 // the hub tree as one mirror clone per deposit repo under the machine-local state folder. Every
 // command here therefore runs in a directory under that mirrors folder and nowhere else, which is
@@ -16,8 +16,8 @@
 // `defaultBranchOf` and `urlOf` read the two fields of the answer of `gh repo view`.
 //
 // This module exists rather than growing git-write.ts because the force option appears nowhere in
-// that file, and the snapshot mode of the deposit needs it exactly once (DESIGN.md, "Git",
-// "Fixed git choices": the one forced push in oculus). Here it appears at one call site,
+// that file, and the snapshot mode of the deposit needs it exactly once
+// (the one forced push in oculus). Here it appears at one call site,
 // `forcePushSnapshot`.
 //
 // A command that runs the mirror's hooks (the commit, the switch and the push) has no time limit,
@@ -373,7 +373,7 @@ export function push(at: Where): Promise<Outcome> {
 }
 
 /**
- * The snapshot of the deposit (DESIGN.md, "Fixed git choices"), kept as a second button: the
+ * The snapshot of the deposit, kept as a second button: the
  * orphan commit replaces the remote's `main` outright, so the history that was there is gone. This
  * is the one call in oculus that forces a push.
  */

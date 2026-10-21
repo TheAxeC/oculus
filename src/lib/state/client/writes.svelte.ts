@@ -1,5 +1,5 @@
 // Layer 2, client state. The page's end of the write endpoint: the token it was given, the POST it
-// makes, and whether one is in flight. DESIGN.md's decision on live data is that writes are fetch
+// makes, and whether one is in flight. The decision on live data is that writes are fetch
 // POSTs, so nothing here goes over the socket; what the page sees of its own write is the watcher's
 // next push of the portfolio, about a fifth of a second later.
 //

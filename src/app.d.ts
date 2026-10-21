@@ -8,7 +8,7 @@ declare global {
         // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- the App namespace is augmented by declaration merging, which only an interface does
         interface Locals {
             /**
-             * The write token of DESIGN.md's "Auth", minted by ServerContext and shipped to the
+             * The write token, minted by ServerContext and shipped to the
              * page as its data. Every request in the Kit graph carries it.
              */
             token: string;

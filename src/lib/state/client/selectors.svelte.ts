@@ -1,4 +1,4 @@
-// Layer 2, client state. The joins, as DESIGN.md's "Client state" names them: the reactive face of
+// Layer 2, client state. The joins: the reactive face of
 // the pure logic beside it, over what the socket delivered. A component reads a selector and never
 // joins anything itself, so what a card shows is decided in one place and tested without a browser.
 //

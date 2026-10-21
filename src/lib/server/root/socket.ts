@@ -1,9 +1,9 @@
-// Layer 2, server. The one WebSocket of DESIGN.md, "The socket": it attaches to an http server
+// Layer 2, server. The one WebSocket: it attaches to an http server
 // that already exists, turns each connection into a Sink the Hub can send to, and accepts the
 // subscription from the page. Nothing else a page sends is acted on, except the three exceptions
 // below; the write side is `POST /api/write`'s and goes over fetch, not over here.
 //
-// DESIGN.md's "The socket" names the three exceptions: terminal input, language server messages
+// The three exceptions are these: terminal input, language server messages
 // and the jump. A page that carried the write token in a subscribe message may send `input` and
 // `resize` on a `pty:` channel, which this hands to server/machine/pty/channel.ts, and a frame on
 // an `lsp:<language>` channel, which this hands to server/machine/lsp/relay/relay.ts. A socket
@@ -21,7 +21,7 @@
 // main page, and every other page ignores it. The message is read through a zod schema held to the
 // `Jump` type of data/model.
 //
-// The origin check is the read half of DESIGN.md's "Auth". The server binds 127.0.0.1, but any page
+// The origin check is the read half of the auth rule. The server binds 127.0.0.1, but any page
 // open in the browser can address 127.0.0.1, so a connection is refused unless its Origin names
 // this machine. A missing Origin is refused with the rest: a browser always sends one on a
 // WebSocket handshake, so its absence is not a browser tab. The rule itself is

@@ -6,7 +6,7 @@
 // diff editor, reaching this module only past the origin guard in src/hooks.server.ts's `handle`,
 // as the POST does too. A POST writes, and carries two things: the write token and, for the
 // five actions that can lose work (commit, push, snapshot, createBranch, switchBranch), a
-// `confirm: true` the page sets only from the confirm dialog. DESIGN.md's decision on git writes
+// `confirm: true` the page sets only from the confirm dialog. The decision on git writes
 // and the deposit is that shape: every write behind the token and a confirm.
 //
 // The action `cancel` (behind the token, with no confirm) aborts the write in flight on the

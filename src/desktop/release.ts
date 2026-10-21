@@ -2,7 +2,7 @@
 // for a platform and an architecture, and packs it as the archive a Release holds. Where
 // `npm run app:package` makes a stub that runs the checkout's code, this app holds everything it
 // runs and reads nothing of the checkout: the server built by `vite build --mode app`, the sources
-// Electron and the server run unbuilt (src/, with config/, docs/, assets/ and the three documents),
+// Electron and the server run unbuilt (src/, with config/, docs/, assets/ and the one document),
 // and the production packages installed for the target into a staging folder by `npm ci` with
 // npm's `--os` and `--cpu` (and `--libc glibc` for Linux, so the packages built per C library get
 // the GNU one). The install runs no package's install script, since a script would build for this

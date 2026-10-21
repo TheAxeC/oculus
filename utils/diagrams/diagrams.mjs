@@ -58,7 +58,7 @@ export { WRITE_ROUTE, declarations, writesDot, writesDrawn } from './writes.mjs'
 /** The layers the folder order names, each drawn as its own diagram after the overview. */
 export const LAYER_NAMES = ['data', 'server', 'state', 'ui', 'shell', 'views'];
 
-/** Every diagram, in the order DESIGN.md names them. */
+/** Every diagram. */
 export const NAMES = [
     'layers',
     ...LAYER_NAMES.map((layer) => `layer-${layer}`),

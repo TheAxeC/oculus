@@ -1,5 +1,5 @@
-// Layer 4, server test. The reader of the apps folders DESIGN.md's "Apps added while oculus runs"
-// describes: each folder with an `app.yml` read to its row and its findings, the id and the finding
+// Layer 4, server test. The reader of the apps folders:
+// each folder with an `app.yml` read to its row and its findings, the id and the finding
 // key an app is known by, and the approval a row carries.
 //
 // Every folder here is synthetic, under the system temporary directory. What this does NOT cover:

@@ -1,4 +1,4 @@
-# Oculus text owned by the Help page's views: the tool's own manual, the HELP.md of oculus's folder, and the Keyboard Shortcuts view with what each key does.
+# Oculus text owned by the Help page's views: the tool's own manual, the docs/HELP.md of oculus's folder, and the Keyboard Shortcuts view with what each key does.
 text:
     help:
         failed: 'The manual could not be read: {0}'

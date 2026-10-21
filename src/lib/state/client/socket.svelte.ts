@@ -1,6 +1,6 @@
 // Layer 2, client state. The page's end of the one WebSocket: subscribe on open, hand every
 // message to entities, reconnect when it drops. The server reloads on a source change in
-// development (DESIGN.md, "Hot reload", second row), so a reconnect is a normal event and not an
+// development, so a reconnect is a normal event and not an
 // error state; the backoff exists so a server that is down does not spin the page.
 //
 // The catalog arrives on the `config` channel and is installed here rather than in entities,

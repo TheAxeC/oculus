@@ -1,7 +1,7 @@
 // Layer 2, client state. The documents the views draw: a project's, one of the hub's own, one of
 // oculus's own folder, and the manual, each held under a key of its own.
 //
-// DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
+// The wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
 // and every later call for that pair reads what is held. hubDocument(path), engineDocument(path)
 // and manual() are the same rule over the other shapes the endpoint answers, and enginePlace() is

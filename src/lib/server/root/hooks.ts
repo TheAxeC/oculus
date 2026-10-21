@@ -1,5 +1,5 @@
 // Layer 2, server. The Notification and Stop hooks of Claude Code, posting to the server
-// (DESIGN.md, "Auth": the hook is the one request that carries neither header). An event updates
+// (the hook is the one request that carries neither header). An event updates
 // the state of its session in the sessions payload at once, which the Sessions view draws as a
 // chip; the server shows no notification of its own.
 //

@@ -2,7 +2,7 @@
 // the page socket, the state of each server, the choices a root offers, the refusals of a choice
 // and the output of a server's log.
 //
-// A language's channel is `lsp:<language>` (DESIGN.md, "The socket"). The messages on it are the
+// A language's channel is `lsp:<language>`. The messages on it are the
 // protocol's JSON-RPC messages, which the editor's client reads through its port, and the relay's
 // own, told apart by their `oculus` field, which this store reads: `state` (a server starting,
 // indexing, ready, not found or failed, with the code that says why), `choices` (the interpreters,
@@ -21,7 +21,7 @@
 // holds the file and is written to disk only where no page does (edits.ts).
 //
 // A library file, which a language server named outside every served root in an answer to a
-// request of this page (DESIGN.md, "The language servers"), has an address `oculus-lib:` the relay
+// request of this page, has an address `oculus-lib:` the relay
 // minted for this connection alone. The editor kit tells the store each address with the root of
 // the document the request was made for and the channel's language (`named`), and the store reads
 // the file over the channel on request (`readLibrary`). The relay forgets every address with the

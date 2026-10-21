@@ -1,6 +1,6 @@
 // Layer 2, server. Whether an app may have a file of a root opened in oculus: the checks of
-// `open({ file: { root, path, page } })` that need the disk, in the order DESIGN.md's "Opening
-// things in oculus" gives, answered as `ok`, `closed` or `missing`, after the rule of the page
+// `open({ file: { root, path, page } })` that need the disk, in order,
+// answered as `ok`, `closed` or `missing`, after the rule of the page
 // (`openPage`), which the page ran already and which needs no disk.
 //
 // The order is what keeps the answer for a hidden path from depending on the disk or on which roots

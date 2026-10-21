@@ -1,6 +1,6 @@
 # Oculus
 
-Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view. `README.md` says how to run and check it; the [Apps guide](docs/apps.md) says how to build an app; the [templates](docs/templates.md) give every YAML file oculus reads and the file of each update task.
+Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view. `README.md` says how to run and check it; the [Apps guide](apps.md) says how to build an app; the [templates](templates.md) give every YAML file oculus reads and the file of each update task.
 
 ## Contents
 
@@ -93,17 +93,17 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - With a source tab on screen it also lists the editor's commands; with a Present tab, the slide commands.
 - `:` starts a command. `:` and a number goes to that line. `:language`, `:interpreter`, `:compile-database`, `:theme`, `:file-icons`, `:tab` and `:goto` list what they choose from, the one in force marked; typing narrows the list. In `:theme` and `:file-icons` moving the selection shows each choice, Esc puts back the one in force, and Enter keeps the one chosen. `:theme` draws the themes under a heading per group, in the order Settings draws them: the arrow keys pass over the headings, and a group whose themes the typed words all leave out shows no heading.
 - `:task-add <title>` adds a task to the primary hub's Tasks file with `status: todo`; Shift+Enter also opens it. History undoes it.
-- Every command is listed in [the palette page](docs/palette.md), written by `npm run docs:palette`.
+- Every command is listed in [the palette page](palette.md), written by `npm run docs:palette`.
 - Cmd+P finds a file by name across the served folders (at most 200 rows). It lists hidden files, honours `.gitignore`, and skips `node_modules`, `.git` and `.svelte-kit`. `search.timeout_s` and `search.max_names` limit it.
 - `#` (Cmd+T in the app) searches the workspace's symbols through the language server.
 - In a float's own window the palette opens views and files in that window; a view that exists once goes to wherever it is.
 
 ### The update tray and schedules
 
-- Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task is a file of the primary hub, `.oculus/tasks/litwatch.md`, `scout.md`, `linkedin.md` or `inbox.md`, and runs as a Claude session in a terminal that is asked to follow that file step by step. The tray offers only the tasks whose file the hub holds, and says so in one line when it holds none; [templates](docs/templates.md) has a template of each file. A task's row gives its last run ("Last run:", or "Last post:" for LinkedIn) and, after a bar, the schedule that runs it next ("Next:"). A pressed task, and a schedule's Run now, turn a sync glyph until the terminal opens or the refusal is said. Chat starts a Claude session over the portfolio.
+- Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task is a file of the primary hub, `.oculus/tasks/litwatch.md`, `scout.md`, `linkedin.md` or `inbox.md`, and runs as a Claude session in a terminal that is asked to follow that file step by step. The tray offers only the tasks whose file the hub holds, and says so in one line when it holds none; [templates](templates.md) has a template of each file. A task's row gives its last run ("Last run:", or "Last post:" for LinkedIn) and, after a bar, the schedule that runs it next ("Next:"). A pressed task, and a schedule's Run now, turn a sync glyph until the terminal opens or the refusal is said. Chat starts a Claude session over the portfolio.
 - A schedule or a request that names a task whose file the primary hub lacks is refused and starts nothing, and the Focus board's refresh lines name only the tasks that have a file.
 - A schedule runs a task, a command of a repository's `.oculus/commands.yml` or a prompt on a cron pattern, in local time. The dialog shows the next three runs before it saves.
-- An entry is `name`, `runs` (`{ task: litwatch }`, `{ command: build, folder: ... }` or `{ prompt: "...", folder: ... }`), `when`, and optional `paused` and `unattended`. Without `when` it runs only from Run now. The template is in [templates](docs/templates.md).
+- An entry is `name`, `runs` (`{ task: litwatch }`, `{ command: build, folder: ... }` or `{ prompt: "...", folder: ... }`), `when`, and optional `paused` and `unattended`. Without `when` it runs only from Run now. The template is in [templates](templates.md).
 - You may edit the file by hand; the dialog, Pause and Resume change only their own keys and keep your comments.
 - A run missed while oculus was stopped starts once when it starts again. A due run while the last one still works is skipped.
 - Run unattended starts Claude with `--dangerously-skip-permissions`, so nobody is asked. A command never runs unattended.
@@ -328,7 +328,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 ## Files and the editor
 
 - The Files view follows the disk within a couple of seconds. Show Hidden Files, Show Ignored Files and File Nesting are toggles of the view, kept per tab. A tab lists hidden files (dotfiles and the build folders) and the files git ignores until its menu turns them off. The file tree of a project card lists neither.
-- A workspace is a file `.oculus/workspaces/<name>.yml` of a hub: `folders:` (each `{ name, path }`) and `primary:`. The template is in [templates](docs/templates.md). With no workspace open, the workspace is unsaved and starts empty.
+- A workspace is a file `.oculus/workspaces/<name>.yml` of a hub: `folders:` (each `{ name, path }`) and `primary:`. The template is in [templates](templates.md). With no workspace open, the workspace is unsaved and starts empty.
 - The `...` menu and the palette (`:workspace`, `:workspace-save`, `:workspace-new`, `:workspace-close`, `:folder`) switch, save, make and close workspaces. Each workspace keeps its own pages.
 - Add Folder to Workspace opens the folder panel; Remove Folder takes a folder out. From the palette, Open Folder and Add Folder to Workspace close the palette as the panel opens. Both keep the file's comments and are undoable. Drag folders to reorder them.
 - A folder entry may set `repository_scan_depth` (0 up, -1 for no limit) for the Repositories view.
@@ -350,7 +350,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - A deleted file keeps its tab, struck through; Save writes it again.
 - `editor.autosave`: `off`, `after_delay` (`editor.autosave_delay_ms`) or `on_focus_change`.
 - On save: `editor.trim_trailing_whitespace`, then the language's `format_on_save`, then `editor.final_newline`. One Cmd+Z undoes all of it.
-- Indentation, word wrap and rulers come from, in order: the tab's own choice, the file, the repository's `.oculus/settings.yml`, `editor.languages`, the global keys. The template of `settings.yml` is in [templates](docs/templates.md).
+- Indentation, word wrap and rulers come from, in order: the tab's own choice, the file, the repository's `.oculus/settings.yml`, `editor.languages`, the global keys. The template of `settings.yml` is in [templates](templates.md).
 
 ### Notes
 
@@ -374,13 +374,13 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) are served by a language server per folder. It stops 60 seconds after the last tab closes; the Markdown server a move in the Files view starts to update links, with no Markdown tab open, stays while the page is open and stops 60 seconds after the page closes. Restart is in the status bar's language menu.
 - A server gives hover, go to definition, references, completion, signature help, diagnostics and the Outline; format, organize imports and hierarchies where it offers them. clangd also gives inlay hints, inactive regions and Switch Source/Header.
 - pyright uses the repository's `.venv` or `venv`, else `python3`, else `:interpreter`. A repository's own interpreter runs only after you approve it.
-- clangd uses the compile database the status bar names: a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml` (template in [templates](docs/templates.md)).
+- clangd uses the compile database the status bar names: a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml` (template in [templates](templates.md)).
 - The Svelte server runs a repository's `svelte.config.*` and `vite.config.*` only after `:svelte-config` approves them.
 - The YAML server checks a hub file against its schema: undeclared keys, wrong values, keys that name nothing, missing required fields. `local.yml` is checked against the options catalog.
 - The Markdown server marks links to missing files and renames a heading with its links. After a move in Files, it offers to update the links that broke, as a Refactor Preview. It also serves the notes in each hub's `.oculus/notes/`, and no other file under a dot folder.
 - A definition outside the workspace opens in a read-only library tab.
 - An edit a server makes to other files is one History record. It is refused whole if a file it names is open in another page, outside the workspace, in `secrets` or `~/.oculus`, over 5 MB, or changed on disk, or if it creates, renames or deletes a file.
-- Apps can add languages and servers ([Apps guide](docs/apps.md), The tools). When oculus and an app both serve a language, their lists are joined, and single answers come from oculus first.
+- Apps can add languages and servers ([Apps guide](apps.md), The tools). When oculus and an app both serve a language, their lists are joined, and single answers come from oculus first.
 
 ### Hub keys in YAML
 
@@ -425,19 +425,19 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 ## Project commands
 
 - A repository's commands come from `.oculus/commands.yml` and from what oculus finds (CMake presets, `package.json` scripts, `Makefile` targets).
-- `commands.yml` is a list `commands:` of `name`, `run`, optional `cwd`, `depends_on` and `default` (`build` or `test`). The template is in [templates](docs/templates.md).
+- `commands.yml` is a list `commands:` of `name`, `run`, optional `cwd`, `depends_on` and `default` (`build` or `test`). The template is in [templates](templates.md).
 - Add Command... on a repository's command bar adds an entry to the end of that repository's `commands.yml`, and makes the file from its template when there is none. The form lists the lines a press would run, the commands it depends on first; Save approves them, so the command runs without asking. Edit and Delete, on the right-click menu of an entry with a `run`, change only that entry and keep your comments and its other keys. A file that does not read is not written, and the form says why.
 - Commands show above the commit box in Repositories, on a project card, and in Run Command on a folder in Files.
 - `depends_on` runs each command of the chain once, in order, and stops at the first failure.
 - `${file}`, `${fileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${lineNumber}`, `${selectedText}` and `${workspaceFolder}` reach the command as environment variables.
 - A command runs only after you approve its exact text on this machine; a Save of the form, or of the schedule dialog that Schedule... opens, is that approval. A changed line, folder or `depends_on`, by hand or by a pull, asks again; an entry written or changed by hand runs on a schedule once its chain is approved through Edit or Schedule....
 - The terminal stays after the command ends, with a check or a cross. Rerun and Restart run it again. A `file:line: error:` line opens that file.
-- An app can add tasks and problem matchers ([Apps guide](docs/apps.md)).
+- An app can add tasks and problem matchers ([Apps guide](apps.md)).
 
 ## Debugging
 
 - The Debug view runs a `.rite` program under `rite_dap`, and other languages under an app's debugger. F9 sets a breakpoint, F5 starts; when it stops, Variables, Watch, Call Stack and the Debug Console show the state.
-- Configurations are in the repository's `.oculus/launch.yml`. With none, F5 runs the `.rite` file on screen. The template is in [templates](docs/templates.md):
+- Configurations are in the repository's `.oculus/launch.yml`. With none, F5 runs the `.rite` file on screen. The template is in [templates](templates.md):
 
 ```yaml
 configurations:
@@ -458,7 +458,7 @@ configurations:
 
 ## Apps
 
-- An app is a folder of web files with an `app.yml`, drawn in a tab. A machine app lives in `.oculus/apps/<name>/` of the hub; a root app in `.oculus/apps/<name>/` of another folder of the workspace. The template is in [templates](docs/templates.md).
+- An app is a folder of web files with an `app.yml`, drawn in a tab. A machine app lives in `.oculus/apps/<name>/` of the hub; a root app in `.oculus/apps/<name>/` of another folder of the workspace. The template is in [templates](templates.md).
 - An app runs only after you approve it, and only while its files are the ones you approved. Keep approved while I edit lets you work on it.
 - An app runs in a sandboxed frame with no access to your files. It reads the channels and makes the writes its manifest lists; every write is in the change log. A delete asks you first.
 - An app with a host runs a program on this machine with your rights; the approval panel says so.
@@ -468,7 +468,7 @@ configurations:
 - What an app adds (commands, keys, menus, status items, views, editors, settings, themes, languages, servers, debuggers, tasks, terminals, source controls, file badges) shows only while it is approved and enabled.
 - An app's settings are written to `app_settings` of the hub's `config.yml`.
 - No app can reach `~/.oculus`, oculus's `config/`, a hub's `secrets` folder or any `local.yml`.
-- Limits are the options under `apps:`, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. The [Apps guide](docs/apps.md) has the manifest, the bridge and an example.
+- Limits are the options under `apps:`, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. The [Apps guide](apps.md) has the manifest, the bridge and an example.
 
 ## Source Control and worktrees
 
@@ -508,16 +508,16 @@ configurations:
   - `text/`: every word on screen.
 - Every option is described in its file under `config/options/` and set in Settings. A wrong value is a finding, and that option takes oculus's value.
 - The theme list is the `themes:` rows of `appearance.yml`; each row's `group` is the words of the heading it is drawn under, in Settings and in `:theme`, the rows with no group first, and an app's themes are drawn under the app's title. The Code theme choice reads a list of its own: the VS Code code themes are the rows of `code_themes.vscode` in `appearance.yml`, each a `class` with TextMate rules in `src/lib/themes/vscode-rules.json`, a `label` and a `group`, drawn under its group. Your workspace file adds, renames or takes out a code theme by its class in `code_themes.vscode` without changing the theme list, and a change to the theme list leaves the Code theme choice as it is. The Shiki code themes are the rows of `code_themes.shiki`, each an `id` of a theme Shiki bundles, a `label` and a `group`, drawn under its group; your workspace file renames, regroups or takes out a Shiki code theme by its id the same way, with `{ id: <id>, removed: true }` to take one out. In the app a window starts on the theme `theme` names, or on the theme `app_theme` names while `theme` names none it can draw, and is filled with that theme's background until its page draws; from then on the window is filled with the background of the theme its page draws. Either option may name an app's colour theme: when the app is approved and enabled and the theme's file resolves, the page draws it from its first paint and the app fills a new window with its background. For an app's theme whose app is not approved and enabled, or whose file does not resolve, the page draws the start theme, the one `app_theme` names in the app and the first theme of the list in a browser.
-- The open workspace file's `settings:` holds keys as the defaults files hold them, with no file names: `code_theme: vscode-dark-2026`, `terminal: { font_px: 14 }`. A value replaces oculus's whole, except a list whose entries have a key field (`rail` by `page`, `floats` by `view`, `themes`, `latex.recipes` and `latex.tools` by `name`, `code_themes.vscode` by `class`, `code_themes.shiki` by `id`, `focus.ticker_sources` by `collection`) and a map such as `arrangements` or `counts`, which override oculus's entries one by one: your entries come first in your order, then oculus's others. `{ page: focus, removed: true }` in such a list takes oculus's entry out, and `focus: null` in such a map takes oculus's key out. A key of a hub's `config.yml`, a key no option names and a value its option refuses are findings naming the workspace file and the key, and oculus's value stands. The template is in [templates](docs/templates.md).
+- The open workspace file's `settings:` holds keys as the defaults files hold them, with no file names: `code_theme: vscode-dark-2026`, `terminal: { font_px: 14 }`. A value replaces oculus's whole, except a list whose entries have a key field (`rail` by `page`, `floats` by `view`, `themes`, `latex.recipes` and `latex.tools` by `name`, `code_themes.vscode` by `class`, `code_themes.shiki` by `id`, `focus.ticker_sources` by `collection`) and a map such as `arrangements` or `counts`, which override oculus's entries one by one: your entries come first in your order, then oculus's others. `{ page: focus, removed: true }` in such a list takes oculus's entry out, and `focus: null` in such a map takes oculus's key out. A key of a hub's `config.yml`, a key no option names and a value its option refuses are findings naming the workspace file and the key, and oculus's value stands. The template is in [templates](templates.md).
 - In a YAML file the editor checks, Ctrl+Space completes the keys, each with its description: the options of the defaults files, a workspace file's `settings:`, a hub's `config.yml` and `local.yml`, the catalogs, the schemas and the hub's data files.
-- A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](docs/templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path. Its `collections:` names the file of each registry, card list and feed: `leads` and `radar` name the Position Leads and Lit Watch files.
+- A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path. Its `collections:` names the file of each registry, card list and feed: `leads` and `radar` name the Position Leads and Lit Watch files.
 - A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
 - A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, the download accounts, and where oculus keeps this machine's files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
 - `commit_message_account` in `local.yml` names the Claude account the suggested commit message runs under: the label of a `claude` row of `accounts:` in any hub's file. Empty or absent, it runs on `~/.claude`; a label no Claude row holds is a finding and `~/.claude` is used. The run saves no session, so it is never listed in Sessions.
-- The rest of `.oculus/` (bookmarks, workspaces, schedules, update tasks, data files, notes, apps, pictures) is listed in the Data map ([data map](docs/data-map.md)).
+- The rest of `.oculus/` (bookmarks, workspaces, schedules, update tasks, data files, notes, apps, pictures) is listed in the Data map ([data map](data-map.md)).
 - `~/.oculus/` is oculus's own state: the open workspace, the page state the server saves for every page (`layouts.json`, each workspace's arrangement and its unread copy; `layout-writes.json`, the last 500 layout writes; `views.json`, each tab's view state; `debug.json`, the debugger's breakpoints and watches), the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
 - The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
-- A hub's data files, their keys and the views that show them are in the Data map ([data map](docs/data-map.md)), a tab of the Help page. A collection's default file is under `.oculus/data/`, in the folder of its kind: `research`, `pillars`, `literature`, `people` or `academic`.
+- A hub's data files, their keys and the views that show them are in the Data map ([data map](data-map.md)), a tab of the Help page. A collection's default file is under `.oculus/data/`, in the folder of its kind: `research`, `pillars`, `literature`, `people` or `academic`.
 - A collection no hub of the workspace lists under `collections:` has no view: its tab is left out of its page, and a pane left with no tab names the missing key. The tab comes back when a hub lists the key.
 - A hub's settings that name no `collections:` list take oculus's list, and the hub lists the collections whose file it holds at their default path.
 

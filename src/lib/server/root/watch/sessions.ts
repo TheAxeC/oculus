@@ -1,5 +1,5 @@
 // Layer 2, server. The `sessions` channel: scan the session stores at start, then rescan and
-// publish whenever one changes. DESIGN.md, "Watchers": sessions watches, for every account the
+// publish whenever one changes. It watches, for every account the
 // `accounts` of the hubs' `.oculus/local.yml` files name, `<dir>/projects` (transcripts) and
 // `<dir>/sessions` (the registry) of each Claude account and `<dir>/sessions` (the rollouts) of
 // each Codex account, every folder once by its real path (sessions/folders.ts).

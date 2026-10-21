@@ -2,7 +2,7 @@
 // hub's own, one of oculus's own, or oculus's manual.
 //
 // routes/api/(docs)/docs/+server.ts is the endpoint and holds nothing but its GET, since a route
-// module may export only its verbs; everything the request does is here. DESIGN.md's wire model
+// module may export only its verbs; everything the request does is here. The wire model
 // keeps documents out of the snapshot ("documents on demand"), so this is the one way a README
 // reaches the page.
 //
@@ -14,8 +14,8 @@
 // config/defaults/layout.yml lists in the view catalogue, and `hub` beside it names the hub it is
 // relative to (the primary when it is missing, and nothing with no primary); `engine` is a Markdown
 // file of oculus's own folder, named by a path relative to that folder, wherever the folder sits;
-// `manual` is the engine's own HELP.md and takes no path. Everything else is a 404 naming what was
-// wrong.
+// `manual` is the engine's own docs/HELP.md and takes no path. Everything else is a 404 naming what
+// was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -35,7 +35,7 @@
 // again after every write that may concern a document, which on a busy hub is every few seconds,
 // so the stat is what keeps a re-read of an unchanged file from rendering it again.
 //
-// A document of oculus's own (HELP.md, DESIGN.md, the Apps guide under docs/: a file whose real
+// A document of oculus's own (docs/HELP.md, the Apps guide under docs/: a file whose real
 // path lies inside the engine's real folder) draws a diagram of `docs/diagrams/` as a part of its
 // own beside its runs of prose, so the page can draw it in the page's text colour; the answer
 // carries those parts only when the document holds a diagram.
@@ -671,7 +671,7 @@ function engineFile(
 
 /**
  * One Markdown document of oculus's own, named by a path relative to the engine folder: the
- * guides under `docs/`, DESIGN.md, README.md and HELP.md. It is served wherever the engine folder
+ * guides under `docs/`, README.md and docs/HELP.md. It is served wherever the engine folder
  * sits, so the Help page's guide and a link between the engine's documents open on a hub that does
  * not hold them. Only a `.md` file whose real path lies inside the engine's real folder is
  * served, outside `node_modules` and any dot folder, by its name and by its real path, so a link
@@ -806,10 +806,10 @@ export function docsFindings(where: ConfigWhere, config: Record<string, unknown>
 }
 
 /**
- * The manual's name in the engine directory: oculus's own manual, beside DESIGN.md. An answer names
+ * The manual's name in the engine directory: oculus's own manual. An answer names
  * it as the manual, and the page opens the Help view for a link that resolves to it.
  */
-export const MANUAL = 'HELP.md';
+export const MANUAL = 'docs/HELP.md';
 
 /**
  * The manual, read from the engine directory. Its name is a constant that the request does not
@@ -828,10 +828,10 @@ export function renderManual(into: DocTarget, held = ''): Response {
 
 /**
  * The whole endpoint: the document the request names. A request carries one of four things, and the
- * first of these that it holds is the one answered: `manual`, which is the engine's own HELP.md and
- * takes no path; `engine`, a Markdown file of the engine folder by its path in it; a hub path
- * (`path`, with the `hub` it is relative to); or a project and one of that project's document
- * names.
+ * first of these that it holds is the one answered: `manual`, which is the engine's own
+ * docs/HELP.md and takes no path; `engine`, a Markdown file of the engine folder by its path in it;
+ * a hub path (`path`, with the `hub` it is relative to); or a project and one of that project's
+ * document names.
  */
 export function handleDocs(request: Request, into: DocTarget): Response {
     const url = new URL(request.url);

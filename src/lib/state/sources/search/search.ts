@@ -41,7 +41,7 @@ import {
     stringItemsShape
 } from '../../../data/shapes/shapes.ts';
 
-// The view layer reads the wire shapes and the all-roots key through this module: DESIGN.md's
+// The view layer reads the wire shapes and the all-roots key through this module: the
 // boundary table lets a view import `state/` and not `data/`, so the one place that names both is
 // here.
 export { ALL_ROOTS };

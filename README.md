@@ -1,64 +1,92 @@
 # oculus
 
-Oculus is a local research workbench: the projects, manuscripts, grants, data and code of a research hub, and the Claude Code sessions working on them, in one VS Code-like app. It runs on your own machine, macOS or Linux (Windows through WSL2), reads the hub's own files and keeps nothing of yours elsewhere.
+Oculus is a workbench for a research hub. A hub is a folder that holds your projects, manuscripts, grants, data and code, described in YAML and Markdown files. Oculus reads those files and shows them as boards, lists and documents, beside a file tree, an editor, git, terminals and the Claude Code sessions working on the hub. It looks and works much like VS Code.
 
-## Quickstart
+Oculus runs on your own machine, in a browser tab or in its own window, on macOS and Linux, and on Windows through WSL2. The server listens on 127.0.0.1 only. Oculus writes to a hub only where a control says so: back into the file a value came from, and the files and folders you make. Its own state lives in `~/.oculus`.
 
-1. Have the requirements: Node 24.15 or later on the 24 line, or Node 26 or later; npm 11; git; tmux; Claude Code, which is optional and runs the sessions; and on Linux `zenity` (the folder panel) and `xdg-utils` (`xdg-open`, which opens files and addresses; `wslu` gives `wslview` under WSL2).
-2. Install the packages from oculus's folder: `npm ci`.
-3. Start it: `npm run dev` serves the page at `http://127.0.0.1:8790`, or `npm run app` opens it in its own window.
-4. Make a first hub: in the Files view, add a folder to the workspace, then choose Make Folder a Hub on it in the folder's context menu, tick the collections the hub keeps, and press Make. Oculus writes the hub's `.oculus/config.yml` and a data file under `.oculus/data/` for each ticked collection.
+## What it shows
 
-The demo hub at `tests/fixtures/hubs/demo/` is the example hub the tests read: a synthetic research hub with its projects, registries, feeds and decks, which can also be added to a workspace to see the views filled.
+Each button on the rail at the left opens a page:
 
-`DESIGN.md` is what oculus is measured against; the rest of this file is how to run it and check it.
+- **Focus**: see what wants attention now, such as deadlines, follow-ups, tasks and the lanes your projects sit on.
+- **Projects**: browse your projects as cards or a list, with separate tabs for coauthored, archived, personal and software projects.
+- **Incoming**: read your mail, position leads, LinkedIn posts and calendars.
+- **Sessions**: follow every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes.
+- **Explorer**: work on files, with the file tree, git, search, references, the TeX view and the problems list.
+- **Academic Life**: track funding, talks and events, teaching and service, position applications, joint work, tasks and photos.
+- **Pillars**: see your projects grouped by research pillar and application domain, and as a graph of what links them.
+- **Registries**: keep the shared lists of venues, datasets, statements, people, organisations and computing resources.
+- **Literature**: search the literature sources, watch new papers and keep the ones you want.
+- **Present**: show a slide deck written in Markdown, with a presenter screen and PDF export.
+- **Apps**: add, enable, disable and remove apps, which are folders of web files oculus draws in a tab.
+- **Help**: read the manual, the keyboard shortcuts, the Apps guide, the templates, the data map and the palette commands.
+- **System**: change settings and look at oculus itself: its views, pages, processes, status, findings, audit and the history of its writes.
 
-## Running it
+## Install
 
-Install once, with Node 24.15 or later on the 24 line (or Node 26 or later) and npm 11 (`nvm install 24` gives both): `npm ci` from the committed lockfile, or `npm install` to regenerate it. The Status view's line counts also need Perl on the PATH to run cloc; macOS and most Linux systems carry it. `npm ci` refuses a Node outside `^24.15.0 || >=26.0.0` (Node 24.15 or later on the 24 line, or Node 26 or later, which every installed package accepts) before it installs anything. Each start (`npm run dev`, `npm run preview`, `npm run app`, `node src/server.ts` and `oculus.app`) first checks the Node version (the app runs on Electron's own Node and leaves it out), that the installed packages are the ones `package-lock.json` lists, the programs `git`, `tmux`, `perl` and the Claude CLI, and says what is missing with its fix; a Node outside that range and packages that do not match the lockfile end the start, and a missing program is named while oculus starts anyway (`npm run app` runs the Node and package part before Electron starts, and the app checks the programs over its own engine). A start with no open workspace, or with a workspace that lists no hub, is no lack: the views are empty and the Files view says to add a folder.
+Download the archive for your machine from the [releases page](https://github.com/TheAxeC/oculus/releases):
 
-Develop with `npm run dev`, which hot-reloads and serves on 127.0.0.1 at the port the primary hub's `.oculus/local.yml` names (8790 by default), the same address as the built server, so the Claude Code hooks that post to it reach whichever is running; the two cannot run at once. In development a component's stylesheet is always served compiled, whichever the page asks for first. For the built server, run the build listed below, then `node src/server.ts`, or `npm run preview` to serve the build. The server runs on this machine only, bound to the loopback address.
+- `oculus-0.1.0-darwin-arm64.zip` is the macOS app for Apple silicon. Unzip it and open `oculus.app`. The app is signed ad hoc and not notarized, so macOS refuses to open it the first time: open System Settings, Privacy and Security, and choose Open Anyway beside the message about oculus.
+- `oculus-0.1.0-linux-x64.tar.gz` and `oculus-0.1.0-linux-arm64.tar.gz` are the Linux app. Unpack the archive and run the `oculus` program in the folder `oculus-linux-<arch>`.
 
-The native app: `npm run app` starts oculus in its own window (Electron, with the server as a utility process; the first run fetches Electron's binary). It takes the single-instance lock, builds the checkout's server into `build-app/` and `.svelte-kit-app/` so it always serves the checkout's code, starts the server on the port the open workspace's primary hub names in its `.oculus/local.yml` (8790 without one) and opens the window, and it takes the same `--engine <dir>`. `--remote-debugging-port=<n>` is Chromium's own switch and the only way the app opens a debugging port. A port that another program holds is named in a dialog, and a port that an oculus holds is offered as a window onto that server. `npm run app:package` writes `oculus.app` (bundle id `local.research.oculus`, ad hoc signed) on macOS, and on Linux the folder `oculus-linux-<arch>` with its `.tar.gz` beside it, to `~/Applications` on macOS and `~/.local/share/oculus` on Linux, or to the folder `--out <dir>` names; the app imports the checkout's `src/desktop/main.ts`, so it runs the checkout's code and is made again only when Electron's version changes, and it runs no build and reads `build-app/`, so it needs one `npm run app` from the checkout first. The window state is kept in `~/.oculus/window.json`, and the page's storage under `~/Library/Application Support/oculus` on macOS and `~/.config/oculus` on Linux. The [manual](HELP.md#the-window) describes what the app adds to the page.
+The app carries its own runtime, so it needs no Node. It uses these programs when they are on the PATH:
 
-The app that runs on its own, with no checkout: `npm run app:release` builds the server and packs an app that holds it, the sources Electron runs, `config/`, `docs/` and the production packages, as `release/oculus-<version>-<platform>-<arch>`: a `.zip` of `oculus.app` (ad hoc signed) for macOS and a `.tar.gz` of the folder `oculus-linux-<arch>` for Linux. `--platform darwin|linux` and `--arch arm64|x64` choose the target, the machine's own by default; a Mac makes all three archives a release holds (`darwin arm64`, `linux x64`, `linux arm64`), and the macOS one only on a Mac. Neither archive is signed by a developer account or notarized. On Linux the unpacked folder's `oculus` program starts the app.
+- `git` for the Repositories view and every other git feature.
+- `tmux` for the terminals.
+- `perl` for the line counts of the Status view.
+- `claude`, the Claude Code CLI, for the agent sessions.
+- On Linux, `zenity` for the folder panel and `xdg-open` (package `xdg-utils`, or `wslview` from `wslu` under WSL2) to open files and links.
 
-The built server takes three arguments. `--engine <dir>` (`--engine=<dir>` too) names the directory that holds the `config/` folder it reads, and never writes, and the `HELP.md` the Help view draws; a relative path is resolved against the directory the command was typed in. Without it the engine is oculus's own folder, which is what a plain `node src/server.ts` over the checkout means. `--default-port <n>` (`--default-port=<n>` too) is a whole port number from 1 to 65535: the port the server takes while the primary hub's `.oculus/local.yml` names none, which the app passes so that the port it expects is the port the server takes. `--handler <file>` (`--handler=<file>` too) names the built handler the server loads, resolved against the directory the command was typed in like `--engine`; the app passes `build-app/handler.js`, and without it the server loads `build/handler.js`, the build of `npm run build`. A directory holding no `config/` and a `--handler` that names no file are refused at start, and any other argument is refused naming it. The development server runs over the checkout and takes no argument. The app hands the server the environment of the login shell when the app is started from the Dock, and the inherited environment when it is started from a terminal or when the shell does not answer within 10 seconds, which a dialog says once. The app looks the programs up in the environment it hands the server and names the ones it does not find in the same sheet on the first window, with Continue and Quit.
+At its first window the app names each program it cannot find and what does not work without it. The rest of oculus works.
 
-Which folders oculus serves is the open workspace, a file `.oculus/workspaces/<name>.yml` of a hub that lists `folders` (each `{ name, path }`) and an optional `primary`; the open workspace and the recent list are kept in `~/.oculus/workspace.json`, which only oculus writes. A start with no state opens an unsaved workspace with no folders. A listed folder that holds `.oculus/config.yml` is a hub. Machine-local values live in each hub's `.oculus/local.yml`, gitignored and optional, read again whenever it changes and never merged with the rest of the hub's configuration: the rows of `accounts`, `calendars` and `mail` are joined over every hub of the workspace, and every other key is one value per oculus read from the primary hub's file alone. `port` is an integer, defaulting to 8790; `claude_bin` names the Claude CLI that the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages run, defaulting to `claude` on PATH. The server reads no environment variable of its own except the operating system's `SHELL`, the command a plain terminal starts (`/bin/zsh` on macOS and `/bin/bash` elsewhere when it is unset or empty): a run that must not touch the checkout's configuration is started over a copy with `--engine`.
+## Run from source
 
-The runtime dependencies, with their licences: `dompurify` (MPL-2.0 or Apache-2.0) filters every piece of HTML the app draws, `marked` (MIT) renders a Markdown field, `marked-highlight` (MIT) colours the code in it and `marked-gfm-heading-id` (MIT) gives its headings their ids, `highlight.js` (BSD-3-Clause) colours a read-only source window, `katex` (MIT) draws the equations, `entities` (BSD-2-Clause) decodes HTML entities, `monaco-editor` (MIT) is the source tab, the diff pane and the merge editor, `shiki` and `@shikijs/monaco` (MIT) are their grammars, `node-diff3` (MIT) finds a merge's regions, `bits-ui` (MIT) draws the menus, tooltips, dialogs and the palette, `fuzzysort` (MIT) ranks the palette's rows, `@zag-js/tree-view` and `@zag-js/svelte` (MIT) are the file tree, `@tanstack/query-core` (MIT) holds the fetched answers of the client's stores, `@tanstack/virtual-core` (MIT) draws the long lists, `@event-calendar/core` (MIT) draws the Calendar, `ical.js` (MPL-2.0) reads a published calendar, `@vscode/ripgrep` (MIT) ships the search across files, `yaml` (ISC) reads the configuration and the hub's files, `smol-toml` (BSD-3-Clause) reads a Codex `config.toml`, `ws` (MIT) is the socket, `@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-search`, `@xterm/addon-web-links`, `@xterm/addon-unicode11` and `@xterm/addon-serialize` (MIT) are the terminal grid with its find, its links, its wide characters and its Copy as HTML, `culori` (MIT) measures the themes' contrast, `nodemailer` (MIT-0) composes a Gmail reply and sends nothing, `trash` (MIT) moves a file or folder to the Trash, `write-file-atomic` (ISC) writes a file whole, `zod` (MIT) checks a value that comes from outside the process or from outside the page's own code where any layer reads it, `image-size` (MIT) reads a PNG's and a WebP's size, `mime` (MIT) names the type a file is served as, `lodash-es` (MIT) is the watchers' debounce, with its maximum wait, `lucide-static` (ISC) ships the line icons `config/catalogs/icons.yml` names, which the server reads off disk and pushes with the configuration, `@viz-js/viz` (MIT) places the Map through Graphviz's neato, `d3-force` (ISC) runs the Map's forces, `pyright` (MIT) is the language server oculus starts for Python files, `typescript-language-server` (Apache-2.0) the one for TypeScript and JavaScript files, which runs on oculus's own `typescript` (Apache-2.0) with `typescript-svelte-plugin` (MIT) loaded into it, `svelte-language-server` (MIT) the one for Svelte files, `yaml-language-server` (MIT) the one for YAML files, `vscode-markdown-languageserver` (MIT) the one for Markdown files, with `markdown-it` (MIT) parsing the text for it, `ajv` (MIT) checks the hub's YAML against the schemas generated from its `schema:` blocks, `vscode-jsonrpc` (MIT) frames the messages between the relay and a language server and between oculus and the host of an app, `@napi-rs/keyring` (MIT) reads and writes the secrets of apps in the operating system's keyring, `vscode-languageserver-protocol` (MIT) types them, `shell-env` (MIT) resolves the login shell's environment for the app's server, `cloc` (GPL-2.0) is run as a separate Perl program, never imported, to count the Status view's lines, and `texlab` (GPL-3.0) is run as a separate program that the reader installs, never imported or shipped, for LaTeX and BibTeX files. `config/catalogs/unimath.yml` is converted from the Unicode math symbol data of LaTeX Workshop 10.19.0 (LPPL 1.3 or later; the copyright line is in the file's head comment). The app's two development dependencies are `electron` (MIT), which runs it, and `@electron/packager` (BSD-2-Clause), which makes `oculus.app`.
-
-## Checking it
-
-The checks run from oculus's folder:
-
-- `npm test` runs the unit suite over the data layer, the server, the stores, the shell and the views, leaving out the tree checks and the tests tagged slow; a file named `*.client.test.ts` runs in Svelte's client runtime with no DOM, which is where an effect's teardown runs, and every other file runs against Svelte's server build.
-- `npm run test:checks` runs every tree check under `tests/checks`, the ones tagged slow included (comment width, file size, duplication, import order and the rest) with no time limit. The checks of oculus's own code read the demo hub; the cases over a real hub (`tests/checks/config/integrity.test.ts`, `tests/checks/config/config-folder.test.ts`) read the hub folder the environment variable `OCULUS_TEST_HUB` names, skip with one printed line when it is unset, and fail naming the variable and the folder when that folder holds no `.oculus/config.yml`.
-- `npm run test:slow` runs the tests tagged slow outside `tests/checks` (`// @module-tag slow` in a test file's head comment tags the file, `{ tags: ['slow'] }` a test or a describe), which start a process, wait on a real timer, open a socket or take 100 ms or more in a run of their own.
-- `npm run check` runs the TypeScript and Svelte check over every file (svelte-check).
-- `npm run build` builds the server.
-- `npm run lint` and `npm run format:check` hold the source to its conventions: Prettier with four-space indentation, which `npm run format` applies.
-- `npm run diagrams` redraws the diagrams of `docs/diagrams/` from the source, and the tree check `tests/checks/diagrams/diagrams.test.ts`, one of those `npm run test:checks` runs, fails while a committed diagram differs from what the source gives now.
-- `npm run docs:palette` writes `docs/palette.md`, the list of every palette command, argument, prefix and key, from the tables the palette runs on, and `tests/checks/diagrams/palette.test.ts`, one of those `npm run test:checks` runs, fails while the committed page differs from what the registry gives now.
-
-## Two Claude accounts
-
-Claude Code keeps its login, settings and session history in one folder, `~/.claude` by default; the environment variable `CLAUDE_CONFIG_DIR` points it at another folder, and the login stored for that folder is its own Keychain entry. Axel's second account (the university address, Max 5x) lives in `~/.claude-work`, whose `CLAUDE.md`, `rules`, `settings.json` and `projects` are symlinks to `~/.claude`'s, so both accounts share the rules, the settings, the transcripts and the memory, and only the login and the app state differ.
-
-The Status view prints the Claude Code hooks block that posts to oculus, which goes in `~/.claude/settings.json`, the settings file both accounts read through that symlink, so a session started in any folder tells oculus when it wants you. A block in the hub's own `.claude/settings.local.json` is not needed once it is there.
-
-Start Claude Code on the second account from the hub root:
+You need Node 24.15 or later on the 24 line, or Node 26 or later, and npm 11 or later.
 
 ```sh
-cd ~/workspace/research-hub
-CLAUDE_CONFIG_DIR=~/.claude-work claude
+git clone https://github.com/TheAxeC/oculus.git
+cd oculus
+npm ci
+npm run dev    # serves the page at http://127.0.0.1:8790
+npm run app    # opens oculus in its own window (Electron)
 ```
 
-Resume a session there, whichever account it started on, since the transcripts are shared:
+Each start checks the Node version, that the installed packages match `package-lock.json`, and the programs listed above. It says what is missing and how to fix it. The port is 8790 unless the hub's `.oculus/local.yml` names another.
+
+`npm run app:release` builds the archives a release holds into `release/`. Add `-- --platform linux --arch x64` (or `darwin`, `arm64`) to choose the target. The macOS archive can only be built on a Mac.
+
+## Start with a hub
+
+Oculus opens with an empty workspace. To make your first hub:
+
+1. Open the Explorer page on the rail. In the Files view, choose Add Folder to Workspace and pick a folder.
+2. Right-click the folder and choose Make Folder a Hub..., then tick the collections the hub keeps and press Make. Oculus writes `.oculus/config.yml` and a data file under `.oculus/data/` for each ticked collection, from its template with every key commented out.
+3. Make a project: right-click a folder and choose Make Folder a Project. Oculus writes the folder's `.oculus/project.yml`.
+
+Save the workspace with Save Workspace As... in the Files view's `...` menu. It is kept as `.oculus/workspaces/<name>.yml` in the hub. Values that belong to this machine, such as the port and where the Claude CLI is, go in the hub's `.oculus/local.yml`, which stays out of git.
+
+To see the views filled before you have a hub of your own, add the demo hub `tests/fixtures/hubs/demo/` of a checkout to the workspace. It is a synthetic hub with projects, registries, feeds and decks.
+
+To have Claude Code sessions tell oculus when they want you, merge the hooks block the Status view prints into the top level of `~/.claude/settings.json`.
+
+## Documentation
+
+- [docs/HELP.md](docs/HELP.md) is the manual: every view, key, setting and file. The app shows it on its Help page.
+- [docs/templates.md](docs/templates.md) gives every YAML file oculus reads as a template to copy.
+- [docs/data-map.md](docs/data-map.md) maps a hub's data files, the views that show them and the keys that link them.
+- [docs/apps.md](docs/apps.md) shows how to build an app, a folder of web files oculus draws in a tab.
+- [docs/palette.md](docs/palette.md) lists every palette command and key. `npm run docs:palette` writes it from the code.
+
+## Checks
+
+Run these from the checkout:
 
 ```sh
-CLAUDE_CONFIG_DIR=~/.claude-work claude --resume <session-id>
+npm test               # the unit suite
+npm run test:checks    # the checks over the source tree, in tests/checks
+npm run test:slow      # the tests tagged slow
+npm run check          # the TypeScript and Svelte type check
+npm run lint           # ESLint
+npm run format:check   # Prettier; npm run format applies it
+npm run build          # builds the server
 ```
-
-`~/.zshrc` on Axel's machine defines `claude-work` as a shortcut for `CLAUDE_CONFIG_DIR=~/.claude-work claude`, with arguments passed through, so `claude-work` and `claude-work --resume <session-id>` do the same as the two commands above. A terminal without the variable runs on the first account. Never resume one session in two terminals at once: both write the same transcript. To branch instead, add `--fork-session`. Codex has the same in `CODEX_HOME`. The Usage view reads both folders through the `accounts:` list in `local.yml`.

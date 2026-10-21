@@ -4,7 +4,7 @@
 // The log is a machine-local file and is not in the snapshot, so it is fetched from GET
 // /api/changes: one page on the first read, an older page each time the reader asks for one, and
 // the whole list again after an undo. The wire shape is declared here rather than imported, since
-// the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
+// the boundary table lets `state/` import `data/model` and nothing of `server/`;
 // server/core/changes.ts holds the same shape on its own side.
 //
 // The server announces each append on the `changes` channel with the moment of the newest record.

@@ -8,10 +8,10 @@
 // turn, forks a session, starts an update task, or builds or cleans one
 // main file of a project's manuscript or of a folder of a served root, runs a project command,
 // runs a task terminal's line again or reads the output of a listed terminal, and additionally
-// carries the write token, since it is a write in DESIGN.md's "Auth" sense: it runs a process on
+// carries the write token, since it is a write in the auth sense: it runs a process on
 // the machine.
 //
-// The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
+// The resume action is the one explicit migration: an observed session becomes a terminal
 // oculus holds by running `claude --resume <id>` or `codex resume <id>` in its own cwd. Nothing is
 // signalled: a session whose process is still running is refused until it has ended, since two
 // processes writing one transcript is what the rule against signalling exists to prevent.

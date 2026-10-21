@@ -7,7 +7,7 @@
 // tabs side by side are two searches. What is not saved is what is in flight: a page restored from
 // storage has no request out, whatever it held when it was written.
 //
-// The request carries the write token, since DESIGN.md's "Auth" puts a read of every file of every
+// The request carries the write token, since the auth rule puts a read of every file of every
 // served root behind it, and the query is checked here before it is sent through the same rule the
 // server checks it with (data/helpers/search/query.ts), so a refusal is a sentence rather than a
 // round trip. The server answers a refusal as a word and every sentence is worded here.

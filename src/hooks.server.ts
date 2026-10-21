@@ -47,7 +47,7 @@ function routePath(event: RequestEvent): string | null {
 
 /**
  * Whether a request is refused before any route sees it: one to a route under /api/, outside the
- * two callbacks, that fails DESIGN.md's one "Auth" rule, a request with neither header to a path of
+ * two callbacks, that fails the one auth rule, a request with neither header to a path of
  * HEADERLESS excepted. Guarding here, where every request passes, is what keeps a route added under
  * /api/ from being answered to another page.
  */
@@ -76,7 +76,7 @@ function refused(event: RequestEvent): boolean {
 // The page's answer carries `Content-Security-Policy: frame-src 'self'`, which holds the frame of
 // an app, whose files are served from /apps/ outside the guard, to the addresses of this origin.
 //
-// Every request under /api/ passes DESIGN.md's one "Auth" rule (`sameOrigin` in
+// Every request under /api/ passes the one auth rule (`sameOrigin` in
 // lib/server/core/auth.ts) here, before any route sees it, and one that fails it is answered 403
 // with `{ error: 'forbidden' }`; UNGUARDED names the two paths passed unchecked and HEADERLESS the
 // five that admit a request with neither header, each with its reason.

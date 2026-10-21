@@ -196,7 +196,7 @@ export type Relations = {
 };
 
 /**
- * What goes over the wire (DESIGN.md, "Normalise"). Flat, JSON-safe and small: no value in it is
+ * What goes over the wire. Flat, JSON-safe and small: no value in it is
  * anything but a string, a number, a boolean, null, a list or a plain object, so it survives
  * JSON.stringify and JSON.parse unchanged. `version` increments on every rebuild.
  */
@@ -208,7 +208,7 @@ export type Snapshot = {
 };
 
 /**
- * One message on the socket (DESIGN.md, "The socket"). The types of the wire live here with the
+ * One message on the socket. The types of the wire live here with the
  * snapshot because both halves of layer 2 need them and the boundary table lets `state/` import
  * `data/model` and nothing else of `data/`.
  */
@@ -244,7 +244,7 @@ export type JumpMessage = { type: 'jump' } & Jump;
 /**
  * The subscribe message a client sends: the channels it wants, and the write token when the page
  * has one. A socket that carried the token may send terminal input on a `pty:` channel; a socket
- * without it reads every channel and writes to none (DESIGN.md, "Auth").
+ * without it reads every channel and writes to none.
  */
 export type Subscription = {
     type: 'subscribe';

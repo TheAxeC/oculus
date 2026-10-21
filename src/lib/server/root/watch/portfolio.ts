@@ -1,6 +1,6 @@
 // Layer 2, server. The `portfolio`, `config`, `feeds` and `audit` channels: build once at start,
-// then rebuild and publish whenever a source file changes. This is DESIGN.md's third row of "Hot
-// reload", the one that is identical in development and in production, and the reason the page
+// then rebuild and publish whenever a source file changes. This is the kind of hot
+// reload that is identical in development and in production, and the reason the page
 // never polls.
 //
 // The whole snapshot is rebuilt on every burst rather than the part that changed. The build of

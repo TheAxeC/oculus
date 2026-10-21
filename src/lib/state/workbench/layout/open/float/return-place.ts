@@ -1,6 +1,6 @@
 // Layer 2, client state. Where a floated pane stood in its page, read as it leaves the page, and
 // the page's tree with the pane put back there, which is what Return to Page does with a float made
-// from a page's pane (HELP.md, Pages and the pane tree). The place is the node the pane stood
+// from a page's pane (docs/HELP.md, Pages and the pane tree). The place is the node the pane stood
 // beside, by its path once the pane had left and by an instance it held, so a page rearranged while
 // the pane floated, which moved or closed that node, gives no place and Return to Page splits the
 // pane off the page's largest pane instead (pages.ts, returnFloat).

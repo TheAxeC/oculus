@@ -8,7 +8,7 @@
 // `sys.executable`, `sys.version_info[:3]`, `sys.prefix` and `sys.base_prefix`; one that does not
 // answer in that time, or answers no version, is left out of the list.
 //
-// A repository's own interpreter is a program the repository supplies, so DESIGN.md's processes
+// A repository's own interpreter is a program the repository supplies, so the processes
 // rule holds for it: it is run, here to read its version and by pyright to read its search paths,
 // only after the reader approved its path on this machine (server/machine/approvals/approvals.ts,
 // the `interpreter:` kind). Until then it is listed with the version its `pyvenv.cfg` names, which

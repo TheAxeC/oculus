@@ -1,5 +1,5 @@
 // Layer 2, server test. The streams of one app host (lib/server/machine/apps/tools/streams.ts), the
-// `oculus/stream/*` rows of DESIGN.md: the host opens every stream under an id it chooses, flow is
+// `oculus/stream/*` methods: the host opens every stream under an id it chooses, flow is
 // by credit, an id oculus does not hold is dropped with a line in the host's output, and a host
 // that stops closes every stream. These are the stream rows of G75 and G77.
 //

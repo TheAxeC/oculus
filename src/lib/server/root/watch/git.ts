@@ -1,6 +1,6 @@
 // Layer 2, server. The `git` channel: the read-only state of every root the file browser knows and
-// of every workspace the `sessions` channel names, re-read when that root changes. DESIGN.md,
-// "Watchers": git watches each workspace's .git and worktree and re-reads on change, no more often
+// of every workspace the `sessions` channel names, re-read when that root changes.
+// It watches each workspace's .git and worktree and re-reads on change, no more often
 // than every two seconds.
 //
 // The file browser's roots are the second source because the Repositories view lists every

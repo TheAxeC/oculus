@@ -203,13 +203,13 @@ describe('the acts of the deck write', () => {
         ]);
         expect(files(held)['fresh/present.yml']).toBeUndefined();
 
-        const made1 = await create("Axel's talk");
+        const made1 = await create("John Smith's talk");
         expect(made1.answer.changed).toEqual(['fresh/present.yml', 'fresh/closing.md']);
         const now = files(held);
-        expect(now['fresh/present.yml']).toContain("title: 'Axel''s talk'");
+        expect(now['fresh/present.yml']).toContain("title: 'John Smith''s talk'");
         expect(now['fresh/present.yml']).toMatch(/order:\n\s+- closing\.md\n$/);
         expect(now['fresh/closing.md']).toContain('kind: closing');
-        expect(now['fresh/closing.md']).toContain("# Axel's talk");
+        expect(now['fresh/closing.md']).toContain("# John Smith's talk");
         const twice = await create('Another');
         expect(twice.answer.refused?.map((one) => one.reason)).toEqual([
             'The folder fresh already holds a present.yml'

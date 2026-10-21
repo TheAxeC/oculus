@@ -15,13 +15,13 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Oculus's own manual: the HELP.md of its folder, drawn as prose.
+    // Layer 3, view. Oculus's own manual: the docs/HELP.md of its folder, drawn as prose.
     //
-    // The manual is a file beside DESIGN.md rather than text in the catalog, because it is pages of
-    // prose about the whole tool and a catalog is words a surface draws. It is read through
-    // api/docs, the one route that turns Markdown into HTML, by its `manual` read, which answers it
-    // in the engine folder's space whatever hub the page is on: its path is HELP.md and a relative
-    // link in it is resolved from there.
+    // The manual is a file rather than text in the catalog, because it is pages of prose about the
+    // whole tool and a catalog is words a surface draws. It is read through api/docs, the one route
+    // that turns Markdown into HTML, by its `manual` read, which answers it in the engine folder's
+    // space whatever hub the page is on: its path is docs/HELP.md and a relative link in it is
+    // resolved from there.
     //
     // The manual holds no diagram. The doc view draws a diagram of docs/diagrams/ over a document
     // of oculus's own folder, which the Apps guide tab of this page is (`engine: true` in the tab's

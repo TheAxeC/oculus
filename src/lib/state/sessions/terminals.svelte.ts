@@ -1,4 +1,4 @@
-// Layer 2, client state. The page's end of DESIGN.md's "PTY": the terminals the sessions payload
+// Layer 2, client state. The page's end of the PTY: the terminals the sessions payload
 // carries, the actions of /api/terminal, and the two messages a page writes on a `pty:` channel.
 //
 // The `pty:` channel of a terminal, its two messages and the panes reading its output are
@@ -30,7 +30,7 @@
 // is moved, split or reloaded ends none. The workbench is handed in by state/client/context.ts,
 // since a hidden page mounts no view that could notice.
 //
-// Every action is a write in DESIGN.md's "Auth" sense, since it runs a process on the machine: the
+// Every action is a write in the auth sense, since it runs a process on the machine: the
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
 // subscribe message, which is what lets that socket send input at all.
 
@@ -520,7 +520,7 @@ export function createTerminals(
     }
 
     /**
-     * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
+     * Continue an observed session in a terminal: the one explicit migration, which runs
      * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server
      * reads the directory off the record, so nothing about where it starts travels from the page.
      */

@@ -2,7 +2,7 @@
 // and writes none, which is the exception the standing spec grants. Its last `describe`, the count
 // of written equations, reads no hub data: it plants a deck in a temporary directory.
 //
-// It is the gate DESIGN.md names: the model validates against a hub with zero findings. Its cases
+// It is the gate: the model validates against a hub with zero findings. Its cases
 // run over two hubs. The demo hub of tests/fixtures/hubs/demo/ is always there, so the cases that
 // check oculus's own code never skip. The real hub is the folder OCULUS_TEST_HUB names
 // (tests/fixtures/hubs/real-hub.ts): unset, its cases skip and the file prints one line naming the

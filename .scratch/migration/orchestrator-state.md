@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:         # steps in flight, up to six (Z632)
-- step: O39 part D
-  base: a2e367d6
-  worktree: .agents/worktrees/migration-O39
-  executor: agent
-  worker: claude:opus
-  launched: 2026-10-21
-  session_id: ada0f9352fe29d6b7
-  model: claude-opus-5-5
-  builder_usage: 296,484 tokens, 164 tool uses, 14.5 min (first report); round 1: 303,347 tokens, 12 tool uses, 0.7 min; round 2: 350,911 tokens, 45 tool uses, 3.8 min
-  report: .scratch/migration/agents/reviews/O39-partD-report.md
-  round: 2 (round 1: a What it shows section in README.md, the 'DESIGN.md' entries of shipped.ts and history.test.ts removed; round 2, Axel 2026-10-21 "Please fix all 3. Example name: John Smith": the tests follow the manual to docs/HELP.md, the comments part D made longer than 100 columns rewrapped, every Axel in example and test data made John Smith)
-  brief_check: none (Axel 2026-10-21: no brief check)
-  landing: not-started
-  note: the first builder (a5f47cf57f964e076) was stopped by Axel and its worktree deleted on his word; this builder works from ruling "O39 part D list" in plan.md alone. No test is run, ever (Axel).
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -170,6 +156,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 201 (2026-10-21, from O39 part D's review): the hub's `CLAUDE.md:33` (and `AGENTS.md`, its link) says every oculus design choice is justified from oculus's own `DESIGN.md`, which part D deleted. (a) reword it to "justified on oculus's own terms, its code and its documents", recommended, since the sentence's rule (prior art is no justification) stays and only the dead file name goes; (b) delete the sentence, which drops the rule with the file; (c) leave it, the lazy option, which leaves a pointer to a file that does not exist. The file is Axel's, so it waits for his yes.
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -335,6 +324,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-21 (O39 part D landed). Part D is on main after its review (`agents/reviews/O39-partD-refuter.md`) with its fixes at landing (the template key, `history.test.ts`, `git.ts:3`, the README's macOS step, the ledger's DESIGN.md names) and ruling "O39 part D names" (the window title `Oculus`, `convert-decks.mjs` deleted, the Recover test users `john` and `johnsmith`), O47's manual lines carried into `docs/HELP.md`, its look on TEST; no verify command run, by Axel's order. Open items: 201. In flight: none. Next: O48 (the editor and terminal transparency, ruling 200 (a)), then O39's part C rows i and j and the owed desktop look, and O39's closing.
 - 2026-10-21 (O47 landed). O47 is on main with its fixes at landing (the manual's lines, the hub's six follow-ups in the list form and its schema lines removed, guarded.md G8, G9 and line 212) and its look on TEST; no verify command run, by Axel's order. O39 part D: two repair rounds done in its worktree (the README's What it shows, the DESIGN.md entries of shipped.ts and history.test.ts, the tests on docs/HELP.md, the long comments rewrapped, Axel made John Smith in example and test data). Open items: none. In flight: O39 part D (round 2 reported, to read). Next: read part D's round 2, then /land O39 part D, carrying O47's HELP.md lines into docs/HELP.md; then the owed desktop look and O39's closing.
 - 2026-10-21 (O39 part C, rows a to h and k and item 16 done). Hub commit 4d515404e moves oculus out of the hub; the status line, the views file and the app point at `~/workspace/oculus`; the oculus memories copied to the new repository's memory folder. Open items: none (195 and 196 ruled). In flight: none. Next: part D on rulings 193 and 194 (the README rewrite and `HELP.md` and `DESIGN.md` into `docs/`) through /spec, a builder, /refute and /land; then the owed desktop first-paint look, and O39's closing.
 - 2026-10-21 (O39 part B done). Axel pushed `main` to `TheAxeC/oculus`; the draft Release `oculus 0.1.0` holds the three archives. Open items: none. In flight: none. Next: part C item 15, which starts with Axel starting his server from `~/workspace/oculus`; then each of its rows with its before and after on his yes; then item 16, the memory.

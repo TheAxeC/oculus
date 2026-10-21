@@ -32,7 +32,7 @@ schema:
 /** The paper most cases save. */
 const PAPER = {
     title: 'Block-term tensor regression for ECoG',
-    authors: ['Axel Faes', 'Marc M. Van Hulle'],
+    authors: ['John Smith', 'Marc M. Van Hulle'],
     year: 2024,
     doi: '10.1016/j.neucom.2024.127654'
 };
@@ -69,13 +69,13 @@ const CERTIFIED = 'Certified robustness of tensor networks';
  */
 const KEY_ROWS: { authors: string | string[]; year?: number; title: string; key: string }[] = [
     {
-        authors: ['Axel Faes', 'Marc M. Van Hulle'],
+        authors: ['John Smith', 'Marc M. Van Hulle'],
         year: 2024,
         title: PAPER.title,
-        key: 'faes2024blockterm'
+        key: 'smith2024blockterm'
     },
     { authors: ['Faes A'], year: 2024, title: PAPER.title, key: 'faes2024blockterm' },
-    { authors: ['Faes, Axel'], year: 2024, title: PAPER.title, key: 'faes2024blockterm' },
+    { authors: ['Smith, John'], year: 2024, title: PAPER.title, key: 'smith2024blockterm' },
     { authors: ['Marc M. Van Hulle'], year: 2023, title: 'Tensor', key: 'vanhulle2023tensor' },
     { authors: ['Van Hulle MM'], year: 2023, title: 'Tensor', key: 'vanhulle2023tensor' },
     { authors: ['Khanh Dao Duc'], year: 2026, title: 'Optimal', key: 'duc2026optimal' },
@@ -119,7 +119,7 @@ describe('Save to Literature', () => {
         expect(text.startsWith(HEAD)).toBe(true);
         expect(entriesOf(file)).toEqual([
             expect.objectContaining({
-                key: 'faes2024blockterm',
+                key: 'smith2024blockterm',
                 title: PAPER.title,
                 authors: PAPER.authors,
                 year: 2024,
@@ -136,9 +136,9 @@ describe('Save to Literature', () => {
             saveLiterature(hub, config, undefined, 'search', { ...PAPER, doi });
         }
         expect(entriesOf(file).map((one) => one.key)).toEqual([
-            'faes2024blockterm',
-            'faes2024blocktermb',
-            'faes2024blocktermc'
+            'smith2024blockterm',
+            'smith2024blocktermb',
+            'smith2024blocktermc'
         ]);
     });
 
@@ -168,7 +168,7 @@ describe('Save to Literature', () => {
         const held = readFileSync(file, 'utf8');
         const outcome = saveLiterature(hub, config, undefined, 'lit-watch', {
             title: 'Block-Term Tensor Regression, for ECoG.',
-            authors: ['Axel Faes']
+            authors: ['John Smith']
         });
         expect(outcome.refused).toEqual([
             { field: 'title', reason: words(config.text, 'server.literature.paper_in_file') }
@@ -185,8 +185,8 @@ describe('Save to Literature', () => {
         });
         expect(outcome.refused).toEqual([]);
         expect(entriesOf(file).map((one) => one.key)).toEqual([
-            'faes2024blockterm',
-            'faes2024blocktermb'
+            'smith2024blockterm',
+            'smith2024blocktermb'
         ]);
     });
 });

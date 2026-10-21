@@ -340,9 +340,9 @@
     const image = $derived(appearance.image());
 
     /**
-     * A tab in the background still says a session wants Axel: the document title carries the count
-     * of sessions with an open permission prompt, so switching tabs is not the only way to notice.
-     * A popped-out window's page names its float's active tab, the words its strip draws.
+     * A tab in the background still says a session wants the user: the document title carries the
+     * count of sessions with an open permission prompt, so switching tabs is not the only way to
+     * notice. A popped-out window's page names its float's active tab, the words its strip draws.
      */
     $effect(() => {
         const tab = pageActiveTab(floatId, floats(), activeMain);

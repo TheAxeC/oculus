@@ -568,11 +568,11 @@ describe('POST /api/terminal, the chat action', () => {
         const named = await handleTerminal(
             request({ action: 'chat', id: 'alpha', cols: 101, rows: 31 }),
             TOKEN,
-            { ...chatOptions(owned), ownerFor: () => 'Axel Faes' }
+            { ...chatOptions(owned), ownerFor: () => 'John Smith' }
         );
         expect(named.status).toBe(200);
         const ownedStart = owned.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(lineOf(ownedStart)[0]).toContain('research hub of Axel Faes (oculus)');
+        expect(lineOf(ownedStart)[0]).toContain('research hub of John Smith (oculus)');
         expect(lineOf(ownedStart)[0]).not.toContain('its owner');
     });
 });

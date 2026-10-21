@@ -1,4 +1,4 @@
-// Layer 2, server. The streams of one host, oculus's end of DESIGN.md's `oculus/stream/*` rows: the
+// Layer 2, server. The streams of one host, oculus's end of the `oculus/stream/*` methods: the
 // byte and message flows of a language server, a debug adapter or a terminal that ride the host's
 // one JSON-RPC connection (host/connection.ts) and never a second pipe.
 //

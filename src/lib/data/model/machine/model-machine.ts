@@ -221,12 +221,12 @@ export type SchedulePayload = {
 };
 
 // ------------------------------------------------------------------ terminals
-// The tmux side of DESIGN.md's "PTY": one record per tmux session oculus started, and the three
+// The tmux side of the PTY: one record per tmux session oculus started, and the three
 // messages the `pty:<id>` channel carries. JSON-safe like everything above, so the bytes of a pane
 // travel as base64 rather than as a string that a lone surrogate could break.
 
 /**
- * What a terminal pane runs: DESIGN.md's two agents and a shell, or a program an app's host
+ * What a terminal pane runs: the two agents and a shell, or a program an app's host
  * started (`app`).
  */
 export type TerminalKind = 'claude' | 'codex' | 'shell' | 'app';

@@ -5,7 +5,7 @@
 // A search is a request with an answer rather than a state the server keeps, so it is a GET. It is
 // same-origin only, as every read here is, and it carries the write token as well: a search reads
 // every file of every served root, which is more than any other read of this server gives away, and
-// DESIGN.md's "Auth" puts that behind the token minted at start and delivered to the page once.
+// the auth rule puts that behind the token minted at start and delivered to the page once.
 //
 // Nothing is searched outside a served root. The roots are the list the route composed, the same
 // one the file route and the source route compose, and a `root` that is not one of their keys is

@@ -1,6 +1,6 @@
 # Building an oculus app
 
-An app is a folder of web files that oculus draws in a tab. This guide starts with a working app, then gives the reference. The rest of the manual is [HELP.md](../HELP.md).
+An app is a folder of web files that oculus draws in a tab. This guide starts with a working app, then gives the reference. The rest of the manual is [HELP.md](HELP.md).
 
 ## Contents
 

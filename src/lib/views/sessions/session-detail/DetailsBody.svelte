@@ -44,7 +44,7 @@
 
     /**
      * Whether the resume control has been asked once. Resuming runs the agent again on the same
-     * transcript, which is DESIGN.md's explicit migration and never something a stray click does.
+     * transcript, which is the explicit migration and never something a stray click does.
      */
     let armed = $state(false);
 

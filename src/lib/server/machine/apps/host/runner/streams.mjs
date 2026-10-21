@@ -1,6 +1,6 @@
 // Layer 2, server. The streams of the host's side of the connection: the byte and message flows of
 // a language server, a debug adapter or a terminal, which ride the host's one JSON-RPC connection
-// as DESIGN.md's `oculus/stream/*` rows say and never touch file descriptor 1 beside it.
+// through the `oculus/stream/*` methods and never touch file descriptor 1 beside it.
 //
 // The host opens every stream (`oculus/stream/open`, answered at once or refused `refused:id`).
 // `oculus/stream/data` carries base64 `bytes` of a terminal, one `message` object of a server or an

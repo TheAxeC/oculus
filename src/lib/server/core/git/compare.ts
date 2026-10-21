@@ -5,7 +5,7 @@
 // and files.ts hold the state of a workspace and the rest of the reads; every module of this folder
 // reaches git through run.ts's one call site.
 //
-// DESIGN.md, "Git": exactly these read-only commands run here, besides those run.ts lists.
+// Exactly these read-only commands run here, besides those run.ts lists.
 //
 //     git -C <root> cat-file -t HEAD:<path>
 //     git -C <root> ls-files --stage -z -- <path>

@@ -257,12 +257,12 @@ const CONFIGS: ConfigRow[] = [
     {
         name: 'PhysioNet: the user and the secret, quotes and backslashes escaped',
         account: DOWNLOADS[0],
-        text: 'user = "axel:pn-pass \\"with\\" \\\\ quote"\n'
+        text: 'user = "john:pn-pass \\"with\\" \\\\ quote"\n'
     },
     {
         name: 'Kaggle: the user and the key',
         account: DOWNLOADS[1],
-        text: 'user = "axelk:kg-key-5f1e9c"\n'
+        text: 'user = "johnsmith:kg-key-5f1e9c"\n'
     },
     {
         name: 'Synapse: the token as a header',

@@ -78,7 +78,7 @@ const fieldTypesShape = z
 
 /**
  * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads.
- * The two readers are separate because the boundary table of DESIGN.md lets `state/` import
+ * The two readers are separate because the boundary table lets `state/` import
  * `data/model` and `data/helpers/guards` and nothing else of layer 1, so a shared module would be a
  * boundary violation rather than a saving; what they share is the config file, which is the point
  * of config as data.

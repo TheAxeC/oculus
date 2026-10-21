@@ -2,7 +2,7 @@
 
 This repository holds oculus, the workbench that reads a research hub and shows it in one app. These rules bind every session and every agent that works on it, whichever runner and model reads them; `AGENTS.md` is a symlink to this file, so every runner reads the same text. Whatever user-level configuration the runner loads is authoritative where it overlaps with this file.
 
-For orientation read `README.md` (how to run and check oculus), `DESIGN.md` (what oculus is measured against: its goals, its decisions and the shape of the code) and `HELP.md` (what each view, setting and file does, as a user meets it).
+For orientation read `README.md` (how to run and check oculus) and `docs/HELP.md` (what each view, setting and file does, as a user meets it).
 
 ## Git
 
@@ -33,7 +33,7 @@ For orientation read `README.md` (how to run and check oculus), `DESIGN.md` (wha
 - **No question boxes.** The session recommends and proceeds, and a question for the user is written as plain text in the message, with its options, their pros and cons and one recommendation. Work stops only where the decision is the user's: a user-visible shape nothing names, a premise found wrong, a red check no fix within the plan covers, a clash between two established rules or decisions.
 - **A question is answered by the session itself.** It reads the code, the files and the data, and runs the commands that show the answer; no diagnosis agent or `/diagnose` run is used for it. The answer comes first in the message that ends the turn, every question in the message is answered in order, and a question never stops work already asked for.
 - **Show code.** When the subject is code, the reply leads with the smallest real snippet (TypeScript, Svelte, YAML, shell) that shows the construct, the call, or the before and after, with prose kept short beside it.
-- **References are not justifications.** Prior art, the tools oculus replaced included, is a cautionary reference for what was slow, awkward or wrong. A design choice is justified from oculus's own `DESIGN.md`, citing the goal or decision it serves; when a choice matches prior art, the reason is still given on oculus's terms.
+- **References are not justifications.** Prior art, the tools oculus replaced included, is a cautionary reference for what was slow, awkward or wrong. A design choice is justified from oculus's own goals and decisions, citing the goal or decision it serves; when a choice matches prior art, the reason is still given on oculus's terms.
 
 ## Plans
 

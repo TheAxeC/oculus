@@ -1,6 +1,6 @@
 // Layer 2, server. The writing half of git, kept apart from server/core/git/ on purpose.
 //
-// DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands. Every write
+// The read-only module runs only its enumerated read-only commands. Every write
 // therefore lives here.
 //
 //     git -C <root> add [-u] -- <paths | .>
@@ -49,7 +49,7 @@
 //
 // Two callers reach this module. server/git-routes.ts answers POST /api/git only for a request
 // carrying the write token, coming from this application's own page, and (for the actions that can
-// lose work) carrying the confirm the page sets from a dialog. DESIGN.md's decision on git writes
+// lose work) carrying the confirm the page sets from a dialog. The decision on git writes
 // is that shape: commit, push, pull, branches, stashes, tags and worktrees on the repositories
 // oculus knows, every write behind the token and those behind a confirm. server/root/watch/
 // autofetch.ts runs only `remoteNames` and `fetchIn`, from a timer, while `git.autofetch_minutes`
@@ -360,7 +360,7 @@ async function pushedAlready(root: string): Promise<boolean> {
 /**
  * Push the current branch to its upstream. A branch with no upstream is refused with that as the
  * reason, before anything is sent: `--set-upstream` decides where a branch lives, and that decision
- * is Axel's at a terminal rather than a side effect of a button. This push never forces.
+ * is the user's at a terminal rather than a side effect of a button. This push never forces.
  */
 export async function push(
     root: string,

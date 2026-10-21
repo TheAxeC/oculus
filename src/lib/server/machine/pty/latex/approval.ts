@@ -1,7 +1,7 @@
 // Layer 2, server. What a build or a clean of a LaTeX main file asks the reader to approve before
 // it runs code that is not the project's text: the latexmkrc files latexmk reads, and a recipe's
-// weave tools. Both are approved once and asked again when they change, by the processes rule of
-// DESIGN.md ("Approval"), and neither runs anything here.
+// weave tools. Both are approved once and asked again when they change, by the processes rule,
+// and neither runs anything here.
 //
 // The latexmkrc set of a main file is every `.latexmkrc` and `latexmkrc` that is a file in the
 // main's folder and in each folder above it up to the folder that bounds the request (the served

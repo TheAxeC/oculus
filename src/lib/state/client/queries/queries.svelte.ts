@@ -1,7 +1,7 @@
 // Layer 2, client state. The one query client of a client state, and the helper every store that
 // fetches an answer and holds it reads and writes it through.
 //
-// DESIGN.md's wire model keeps documents, listings and logs out of the snapshot, so the stores
+// The wire model keeps documents, listings and logs out of the snapshot, so the stores
 // that hold them ask an endpoint the first time a key is read. They hold what came back in a
 // `@tanstack/query-core` QueryClient built here, once per client state, and none of them keeps a
 // record of answers, a set of requests in flight or a microtask of its own.

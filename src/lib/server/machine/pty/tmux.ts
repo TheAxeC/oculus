@@ -1,4 +1,4 @@
-// Layer 2, server. The one process boundary of DESIGN.md's "PTY": every tmux call this application
+// Layer 2, server. The one process boundary of the PTY: every tmux call this application
 // makes goes through run() or control(), as a list of arguments and never as a shell string, the
 // same rule server/core/git/run.ts holds for git.
 //

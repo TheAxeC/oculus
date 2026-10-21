@@ -1,4 +1,4 @@
-// Layer 4, tree check. The import graph respects the layers of DESIGN.md, section "Boundaries".
+// Layer 4, tree check. The import graph respects the layers.
 // Every module under src/lib is read, its imports are read out of its code by the import checks'
 // own reader (tests/checks/imports/graph.ts, type-only ones included), and each one is checked
 // against the row of the table its own folder sits in. Anything the row does not allow is a

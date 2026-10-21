@@ -1,4 +1,4 @@
-// Layer 2, server. DESIGN.md's "Auth", in one module: which requests the server answers at all, and
+// Layer 2, server. Auth, in one module: which requests the server answers at all, and
 // the token a write additionally carries.
 //
 // The server binds 127.0.0.1, but any page open in the browser can address 127.0.0.1, so a request
@@ -40,7 +40,7 @@ export function allowedOrigin(origin: string | undefined): boolean {
 }
 
 /**
- * Whether a request came from this application's own page, by DESIGN.md's one "Auth" rule.
+ * Whether a request came from this application's own page, by the one auth rule.
  *
  * `Sec-Fetch-Site: same-origin` is the browser saying so, and `none` is a request the user made
  * themselves (a typed address, a bookmark). An Origin must name this machine or the very host the

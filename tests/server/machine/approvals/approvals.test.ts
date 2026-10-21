@@ -1,4 +1,4 @@
-// Layer 4, server test. The approvals file DESIGN.md's "Approval" paragraph describes, as the
+// Layer 4, server test. The approvals file, as the
 // project commands use it: an unreadable file never written over, and the key and text of a LaTeX
 // step's latexmkrc set and weave tools.
 //

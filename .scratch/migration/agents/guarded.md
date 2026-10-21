@@ -338,9 +338,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: `tests/state/system/settings/theme-groups.test.ts`, describe 'the groups of the UI theme choice' and describe 'the groups of the code theme choice', every case; `tests/data/helpers/code-theme-pairs.test.ts`, 'keeps a Shiki theme only when it colours some scope differently from its VS Code theme' and 'hold one row for each theme Shiki bundles but the duplicates of a VS Code theme'; `tests/shell/keys/theme-rows.test.ts`, describe 'the rows of :theme', every case.
 ## The repository's rules, checked by a machine
 
-Each entry is one tree check under `tests/checks/`, kept because a rule in `agents/spec.md` or `DESIGN.md` asks for it.
+Each entry is one tree check under `tests/checks/`, kept because a rule in `agents/spec.md` asks for it.
 
-- G16. The import graph keeps the layer boundaries of DESIGN.md. Test: `tests/checks/tree/boundaries.test.ts`.
+- G16. The import graph keeps the layer boundaries. Test: `tests/checks/tree/boundaries.test.ts`.
 - G17. Inside a layer, a module imports only its own folder or a folder below. Test: `tests/checks/imports/order.test.ts`.
 - G18. No module imports itself through a chain at run time. Test: `tests/checks/imports/cycles.test.ts`.
 - G19. No module under `src` augments a module of the tree. Test: `tests/checks/imports/augments.test.ts`.

@@ -1,6 +1,6 @@
 // Layer 3, view partial of Source.svelte. What a tab over a library file is: a file outside every
-// served root that a language server named in an answer to this page (DESIGN.md, "The language
-// servers"), shown read-only. The tab's state holds the library address the relay gave this
+// served root that a language server named in an answer to this page,
+// shown read-only. The tab's state holds the library address the relay gave this
 // connection (state/sessions/source/draft.ts's `libraryTabState`) and no root or path; the root
 // and the channel's language the address was named under are the lsp store's, which knows an
 // address only for as long as the connection that was given it.

@@ -1,4 +1,4 @@
-// Layer 2, server. The `pty:<id>` channels of DESIGN.md's "The socket", and with the language
+// Layer 2, server. The `pty:<id>` channels, and with the language
 // server relay (server/machine/lsp/relay/relay.ts) the only place the socket accepts anything from
 // the page beyond a subscription.
 //
@@ -7,9 +7,9 @@
 // also just before it subscribes, and both are accepted only from a socket the socket module found
 // carrying the write token (server/root/socket.ts, which hands `gate` the `canWrite(sink)` that
 // `inbound` asks); a socket without the token reads every channel and writes to none. That is
-// DESIGN.md's "The socket accepts nothing from the page except subscriptions and, from a socket
+// the rule that the socket accepts nothing from the page except subscriptions and, from a socket
 // whose subscription carried the write token, terminal input and the frames of an `lsp:<language>`
-// channel", made concrete for the terminals.
+// channel, made concrete for the terminals.
 //
 // A control client is opened per attached terminal and closed a minute after nothing is attached to
 // that terminal, so a machine with no terminal open runs no tmux child. While one is open, tmux's

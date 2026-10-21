@@ -216,12 +216,12 @@ describe('Recover access', () => {
         const home = scratchDir('oculus-recover-netrc-');
         writeFileSync(
             join(home, '.netrc'),
-            'machine physionet.org login axel password netrc-pass\n'
+            'machine physionet.org login john password netrc-pass\n'
         );
         mkdirSync(join(home, '.kaggle'));
         writeFileSync(
             join(home, '.kaggle', 'kaggle.json'),
-            '{"username":"axelk","key":"kaggle-json-key"}'
+            '{"username":"johnsmith","key":"kaggle-json-key"}'
         );
         vi.stubEnv('HOME', home);
         try {

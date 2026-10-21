@@ -1,7 +1,7 @@
 // Layer 2, server. The turns of one session: the conversation itself, read from the transcript on
 // demand rather than folded into the snapshot.
 //
-// DESIGN.md's "Sessions" folds a transcript into counts, a timeline, the agents and the touched
+// The sessions channel folds a transcript into counts, a timeline, the agents and the touched
 // files, and the turn text never reaches the page through that path. It is read here instead, with
 // the same foldFrom() the incremental cache uses, so a session already read is followed by asking
 // for the bytes appended since the last read rather than parsing the file again.

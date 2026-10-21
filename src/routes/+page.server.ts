@@ -50,7 +50,7 @@ import type { PageServerLoad } from './$types';
 // is at least as new as, so the arrangement is drawn from it on the first frame and the socket's
 // replay is taken only above that version.
 //
-// The write token rides with them, which is how DESIGN.md's "Auth" delivers it to the page: it is
+// The write token rides with them, which is how the auth rule delivers it to the page: it is
 // minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and
 // nowhere else. invalidateAll() runs this load again, which is how a page that met a 403 gets the
 // token a restarted server minted.

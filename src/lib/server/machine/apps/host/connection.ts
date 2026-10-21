@@ -1,8 +1,7 @@
 // Layer 2, server. The JSON-RPC 2.0 connection between oculus and one host, oculus's end of it.
 // The framing, the request ids, the cancellation and the progress are `vscode-jsonrpc`'s
 // `createMessageConnection` over the host process's standard input and output; the runner
-// (host-runner.mjs) is its other end. The methods are in DESIGN.md's "Apps added while oculus
-// runs".
+// (host-runner.mjs) is its other end.
 //
 // Requests and notifications go both ways. A request to the host may be cancelled with a
 // `CancellationToken`, which sends `$/cancelRequest`, and may ask for progress: the host reports

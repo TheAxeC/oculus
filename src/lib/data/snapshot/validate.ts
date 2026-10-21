@@ -1,4 +1,4 @@
-// Layer 1, data. The rules of the integrity gate of DESIGN.md that a schema cannot state: ids that
+// Layer 1, data. The rules of the integrity gate that a schema cannot state: ids that
 // refer to each other across files, identities that must be unique and a status in its vocabulary.
 // What a file's own `schema:` states (the keys, the
 // types, the allowed values, the references and the conditions) is checked by schema/check.ts over
