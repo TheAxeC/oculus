@@ -157,6 +157,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 193 (2026-10-21): Axel asks for a major rewrite of the oculus repository's `README.md`. Proposed: folded into O39 as a part built by a builder agent, reviewed and landed, `README.md` holding what oculus is, install from the Release or from source, the first hub, where the documents are and the checks, and the reference paragraphs (the server's arguments, the workspace and `local.yml` keys, the dependency and licence list) moved to a page under `docs/`; a lighter edit of the present text is the lazy option. Awaiting Axel's ruling and any part of that shape he wants otherwise.
+- Open item 194 (2026-10-21): move `HELP.md` and `DESIGN.md` into `docs/`. (a) both, every reference updated (`HELP.md` 16 files, the server's `MANUAL` in `src/lib/server/content/docs.ts:812` and the shipped list `src/lib/data/places/shipped.ts` among them; `DESIGN.md` 73 files, mostly code comments); (b) `HELP.md` only; (c) neither, the lazy option. Recommended: (a), in the same builder part as open item 193. Awaiting Axel's ruling.
+
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
