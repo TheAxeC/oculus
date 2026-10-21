@@ -63,10 +63,15 @@ export type BodyLooks = { crt: boolean; brackets: boolean; monospace: boolean };
  */
 export const WALL_CLASS = 'wall';
 
-/** The three custom properties the translucent surfaces are painted through. */
-export const WALL_PANEL = '--wall-panel';
-export const WALL_POPOVER = '--wall-popover';
-export const WALL_BLUR = '--wall-blur';
+/**
+ * The custom properties the translucent surfaces are painted through: a pane's, a menu's, the
+ * editor's and the terminal's share of their surface colour, and the blur behind them.
+ */
+const WALL_PANEL = '--wall-panel';
+const WALL_POPOVER = '--wall-popover';
+const WALL_EDITOR = '--wall-editor';
+const WALL_TERMINAL = '--wall-terminal';
+const WALL_BLUR = '--wall-blur';
 
 /**
  * What applyWallpaper needs of the configuration: state/shared/words/appearance.ts's Wallpaper,
@@ -75,14 +80,17 @@ export const WALL_BLUR = '--wall-blur';
 export type WallpaperStyle = {
     panel: number;
     popover: number;
+    editor: number;
+    terminal: number;
     panelBlur: number;
 };
 
 /**
- * The wallpaper's three custom properties on the root element, beside the theme's derived tokens.
- * `panel` and `popover` are the percentages a pane and a menu keep of their own surface colour;
- * `panelBlur` is the backdrop blur behind them. Off, or configured with nothing, clears all three,
- * so a rule that names one paints nothing rather than the last theme's value.
+ * The wallpaper's custom properties on the root element, beside the theme's derived tokens.
+ * `panel`, `popover`, `editor` and `terminal` are the percentages a pane, a menu, the editor and
+ * the terminal keep of their own surface colour; `panelBlur` is the backdrop blur behind them. Off,
+ * or configured with nothing, clears them all, so a rule that names one paints nothing rather than
+ * the last theme's value.
  */
 export function applyWallpaper(
     document: Themeable,
@@ -91,11 +99,15 @@ export function applyWallpaper(
 ): void {
     const style = document.documentElement.style;
     if (!on || config === null) {
-        for (const name of [WALL_PANEL, WALL_POPOVER, WALL_BLUR]) style.setProperty(name, '');
+        for (const name of [WALL_PANEL, WALL_POPOVER, WALL_EDITOR, WALL_TERMINAL, WALL_BLUR]) {
+            style.setProperty(name, '');
+        }
         return;
     }
     style.setProperty(WALL_PANEL, `${config.panel}%`);
     style.setProperty(WALL_POPOVER, `${config.popover}%`);
+    style.setProperty(WALL_EDITOR, `${config.editor}%`);
+    style.setProperty(WALL_TERMINAL, `${config.terminal}%`);
     style.setProperty(WALL_BLUR, `${config.panelBlur}px`);
 }
 

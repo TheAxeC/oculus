@@ -301,6 +301,13 @@ options:
         section: Source editor
         help: When enabled, a save ends a last line of text with one line ending and takes off the empty lines after the last line that holds any character.
         control: toggle
+    editor.opacity:
+        heading: editor
+        section: Source editor
+        help: How solid the editor stays over the wallpaper, from 0 to 1 (1 is opaque), applied as a whole percentage. It covers a Source tab's editor and its read-only code window, the files of the Diff view and the Merge view. Leaving the key out, as the defaults do, takes wallpaper.panel_opacity. It counts only while a wallpaper shows; a diff drawn inside another view, as the Deposit view draws one, and an editor inside a free float take that view's or that float's share instead.
+        control: number
+        min: 0
+        max: 1
     editor.languages:
         heading: editor
         section: Source editor

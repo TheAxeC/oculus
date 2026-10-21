@@ -11,7 +11,10 @@ import {
     type WriteConfigKey
 } from '$lib/state/system/config/write';
 
-/** A write sequence whose `shown` and `said` redraw whatever read them when a write moves. */
+/**
+ * A write sequence whose `shown`, `pending` and `said` redraw whatever read them when a write
+ * moves.
+ */
 export function reactiveWriter(
     write: WriteConfigKey,
     reset: ResetConfig,
@@ -29,6 +32,7 @@ export function reactiveWriter(
     return {
         ...inner,
         shown: (row) => (version < 0 ? undefined : inner.shown(row)),
+        pending: (row) => version >= 0 && inner.pending(row),
         said: (row) => (version < 0 ? null : inner.said(row))
     };
 }

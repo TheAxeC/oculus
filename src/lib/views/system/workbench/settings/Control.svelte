@@ -4,8 +4,9 @@
     // its range, a text box or area, a choice, a glyph, hue or colour picker, a folder, file or
     // path box, and for a list, a multi, a parked list or a family its editor (../editors/
     // Editor.svelte). A list or family in force in a shape the editor does not draw has the way to
-    // edit the user's file instead (EditLink.svelte), and so does a row with no value in force,
-    // which says so.
+    // edit the user's file instead (EditLink.svelte), and so does a list, multi, parked list or
+    // family with no value in force, which says so. A row set one value at a time with no value in
+    // force draws its control empty, and a value given there writes the key.
     //
     // A box keeps its unsent text in the tab's instance state under the file and key
     // (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it on
@@ -23,7 +24,7 @@
     } from '$lib/state/system/config/editors/fields';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
-    import type { ConfigRow } from '$lib/state/system/config/rows';
+    import { writtenWhole, type ConfigRow } from '$lib/state/system/config/rows';
     import { typedText, withTypedText } from '$lib/state/system/config/typed';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
@@ -47,18 +48,13 @@
     let { row, id, writer, editors, lists }: Props = $props();
 
     /** The value the control shows: the one sent while its write is out, else the one in force. */
-    const held = $derived(writer.shown(row) ?? row.value);
+    const held = $derived(writer.pending(row) ? writer.shown(row) : row.value);
 
     /** The control the row is drawn with. */
     const control = $derived(controlOf(row.entry));
 
     /** Whether the row is set one value at a time, which is written as it is made. */
-    const single = $derived(
-        row.control !== 'family' &&
-            row.control !== 'list' &&
-            row.control !== 'multi' &&
-            row.control !== 'parked'
-    );
+    const single = $derived(!writtenWhole(row.control));
 
     /** Whether the control is a box, whose text is kept until it is written. */
     const boxed = $derived(['number', 'text', 'long', 'folder', 'file', 'path'].includes(control));
@@ -117,7 +113,7 @@
     const drawn = $derived(drawsEditor(row));
 </script>
 
-{#if row.state === 'missing'}
+{#if row.state === 'missing' && !single}
     <EditLink {row} />
 {:else if single}
     <div class="box" class:wide={control === 'long'} role="presentation" onkeydown={revert}>

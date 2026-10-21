@@ -11,8 +11,9 @@
     // the page reset, and the workbench row has none, since its layout tree is edited in the file;
     // a row of the machine's own file has its description, its key path, where it is set and the
     // value in force the server sent (a line for each row of a joined list, with a way to open the
-    // file of each hub that holds a row). A row with no value in force says so and has the way to
-    // edit the user's file.
+    // file of each hub that holds a row). A list, multi, parked list or family with no value in
+    // force says so and has the way to edit the user's file; a row set one value at a time with no
+    // value in force draws its control empty (Control.svelte) and says nothing more.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
@@ -38,7 +39,7 @@
     import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
     import { message } from '$lib/state/system/config/messages';
     import { LOCAL_PATH, hubFileTarget, openTarget } from '$lib/state/system/config/config-files';
-    import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
+    import { mismatchMessage, placeOf, writtenWhole } from '$lib/state/system/config/rows';
     import { settingsQuery, withTypedText } from '$lib/state/system/config/typed';
     import { foundInside, partTexts, type FoldPart } from '$lib/state/system/config/view/fold';
     import { gearEntries } from '$lib/state/system/config/view/gear';
@@ -77,7 +78,9 @@
     /** The kind of control the item draws, which the markup names. */
     const control = $derived.by(() => {
         if (row.kind === 'local') return 'none';
-        if (row.kind === 'config' && row.state === 'missing') return 'none';
+        if (row.kind === 'config' && row.state === 'missing' && writtenWhole(row.control)) {
+            return 'none';
+        }
         if (row.id === RAIL_ROW) return 'rail';
         if (row.id === PAGES_ROW) return 'arrangements';
         if (row.id === WORKBENCH_ROW) return 'workbench';
@@ -119,7 +122,12 @@
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
         }
-        if (row.state === 'missing' && row.key !== WALLPAPER_KEY && row.place.path !== null) {
+        if (
+            row.state === 'missing' &&
+            writtenWhole(row.control) &&
+            row.key !== WALLPAPER_KEY &&
+            row.place.path !== null
+        ) {
             found.push(said(message('missing', row.place.path)));
         }
         const mismatch = mismatchMessage(row);
@@ -135,10 +143,7 @@
     function reset(): void {
         if (row.kind === 'app') {
             void writeAppSetting(row.setting.key, row.setting.default);
-        } else if (
-            row.kind === 'config' &&
-            ['list', 'multi', 'parked', 'family'].includes(row.control)
-        ) {
+        } else if (row.kind === 'config' && writtenWhole(row.control)) {
             editors.clear(row);
             ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
             void editors.reset(row);
@@ -292,7 +297,8 @@
     {/if}
     {#if row.kind === 'config'}
         <div class="foot">
-            {#if defaultWords(row) !== ''}
+            <!-- A key the defaults leave out has no default to name; its help says what holds. -->
+            {#if row.default !== undefined && defaultWords(row) !== ''}
                 <span class="default">{defaultWords(row)}</span>
             {/if}
             {#if row.own && row.place.path !== null && target === null}

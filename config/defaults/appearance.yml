@@ -80,6 +80,7 @@ terminal:
   copy_on_selection: false    # true copies a selection to the clipboard as soon as it is made
   cursor_style: block         # block | line | underline (line is a thin bar)
   cursor_blinking: false      # true makes the cursor blink
+  # opacity: 0.8              # how solid the Terminal view stays over the wallpaper, 0 to 1; left out, it is wallpaper.panel_opacity
 
 
 # === Look ===================================================================

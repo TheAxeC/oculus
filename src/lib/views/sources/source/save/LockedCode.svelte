@@ -6,7 +6,8 @@
     // mode locks is drawn by the line alone, over the tab's editor in its read-only form
     // (SourceBody.svelte draws the editor), so the editor is never replaced when the mode changes.
     // The line and the window are two rows of the tab's grid (SourceBody.svelte). Over a
-    // wallpaper the line is read off a `Surface`, and the code window is its own surface.
+    // wallpaper the line is read off a `Surface`, and the code window is its own surface at the
+    // editor's share.
 
     import type { Snippet } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -36,10 +37,19 @@
     </p>
 </Surface>
 {#if lock.window}
-    <Code {text} {language} {path} {gutter} {onscrolled} />
+    <div class="window">
+        <Code {text} {language} {path} {gutter} {onscrolled} />
+    </div>
 {/if}
 
 <style>
+    /* Over a wallpaper the code window keeps the editor's share of its colour, `--wall-editor`
+       (the option `editor.opacity`), as the tab's editor does. The wrapper draws no box. */
+    .window {
+        display: contents;
+        --chip-on-wall: color-mix(in srgb, var(--chip) var(--wall-editor), transparent);
+    }
+
     .locked {
         display: flex;
         align-items: center;

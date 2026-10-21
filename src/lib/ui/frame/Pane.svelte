@@ -37,6 +37,12 @@
          */
         tinted?: boolean;
         /**
+         * Whose share of the panel a tinted box keeps over a wallpaper: the pane's
+         * (`wallpaper.panel_opacity`) when left out, the editor's (`editor.opacity`) for a view
+         * that is an editor, the terminal's (`terminal.opacity`) for the Terminal view.
+         */
+        share?: 'editor' | 'terminal';
+        /**
          * Whether the body is drawn without its inset, so a view that fills it with an editor or a
          * terminal reaches the pane's edges, as VS Code's editors and terminals do.
          */
@@ -52,12 +58,18 @@
         toolbar,
         bar,
         tinted = false,
+        share,
         flush = false,
         children
     }: Props = $props();
 </script>
 
-<section class="pane" class:tinted data-surface={tinted ? '' : undefined}>
+<section
+    class="pane"
+    class:tinted
+    data-surface={tinted ? '' : undefined}
+    style:--panel-on-wall={share === undefined ? undefined : `var(--${share}-on-wall)`}
+>
     {#if titled || toolbar}
         <header>
             {#if titled}

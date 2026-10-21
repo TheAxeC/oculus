@@ -92,6 +92,13 @@ options:
         section: Display and keys
         help: Whether the terminal grid's cursor blinks. false keeps it steady. A value that is not true or false counts as false.
         control: toggle
+    terminal.opacity:
+        heading: terminal
+        section: Display and keys
+        help: How solid the Terminal view stays over the wallpaper, from 0 to 1 (1 is opaque), applied as a whole percentage. Leaving the key out, as the defaults do, takes wallpaper.panel_opacity. It counts only while a wallpaper shows, and a Terminal view inside a free float takes the float's share instead.
+        control: number
+        min: 0
+        max: 1
     wallpaper.show:
         heading: appearance
         section: Wallpaper

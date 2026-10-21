@@ -226,7 +226,10 @@
        view fills paint nothing, a view that draws its text straight into its box asks the box
        for the translucent surface, and everything the box holds that paints a surface of its own
        keeps `panel_opacity` of its colour with `panel_blur` of backdrop blur, as the rail and
-       the tab strip do, while a surface inside one of those paints nothing in turn. A strip that
+       the tab strip do, while a surface inside one of those paints nothing in turn. The editor's
+       surfaces keep `editor.opacity` and the Terminal view's box keeps `terminal.opacity`
+       instead, each `panel_opacity` when its key is left out (`--editor-on-wall`,
+       `--terminal-on-wall` below). A strip that
        stays in place over rows scrolling in the same box keeps a mix of its own
        (`popover_opacity` of the panel's colour for the Calendar's header rows, `panel_opacity`
        for a table's sticky header row), a floating surface keeps `popover_opacity`, and the
@@ -287,6 +290,17 @@ body {
    `data-surface`. Declared on body for the same reason as the chip's. */
 body {
     --panel-on-wall: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+}
+
+/* The panel at the editor's and at the terminal's opacity over a picture: the source editor
+   (ui/controls/editor/kit/theme/wall.css), a file of the Diff view and the Merge view's box take
+   the editor's, the Terminal view's box the terminal's, and a Source tab's read-only code window
+   takes the chip at the editor's share (save/LockedCode.svelte). A tinted Pane takes either
+   through its `share`, which puts it in place of `--panel-on-wall` for the box and what it
+   holds. Declared on body for the same reason as the chip's. */
+body {
+    --editor-on-wall: color-mix(in srgb, var(--panel) var(--wall-editor), transparent);
+    --terminal-on-wall: color-mix(in srgb, var(--panel) var(--wall-terminal), transparent);
 }
 
 /* The border of a floating pane: the theme's own orange, declared on body for the same reason, so a

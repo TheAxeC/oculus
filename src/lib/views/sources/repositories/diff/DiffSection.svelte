@@ -487,7 +487,7 @@
     }
 
     :global(body.wall) .file {
-        background: var(--panel-on-wall);
+        background: var(--editor-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 

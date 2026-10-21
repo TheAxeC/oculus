@@ -123,6 +123,7 @@ editor:
   autosave_delay_ms: 1000
   trim_trailing_whitespace: false
   final_newline: false
+  # opacity: 0.8   # how solid the editor stays over the wallpaper, 0 to 1; left out, it is wallpaper.panel_opacity
   languages:
     makefile: { insert_spaces: false }
     markdown: { word_wrap: 'on' }

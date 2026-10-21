@@ -1,13 +1,13 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (2 steps):
-- O48 (the editor and the terminal each get a transparency setting, `editor.opacity` and `terminal.opacity`, ruling 200 (a)).
+Queued, in order (1 step):
 - O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C rows a to h and k and the memory done, rows i and j on open items 195 and 196; part D landed.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
 
 Landed, newest first:
+- O48 (the editor and the terminal each get a transparency setting, `editor.opacity` and `terminal.opacity`, ruling 200 (a)): the source editor, its read-only code window, the Diff view's files and the Merge view take the editor's share, the Terminal view the terminal's; the Settings rows draw an empty number box while the key is left out. Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O39 part D (the README rewritten, `HELP.md` moved to `docs/HELP.md`, `DESIGN.md` deleted with every citation of it, Axel made the user in the text and John Smith in example data, the window title `Oculus`, `convert-decks.mjs` deleted). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents; with the Timeline and Bookmarks layout and the editor and terminal margins (ruling 199). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O39 part A (the new repository's own files and `CLAUDE.md`; Theme and Code theme as two lists under their rows' groups, `code_themes.vscode` and `code_themes.shiki`; an app's colour theme from a window's first paint; no refusal of a workspace folder inside a hub), 2026-10-21, the commit "Land O39 part A".

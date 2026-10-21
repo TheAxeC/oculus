@@ -167,7 +167,13 @@
     <ToolButton small label={t('repositories.merge_retry')} onclick={() => void reads.again()} />
 {/snippet}
 
-<Pane title={t('repositories.merge_editor_title', path)} toolbar={tools} {bar} tinted>
+<Pane
+    title={t('repositories.merge_editor_title', path)}
+    toolbar={tools}
+    {bar}
+    tinted
+    share="editor"
+>
     <div class="merge" data-instance={instance.id} data-view="repositories-merge" data-path={path}>
         {#if root === '' || path === ''}
             <Empty message={t('repositories.merge_empty')} glyph="merge" />

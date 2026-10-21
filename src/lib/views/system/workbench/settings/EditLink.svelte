@@ -15,7 +15,7 @@
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { openTarget } from '$lib/state/system/config/config-files';
-    import { placeOf, type ConfigRow } from '$lib/state/system/config/rows';
+    import { placeOf, writtenWhole, type ConfigRow } from '$lib/state/system/config/rows';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -26,9 +26,6 @@
     } = useState();
 
     let { row }: { row: ConfigRow } = $props();
-
-    /** The controls whose value is written whole, as a list or a family. */
-    const WHOLE = ['list', 'multi', 'parked', 'family'];
 
     const place = $derived(placeOf(row));
     const target = $derived(
@@ -51,7 +48,7 @@
             return;
         }
         refused = '';
-        const answer = WHOLE.includes(row.control)
+        const answer = writtenWhole(row.control)
             ? await writeConfigValue(row.file, row.key, row.value, row.value, true)
             : await writeConfigKey(row.file, row.key, row.value, true);
         if (answer.ok) waiting = true;

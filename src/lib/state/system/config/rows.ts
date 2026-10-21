@@ -174,6 +174,16 @@ export function placeOf(row: ConfigRow): { root: string; file: string } | null {
     return root === null || path === null ? null : { root, file: path };
 }
 
+/**
+ * Whether a row's control writes its value whole, as a list, a multi, a parked list or a family
+ * does through its editor, rather than one value at a time.
+ */
+export function writtenWhole(control: ConfigRow['control']): boolean {
+    return (
+        control === 'list' || control === 'multi' || control === 'parked' || control === 'family'
+    );
+}
+
 /** One word of a key path as a title: underscores read as spaces, the first letter capital. */
 function wordOf(segment: string): string {
     const spaced = segment.replaceAll('_', ' ');

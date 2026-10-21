@@ -1,0 +1,8 @@
+/* Layer 3, stylesheet of grid-look.ts. xterm.js paints its viewport, the box under the rows,
+   black (`.xterm .xterm-viewport` in its own xterm.css), and the grid's background has no alpha
+   (grid-look.ts), so the viewport would show black behind the text. It paints nothing here, so the
+   Terminal view's box shows. The grid's `data-terminal` makes this rule outrank xterm's whichever
+   stylesheet loads last. */
+[data-terminal] .xterm .xterm-viewport {
+    background-color: transparent;
+}

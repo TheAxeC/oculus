@@ -76,6 +76,10 @@ export type Wallpaper = {
     panel: number;
     /** The same for a menu, which floats over a pane and so stays closer to solid. */
     popover: number;
+    /** The same for the editor, `editor.opacity`; the pane's when the key is left out. */
+    editor: number;
+    /** The same for the Terminal view, `terminal.opacity`; the pane's when the key is left out. */
+    terminal: number;
     /** Backdrop blur behind a pane, in pixels. */
     panelBlur: number;
 };
@@ -229,6 +233,24 @@ function percent(fraction: number): number {
 }
 
 /**
+ * The `opacity` of an `editor:` or `terminal:` block, a fraction cut to 0..1, or undefined when the
+ * block holds no number there, so a key left out follows `wallpaper.panel_opacity`.
+ */
+const opacityShape = z.object({
+    opacity: z
+        .number()
+        .transform((value) => Math.min(1, Math.max(0, value)))
+        .optional()
+        .catch(undefined)
+});
+
+/** The share, a percentage, an `editor:` or `terminal:` block keeps: its own, or `panel`. */
+function shareOf(block: unknown, panel: number): number {
+    const opacity = readAs(opacityShape, block)?.opacity;
+    return opacity === undefined ? panel : percent(opacity);
+}
+
+/**
  * The `wallpaper` key of the merged config. An unset `popover_opacity` is three quarters of the
  * way from the panel's own opacity to solid, since a menu is read through the pane beneath it as
  * well as through the picture. A `popover_opacity` that is a number but not a finite one is the
@@ -246,7 +268,7 @@ const wallpaperShape = z
             .catch(undefined),
         panel_blur: clamped(6, 0, 64)
     })
-    .transform((raw): Wallpaper => {
+    .transform((raw): Omit<Wallpaper, 'editor' | 'terminal'> => {
         const panel = percent(raw.panel_opacity);
         return {
             dim: raw.dim,
@@ -363,7 +385,15 @@ const lookShape = z
 export function setAppearance(config: Record<string, unknown>, classes: readonly string[]): void {
     list = [];
     byName = {};
-    paper = readAs(wallpaperShape, config.wallpaper);
+    const wall = readAs(wallpaperShape, config.wallpaper);
+    paper =
+        wall === null
+            ? null
+            : {
+                  ...wall,
+                  editor: shareOf(config.editor, wall.panel),
+                  terminal: shareOf(config.terminal, wall.panel)
+              };
     look = readAs(lookShape, config) ?? NO_LOOK;
     codeTheme = isCodeTheme(config.code_theme, config, new Set(classes))
         ? config.code_theme

@@ -21,7 +21,7 @@
 import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import { message, type Message } from '../messages.ts';
-import type { ConfigRow } from '../rows.ts';
+import { writtenWhole, type ConfigRow } from '../rows.ts';
 import { answered, type ResetConfig } from '../write.ts';
 import { draftValue, type Draft } from './draft.ts';
 import type { Lists } from './sources.ts';
@@ -124,8 +124,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     }
 
     async function reset(row: ConfigRow): Promise<void> {
-        const collection = ['list', 'multi', 'parked', 'family'].includes(row.control);
-        if (!collection || !row.own) return;
+        if (!writtenWhole(row.control) || !row.own) return;
         return send(row, row.default, true);
     }
 

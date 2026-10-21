@@ -55,6 +55,11 @@ export type RowWriter = {
     reset: (row: ConfigRow) => Promise<void>;
     /** The value the control shows while a write is out and until the file holds it. */
     shown: (row: ConfigRow) => unknown;
+    /**
+     * Whether a write of the row is out and the file does not hold it yet, so `shown` stands even
+     * when it is undefined, as it is while a reset of a key the defaults leave out is out.
+     */
+    pending: (row: ConfigRow) => boolean;
     /** The message under the row, or null. */
     said: (row: ConfigRow) => Message | null;
     /** Take the message of a row away. */
@@ -128,6 +133,11 @@ export function createRowWriter(
         return held.value;
     }
 
+    function pending(row: ConfigRow): boolean {
+        const held = showing.get(row.id);
+        return held !== undefined && isEqual(held.base, row.value);
+    }
+
     function clear(row: ConfigRow): void {
         if (saying.delete(row.id)) changed();
     }
@@ -136,6 +146,7 @@ export function createRowWriter(
         submit,
         reset: (row) => send(row, row.default, true),
         shown,
+        pending,
         said: (row) => saying.get(row.id) ?? null,
         clear,
         close: () => {

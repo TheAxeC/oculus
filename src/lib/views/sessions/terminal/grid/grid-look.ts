@@ -9,6 +9,7 @@ import type { ITerminalOptions, ITheme } from '@xterm/xterm';
 import type { TerminalOptions } from '$lib/state/shared/words/appearance';
 import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
 import { copySelection, type SelectionClipboard } from './grid-actions';
+import './grid.css';
 
 /** The grid's palette and its font family, as the theme in force gives them. */
 export type GridLook = { theme: ITheme; fontFamily: string };
@@ -27,6 +28,12 @@ const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
  * The grid's palette and font in force, read off the body, which is where the theme's class sits
  * and where its tokens are set (`body.rice.dracula` and the like in themes/rice/); the root element
  * carries the light defaults only, so a read there would paint a light grid under a dark theme.
+ * The grid paints no background: its background is the panel's colour with no alpha, so the
+ * Terminal view's box behind it shows (Terminal.svelte), solid in the panel's colour, or over a
+ * wallpaper at the terminal's share of it (`--terminal-on-wall`), and xterm takes the panel's
+ * colour for what it derives from the background: inverse video and the selection's blend. Every
+ * theme's `--panel` is a hex colour; one that is not is handed on whole, and the grid then paints
+ * it solid.
  * The font is the page's monospace token, and a selection is drawn as the selected row of a tree
  * is, on `--accent-bg` in `--on-accent-bg`, the one selection surface every theme derives. Before
  * a theme is applied the root carries no `--on-accent-bg`, and the selection is then drawn in
@@ -36,7 +43,7 @@ export function gridLook(): GridLook {
     const root = getComputedStyle(document.body);
     const of = (name: string) => root.getPropertyValue(name).trim();
     const theme: ITheme = {
-        background: of('--panel'),
+        background: clear(of('--panel')),
         foreground: of('--ink'),
         cursor: of('--accent'),
         selectionBackground: of('--accent-bg'),
@@ -110,6 +117,12 @@ export function applyLook(options: ITerminalOptions, look: GridLook): void {
 
 /** The colours the search addon marks matches in: its decoration options. */
 export type FindLook = NonNullable<ISearchOptions['decorations']>;
+
+/** A hex colour with its alpha set to none, `#rrggbb00`; any other colour as it was. */
+function clear(value: string): string {
+    const six = sixDigits(value);
+    return six.startsWith('#') ? `${six}00` : value;
+}
 
 /**
  * A colour as `#rrggbb`, which is the one form the search addon draws a mark in: a three- or
