@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O39 (oculus in its own repository): part A landed; part B (the filtered clone, the checks, the GitHub repository, the Release, the Lima run) by the orchestrator next, then part C path by path on Axel's yes.
+- O39 (oculus in its own repository): part A landed; part B done but the Release, which waits for Axel's push of `main` to `TheAxeC/oculus`; then part C path by path on Axel's yes.
 
 Owed looks (1):
 - O39 part A: the Theme and Code theme choices with their groups, Cmd-K's `:theme`, the Oculus and `theaxec.github.io` cards, a desktop window on an app's theme from its first paint (`agents/reviews/owed-looks.md`, "To take").
