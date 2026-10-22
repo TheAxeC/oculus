@@ -39,8 +39,18 @@ dispatch:         # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/O59-refuter.md (a829b81915b79ee67, claude-opus-5-5, 178609 tokens, 53 tool uses, 6 min 16 s)
   landing: cherry-picking
 - step: O50
-  landing: preparing
-  brief_check: "reported: a5cae3c5b6723f862"
+  executor: agent
+  worker: claude:opus
+  session_id: aa29e323ca91b7afd
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 0379bb5d
+  worktree: .agents/worktrees/migration-O50
+  brief_check: agents/reviews/O50-brief-check.md (a5cae3c5b6723f862, claude-opus-5-5, 257554 tokens, 86 tool uses, 12 min 53 s)
+  report: agents/reviews/O50-report.md
+  round: 0
+  landing: not-started
+  shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
 - step: O62
   executor: agent
   worker: claude:opus
