@@ -1,14 +1,14 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: brief checked, worktree being prepared.
+- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204 and 208. State: brief being written.
 
-Queued (16 steps). Built by agents, up to six in flight (ruling O49 to O63 by agents, ruling Parallel order); go given 2026-10-22. First wave: O59, O50, O62, O58, O54, O52; each later step starts in a free slot once the steps it waits for have landed.
-- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216.
-- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204 and 208.
-- O62 (`archive_order` removed from the vocabulary with its shape and test row; no code reads it), a defect.
-- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect.
-- O54 (the hubs of a workspace resolve own hub first; a project id held by two hubs carries its hub's prefix; Add asks which hub), ruling 203.
-- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike), ruling Focus headings.
-- O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique.
-- O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212.
+Queued, in order (14 steps):
+- O62 (`archive_order` removed from the vocabulary with its shape and test row; no code reads it), a defect. Waits: a free slot.
+- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. Waits: a free slot.
+- O54 (the hubs of a workspace resolve own hub first; a project id held by two hubs carries its hub's prefix; Add asks which hub), ruling 203. Waits: a free slot.
+- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike), ruling Focus headings. Waits: a free slot.
+- O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
+- O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
 - O61 (one home for each vocabulary word: stage words are types with their flags, chips are form and situation labels, the status list split into `chips:`, `statuses:` and `lead_statuses:`, each stage word an idea, in flight, done or neither, one spelling per word), rulings 218, 219, 221, 222. Waits: after O59 and O62 have landed.
 - O53 (a project's `lead:` a list of person keys; the views show the team without `self`; the portfolio chat names `self`; no owner key), rulings 205, Owner and self, 209. Waits: after O50.
 - O56 (a new project, a new entry and Save to Literature ask which hub when more than one could take it), ruling 210. Waits: after O54.
