@@ -4,11 +4,15 @@ Position: plan migration (cockpit to oculus), step O58 (`config/catalogs/meta.ym
 
 ## Open items
 
-- Open item 239 (2026-10-22): O58's look cannot be taken on TEST. O58 removes `config/catalogs/meta.yml`, so the Settings view's Catalogs group should no longer list it. The Settings view is a unique view: on TEST, opening it brings up the Settings tab your System page holds, with your filter `opacity` set, which hides the Catalogs group. (a) I move that Settings tab to TEST, clear the filter, take the look, then type `opacity` back and move the tab back to the System page. Pro: the look is taken now, and your page ends as it was. Con: your System page is changed for a minute. (b) the look stays owed (`agents/reviews/owed-looks.md`) and is taken when you next close or clear that Settings tab. Pro: your page is not touched. Con: the look waits on you. Recommended: (a); (b) is the lazy option. O58 lands now either way, with the look named as not taken.
+None. Open item 239 was ruled (a) and the look is taken.
 
 ## Not done
 
-- The look on TEST was not taken: open item 239, owed in `agents/reviews/owed-looks.md`.
+Nothing.
+
+## The look
+
+On TEST, by ruling 239 (a): the Settings tab of the System page moved to TEST, its filter `opacity` cleared. The Catalogs group lists `catalogs/agents.yml`, `file-nesting.yml`, `glyphs.yml`, `icons.yml`, `latex.yml`, `unimath.yml` and `vocab.yml`, and no `meta.yml`; the text "The tool identity" is nowhere on the page. The filter typed back and the tab moved back to the System page, where it now sits after Account setup instead of before it. No write in the hub's `.oculus` or oculus's `config` (`git status --short`). Defects: none.
 
 ## The check of Steps 1
 
