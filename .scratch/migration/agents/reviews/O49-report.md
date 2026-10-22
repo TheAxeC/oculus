@@ -185,3 +185,102 @@ That test file holds the shell's store rule (`SHELL_STORES`, `boundaries.test.ts
 - C13 under item 3's rule, ruled in `O49-cases.md` (above).
 - The brief puts the "Eleven views" sentence at `docs/HELP.md` line 64 and Lock Group at line 72. In the base copy they are at lines 65 and 70 (`grep -n "Eleven views\|Lock Group (pane" migration-O49-base/docs/HELP.md`). The sentence the brief names was the one rewritten.
 - The brief's item 4 names `isPage`, which `src/lib/state/workbench/layout/index.ts` does not export. Ruling 4 covers it.
+
+## Repair round 1
+
+Everything in `O49-round1.md` is done. One sentence of St3 follows the code where the round's wording would not be true; it is explained under St3.
+
+### St1, the two comments rewrapped (words unchanged)
+
+The fill is greedy at 100 columns. Before any change, the paragraphs of the round-0 tree were copied to the scratchpad and their columns were read with `awk '{print FNR": "length": "$0}'`.
+
+- `src/lib/shell/panes/strip/open-view.svelte.ts:1-12`, the head comment.
+  - Before: line 3 was 98 columns with "a" fitting after it, line 6 was 96 with "the", line 8 was 93 with "state", line 9 was 92 with "open,", and line 10 was 94 with "lives".
+  - After, the paragraph reads:
+    ```
+    // Layer 3, shell. The Open View item of the right-click menu of a pane's strip and of an empty
+    // pane's body, and what its picks do. Its submenu lists every listed view by the group the Views
+    // view lists it under, through the same fold (state/workbench/navigation/catalogue.ts `arrange`): a
+    // submenu per rail page in the rail's order, then the `nav_groups:` groups, then the views no group
+    // holds with no heading. The views apps add are registrations like any other, so they are listed
+    // under their group while their app acts. A pick opens the view as a new tab of the pane the menu
+    // was opened on, and a unique view a page or float holds is shown where it is, as every opener
+    // shows it; the item names that page or float as its hint. The menu is drawn from the state at the
+    // right-click and another window may change the layout or the apps while it is open, so a pick
+    // reads the registry and the holder again and never trusts what was drawn. It lives apart from
+    // pane-view.ts so stripMenu stays a function of the facts it is handed, and it reads the client as
+    // close-question.svelte.ts does.
+    ```
+- `src/lib/shell/panes/pane-view.ts:298-309`, the doc comment of `stripMenu`.
+  - Before: line 302 was 96 columns with "the" fitting after it, and line 306 was 96 with "the".
+  - After, lines 302-309 read:
+    ```
+     * Tab Bar and Editor Actions Position submenus, each marking the setting in force with a check, the
+     * first place named Tab Bar, or Title Bar while the tab bar is not drawn, when the window's title
+     * bar strip draws the actions (shell/titlebar/); Close, while the page holds more than one pane;
+     * and New Terminal. The pane of a float (`float`, its place) has the float's items in place of the
+     * splits and always offers Close, which closes the float. With the editor actions hidden the pane
+     * menu's `...` button is not drawn, so the menu also holds the pane menu's items that it has none
+     * of its own for (`paneItems`, the pane menu as the pane draws it), and Close is always offered, as
+     * the pane menu offers it.
+    ```
+- Checks after the change:
+  - `awk 'length > 100'` over the two files (and `PaneView.svelte`) printed nothing (exit 0).
+  - A read of lines 297-309 of `pane-view.ts` printed `fits=no` for every line from 298 to 308; that is, each line's next word would pass 100 columns.
+  - The same check over `open-view.svelte.ts:1-12` and `PaneView.svelte:43-49` printed no short line.
+
+### St2, the head comment of `PaneView.svelte` (lines 43-49)
+
+- Before (lines 44-45): `Open View (the views by rail page, opened in this pane, strip/open-view.svelte.ts)`. That says every view opens in this pane, while `open-view.svelte.ts:121` shows a held view where it is held.
+- After (lines 44-46), the paragraph rewrapped whole at 100 columns: `Open View (the views by rail page, strip/open-view.svelte.ts: a view a page or float holds is shown where it is held, and any other view opens in this pane)`.
+- Read against `picked` (`open-view.svelte.ts:116-124`): `heldHost(view) !== null` leads to `openView(view)`, and otherwise to `openInPane(view, undefined, page, path)`. The comment now says the same.
+- `PaneView.svelte` is 517 lines (`wc -l`).
+
+### St3, the Open View bullet of `docs/HELP.md` (line 76)
+
+- Before: `lists every view by rail page, then Float, the views your apps add under Apps.` "Every view" is false, since `listedViews` leaves out `listed: false` (`catalogue.ts:381-383`, `open-view.svelte.ts:91`). The Float phrase also read as if Float were the apps' views.
+- After: `Open View (right-click on a strip's empty part or in an empty pane) lists the views the Views catalogue lists, so not a view opened only for something (a project, an entry, a file) and not the view of an app that is not active. It has a section per rail page in the rail's order, among them Apps with each app and the views your apps add, then a Float section with the views of the floats.` The rest of the bullet is unchanged.
+- Where this follows the code and not the round's word order: the round brief lists the sections as "by rail page, then the floats' section, then the views the apps add under Apps". On the tree, Apps is a rail page between Present and Help (`config/defaults/layout.yml:20`). `arrange` lists the rail groups in the rail's order and then the `nav_groups:` groups (`catalogue.ts:183-207`, `:283-303`), so Apps comes before Float. The bullet names Apps among the rail pages and Float last, as two separate sections. That is the order `item()` draws (`open-view.svelte.ts:88-108`).
+
+### St4, the Apps guide (`docs/apps.md`, lines 87 and 263)
+
+`sed -n '87p;263p' docs/apps.md`:
+- Before:
+  - `- Open an app from the Apps rail button, the Views catalogue, or `a` and its digit.`
+  - `- A view is listed in the Views catalogue under Apps. The first time, an `activitybar` view docks on the left, ...`
+- After:
+  - `- Open an app from the Apps rail button, the Views catalogue, Open View (the strip's right-click menu, under Apps), or `a` and its digit.`
+  - `- A view is listed in the Views catalogue under Apps, and in Open View (the strip's right-click menu) under Apps with its container's title as its hover words. The first time, an `activitybar` view docks on the left, ...`
+
+The earlier section "Outside the write list" is settled by this change: both lines are now in the round's path list and both are written.
+
+### P1, the verify list after the last change of this round
+
+The last change of the round was the `docs/apps.md` line 263 edit; the report is not a checked file. After it: `npx prettier --check` over the five files of the round printed "All matched files use Prettier code style!". Then `npm run diagrams && npm run test:quick` ran once:
+
+```
+ok      prettier (0.5 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.2 s)
+ok      svelte-check (9.8 s): 1792684696174 COMPLETED 535 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (9.9 s)
+ok      vitest (33.4 s): Duration  22.85s (transform 51.59s, setup 0ms, import 75.74s, tests 2.16s, environment 784ms)
+test:quick: 35.7 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+```
+
+- The ASCII gate of `spec.md` over the five files of the round printed nothing (exit 0).
+- The history-word grep over the lines of `PaneView.svelte` this round changed found no hit (exit 1). The other two comments keep their words.
+- `diff -rq` against the base copy lists the round-0 files plus `docs/apps.md`.
+- In this round, the verify list ran 1 time. No other test command and no whole-suite command ran.
+
+### P2, a pick after the pane closed or the tree changed while the menu was open (by reading)
+
+- **The pane closes.** Both menus are drawn inside the pane, so they unmount with it and no pick reaches a pane that is gone:
+  - The strip's `ContextMenu` is at `PaneView.svelte:439`.
+  - `PaneBody`'s menu is at `PaneView.svelte:471`, and `PaneBody.svelte:337`.
+  - The list sits in `ContextMenu.Root` and `ContextMenu.Portal` inside that component (`ContextMenu.svelte:133-152`).
+- **The tree changes.** The module reads the pane's place through getters, `page: () => page, path: () => path` (`PaneView.svelte:257`). A pick then reads the pane's current `page` and `path` props at the moment of the pick (`open-view.svelte.ts:122`, `deps.page()`, `deps.path()`), never the values when the menu opened.
+- **The page or path no longer holds a pane at the pick.** `openInPane` answers `''` and opens nothing (`opening.ts:195-197`, `if (held === null || paneAt(access.layout(held.id), path) === null) return '';`).
+- **A held unique view.** Its pick goes through `openView`, which does not depend on the pane at all.
