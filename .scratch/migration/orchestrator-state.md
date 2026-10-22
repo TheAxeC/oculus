@@ -48,6 +48,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O50
   brief_check: agents/reviews/O50-brief-check.md (a5cae3c5b6723f862, claude-opus-5-5, 257554 tokens, 86 tool uses, 12 min 53 s)
   report: agents/reviews/O50-report.md
+  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build)
   round: 0
   landing: not-started
   shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
@@ -228,7 +229,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None open.
+- Open item 227 (2026-10-22): O50, a rename of a person key carried to `settings.self`. Open item 226 said that adding `people` to the reference index's option sources (`OPTION_SOURCES`) makes a rename rewrite `settings.self`; that was wrong. The index reads oculus's own defaults files and the hub's data files, never a workspace file (`optionFiles`, `src/lib/data/sources/config/catalog/schemas/references.ts:119-127`, read only through `engineScans` in `src/lib/data/snapshot/references/build.ts:187`; `buildPortfolioWithSchemas` hands it no workspace file, `src/lib/data/index.ts:519-529`), so the row alone adds one place, the empty `self: ''` of `config/defaults/sources.yml`, and a rename of your person key still leaves `settings.self` naming the old key. O50's builder found it on its first run of C14. (a) O50 also makes the reference index read the open workspace file's `settings:` as an options file (its path passed from `src/lib/server/root/watch/portfolio.ts` through `buildPortfolioWithSchemas` to one more scan in `build.ts`), with the `OPTION_SOURCES` row. Pro: renaming your person key keeps you marked, which is what 226 (a) was for, and a workspace-file option drawn from `domains` or `clusters` is rewritten by a rename too. Con: three more paths in O50. (b) only the row, as 226 (a) was worded. Pro: one line. Con: it changes nothing you can see. Recommended: (a); (b) is the lazy option. O50 builds every other part meanwhile and leaves the row and C14 until you rule.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
