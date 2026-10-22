@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built (report `agents/reviews/O54-report.md`, saved from the builder's final message); repair round 1 building (`agents/briefs/O54-round1.md`), then its review.
-- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: building (base 3a35d993).
+- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: built (report `agents/reviews/O65-report.md`); first review running; open item 259 (Pin Editor's chord) waits for Axel (base 3a35d993).
 - O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: built after the round-0 cases ruling (report `agents/reviews/O39-partE-report.md`); first review running (base 200f12da).
 
 Queued, in order (7 steps):

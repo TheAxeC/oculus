@@ -50,6 +50,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O65
   brief_check: agents/reviews/O65-brief-check.md (a6b632fc3fe084af5, claude-opus-5-5, 244624 tokens, 103 tool uses, 16 min 38 s)
   report: agents/reviews/O65-report.md
+  builder_usage: 265990 tokens, 348 tool uses, 70 min 1 s
+  reviewer_report: running: a9ee849e1a46ad40f (claude-opus-5-5)
   round: 0
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
@@ -205,6 +207,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code.
 
 
 
@@ -456,6 +460,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O65 built). The builder reported (`agents/reviews/O65-report.md`, saved from its worktree); the orchestrator read the whole source and config diff. The builder's J1 is open item 259 (a new key, Axel's); its J2 (the one-press LaTeX keys still bound in `.bib`, `.sty` and `.cls`, where LaTeX Workshop does not bind them) is inside item 5 and goes to the repair round with the review's findings. In flight (3 of 6): O54 (round 1 building), O65 (review running), O39 part E (review running). Open items: 259.
 - 2026-10-22 (O39 part E built). The builder reported after the cases ruling (`agents/reviews/O39-partE-report.md`, saved from its worktree); the orchestrator read the whole source diff (24 files). The review runs (a6d705f9b51150ea3, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (building), O39 part E (review running).
 - 2026-10-22 (O54 round 1 sent). Repair round 1 of O54 in `agents/briefs/O54-round1.md`: feed entries by their internal id (S1), a 400 for a write that names no hub (B1), the server's answer naming a created record (B2), every changed saved field listed for ruling 238's change at landing (S2), the C11 and C12 probes rerun (P1, P2), the links.ts comment (T1). Snapshot at `.agents/worktrees/migration-O54-round-1` (216 paths). In flight (3 of 6): O54 (round 1), O65 (building), O39 part E (building after its cases ruling).
 - 2026-10-22 (O64 look taken). On TEST on Axel's server: the Inbox and Usage Refresh, the Literature search bar and the Search view's bar seen as O64 says; the Calendar Refresh, Suggest, the running git bar, the folded head and NoticeEntry's progress moved to "Cannot be taken on this hub" with their reasons (`agents/reviews/owed-looks.md`). Defects: none. Seen and not verified: the Inbox's "as of" time unchanged after a Refresh.
