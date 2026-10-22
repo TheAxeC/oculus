@@ -39,6 +39,12 @@ dispatch:         # steps in flight, up to six (Z632)
 - step: O50
   landing: preparing
   brief_check: "running: a5cae3c5b6723f862"
+- step: O62
+  landing: preparing
+  brief_check: "running: a05874f9b03fbf13d"
+- step: O58
+  landing: preparing
+  brief_check: "running: a27ff5fa5d0557791"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -172,6 +178,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 223 (2026-10-22): O54, own hub first across the hubs of the workspace (ruling 203 (b)). The merged portfolio keeps each kind of record in a table keyed by its id (`src/lib/data/snapshot/hubs/merge.ts`, `entities[kind]` built with `byId`), and a record of a hub other than the primary is kept apart today only because every one of its ids carries the hub's prefix (`entitiesOf`, `prefixer`). Ruling 203 (b) gives the prefix to a project id held by two hubs and to no other id, so when two hubs both hold `smith` in people, `nature` in venues, a collection `grants` or an entry key, the two records have one id and the table keeps only one of them; the ruling does not say how the other is kept. The same choice decides whether the primary's copy of a shared key changes its id. (a) every key two hubs both hold (a project, a registry entry, a collection, a collection entry, a lead) carries its hub's prefix in the merged portfolio, both copies and the primary's among them; a key one hub holds stays bare. Pro: one rule for every kind; a reference still resolves own hub first. Con: when a hub holding the same key is opened beside the primary, the primary's id changes, so what names it by id (a tab's state, a Focus row) finds nothing while that hub is open. (b) as (a), but the primary's copy keeps its bare id and only the other hubs' copies carry their prefix. Pro: the primary's ids never change, as today, where the primary's records carry no `root`; Con: the primary is treated apart from the other hubs. (c) no id carries a prefix and every table of the portfolio is keyed by hub and id. Pro: the ruling's words hold as written. Con: every lookup, relation table, page and tab state that names a record by id must name its hub too, a new wire shape and a far larger step. Recommended: (b), since the primary's ids stay as they are and every other copy is told apart by the prefix the ruling already gives projects. (c) is the larger; (b) is recommended for its result, not its cost, and no option leaves work undone. The step waits for the ruling; nothing of O54 is built.
 
 
 
