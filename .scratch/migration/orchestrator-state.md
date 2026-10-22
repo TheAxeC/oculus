@@ -51,7 +51,7 @@ dispatch:         # steps in flight, up to six (Z632)
   builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8); 284544 tokens, 117 tool uses, 16 min 50 s (the build after the cases ruling); 307182 tokens, 29 tool uses, 3 min 51 s (repair round 1)
   reviewer_report: agents/reviews/O64-refuter.md (a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s); over round 1: aabffa79636343fa8, claude-opus-5-5, 166633 tokens, 36 tool uses, 4 min 56 s
   round: 1
-  landing: not-started
+  landing: cherry-picking
   shared_paths: with O54 and O65: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 115-124 and 160-169): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O65
   executor: agent
@@ -67,8 +67,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O39 part E
+  executor: agent
+  worker: claude:opus
+  session_id: ae778f34fa099ded2
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 200f12da
+  worktree: .agents/worktrees/migration-O39-partE
   brief_check: agents/reviews/O39-partE-brief-check.md (aece82159cd53f676, claude-opus-5-5, 221577 tokens, 71 tool uses, 10 min 19 s)
-  landing: preparing
+  report: agents/reviews/O39-partE-report.md
+  round: 0
+  landing: not-started
+  shared_paths: with O54, O64 and O65: none of their changed files (git status of part E's paths in each worktree prints nothing); docs/diagrams/ regenerated at each landing
 ```
 
 ## The standing demands (from Axel, in force)
