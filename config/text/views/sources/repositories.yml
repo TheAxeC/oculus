@@ -120,6 +120,7 @@ text:
         list: Repositories
         list_changes: '{0} changes'
         list_changes_one: 1 change
+        row_running: '{0}, {1}'
         mark_added: Lines added from line {0}. Open the change.
         mark_deleted: Lines deleted before line {0}. Open the change.
         mark_modified: Lines changed from line {0}. Open the change.

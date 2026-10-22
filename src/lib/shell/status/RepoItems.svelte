@@ -20,13 +20,14 @@
     // writes are the page's, handed in, since the shell may not write.
     //
     // While a push, a pull, a fetch, a sync or a publish runs on any root of the repository, from
-    // the press to its answer, the sync item draws the sync glyph turning in place of the behind
-    // and ahead glyphs, its counts kept, and the action's words (Pushing...) as its hover words;
-    // while a publish runs, the Publish item, for one remote or several, draws the sync glyph
-    // turning and the same words, and is waiting: drawn disabled, it takes no press and opens no
-    // list until the answer, and it stays the same button, in the focus order, so the focus the
-    // confirm gives back lands on it. The glyph is still under the system's reduce-motion setting.
-    // The page says which action runs (`git.running`), as it does the writes.
+    // the press to its answer, whatever other action runs on another of its roots, the sync item
+    // draws the sync glyph turning in place of the behind and ahead glyphs, its counts kept, and
+    // the action's words (Pushing...) as its hover words; while a publish runs, the Publish item,
+    // for one remote or several, draws the sync glyph turning and the same words, and is waiting:
+    // drawn disabled, it takes no press and opens no list until the answer, and it stays the same
+    // button, in the focus order, so the focus the confirm gives back lands on it. The glyph is
+    // still under the system's reduce-motion setting. The page says which of those actions runs
+    // (`git.running`, asked for those actions alone), as it does the writes.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -118,11 +119,12 @@
     /** The actions that move the branch against its upstream, which the sync item shows. */
     const SYNC_ACTIONS: readonly string[] = ['push', 'pull', 'fetch', 'sync', 'publish'];
 
-    /** The action that moves the branch running on the repository, or null when none runs. */
-    const syncing = $derived.by(() => {
-        const running = git.running(repo.root);
-        return running !== null && SYNC_ACTIONS.includes(running.action) ? running : null;
-    });
+    /**
+     * The action that moves the branch running on any root of the repository, or null when none
+     * runs; an action of another kind on one of its roots, such as a commit message being written,
+     * is passed over.
+     */
+    const syncing = $derived(git.running(repo.root, SYNC_ACTIONS));
     /** Whether a publish runs on the repository, which the Publish item waits on. */
     const publishing = $derived(syncing?.action === 'publish');
 

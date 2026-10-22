@@ -38,21 +38,6 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
   shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
-- step: O64
-  executor: agent
-  worker: claude:opus
-  session_id: a3fbfd6982133a5b6
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 4c89702d
-  worktree: .agents/worktrees/migration-O64
-  brief_check: agents/reviews/O64-brief-check.md (a807f5f7c26db7f22, claude-opus-5-5, 192674 tokens, 55 tool uses, 7 min 16 s)
-  report: agents/reviews/O64-report.md
-  builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8); 284544 tokens, 117 tool uses, 16 min 50 s (the build after the cases ruling); 307182 tokens, 29 tool uses, 3 min 51 s (repair round 1)
-  reviewer_report: agents/reviews/O64-refuter.md (a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s); over round 1: aabffa79636343fa8, claude-opus-5-5, 166633 tokens, 36 tool uses, 4 min 56 s
-  round: 1
-  landing: cherry-picking
-  shared_paths: with O54 and O65: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 115-124 and 160-169): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O65
   executor: agent
   worker: claude:opus
@@ -466,6 +451,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O64 landed). O64 is on main, checked in the gate worktree (`test:quick` 132.9 s, every command passed); fixes at landing: T3, T4 and T5 of the review over round 1, in the report's text. The look is owed (`agents/reviews/owed-looks.md`, To take): Axel's server on 8790 is not running. Open items: none new. In flight (3 of 6): O54 (first review running), O65 (building), O39 part E (building). Next: O54's review and repair round; O65's and O39 part E's reports; then /spec O61, O53 and O56 after O54.
 - 2026-10-22 (rulings 250, 251, 254; 256 agreed). Axel ruled 250 (a), 251 (a2) and 254 (a), booked in plan.md Rulings; O65 added; O53's line tagged (ruling 251) (ruling 254); he agreed to the corrected booking of 256. Open items: none. In flight (1 of 6): O54 (building). Next: O54's report, /refute O54, /land O54; then /spec O61, O53 and O56.
 - 2026-10-22 (O51 landed; rulings 249, 255, 256, 257). O51 is on main, landed in the gate worktree; fixes at landing: round 1 S1 and S2 (the menu watch `src/lib/ui/menu/menu-watch.ts` in place of the read of `aria-expanded`), S3 (`docs/apps.md:84`), P1 (diagrams), and the watch's call put under `untrack` after the look found `effect_update_depth_exceeded` on opening the pane menu. Axel ruled 249 (a), 255 (a), 256 (a, venue KU Leuven for every thesis) and 257 (a), booked in plan.md Rulings; O64 added. Open items: 250 (redone: editor keys in general), 251 (answered, not locked), 254 (reworded). In flight (1 of 6): O54 (building). Next: O54's report, /refute O54, /land O54; then /spec O61, O53 and O56.
 - 2026-10-22 (O51 round 1 sent). The reviewer a914ccedd6c86f1fa on claude-opus-5-5 wrote `agents/reviews/O51-refuter.md`: items 5 and 7 partial, C8 and C21 not verifiable without the look; findings S1, S2, P2, P3, T1, T2, B1, B2. Round 1 (`agents/briefs/O51-round1.md`, 7 items, paths widened to `docs/apps.md`) sent to the builder; snapshot `.agents/worktrees/migration-O51-round-1` with `files.txt`. Left for the landing: the new G29 row booked in `agents/guarded.md`, the look on TEST. Open items: 249, 250, 251, 254, 255, 256, 257. In flight (2 of 6): O54 (building), O51 (round 1). Next: O51's round report and its review over the round; O54's report.

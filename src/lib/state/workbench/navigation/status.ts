@@ -90,10 +90,11 @@ export type RepoChoice = { root: string; label: string };
  * the branch, sync it (pull, then push), publish it to a remote, and show the repository in the
  * Repositories view. A write git refuses shows the repository too, whose line says why. The page
  * also says which action that says words of its own runs on any root of a root's repository, with
- * those words, so the items show it whichever root it was started through.
+ * those words, so the items show it whichever root it was started through; given `among`, only an
+ * action named in it counts, so an item that shows some actions finds one running on any root.
  */
 export type StatusGit = {
-    running: (root: string) => RunningAction | null;
+    running: (root: string, among?: readonly string[]) => RunningAction | null;
     switchBranch: (root: string, name: string) => Promise<void>;
     push: (root: string) => Promise<void>;
     sync: (root: string) => Promise<void>;

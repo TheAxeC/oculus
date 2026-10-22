@@ -231,7 +231,7 @@
      * git refuses shows the repository, whose line says why.
      */
     const git: StatusGit = {
-        running: (root) => repositories.running(rootsOfRepository(root)),
+        running: (root, among) => repositories.running(rootsOfRepository(root), among),
         switchBranch: async (root, name) => {
             if (!(await repositories.switchBranch(root, name))) showRepository(root);
         },

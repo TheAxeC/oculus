@@ -55,7 +55,8 @@ export type RunningAction = { action: string; words: string };
 
 /**
  * The words an action says while it runs, by the name the page sends it under: the ones a reader
- * waits on for long enough to ask what is happening. Every other action says Working.
+ * waits on for long enough to ask what is happening, a commit message being written from the
+ * staged diff among them. Every other action says Working.
  */
 const RUNNING_WORDS: Record<string, () => string> = {
     commit: () => t('git.running_commit'),
@@ -70,7 +71,8 @@ const RUNNING_WORDS: Record<string, () => string> = {
     stash: () => t('git.running_stash'),
     stashApply: () => t('git.running_stash_apply'),
     stashPop: () => t('git.running_stash_pop'),
-    stashDrop: () => t('git.running_stash_drop')
+    stashDrop: () => t('git.running_stash_drop'),
+    suggest: () => t('git.running_suggest')
 };
 
 export type RepositoriesStore = {
@@ -79,9 +81,11 @@ export type RepositoriesStore = {
     /**
      * The action in flight on the first of these roots whose action says words of its own, with
      * those words; null when none of them runs one. A view hands the roots of its repository, so
-     * an action started through another root of the same repository is seen.
+     * an action started through another root of the same repository is seen. Given `among`, only
+     * an action named in it counts, so a reader that shows some actions alone finds one of them
+     * running on a later root while another action runs on an earlier one.
      */
-    running: (roots: readonly string[]) => RunningAction | null;
+    running: (roots: readonly string[], among?: readonly string[]) => RunningAction | null;
     /**
      * What a control over this root says while a write runs on it: the words of the action in
      * flight, or Working for an action that says none.
@@ -271,11 +275,12 @@ export function createRepositories(
         return Object.hasOwn(state.acting, root);
     }
 
-    function running(roots: readonly string[]): RunningAction | null {
+    function running(roots: readonly string[], among?: readonly string[]): RunningAction | null {
         for (const root of roots) {
             const action = busy(root) ? state.acting[root] : undefined;
             const words = action === undefined ? undefined : RUNNING_WORDS[action];
-            if (action !== undefined && words !== undefined) return { action, words: words() };
+            if (action === undefined || words === undefined) continue;
+            if (among === undefined || among.includes(action)) return { action, words: words() };
         }
         return null;
     }

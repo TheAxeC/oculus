@@ -17,7 +17,9 @@
     );
 </script>
 
-<div
+<!-- A span drawn as a block, so the bar is valid wherever phrasing content is, inside a button
+     included. -->
+<span
     class="track"
     role="progressbar"
     aria-label={label}
@@ -27,10 +29,11 @@
 >
     <span class="fill" class:running={done === null} style:width={done === null ? '' : `${done}%`}
     ></span>
-</div>
+</span>
 
 <style>
     .track {
+        display: block;
         flex: 1 1 auto;
         min-width: 0;
         height: 4px;

@@ -26,7 +26,8 @@
     //
     // A Claude account's card carries Refresh, whose glyph turns from the reader's press until that
     // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own
-    // cadence turns nothing.
+    // cadence turns nothing. The card draws its controls only under the pointer or the focus, so
+    // while a press waits the control is held drawn on its card, turning, until the answer.
     //
     // Over a wallpaper each account's card is its own surface, and the history under them is read
     // off a `Surface`; its table's header row scrolls with the table and paints nothing.
@@ -195,7 +196,7 @@
                                 <Tag label={account.billing} />
                             {/if}
                             {#if account.tool === 'claude'}
-                                <span class="act">
+                                <span class="act" class:held={refreshing(account.label)}>
                                     <ToolButton
                                         compact
                                         label={t('usage.refresh')}
@@ -358,7 +359,9 @@
 
     /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-at-rest`:
        under the pointer, with the focus inside the card, or always where nothing hovers. At rest it
-       is not drawn and takes no room. */
+       is not drawn and takes no room, except while a press of it waits for its answer: then it is
+       held drawn, turning, whatever the pointer and the focus do, and goes back to the card's rule
+       once the answer comes. */
     .act {
         display: var(--card-at-rest, inline-flex);
         /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
@@ -366,6 +369,10 @@
            their own they reach no further than the gap between the lines. */
         margin-block: min(0px, calc((1lh - 22px) / 2));
         margin-left: auto;
+    }
+
+    .act.held {
+        display: inline-flex;
     }
 
     .history {

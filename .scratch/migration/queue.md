@@ -1,6 +1,5 @@
-In flight (4 of 6 slots in use):
+In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built (report `agents/reviews/O54-report.md`, saved from the builder's final message); first review running.
-- O64 (motion where work is in progress: Inbox and Calendar Refresh turn, the Usage Refresh stays drawn while it runs, the commit message suggestion says what runs, one git line under the repository's name; ruling 249). State: landing (the review over round 1 found three report-text findings, fixed in the report; the gate running). Shares only `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O65: simple to merge.
 - O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: building (base 3a35d993).
 - O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: building (base 200f12da).
 
@@ -13,9 +12,11 @@ Queued, in order (7 steps):
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O39 (oculus in its own repository): after part E lands, the desktop look again, then the tick.
 
-Owed looks: none.
+Owed looks:
+- O64, on TEST once Axel's server on 8790 runs again (`agents/reviews/owed-looks.md`, To take).
 
 Landed, newest first:
+- O64 (motion where work is in progress), 2026-10-22.
 - O51 (a per-pane Hide Tab Row), 2026-10-22.
 - O57 (the portfolio chat's index over every hub), 2026-10-22.
 - O49 (an Open View submenu in the tab strip's menus), 2026-10-22.

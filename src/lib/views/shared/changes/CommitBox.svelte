@@ -17,6 +17,11 @@
     // Ctrl or Cmd with Enter in the field commits as the button does. The field opens one line
     // high and grows with its lines to ten and then scrolls.
     //
+    // While a message is being suggested for the root, Suggest turns its glyph and its accessible
+    // name is the suggestion's running words, the ones the store's `busyWords` says for it, so one
+    // running action carries one sentence; every commit box of the root turns together, since
+    // which roots are being suggested for is the store's.
+    //
     // While a merge or a cherry pick is in progress the field starts with the message git prepared
     // for it, takes git's new message when that changes while the field still holds the one offered
     // before, is emptied again when the operation ends and the field still holds that text, and the
@@ -174,9 +179,10 @@
         </div>
         <div class="tools">
             <ToolButton
-                label={suggesting ? t('git.suggest_pending') : t('git.suggest')}
+                label={suggesting ? t('git.running_suggest') : t('git.suggest')}
                 title={t('git.suggest')}
                 glyph="spark"
+                turning={suggesting}
                 compact
                 bare
                 disabled={busy || suggesting || git.staged.length === 0}

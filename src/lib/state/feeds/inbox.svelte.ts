@@ -2,9 +2,13 @@
 // Connect, Add and Remove are state/life/accounts.svelte.ts's, shared with the Calendar.
 //
 // The plate is derived from the one socket entity, so the view holds no copy of it: a publish
-// replaces the payload and the sections are computed again. The only state of this store's own is
-// which threads have a write in flight, which is what makes those controls unpressable while the
-// server is answering.
+// replaces the payload and the sections are computed again. The state of this store's own is which
+// threads have a write in flight, which is what makes those controls unpressable while the server
+// is answering, and how many presses of Refresh wait for their answer. The route answers once the
+// poll it asked for has run, so Refresh turns its glyph from the reader's press until that press's
+// answer, in every Inbox view of the page, a view opened while a press waits included; a poll the
+// server runs on its own cadence is no press and turns nothing, and a refused or unreachable press
+// ends the turn at its answer.
 //
 // A reply and an archive go through the same endpoint as the triage note and are answered by it, so
 // the view says what a refused write said and never reads a provider itself. A command whose answer
@@ -45,6 +49,8 @@ export type InboxStore = {
     badgeText: () => string;
     /** Whether a write on this thread has not been answered yet. */
     busy: (thread: InboxThread) => boolean;
+    /** Whether a press of Refresh waits for its answer. */
+    refreshing: () => boolean;
     refresh: () => Promise<MailAnswer>;
     triage: (thread: InboxThread, values: TriageFields) => Promise<MailAnswer>;
     reply: (thread: InboxThread, body: string) => Promise<MailAnswer>;
@@ -54,6 +60,8 @@ export type InboxStore = {
 export function createInbox(entities: EntitiesStore, writes: WritesStore): InboxStore {
     /** The threads whose write is still open, by the id the endpoint is given. */
     const busyThreads = $state(new Set<string>());
+    /** How many presses of Refresh wait for their answer. */
+    let pressed = $state(0);
 
     function state(): InboxPayload | null {
         return entities.inbox();
@@ -83,6 +91,16 @@ export function createInbox(entities: EntitiesStore, writes: WritesStore): Inbox
         }
     }
 
+    /** Ask the server for a poll now, counted as waiting from the press to its answer. */
+    async function refresh(): Promise<MailAnswer> {
+        pressed += 1;
+        try {
+            return await command({ action: 'refresh' });
+        } finally {
+            pressed -= 1;
+        }
+    }
+
     return {
         state,
         threads,
@@ -93,7 +111,8 @@ export function createInbox(entities: EntitiesStore, writes: WritesStore): Inbox
             return count === 0 ? '' : String(count);
         },
         busy: (thread) => busyThreads.has(thread.id),
-        refresh: () => command({ action: 'refresh' }),
+        refreshing: () => pressed > 0,
+        refresh,
         triage: (thread, values) => onThread(thread, { action: 'triage', fields: values }),
         reply: (thread, body) => onThread(thread, { action: 'reply', body }),
         archive: (thread) => onThread(thread, { action: 'archive' })

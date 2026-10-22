@@ -15,10 +15,20 @@
     // question the view's `...` menu asks and press through the same store call; the Branch control
     // asks the view to show the repository and open its Branches section. Branch, Sync and Publish
     // are disabled while a write runs on the repository, and say what runs as their hover words:
-    // the words of the action, or Working for an action that says none. While an action that says
-    // words of its own runs on any root of the repository, a moving line is laid along the foot of
-    // the row, over it so the row keeps its height and passing the pointer through to the row, with
-    // those words as its name; under the system's reduce-motion setting it is drawn still.
+    // the words of the action, or Working for an action that says none.
+    //
+    // While an action that says words of its own runs on any root of the repository, a moving line
+    // is laid along the foot of the row under the repository's name, from the name's left edge to
+    // the right edge of the part of it drawn, so never under the Branch, Sync or Publish controls.
+    // The row draws its name itself (`TreeItem`'s `words`) with the line inside the name's box, so
+    // the width is the layout's and nothing is measured; the name's box is the row's height, so its
+    // foot is the row's. The line takes no room, so nothing moves when it shows or clears, passes
+    // the pointer through to the row and is drawn still under the system's reduce-motion setting.
+    // It lies inside the row's button, whose children a screen reader does not reach, so the row's
+    // own accessible name says the repository's name and the running words. While the section is
+    // folded the line lies the same way under the word Repositories on the section's head, for the
+    // first listed repository with such an action, and the head's accessible name says the words.
+    // For the repository shown, the pane's message line (repo/RepoMessage.svelte) says them too.
     //
     // A root that is no repository, that is gone or whose read failed keeps its row, with the few
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as
@@ -53,6 +63,7 @@
         tracksUpstream
     } from '$lib/state/sources/repositories/repositories';
     import { repoListRows } from '$lib/state/sources/repositories/change-tree';
+    import type { RunningAction } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { scmKey } from '$lib/state/system/apps/tools/scm.svelte';
     import type { AppScmState } from '$lib/state/system/apps/tools/scm.svelte';
@@ -128,6 +139,23 @@
         )
     );
 
+    /** The action with words of its own running on a repository, with any of its roots. */
+    function runningOn(root: string): RunningAction | null {
+        return repositories.running(selectors.rootsOfRepository(root));
+    }
+
+    /** The action the folded section's head shows: the first listed repository's that runs one. */
+    const folded = $derived(
+        collapsed.includes('repos')
+            ? (roots.map(runningOn).find((one) => one !== null) ?? null)
+            : null
+    );
+
+    /** A row's accessible name: its own name, and the running words while an action runs. */
+    function accessibleName(label: string, running: RunningAction | null): string | undefined {
+        return running === null ? undefined : t('repositories.row_running', label, running.words);
+    }
+
     function sync(root: string, git: GitState): void {
         const words = syncWords(git);
         ask(words.message, words.detail, () => void repositories.sync(root));
@@ -140,24 +168,39 @@
     }
 </script>
 
+<!-- A name as a row or the section's head draws it, with the moving line of a running action
+     along the foot of its box. -->
+{#snippet named(text: string, running: RunningAction | null)}
+    <span class="named"
+        >{text}{#if running !== null}<span class="running"
+                ><Progress percent={null} label={running.words} /></span
+            >{/if}</span
+    >
+{/snippet}
+
 <TreeView label={t('repositories.list')} {rows} {ontoggle}>
     {#snippet children(nav: TreeNav)}
         <div data-group="repos">
             <TreeSection
                 label={t('repositories.list')}
+                name={accessibleName(t('repositories.list'), folded)}
                 id="repos"
                 {nav}
                 count={roots.length + sources.length}
                 open={!collapsed.includes('repos')}
                 ontoggle={() => ontoggle('repos')}
             >
+                {#snippet words()}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render named(t('repositories.list'), folded)}
+                {/snippet}
                 {#each roots as root (root)}
                     {@const git = stateOf(root)}
                     {@const shape = repoShape(root, git)}
                     {@const readable = shape === 'readable' && git !== null}
                     {@const count = git === null || !readable ? 0 : changeCount(git)}
-                    {@const running = repositories.running(selectors.rootsOfRepository(root))}
-                    <li role="none" data-repo-row={root}>
+                    {@const running = runningOn(root)}
+                    <li role="none">
                         <ContextMenu
                             label={labels[root] ?? root}
                             items={repoRowMenu(
@@ -169,6 +212,7 @@
                         >
                             <TreeItem
                                 label={labels[root] ?? root}
+                                name={accessibleName(labels[root] ?? root, running)}
                                 id={`repo:${root}`}
                                 {nav}
                                 level={2}
@@ -186,13 +230,19 @@
                                 yielding={readable}
                                 onclick={() => onpick(root)}
                             >
+                                {#snippet words()}
+                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                    {@render named(labels[root] ?? root, running)}
+                                {/snippet}
                                 {#snippet actions(reach: number)}
                                     {#if git !== null && readable}
                                         {@const working = repositories.busy(root)}
-                                        {@const words = working ? repositories.busyWords(root) : ''}
+                                        {@const busyWords = working
+                                            ? repositories.busyWords(root)
+                                            : ''}
                                         <ToolButton
                                             label={branchOf(git)}
-                                            title={working ? words : branchTitle(git)}
+                                            title={working ? busyWords : branchTitle(git)}
                                             glyph="branch"
                                             small
                                             cut
@@ -203,7 +253,7 @@
                                         {#if tracksUpstream(git)}
                                             <ToolButton
                                                 label={branchState(git)}
-                                                title={working ? words : branchState(git)}
+                                                title={working ? busyWords : branchState(git)}
                                                 glyph="sync"
                                                 small
                                                 tabindex={reach}
@@ -224,7 +274,9 @@
                                         {:else if canPublish(git)}
                                             <ToolButton
                                                 label={t('repositories.publish')}
-                                                title={working ? words : t('repositories.publish')}
+                                                title={working
+                                                    ? busyWords
+                                                    : t('repositories.publish')}
                                                 glyph="publish"
                                                 compact
                                                 tabindex={reach}
@@ -261,11 +313,6 @@
                                 {/snippet}
                             </TreeItem>
                         </ContextMenu>
-                        {#if running !== null}
-                            <div class="running">
-                                <Progress percent={null} label={running.words} />
-                            </div>
-                        {/if}
                     </li>
                 {/each}
                 {#each sources as one (scmKey(one.app, one.id))}
@@ -282,9 +329,15 @@
 </TreeView>
 
 <style>
-    /* The row's own box, so its moving line is laid along the row's foot. */
-    [data-repo-row] {
+    /* A name the row's height tall, its words centred on the row's line as the row centres them,
+       so the foot of its box is the row's foot. Its words are cut with an ellipsis here, the box
+       that holds them, and the moving line is laid along that foot, as wide as the name drawn. */
+    .named {
+        display: block;
         position: relative;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .running {
@@ -293,6 +346,7 @@
         right: 0;
         bottom: 0;
         display: flex;
+        line-height: 0;
         pointer-events: none;
     }
 

@@ -11,6 +11,12 @@
 //
 // Each command answers the sentence the view says about it: the empty string when the endpoint took
 // it, and otherwise the endpoint's refusal or the reason no answer could be read.
+//
+// The store's one state of its own is how many presses of Refresh wait for their answer. The route
+// answers once the poll it asked for has run, so Refresh turns its glyph from the reader's press
+// until that press's answer, in every Calendar view of the page, a view opened while a press waits
+// included; a poll the server runs on its own cadence is no press and turns nothing, and a refused
+// or unreachable press ends the turn at its answer.
 
 import type { CalendarPayload } from '../../data/model/index.ts';
 import { optionalTextShape, readAs } from '../../data/shapes/shapes.ts';
@@ -23,6 +29,8 @@ export type CalendarStore = {
     state: () => CalendarPayload | null;
     remaining: () => number;
     badgeText: () => string;
+    /** Whether a press of Refresh waits for its answer. */
+    refreshing: () => boolean;
     refresh: () => Promise<string>;
     openEvent: (id: string) => Promise<string>;
 };
@@ -32,6 +40,9 @@ export function createCalendar(
     writes: WritesStore,
     clock: ClockStore
 ): CalendarStore {
+    /** How many presses of Refresh wait for their answer. */
+    let pressed = $state(0);
+
     function state(): CalendarPayload | null {
         return entities.calendar();
     }
@@ -56,6 +67,16 @@ export function createCalendar(
 
     const remaining = (): number => remainingToday(events(), moment());
 
+    /** Ask the server for a poll now, counted as waiting from the press to its answer. */
+    async function refresh(): Promise<string> {
+        pressed += 1;
+        try {
+            return await command({ action: 'refresh' });
+        } finally {
+            pressed -= 1;
+        }
+    }
+
     return {
         state,
         remaining,
@@ -63,7 +84,8 @@ export function createCalendar(
             const count = remaining();
             return count === 0 ? '' : String(count);
         },
-        refresh: () => command({ action: 'refresh' }),
+        refreshing: () => pressed > 0,
+        refresh,
         openEvent: (id) => command({ action: 'open', event: id })
     };
 }

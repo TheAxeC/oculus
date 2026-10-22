@@ -64,7 +64,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        calendar: { openEvent, refresh, state: payload },
+        calendar: { openEvent, refresh, refreshing, state: payload },
         clock: { minuteNow, startMinuteClock },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -196,6 +196,7 @@
     <ConnectorHead
         {data}
         words={headWords()}
+        refreshing={refreshing()}
         onrefresh={() => void refresh().then((words) => (said = words))}
     />
     {#if data && data.status !== 'unconfigured' && range}

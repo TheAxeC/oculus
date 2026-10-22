@@ -13,11 +13,9 @@
     // repositoryKeyRows() lists, Right and Left opening and closing a head or a group. In the
     // view's tree mode the change groups and the files of the open commit draw folders, and the key
     // rows list them. A write in flight (with its Cancel) and what the last write answered are said
-    // on one message line laid over the foot of the pane (repo/RepoMessage.svelte). While an action
-    // that says words of its own runs on any root of the repository (a commit, a push, a checkout:
-    // the store's `running`), a moving line runs along the foot of the header, laid over it, with
-    // those words as its name and its hover words; it takes no room either, so no row moves when it
-    // shows or clears, and under the system's reduce-motion setting it is drawn still.
+    // on one message line laid over the foot of the pane (repo/RepoMessage.svelte). The moving line
+    // of an action that says words of its own is drawn under the repository's name in the
+    // Repositories section (../RepoList.svelte), so the header draws none.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -38,7 +36,6 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from '../refs/Branches.svelte';
     import Changes from '../changes/Changes.svelte';
@@ -123,14 +120,13 @@
         onpicked
     }: Props = $props();
 
-    const { repositories, selectors } = useState();
+    const { repositories } = useState();
 
     let graphRows: KeyRow[] = $state([]);
 
     const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows, { root, mode }));
     const shape = $derived(repoShape(root, git));
     const busy = $derived(repositories.busy(root));
-    const running = $derived(repositories.running(selectors.rootsOfRepository(root)));
 
     /** The keys of the change rows: the selection's two Shift keys and Open to the Side. */
     const keymap = filesKeymap(onMac()).filter(
@@ -256,18 +252,13 @@
 {/snippet}
 
 <section class="repo" data-root={root}>
-    <div class="head" title={root}>
+    <div title={root}>
         <TreeItem
             label={name}
             glyph="repositories"
             heading
             detail={git.detached || git.branch !== '' ? branchWords : undefined}
         />
-        {#if running !== null}
-            <div class="bar" data-repo-running={running.action} title={running.words}>
-                <Progress percent={null} label={running.words} />
-            </div>
-        {/if}
     </div>
     {#if shape !== 'readable'}
         <!-- git's reason as the row's hover words, the attribute the Changes panel carries it on:
@@ -404,25 +395,11 @@
         min-width: 0;
     }
 
-    /* The header holds the moving line, which lies over its foot so nothing moves when it shows
-       or clears. */
-    .head {
-        position: relative;
-    }
-
     /* The header's name is drawn in capitals (ui/tree/TreeItem.svelte's heading row); the branch
        words after it keep their own case, since a branch name, the short hash of a detached HEAD
        and the detached sentence read as git and the catalog write them. */
     .branch {
         text-transform: none;
-    }
-
-    .bar {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
     }
 
     /* The message box and its button, 11px in from the left of the row and 12px from its right. */

@@ -3,7 +3,9 @@
     // ui/tree/TreeView.svelte: a heading row with the section's name, its controls and its count at
     // the right edge, and under it, while it is open, the group the caller's rows are drawn into.
     // Whether it is open is the caller's, so a view keeps it in its instance state and a section
-    // closed before a tab switch is closed after it.
+    // closed before a tab switch is closed after it. The caller may draw the head's name itself,
+    // through `words`, and give the head an accessible name that says more than the name drawn,
+    // through `name`, as a row of ui/tree/TreeItem.svelte takes both.
 
     import type { Snippet } from 'svelte';
     import TreeItem from './TreeItem.svelte';
@@ -13,6 +15,13 @@
     type Props = {
         /** The section's name, already translated; also the name of its group. */
         label: string;
+        /** The head's accessible name, when it says more than the name drawn. */
+        name?: string;
+        /**
+         * The head's name drawn by the caller in the place of the label's text, for a head that
+         * draws something under its name, such as the moving line of a folded list.
+         */
+        words?: Snippet;
         /** The head's id in the tree the section is drawn in. */
         id: string;
         nav?: TreeNav;
@@ -41,6 +50,8 @@
 
     let {
         label,
+        name,
+        words,
         id,
         nav,
         count,
@@ -59,6 +70,8 @@
 <div class="section">
     <TreeItem
         {label}
+        {name}
+        {words}
         {id}
         {nav}
         level={1}

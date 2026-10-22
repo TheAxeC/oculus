@@ -59,7 +59,7 @@
 
     const {
         clock: { startMinuteClock },
-        inbox: { archive, busy, refresh, reply, split, state: plate, triage },
+        inbox: { archive, busy, refresh, refreshing, reply, split, state: plate, triage },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -122,6 +122,7 @@
         {data}
         words={headWords()}
         notice={data?.notesError ? t('inbox.notes_error', data.notesError) : ''}
+        refreshing={refreshing()}
         onrefresh={() =>
             void refresh().then((answer) => (said = answer.ok ? '' : (answer.error ?? '')))}
     />

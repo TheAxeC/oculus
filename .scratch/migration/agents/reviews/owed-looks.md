@@ -8,6 +8,8 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
+- O64 (landed 2026-10-22, not taken: Axel's server on 8790 was not running). On TEST: the Inbox and Calendar Refresh buttons turn while their read runs; the Usage Refresh stays drawn while it runs; CommitBox's Suggest says what runs; the moving bar of a running git command sits under the Repositories header, under the selected repository's name, and not across the view; the folded Repositories head; the status-bar sync item; `Progress.svelte` in its four users (NoticeEntry, Literature, Results, RepoList) draws as before.
+
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
