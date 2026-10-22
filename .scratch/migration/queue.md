@@ -6,7 +6,8 @@ In flight (6 of 6 slots in use):
 - O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: building.
 - O54 (the hubs of a workspace resolve own hub first; a key held by two hubs carries its hub's prefix except the primary's copy; Add asks which hub), rulings 203 and 223. State: /spec, writing the brief.
 
-Queued, in order (10 steps):
+Queued, in order (11 steps):
+- O64 (the development server ignores the worktrees under `.agents/`, so a build in a worktree no longer reloads Axel's `npm run dev`), a defect. Waits: the next free slot, first.
 - O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
 - O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
 - O61 (one home for each vocabulary word: stage words are types with their flags, chips are form and situation labels, the status list split into `chips:`, `statuses:` and `lead_statuses:`, each stage word an idea, in flight, done or neither, one spelling per word), rulings 218, 219, 221, 222. Waits: after O59 and O62 have landed.
