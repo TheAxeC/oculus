@@ -34,6 +34,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O54
   brief_check: agents/reviews/O54-brief-check.md (ad3e2648214fa3664, claude-opus-5-5, 247636 tokens, 97 tool uses, 14 min 51 s)
   report: agents/reviews/O54-report.md
+  reviewer_report: agents/reviews/O54-refuter.md (aa1dd67ae57731a87, claude-opus-5-5, 149205 tokens, 78 tool uses, 17 min 26 s)
   builder_usage: 306087 tokens, 83 tool uses, 14 min 1 s (hand-back of C3); 141726 tokens, 1083 tool uses, 3 h 10 min 19 s (the build after the cases ruling)
   round: 0
   landing: not-started
@@ -61,6 +62,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O39-partE
   brief_check: agents/reviews/O39-partE-brief-check.md (aece82159cd53f676, claude-opus-5-5, 221577 tokens, 71 tool uses, 10 min 19 s)
   report: agents/reviews/O39-partE-report.md
+  builder_usage: round 0 hand-back 252026 tokens, 50 tool uses, 14 min 3 s
+  cases_ruling: agents/briefs/O39-partE-cases.md (C15 (a), C6 (a), C10 the builder's row)
   round: 0
   landing: not-started
   shared_paths: with O54, O64 and O65: none of their changed files (git status of part E's paths in each worktree prints nothing); docs/diagrams/ regenerated at each landing
@@ -451,6 +454,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O39 part E cases ruled). The builder handed back C15, C6 and C10 before changing `src/`; ruled in `agents/briefs/O39-partE-cases.md` (C15 (a), the guard kept and the case rewritten; C6 (a), a fourth input for the CRT overlay; C10, the builder's row with a given finding), the claims read on main (`app-theme.ts:221`, `vscode-map.ts:283-290`, `ui.svelte.ts:298-300`). The builder resumed with the ruling. In flight (3 of 6): O54 (reviewed, repair round 1 next), O65 (building), O39 part E (building after the ruling).
+- 2026-10-22 (O54 diff read). The orchestrator read O54's whole source diff (data, server, state, shell, views, routes; the tests not read line by line). Points for O54's landing: `src/lib/views/system/machine/usage/Usage.svelte` is changed by O54 (line 184, `RootChip hub=`) and by O64 (landed in 91f9040b), so the cherry-pick merges the two; a terminal's task mark written before O54 holds `target: {id}`, which `jobShape` of `server/machine/pty/sessions.ts` now reads as no target (Run again on such a build terminal finds no folder), live tmux state only and not among ruling 238's files; the splits `DepositPlan.svelte`, `mode-lists.svelte.ts`, `normalise-parts/links.ts`, `settings/scan.ts` and `watch/build.ts` are named in the report as size and folder-limit moves. In flight (3 of 6): O54 (first review running), O65 (building), O39 part E (building).
 - 2026-10-22 (O64 landed). O64 is on main, checked in the gate worktree (`test:quick` 132.9 s, every command passed); fixes at landing: T3, T4 and T5 of the review over round 1, in the report's text. The look is owed (`agents/reviews/owed-looks.md`, To take): Axel's server on 8790 is not running. Open items: none new. In flight (3 of 6): O54 (first review running), O65 (building), O39 part E (building). Next: O54's review and repair round; O65's and O39 part E's reports; then /spec O61, O53 and O56 after O54.
 - 2026-10-22 (rulings 250, 251, 254; 256 agreed). Axel ruled 250 (a), 251 (a2) and 254 (a), booked in plan.md Rulings; O65 added; O53's line tagged (ruling 251) (ruling 254); he agreed to the corrected booking of 256. Open items: none. In flight (1 of 6): O54 (building). Next: O54's report, /refute O54, /land O54; then /spec O61, O53 and O56.
 - 2026-10-22 (O51 landed; rulings 249, 255, 256, 257). O51 is on main, landed in the gate worktree; fixes at landing: round 1 S1 and S2 (the menu watch `src/lib/ui/menu/menu-watch.ts` in place of the read of `aria-expanded`), S3 (`docs/apps.md:84`), P1 (diagrams), and the watch's call put under `untrack` after the look found `effect_update_depth_exceeded` on opening the pane menu. Axel ruled 249 (a), 255 (a), 256 (a, venue KU Leuven for every thesis) and 257 (a), booked in plan.md Rulings; O64 added. Open items: 250 (redone: editor keys in general), 251 (answered, not locked), 254 (reworded). In flight (1 of 6): O54 (building). Next: O54's report, /refute O54, /land O54; then /spec O61, O53 and O56.
