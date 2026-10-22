@@ -290,7 +290,7 @@ describe('the desktop host decisions', () => {
 // alone. The values below are the ones the blocks of src/lib/themes/ set: `vscode-dark-modern` in
 // vscode.css, `mocha` in rice/catppuccin.css (which sets no title bar words, so its ink is taken)
 // and `:root` in tokens.css for the light theme.
-describe('the colours of the theme a window starts on', () => {
+describe('the colours of the theme a window starts on', { tags: ['slow'] }, () => {
     const engine = engineDir();
     const DARK_MODERN = { background: '#181818', symbol: '#cccccc' };
     const LIGHT = { background: '#f1f5f9', symbol: '#0f172a' };

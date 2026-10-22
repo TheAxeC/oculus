@@ -10,8 +10,8 @@
 // (ui/display/ticker/Ticker.svelte's `reveal`), except the one the row exists for, which the
 // builder names by the row's id: a subtask's or a follow-up's done, and a task entry's `done`
 // status, since ticking a task off is what its row is for. Another entry's statuses are all left
-// under the pointer: the palette's `terminal` says a status drops off the deadline radar, which is
-// not the same as the status a reader closes it with.
+// under the pointer: the palette's `closes_deadline` says a status drops off the deadline radar,
+// which is not the same as the status a reader closes it with.
 //
 // A line whose buttons write an entry or a subtask of a collection file has them disabled, with the
 // words naming the file as their title, while a source tab holds unsaved text of that file. The

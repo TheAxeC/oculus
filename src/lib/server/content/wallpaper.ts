@@ -66,9 +66,7 @@ function named(
     if (!isFilePath(file)) return { fault: 'name' };
     const held = pictures.find((one) => one.hub === hub);
     if (held === undefined) return { fault: 'hub' };
-    return holds(held.wallpaper, file)
-        ? { hub, file, dir: held.wallpaper }
-        : { fault: 'gone' };
+    return holds(held.wallpaper, file) ? { hub, file, dir: held.wallpaper } : { fault: 'gone' };
 }
 
 /**

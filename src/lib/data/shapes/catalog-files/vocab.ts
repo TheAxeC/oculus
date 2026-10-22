@@ -42,14 +42,14 @@ const statusWord = z.strictObject({
     chip: flag(
         "A status chip a manifest's `status.chips` picks from (the status legend), offered by the project form in this order."
     ),
-    terminal: flag(
+    closes_deadline: flag(
         "The status ends a collection entry's deadline on the deadline radar; the status is compared trimmed and in lower case."
     ),
     deadline_met: flag(
-        "The status ends a project's own deadline (a terminal chip alone does not); compared trimmed and in lower case."
+        "The status ends a project's own deadline (a chip whose word carries `closes_deadline` alone does not); compared trimmed and in lower case."
     ),
     live_subtasks: flag(
-        'A terminal entry whose subtasks and follow-up notes still show on the radar; compared trimmed and in lower case.'
+        "A status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case."
     ),
     waiting: flag(
         "An entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case."

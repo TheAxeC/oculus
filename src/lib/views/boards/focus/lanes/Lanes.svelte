@@ -8,6 +8,8 @@
     // drag and a view has no business in it. The move menu stays beside the drag because it
     // provides the keyboard path.
 
+    import { answerWords } from '$lib/views/shared/forms/answer-words';
+    import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { personNames } from '$lib/state/boards/person';
     import { waitingLabel } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -125,12 +127,8 @@
     }
 
     /** Say what one write answered, on the board's one outcome line. */
-    function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+    function said(answer: WriteAnswer): void {
+        onsaid(answerWords(answer));
     }
 
     /** Picking a lane writes `focus:`; picking a priority writes `priority:`. */

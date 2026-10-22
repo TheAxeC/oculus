@@ -379,6 +379,7 @@ describe('taking a change back', () => {
 
     it.each(PLACED_ROWS)(
         'writes the project of a folder of the workspace inside $hub and outside every scan folder in its own file, and takes it back: $name',
+        { tags: ['slow'] },
         async (row) => {
             const { into, file } = insideHubTarget(undefined, row.second);
             const original = readFileSync(file, 'utf8');

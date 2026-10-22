@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count,
     // one row per line with what it says and when it is due, the buttons that move it, and the
-    // one-line form that adds another (views/shared/forms/LineForm.svelte). A line's edit button
-    // turns the line into the same form, holding its text and deadline, and its save writes each of
-    // the two that changed.
+    // one-line form that adds another (views/shared/forms/dated/LineForm.svelte). A line's edit
+    // button turns the line into the same form, holding its text and deadline, and its save writes
+    // each of the two that changed.
     //
     // A card with no lines draws no block at all: adding its first line is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is
@@ -30,7 +30,13 @@
     import LineForm from './LineForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type { SubtaskAction, SubtaskTarget } from '$lib/state/client/writes.svelte';
+    import type {
+        SubtaskAction,
+        SubtaskTarget,
+        WriteAnswer
+    } from '$lib/state/client/writes.svelte';
+    import { answerWords } from '../answer-words';
+    import ListHead from './ListHead.svelte';
     import { openSubtaskCount, type Subtask } from '$lib/state/boards/collection';
     import { useState } from '$lib/state/client/use';
 
@@ -72,12 +78,8 @@
         return new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
     }
 
-    function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+    function said(answer: WriteAnswer): void {
+        onsaid(answerWords(answer));
     }
 
     /** One button: the action it names, on the line it sits in. */
@@ -112,29 +114,18 @@
 
 {#if subtasks.length > 0 || adding}
     <div class="subtasks">
-        {#if subtasks.length > 0}
-            <div class="hdr">
-                <span class="label">{t('project.action.subtasks')}</span>
-                <span class="count">{t('project.action.n_open', open)}</span>
-                <ToolButton
-                    small
-                    label={t('project.action.add_subtask')}
-                    title={why(t('project.action.add_subtask_tip'))}
-                    disabled={blocked !== ''}
-                    active={adding}
-                    onclick={() => onadding(!adding)}
-                />
-            </div>
-        {/if}
-
-        {#if adding}
-            <LineForm
-                dateLabel={t('project.action.subtask_deadline')}
-                {blocked}
-                onsave={add}
-                oncancel={() => onadding(false)}
-            />
-        {/if}
+        <ListHead
+            shown={subtasks.length > 0}
+            label={t('project.action.subtasks')}
+            count={t('project.action.n_open', open)}
+            addLabel={t('project.action.add_subtask')}
+            addTip={t('project.action.add_subtask_tip')}
+            dateLabel={t('project.action.subtask_deadline')}
+            {blocked}
+            {adding}
+            {onadding}
+            onadd={add}
+        />
 
         {#each subtasks as line (line.key)}
             {#if editing === line.key}
@@ -143,7 +134,7 @@
                     date={line.deadline}
                     dateLabel={t('project.action.subtask_deadline')}
                     {blocked}
-                    onsave={(text, due) => save(line, text, due)}
+                    onsave={(text: string, due: string) => save(line, text, due)}
                     oncancel={() => (editing = null)}
                 />
             {:else}
@@ -252,7 +243,6 @@
         gap: 4px;
     }
 
-    .hdr,
     .line,
     .acts {
         display: flex;
@@ -261,9 +251,7 @@
         gap: 6px;
     }
 
-    /* A header and a line are one row of the tree's height; a line that wraps grows by whole
-       lines. */
-    .hdr,
+    /* A line is one row of the tree's height; a line that wraps grows by whole lines. */
     .line {
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
@@ -288,19 +276,6 @@
     .acts {
         opacity: var(--row-reveal);
         transition: opacity 120ms ease-out;
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .count {
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
     }
 
     .box {

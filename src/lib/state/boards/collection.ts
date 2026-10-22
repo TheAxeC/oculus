@@ -20,6 +20,7 @@ import {
     anyValueShape,
     fieldItemsShape,
     filledTextShape,
+    followups,
     itemsShape,
     keyedRowsShape,
     listOrOneShape,
@@ -38,14 +39,20 @@ import {
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
-import { followups } from '../../data/snapshot/normalise-parts/plans.ts';
 import { entryPageState } from '../forms/page-entry.ts';
 import { JOINT_WORK } from '../forms/referrers.ts';
 import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
-export type { Collection, Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
+export type {
+    Collection,
+    Entry,
+    Followup,
+    Project,
+    SchemaField,
+    Subtask
+} from '../../data/model/index.ts';
 export { optionKeys, optionLabel } from '../../data/model/index.ts';
 
 // The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
@@ -700,7 +707,7 @@ export function entrySubtasks(entry: Entry): Subtask[] {
 
 /**
  * The `followup:` notes of one entry as the card and the Focus board read them, read by the one
- * reader the snapshot uses (data/snapshot/normalise-parts/plans.ts), so the note a card shows and
+ * reader the snapshot uses (data/shapes/shapes.ts), so the note a card shows and
  * the note a write addresses are keyed alike.
  */
 export function entryFollowups(entry: Pick<Entry, 'fields'>): Followup[] {

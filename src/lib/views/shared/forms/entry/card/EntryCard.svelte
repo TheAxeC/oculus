@@ -28,6 +28,8 @@
     // one that has follow-up notes, adding the first of each being one of the controls. The card
     // may draw past its own edge, so the More menu is not cut off at its foot.
 
+    import { answerWords } from '../../answer-words';
+    import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import CardActions from '../../../card/CardActions.svelte';
@@ -38,8 +40,8 @@
     import Grip from './Grip.svelte';
     import RootChip from '../../../card/RootChip.svelte';
     import InPlace from '../../InPlace.svelte';
-    import Followups from '../../Followups.svelte';
-    import Subtasks from '../../Subtasks.svelte';
+    import Followups from '../../dated/Followups.svelte';
+    import Subtasks from '../../dated/Subtasks.svelte';
     import EntryFields from './EntryFields.svelte';
     import {
         entryStatus,
@@ -55,7 +57,6 @@
     } from '$lib/state/boards/collection';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
-    import { t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
@@ -215,12 +216,8 @@
         })
     );
 
-    function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+    function said(answer: WriteAnswer): void {
+        onsaid(answerWords(answer));
     }
 
     /** Float the card to the top of its list, or let it fall back into file order. */

@@ -5,6 +5,7 @@
 // scratch files, and the clock is the case's own.
 //
 // What this does NOT cover: the apps found in a folder (tests/server/machine/apps/).
+// @module-tag slow: each case reads a whole config and a workspace, 0.7 s to 2.4 s alone.
 
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';

@@ -511,9 +511,7 @@ type: idea              # active, published, submitted, in-prep, paused, idea, t
 
 # --- Dates
 # deadline: YYYY-MM-DD
-# followup:
-#   do: ""
-#   after: YYYY-MM-DD   # hidden until this date
+# followup: []          # written by the card: { do, after }, hidden until after
 # snooze: YYYY-MM-DD    # off the ticker until this date
 # subtasks: {}          # written by the card
 

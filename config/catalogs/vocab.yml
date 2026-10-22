@@ -78,9 +78,9 @@ types:
 
 # The status words, of a project's chips (its manifest's `status.chips`, which the manifests hold as the source of truth for status) and of a collection entry's `status`, each with what is drawn for it and what it decides. A chip is drawn with its `icon` and its `label`; a word with a `color` is a status an entry takes, drawn in that colour. The flags, and a word without a flag is not one of them; each line says how the code compares a word with the flag: `wordFlag` trims a collection entry's status and puts it in lower case, and the chip flags go through `anyWord`, which compares a project's chips as written:
 # - `chip`: a status chip a manifest's `status.chips` picks from (the status legend), offered by the project form in this order.
-# - `terminal`: the status ends a collection entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
-# - `deadline_met`: the status ends a project's own deadline (a terminal chip alone does not); compared trimmed and in lower case (`wordFlag`).
-# - `live_subtasks`: a terminal entry whose subtasks and follow-up notes still show on the radar; compared trimmed and in lower case (`wordFlag`).
+# - `closes_deadline`: the status ends a collection entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
+# - `deadline_met`: the status ends a project's own deadline (a chip whose word carries `closes_deadline` alone does not); compared trimmed and in lower case (`wordFlag`).
+# - `live_subtasks`: a status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case (`wordFlag`).
 # - `waiting`: an entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case, untrimmed.
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `lead_closed`: a Position Lead that is closed, counted and listed as done; compared trimmed and in lower case (`wordFlag`).
@@ -98,8 +98,8 @@ statuses:
   submit-ready:     { chip: true, label: "submit-ready", icon: green, submit_ready: true }
   submitted:        { chip: true, label: "submitted / under review", icon: brown, color: "#b45309", deadline_met: true, waiting: true, pauses_countdown: true }
   revision:         { chip: true, label: "major revision (back with the authors)", icon: orange_square, color: "#b45309" }
-  accepted:         { chip: true, label: "accepted (camera-ready pending)", icon: green_square, color: "#2563eb", terminal: true }
-  published:        { chip: true, label: "published", icon: done, color: "#0ea5e9", terminal: true, published: true }
+  accepted:         { chip: true, label: "accepted (camera-ready pending)", icon: green_square, color: "#2563eb", closes_deadline: true }
+  published:        { chip: true, label: "published", icon: done, color: "#0ea5e9", closes_deadline: true, published: true }
   in-prep:          { chip: true, label: "in preparation", icon: writing, color: "#7c5cff" }
   abandoned:        { chip: true, label: "abandoned", icon: cross }
   tech-report:      { chip: true, label: "tech report (not peer-reviewed)", icon: paper }
@@ -108,7 +108,7 @@ statuses:
   lead:             { chip: true, label: "first author", icon: author }
   phd:              { chip: true, label: "PhD thesis", icon: scout }
   nogo:             { chip: true, label: "no-go (failed gate)", icon: overdue }
-  dropped:          { chip: true, label: "dropped", icon: trash, color: "#ea580c", terminal: true }
+  dropped:          { chip: true, label: "dropped", icon: trash, color: "#ea580c", closes_deadline: true }
   disproved:        { chip: true, label: "disproved", icon: cross_box }
   results-positive: { chip: true, label: "positive result (pre-writeup)", icon: white }
   admin-prep:       { chip: true, label: "admin/prep", icon: yellow }
@@ -121,7 +121,7 @@ statuses:
   de-risking:       { chip: true, label: "de-risking (feasibility experiment)", icon: blue, color: "#16a34a" }
   building:         { chip: true, label: "building", icon: active, color: "#d4a017" }
   running:          { chip: true, label: "running", icon: live, color: "#16a34a" }
-  finished:         { chip: true, label: "finished", icon: done, color: "#0ea5e9", terminal: true }
+  finished:         { chip: true, label: "finished", icon: done, color: "#0ea5e9", closes_deadline: true }
   paused:           { chip: true, label: "paused", icon: black, color: "#9ca3af" }
   # publication-type chips (on published works), orthogonal to outcome and role; they feed the Status facet
   journal:          { chip: true, label: "journal article", icon: journals }
@@ -143,28 +143,28 @@ statuses:
   todo:             { color: "#b45309", default_task: true }
   doing:            { color: "#16a34a" }
   # these statuses close an entry, and only a status with deadline_met ends a project's deadline
-  ongoing:          { color: "#16a34a", terminal: true, live_subtasks: true }
-  completed:        { color: "#0ea5e9", terminal: true }
-  done:             { color: "#0ea5e9", terminal: true }
-  awarded:          { color: "#16a34a", terminal: true, acknowledged: true }
-  granted:          { color: "#16a34a", terminal: true }
-  contributing:     { color: "#0891b2", terminal: true, acknowledged: true }
-  rejected:         { color: "#dc2626", terminal: true }
-  "not funded":     { color: "#dc2626", terminal: true }
-  declined:         { color: "#ea580c", terminal: true, lead_closed: true, lead_declined: true }
-  withdrawn:        { color: "#475569", terminal: true }
-  "not applied":    { color: "#9ca3af", terminal: true, default_application: true }
-  not-applied:      { color: "#9ca3af", terminal: true }
-  "not attending":  { color: "#9ca3af", terminal: true }
-  not-attending:    { color: "#9ca3af", terminal: true }
-  cancelled:        { color: "#9ca3af", terminal: true }
-  canceled:         { color: "#9ca3af", terminal: true }
-  past:             { color: "#9ca3af", terminal: true }
-  skipped:          { color: "#9ca3af", terminal: true }
-  passed:           { color: "#9ca3af", terminal: true }
+  ongoing:          { color: "#16a34a", closes_deadline: true, live_subtasks: true }
+  completed:        { color: "#0ea5e9", closes_deadline: true }
+  done:             { color: "#0ea5e9", closes_deadline: true }
+  awarded:          { color: "#16a34a", closes_deadline: true, acknowledged: true }
+  granted:          { color: "#16a34a", closes_deadline: true }
+  contributing:     { color: "#0891b2", closes_deadline: true, acknowledged: true }
+  rejected:         { color: "#dc2626", closes_deadline: true }
+  "not funded":     { color: "#dc2626", closes_deadline: true }
+  declined:         { color: "#ea580c", closes_deadline: true, lead_closed: true, lead_declined: true }
+  withdrawn:        { color: "#475569", closes_deadline: true }
+  "not applied":    { color: "#9ca3af", closes_deadline: true, default_application: true }
+  not-applied:      { color: "#9ca3af", closes_deadline: true }
+  "not attending":  { color: "#9ca3af", closes_deadline: true }
+  not-attending:    { color: "#9ca3af", closes_deadline: true }
+  cancelled:        { color: "#9ca3af", closes_deadline: true }
+  canceled:         { color: "#9ca3af", closes_deadline: true }
+  past:             { color: "#9ca3af", closes_deadline: true }
+  skipped:          { color: "#9ca3af", closes_deadline: true }
+  passed:           { color: "#9ca3af", closes_deadline: true }
   ready:            { color: "#16a34a" }
-  archived:         { color: "#9ca3af", terminal: true }
-  applied:          { color: "#0891b2", terminal: true, lead_closed: true, lead_applied: true }
+  archived:         { color: "#9ca3af", closes_deadline: true }
+  applied:          { color: "#0891b2", closes_deadline: true, lead_closed: true, lead_applied: true }
   # the statuses of a Position Lead that no chip or collection entry takes
   closed:           { lead_closed: true }
   dismissed:        { lead_closed: true, lead_declined: true }

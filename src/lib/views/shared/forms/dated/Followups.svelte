@@ -2,15 +2,16 @@
     // Layer 3, view partial under views/shared/. The follow-up block of one card: one row per note
     // of the host's `followup:` list with what it says and the date before which it stays off the
     // Focus board, the buttons that change it or take it out once done, and the one-line form that
-    // adds another (views/shared/forms/LineForm.svelte). A note's edit button turns the note into
-    // the same form, holding its text and date, and its save writes each of the two that changed.
+    // adds another (views/shared/forms/dated/LineForm.svelte). A note's edit button turns the note
+    // into the same form, holding its text and date, and its save writes each of the two that
+    // changed.
     //
     // A card with no notes draws no block at all: adding its first note is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is
     // open is the card's, handed in, since the card's action and this block's own add control both
     // open it.
     //
-    // Two views draw it, as they draw views/shared/forms/Subtasks.svelte:
+    // Two views draw it, as they draw views/shared/forms/dated/Subtasks.svelte:
     // views/shared/card/project/ProjectCard.svelte with the `{ id }` of one manifest, and
     // views/shared/forms/entry/card/EntryCard.svelte with the `{ id, collection }` of one entry.
     //
@@ -29,8 +30,14 @@
     import LineForm from './LineForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type { FollowupAction, SubtaskTarget } from '$lib/state/client/writes.svelte';
-    import type { Followup } from '$lib/data/model';
+    import type {
+        FollowupAction,
+        SubtaskTarget,
+        WriteAnswer
+    } from '$lib/state/client/writes.svelte';
+    import { answerWords } from '../answer-words';
+    import ListHead from './ListHead.svelte';
+    import type { Followup } from '$lib/state/boards/collection';
     import { useState } from '$lib/state/client/use';
     import { daysUntil } from '$lib/state/boards/board';
 
@@ -71,12 +78,8 @@
     /** The key of the note being edited; null while no note is. */
     let editing = $state<string | null>(null);
 
-    function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+    function said(answer: WriteAnswer): void {
+        onsaid(answerWords(answer));
     }
 
     /**
@@ -106,28 +109,17 @@
 
 {#if notes.length > 0 || adding}
     <div class="followups">
-        {#if notes.length > 0}
-            <div class="hdr">
-                <span class="label">{t('project.action.followups')}</span>
-                <ToolButton
-                    small
-                    label={t('project.action.add_followup')}
-                    title={why(t('project.action.add_followup_tip'))}
-                    disabled={blocked !== ''}
-                    active={adding}
-                    onclick={() => onadding(!adding)}
-                />
-            </div>
-        {/if}
-
-        {#if adding}
-            <LineForm
-                dateLabel={t('project.action.followup_after')}
-                {blocked}
-                onsave={add}
-                oncancel={() => onadding(false)}
-            />
-        {/if}
+        <ListHead
+            shown={notes.length > 0}
+            label={t('project.action.followups')}
+            addLabel={t('project.action.add_followup')}
+            addTip={t('project.action.add_followup_tip')}
+            dateLabel={t('project.action.followup_after')}
+            {blocked}
+            {adding}
+            {onadding}
+            onadd={add}
+        />
 
         {#each notes as note (note.key)}
             {#if editing === note.key}
@@ -136,7 +128,7 @@
                     date={note.after}
                     dateLabel={t('project.action.followup_after')}
                     {blocked}
-                    onsave={(text, after) => save(note, text, after)}
+                    onsave={(text: string, after: string) => save(note, text, after)}
                     oncancel={() => (editing = null)}
                 />
             {:else}
@@ -179,7 +171,6 @@
         gap: 4px;
     }
 
-    .hdr,
     .line,
     .acts {
         display: flex;
@@ -188,9 +179,7 @@
         gap: 6px;
     }
 
-    /* A header and a line are one row of the tree's height; a line that wraps grows by whole
-       lines. */
-    .hdr,
+    /* A line is one row of the tree's height; a line that wraps grows by whole lines. */
     .line {
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
@@ -215,14 +204,6 @@
     .acts {
         opacity: var(--row-reveal);
         transition: opacity 120ms ease-out;
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
     }
 
     .mark {

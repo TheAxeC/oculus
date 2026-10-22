@@ -35,6 +35,7 @@ import {
     type Unplaced
 } from './focus-lanes.ts';
 import {
+    closesDeadline,
     deadlineMet,
     entriesOf,
     focusLabel,
@@ -42,7 +43,6 @@ import {
     settled,
     snoozed,
     statusFlag,
-    terminal,
     unplaced,
     venueLabel,
     type Tally
@@ -218,7 +218,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const grant = categoryOf(sources, FUNDING);
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (grant === undefined || terminal(config, status) || deadlineMet(config, status)) {
+        if (grant === undefined || closesDeadline(config, status) || deadlineMet(config, status)) {
             continue;
         }
         const days = daysUntil(isoOf(scheme.deadline), now);
@@ -246,7 +246,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const statuses = collectionStatuses(collections[key]);
         for (const entry of entriesOf(collections, key)) {
             const status = str(entry.fields.status);
-            if (terminal(config, status) || deadlineMet(config, status)) continue;
+            if (closesDeadline(config, status) || deadlineMet(config, status)) continue;
             const days = daysUntil(entryDate(entry), now);
             // An undated entry of a source marked `undated` (the tasks file) is open work rather
             // than a date, so it is a task line; an undated entry of any other file names no
@@ -348,7 +348,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
+        if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+            continue;
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
                 days,
@@ -366,7 +367,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
-            if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
+            if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+                continue;
             const held = entryFollowups(entry);
             for (const { note, days } of dueFollowups(held, now)) {
                 notes.push({
@@ -403,7 +405,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
+        if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+            continue;
         for (const line of subtaskLines(
             scheme.subtasks,
             scheme.title,
@@ -424,7 +427,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
-            if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
+            if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+                continue;
             for (const line of subtaskLines(
                 subtasksOf(entry.fields.subtasks),
                 entry.title,

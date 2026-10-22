@@ -57,12 +57,7 @@
 </script>
 
 {#each fields as field (field.field)}
-    <Field
-        label={field.label}
-        help={field.help}
-        note={notesOf(field)}
-        dirty={changed(field.field)}
-    >
+    <Field label={field.label} help={field.help} note={notesOf(field)} dirty={changed(field.field)}>
         <FieldControl
             {field}
             value={valueOf(field)}

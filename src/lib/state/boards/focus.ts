@@ -73,9 +73,9 @@ export function statusFlag(config: Record<string, unknown>, status: string, flag
     return wordFlag(config, 'statuses', status, flag);
 }
 
-/** Whether a status takes its entry off the deadline radar. */
-export function terminal(config: Record<string, unknown>, status: string): boolean {
-    return statusFlag(config, status, 'terminal');
+/** Whether a status carries `closes_deadline`, which takes its entry off the deadline radar. */
+export function closesDeadline(config: Record<string, unknown>, status: string): boolean {
+    return statusFlag(config, status, 'closes_deadline');
 }
 
 /**
@@ -107,9 +107,9 @@ export function deadlineMet(config: Record<string, unknown>, status: string): bo
 
 /**
  * Whether a project's own deadline has stopped being yours to act on: a chip whose word of
- * `statuses` carries `deadline_met` (which is what `submitted` and `under-review` carry). A
- * terminal chip alone does not end it. Reading the flag is what keeps the rule in
- * config/catalogs/vocab.yml rather than in a list of chip names here.
+ * `statuses` carries `deadline_met` (which is what `submitted` and `under-review` carry). A chip
+ * whose word carries `closes_deadline` alone does not end it. Reading the flag is what keeps the
+ * rule in config/catalogs/vocab.yml rather than in a list of chip names here.
  */
 export function settled(project: Project, config: Record<string, unknown>): boolean {
     return project.chips.some((chip) => deadlineMet(config, chip));

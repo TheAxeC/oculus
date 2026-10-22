@@ -1,6 +1,7 @@
 // Layer 2, client state, pure. The hub file a write over /api/write changes, named from the write's
 // own arguments and the configuration the page reads, so the write path can refuse a write over a
-// file a source tab holds unsaved text of before the write is sent.
+// file a source tab holds unsaved text of before the write is sent, with the refusal it is answered
+// with (`unsavedAnswer`).
 //
 // A write that creates its file (a new idea, a LinkedIn idea, a picture on the Memories wall, a
 // deck made in a folder) names none, since no tab can hold unsaved text of a file not yet written,
@@ -17,6 +18,8 @@ import { HUB_FILE, MANIFEST, ROOT_FOLDER, hubFileOf } from '../../../data/helper
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
+import type { WriteAnswer } from '../../shared/stores/shapes.ts';
+import { t } from '../../shared/words/text.ts';
 
 /** The lookups the page makes of its own stores to name a file a write carries only an id of. */
 export type FileLookups = {
@@ -233,4 +236,31 @@ export function writtenFile(
 export function depositedFile(action: string, id: string, look: FileLookups): ViewSource | null {
     if (action !== 'push') return null;
     return look.projectManifest(id);
+}
+
+/** The code of the refusal a write over a file with unsaved text in a tab is answered with. */
+const FILE_UNSAVED = 'file_unsaved';
+
+/** The code of the refusal a write is answered with while it cannot be told if a tab holds it. */
+const FOLDERS_LOADING = 'folders_loading';
+
+/**
+ * The refusal of a write over `file` while a source tab holds unsaved text of it, or while it
+ * cannot be told yet whether one does; null when the write goes out, a write that names no file
+ * among them. The sentence names the file.
+ */
+export function unsavedAnswer(
+    file: { root: string; path: string } | null,
+    look: Readonly<FileLookups>,
+    heldUnsaved: (file: { root: string; path: string }) => boolean
+): WriteAnswer | null {
+    if (file === null) return null;
+    const name = file.path.slice(file.path.lastIndexOf('/') + 1);
+    if (look.unsavedUnknown(file)) {
+        const error = t('app.folders_loading', name);
+        return { ok: false, changed: [], refused: [], error, code: FOLDERS_LOADING };
+    }
+    if (!heldUnsaved(file)) return null;
+    const error = t('app.file_unsaved', name);
+    return { ok: false, changed: [], refused: [], error, code: FILE_UNSAVED };
 }

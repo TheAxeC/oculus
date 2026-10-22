@@ -183,6 +183,7 @@ describe("an app's colour theme from a window's first paint", () => {
         { row: 'app_theme names it and theme is empty', option: 'app_theme' }
     ])(
         "carries an approved app's theme file, draws it at once and fills a window with it when $row",
+        { tags: ['slow'] },
         async ({ option }) => {
             const fixture = plantDusk();
             const choice = duskChoice(fixture);
@@ -251,7 +252,7 @@ describe("an app's colour theme from a window's first paint", () => {
             },
             closed: false
         }
-    ])('gives the start of the rows for $row', ({ held, closed }) => {
+    ])('gives the start of the rows for $row', { tags: ['slow'] }, ({ held, closed }) => {
         const fixture = plantDusk();
         const choice = duskChoice(fixture);
         const apps = held(fixture);

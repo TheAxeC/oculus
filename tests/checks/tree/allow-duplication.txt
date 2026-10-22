@@ -15,8 +15,6 @@ src/lib/data/sources/config/merge/merge.ts src/lib/server/transcripts/stores.ts 
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/machine/hpc/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts cb7b0e6155d3 the same 12 lines at 132 and 58, to fold into one place
-src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/Subtasks.svelte 2f5da5c5461b the same 13 lines at 123 and 58, to fold into one place
-src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/entry/card/EntryCard.svelte f494adcc1949 the same 10 lines at 127 and 206, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
 tests/routes/edit/write-fixture.ts tests/routes/git/deposit.test.ts 01fefb490553 the same 14 lines at 143 and 52, to fold into one place
 tests/routes/files/fs.test.ts tests/server/files/fs.test.ts 9fcd8308df69 the same 19 lines at 35 and 61, to fold into one place

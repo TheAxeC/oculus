@@ -241,6 +241,10 @@
        notification centre, toasts and confirm are drawn on the document body through bits-ui's
        `Portal` instead of inside the surface their control sits on. */
     --wall-panel: 100%;
+    /* The editor's and the terminal's share of their surface colour over a picture, solid until the
+       wallpaper sets them (ui/theme/theme.ts). */
+    --wall-editor: 100%;
+    --wall-terminal: 100%;
     /* The box of an icon in a tree row: a file's Seti icon, the status letter's decoration box and
        the glyph of a row's icon control, at the text's own size. */
     --icon-box: 16px;

@@ -9,24 +9,24 @@
     // whose folder is a repository also has its project commands, drawn below the chips by the
     // commands bar the Repositories view uses (views/shared/sessions/CommandBar.svelte): five
     // buttons, an overflow menu for the rest, the control that adds a command and the mark of a
-    // file that was not read. The card's ELI5 is views/shared/card/Clamp.svelte wherever the caller
-    // keeps an open state for it; its subtasks block is drawn only for a project that has subtasks,
-    // and its follow-up block only for one that has follow-up notes, adding the first of each being
-    // one of the controls. The card is a positioned box whose content may
-    // reach past its edge, so the More menu of its controls is not cut off at the foot of a short
-    // card.
+    // file that was not read. The card's ELI5 and next action are drawn by CardBrief.svelte; its
+    // subtasks block is drawn only for a project that has subtasks, and its follow-up block only
+    // for one that has follow-up notes, adding the first of each being one of the controls. The
+    // card is a positioned box whose content may reach past its edge, so the More menu of its
+    // controls is not cut off at the foot of a short card.
     //
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
     // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included. A web address written in the ELI5 or the next action
-    // is a link (ui/display/text/LinkedText.svelte); the folder, the venue and the authors are
-    // names and stay words.
+    // project read from a repository included. The folder, the venue and the authors are names and
+    // stay words.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import CardActions, { type CardAction } from '../CardActions.svelte';
+    import CardBrief from './CardBrief.svelte';
+    import { answerWords } from '../../forms/answer-words';
     import CardDetails from './CardDetails.svelte';
     import RootChip from '../RootChip.svelte';
     import CardAddresses from './CardAddresses.svelte';
@@ -34,20 +34,11 @@
     import CardSessions from './CardSessions.svelte';
     import CardStatus from './CardStatus.svelte';
     import CommandBar from '../../sessions/CommandBar.svelte';
-    import CodeText from '$lib/ui/display/text/CodeText.svelte';
-    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import Clamp from '../Clamp.svelte';
-    import Followups from '../../forms/Followups.svelte';
-    import Subtasks from '../../forms/Subtasks.svelte';
+    import Followups from '../../forms/dated/Followups.svelte';
+    import Subtasks from '../../forms/dated/Subtasks.svelte';
     import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
     import { placeOf } from '$lib/state/shared/page/hubs';
-    import {
-        firstSentence,
-        isStale,
-        newestDocDate,
-        waitingLine,
-        type BoardItem
-    } from '$lib/state/boards/board';
+    import { isStale, newestDocDate, waitingLine, type BoardItem } from '$lib/state/boards/board';
     import { contextText } from '$lib/state/boards/project-context';
     import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
@@ -113,8 +104,6 @@
         more = false,
         onmore
     }: Props = $props();
-    /** The most characters of the next action shown on a collapsed card. */
-    const CARD_NEXT = 130;
     let copied = $state(false);
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
@@ -301,12 +290,7 @@
     }
     /** Toggle the manifest's pinned state and report the write outcome. */
     async function pin(): Promise<void> {
-        const answer = await writeManifest(item.id, { pin: item.project.pin !== true });
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+        onsaid(answerWords(await writeManifest(item.id, { pin: item.project.pin !== true })));
     }
     /** Open the project. */
     function openTitle(): void {
@@ -412,23 +396,7 @@
         {/if}
         <CardLinks {item} />
         <CardSessions {item} />
-        {#if item.project.eli5}
-            <div class="eli5">
-                <span class="label">{t('project.card.eli5')}</span>
-                {#if onmore === undefined}
-                    <p><LinkedText text={item.project.eli5} /></p>
-                {:else}
-                    <Clamp open={more} ontoggle={onmore}>
-                        <LinkedText text={item.project.eli5} />
-                    </Clamp>
-                {/if}
-            </div>
-        {/if}
-        {#if item.project.next}
-            <p class="next">
-                <CodeText text={firstSentence(item.project.next, CARD_NEXT)} linked />
-            </p>
-        {/if}
+        <CardBrief project={item.project} {more} {onmore} />
         <CardAddresses {item} />
         {#if open}
             <CardDetails {item} {onsaid} {documents} />
@@ -507,28 +475,10 @@
         margin-top: 6px;
     }
 
-    .eli5 {
-        margin-top: 8px;
-    }
-
-    .eli5 p,
-    .eli5 :global(.clamp) {
-        margin: 2px 0 0;
-        font-size: var(--fs-md);
-    }
-
-    .next,
-    .waiting {
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .next {
-        margin: 2px 0 0;
-    }
-
     .waiting {
         margin: 3px 0 0;
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
     }
 
     .waiting.blocked {
@@ -537,13 +487,5 @@
 
     .waiting.review {
         color: var(--c-violet-txt);
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
     }
 </style>

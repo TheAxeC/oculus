@@ -14,7 +14,6 @@ import { z } from 'zod';
 import { compact } from './compact.ts';
 import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
-import { followups, subtasks } from './normalise-parts/plans.ts';
 import { docFlags } from './normalise-parts/folder.ts';
 import { retrievalOf } from './normalise-parts/retrieval.ts';
 import { indexing } from './indexing.ts';
@@ -51,7 +50,14 @@ import type {
 import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 import { tierOf } from '../helpers/hub-names.ts';
-import { mapShape, readOr, rowsShape, stringItemsShape } from '../shapes/shapes.ts';
+import {
+    followups,
+    mapShape,
+    readOr,
+    rowsShape,
+    stringItemsShape,
+    subtasks
+} from '../shapes/shapes.ts';
 
 /**
  * Registry-backed collection keys. Normalise carries these both as entities and collections so

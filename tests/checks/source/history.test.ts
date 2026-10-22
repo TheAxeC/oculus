@@ -18,7 +18,9 @@ import { treeFiles } from '../walk.ts';
 
 const ROOTS = ['src', 'tests', 'utils', 'config'];
 
-/** The document at the root, read whole: every line is prose a reader takes as the tool's present. */
+/**
+ * The document at the root, read whole: every line is prose a reader takes as the tool's present.
+ */
 const DOCS = ['README.md'];
 
 /** The folder holding the Apps guide and any other Markdown document, each read whole as well. */

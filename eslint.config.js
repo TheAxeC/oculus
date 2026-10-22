@@ -18,10 +18,13 @@ import svelteParser from 'svelte-eslint-parser';
 import ts from 'typescript-eslint';
 
 export default ts.config(
-    // Generated output, dependencies, and the one root file that is build configuration rather than
-    // application code. The three globs below are the whole of what is linted.
+    // Generated output, dependencies, the worktrees under .agents/ (each a whole checkout with its
+    // own config, which eslint would otherwise lint as part of this one), and the one root file
+    // that is build configuration rather than application code. The three globs below are the whole
+    // of what is linted.
     {
         ignores: [
+            '.agents/**',
             '.svelte-kit/**',
             'build/**',
             '.svelte-kit-app/**',

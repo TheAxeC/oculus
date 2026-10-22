@@ -7,6 +7,10 @@ package-lock.json
 .scratch/
 *.md
 
+# The runner's own permission file: untracked, kept out of git by the user's own ignore rules rather
+# than this repository's .gitignore, and written by the runner, not by hand.
+.claude/settings.local.json
+
 # The configuration is written in two-space YAML with each key beside the comment block that explains
 # it, and a formatter pass would rewrite the indentation and the comment columns of every file listed.
 # meta.yml and icons.yml are formatted. The demo hub the tests copy is data, not source: a formatter

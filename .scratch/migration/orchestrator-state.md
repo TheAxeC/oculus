@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
-- step: O59
-  executor: agent
-  worker: claude:opus
-  session_id: a07b44a7c7ba9e8e9
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: cd00ebb1
-  worktree: .agents/worktrees/migration-O59
-  brief_check: agents/reviews/O59-brief-check.md (a836f5a00ff244775, claude-opus-5-5, 189285 tokens, 66 tool uses, 7 min 13 s)
-  report: agents/reviews/O59-report.md
-  builder_usage: 188321 tokens, 68 tool uses, 10 min 24 s
-  round: 0
-  reviewer_report: agents/reviews/O59-refuter.md (a829b81915b79ee67, claude-opus-5-5, 178609 tokens, 53 tool uses, 6 min 16 s)
-  landing: cherry-picking
 - step: O50
   executor: agent
   worker: claude:opus
@@ -446,6 +432,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O59 landed). O59 is on main with the fixes of main's own red lines, the dev server's watch and eslint's ignore of `.agents/`, every command of `npm run test:landing` passing on main. Open items: none. In flight (4 of 6): O50 (round 1 building), O52 (round 1 built, its run of /refute next), O58 and O62 (refuted, ready for /land); O54 not yet prepared. Next: /spec O54, save O52's round-1 report and /refute it, /land O58 and O62.
 - 2026-10-22 (go given, by agents in parallel). Axel ruled O49 to O63 by agents, Parallel order and Brief check scope, and gave the go. First wave: `/spec` O59, O50, O62, O58, O54 and O52; O39's look and tick at any time. Open items: none. In flight: none yet.
 - 2026-10-22 (go given). Axel ruled O39 closing (the owed desktop look, then the tick and booking) and gave the go for the inline order; O52 is building in the main checkout. Open items: none.
 - 2026-10-22 (discussion, no build). Ruled 219 to 222 (a); O61 widened, O63 booked; queue.md lists O49 to O63 in their order. Open items: none. Nothing starts until Axel ends the discussion; O52 runs first then.

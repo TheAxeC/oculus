@@ -1,9 +1,8 @@
-In flight (5 of 6 slots in use):
-- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: landing; the landing fixes main's own red lines and the dev server's reload on `.agents/worktrees/` (plan.md, O59 Step 0).
-- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208, 226 and 227. State: reported, review next.
-- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: reported, review next.
-- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: reported, review next.
-- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: reported, review next.
+In flight (4 of 6 slots in use):
+- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208, 226 and 227. State: round 1 sent, building.
+- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: refuted, no round; ready for /land.
+- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: refuted, no round; ready for /land.
+- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: round 1 built; its run of /refute next.
 
 Queued, in order (11 steps):
 - O54 (the hubs of a workspace resolve own hub first; every record's internal id is `<hub>:<key>` and never shown or written; Add asks which hub), rulings 203, 236, No hub prefix shown and 231 to 235. Waits: a free slot, after O64.
@@ -22,6 +21,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
 
 Landed, newest first:
+- O59 (the status flag `terminal` renamed `closes_deadline` in the vocabulary, its reader `closesDeadline` and the documents; the type flag keeps `terminal`), ruling 216; with it main's own red lines, the dev server's watch and eslint's ignore of `.agents/` (Step 0). Landed 2026-10-22.
 - O48 (the editor and the terminal each get a transparency setting, `editor.opacity` and `terminal.opacity`, ruling 200 (a)): the source editor, its read-only code window, the Diff view's files and the Merge view take the editor's share, the Terminal view the terminal's; the Settings rows draw an empty number box while the key is left out. Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O39 part D (the README rewritten, `HELP.md` moved to `docs/HELP.md`, `DESIGN.md` deleted with every citation of it, Axel made the user in the text and John Smith in example data, the window title `Oculus`, `convert-decks.mjs` deleted). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
 - O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents; with the Timeline and Bookmarks layout and the editor and terminal margins (ruling 199). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.

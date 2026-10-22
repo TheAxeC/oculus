@@ -32,6 +32,7 @@ import { t } from '../shared/words/text.ts';
 import {
     NO_LOOKUPS,
     depositedFile,
+    unsavedAnswer,
     writtenFile,
     type FileLookups
 } from '../sessions/source/write-files.ts';
@@ -91,12 +92,6 @@ function takenFrom(sent: Record<string, unknown>, answer: WriteAnswer): Record<s
         Object.entries(sent).filter(([name]) => answer.changed.includes(name))
     );
 }
-
-/** The code of the refusal a write over a file with unsaved text in a tab is answered with. */
-const FILE_UNSAVED = 'file_unsaved';
-
-/** The code of the refusal a write is answered with while it cannot be told if a tab holds it. */
-const FOLDERS_LOADING = 'folders_loading';
 
 /**
  * The page's writes. `settings` is the merged configuration as the page last received it, read at
@@ -334,13 +329,7 @@ export function createWrites(
         action: SubtaskAction,
         value?: string
     ): Promise<WriteAnswer> {
-        return send({
-            kind: 'subtask',
-            target,
-            key,
-            action,
-            ...(value === undefined ? {} : { value })
-        });
+        return writeLine('subtask', target, key, action, value);
     }
 
     /**
@@ -364,13 +353,18 @@ export function createWrites(
         action: FollowupAction,
         value?: string
     ): Promise<WriteAnswer> {
-        return send({
-            kind: 'followup',
-            target,
-            key,
-            action,
-            ...(value === undefined ? {} : { value })
-        });
+        return writeLine('followup', target, key, action, value);
+    }
+
+    /** One action on one line of a subtask list or a follow-up list, the two sent alike. */
+    async function writeLine(
+        kind: 'subtask' | 'followup',
+        target: SubtaskTarget,
+        key: string,
+        action: SubtaskAction | FollowupAction,
+        value: string | undefined
+    ): Promise<WriteAnswer> {
+        return send({ kind, target, key, action, ...(value === undefined ? {} : { value }) });
     }
 
     /**
@@ -725,22 +719,8 @@ export function createWrites(
      * goes out. Nothing is posted for it; the file's name is what the sentence says.
      */
     function unsavedRefusal(request: unknown, path: string): Exchange | null {
-        const file = fileOf(request, path);
-        if (file === null) return null;
-        const name = file.path.slice(file.path.lastIndexOf('/') + 1);
-        if (look.unsavedUnknown(file)) {
-            const error = t('app.folders_loading', name);
-            return {
-                answered: true,
-                answer: { ok: false, changed: [], refused: [], error, code: FOLDERS_LOADING }
-            };
-        }
-        if (!heldUnsaved(file)) return null;
-        const error = t('app.file_unsaved', name);
-        return {
-            answered: true,
-            answer: { ok: false, changed: [], refused: [], error, code: FILE_UNSAVED }
-        };
+        const answer = unsavedAnswer(fileOf(request, path), look, heldUnsaved);
+        return answer === null ? null : { answered: true, answer };
     }
 
     /** One write, said to the listeners when it does not land. */

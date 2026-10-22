@@ -37,6 +37,7 @@ import {
 import { oculusViteServer } from './src/lib/server/root/vite-plugin.ts';
 import { openWorkspace } from './src/lib/server/files/workspace/open.ts';
 import { defaultStateFolder } from './src/lib/server/files/workspace/state.ts';
+import { WORKTREES_DIR } from './src/lib/data/helpers/worktrees.ts';
 
 /** The port the primary hub of the open workspace names, the default one without a primary. */
 function devPort(): number {
@@ -409,6 +410,11 @@ async function syncTypesOnce(pending: Promise<Plugin[]>, kitDir: string): Promis
     return plugins.map((plugin) => (plugin === found ? wrapped : plugin));
 }
 
+/** A watch matcher that holds for the folder `dir` and every path inside it. */
+function notWorktree(dir: string): (path: string) => boolean {
+    return (path) => path === dir || path.startsWith(`${dir}/`);
+}
+
 export default defineConfig(({ mode }) => {
     const app = mode === APP_MODE;
     const folders = app ? APP_FOLDERS : PLAIN_FOLDERS;
@@ -447,7 +453,12 @@ export default defineConfig(({ mode }) => {
         server: {
             host: '127.0.0.1',
             port: devPort(),
-            strictPort: true
+            strictPort: true,
+            // A worktree under .agents/worktrees is a whole checkout with its own tsconfig.json and
+            // .svelte-kit folders; a file written or removed there would make the dev server reload
+            // the page or restart. A function matches the path as it is, where a glob string would
+            // read a bracket or a star in the checkout's path as a pattern.
+            watch: { ignored: [notWorktree(resolve(WORKTREES_DIR))] }
         },
         test: {
             // A test tagged slow starts a process, waits on a real timer, opens a socket or takes
