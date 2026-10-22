@@ -48,6 +48,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O64
   brief_check: agents/reviews/O64-brief-check.md (a807f5f7c26db7f22, claude-opus-5-5, 192674 tokens, 55 tool uses, 7 min 16 s)
   report: agents/reviews/O64-report.md
+  builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8)
   round: 0
   landing: not-started
   shared_paths: with O54 and O65: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 115-124 and 160-169): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
