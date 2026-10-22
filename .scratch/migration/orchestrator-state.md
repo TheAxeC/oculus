@@ -63,7 +63,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O39-partE
   brief_check: agents/reviews/O39-partE-brief-check.md (aece82159cd53f676, claude-opus-5-5, 221577 tokens, 71 tool uses, 10 min 19 s)
   report: agents/reviews/O39-partE-report.md
-  builder_usage: round 0 hand-back 252026 tokens, 50 tool uses, 14 min 3 s
+  reviewer_report: running: a6d705f9b51150ea3 (claude-opus-5-5)
+  builder_usage: round 0 hand-back 252026 tokens, 50 tool uses, 14 min 3 s; build after the cases ruling 350578 tokens, 66 tool uses, 17 min 14 s
   cases_ruling: agents/briefs/O39-partE-cases.md (C15 (a), C6 (a), C10 the builder's row)
   round: 0
   landing: not-started
@@ -455,6 +456,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O39 part E built). The builder reported after the cases ruling (`agents/reviews/O39-partE-report.md`, saved from its worktree); the orchestrator read the whole source diff (24 files). The review runs (a6d705f9b51150ea3, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (building), O39 part E (review running).
 - 2026-10-22 (O54 round 1 sent). Repair round 1 of O54 in `agents/briefs/O54-round1.md`: feed entries by their internal id (S1), a 400 for a write that names no hub (B1), the server's answer naming a created record (B2), every changed saved field listed for ruling 238's change at landing (S2), the C11 and C12 probes rerun (P1, P2), the links.ts comment (T1). Snapshot at `.agents/worktrees/migration-O54-round-1` (216 paths). In flight (3 of 6): O54 (round 1), O65 (building), O39 part E (building after its cases ruling).
 - 2026-10-22 (O64 look taken). On TEST on Axel's server: the Inbox and Usage Refresh, the Literature search bar and the Search view's bar seen as O64 says; the Calendar Refresh, Suggest, the running git bar, the folded head and NoticeEntry's progress moved to "Cannot be taken on this hub" with their reasons (`agents/reviews/owed-looks.md`). Defects: none. Seen and not verified: the Inbox's "as of" time unchanged after a Refresh.
 - 2026-10-22 (O39 part E cases ruled). The builder handed back C15, C6 and C10 before changing `src/`; ruled in `agents/briefs/O39-partE-cases.md` (C15 (a), the guard kept and the case rewritten; C6 (a), a fourth input for the CRT overlay; C10, the builder's row with a given finding), the claims read on main (`app-theme.ts:221`, `vscode-map.ts:283-290`, `ui.svelte.ts:298-300`). The builder resumed with the ruling. In flight (3 of 6): O54 (reviewed, repair round 1 next), O65 (building), O39 part E (building after the ruling).
