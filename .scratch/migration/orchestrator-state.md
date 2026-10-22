@@ -48,8 +48,9 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O50
   brief_check: agents/reviews/O50-brief-check.md (a5cae3c5b6723f862, claude-opus-5-5, 257554 tokens, 86 tool uses, 12 min 53 s)
   report: agents/reviews/O50-report.md
-  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build)
-  round: 0
+  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build); round 0 build 199848 tokens, 274 tool uses, 36 min 19 s
+  round: 1
+  reviewer_report: agents/reviews/O50-refuter.md (ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s)
   landing: not-started
   shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
 - step: O62
@@ -64,6 +65,7 @@ dispatch:         # steps in flight, up to six (Z632)
   report: agents/reviews/O62-report.md
   builder_usage: 171924 tokens, 52 tool uses, 12 min 57 s
   round: 0
+  reviewer_report: agents/reviews/O62-refuter.md (acc2eb3d4addcfcb2, claude-opus-5-5, 157328 tokens, 34 tool uses, 15 min 12 s)
   landing: not-started
   shared_paths: config/catalogs/vocab.yml and src/lib/data/shapes/catalog-files/vocab.ts with O59 (O59 writes vocab.yml 76-167 and vocab.ts 42-53, O62 vocab.yml 207-210 and vocab.ts 286-289: disjoint ranges, simple to merge); tests/checks/config/config-folder.test.ts with O58 (O58 lines 194 and 324, O62 line 220: simple to merge)
 - step: O58
@@ -78,6 +80,7 @@ dispatch:         # steps in flight, up to six (Z632)
   report: agents/reviews/O58-report.md
   builder_usage: 136413 tokens, 38 tool uses, 8 min 2 s
   round: 0
+  reviewer_report: agents/reviews/O58-refuter.md (aac7aef6659cb68a7, claude-opus-5-5, 148061 tokens, 41 tool uses, 14 min 18 s)
   landing: not-started
   shared_paths: tests/checks/config/config-folder.test.ts with O62 (O58 lines 194 and 324, O62 line 220: simple to merge); docs/diagrams/ with O59 and O62, regenerated at each landing
 - step: O52
@@ -91,7 +94,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O52-brief-check.md (a95389eccf26b9f17, claude-opus-5-5, 172686 tokens, 43 tool uses, 5 min 59 s)
   report: agents/reviews/O52-report.md
   builder_usage: 197523 tokens, 51 tool uses, 23 min 27 s
-  round: 0
+  round: 1
+  reviewer_report: agents/reviews/O52-refuter.md (aa46c6d7fba77e682, claude-opus-5-5, 180969 tokens, 41 tool uses, 12 min 24 s)
   landing: not-started
   shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 ```

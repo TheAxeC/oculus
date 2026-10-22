@@ -1,12 +1,11 @@
 In flight (5 of 6 slots in use):
-- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: landing; the landing checks are red, being compared with a run on unchanged main.
+- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: landing; the landing fixes main's own red lines and the dev server's reload on `.agents/worktrees/` (plan.md, O59 Step 0).
 - O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208, 226 and 227. State: reported, review next.
 - O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: reported, review next.
 - O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: reported, review next.
 - O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: reported, review next.
 
-Queued, in order (12 steps):
-- O64 (the development server ignores the worktrees under `.agents/`, so a build in a worktree no longer reloads Axel's `npm run dev`), a defect. Waits: the next free slot, first.
+Queued, in order (11 steps):
 - O54 (the hubs of a workspace resolve own hub first; every record's internal id is `<hub>:<key>` and never shown or written; Add asks which hub), rulings 203, 236, No hub prefix shown and 231 to 235. Waits: a free slot, after O64.
 - O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
 - O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
@@ -15,7 +14,7 @@ Queued, in order (12 steps):
 - O56 (a new project, a new entry and Save to Literature ask which hub when more than one could take it), ruling 210. Waits: after O54.
 - O51 (a per-pane Hide Tab Row; the hidden row shows while the pointer is at the pane's top edge), ruling Headerless panes. Waits: after O49.
 - O55 (the project boards by kind, role and state: three tiers, `roles:`, the `type:` and `status:` blocks, `hub:` and `match:`, a project on every board it meets, the six shipped boards, Projects and Archive from the type's state, a project no board takes a finding, collections with `lead:`, `collaborators:` and `supervisors:`), rulings 206, 207, 211, 213, 215, 217; after O50, O53 and O61. Waits: after O53, O56 and O61.
-- O60 (each part of `config/` overridden where ruling 214 puts it: the vocabulary lists and `roles:` in the hub list, added project-form fields, the workspace's catalogs and interface words), ruling 214; after O55 and O61. Waits: after O55, with O63.
+- O60 (each part of `config/` overridden where ruling 214 puts it: the vocabulary lists and `roles:` in the hub list, added project-form fields, the workspace's catalogs and interface words), ruling 214; after O55 and O61; its /spec raises an open item on multi-language support (plan.md, O60 Step 0). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings, off unless set; the author-chip check removed), ruling 220; after O55 and O61. Waits: after O55, with O60.
 - O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C done (row i on ruling 195, row j closed by ruling 196); part D landed; left: the owed desktop look of part A, then the tick and the closing booking (ruling O39 closing). Waits: at any time, in no slot.
 
