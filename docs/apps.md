@@ -84,7 +84,7 @@ The write changes the project's `project.yml`, and History undoes it. Take `subt
 - The page runs in a sandboxed frame with no cookies, no storage, no popups and no access to the rest of oculus. It talks to oculus only through the bridge, `/apps/-/oculus.js`.
 - A machine app lives in the primary hub's `.oculus/apps/` and may read every channel open to apps. A root app lives in `.oculus/apps/` of another folder of the workspace, travels with that repository, reads files only from its own folder, and gets fewer channels.
 - An app with a `host` also runs a program on this machine (The host), which reaches the languages, debuggers, tasks, terminals, source control and file decorations of oculus (The tools).
-- Open an app from the Apps rail button, the Views catalogue, or `a` and its digit.
+- Open an app from the Apps rail button, the Views catalogue, Open View (the strip's right-click menu, under Apps), or `a` and its digit.
 
 ## Where the files go
 
@@ -260,7 +260,7 @@ A host calls `oculus.window.createStatusBarItem(id, alignment, priority)`; a pag
 
 ### Views
 
-- A view is listed in the Views catalogue under Apps. The first time, an `activitybar` view docks on the left, a `panel` view at the bottom, an `explorer` view beside Files.
+- A view is listed in the Views catalogue under Apps, and in Open View (the strip's right-click menu) under Apps with its container's title as its hover words. The first time, an `activitybar` view docks on the left, a `panel` view at the bottom, an `explorer` view beside Files.
 - `type: webview` draws the view's `entry` page, with the bridge.
 - `type: tree` gets its rows from the host: `oculus.window.registerTreeDataProvider(viewId, provider)` or `createTreeView`, answering VS Code's TreeItem. A press runs the row's `command`.
 - A panel is `oculus.window.createWebviewPanel(viewType, title, { entry })` from a host, or `createPanel(viewType, title, { entry })` from a page: a tab drawing that page of the app.

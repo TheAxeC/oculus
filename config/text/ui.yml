@@ -79,6 +79,7 @@ text:
         strip_new_terminal: New Terminal
         strip_new_text_file: New Text File
         strip_open_file: Open File...
+        strip_open_view: Open View
         strip_split_down: Split Down
         strip_split_left: Split Left
         strip_split_right: Split Right

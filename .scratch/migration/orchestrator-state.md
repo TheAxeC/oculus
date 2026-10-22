@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
-- step: O49
-  executor: agent
-  worker: claude:opus
-  session_id: a33eecffdfbceb611
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 374eeaa2
-  worktree: .agents/worktrees/migration-O49
-  brief_check: agents/reviews/O49-brief-check.md (ab729638069c01a99, claude-opus-5-5, 215648 tokens, 83 tool uses, 9 min 38 s)
-  report: agents/reviews/O49-report.md
-  builder_usage: 172788 tokens, 44 tool uses, 5 min 13 s (hand-back of C13 before the build); round 0 build 235300 tokens, 69 tool uses, 8 min 31 s; round 1 270708 tokens, 20 tool uses, 2 min 59 s
-  round: 1
-  reviewer_report: agents/reviews/O49-refuter.md (af0803206f26587d0, claude-opus-5-5, 183702 tokens, 57 tool uses, 8 min 48 s); over round 1: a06d0d28ac2eac6e4, claude-opus-5-5, 177883 tokens, 41 tool uses, 4 min 52 s
-  landing: not-started
-  shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 65 and 76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
 - step: O57
   executor: agent
   worker: claude:opus
@@ -51,6 +36,7 @@ dispatch:         # steps in flight, up to six (Z632)
   report: agents/reviews/O57-report.md
   builder_usage: 285702 tokens, 97 tool uses, 24 min 54 s
   round: 0
+  reviewer_report: agents/reviews/O57-refuter.md (a46362af9cc54a265, claude-opus-5-5, 237825 tokens, 55 tool uses, 11 min 55 s)
   landing: not-started
   shared_paths: with O50: config/defaults/sources.yml (O50 lines 5, 28 and after 72, O57 after 46), config/options/sources.yml (O50 after 111, O57 after 58), chat.ts (O50 lines 29-30, O57 lines 1-3, 16-18, 42-46, 100-125), config-folder.test.ts (O50 after 208, O57 after 197), docs/data-map.md (O50 line 158, O57 lines 78-98), docs/templates.md (O50 after 294 and 843-866, O57 after 84), docs/HELP.md (O50 after 300, O57 line 103); with O49: docs/HELP.md (O49 lines 65 and 76): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O54
@@ -422,6 +408,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O49 landed). O49 is on main, landed in the gate worktree; fix at landing: round 1 R1, the Float phrase of `docs/HELP.md:76`. Open items: 243, 244. In flight (2 of 6): O57 (reviewed, findings to close), O54 (/spec, premise checks). Next: close O57's review findings and /land O57; /spec O51 (unblocked by O49); O54's brief; O53 after O57.
 - 2026-10-22 (O50 landed). O50 is on main, landed in the gate worktree; fixes at landing: the layer-4 head comment's reason in `references.test.ts`, `watchedOnce` shared by the two watcher harnesses, G66, G67 and G119 naming the new tests, and `ownPeople` keying labels until none collide. The hub's line moved once (`settings.self: axel-faes` in `.oculus/workspaces/research-hub.yml`, no `self` left in `.oculus/data/people/people.yml`), on disk and not committed: the runner's permission check refused the hub commit. Open items: none. In flight (2 of 6): O49 (ready for /land), O57 (building). Next: /spec O54, O61 and O53; /land O49.
 - 2026-10-22 (O52 landed). O52 is on main, landed in the gate worktree (rulings 240 (a) and 241 (b)); fixes at landing: the folded career box's padding, and ruling 240 (a)'s related-only `tests/tiers/quick.mjs` with `essential.txt` deleted. Open items: none. In flight (3 of 6): O50, O49 (ready for /land), O57 (building). Next: /land O50, then /spec O54, O61 and O53; /land O49.
 - 2026-10-22 (rulings 240 to 242, O57 building). Axel ruled 240 (a), 241 (b) and 242 (a); G120 added to `agents/guarded.md`; O57 prepared from base 8c53e525 and its builder launched. O49's review over round 1 found one phrase (R1), fixed at landing. Open items: none. In flight (4 of 6): O50, O52, O49 (each ready for /land), O57 (building). Next: /land O52 in the gate worktree with ruling 240 (a)'s change to `tests/tiers/quick.mjs`, then /land O50 and /land O49; after O50, /spec O54, O61 and O53.

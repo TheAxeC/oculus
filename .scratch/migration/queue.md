@@ -1,13 +1,12 @@
-In flight (3 of 6 slots in use):
-- O49 (an Open View submenu in the tab strip's menus). State: refuted over round 1; landing next, R1 fixed at landing.
-- O57 (the portfolio chat's index over every hub). State: built; review running.
+In flight (2 of 6 slots in use):
+- O57 (the portfolio chat's index over every hub). State: reviewed; findings being closed, then /land.
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: /spec, premise checks.
 
 Queued, in order (8 steps):
+- O51 (a per-pane Hide Tab Row). Waits: nothing; /spec next.
 - O61 (one home for each vocabulary word). Waits: Axel's rulings on open items 243 and 244.
-- O53 (a project's `lead:` a list of person keys). Waits: nothing; /spec next.
+- O53 (a project's `lead:` a list of person keys). Waits: O57's landing (both change `chat.ts` lines 100-125 and `config/text/server.yml` line 57); then /spec from Steps 5.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
-- O51 (a per-pane Hide Tab Row). Waits: after O49.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
@@ -17,6 +16,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
+- O49 (an Open View submenu in the tab strip's menus), 2026-10-22.
 - O50 (who the user is: the workspace setting `self`), 2026-10-22.
 - O52 (the Focus board's section headings in one shape), 2026-10-22.
 - O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, b1686091.

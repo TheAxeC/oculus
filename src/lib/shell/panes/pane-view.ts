@@ -1,8 +1,9 @@
 // Layer 3, shell. The pane menu's page items, apart from the component so the numbering they draw,
 // the pages they offer and the two choices they are gathered under can be read by a test; and the
 // right-click menu of a pane's strip and of an empty pane's body, VS Code's editor group menu, with
-// what each of its picks runs; and the path and tab helpers a pane reads (`isPaneDrop`,
-// `shownTabPath`, `openLabels`).
+// what each of its picks runs, but for the Open View item, which it is handed and places, and whose
+// submenu and picks are strip/open-view.svelte.ts's; and the path and tab helpers a pane reads
+// (`isPaneDrop`, `shownTabPath`, `openLabels`).
 
 import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
@@ -294,17 +295,18 @@ export function floatMenu(
 }
 
 /**
- * The strip's menu, in VS Code's groups: Open File... (the palette, as Cmd+K opens it) and New Text
- * File; the four splits of the active tab and Float, while the pane of a page holds a tab; Lock
- * Group or Unlock Group, on the pane of a page or of a float; the Tab Bar and Editor Actions
- * Position submenus, each marking the setting in force with a check, the first place named Tab
- * Bar, or Title Bar while the tab bar is not drawn, when the window's title bar strip draws the
- * actions (shell/titlebar/); Close, while the page holds more than one pane; and New Terminal. The
- * pane of a float (`float`, its place) has the float's items in place of the splits and always
- * offers Close, which closes the float. With the editor actions hidden the pane menu's `...` button
- * is not drawn, so the menu also holds the pane menu's items that it has none of its own for
- * (`paneItems`, the pane menu as the pane draws it), and Close is always offered, as the pane menu
- * offers it.
+ * The strip's menu, in VS Code's groups: Open File... (the palette, as Cmd+K opens it), New Text
+ * File and Open View (`openView`, the item strip/open-view.svelte.ts builds, whose submenu lists
+ * the views by rail page), on every pane; the four splits of the active tab and Float, while the
+ * pane of a page holds a tab; Lock Group or Unlock Group, on the pane of a page or of a float; the
+ * Tab Bar and Editor Actions Position submenus, each marking the setting in force with a check, the
+ * first place named Tab Bar, or Title Bar while the tab bar is not drawn, when the window's title
+ * bar strip draws the actions (shell/titlebar/); Close, while the page holds more than one pane;
+ * and New Terminal. The pane of a float (`float`, its place) has the float's items in place of the
+ * splits and always offers Close, which closes the float. With the editor actions hidden the pane
+ * menu's `...` button is not drawn, so the menu also holds the pane menu's items that it has none
+ * of its own for (`paneItems`, the pane menu as the pane draws it), and Close is always offered, as
+ * the pane menu offers it.
  */
 export function stripMenu(
     facts: {
@@ -317,6 +319,8 @@ export function stripMenu(
         paneItems?: readonly Item[];
         /** Whether the page is in the desktop app, which offers the moves into a new window. */
         windows?: boolean;
+        /** The Open View item with its submenu, placed after New Text File. */
+        openView: Item;
     },
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
@@ -342,7 +346,8 @@ export function stripMenu(
     return grouped([
         [
             { id: STRIP_OPEN_FILE, label: t('ui.strip_open_file') },
-            { id: STRIP_NEW_TEXT_FILE, label: t('ui.strip_new_text_file') }
+            { id: STRIP_NEW_TEXT_FILE, label: t('ui.strip_new_text_file') },
+            facts.openView
         ],
         facts.float !== undefined
             ? floatItems(facts.float, t, facts.windows === true)

@@ -41,11 +41,13 @@
     // draws them at the right end of the breadcrumb bar, beside the breadcrumb of that tab's path.
     //
     // A right-click on the strip's empty area or in an empty pane's body opens VS Code's editor
-    // group menu (pane-view.ts's stripMenu): Open File..., New Text File, the four splits of the
-    // active tab, Lock Group, the Tab Bar and Editor Actions Position submenus (which write the two
-    // settings), Close through the pane menu's own close and its question, and New Terminal. With
-    // editor_actions hidden it also holds the pane menu's other items (Maximise or Restore, Fold,
-    // the page choices), and Close is always offered, so nothing needs the `...` button.
+    // group menu (pane-view.ts's stripMenu): Open File..., New Text File, Open View (the views by
+    // rail page, strip/open-view.svelte.ts: a view a page or float holds is shown where it is held,
+    // and any other view opens in this pane), the four splits of the active tab, Lock Group, the
+    // Tab Bar and Editor Actions Position submenus (which write the two settings), Close through
+    // the pane menu's own close and its question, and New Terminal. With editor_actions hidden it
+    // also holds the pane menu's other items (Maximise or Restore, Fold, the page choices), and
+    // Close is always offered, so nothing needs the `...` button.
 
     import {
         EMBED,
@@ -61,6 +63,7 @@
         stripPicked
     } from '$lib/shell/panes/pane-view';
     import { createCloseQuestion } from './strip/close-question.svelte';
+    import { createOpenView } from './strip/open-view.svelte';
     import { useFileProblems } from './strip/file-problems';
     import { stripTab } from './strip/strip-tab';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
@@ -251,6 +254,8 @@
         )
     );
 
+    const viewOpener = createOpenView({ client, page: () => page, path: () => path });
+
     /** The strip's and the empty body's right-click menu. */
     const stripItems = $derived<MenuItem[]>(
         stripMenu(
@@ -262,7 +267,8 @@
                 tabBar: showTabs(),
                 actions: editorActions(),
                 paneItems: items,
-                windows: client.desktop !== undefined
+                windows: client.desktop !== undefined,
+                openView: viewOpener.item()
             },
             t
         )
@@ -271,6 +277,7 @@
     const openText = newTextFileOpener(openInPane, () => openLabels(pages(), layout));
 
     function stripPick(id: string): void {
+        if (viewOpener.picked(id)) return;
         if (isPaneItem(id)) {
             pick(id);
             return;

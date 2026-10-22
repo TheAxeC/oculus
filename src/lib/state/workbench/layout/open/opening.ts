@@ -89,6 +89,13 @@ export type Opening = {
      * changes nothing.
      */
     heldInstance: (view: ViewId, id?: string) => string | null;
+    /**
+     * The page or float holding the instance of a unique view that openView would show, or null
+     * when nothing holds one or the view is no unique view. It reads the same order openView
+     * searches, so a caller naming the holder names the one a later openView goes to. It changes
+     * nothing.
+     */
+    heldHost: (view: ViewId) => Host | null;
 };
 
 /** A unique view's instance with the page or float holding it, and whether the screen draws it. */
@@ -401,6 +408,10 @@ export function createOpening(
         return unique(view) ? (holderOf(view)?.instance.id ?? null) : null;
     }
 
+    function heldHost(view: ViewId): Host | null {
+        return unique(view) ? (holderOf(view)?.host ?? null) : null;
+    }
+
     /**
      * Show the leaf at `path` of a page: a maximised pane that does not hold it is given back and a
      * folded child holding it is expanded, so the page drawn in the leaf is on screen.
@@ -486,5 +497,5 @@ export function createOpening(
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
     }
 
-    return { openView, openBeside, openInPane, heldInstance };
+    return { openView, openBeside, openInPane, heldInstance, heldHost };
 }

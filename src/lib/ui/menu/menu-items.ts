@@ -21,7 +21,10 @@ export type MenuItem = {
     label: string;
     /** The item's hover words, when they say more than its label. */
     title?: string;
-    /** The keys that run the choice, drawn muted at its end, as VS Code's menus write them. */
+    /**
+     * Words drawn muted at the choice's end: the keys that run it, as VS Code's menus write them,
+     * or, for a view held elsewhere, where it is held.
+     */
     hint?: string;
     active?: boolean;
     /**

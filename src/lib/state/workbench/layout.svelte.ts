@@ -213,6 +213,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         moveAway: Away['moveAway'];
         /** The id of the instance of a view that a page or float holds (see Opening), else null. */
         heldInstance: Opening['heldInstance'];
+        /** The page or float holding a unique view that openView would show (see Opening). */
+        heldHost: Opening['heldHost'];
         paneHolds: Away['paneHolds'];
         /**
          * Say which views are opened for something, which the registry knows and this store does
@@ -825,6 +827,7 @@ export function createLayout(
         openNextTo: away.openNextTo,
         moveAway: away.moveAway,
         heldInstance: opening.heldInstance,
+        heldHost: opening.heldHost,
         paneHolds: away.paneHolds,
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,
