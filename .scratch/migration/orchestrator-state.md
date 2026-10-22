@@ -34,12 +34,15 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O57
   brief_check: agents/reviews/O57-brief-check.md (ab90eaaac353fc610, claude-opus-5-5, 229799 tokens, 84 tool uses, 9 min 57 s)
   report: agents/reviews/O57-report.md
-  builder_usage: 285702 tokens, 97 tool uses, 24 min 54 s
+  builder_usage: 285702 tokens, 97 tool uses, 24 min 54 s; round 1 315597 tokens, 24 tool uses, 6 min 3 s
   round: 1
   reviewer_report: agents/reviews/O57-refuter.md (a46362af9cc54a265, claude-opus-5-5, 237825 tokens, 55 tool uses, 11 min 55 s)
   landing: not-started
   shared_paths: with O50: config/defaults/sources.yml (O50 lines 5, 28 and after 72, O57 after 46), config/options/sources.yml (O50 after 111, O57 after 58), chat.ts (O50 lines 29-30, O57 lines 1-3, 16-18, 42-46, 100-125), config-folder.test.ts (O50 after 208, O57 after 197), docs/data-map.md (O50 line 158, O57 lines 78-98), docs/templates.md (O50 after 294 and 843-866, O57 after 84), docs/HELP.md (O50 after 300, O57 line 103); with O49: docs/HELP.md (O49 lines 65 and 76): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O54
+  landing: preparing
+- step: O51
+  brief_check: "running: a760fccefd58a7066"
   landing: preparing
 ```
 

@@ -225,3 +225,102 @@ None. G120's Test line names the title the case carries: `it.each(INDEX_ROWS)('w
 
 - Item 2 says `chatContext` in `files.ts` reads the list "with `collectionFiles`". Doing so would import a server-only module (`collections.ts:2`) into a file the page imports (`selectors.svelte.ts:39`). What was built instead is judgment call 1.
 - Nothing else. The premises checked on the tree held: the `context.ts` and `chat.ts` line numbers, `allHubs`' folders already expanded (`open.ts:239-241`, built from `WorkspaceFolder.dir`, documented as "The path with a leading `~` expanded" at `folders.ts:56`), and `READER_FINDINGS` being read only by the primary's config (`grep -rn "sections/findings" src`: `config-checks.ts:33` and `process/context/findings.ts:9`).
+
+## Repair round 1
+
+Every ruling of `agents/briefs/O57-round1.md` is carried out. Files written this round: `src/lib/server/machine/pty/start/context.ts` (101 lines), `tests/routes/sessions/terminal-actions.test.ts` (810), `tests/data/sources/config/settings.test.ts` (863), and this report. `diff -rq` against `migration-O57-base` still lists the same 22 files.
+
+### S1, `chatContext` reads the entry's `from: collections` source
+
+No change. The departure stays as stated in judgment call 1 above.
+
+### P1, the C16 row's own finding assertion
+
+- **Before** (`sed -n 640,650p;745,752p;800,812p` on the round-0 tree): the row type held `unread?: string;` (line 646), the C16 row ended `unread: 'other'` (line 749), and the test ran this block (lines 805-809):
+
+  ```
+  if (row.unread !== undefined) {
+      const hub = world.at(row.unread);
+      const { findings } = world.options.hubSettings(hub);
+      expect(findings.map((one) => one.file)).toContain(join(hub, HUB_FILE));
+  }
+  ```
+
+- **After:**
+  - The field, its value and the block are gone. The `HUB_FILE` import that only the block used is gone too.
+  - The row table's doc comment (`terminal-actions.test.ts:643-645`) no longer names the unreadable hub.
+  - The C16 row keeps its index assertion. `grep -n "HUB_FILE\|unread" tests/routes/sessions/terminal-actions.test.ts` prints nothing.
+- **The build's report of the unreadable settings, checked by reading:** `readOtherHub` (`src/lib/data/index.ts:601-622`) returns `findings: [...findings, ...sourcesFindings(...)]`, where `findings` is that of `loaded`, the hub's `loadConfig` parse. So the settings finding of a hub other than the primary reaches the build.
+
+### St1, the dead de-duplication
+
+- **Before** (`sed -n 50,70p context.ts`): `orderedHubs` built `ordered` and returned `ordered.filter(...)` over a `seen` set.
+- **After:** `orderedHubs` (`context.ts:53-67`, doc comment included) returns the two disjoint filters of `allHubs` directly. The doc comment keeps "each once".
+
+### St2, one test for `chatContext`
+
+- **Before** (`npx vitest run tests/data/sources/config/settings.test.ts -t chatContext --reporter=verbose`): the describe had 11 table rows of 'answers for %s the keys of the collections list it names, or its default and a problem', plus the separate case 'reads a hub whose collections list leaves out tasks, and finds a number written there' (378ms). The run printed `Tests  12 passed | 74 skipped (86)`.
+- **After:** one `it.each` table (`settings.test.ts`, describe 'chatContext').
+  - Each row gives the input, a function answering the map, the value, the problems, and whether `settingProblems` of the map holds `chat_context`.
+  - The two inputs of the removed case are rows on a map `loadConfig` reads from a planted hub:
+    - 'a hub whose list leaves out tasks': the five keys, no problem, `false`.
+    - 'a hub whose list leaves out tasks, writing 3': the five keys, `chat_context: words`, `true`.
+  - The removed case checked `not.toContain` on the first map and `toContain` on the second; both are now the flag column.
+  - The same run printed 13 rows, ending:
+
+    ```
+    answers for a hub whose list leaves out tasks the keys of the collections list it names, or its default and a problem 180ms
+    answers for a hub whose list leaves out tasks, writing 3 the keys of the collections list it names, or its default and a problem 179ms
+          Tests  13 passed | 74 skipped (87)
+    ```
+
+### B1, the head files named by their absolute path
+
+- **`context.ts`:**
+  - `addFile` takes the file's absolute path and its heading line.
+  - `portfolioContext` heads the opening files by `join(primary.hub, registries.venues)` with ` (venue catalogue)`, and by `join(primary.hub, registries.pillars)`.
+  - A section's collection files keep `## <hub-relative path>`.
+  - The head comment (lines 1-8) says the opening files are headed by their absolute path, so a chat that runs in another hub finds the primary's file.
+- **Test:** `venueLines` takes `at` and expects `` `# ${join(at('hub'), VENUES)} (venue catalogue)` ``. The three-hub workspace's `hub` also plants the pillars registry, and `threeHubLines` expects `` `# ${join(at('hub'), PILLARS)}` `` after the venue lines. That gives the pillars heading a row: C1 and C7. C19's row expects the absolute venue heading.
+- **Before** (round-0 code, new expectations; `npx vitest run tests/routes/sessions/terminal-actions.test.ts -t "chat action"`): `Tests  3 failed | 10 passed | 20 skipped (33)`. The failing rows were C1, C7 and C19, each on the heading alone. The C7 diff (`<W>` is the row's scratch folder):
+
+  ```
+  -   "# <W>/hub/.oculus/data/research/venues.yml (venue catalogue)",
+  +   "# .oculus/data/research/venues.yml (venue catalogue)",
+  -   "# <W>/hub/.oculus/data/pillars/pillars.yml",
+  +   "# .oculus/data/pillars/pillars.yml",
+  ```
+
+  C19 differed on the venue line alone.
+- **After** (same run, verbose): `Tests  13 passed | 20 skipped (33)`. The 12 G120 rows took 194 ms to 745 ms. C7's row, a project chat of beta in `other`, passes with `# <W>/hub/.oculus/data/research/venues.yml (venue catalogue)`, the primary's folder.
+- **The head of C1's index as the code now writes it** (it replaces the first two lines of the index quoted above; the rest is unchanged):
+
+  ```
+  # <W>/hub/.oculus/data/research/venues.yml (venue catalogue)
+  planted: hub/.oculus/data/research/venues.yml
+
+  # <W>/hub/.oculus/data/pillars/pillars.yml
+  planted: hub/.oculus/data/pillars/pillars.yml
+
+  # HUB hub: <W>/hub
+  ```
+
+### Verify, after the last change
+
+`npm run format`, then `npm run diagrams && npm run test:quick`:
+
+```
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (13.7 s)
+ok      svelte-check (41.4 s): 1792688148180 COMPLETED 535 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (84.0 s): Duration  69.37s (transform 61.34s, setup 0ms, import 129.36s, tests 132.64s, environment 1.56s)
+test:quick: 86.6 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+```
+
+- The run ended at a load average of 9.81 (`uptime`).
+- The ASCII gate of `spec.md` over the three changed files printed nothing (`ascii-gate-exit 0`).
+- `sh utils/unused-exports.sh` compared with the base list printed nothing (`unused-diff-exit 0`).
+- Full-list runs this round: 1. No whole-suite command ran.
