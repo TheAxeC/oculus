@@ -70,7 +70,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 65 and 76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
 - step: O57
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a8ccea2c1a4048d6d
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 8c53e525
+  worktree: .agents/worktrees/migration-O57
+  brief_check: agents/reviews/O57-brief-check.md (ab90eaaac353fc610, claude-opus-5-5, 229799 tokens, 84 tool uses, 9 min 57 s)
+  report: agents/reviews/O57-report.md
+  round: 0
+  landing: not-started
+  shared_paths: with O50: config/defaults/sources.yml (O50 lines 5, 28 and after 72, O57 after 46), config/options/sources.yml (O50 after 111, O57 after 58), chat.ts (O50 lines 29-30, O57 lines 1-3, 16-18, 42-46, 100-125), config-folder.test.ts (O50 after 208, O57 after 197), docs/data-map.md (O50 line 158, O57 lines 78-98), docs/templates.md (O50 after 294 and 843-866, O57 after 84), docs/HELP.md (O50 after 300, O57 line 103); with O49: docs/HELP.md (O49 lines 65 and 76): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -437,6 +448,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (rulings 240 to 242, O57 building). Axel ruled 240 (a), 241 (b) and 242 (a); G120 added to `agents/guarded.md`; O57 prepared from base 8c53e525 and its builder launched. O49's review over round 1 found one phrase (R1), fixed at landing. Open items: none. In flight (4 of 6): O50, O52, O49 (each ready for /land), O57 (building). Next: /land O52 in the gate worktree with ruling 240 (a)'s change to `tests/tiers/quick.mjs`, then /land O50 and /land O49; after O50, /spec O54, O61 and O53.
 - 2026-10-22 (O49 round 1 built). O49's builder handed back round 1 (`agents/reviews/O49-report.md`, "Repair round 1"); the delta against `migration-O49-round-1` holds the six rulings and nothing else; the review over round 1 is running. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (review over round 1 running). Next: the review's report, then /land O49 once 240 and 241 are ruled; O57 on 242's ruling; O61 after O50.
 - 2026-10-22 (O57 stopped at its brief check). The brief check (`agents/reviews/O57-brief-check.md`) found that O57's multi-hub cases need a guarded entry no entry holds; open item 242 raised, the other findings closed in the report's Closed section for the brief's rewrite. O57 holds no slot until Axel rules. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building). Next: O49's round-1 report and its run of /refute; O57 on 242's ruling; O61 after O50.
 - 2026-10-22 (O49 round 1 sent). O49's review (`agents/reviews/O49-refuter.md`) found comments and pages not fully true or rewrapped (St1 to St4) and the verify list run before the last edit (P1); round 1 (`agents/briefs/O49-round1.md`) sends St1 to St4, P1 and P2 back to the builder. Open items: 240, 241. In flight (4 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building), O57 (brief check returned, findings being closed). Next: close O57's brief check findings, then its preparation commit and builder.
