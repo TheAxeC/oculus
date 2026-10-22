@@ -51,8 +51,9 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O65-brief-check.md (a6b632fc3fe084af5, claude-opus-5-5, 244624 tokens, 103 tool uses, 16 min 38 s)
   report: agents/reviews/O65-report.md
   builder_usage: 265990 tokens, 348 tool uses, 70 min 1 s
-  reviewer_report: running: a9ee849e1a46ad40f (claude-opus-5-5)
-  round: 0
+  reviewer_report: agents/reviews/O65-refuter.md (a9ee849e1a46ad40f, claude-opus-5-5, 285514 tokens, 70 tool uses, 24 min 12 s)
+  round: 1
+  round_1: agents/briefs/O65-round1.md (P1, P2, T1, T2, B1 with S3, B2 sent; S1 and S2 recorded at landing; P3 at the look), snapshot .agents/worktrees/migration-O65-round-1
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O39 part E
@@ -461,6 +462,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O65 round 1 sent). The review (`agents/reviews/O65-refuter.md`) found item 6 violated by three stale comments (T1) and C13 partial (B1, Cmd+Alt+C in `.bib` taking Monaco's find toggle); the copied settings equal their sources. Repair round 1 in `agents/briefs/O65-round1.md`: Julia's settings by an order that does not depend on a timer, with a test (P1), the test's file-scope record moved (P2), the comments (T1, T2), the one-press LaTeX keys in the files LaTeX Workshop binds them in (B1), Before and after complete (B2). S1 (the builder ran read-only git commands, against spec.md) and S2 are recorded at landing. Open item 259 is not in the round; Axel's ruling on it is carried out at landing. In flight (3 of 6): O54 (round 1 building), O65 (round 1 building), O39 part E (round 1 building). Open items: 259.
 - 2026-10-22 (O39 part E round 1 sent). The review (`agents/reviews/O39-partE-refuter.md`) passed every item and case, with seven small findings and one on an unverified limitation (B1); repair round 1 in `agents/briefs/O39-partE-round1.md`: one reader of the looks shared by the page and the server, the C6 rows tagged or sped up, three comments made true, `RequestStart` local, the report's collision statement and B1 settled by reading and fixed if a frame can show it. In flight (3 of 6): O54 (round 1 building), O65 (review running), O39 part E (round 1 building). Open items: 259.
 - 2026-10-22 (O65 built). The builder reported (`agents/reviews/O65-report.md`, saved from its worktree); the orchestrator read the whole source and config diff. The builder's J1 is open item 259 (a new key, Axel's); its J2 (the one-press LaTeX keys still bound in `.bib`, `.sty` and `.cls`, where LaTeX Workshop does not bind them) is inside item 5 and goes to the repair round with the review's findings. In flight (3 of 6): O54 (round 1 building), O65 (review running), O39 part E (review running). Open items: 259.
 - 2026-10-22 (O39 part E built). The builder reported after the cases ruling (`agents/reviews/O39-partE-report.md`, saved from its worktree); the orchestrator read the whole source diff (24 files). The review runs (a6d705f9b51150ea3, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (building), O39 part E (review running).
