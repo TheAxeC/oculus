@@ -69,9 +69,6 @@ dispatch:         # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/O49-refuter.md (af0803206f26587d0, claude-opus-5-5, 183702 tokens, 57 tool uses, 8 min 48 s)
   landing: not-started
   shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 65 and 76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
-- step: O57
-  landing: preparing
-  brief_check: "running: ab90eaaac353fc610"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -217,6 +214,11 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (a) On main, as `land.sh` does; Z492 retired. Pro: the skill's own script, and related tests take seconds. Con: main's checkout is the one Axel's server on 8790 runs from, and the test run's `svelte-kit sync` rewrites its `.svelte-kit` types.
   - (b) In the gate worktree, as Z492 says, the staged change then copied to main. Pro: Axel's running server never sees a test run. Con: every landing applies the range twice and keeps the gate's `node_modules` current, outside `land.sh`.
   - Recommendation: (b), since it ends the cause Z492 was written for. (a) is the lazy option.
+- Open item 242 (2026-10-22): O57's test of the chat index across hubs. The brief check (`agents/reviews/O57-brief-check.md`, finding 4.2) found that the step's multi-hub cases need a test no entry of `agents/guarded.md` holds: G35, whose chat row is the case 'starts a focused interactive Claude terminal and writes its private index first', guarantees that a terminal operation acts only on the terminal it names, not what the index holds, and `spec.md` says a step that needs a new entry stops and asks. The running workspace on 8790 has one hub, so the look on TEST cannot show a second hub's section.
+  - (a) A new entry: "A portfolio or project chat's index holds every hub of the workspace, each hub's projects under its own section and the collection files its `chat_context` names, and no other collection file", its test the chat case of `tests/routes/sessions/terminal-actions.test.ts` with rows over two and three hubs (C1 to C3, C7, C11 to C13 of the brief). Pro: the multi-hub index is checked on every run, and nothing else can check it. Con: one more entry and about a dozen assertions in an existing case.
+  - (b) G35's text widened with the same clause, its chat row unchanged as the test. Pro: no new entry. Con: G35 then guards two unrelated guarantees, which the one-guarantee-per-entry form of `guarded.md` does not take.
+  - (c) No test of the index: the cases checked by reading only. Con: the multi-hub behaviour the step exists for is never run, here or at the look. This is the lazy option.
+  - Recommendation: (a), since the multi-hub index is the step's goal and no other check reaches it.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -432,6 +434,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O57 stopped at its brief check). The brief check (`agents/reviews/O57-brief-check.md`) found that O57's multi-hub cases need a guarded entry no entry holds; open item 242 raised, the other findings closed in the report's Closed section for the brief's rewrite. O57 holds no slot until Axel rules. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building). Next: O49's round-1 report and its run of /refute; O57 on 242's ruling; O61 after O50.
 - 2026-10-22 (O49 round 1 sent). O49's review (`agents/reviews/O49-refuter.md`) found comments and pages not fully true or rewrapped (St1 to St4) and the verify list run before the last edit (P1); round 1 (`agents/briefs/O49-round1.md`) sends St1 to St4, P1 and P2 back to the builder. Open items: 240, 241. In flight (4 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building), O57 (brief check returned, findings being closed). Next: close O57's brief check findings, then its preparation commit and builder.
 - 2026-10-22 (O61 waits for O50). /spec O61 found its files shared with O50 in a way that does not merge simply: both change the `OPTION_SOURCES` lines of `src/lib/data/sources/config/catalog/schemas/references.ts` (O50 adds `people` beside `status_chips` and `entry_statuses`, which O61 renames to the split lists of ruling 221) and its head comment, the checks of `src/lib/data/snapshot/validate.ts`, and the vocabulary readers of `src/lib/data/index.ts`. O61 waits until O50 lands; no brief or worktree was made. Open items: 240, 241. In flight (4 of 6): O50, O52, O49 (review running), O57 (brief check running). Next: the reports of O49's review and O57's brief check.
 - 2026-10-22 (O49 built, O57 brief written). O49's builder reported (`agents/reviews/O49-report.md`); its review is running. O57's brief is written and its brief check is running. Open items: 240, 241. In flight (4 of 6): O50 and O52 (refuted over round 1; their landings wait on 240 and 241), O49 (review running), O57 (brief check running). Next: /spec O61, then the reports of O49's review and O57's brief check.
