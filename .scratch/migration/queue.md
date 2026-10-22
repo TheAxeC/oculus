@@ -6,7 +6,7 @@ In flight (4 of 6 slots in use):
 
 Queued, in order (9 steps):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
-- O61 (one home for each vocabulary word). Waits: a free slot.
+- O61 (one home for each vocabulary word). Waits: after O50 lands (shared readers in references.ts, validate.ts and data/index.ts).
 - O53 (a project's `lead:` a list of person keys). Waits: after O50.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
 - O51 (a per-pane Hide Tab Row). Waits: after O49.
