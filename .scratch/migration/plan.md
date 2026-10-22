@@ -1,8 +1,8 @@
-# Migration plan: cockpit to oculus
+# Plan: migration (cockpit to oculus)
 
 Execution ledger for `tools/oculus/DESIGN.md`. One bullet is one package of work and one agent dispatch, except the bookkeeping packages the orchestrator does itself (marked). A package is ticked only after its verification commands ran and the orchestrator read the whole diff; the commands are in `orchestrator-state.md`, and nothing is ticked on inspection. The green checkmark is this file's status vocabulary by Axel's instruction of 2026-09-10; everything else in this folder is ASCII. Read `orchestrator-state.md` first after any context compaction. The lettering C, R, S, O is the ledger's own; the cockpit roadmap's letters A to I map onto the O packages as noted.
 
-## Packages, in execution order
+## Steps, in execution order
 
 One line per package: the status mark, the id, the title, and where the rest is (the brief, the review, the landing note in `orchestrator-state.md`). Lean by Axel's rule of 2026-09-12; nothing about a package lives only here.
 - ✅ C1 cockpit: `claude` CLI resolved when PATH is minimal (1 commit)
@@ -1062,7 +1062,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O41 with O40, their shared files named in O41's `shared_paths` (ruling 132).
 - O45 with O44, their shared files `DESIGN.md` and `docs/diagrams/` named in each brief's shared paths, O45's brief kept off the Recover view files (ruling O44 and O45 in parallel).
 
-## Rulings (2026-09-10)
+## Rulings
 - U4 (2026-10-01 20:52, Axel): the Focus view is far too large and out of line with the other views, as is the Sessions view, the Files and Repositories views maybe a little too large; the text size setting is not the answer, since it changes every view; the Repositories view's more-ways-to-commit control does not align with the Commit button (the user).
 - 2026-09-25, Axel: X3a's file icons are the Seti set (`seti-ui`), its nesting patterns a new catalog `config/catalogs/file-nesting.yml`, its local history copies under `~/.oculus/history/`; X3c's pinned tabs are `pinned?: true` on `Instance` with a layout migration, its wrapped tabs a per-browser UI-store toggle.
 - 2026-09-25, Axel: S2's composer choices live in a new catalog `config/catalogs/agents.yml`, per agent (Claude, Codex) its models, efforts and permission modes, each with the words shown, the flag passed and a default (S2's Step 0, option (a)).
@@ -2430,6 +2430,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O49 to O63 by agents (2026-10-22): the steps O49 to O63 are each built by one Opus builder agent in its own worktree, through `/spec`, `/refute` and `/land`, in place of ruling O49 to O63 inline; O39's last row stays the orchestrator's; inline, one step at a time in the main checkout, was the lazy option (Axel: "I agree on the parallel plan, as well as using agents") (the user).
 - Parallel order (2026-10-22): up to six steps in flight: first O59, O50, O62, O58, O54 and O52; then O49 and O57 as slots free; O61 once O59 and O62 have landed, O53 after O50, O56 after O54, O51 after O49; O55 once O53, O56 and O61 have landed; O60 and O63 together once O55 has landed, the later of the two naming the hub-settings files they share under `shared_paths`; O39's look and tick at any time, in no slot; in place of the one-at-a-time order of ruling O49 to O63 inline and O39's place as the second step in ruling O39 closing (Axel: "I agree on the parallel plan") (the user).
 - Brief check scope (2026-10-22): a brief check never widens a step: a finding whose fix would widen the step's paths, add a requirement or add a case beyond the step's line is not closed in the brief but raised to the user as an open item, the stop "A brief check finding the brief cannot absorb"; only a finding that corrects the brief inside the step's line is closed in the brief (Axel: "a brief check is NOT allowed to randomly increase the scope or amount of work. Those decisions MUST become open items to me") (the user).
+- Plan headings (2026-10-22): (a), `plan.md` opens with `# Plan: migration (cockpit to oculus)` and its sections read `## Steps, in execution order` and `## Rulings`, the headings the `spec` skill reads, nothing else changed; (b), a new plan for O49 to O63, would split the ledger and leave the steps' rulings in another file (the user).
 
 ## Agents
 
