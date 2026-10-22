@@ -378,11 +378,17 @@ function pillar(entry: RawRegistryEntry): Pillar {
     });
 }
 
+/** The person key the workspace setting `self` names in a merged config, empty for none. */
+export function selfKey(merged: Record<string, unknown>): string {
+    return str(merged.self) ?? '';
+}
+
 /**
- * One human. `self` is carried only when it is true, so the wire says who the hub belongs to and
- * says nothing at all about everybody else.
+ * One human. `self` is true on the person whose key `owner` is, the key the workspace setting
+ * `self` names, and carried only then, so the wire says who the hub belongs to and says nothing at
+ * all about everybody else.
  */
-function person(entry: RawRegistryEntry): Person {
+function person(entry: RawRegistryEntry, owner: string): Person {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
@@ -392,7 +398,7 @@ function person(entry: RawRegistryEntry): Person {
         email: str(entry.email),
         links: strings(entry.links),
         folder: str(entry.folder),
-        self: entry.self === true ? true : undefined,
+        self: owner !== '' && entry.key === owner ? true : undefined,
         projectIds: [],
         jointWorkIds: []
     });
@@ -702,7 +708,8 @@ export function normalise(
     const schemes = raw.registries.funding.entries
         .map(funding)
         .filter((scheme) => scheme.id.length > 0);
-    const people = withId(raw.registries.people.entries).map(person);
+    const owner = selfKey(merged);
+    const people = withId(raw.registries.people.entries).map((entry) => person(entry, owner));
     const organisations = withId(raw.registries.organisations.entries).map(organisation);
     const resources = keptResources(raw.registries.resources.entries).map(resource);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));

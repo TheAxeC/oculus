@@ -30,6 +30,11 @@
     // The folder block is views/shared/links/FolderFiles.svelte, which lists the folder through the
     // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
     // as a file browser row does; the entry page draws it for the folder an entry's link names.
+    //
+    // A person of the primary hub has a "this is me" button, pressed on the person the workspace
+    // setting `self` names; pressing it on another person writes that person's key to `self`
+    // through the Settings write path (state/workbench/ui.svelte.ts, `setSelf`). A person of
+    // another hub has none, since the setting names a person of the primary hub.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -62,7 +67,8 @@
         layout: { openView },
         pages: { pageOf },
         selectors: { configMap },
-        source: { unsavedFile }
+        source: { unsavedFile },
+        ui: { setSelf }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -137,6 +143,23 @@
      */
     const title = $derived(page?.title ?? (join.person === null ? key : join.person.name));
 
+    /**
+     * Whether this person is the user, the one the workspace setting `self` names: the flag of the
+     * published portfolio, so a write on its way shows the state before it until the portfolio
+     * that carries it arrives.
+     */
+    const isSelf = $derived(join.person?.self === true);
+
+    /**
+     * Make this person the user by writing their key to `self` through the Settings write path; on
+     * the person already marked nothing is written, and clearing the setting is the Settings row's.
+     */
+    function markSelf(): void {
+        const person = join.person;
+        if (person === null || person.root !== undefined || isSelf) return;
+        setSelf(person.id);
+    }
+
     /** Open one project of this person as its own tab, the tab a board card opens. */
     function openProject(id: string, label: string): void {
         openView('project', { id, label });
@@ -184,10 +207,18 @@
                 <p class="self">
                     <RootChip record={join.person} />
                 </p>
-            {/if}
-            {#if join.person.self === true}
+            {:else}
                 <p class="self">
-                    <Tag label={t('person.self')} glyph="star" tone="teal" />
+                    <ToolButton
+                        label={t('person.self')}
+                        glyph="star"
+                        pressed={isSelf}
+                        active={isSelf}
+                        title={isSelf
+                            ? t('person.self_held_tip', title)
+                            : t('person.self_tip', title, join.person.id)}
+                        onclick={markSelf}
+                    />
                 </p>
             {/if}
 

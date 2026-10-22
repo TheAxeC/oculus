@@ -292,7 +292,10 @@ primary: my-hub
 # `collection`) overrides oculus's entry with the same key, and
 # `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
 # overrides by its keys, and a key set to null takes oculus's key out.
+# `self` is the key of your own entry in the primary hub's people file, which the Person page's
+# "this is me" button and the portfolio chat read.
 # settings:
+#   self: me
 #   code_theme: vscode-dark-2026
 #   terminal: { font_px: 14 }
 #   rail:
@@ -838,7 +841,7 @@ entries:
 
 ### .oculus/data/people/people.yml
 
-Exactly one entry carries `self: true`: you.
+Your own entry is the one whose key the workspace setting `self` names (see `workspaces/<name>.yml`).
 
 ```yaml
 title: People
@@ -851,7 +854,6 @@ schema:
   - { field: email,        type: text,     help: "Email address." }
   - { field: links,        type: tags,     help: "Web addresses." }
   - { field: folder,       type: text,     help: "A student's supervision folder." }
-  - { field: self,         type: checkbox, help: "True on your own entry." }
 entries:
 #  - key: me                      # required
 #    name: "Your Name"            # required
@@ -861,7 +863,6 @@ entries:
 #    email: you@example.org
 #    links: []
 #    folder: ""                   # a student's supervision folder
-#    self: true                   # on your own entry only
 ```
 
 ### .oculus/data/people/organisations.yml

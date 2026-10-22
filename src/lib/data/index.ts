@@ -41,7 +41,12 @@ import { textCatalog, type loadConfig } from './sources/config.ts';
 import { readYamlMap } from './sources/yaml-file.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
 import { mergeHubs, type HubSnapshot } from './snapshot/hubs/merge.ts';
-import { FEED_COLLECTION_KEYS, isFeedCollection, normalise } from './snapshot/normalise.ts';
+import {
+    FEED_COLLECTION_KEYS,
+    isFeedCollection,
+    normalise,
+    selfKey
+} from './snapshot/normalise.ts';
 import { sortFindings, validate } from './snapshot/validate.ts';
 import { createChecker, type Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
@@ -58,9 +63,13 @@ import {
 } from './snapshot/schema/set.ts';
 import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
 import { catalogOf } from './sources/config/catalog/options.ts';
-import { optionFiles } from './sources/config/catalog/schemas/references.ts';
+import { optionFiles, settingsNode } from './sources/config/catalog/schemas/references.ts';
 import { DECK_FILE } from './sources/deck/read.ts';
-import { buildReferences, type EngineConfigFolder } from './snapshot/references/build.ts';
+import {
+    buildReferences,
+    type EngineConfigFolder,
+    type SettingsFile
+} from './snapshot/references/build.ts';
 import type { ReferenceIndex } from './snapshot/references/model.ts';
 import { domainColorOf, optionKeys, optionLabel } from './model/index.ts';
 import type {
@@ -456,7 +465,9 @@ function configFolder(engine: EngineConfigIn | null): EngineConfigFolder | null 
  * config folder and the workspace folders that hold it, whose files that carry a reference are
  * indexed beside the hub's and governed by schema where the workspace holds them; none when it is
  * null. `root` is the name of the workspace folder the hub's files are named under; the folder's
- * base name when it is not given.
+ * base name when it is not given. `workspace` is the open workspace file, whose `settings:` the
+ * index reads for the keys they name; none for the unsaved workspace and for a hub other than the
+ * primary.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
@@ -465,7 +476,8 @@ export function buildPortfolioWithSchemas(
     roots: RepositoryRoot[] = [],
     checker: Checker = createChecker(),
     engine: EngineConfigIn | null = null,
-    root: string = basename(hub)
+    root: string = basename(hub),
+    workspace: SettingsFile | null = null
 ): PortfolioBuild {
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
     const unnamed = heldUnnamed(hub, config.unnamed);
@@ -512,10 +524,16 @@ export function buildPortfolioWithSchemas(
         ...validate(raw, {
             vocab: config.vocab,
             listed: listedFields(config.schema, unread),
-            text: config.text
+            text: config.text,
+            self: {
+                key: selfKey(config.merged),
+                file: join(hub, config.registries.people),
+                read: !unread.has('people')
+            }
         }),
         ...run.findings
     ]);
+    const catalog = catalogOf(config.merged);
     const references = buildReferences({
         hub,
         root,
@@ -524,7 +542,9 @@ export function buildPortfolioWithSchemas(
         read: run.read,
         manifests: raw.manifests,
         decks: raw.decks,
-        options: optionFiles(catalogOf(config.merged)),
+        options: optionFiles(catalog),
+        workspace,
+        settings: settingsNode(catalog),
         deckFile: DECK_FILE
     });
     return {

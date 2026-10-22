@@ -49,6 +49,7 @@ export type Heading = (typeof HEADINGS)[number];
 export const SOURCES = [
     'domains',
     'clusters',
+    'people',
     'models',
     'languages',
     'arrangements',

@@ -1,12 +1,11 @@
-In flight (3 of 6 slots in use):
-- O50 (who the user is: the workspace setting `self`). State: refuted over round 1; landing now, in the gate worktree.
+In flight (2 of 6 slots in use):
 - O49 (an Open View submenu in the tab strip's menus). State: refuted over round 1; landing next, R1 fixed at landing.
 - O57 (the portfolio chat's index over every hub). State: building.
 
 Queued, in order (9 steps):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
-- O61 (one home for each vocabulary word). Waits: after O50 lands (shared readers in references.ts, validate.ts and data/index.ts).
-- O53 (a project's `lead:` a list of person keys). Waits: after O50.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: nothing; /spec next.
+- O61 (one home for each vocabulary word). Waits: nothing; /spec next.
+- O53 (a project's `lead:` a list of person keys). Waits: nothing; /spec next.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
 - O51 (a per-pane Hide Tab Row). Waits: after O49.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
@@ -18,6 +17,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
+- O50 (who the user is: the workspace setting `self`), 2026-10-22.
 - O52 (the Focus board's section headings in one shape), 2026-10-22.
 - O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, b1686091.
 - O58 (`config/catalogs/meta.yml` removed), 2026-10-22, f17c205c.

@@ -11,6 +11,9 @@ text:
         nobody: This tab was opened for nobody. Press a collaborator tag on a project card to open a person.
         unknown: "No entry of the hub's people file carries the key {0}."
         self: this is me
+        self_tip: 'Mark {0} as you: writes self: {1} into the settings of the open workspace file'
+        self_held_tip: '{0} is you, as the setting self of the open workspace file names; Settings clears it'
+        named_key: '{0} ({1})'
         organisation: Organisation
         organisation_line: '{0} ({1})'
         sep: ', '

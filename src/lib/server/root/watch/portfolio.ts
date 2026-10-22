@@ -37,6 +37,7 @@ import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
 import type { HubSnapshot } from '../../../data/snapshot/hubs/merge.ts';
 import { withOwnSchemas } from './own-schemas.ts';
 import { createChecker } from '../../../data/snapshot/schema/check.ts';
+import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
 import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
 import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
 import {
@@ -54,7 +55,12 @@ import {
     textCatalog,
     type IconMemory
 } from '../../../data/sources/config.ts';
-import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import {
+    HUB_FILE,
+    MANIFEST,
+    ROOT_FOLDER,
+    WORKSPACES_FOLDER
+} from '../../../data/helpers/hub-names.ts';
 import { platformText } from '../../../data/places/platform.ts';
 import { vscodeRuleIds } from '../../../data/places/code-rules.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
@@ -63,7 +69,7 @@ import { wallpaperFindings } from '../../content/wallpaper.ts';
 import { placeClones } from '../../../data/sources/clones.ts';
 import { allHubs, primaryConfig } from '../../files/roots.ts';
 import { engineConfigIn } from '../../files/workspace/folders.ts';
-import type { OpenWorkspace } from '../../files/workspace/open.ts';
+import { folderOfHub, hubOfFile, type OpenWorkspace } from '../../files/workspace/open.ts';
 import { configOptions } from '../../files/workspace/paths.ts';
 import { readerFindings } from '../process/context/findings.ts';
 import type { MachineProblem } from '../../../data/sources/config/machine.ts';
@@ -247,6 +253,20 @@ export function namedByConfig(
                 .filter((part) => part !== '')
         );
     };
+}
+
+/**
+ * The open workspace file as the reference index names it, under the workspace folder of the hub
+ * it lies in, so a rename of a key one of its settings names edits the file; null for the unsaved
+ * workspace and for a file whose hub is no folder of the workspace, which the page cannot open.
+ */
+function settingsFileOf(workspace: OpenWorkspace): SettingsFile | null {
+    const hub = workspace.file === null ? null : hubOfFile(workspace.file);
+    if (workspace.file === null || hub === null) return null;
+    const folder = folderOfHub(hub, workspace.folders);
+    if (folder === undefined) return null;
+    const path = [ROOT_FOLDER, WORKSPACES_FOLDER, basename(workspace.file)].join('/');
+    return { file: workspace.file, root: folder.name, path };
 }
 
 /**
@@ -726,7 +746,8 @@ export function watchPortfolio(
                           roots,
                           checker,
                           held,
-                          workspace.primary ?? undefined
+                          workspace.primary ?? undefined,
+                          settingsFileOf(workspace)
                       );
             const built = joinHubs(
                 base,

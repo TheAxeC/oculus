@@ -1,9 +1,10 @@
 // Layer 1, data. The options catalog as the places that name a hub key, for the reference index
 // (data/snapshot/references/): an option or a field of an options family whose `from` names a list
-// of the hub (`domains`, `clusters`) or a vocabulary list the catalog reads from vocab.yml
-// (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is written. A
-// defaults file of oculus (config/defaults/) that has such an option is read as a record of those
-// places; a file with none is not read.
+// of the hub (`domains`, `clusters`, `people`) or a vocabulary list the catalog reads from
+// vocab.yml (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is
+// written. A defaults file of oculus (config/defaults/) that has such an option is read as a record
+// of those places; a file with none is not read. The open workspace file's `settings:` is read
+// with the places of every such file together, since it keys its settings as they do.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -13,6 +14,7 @@ import { VOCAB_SOURCE, recordOf } from '../../../../snapshot/references/specs.ts
 import type { FieldNode, OptionFile } from '../../../../snapshot/references/model.ts';
 import { DEFAULTS_DIR } from '../../folder.ts';
 import { LOCAL_NAME } from '../../local.ts';
+import { SETTINGS_KEY } from '../../merge/workspace-layer.ts';
 import type { Catalog, CatalogEntry, FieldSpec } from '../options.ts';
 import { isPairs, withoutKey } from './options.ts';
 
@@ -26,6 +28,7 @@ import { isPairs, withoutKey } from './options.ts';
 const OPTION_SOURCES: Record<string, string | undefined> = {
     domains: 'domains',
     clusters: 'clusters',
+    people: 'people',
     project_types: `${VOCAB_SOURCE}types`,
     tiers: `${VOCAB_SOURCE}tiers`,
     status_chips: `${VOCAB_SOURCE}statuses.chip`,
@@ -124,4 +127,18 @@ export function optionFiles(catalog: Catalog): OptionFile[] {
         if (spec !== null) files.push({ path: `${DEFAULTS_DIR}/${name}`, spec });
     }
     return files;
+}
+
+/**
+ * The node that reads a workspace file: the options of every defaults file together under
+ * `settings`, since a workspace file keys its settings as the defaults files key them, with no
+ * file names. Null when no option names a source the index holds.
+ */
+export function settingsNode(catalog: Catalog): FieldNode | null {
+    const entries: Record<string, CatalogEntry> = {};
+    for (const [name, held] of Object.entries(catalog)) {
+        if (name !== LOCAL_NAME) Object.assign(entries, held);
+    }
+    const settings = optionsRecord(entries);
+    return settings === null ? null : recordOf({ [SETTINGS_KEY]: settings });
 }

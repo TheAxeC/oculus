@@ -95,6 +95,8 @@ function optionSource(
                 return [CODE_TOKENS, ...codeThemeIds(config.merged, new Set(vscodeRuleIds()))];
             case 'domains':
                 return hub.domains;
+            case 'people':
+                return hub.people;
             case 'clusters':
                 return raw.registries.resources.entries
                     .filter((entry) => entry.kind === 'cluster' && entry.key !== '')

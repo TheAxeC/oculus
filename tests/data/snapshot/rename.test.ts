@@ -29,9 +29,16 @@ import {
 } from '../../../src/lib/data/snapshot/references/rename.ts';
 import type { FileScan } from '../../../src/lib/data/snapshot/references/model.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { HUB_FILES, plantHub, type PlantedHub } from './reference-hub.ts';
+import {
+    HUB_FILES,
+    plantHub,
+    WORKSPACE_FILE,
+    WORKSPACE_TEXT,
+    type PlantedHub,
+    type PlantedRoot
+} from './reference-hub.ts';
 
-type Root = 'hub' | 'engine';
+type Root = PlantedRoot;
 
 /** Where the rename is asked: a file and a position, the first letter of the key. */
 type At = [Root, string, number, number];
@@ -46,14 +53,22 @@ type Edited = {
     hub?: Texts;
     /** The engine's config files the row plants in place of the standard ones. */
     engine?: Texts;
+    /** The open workspace file the row plants, and the workspace folder it lies in. */
+    workspace?: { text: string; folder: 'hub' | 'lab' };
     /** The files that change, by `root:path`, with the text each has after the rename. */
     after: Texts;
 };
 
 /** The text of a file of the planted hub or engine, as the disk holds it. */
 function disk(hub: PlantedHub): (scan: FileScan) => FileText {
+    const folders: Record<string, string | null> = {
+        hub: hub.hub,
+        engine: hub.engine,
+        lab: hub.lab
+    };
     return (scan) => {
-        const folder = scan.file.root === 'hub' ? hub.hub : hub.engine;
+        const folder = folders[scan.file.root] ?? null;
+        if (folder === null) throw new Error(`the row plants no folder ${scan.file.root}`);
         return { text: readFileSync(join(folder, scan.file.path), 'utf8') };
     };
 }
@@ -77,6 +92,21 @@ function applied(hub: PlantedHub, plan: ReturnType<typeof planRename>): Texts {
 const VENUE = HUB_FILES['.oculus/data/research/venues.yml'];
 const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
 const BETA = HUB_FILES['projects/active/beta/project.yml'];
+
+/** The hub's files after `amir` is renamed `amir-2`: the entry and each place that names it. */
+const AMIR_RENAMED: Texts = {
+    'hub:.oculus/data/people/people.yml': HUB_FILES['.oculus/data/people/people.yml'].replace(
+        'key: amir',
+        'key: amir-2'
+    ),
+    'hub:.oculus/data/academic/joint-work.yml': HUB_FILES[
+        '.oculus/data/academic/joint-work.yml'
+    ].replace('"amir"', '"amir-2"'),
+    'hub:projects/active/alpha/project.yml': ALPHA.replace(
+        'waiting-on: [amir, beta]',
+        'waiting-on: [amir-2, beta]'
+    ).replace('collaborators: [amir]', 'collaborators: [amir-2]')
+};
 
 const EDITED: Edited[] = [
     {
@@ -194,6 +224,26 @@ const EDITED: Edited[] = [
                 '.oculus/data/pillars/domains.yml'
             ].replace('key: heart', 'key: cardio'),
             'hub:projects/active/beta/project.yml': `${BETA}domain: cardio\n`
+        }
+    },
+    {
+        name: 'the person the setting self of the open workspace file names, and no other byte of that file',
+        at: ['hub', '.oculus/data/people/people.yml', 5, 10],
+        newKey: 'amir-2',
+        workspace: { text: WORKSPACE_TEXT, folder: 'hub' },
+        after: {
+            ...AMIR_RENAMED,
+            [`hub:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace('self: amir', 'self: amir-2')
+        }
+    },
+    {
+        name: 'the person the setting self names, in an open workspace file of another workspace folder',
+        at: ['hub', '.oculus/data/people/people.yml', 5, 10],
+        newKey: 'amir-2',
+        workspace: { text: WORKSPACE_TEXT, folder: 'lab' },
+        after: {
+            ...AMIR_RENAMED,
+            [`lab:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace('self: amir', 'self: amir-2')
         }
     }
 ];
@@ -346,7 +396,7 @@ const REFUSED: Refused[] = [
 
 describe('the rename of a hub key', () => {
     it.each(EDITED)('edits $name', (row) => {
-        const hub = plantHub(row.hub, row.engine);
+        const hub = plantHub(row.hub, row.engine, { workspace: row.workspace });
         const [root, path, line, character] = row.at;
         const { hit, graph } = hub.hit(root, path, { line, character });
         expect(hit).not.toBeNull();

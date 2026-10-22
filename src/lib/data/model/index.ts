@@ -95,7 +95,15 @@ export type ValidationRules = {
     listed?: ReadonlySet<string>;
     /** The flat text catalog every finding's sentence is read from, by its `findings.` key. */
     text: Record<string, string>;
+    /** The person the setting `self` names, checked against the people file; none checks none. */
+    self?: SelfCheck;
 };
+
+/**
+ * The person key the workspace setting `self` names (empty for none), the people file it is
+ * looked up in and whether that file read.
+ */
+export type SelfCheck = { key: string; file: string; read: boolean };
 
 /** Everything a portfolio build needs: where to read, and what to check what it read against. */
 export type PortfolioConfig = {

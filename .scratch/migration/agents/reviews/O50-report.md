@@ -814,3 +814,7 @@ tests/state/system/settings/theme-groups.test.ts:406:         const pool = poolO
   - G67, `hub-keys.test.ts`: describe 'the answer to a request on a setting of the open workspace file', with "goes from the setting self of the open workspace file in the folder of the primary hub to the primary hub's person", the same "in another workspace folder", and "renames from the open workspace file of another workspace folder the primary hub's person".
   - G119, `theme-groups.test.ts`: describe 'the people of the choice self', four rows 'draws $people as $drawn, so no two items read alike'.
 - `npm run format` rewrites `src/lib/server/content/wallpaper.ts` and `src/lib/views/shared/forms/entry/edit/EntryForm.svelte` on every run, files this step does not change. Both were copied back from the base after the format, and `diff -q` against `../migration-O50-base` prints nothing for either.
+
+## Note at landing
+
+The failing lines quoted under round 1's runs on the round-0 tree and on the base were taken before the round's last change. The reviewer's runs give them as `tests/server/machine/lsp/adapters/hub-keys.test.ts:210:28` and `:232:25`, `tests/data/snapshot/rename.test.ts:406:24` and `tests/data/snapshot/references.test.ts:625:23`; the failures themselves are as quoted.

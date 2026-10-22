@@ -135,7 +135,7 @@ describe('the registries that are collections of their own', () => {
                 '  - { field: key, type: text }',
                 '  - { field: affiliations, type: tags }',
                 'entries:',
-                '  - { key: wim, name: Wim, affiliations: [kuleuven, ut], self: true }',
+                '  - { key: wim, name: Wim, affiliations: [kuleuven, ut] }',
                 '  - { key: an, name: An }',
                 ''
             ].join('\n')
@@ -175,8 +175,7 @@ describe('the registries that are collections of their own', () => {
         expect(collections.people.entries.map((entry) => entry.key)).toEqual(['wim', 'an']);
         expect(collections.people.entries[0]).toMatchObject({
             name: 'Wim',
-            affiliations: ['kuleuven', 'ut'],
-            self: true
+            affiliations: ['kuleuven', 'ut']
         });
         expect(collections.organisations.entries.map((entry) => entry.kind)).toEqual([
             'university'

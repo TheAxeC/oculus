@@ -101,10 +101,18 @@ function nameOfFile(file: string): string {
     return basename(file, '.yml');
 }
 
+/** The folder of the workspace that is the hub folder `hub`, matched on disk, or undefined. */
+export function folderOfHub(
+    hub: string,
+    folders: readonly WorkspaceFolder[]
+): WorkspaceFolder | undefined {
+    const real = realPath(hub, true) ?? hub;
+    return folders.find((one) => one.real === real);
+}
+
 /** The name of the hub folder `hub` among the folders, else its base name. */
 function hubNameOf(hub: string, folders: readonly WorkspaceFolder[]): string {
-    const real = realPath(hub, true) ?? hub;
-    return folders.find((one) => one.real === real)?.name ?? basename(hub);
+    return folderOfHub(hub, folders)?.name ?? basename(hub);
 }
 
 /** The workspace files of the hubs among the folders, by hub in folder order, then by name. */

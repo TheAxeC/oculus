@@ -1,8 +1,9 @@
 // Layer 2, server. The lists a config write checks a choice, a multi or a suggestion against, as
 // the server reads them: the config-derived ones through options.ts (the page reads the same
 // function), the languages and code themes the data layer holds (the code themes held to the
-// TextMate rules the checkout ships, data/places/code-rules.ts), and the domains, clusters and
-// slides of the portfolio this server last published.
+// TextMate rules the checkout ships, data/places/code-rules.ts), and the domains, clusters, people
+// and slides of the portfolio this server last published. The people are those of the primary hub,
+// the records with no `root`, since the workspace setting `self` names a person of the primary.
 //
 // A list the server does not hold answers null, and the check of a value drawn from it is its type
 // alone. That is every portfolio list of a process that has published no portfolio yet, and the
@@ -11,6 +12,7 @@
 // the pieces of the write target through SourceInputs.
 
 import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { vscodeRuleIds } from '../../../../data/places/code-rules.ts';
 import { registered } from '../../../../data/prose/languages.ts';
@@ -30,7 +32,7 @@ export type SourceInputs = {
      */
     projects: () => Project[];
     /** One entity map of that portfolio, or null while it holds none. */
-    entities?: (kind: 'domains' | 'resources') => Record<string, unknown> | null;
+    entities?: (kind: 'domains' | 'resources' | 'people') => Record<string, unknown> | null;
 };
 
 /** The lists of one write, over the merged configuration the write was made against. */
@@ -58,6 +60,14 @@ export function sourcesFor(inputs: SourceInputs, config: Record<string, unknown>
             case 'clusters': {
                 const resources = inputs.entities?.('resources') ?? null;
                 return resources === null ? null : resourcesOfKind(resources, 'cluster');
+            }
+            case 'people': {
+                const people = inputs.entities?.('people') ?? null;
+                return people === null
+                    ? null
+                    : Object.entries(people).flatMap(([id, one]) =>
+                          isMap(one) && one.root === undefined ? [id] : []
+                      );
             }
             case 'slide_tags': {
                 const projects = inputs.projects();

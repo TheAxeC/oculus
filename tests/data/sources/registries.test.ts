@@ -73,7 +73,7 @@ function buildHub(): string {
             'schema: []',
             'entries:',
             '  - { key: naesens, name: Maarten Naesens, affiliations: [ku-leuven], role: host }',
-            '  - { key: me, name: The Owner, self: true }',
+            '  - { key: me, name: The Owner }',
             '  - { name: nameless }',
             ''
         ].join('\n')

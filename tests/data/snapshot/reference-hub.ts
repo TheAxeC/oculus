@@ -1,7 +1,8 @@
 // Layer 4, test helper. A small hub planted in a scratch directory for the reference index and the
-// rename of a hub key: one file of each kind that names a key or defines one, and an engine folder
+// rename of a hub key: one file of each kind that names a key or defines one, an engine folder
 // holding the configuration files the index reads (`defaults/behavior.yml`, `defaults/sources.yml`
-// and `catalogs/vocab.yml`).
+// and `catalogs/vocab.yml`), and where a row asks for one, the open workspace file, in the hub or in
+// a second workspace folder `lab`.
 // The texts are synthetic; none of them is a file of the hub.
 
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -23,6 +24,12 @@ import { join } from 'node:path';
  */
 const HUB_FOLDER = 'hub';
 const CONFIG_FOLDER = 'engine';
+
+/** The name of the second workspace folder, which holds only the open workspace file. */
+const LAB_FOLDER = 'lab';
+
+/** The roots a row names a file of. */
+export type PlantedRoot = 'hub' | 'engine' | 'lab';
 
 /** Where the config folder lies inside the hub when oculus's folder is inside the hub folder. */
 const CONFIG_IN_HUB = 'tools/oculus/config';
@@ -202,12 +209,14 @@ export const ENGINE_FILES: Record<string, string> = {
 export type PlantedHub = {
     hub: string;
     engine: string;
+    /** The second workspace folder, when the row plants the workspace file there; else null. */
+    lab: string | null;
     index: ReferenceIndex;
     /** The file of the index at a path under a root. */
-    file: (root: 'hub' | 'engine', path: string) => FileScan;
+    file: (root: PlantedRoot, path: string) => FileScan;
     /** What stands at a position of a file, the open texts laid over the index. */
     hit: (
-        root: 'hub' | 'engine',
+        root: PlantedRoot,
         path: string,
         at: { line: number; character: number },
         open?: Record<string, string>
@@ -220,7 +229,27 @@ export type PlantOptions = {
     deck?: string | null;
     /** The engine's config folder is the hub's own `tools/oculus/config`, not another folder. */
     engineInHub?: boolean;
+    /**
+     * The open workspace file the build reads, planted at `WORKSPACE_FILE` with this text, in the
+     * hub's folder or in the second workspace folder `lab`.
+     */
+    workspace?: { text: string; folder: 'hub' | 'lab' };
 };
+
+/** Where a planted workspace file lies in its folder, in the folder of a hub's workspace files. */
+export const WORKSPACE_FILE = '.oculus/workspaces/lab.yml';
+
+/** A workspace file whose setting `self` names the person `amir`, with bytes around it to keep. */
+export const WORKSPACE_TEXT = [
+    'folders:',
+    '  - { name: hub, path: ~/hub }',
+    'primary: hub',
+    '# what this workspace sets',
+    'settings:',
+    '  self: amir   # who I am',
+    '  code_theme: vscode-dark-2026',
+    ''
+].join('\n');
 
 /**
  * Plant the hub (and the given changes to its files) and build its reference index. In the texts
@@ -239,9 +268,26 @@ export function plantHub(
     );
     const hub = plantScratch(
         'oculus-reference-hub-',
-        { ...HUB_FILES, ...changes, ...(inHub ? placed : {}) },
+        {
+            ...HUB_FILES,
+            ...changes,
+            ...(inHub ? placed : {}),
+            ...(options.workspace?.folder === 'hub'
+                ? { [WORKSPACE_FILE]: options.workspace.text }
+                : {})
+        },
         ['secrets']
     );
+    const lab =
+        options.workspace?.folder === 'lab'
+            ? plantScratch('oculus-reference-lab-', { [WORKSPACE_FILE]: options.workspace.text })
+            : null;
+    const folderOf = (root: PlantedRoot): string => {
+        if (root === 'hub') return hub;
+        if (root === 'engine') return engine;
+        if (lab === null) throw new Error('the row plants no folder lab');
+        return lab;
+    };
     const engine = inHub
         ? join(hub, CONFIG_IN_HUB)
         : plantScratch('oculus-reference-engine-', engineFiles);
@@ -256,13 +302,21 @@ export function plantHub(
         [],
         undefined,
         { dir: engine, held: [held] },
-        HUB_FOLDER
+        HUB_FOLDER,
+        options.workspace === undefined
+            ? null
+            : {
+                  file: join(lab ?? hub, WORKSPACE_FILE),
+                  root: lab === null ? HUB_FOLDER : LAB_FOLDER,
+                  path: WORKSPACE_FILE
+              }
     ).references;
     const roots = [
         { key: HUB_FOLDER, dir: hub },
-        ...(inHub ? [] : [{ key: CONFIG_FOLDER, dir: engine }])
+        ...(inHub ? [] : [{ key: CONFIG_FOLDER, dir: engine }]),
+        ...(lab === null ? [] : [{ key: LAB_FOLDER, dir: lab }])
     ];
-    const file = (root: 'hub' | 'engine', path: string): FileScan => {
+    const file = (root: PlantedRoot, path: string): FileScan => {
         const found = index.files.find((one) => one.file.root === root && one.file.path === path);
         if (found === undefined) throw new Error(`the index holds no ${root}:${path}`);
         return found;
@@ -270,18 +324,22 @@ export function plantHub(
     return {
         hub,
         engine,
+        lab,
         index,
         file,
         hit: (root, path, at, open = {}) => {
             const texts = Object.entries(open).map(([name, text]) => {
-                const [home, rest] = /^(hub|engine):/.test(name)
-                    ? [name.slice(0, name.indexOf(':')), name.slice(name.indexOf(':') + 1)]
+                const [home, rest] = /^(hub|engine|lab):/.test(name)
+                    ? [
+                          name.slice(0, name.indexOf(':')) as PlantedRoot,
+                          name.slice(name.indexOf(':') + 1)
+                      ]
                     : [root, name];
-                return { real: join(home === 'hub' ? hub : engine, rest), text };
+                return { real: join(folderOf(home), rest), text };
             });
             const laid = overlay(index, roots, texts);
             const graph = graphOf(laid, HUB_FOLDER);
-            const scan = scanOf(laid, roots, join(root === 'hub' ? hub : engine, path));
+            const scan = scanOf(laid, roots, join(folderOf(root), path));
             if (scan === undefined) throw new Error(`the index holds no ${root}:${path}`);
             return { hit: hitAt(graph, scan, at), graph };
         }

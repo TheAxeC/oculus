@@ -16,6 +16,7 @@ import type {
     RawManifest,
     RawPortfolio,
     RegistryName,
+    SelfCheck,
     ValidationRules
 } from '../model/index.ts';
 import { domainColorOf } from '../model/index.ts';
@@ -295,21 +296,23 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
 }
 
 /**
- * Exactly one people entry carries `self: true`, which is how the hub knows which entry is its
- * owner: two of them or none leaves that question unanswered.
+ * The workspace setting `self` names a person of the people registry, which is how the hub knows
+ * who its owner is: a key no entry carries marks nobody, and is one finding on the people file. An
+ * empty setting is no finding, and a people file that did not read gives none, since its own
+ * finding names the cause.
  */
-function checkPeople(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
-    const entries = raw.registries.people.entries;
-    const selves: number[] = [];
-    entries.forEach((entry, index) => {
-        if (entry.self === true) selves.push(index);
-    });
-    if (entries.length === 0 || selves.length === 1) return;
-    const file = entries[0]?.file ?? '';
+function checkSelf(
+    raw: RawPortfolio,
+    self: SelfCheck | undefined,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
+    if (self === undefined || self.key === '' || !self.read) return;
+    if (raw.registries.people.entries.some((entry) => entry.key === self.key)) return;
     findings.push({
-        file,
+        file: self.file,
         key: 'entries',
-        message: findingText(catalog, 'findings.validate.self_not_one', selves.length)
+        message: findingText(catalog, 'findings.validate.self_unknown', self.key)
     });
 }
 
@@ -391,7 +394,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkWaitingOn(manifest, catalog, findings);
     }
     checkFolderNames(raw, catalog, findings);
-    checkPeople(raw, catalog, findings);
+    checkSelf(raw, rules.self, catalog, findings);
     checkResources(raw, catalog, findings);
     checkDatasetSources(raw, catalog, findings);
     checkFundingStatements(raw, rules.vocab.acknowledged, catalog, findings);

@@ -11,6 +11,9 @@
 // Settings view's choice field reads it (editors/fields.ts `poolOf`), and split by the rule its
 // list draws by (`choiceGroups`).
 //
+// The choice `self` draws each person of the primary hub by name, by key when the name is empty,
+// and as name and key when its words would read like another item's.
+//
 // It does not cover the choice as the view draws it, which the look does.
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -20,6 +23,7 @@ import {
     isCodeTheme
 } from '../../../../src/lib/data/helpers/editor/code-themes.ts';
 import type { AppOffers } from '../../../../src/lib/data/helpers/files/apps/choices.ts';
+import type { Person } from '../../../../src/lib/data/model/index.ts';
 import { vscodeRuleIds } from '../../../../src/lib/data/places/code-rules.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { openWorkspace } from '../../../../src/lib/server/files/workspace/open.ts';
@@ -377,5 +381,45 @@ describe('the groups of the code theme choice', () => {
         ).toBe(false);
         const lists = listsFor(withCodeLists({ shiki: [{ id: 'nord' }] }));
         expect(drawn('code_theme', lists).loose).toEqual(['tokens', 'nord']);
+    });
+});
+
+describe('the people of the choice self', () => {
+    /** The words the choice `self` draws each person by, over people given as key and name. */
+    function drawnPeople(people: Record<string, string>): string[] {
+        const held = Object.fromEntries(
+            Object.entries(people).map(([id, name]): [string, Person] => [
+                id,
+                { id, name, affiliations: [], links: [], projectIds: [], jointWorkIds: [] }
+            ])
+        );
+        const lists = listsOf({
+            config,
+            portfolio: { domains: {}, resources: {}, people: held, projects: [] },
+            views: [],
+            tiers: null,
+            themeClasses: [],
+            codeThemeClasses: [...RULED],
+            offers: NONE,
+            folder: () => ({ state: 'ready', entries: [] })
+        });
+        const pool = poolOf(shipped['sources.yml'].self, {}, lists);
+        return pool.items.map((id) => pool.labels.get(id) ?? id);
+    }
+
+    it.each<{ people: Record<string, string>; drawn: string[] }>([
+        { people: { ada: 'Ada', bob: '' }, drawn: ['Ada', 'bob'] },
+        { people: { k1: 'Kim', k2: 'Kim' }, drawn: ['Kim (k1)', 'Kim (k2)'] },
+        { people: { ada: '', bob: 'ada' }, drawn: ['ada (ada)', 'ada (bob)'] },
+        {
+            people: { k1: 'Kim', k2: 'Kim', x: 'Kim (k1)' },
+            drawn: ['Kim (k1)', 'Kim (k2)', 'Kim (k1) (x)']
+        },
+        {
+            people: { k1: 'Kim', k2: 'Kim', x: 'Kim (k1)', y: 'Kim (k1) (x)' },
+            drawn: ['Kim (k1)', 'Kim (k2)', 'Kim (k1) (x)', 'Kim (k1) (x) (y)']
+        }
+    ])('draws $people as $drawn, so no two items read alike', (row) => {
+        expect(drawnPeople(row.people)).toEqual(row.drawn);
     });
 });

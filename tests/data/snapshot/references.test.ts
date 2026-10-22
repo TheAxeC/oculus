@@ -1,4 +1,4 @@
-// Layer 1, data tests. The reference index of the snapshot build (data/snapshot/references/): the
+// Layer 4, data tests. The reference index of the snapshot build (data/snapshot/references/): the
 // places in the hub's files that name a key and the places that define one, found by the schemas
 // the files are checked by and by nothing else. A hub planted in a scratch directory, with an
 // engine folder holding `defaults/behavior.yml` and `catalogs/vocab.yml`, is built through
@@ -12,14 +12,33 @@
 // an entry with no identity; and the files read in place: every document of a file of several, and
 // the portfolio deck of `portfolio_deck`, absent when it is null.
 //
+// The last table builds through the portfolio watcher (server/root/watch/portfolio.ts), a server
+// module, which makes this file layer 4 as the other watcher tests are. The watcher names the open
+// workspace file for the index: the file is scanned for its `settings:` when it lies in a hub
+// folder of the workspace, under that folder's name, and says it names the primary hub's keys
+// (`of`) when that folder is another; an unsaved workspace and a file whose hub is no folder of the
+// workspace give no scan. Its hubs are empty hub folders and each workspace a state folder that
+// opens a planted workspace file, as the server opens one; a build takes about a second, so the
+// table is tagged slow.
+//
 // What this does NOT cover: the answers of the language server over the channel (the relay tests
 // and the cases of the step run those) and the rename (rename.test.ts).
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { referencesTo } from '../../../src/lib/data/snapshot/references/lookup.ts';
-import type { FieldNode } from '../../../src/lib/data/snapshot/references/model.ts';
+import type { FieldNode, ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import { scanText } from '../../../src/lib/data/snapshot/references/scan.ts';
-import { it } from '../../fixtures/scratch.ts';
+import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
+import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
+import {
+    plantHub as plantHubFolder,
+    workspaceOf,
+    workspaceWith
+} from '../../fixtures/hubs/workspace.ts';
+import { watchedOnce } from '../hubs/hubs-fixture.ts';
 import { ENGINE_FILES, HUB_FILES, plantHub, type PlantOptions } from './reference-hub.ts';
 
 type Root = 'hub' | 'engine';
@@ -513,5 +532,82 @@ describe('the reference index', () => {
         expect(graph.index.files.filter((one) => one.unparsed).map((one) => one.file.path)).toEqual(
             ['projects/active/alpha/project.yml']
         );
+    });
+});
+
+/** Where the open workspace file lies, or that the workspace is unsaved. */
+type Where = 'unsaved' | 'primary' | 'other folder' | 'no folder';
+
+/** The workspace file's place under its hub. */
+const WORKSPACE = '.oculus/workspaces/team.yml';
+
+/** The workspace of a row: the hub folders `hub` (the primary) and `lab`, its file where it says. */
+function workspaceAt(where: Where): Workspace {
+    const base = scratchDir('oculus-workspace-index-');
+    const hub = plantHubFolder(join(base, 'hub'));
+    const lab = plantHubFolder(join(base, 'lab'));
+    const folders = [
+        { name: 'hub', dir: hub },
+        { name: 'lab', dir: lab }
+    ];
+    if (where === 'unsaved') return workspaceWith(folders, 'hub');
+    const holder =
+        where === 'primary'
+            ? hub
+            : where === 'other folder'
+              ? lab
+              : plantHubFolder(join(base, 'away'));
+    mkdirSync(join(holder, '.oculus', 'workspaces'), { recursive: true });
+    const file = join(holder, WORKSPACE);
+    const listed = folders.map((one) => `  - { name: ${one.name}, path: ${one.dir} }`);
+    writeFileSync(
+        file,
+        ['folders:', ...listed, 'primary: hub', 'settings:', '  self: owner', ''].join('\n')
+    );
+    const state = scratchDir('oculus-workspace-state-');
+    writeState(state, { open: file, recent: [file], unsaved: { folders: [] } });
+    return workspaceOf(state);
+}
+
+/** The reference index of the watcher's first build over a workspace. */
+function watchedIndex(workspace: Workspace): ReferenceIndex {
+    let index: ReferenceIndex | undefined;
+    watchedOnce(workspace, {
+        schemas: (_set, references) => {
+            index = references;
+        }
+    });
+    if (index === undefined) throw new Error('the watcher built no index');
+    return index;
+}
+
+describe('the open workspace file in the reference index', { tags: ['slow'] }, () => {
+    it.each<{ name: string; where: Where; scans: object[] }>([
+        { name: 'no file, for an unsaved workspace', where: 'unsaved', scans: [] },
+        {
+            name: 'no file, for a file in a hub that is no folder of the workspace',
+            where: 'no folder',
+            scans: []
+        },
+        {
+            name: 'the file under the primary hub, for a file in its folder',
+            where: 'primary',
+            scans: [{ root: 'hub', path: WORKSPACE, of: undefined, named: ['owner'] }]
+        },
+        {
+            name: 'the file under another folder, naming the primary hub, for a file in that folder',
+            where: 'other folder',
+            scans: [{ root: 'lab', path: WORKSPACE, of: 'hub', named: ['owner'] }]
+        }
+    ])('scans $name', (row) => {
+        const scans = watchedIndex(workspaceAt(row.where))
+            .files.filter((one) => one.file.path.startsWith('.oculus/workspaces/'))
+            .map((one) => ({
+                root: one.file.root,
+                path: one.file.path,
+                of: one.of,
+                named: one.references.map((place) => place.value)
+            }));
+        expect(scans).toEqual(row.scans);
     });
 });

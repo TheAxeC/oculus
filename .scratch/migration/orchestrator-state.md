@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
-- step: O50
-  executor: agent
-  worker: claude:opus
-  session_id: aa29e323ca91b7afd
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 0379bb5d
-  worktree: .agents/worktrees/migration-O50
-  brief_check: agents/reviews/O50-brief-check.md (a5cae3c5b6723f862, claude-opus-5-5, 257554 tokens, 86 tool uses, 12 min 53 s)
-  report: agents/reviews/O50-report.md
-  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build); round 0 build 199848 tokens, 274 tool uses, 36 min 19 s; round 1 182663 tokens, 238 tool uses, 50 min 34 s
-  round: 1
-  reviewer_report: agents/reviews/O50-refuter.md (ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s); over round 1: ae22da9a7c93e0180, claude-opus-5-5, 239932 tokens, 75 tool uses, 18 min 52 s
-  landing: not-started
-  shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
 - step: O49
   executor: agent
   worker: claude:opus
@@ -433,6 +418,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O50 landed). O50 is on main, landed in the gate worktree; fixes at landing: the layer-4 head comment's reason in `references.test.ts`, `watchedOnce` shared by the two watcher harnesses, G66, G67 and G119 naming the new tests, and `ownPeople` keying labels until none collide. The hub's line moved once (`settings.self: axel-faes` in `.oculus/workspaces/research-hub.yml`, no `self` left in `.oculus/data/people/people.yml`), on disk and not committed: the runner's permission check refused the hub commit. Open items: none. In flight (2 of 6): O49 (ready for /land), O57 (building). Next: /spec O54, O61 and O53; /land O49.
 - 2026-10-22 (O52 landed). O52 is on main, landed in the gate worktree (rulings 240 (a) and 241 (b)); fixes at landing: the folded career box's padding, and ruling 240 (a)'s related-only `tests/tiers/quick.mjs` with `essential.txt` deleted. Open items: none. In flight (3 of 6): O50, O49 (ready for /land), O57 (building). Next: /land O50, then /spec O54, O61 and O53; /land O49.
 - 2026-10-22 (rulings 240 to 242, O57 building). Axel ruled 240 (a), 241 (b) and 242 (a); G120 added to `agents/guarded.md`; O57 prepared from base 8c53e525 and its builder launched. O49's review over round 1 found one phrase (R1), fixed at landing. Open items: none. In flight (4 of 6): O50, O52, O49 (each ready for /land), O57 (building). Next: /land O52 in the gate worktree with ruling 240 (a)'s change to `tests/tiers/quick.mjs`, then /land O50 and /land O49; after O50, /spec O54, O61 and O53.
 - 2026-10-22 (O49 round 1 built). O49's builder handed back round 1 (`agents/reviews/O49-report.md`, "Repair round 1"); the delta against `migration-O49-round-1` holds the six rulings and nothing else; the review over round 1 is running. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (review over round 1 running). Next: the review's report, then /land O49 once 240 and 241 are ruled; O57 on 242's ruling; O61 after O50.

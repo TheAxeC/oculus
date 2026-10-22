@@ -26,8 +26,8 @@ export type ChatOptions = StartOptions & {
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /**
-     * The name of the person marked `self: true` in the hub's people file, or null when none is
-     * marked or the file does not read. The instruction names the hub's owner by it.
+     * The name of the person the workspace setting `self` names, or null when it names nobody or
+     * the person has no name. The instruction names the hub's owner by it.
      */
     ownerFor?: () => string | null;
     /**

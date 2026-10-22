@@ -134,19 +134,21 @@ function entityMap(hub: HubLike, kind: string): Record<string, unknown> | null {
 }
 
 /**
- * One entity map of the last published `portfolio` payload (the domains, the resources), for a
- * config write that checks a value against them; null while the process has published none.
+ * One entity map of the last published `portfolio` payload (the domains, the resources, the
+ * people), for a config write that checks a value against them; null while the process has
+ * published none.
  */
 export function entities(
     hub: HubLike,
-    kind: 'domains' | 'resources'
+    kind: 'domains' | 'resources' | 'people'
 ): Record<string, unknown> | null {
     return entityMap(hub, kind);
 }
 
 /**
- * The name of the person the last published `portfolio` payload marks `self: true`, the hub's
- * owner, or null when none is marked, the name is empty or no payload was published.
+ * The name of the person the workspace setting `self` names, which the last published `portfolio`
+ * payload marks `self: true`: the hub's owner, or null when none is marked, the name is empty or
+ * no payload was published.
  */
 export function ownerName(hub: HubLike): string | null {
     const people = entityMap(hub, 'people');

@@ -205,6 +205,7 @@ describe("oculus's own config directory", () => {
             'schedules',
             'apps_dir',
             'repository_scan_depth',
+            'self',
             'languages'
         ],
         'catalogs/vocab.yml': [

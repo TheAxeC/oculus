@@ -155,7 +155,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `venues`: `deadline_month` and `held_month` only when `category: conference`.
 - `events`: `link` is required when `role: present`.
 - `funding`: `statement` is required when `status` is `awarded` or `contributing`.
-- `people`: `self: true` on exactly one entry, the hub owner's.
+- `people`: the workspace setting `self` names the key of one entry, the user's own; a key no entry carries is a finding.
 - `resources`: `host` is needed for `slurm.resource` to poll the cluster.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
 - `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date; `holding` as `focus` only on the tiers `projects` and `personal`.

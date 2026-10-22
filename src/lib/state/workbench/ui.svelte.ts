@@ -9,12 +9,13 @@
 // The look is the options' (state/shared/words/appearance.ts, `configuredLook`): the `theme`,
 // `text_size`, `rice`, `wallpaper.show`, `crt.on`, `code_theme` and `terminal.font_px` options of
 // the appearance defaults and the `status_bar` and `editor.suggest_details` options of the behavior
-// defaults, as the open workspace file sets them or oculus's defaults hold them. A control that
-// changes one writes the option through the Settings write path, so every page of the server shows
-// the new value from the config push that follows the write. Until that push arrives, the value
-// written is held over the configured one (`pending`), so the control answers at once; a write
-// that does not land drops it, and the writes store says why. With no workspace file open (the
-// unsaved workspace) a control writes nothing and the page offers Save Workspace instead
+// defaults, as the open workspace file sets them or oculus's defaults hold them; it also writes the
+// `self` option of the sources defaults, who the user is, which the Person page sets. A control
+// that changes one writes the option through the Settings write path, so every page of the server
+// shows the new value from the config push that follows the write. Until that push arrives, the
+// value written is held over the configured one (`pending`), so the control answers at once; a
+// write that does not land drops it, and the writes store says why. With no workspace file open
+// (the unsaved workspace) a control writes nothing and the page offers Save Workspace instead
 // (`noWorkspace`).
 //
 // The records are the page state's view states (state/shared/stores/page-state.svelte.ts), which
@@ -117,9 +118,10 @@ const NO_WRITES: OptionWrites = {
     resetConfig: () => Promise.resolve(NOT_WRITTEN)
 };
 
-/** The appearance defaults file and the behavior defaults file, by the names the writes take. */
+/** The appearance, behavior and sources defaults files, by the names the writes take. */
 const APPEARANCE = 'appearance.yml';
 const BEHAVIOR = 'behavior.yml';
+const SOURCES = 'sources.yml';
 
 /**
  * A value written and not yet in the config the page holds: the value, and the configuration's
@@ -177,6 +179,8 @@ export type UiStore = CloseHooks & {
     setStatusRepository: (root: string | null) => void;
     /** Write the reader's choice of the suggest list's description panel. */
     setSuggestDetails: (shown: boolean) => void;
+    /** Write the user's own person key to the `self` option; an empty key writes nothing. */
+    setSelf: (key: string) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     /** Write the file icon theme to the `file_icons` option, for every page. */
     setFileIcons: (name: string) => Promise<boolean>;
@@ -445,6 +449,16 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         void writeOption(BEHAVIOR, 'editor.suggest_details', shown);
     }
 
+    /**
+     * Write who the user is, the key of their own person, to the `self` option of the sources
+     * defaults, which the open workspace file holds. Clearing it is the Settings row's, so an empty
+     * key writes nothing.
+     */
+    function setSelf(key: string): void {
+        if (key === '') return;
+        void writeOption(SOURCES, 'self', key);
+    }
+
     /** What a view instance wants remembered. */
     function setInstanceState(id: string, state: unknown): void {
         deps.state.changeViews({ [id]: state }, []);
@@ -516,6 +530,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         setStatusQuiet,
         setStatusRepository,
         setSuggestDetails,
+        setSelf,
         setPaneStrip,
         setFileIcons,
         setInstanceState,

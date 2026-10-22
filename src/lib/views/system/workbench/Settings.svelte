@@ -192,6 +192,7 @@
                     : {
                           domains: snapshot.entities.domains,
                           resources: snapshot.entities.resources,
+                          people: snapshot.entities.people,
                           projects: Object.values(snapshot.entities.projects)
                       },
             views: registry.views().map((one) => one.id),

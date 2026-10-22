@@ -1,7 +1,7 @@
 # People - one entry per human the hub names: a collaborator a project's `collaborators:` or
 # `waiting-on:` points at, a student whose supervision folder is under education/, and the hub's own
-# owner, the one entry carrying `self: true`. A person's facts live here and nowhere else, so a name
-# is written once and every card, tag and map node that draws one reads it from this file.
+# owner. A person's facts live here and nowhere else, so a name is written once and every card, tag
+# and map node that draws one reads it from this file.
 # `affiliations:` are keys of .oculus/data/people/organisations.yml, never free strings, the primary first.
 
 schema:
@@ -13,7 +13,6 @@ schema:
   - { field: email,        type: text }
   - { field: links,        type: tags }
   - { field: folder,       type: text,     help: "hub-relative folder of a student's supervision files" }
-  - { field: self,         type: checkbox, help: "true on the hub owner's own entry, exactly one" }
 
 entries:
   - key: "rivera-lab"
@@ -30,4 +29,3 @@ entries:
     name: "Dr. Dana Example"
     affiliations: ["northwood-university"]
     role: "principal investigator"
-    self: true

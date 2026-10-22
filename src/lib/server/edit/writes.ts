@@ -132,11 +132,11 @@ export type WriteTarget = {
      */
     projects: () => Project[];
     /**
-     * One entity map (the domains, the resources) of the portfolio this server last published, or
-     * null while it has published none, which the config writes check a choice against. A target
-     * built without it checks those choices for their type alone.
+     * One entity map (the domains, the resources, the people) of the portfolio this server last
+     * published, or null while it has published none, which the config writes check a choice
+     * against. A target built without it checks those choices for their type alone.
      */
-    entities?: (kind: 'domains' | 'resources') => Record<string, unknown> | null;
+    entities?: (kind: 'domains' | 'resources' | 'people') => Record<string, unknown> | null;
     bookmarks?: string;
     /**
      * Where this machine's change log is, how much of it is kept, and the chain an append waits

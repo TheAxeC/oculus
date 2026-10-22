@@ -8,6 +8,12 @@
 // a hub list, and `catalogs/vocab.yml`) are read here. A file under the hub's `secrets` folder and
 // the manifest of a workspace folder outside the hub are never read.
 //
+// The open workspace file is read too, for its `settings:`: each key there is an option of a
+// defaults file, so its places are the options catalog's own, under `settings`. Its values name
+// keys of the primary hub wherever the file lies, so its scan says so (`of`), and a rename of a key
+// a setting names, the person `self` names among them, rewrites the setting. The unsaved workspace
+// has no file, and nothing is read for it.
+//
 // What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
 // manifest its `id:` line, vocab.yml the items of the lists some reference names, and a hub file
 // the keys of the option rows of its own schema's fields.
@@ -51,6 +57,12 @@ import {
  */
 export type EngineConfigFolder = { dir: string; root: string; path: string };
 
+/**
+ * The open workspace file: where it is on disk, and its name in the index, the workspace folder
+ * that holds it and its path inside that folder.
+ */
+export type SettingsFile = FileId & { file: string };
+
 /** The file of oculus's own configuration that holds the vocabulary lists. */
 const VOCAB_FILE = 'catalogs/vocab.yml';
 
@@ -69,6 +81,10 @@ export type ReferenceSources = {
     decks: Record<string, RawDeck>;
     /** The files of oculus's own configuration that name a hub key, read from the catalog. */
     options: OptionFile[];
+    /** The open workspace file, or null for the unsaved workspace and a build of another hub. */
+    workspace?: SettingsFile | null;
+    /** The node that reads the workspace file's `settings:`, read from the catalog. */
+    settings?: FieldNode | null;
     /** The file name of a deck. */
     deckFile: string;
     /** The text of a file, or undefined when it cannot be read; the disk by default. */
@@ -217,9 +233,24 @@ function engineScans(
     return found;
 }
 
+/** The scan of the open workspace file, none for the unsaved workspace or a file that is gone. */
+function workspaceScans(
+    sources: ReferenceSources,
+    read: (file: string) => string | undefined
+): FileScan[] {
+    const held = sources.workspace ?? null;
+    const spec = sources.settings ?? null;
+    const text = held === null ? undefined : read(held.file);
+    if (held === null || spec === null || text === undefined) return [];
+    const scan = scanText({ root: held.root, path: held.path }, text, reads(spec));
+    return [held.root === sources.root ? scan : { ...scan, of: sources.root }];
+}
+
 /** The reference index of one build. */
 export function buildReferences(sources: ReferenceSources): ReferenceIndex {
     const read = sources.readFile ?? readDisk;
     const scans = hubScans(sources, read);
-    return { files: [...scans, ...engineScans(sources, scans, read)] };
+    return {
+        files: [...scans, ...workspaceScans(sources, read), ...engineScans(sources, scans, read)]
+    };
 }

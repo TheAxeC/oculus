@@ -1,10 +1,12 @@
 // Layer 2, server test. What the YAML entry answers to `prepareRename` and `rename` of a hub key
 // (server/machine/lsp/adapters/yaml/hub-keys.ts), G67: a refusal that does not depend on the new
 // key is the answer to `prepareRename`, so the page shows it at the caret, and `rename` gives it
-// again; a refusal that depends on the new key is the answer to `rename` alone. The index is the
-// planted hub of tests/data/snapshot/reference-hub.ts, the page's view is built here with the
-// open document, the disk read and the tabs of another window as each case needs them, and the
-// sentences are the checkout's own catalog (tests/server/text.ts).
+// again; a refusal that depends on the new key is the answer to `rename` alone. A setting of the
+// open workspace file that names a key of the primary hub is answered against the primary hub's
+// keys, wherever the file lies. The index is the planted hub of
+// tests/data/snapshot/reference-hub.ts, the page's view is built here with the open document, the
+// disk read and the tabs of another window as each case needs them, and the sentences are the
+// checkout's own catalog (tests/server/text.ts).
 //
 // What this does NOT cover: the edit a rename returns (tests/data/snapshot/rename.test.ts), and
 // where the page shows an error (tests/ui/controls/editor/lsp-transport.test.ts).
@@ -18,11 +20,22 @@ import type { PageAnswer, PageView } from '../../../../../src/lib/server/machine
 import { pageUri } from '../../../../../src/lib/server/machine/lsp/uris.ts';
 import { words } from '../../../../../src/lib/server/core/words.ts';
 import { it } from '../../../../fixtures/scratch.ts';
-import { HUB_FILES, plantHub, type PlantedHub } from '../../../../data/snapshot/reference-hub.ts';
+import {
+    HUB_FILES,
+    plantHub,
+    WORKSPACE_FILE,
+    WORKSPACE_TEXT,
+    type PlantedHub
+} from '../../../../data/snapshot/reference-hub.ts';
 import { TEXT } from '../../../text.ts';
 
 const ALPHA = 'projects/active/alpha/project.yml';
 const VENUE_AT = { line: 3, character: 10 };
+const PEOPLE = '.oculus/data/people/people.yml';
+
+/** The value of `self` in the planted workspace file, and the key `amir` in the people file. */
+const SELF_AT = { line: 5, character: 9 };
+const AMIR_DEFINED = { start: { line: 5, character: 9 }, end: { line: 5, character: 13 } };
 
 /** What the page holds and the disk gives, which a case changes. */
 type Page = {
@@ -32,26 +45,32 @@ type Page = {
     elsewhere?: (real: string) => boolean;
 };
 
-/** The answer to a request about the position of the manifest of `alpha`. */
+/**
+ * The answer to a request about a position of a file open in the page, the manifest of `alpha`
+ * unless named; a name written `lab:path` is a file of the second workspace folder.
+ */
 function ask(
     hub: PlantedHub,
-    method: 'textDocument/prepareRename' | 'textDocument/rename',
+    method: 'textDocument/definition' | 'textDocument/prepareRename' | 'textDocument/rename',
     at: { line: number; character: number },
     page: Page = {},
-    file: string = ALPHA,
+    named: string = ALPHA,
     newName = 'jama'
 ): PageAnswer | undefined {
     const real = realpathSync(hub.hub);
     const roots = [
         { key: 'hub', dir: hub.hub, real },
-        { key: 'engine', dir: hub.engine, real: realpathSync(hub.engine) }
+        { key: 'engine', dir: hub.engine, real: realpathSync(hub.engine) },
+        ...(hub.lab === null ? [] : [{ key: 'lab', dir: hub.lab, real: realpathSync(hub.lab) }])
     ];
-    const path = join(real, file);
+    const inLab = named.startsWith('lab:');
+    const file = inLab ? named.slice('lab:'.length) : named;
+    const folder = inLab && hub.lab !== null ? hub.lab : hub.hub;
     const document = {
-        real: path,
-        pageUri: pageUri('hub', file),
+        real: join(realpathSync(folder), file),
+        pageUri: pageUri(inLab ? 'lab' : 'hub', file),
         version: 1,
-        text: readFileSync(join(hub.hub, file), 'utf8')
+        text: readFileSync(join(folder, file), 'utf8')
     };
     const tabs = Object.entries(page.tabs ?? {}).map(([name, text]) => ({
         real: join(real, name),
@@ -175,5 +194,48 @@ describe('the answer to prepareRename and rename of a hub key', () => {
         expect(ask(hub, 'textDocument/prepareRename', VENUE_AT)).toMatchObject({ result: {} });
         const answer = ask(hub, 'textDocument/rename', VENUE_AT, {}, ALPHA, key);
         expect(messageOf(answer)).toBe(words(TEXT, `source.${text}`, ...args));
+    });
+});
+
+describe('the answer to a request on a setting of the open workspace file', () => {
+    it.each([
+        ['the folder of the primary hub', 'hub' as const],
+        ['another workspace folder', 'lab' as const]
+    ])(
+        "goes from the setting self of the open workspace file in %s to the primary hub's person",
+        (_name, folder) => {
+            const hub = plantHub({}, {}, { workspace: { text: WORKSPACE_TEXT, folder } });
+            const file = folder === 'lab' ? `lab:${WORKSPACE_FILE}` : WORKSPACE_FILE;
+            const answer = ask(hub, 'textDocument/definition', SELF_AT, {}, file);
+            expect(answer).toMatchObject({
+                result: [{ targetUri: pageUri('hub', PEOPLE), targetRange: AMIR_DEFINED }]
+            });
+        }
+    );
+
+    it("renames from the open workspace file of another workspace folder the primary hub's person", () => {
+        const hub = plantHub({}, {}, { workspace: { text: WORKSPACE_TEXT, folder: 'lab' } });
+        const answer = ask(
+            hub,
+            'textDocument/rename',
+            SELF_AT,
+            {},
+            `lab:${WORKSPACE_FILE}`,
+            'amir-2'
+        );
+        const result = answer !== undefined && 'result' in answer ? answer.result : null;
+        const changed = (
+            result as { documentChanges?: { textDocument: { uri: string } }[] } | null
+        )?.documentChanges
+            ?.map((one) => one.textDocument.uri)
+            .sort();
+        expect(changed).toEqual(
+            [
+                pageUri('hub', PEOPLE),
+                pageUri('hub', '.oculus/data/academic/joint-work.yml'),
+                pageUri('hub', 'projects/active/alpha/project.yml'),
+                pageUri('lab', WORKSPACE_FILE)
+            ].sort()
+        );
     });
 });

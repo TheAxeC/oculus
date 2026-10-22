@@ -89,6 +89,11 @@ export type FileScan = {
     open?: true;
     /** True for a file of oculus's own configuration, which every hub's keys are matched with. */
     engine?: true;
+    /**
+     * The root whose keys the file names where that is not its own root: the open workspace file,
+     * whose `settings:` name keys of the primary hub wherever the file lies.
+     */
+    of?: string;
     unparsed: boolean;
     references: Candidate[];
     definitions: Definition[];

@@ -11,7 +11,8 @@ import { join } from 'node:path';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { AuditPayload, FeedsPayload, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
-import { watchPortfolio } from '../../../src/lib/server/root/watch/portfolio.ts';
+import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
+import { watchPortfolio, type WatchOptions } from '../../../src/lib/server/root/watch/portfolio.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 
@@ -33,10 +34,10 @@ export function copies(): Copies {
 /** What the watcher published for a hub on its first build. */
 export type Published = { snapshot: Snapshot; audit: AuditPayload; feeds: FeedsPayload };
 
-/** The first build of the watcher over a workspace listing the given folders, the first primary. */
-export function published(folders: readonly FolderSpec[], primary?: string): Published {
+/** The channels of the watcher's first build over a workspace, with the build options given;
+ * the watcher is closed after the build. */
+export function watchedOnce(workspace: Workspace, options: WatchOptions = {}): Hub {
     const channels = new Hub();
-    const workspace = workspaceWith(folders, primary);
     const watcher = watchPortfolio(
         channels,
         {
@@ -47,15 +48,18 @@ export function published(folders: readonly FolderSpec[], primary?: string): Pub
             settings: (dir) => loadConfig(engineDir(), { hub: dir }),
             problems: () => []
         },
-        { debounce: 20 }
+        { debounce: 20, ...options }
     );
-    try {
-        return {
-            snapshot: channels.latest('portfolio')?.payload as Snapshot,
-            audit: channels.latest('audit')?.payload as AuditPayload,
-            feeds: channels.latest('feeds')?.payload as FeedsPayload
-        };
-    } finally {
-        watcher.close();
-    }
+    watcher.close();
+    return channels;
+}
+
+/** The first build of the watcher over a workspace listing the given folders, the first primary. */
+export function published(folders: readonly FolderSpec[], primary?: string): Published {
+    const channels = watchedOnce(workspaceWith(folders, primary));
+    return {
+        snapshot: channels.latest('portfolio')?.payload as Snapshot,
+        audit: channels.latest('audit')?.payload as AuditPayload,
+        feeds: channels.latest('feeds')?.payload as FeedsPayload
+    };
 }

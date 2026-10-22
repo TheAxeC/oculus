@@ -64,11 +64,7 @@ export function overlay(
         const text = real === null ? undefined : open.get(same(real));
         return text === undefined
             ? scan
-            : {
-                  ...scanText(scan.file, text, scan.reading),
-                  ...(scan.engine === true ? { engine: true as const } : {}),
-                  open: true as const
-              };
+            : { ...scan, ...scanText(scan.file, text, scan.reading), open: true as const };
     });
     return { files };
 }
@@ -87,12 +83,21 @@ export function scanOf(
 }
 
 /**
- * The index with every reference matched by key, over the files of one root and oculus's own
- * configuration, so a key of one hub is never matched with a definition of another.
+ * The root whose keys a file names: the one it says (`of`, the open workspace file's primary hub),
+ * else its own. A request on a file is answered over the graph of this root.
+ */
+export function keysRootOf(scan: FileScan): string {
+    return scan.of ?? scan.file.root;
+}
+
+/**
+ * The index with every reference matched by key, over the files that name keys of one root (its
+ * own files and a file that says it names that root's keys, `of`) and oculus's own configuration,
+ * so a key of one hub is never matched with a definition of another.
  */
 export function graphOf(whole: ReferenceIndex, root: string): Graph {
     const index: ReferenceIndex = {
-        files: whole.files.filter((scan) => scan.file.root === root || scan.engine === true)
+        files: whole.files.filter((scan) => keysRootOf(scan) === root || scan.engine === true)
     };
     const definitions = new Map<string, DefinitionAt[]>();
     const references = new Map<string, ReferenceAt[]>();

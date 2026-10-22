@@ -194,9 +194,8 @@ describe('the rules of a hub schema', () => {
                 '  - { field: key, type: text, required: true, help: The person key. }',
                 '  - { field: name, type: text, required: true, help: The name. }',
                 '  - { field: affiliations, type: tags, help: The organisations. }',
-                '  - { field: self, type: checkbox, help: The owner. }',
                 'entries:',
-                '  - { key: ada, name: Ada, self: true, affiliation: x }',
+                '  - { key: ada, name: Ada, affiliation: x }',
                 ''
             ].join('\n'),
             key: 'entries[0].affiliation'

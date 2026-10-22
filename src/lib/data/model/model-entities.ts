@@ -787,7 +787,7 @@ export type Person = Rooted & {
     links: string[];
     /** A student's supervision folder, hub-relative, whose files the Person view lists. */
     folder?: string;
-    /** True on the one entry that is the hub's owner; absent on every other. */
+    /** True on the person the workspace setting `self` names; absent on every other. */
     self?: boolean;
     /**
      * Absolute path of the people file of a person of a hub other than the primary, which the
