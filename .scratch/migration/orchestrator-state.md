@@ -228,7 +228,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None open.
+- Open item 237 (2026-10-22): O54's draft brief on disk, a clash between the `spec` skill and the ban on `git restore`. `agents/briefs/O54.md` holds the brief written before rulings 231 to 236, uncommitted. The `spec` skill refuses a step whose brief path holds an uncommitted change (`~/.claude/skills/spec/SKILL.md:88`), and the way it gives to clear it, `git restore` (`SKILL.md:452`), is banned. (a) commit the draft as it stands, as a ledger record of O54 marked superseded, so the path is clean; the next `/spec O54` writes the new brief over it under rulings 203, 231 to 236 and No hub prefix shown. Pro: no git restore, nothing lost, `/spec` runs as written. Con: a superseded brief is in one commit of the history. (b) delete the file and let `/spec` write a fresh one. Con: the draft is lost from the ledger (a copy stays in the session scratchpad only). Recommended: (a); (b) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
