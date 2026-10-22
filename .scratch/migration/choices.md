@@ -4829,3 +4829,10 @@ Where it applies: O39, part A item 5 and round item 1. Booked in `plan.md` Rulin
 - Not chosen: leaving the tests under no entry, which the guarded page does not allow, and folding the window colours into G47, which guards the window's safety and not its colours.
 
 Where it applies: O39, part A. Booked in `plan.md` Rulings.
+
+## Z972 (2026-10-22, O57's review, Behaviour B1, the orchestrator, automode): how the files that open a chat's index are headed
+
+- Chosen: the venue catalogue and the pillars registry that open the index are headed by their absolute path (`# <primary folder>/.oculus/data/research/venues.yml (venue catalogue)`), so a project chat of a project in another hub, told that hub's folder as `{0}`, reads the primary's file and not its own hub's.
+- Not chosen: one clause of the instruction saying the head files are the primary's, which still leaves a relative path the chat resolves against `{0}`; leaving the brief's heading as dictated, the lazy option.
+
+Where it applies: O57, repair round 1 item 5. Booked in `plan.md` Rulings.
