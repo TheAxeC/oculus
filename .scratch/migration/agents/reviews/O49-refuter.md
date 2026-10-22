@@ -204,3 +204,183 @@ No finding. The following were read and hold:
 - Whether `OpenViewDeps`, an exported type with no importer outside its own file, should be made local. `utils/unused-exports.sh` (knip) does not list it. The existing `CloseQuestionDeps` follows the same pattern.
 
 Reviewer usage: af0803206f26587d0, claude-opus-5-5, 183702 tokens, 57 tool uses, 8 min 48 s.
+
+## Repair round 1, refuted
+
+Reviewed in `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O49` against base `374eeaa2` and the round-1 snapshot `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O49-round-1/` (`files.txt`, 12 paths). The round's delta: `diff -u` of each `files.txt` path between the snapshot and the worktree, plus `git diff 374eeaa2 -- docs/apps.md` for the one path changed now that `files.txt` does not list. Of the `files.txt` paths, `config/text/ui.yml`, the four diagram files, `layout.svelte.ts`, `opening.ts` and `menu-items.ts` are identical to the snapshot (`diff -u` exit 0). The delta is the head comment of `open-view.svelte.ts` (lines 1-12), the doc comment of `stripMenu` (`pane-view.ts:302-309`), the head comment of `PaneView.svelte` (lines 44-49), `docs/HELP.md:76` and `docs/apps.md:87` and `:263`. No code line changed in the round.
+
+```
+$ git status --short        (from the worktree root)
+ M config/text/ui.yml
+ M docs/HELP.md
+ M docs/apps.md
+ M docs/diagrams/layer-shell.dot
+ M docs/diagrams/layer-shell.svg
+ M docs/diagrams/layers.dot
+ M docs/diagrams/layers.svg
+ M src/lib/shell/panes/PaneView.svelte
+ M src/lib/shell/panes/pane-view.ts
+ M src/lib/state/workbench/layout.svelte.ts
+ M src/lib/state/workbench/layout/open/opening.ts
+ M src/lib/ui/menu/menu-items.ts
+?? .scratch/migration/agents/briefs/O49-cases.md
+?? .scratch/migration/agents/briefs/O49-round1.md
+?? .scratch/migration/agents/reviews/O49-report.md
+?? src/lib/shell/panes/strip/open-view.svelte.ts
+
+$ export PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH && npm run test:quick 2>&1 | tail -15; echo "exit ${pipestatus[1]}"   (tail)
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      svelte-kit sync (2.1 s)
+ok      eslint (1.3 s)
+ok      svelte-check (6.4 s): 1792684974260 COMPLETED 535 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (28.1 s): Duration  21.02s (transform 50.11s, setup 0ms, import 70.36s, tests 1.91s, environment 606ms)
+test:quick: 30.2 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+exit 0
+
+$ LC_ALL=C perl -ne '...spec.md ASCII gate...' src/lib/shell/panes/strip/open-view.svelte.ts src/lib/shell/panes/pane-view.ts src/lib/shell/panes/PaneView.svelte src/lib/ui/menu/menu-items.ts src/lib/state/workbench/layout/open/opening.ts src/lib/state/workbench/layout.svelte.ts config/text/ui.yml docs/HELP.md docs/apps.md docs/diagrams/layer-shell.dot docs/diagrams/layers.dot; echo "ascii exit $?"
+ascii exit 0
+
+$ awk 'length > 100 {print FILENAME":"FNR": "length}' src/lib/shell/panes/strip/open-view.svelte.ts src/lib/shell/panes/pane-view.ts src/lib/shell/panes/PaneView.svelte; echo "awk exit $?"
+awk exit 0
+
+$ (fill check: for each line of a paragraph but the last, whether the next line's first word fits at 100 columns)
+open-view.svelte.ts 1-12: every line "ok" (no next word fits); line widths 95 97 100 100 97 98 95 99 95 95 99
+pane-view.ts 298-309: every line "ok"; widths 97 97 97 99 100 98 97 99 98 98 100
+PaneView.svelte 43-50: every line "ok"; widths 96 98 100 97 97 98 96
+pane-view.ts 1-6, menu-items.ts 25-26, opening.ts 93-96 (round-0 comments): every line "ok"
+
+$ (word sequence of the two St1 paragraphs, snapshot against worktree, comment markers stripped) diff ...; echo $?
+open-view words exit 0
+pane-view words exit 0
+
+$ awk (snapshot widths) migration-O49-round-1/.../open-view.svelte.ts 1-12 and pane-view.ts 298-309
+1: 95 2: 97 3: 98 4: 96 5: 96 6: 96 7: 97 8: 93 9: 92 10: 94 11: 96 12: 53
+298: 97 299: 97 300: 97 301: 99 302: 96 303: 96 304: 97 305: 98 306: 96 307: 98 308: 97 309: 39
+
+$ sed -n '87p;263p' docs/apps.md
+- Open an app from the Apps rail button, the Views catalogue, Open View (the strip's right-click menu, under Apps), or `a` and its digit.
+- A view is listed in the Views catalogue under Apps, and in Open View (the strip's right-click menu) under Apps with its container's title as its hover words. The first time, an `activitybar` view docks on the left, a `panel` view at the bottom, an `explorer` view beside Files.
+
+$ wc -l src/lib/shell/panes/PaneView.svelte src/lib/shell/panes/pane-view.ts src/lib/shell/panes/strip/open-view.svelte.ts; ls src/lib/shell/panes/strip | wc -l
+     517 src/lib/shell/panes/PaneView.svelte
+     541 src/lib/shell/panes/pane-view.ts
+     127 src/lib/shell/panes/strip/open-view.svelte.ts
+      10
+
+$ npx prettier --check src/lib/shell/panes/strip/open-view.svelte.ts src/lib/shell/panes/pane-view.ts src/lib/shell/panes/PaneView.svelte docs/HELP.md docs/apps.md; echo "prettier exit $?"
+All matched files use Prettier code style!
+prettier exit 0
+
+$ (git diff 374eeaa2 -- src docs/HELP.md docs/apps.md | grep '^+' | grep -v '^+++'; cat src/lib/shell/panes/strip/open-view.svelte.ts) | grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands"; echo "history grep exit $?"
+history grep exit 1
+
+$ for d in src config docs tests utils; do diff -rq --exclude=local.yml migration-O49-base/$d migration-O49/$d; done
+PaneView.svelte, pane-view.ts, opening.ts, layout.svelte.ts, menu-items.ts differ; only in worktree: strip/open-view.svelte.ts; config/text/ui.yml, docs/HELP.md, docs/apps.md and the four diagram files differ; tests and utils unchanged
+
+$ sh utils/unused-exports.sh > <scratchpad>/o49r1-unused.txt; diff ../migration-O49-base/unused-exports.txt <scratchpad>/o49r1-unused.txt; echo "diff exit $?"
+diff exit 0
+
+$ sed -n '257p;439p;471,479p' src/lib/shell/panes/PaneView.svelte; sed -n 335,339p src/lib/shell/panes/PaneBody.svelte; sed -n 128,153p src/lib/ui/menu/ContextMenu.svelte; sed -n 186,200p src/lib/state/workbench/layout/open/opening.ts   (the P2 citations)
+257: const viewOpener = createOpenView({ client, page: () => page, path: () => path });
+439: <ContextMenu label={t('ui.pane_menu')} read={tabMenu.read} onpick={tabMenu.pick}>
+471-479: <PaneBody ... {page} {path} ... items={stripItems} onpick={stripPick}
+PaneBody.svelte:337: <ContextMenu label={t('ui.pane_menu')} {items} {onpick}>
+ContextMenu.svelte:133-152: ContextMenu.Root > Trigger, Portal > Content > MenuList
+opening.ts:195-197: function openInPane(...) { const held = access.at(page); if (held === null || paneAt(access.layout(held.id), path) === null) return '';
+
+$ cat -n config/defaults/layout.yml | sed -n 9,27p; grep -n "^export function arrange\|^export function readGroups" src/lib/state/workbench/navigation/catalogue.ts   (the St3 order)
+20: - { label: "Apps", glyph: app, page: apps, chord: a, group_glyph: app }   (11th of 13 rail entries, between Present and Help)
+26-27: nav_groups: float: { label: "Float", glyph: split_right, chord: w }
+183:export function arrange(
+283:export function readGroups(config: Record<string, unknown> | undefined): NavGroup[] {
+```
+
+The round report's own test:quick run (35.7 s) and mine (30.2 s) differ by load; no decision rests on the time. That the builder's run came after its last change cannot be shown by an allowed command; the rerun above covers the tree as it is now.
+
+### Verdicts
+
+Items of `O49.md` "What to build", for the whole diff since the base:
+
+- 1: holds. `pane-view.ts:349-350` places `facts.openView` third in the first group, which carries no condition; `config/text/ui.yml:82` `strip_open_view: Open View`.
+- 2: holds. `open-view.svelte.ts:88-108`: `arrange(listedViews(views()), readGroups(configMap()))`, one submenu per labelled section with `groupGlyph`, views with `registrationLabel`, `registrationGlyph`, `title` from `registrationHeading`, the loose section after the groups, no docs.
+- 3: holds. `open-view.svelte.ts:116-124` decides at the pick: `viewFor` undefined or unlisted opens nothing (cases ruling 1), otherwise `openInPane(view, undefined, deps.page(), deps.path())`.
+- 4: holds. `heldHost` at `opening.ts:92-98`, `:411-413`, returned at `:500`; on the store at `layout.svelte.ts:216-217`, `:830`; the hint from `holderWords` (`open-view.svelte.ts:61-69`), page label, `Page N` (cases ruling 2) or `ui.float_label`, told apart by `pages()` (cases ruling 4).
+- 5: holds. The new module has its head comment and the `open-view:` prefix; `PaneView.svelte` 517 lines (at or under 520); `strip/` 10 items.
+- 6: holds. Every comment the brief names is true and filled to 100 columns (fill check above). `HELP.md:65` reads twelve views, with Apps; the Open View bullet at `HELP.md:76` says where it is, the sections, apps' views included, the pick in that pane, and the held view's hint and pick. One phrase of that bullet is finding Standards R1, recorded against round item 3.
+- 7: holds. The round changed no import, and the four diagram files are identical to the snapshot. The first review's staleness run covers the round-0 import counts.
+
+Cases of `O49.md` (read through the code, which the round did not change; C1 to C11 on screen are the orchestrator's look on TEST):
+
+- C1: met, by reading. Rail order at `layout.yml:10-22` then Float from `nav_groups`; `arrange` keeps that order.
+- C2: met, by reading. `PaneBody` gets `items={stripItems}` and `onpick={stripPick}` (`PaneView.svelte:478-479`).
+- C3: met, by reading.
+- C4: met, by reading, under cases ruling 3. The Apps view, each `registrationOfApp` entry and each listed `registrationOfView` entry, `title` from `heading` or `headingKey` (`registry.ts:178-183`).
+- C5: met, by reading.
+- C6: met, by reading.
+- C7: met, by reading.
+- C8: met, by reading.
+- C9: met, by reading.
+- C10: met, by reading.
+- C11: met, by reading. `listedViews` (`catalogue.ts:381-383`) before `arrange`.
+- C12: met, by reading.
+- C13: met, by reading, under cases ruling 1.
+- C14: met, by reading.
+- C15: met, by reading.
+- C16: met, by reading.
+- C17: met, by reading.
+
+Items of `O49-round1.md` "What to build":
+
+- 1 (St1): holds. Both paragraphs fill to 100 columns: the awk check printed nothing, every line reads "ok" in the fill check, and the word sequence is unchanged against the snapshot (diff exit 0 for both).
+- 2 (St2): holds. `PaneView.svelte:44-46` reads "a view a page or float holds is shown where it is held, and any other view opens in this pane". That is what `picked` does (`open-view.svelte.ts:121-122`). The paragraph fills at 100 columns.
+- 3 (St3): holds on everything St3 named. "every view" is replaced by "the views the Views catalogue lists, so not a view opened only for something (a project, an entry, a file) and not the view of an app that is not active". This matches `listedViews` and the `listed` doc at `registry.ts:111-116`. Float and the apps' views read as two sections. The builder's departure from the round brief's word order is true to the code (see the note under the Findings). One phrase is finding Standards R1.
+- 4 (St4): holds. `docs/apps.md:87` and `:263` name Open View under Apps, with the container's title as hover words, and nothing else in the file changed (`git diff 374eeaa2 -- docs/apps.md`: two hunks, one line each).
+- 5 (P1): holds. The report quotes a green test:quick run, and my rerun on the current tree is green (`test:quick: 30.2 s (limit 45.0 s); every command passed`).
+- 6 (P2): holds. The statement is in the report, and each citation reproduces: `PaneView.svelte:257`, `:439`, `:471`; `PaneBody.svelte:337`; `ContextMenu.svelte:133-152`; `opening.ts:195-197`.
+
+Cases of `O49-round1.md`:
+
+- 1 (St1): met. The awk check printed nothing, and each line ends where the next word would pass 100 columns. The report gives the "before" as columns and next words, not the paragraph text. The snapshot reproduces those columns (open-view 3: 98, 6: 96, 8: 93, 9: 92, 10: 94; pane-view 302: 96, 306: 96), and the words are unchanged.
+- 2 (St2): met. Before: "opened in this pane". After: the held view is shown where it is held.
+- 3 (St3): met, apart from Standards R1.
+- 4 (St4): met. The before and after lines are quoted; the after lines match `sed -n '87p;263p' docs/apps.md` above.
+
+The St3 word order. The builder's bullet is true to the code, and the round brief's order would not have been. The round brief listed the sections as "by rail page, then the floats' section, then the views the apps add under Apps". The bullet puts Apps among the rail pages and Float last. Apps is a rail entry, the 11th of 13 (`config/defaults/layout.yml:20`, between Present at `:19` and Help at `:21`). `readGroups` (`catalogue.ts:283-303`) gives the rail groups in rail order first and then the `nav_groups:` groups, Float being the only one (`layout.yml:26-27`). `arrange` (`catalogue.ts:183-207`) keeps that order. `item()` (`open-view.svelte.ts:88-108`) draws the labelled sections in that order, then the loose views. So the submenu reads Focus ... Present, Apps, Help, System, then Float. Written in the brief's order, the bullet would have put Apps after Float, which is false. The departure is stated in the report under St3 and is no finding.
+
+### Findings
+
+#### 1. Spec
+
+none. The delta writes only the round's paths (`open-view.svelte.ts` lines 1-12, `pane-view.ts` lines 302-309 inside 296-394, `PaneView.svelte` lines 44-49, `HELP.md:76`, `apps.md:87` and `:263`). No code line changed, and no fix reaches beyond its finding. No finding is closed by removing a check.
+
+#### 2. Proof
+
+none. Every closure the report claims reproduces in my rerun: the fill, the words unchanged, the apps lines, the sizes, prettier, the ASCII gate, the history grep, unused exports, the P2 citations and test:quick.
+
+#### 3. Standards
+
+- R1. `docs/HELP.md:76`: "then a Float section with the views of the floats."
+  - What is wrong: the Float section holds the registrations whose group is `float`. On the tree these are Live HPC, Usage and Workbenches (`group: 'float'` in `Hpc.svelte:10`, `Usage.svelte:12` and `Workbenches.svelte:10`), the views the shipped float starts with (`layout.yml:222`). It does not hold whatever views are in floats. "the floats", plural, reads as every floating pane. The same section names this group "the float" with its three views (`HELP.md:54`: "or in the float (Live HPC, Usage, Workbenches)"), and `layout.yml:25` says "the float's views".
+  - Failure scenario: a reader floats a pane holding Files (Float in the pane menu), then looks for Files in Open View's Float section. Files is listed under Explorer.
+  - Fix: one phrase, fixable at landing inside round item 3's path, for example "then Float with the float's views (Live HPC, Usage, Workbenches)".
+  - Verdict: the one imprecise phrase of round item 3 and round case 3. It is not a red check or an unbuilt item.
+
+#### 4. Behaviour
+
+none. The round changed comments and documents only. The behaviour stated in the round-0 report's "before and after" is unchanged by the delta.
+
+### Declined to judge
+
+- Whether the builder's test:quick run came after its last change, and how many times it ran in the round: no allowed command shows the order of the work. My rerun covers the tree as it is now.
+- The diagram staleness test (`tests/checks/diagrams/diagrams.test.ts`) was not rerun. The round brief does not name it, the round changed no import, and the diagram files are byte-identical to the snapshot. The first review's run covers the round-0 counts.
+- C1 to C11 on screen, and whether the System page's saved label on TEST is "System" (C5): these are the orchestrator's look at landing. The saved layout under `~/.oculus` was not read.
+- Whether a rail page added by a workspace's settings with no registered views should show a section: `arrange` leaves out a group with no listed views, as the Views catalogue does and as `HELP.md:54` describes it. The bullet's "a section per rail page" holds for the shipped rail. Ruling on custom rails is outside the step.
+
+Reviewer usage: a06d0d28ac2eac6e4, claude-opus-5-5, 177883 tokens, 41 tool uses, 4 min 52 s.
+
+### Closed
+
+- R1: fixed at landing, inside round item 3's path (`docs/HELP.md:76`): the Float phrase names the float's views (Live HPC, Usage, Workbenches).
