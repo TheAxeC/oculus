@@ -1,9 +1,9 @@
 In flight (5 of 6 slots in use):
 - O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: review running.
 - O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204 and 208. State: brief check reported, its findings being closed.
-- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: brief widened for ruling 224, builder being launched.
+- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: building.
 - O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: brief check reported, its findings being closed.
-- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike), ruling Focus headings. State: brief check running.
+- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike), ruling Focus headings. State: brief check reported, its findings being closed.
 
 Queued, in order (11 steps):
 - O54 (the hubs of a workspace resolve own hub first; a key held by two hubs carries its hub's prefix except the primary's copy; Add asks which hub), rulings 203 and 223. Waits: a free slot.

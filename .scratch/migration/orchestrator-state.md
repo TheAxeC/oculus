@@ -40,16 +40,26 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
 - step: O50
   landing: preparing
-  brief_check: "running: a5cae3c5b6723f862"
+  brief_check: "reported: a5cae3c5b6723f862"
 - step: O62
-  landing: preparing
-  brief_check: "running: a05874f9b03fbf13d"
+  executor: agent
+  worker: claude:opus
+  session_id: a2be218df230a06d7
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: a2288789
+  worktree: .agents/worktrees/migration-O62
+  brief_check: agents/reviews/O62-brief-check.md (a05874f9b03fbf13d, claude-opus-5-5, 158684 tokens, 43 tool uses, 5 min 57 s)
+  report: agents/reviews/O62-report.md
+  round: 0
+  landing: not-started
+  shared_paths: config/catalogs/vocab.yml and src/lib/data/shapes/catalog-files/vocab.ts with O59 (O59 writes vocab.yml 76-167 and vocab.ts 42-53, O62 vocab.yml 207-210 and vocab.ts 286-289: disjoint ranges, simple to merge); tests/checks/config/config-folder.test.ts with O58 (O58 lines 194 and 324, O62 line 220: simple to merge)
 - step: O58
   landing: preparing
-  brief_check: "running: a27ff5fa5d0557791"
+  brief_check: "reported: a27ff5fa5d0557791"
 - step: O52
   landing: preparing
-  brief_check: "running: a95389eccf26b9f17"
+  brief_check: "reported: a95389eccf26b9f17"
 ```
 
 ## The standing demands (from Axel, in force)
