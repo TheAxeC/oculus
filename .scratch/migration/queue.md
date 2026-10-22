@@ -1,9 +1,9 @@
-In flight (3 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
 - O64 (motion where work is in progress: Inbox and Calendar Refresh turn, the Usage Refresh stays drawn while it runs, the commit message suggestion says what runs, one git line under the repository's name; ruling 249). State: building (base 4c89702d), resumed after the cases ruling `agents/briefs/O64-cases.md` (the row's accessible name carries the words; the status bar's sync item). Shares only `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O65: simple to merge.
-- O65 (the status bar scrolls sideways; the eight languages' settings from VS Code's and LaTeX Workshop's files with the table test; every default Monaco key read against oculus's key tables and pressed in Chrome at the look; Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M in a LaTeX tab; ruling 250). State: /spec, brief `agents/briefs/O65.md` written, brief check running; next as O64. Shares `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O64, and possibly `src/lib/shell/keys/rows/CommandRows.svelte` with O54: simple to merge.
 
-Queued, in order (6 steps):
+Queued, in order (8 steps):
+- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; ruling 250). Waits: Axel's ruling on open item 258 (Cmd+K and Ctrl+K in the editor against D46); brief and brief check done, every other finding closed; then its preparation commit and the launch.
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
 - O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge).
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.

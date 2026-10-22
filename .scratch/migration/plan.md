@@ -2984,6 +2984,7 @@ Agents in no role the cost script prices:
 - aba446840547d8ea4: builder of step O51, claude-opus-5-5
 - a914ccedd6c86f1fa: reviewer of step O51, claude-opus-5-5
 - a0e5d4a6e03b9c695: reviewer of step O51 over round 1, claude-opus-5-5
+- a6b632fc3fe084af5: brief check of step O65, claude-opus-5-5
 
 ## Blocked, and by what
 
