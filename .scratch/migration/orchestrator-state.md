@@ -48,7 +48,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O51
   brief_check: agents/reviews/O51-brief-check.md (a760fccefd58a7066, claude-opus-5-5, 216679 tokens, 58 tool uses, 8 min 23 s)
   report: agents/reviews/O51-report.md
-  builder_usage: 225097 tokens, 52 tool uses, 8 min 39 s (hand-back of the frame tabs); 108098 tokens, 76 tool uses, 20 min 28 s (the build after the cases ruling)
+  builder_usage: 225097 tokens, 52 tool uses, 8 min 39 s (hand-back of the frame tabs); 108098 tokens, 76 tool uses, 20 min 28 s (the build after the cases ruling); round 1: 186721 tokens, 40 tool uses, 7 min 16 s
   reviewer_report: agents/reviews/O51-refuter.md (a914ccedd6c86f1fa, claude-opus-5-5, 244440 tokens, 76 tool uses, 12 min 55 s)
   round: 1
   landing: not-started
