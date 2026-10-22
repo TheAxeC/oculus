@@ -65,9 +65,10 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O49-brief-check.md (ab729638069c01a99, claude-opus-5-5, 215648 tokens, 83 tool uses, 9 min 38 s)
   report: agents/reviews/O49-report.md
   builder_usage: 172788 tokens, 44 tool uses, 5 min 13 s (hand-back of C13 before the build); round 0 build 235300 tokens, 69 tool uses, 8 min 31 s
-  round: 0
+  round: 1
+  reviewer_report: agents/reviews/O49-refuter.md (af0803206f26587d0, claude-opus-5-5, 183702 tokens, 57 tool uses, 8 min 48 s)
   landing: not-started
-  shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 64 and 75-76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
+  shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 65 and 76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
 - step: O57
   landing: preparing
   brief_check: "running: ab90eaaac353fc610"
@@ -431,6 +432,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O49 round 1 sent). O49's review (`agents/reviews/O49-refuter.md`) found comments and pages not fully true or rewrapped (St1 to St4) and the verify list run before the last edit (P1); round 1 (`agents/briefs/O49-round1.md`) sends St1 to St4, P1 and P2 back to the builder. Open items: 240, 241. In flight (4 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building), O57 (brief check returned, findings being closed). Next: close O57's brief check findings, then its preparation commit and builder.
 - 2026-10-22 (O61 waits for O50). /spec O61 found its files shared with O50 in a way that does not merge simply: both change the `OPTION_SOURCES` lines of `src/lib/data/sources/config/catalog/schemas/references.ts` (O50 adds `people` beside `status_chips` and `entry_statuses`, which O61 renames to the split lists of ruling 221) and its head comment, the checks of `src/lib/data/snapshot/validate.ts`, and the vocabulary readers of `src/lib/data/index.ts`. O61 waits until O50 lands; no brief or worktree was made. Open items: 240, 241. In flight (4 of 6): O50, O52, O49 (review running), O57 (brief check running). Next: the reports of O49's review and O57's brief check.
 - 2026-10-22 (O49 built, O57 brief written). O49's builder reported (`agents/reviews/O49-report.md`); its review is running. O57's brief is written and its brief check is running. Open items: 240, 241. In flight (4 of 6): O50 and O52 (refuted over round 1; their landings wait on 240 and 241), O49 (review running), O57 (brief check running). Next: /spec O61, then the reports of O49's review and O57's brief check.
 - 2026-10-22 (O62 landed). O62 is on main; fixes at landing: `write.test.ts` tagged slow, and `vite.config.ts`'s client build no longer waits on the types lock. Axel's standing demand "Only related tests at a landing" booked; open items 240 (how `land.sh`'s check follows it) and 241 (main or the gate worktree). In flight (3 of 6): O50 (refuted over round 1, landing with fixes), O52 (refuted over round 1, ready for /land), O49 (brief checked, preparation commit next). Next: /spec O49 on, /land O52, /land O50, /spec O57 and O61.

@@ -1,8 +1,8 @@
 In flight (4 of 6 slots in use):
 - O50 (who the user is: the workspace setting `self`). State: refuted over round 1; landing waits on open items 240 and 241, with fixes at landing.
 - O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing waits on open items 240 and 241.
-- O49 (an Open View submenu in the tab strip's menus). State: built; its review running.
-- O57 (the portfolio chat's index over every hub). State: brief written; its brief check running.
+- O49 (an Open View submenu in the tab strip's menus). State: refuted; repair round 1 building.
+- O57 (the portfolio chat's index over every hub). State: brief checked; its findings being closed in the brief.
 
 Queued, in order (9 steps):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
