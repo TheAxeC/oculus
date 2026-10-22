@@ -38,6 +38,12 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
   shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
+- step: O64
+  brief_check: agents/reviews/O64-brief-check.md (a807f5f7c26db7f22, claude-opus-5-5, 192674 tokens, 55 tool uses, 7 min 16 s)
+  landing: preparing
+- step: O65
+  brief_check: "running: a6b632fc3fe084af5"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)

@@ -1,16 +1,16 @@
-In flight (2 of 6 slots in use):
+In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
-- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
+- O64 (motion where work is in progress: Inbox and Calendar Refresh turn, the Usage Refresh stays drawn while it runs, the commit message suggestion says what runs, one git line under the repository's name; ruling 249). State: /spec, brief `agents/briefs/O64.md` written, brief check running; next: its findings closed in the brief, the preparation commit, the worktree, the builder. Shares only `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O65: simple to merge.
+- O65 (the status bar scrolls sideways; the eight languages' settings from VS Code's and LaTeX Workshop's files with the table test; every default Monaco key read against oculus's key tables and pressed in Chrome at the look; Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M in a LaTeX tab; ruling 250). State: /spec, brief `agents/briefs/O65.md` written, brief check running; next as O64. Shares `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O64, and possibly `src/lib/shell/keys/rows/CommandRows.svelte` with O54: simple to merge.
 
-Queued, in order (8 steps):
+Queued, in order (6 steps):
+- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
 - O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge).
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O64 (motion where work is in progress: Inbox and Usage Refresh, commit message generation, the git bar under the selected repository; ruling 249). Waits: a free slot; /spec reads its premises.
-- O65 (the status bar scrolls; the editor's keys as VS Code's: language settings for eight languages, every key checked, the LaTeX keys; ruling 250). Waits: a free slot; /spec reads its premises.
-- O39 (oculus in its own repository): left: the owed desktop look of part A, then the tick. Waits: at any time, in no slot.
+- O39 (oculus in its own repository): left: the owed desktop look of part A, then the tick. Waits: Axel's look in the desktop app (the steps are in the session's answer of 2026-10-22); in no slot.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
