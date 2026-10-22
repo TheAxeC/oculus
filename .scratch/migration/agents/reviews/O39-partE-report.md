@@ -1,172 +1,260 @@
-# O39 part E: report
+# O39 part E: report (repair round 1)
 
-Everything in the brief is done, under the cases ruling `agents/briefs/O39-partE-cases.md` (C6, C10, C15). Two paths outside the write list were changed, both comments: `src/routes/+page.ts` and `src/lib/shell/Workbench.svelte` (see "Files").
+Everything in the brief and in `agents/briefs/O39-partE-round1.md` is done. Ruling 7 found a frame that paints the mounted page before the derived tokens are set, so this round fixes it: the first HTML now carries the start theme's derived tokens on the root element. That adds `src/routes/+layout.svelte` (a comment made false by the fix) and the dependency of `src/hooks.server.ts` on `src/lib/ui/theme/theme.ts` (see ruling 7).
 
 ## Open items of the state file, verbatim
 
-The section "## Open items" of `orchestrator-state.md` holds no item. Its text: "An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own."
+From `orchestrator-state.md`, section "## Open items", read with `sed -n '/## Open items/,/^## [A-Z]/p'`:
 
-## The cases' first run, and the ruling
+- Open item 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code.
 
-Command on the unchanged tree (no file under `src/` changed, only the two test files): `npx vitest run tests/server/root/hooks-server.test.ts tests/server/desktop/app-theme-start.test.ts --reporter=verbose`. The hook file's summary: `Tests  9 failed | 4 passed (13)`.
+## Rulings
 
-| Case | Row | Command or reading | First run on the unchanged tree |
-|---|---|---|---|
-| C1, C2 | G11 'starts a browser on the first row and the desktop window on app_theme, by the mark (C1, C2)'; G118 'starts on $row' rows C1 and C2 | the run above | G11: `expected '' to be 'vscode-dark-modern'`. G118: `TypeError: loaded.requestStart is not a function` at `app-theme-start.test.ts:399` |
-| C3 | G118 rows C3 browser and desktop | the run above | `TypeError: loaded.requestStart is not a function` |
-| C4 | G11 "sends an approved app's theme as its class and the block of its file in the shared style element (C4)"; G118 row C4 | the run above | G11: `expected '' to be 'app-theme'`. G118: the TypeError |
-| C5 | G118 rows C5 (not approved, browser and desktop; file not resolved, browser and desktop) | the run above | the TypeError |
-| C6 | G11 'sends $row the start the workbench gets (C6)', rows float, find, audience, print | the run above | each `expected '' to be 'vscode-dark-modern'` |
-| C7 | reading | `paintAppTheme`, `src/lib/ui/theme/app-theme.ts` (now `:88-104`): it looks up `APP_THEME_STYLE_ID`, replaces the text of an element that is there, and creates one only when none is; a first draw that is no app theme removes it | holds: one element |
-| C8 | the orchestrator's look | not run (spec.md:64) | see "Before and after" |
-| C9 | the orchestrator's look | not run | see "Before and after" |
-| C10 | G11 'sends the start theme and the title for a theme option naming nothing, in a config the read answers with a finding (C10)' | the run above | `expected '' to be 'vscode-dark-modern'` |
-| C11 | G118 row 'the CRT overlay on and the rice toggles off over a rice theme (C11)' | the run above | the TypeError |
-| C12 | G118 rows C12 desktop and browser | the run above | the TypeError |
-| C13 | G11 'sends the find page in a browser the browser start (C13)'; page half by reading | the run above; `src/routes/find/+page.svelte:62` was `void drawConfiguredTheme(document, true, data.appThemes);` | HTML row passes on the unchanged tree (the unchanged hook adds nothing, which is the browser start); page half fails on the unchanged tree: a browser tab drew the desktop start |
-| C14 | G11 'writes a class holding a quote, a bracket, an ampersand and a replacement pattern escaped and literal (C14)' | the run above | `expected '' to be 'a&quot;b&lt;c&amp;d$&amp;e'` |
-| C15 | G11 C15 row as first written | the run above | its precondition `expect(block).toContain('<')` failed: `expected 'color-scheme: dark;\n--shadow: none;\...' to contain '<'`, the block showing `--bg: #252526;`, the base value |
-| C16 | G11 'reads no config and no apps for a request to an API route (C16)' | the run above | passes on the unchanged tree (the unchanged hook reads nothing for an API route) |
-| item 1, throw | G11 'sends the HTML with no theme and the title when the theme cannot be computed' | the run above | passes on the unchanged tree (the unchanged hook adds no theme) |
+### 1. T1 and P1, one reader of the looks: DONE
 
-The cases the brief's rules got wrong, with the ruling (`agents/briefs/O39-partE-cases.md`):
+`src/lib/state/shared/words/appearance.ts`: `lookShape` no longer reads `crt.on`, `rice.brackets` or `rice.monospace` itself. `rice` and `crt` are taken as `z.unknown()` and the three fields come from `configLooks` over the same node; `rice.icons` is read by a shape of its own; `NO_LOOK`'s three values come from `configLooks({})`.
 
-- C15. Rule: a block holding `<` is not sent. Result: no theme file can put `<` into the block (`parseColour`, `vscode-map.ts:283-290`, accepts only a hex; every other value is a hex from `settle`, a value of the shipped sheets, or `dark`, `none`, `transparent`), so the case's input sends a style element. Ruling, option (a): the guard stays, its comment saying it covers the two shipped sheets' text; C15 is now a theme whose file holds `</style>` in a colour: body class `app-theme`, one style element with the shared id, no `<` in it, the colour falling back. No row mocks the sheets.
-- C6. Rule: the body carries the class the page's first `applyTheme` sets. Result: the find, audience and print pages draw `crt: false` (`app-theme.ts:221`, `drawConfiguredTheme`), the workbench draws `crt.on`. Ruling, option (a): `requestStart(held, config, marked, crt)`, the hook passing `event.route.id === '/'`; C6 now: `/?float=<id>` gets `/`'s class and style element, the other three `/`'s style element and class without the CRT class.
-- C10. Result: a `theme` naming no row gives the read no finding (`loadConfig`'s findings are merge findings, `merge.ts:123-189`; `themeFindings` runs in `READER_FINDINGS` and names only `app_theme`). Ruling: the row with a given finding stands.
+```ts
+// appearance.ts:323
+const iconsShape = z.object({ icons: z.boolean() }).transform((rice) => rice.icons);
+// lookShape, :337 and :341
+        rice: z.unknown(),
+        crt: z.unknown(),
+// its transform, :356-357
+        icons: readAs(iconsShape, node.rice) ?? NO_LOOK.icons,
+        ...configLooks(node),
+// NO_LOOK, :160
+    ...configLooks({}),
+```
 
-The rows rewritten after the ruling (C6's two `crt.on: true` configs, C15, and the G118 row 'the same looks on a page that draws no CRT overlay (C11)') were not run on the unchanged tree after the ruling. Their failing line there is read, not run: the unchanged hook gives the class `''` for every config, so C6's first failing line is the same `expected '' to be 'vscode-dark-modern'` quoted above (its first two configs are unchanged), C15's is `expect(bodyClass(sent.html)).toBe('app-theme')` with `''`, and the new G118 row fails with the same `TypeError: loaded.requestStart is not a function` as every row of its table.
+`rice.icons` reads as before for every input: a boolean is kept, a non-boolean, a missing key or a `rice` that is not a map gives `false`. `configLooks`'s doc comment (`start-theme.ts:123-128`) now names it the one reader of the three options, and `lookShape`'s doc comment (`appearance.ts:325-331`, above `const lookShape` at `:332`) says it takes them from there.
+
+The C11 rows of G118 (`tests/server/desktop/app-theme-start.test.ts`) now compare the server's class with the class the page sets for the same config, read the page's way, through `pageClass(config, inApp, drawnBy)`: `setAppearance(config, CLASSES)`, then for the workbench `configuredLook()` and `drawTheme` with `themeClass(look.theme, NO_OFFERS, inApp)` and `look.crt`, `look.brackets`, `look.monospace`, as `shell/window/appearance.svelte.ts:134-145` calls it, and for a page with no `apps` channel `drawConfiguredTheme(document, inApp, {})`. The rows:
+
+- 'the CRT overlay on and the rice toggles off over a rice theme (C11)', drawn by the workbench, class `rice kanagawalotus crt rice-plain rice-sans`;
+- 'the same looks on a page that draws no CRT overlay (C11)', drawn as the find page draws, class `rice kanagawalotus rice-plain rice-sans`;
+- new: 'rice.monospace written as a word, which reads as its default (C11)', `rice: { brackets: false, monospace: 'x' }`, drawn by the workbench, class `rice kanagawalotus crt rice-plain`.
+
+The literal `looks` field and the test's own `body()` document are gone, and `applyTheme` is no longer a member of the test's `Modules`.
+
+Run of the three rows on the tree before this round's change to `src/` (only the test file changed): `npx vitest run tests/server/desktop/app-theme-start.test.ts -t "starts on 'the CRT overlay|starts on 'the same looks|starts on 'rice.monospace written" --reporter=verbose`:
+
+```
+<check mark> |unit| ... > the theme a page is sent with > starts on 'the CRT overlay on and the rice toggl...' 15ms
+<check mark> |unit| ... > the theme a page is sent with > starts on 'the same looks on a page that draws n...' 4ms
+<check mark> |unit| ... > the theme a page is sent with > starts on 'rice.monospace written as a word, whi...' 4ms
+      Tests  3 passed | 17 skipped (20)
+```
+
+They pass there because the page's own zod reading and `configLooks` already gave the same answer for these inputs: a non-boolean `monospace` gives `true` in both. With this round the two cannot diverge, since there is one reader. The same command after the change:
+
+```
+<check mark> |unit| ... > starts on 'the CRT overlay on and the rice toggl...' 7ms
+<check mark> |unit| ... > starts on 'the same looks on a page that draws n...' 2ms
+<check mark> |unit| ... > starts on 'rice.monospace written as a word, whi...' 2ms
+      Tests  3 passed | 17 skipped (20)
+```
+
+### 2. T2, the C6 rows: DONE
+
+The C6 table is tagged slow: `it.each([...])('sends $row the start the workbench gets (C6)', { tags: ['slow'] }, ...)`, `hooks-server.test.ts:310-312`. While timing every row of the file alone, C4 also took 129 ms alone, so it is tagged slow as well (`:285-287`). Each row run alone with `npx vitest run tests/server/root/hooks-server.test.ts -t "<row>" --reporter=verbose`:
+
+| Row | Alone |
+|---|---|
+| C1, C2 | 48 ms |
+| C4 | 129 ms, tagged slow |
+| C6 'a float window' | 129 ms, tagged slow |
+| C6 'the find page' | 122 ms, tagged slow |
+| C6 'the audience page' | 177 ms, tagged slow |
+| C6 'the print page' | 210 ms, tagged slow |
+| the root element's tokens (new, ruling 7) | 59 ms |
+| C10 | 33 ms |
+| the theme cannot be computed | 16 ms |
+| C13 | 21 ms |
+| C14 | 27 ms |
+| C15 | 32 ms |
+| C16 | 21 ms |
+
+### 3. T3, `tokens.css:18-20`: DONE
+
+```css
+    /* Three colours derive.ts computes for every theme and ui/theme/theme.ts sets on the root
+       element: the selected-row surface and the scrollbar's thumb and track. The page's first HTML
+       carries the start theme's class and its derived tokens, these three among them, on the root
+       element (hooks.server.ts), and the page's script sets them again when it draws. These are
+       the default theme's values, which a page sent with no start theme draws. */
+```
+
+The ruling's wording ("these three derived colours are set when the page's script draws") was written before ruling 7 settled; with ruling 7's fix the HTML carries them too, and the comment says that. The values on `:root` are what the page draws when the hook's `pageTheme` throws and sends no start theme (`hooks.server.ts:102-104`).
+
+### 4. T4, `drawTheme`'s doc comment: DONE
+
+`src/lib/ui/theme/app-theme.ts:160-170`: "The page's first paint comes from the HTML the server sent, which holds the start theme's class, its derived tokens and, for an app's theme, its block; an app's theme the draw hands the file of (`file`, which the page's first load carries) is drawn from that file at once, the draw replacing the text of the style element the server sent, and any other draw of an app's theme loads its file from the server." The file's head comment (`:10-15`) names the derived tokens as part of the first HTML.
+
+### 5. T5, `RequestStart`: DONE
+
+`src/lib/server/machine/apps/routes/theme.ts:70`: `type RequestStart = { classes: string; file: AppThemeFile | null };`. `grep -rn RequestStart src tests` prints only `:70` and `:85` (the return type of `requestStart`).
+
+### 6. T7, two statements: DONE
+
+- A browser whose user agent carries the word `oculus-desktop` (split on whitespace, `desktopMarked`, `start-theme.ts:96-100`) is sent the desktop start: `app_theme` when `theme` names nothing drawable, and the start theme's class, tokens and block in its HTML. Its page has no bridge to the host (`desktopOf(window, '')` is undefined), so its first draw starts as a browser's does, on the first row; where the two starts differ (`theme` empty or not drawable and `app_theme` set) the tab shows the desktop start at its first paint and changes colour once when the script draws. Where `theme` names a drawable theme both starts are that theme and nothing changes. The mark inside a longer word (`x oculus-desktopy`) is not the mark: G11 row C1, C2 checks `bodyClass` is `''` for it. The hook's head comment says this (`hooks.server.ts:129-134`).
+- An unknown placeholder name, `%oculus.<name>%` with a name the hook does not fill, is left in the HTML as it is: the replacer returns `filled[name] ?? whole` (`hooks.server.ts:183`). `app.html` holds only the four names the hook fills (`title`, `root-style`, `body-class`, `theme-style`), and the throw row checks `sent.html` holds no `%oculus.`. The hook's head comment says this (`hooks.server.ts:129`).
+
+### 7. B1, a frame before the derived tokens: a frame can, fixed in this round: DONE
+
+The reading, line by line:
+
+- `src/app.html:10-11` (the brief's `:12`), `<body class="%oculus.body-class%" ...>` and `<div style="display: contents">%sveltekit.body%</div>`: with `ssr = false` the body holds only Kit's start script, so a frame painted before the script mounts shows the body's background and no mounted content.
+- `node_modules/@sveltejs/kit/src/runtime/client/client.js:703-711`: Kit mounts the root with `new app.root({ target, props, hydrate, sync: false, ... })`. The root is a class made by `asClassComponent` (`@sveltejs/kit/src/core/sync/write_root.js:190-192`).
+- `node_modules/svelte/src/legacy/legacy-client.js:115-129`: the class constructor mounts the component and then runs `flushSync()` when `!async_mode_flag && (!options?.props?.$$host || options.sync === false)`. Kit passes no `$$host`, and the app does not turn on Svelte's experimental async mode (`vite.config.ts:440-444`, `compilerOptions` holds only `runes`; `async_mode_flag` defaults to false, `svelte/src/internal/flags/index.js:2`). So the mount and every effect it creates, `$effect` and `onMount` included, run in the same task, and the browser paints no frame in between.
+- `src/routes/+layout.svelte`: renders the children under `TooltipGroup` with no `{#await}` and no condition, and the find, audience and print pages draw in `onMount` with `drawConfiguredTheme` (`find/+page.svelte:61-64`, `present/show/+page.svelte:182-183`, `present/print/+page.svelte:71-72`), which is synchronous for every start: `fileOffers(files)` makes the offers non-null, so an app theme is `ready` with its file or `missing` and drawn as the start (`app-theme.ts:204-222`).
+- `src/lib/shell/window/appearance.svelte.ts:117-145`, the workbench's draw: at mount the apps channel has sent nothing, so `appShell.offers().themes` is `null` (`state/system/apps/shell/shell.svelte.ts:411-413`). For a `theme` (or, in the desktop window, `app_theme`) naming an app's theme whose file the first load carries as `null` (the app not approved or disabled, or the file not resolving), `withoutThemes` keeps the null offers (`appearance.ts:479`), `appThemeState` answers `pending` (`appearance.ts:425`), so `app` is true (`appearance.svelte.ts:132`) and `firstFile(shown)` is undefined (`firstDrawFile` answers undefined for a null file). `drawTheme` then awaits `loadAppTheme` (`app-theme.ts:185`) and sets nothing synchronously. The mounted workbench paints with the class the server sent (the start theme's, since `requestStart` found that theme not drawable) and without its derived tokens until the request answers and `applyTheme(document, draw.classes, draw)` runs (`app-theme.ts:186-190`). In the desktop window the start theme is Dark Modern, so those frames drew `--accent-bg`, `--scroll-thumb`, `--scroll-track` and the `-txt` tokens in the light theme's values from `tokens.css`.
+
+The fix: the HTML carries the start theme's derived tokens on the root element, where `applyTheme` sets them, through the same derivation.
+
+```ts
+// src/lib/ui/theme/theme.ts:94-106, used by applyTheme at :127
+export function derivedTokens(
+    className: string,
+    tokens: string = tokensCss,
+    themes: string = THEME_SHEETS
+): Record<string, string> {
+    return deriveTokens(resolveTheme(parseBlocks(`${tokens}\n${themes}`), className));
+}
+
+// src/hooks.server.ts, pageTheme, :93-99
+        const themes = sent ? `${THEME_SHEETS}\n${sheet.css}` : THEME_SHEETS;
+        const tokens = Object.entries(derivedTokens(start.classes, tokensCss, themes));
+        return {
+            rootStyle: escapeAttribute(
+                tokens.map(([name, value]) => `${name}: ${value}`).join('; ')
+            ),
+            bodyClass: escapeAttribute(start.classes),
+```
+
+```html
+<!-- src/app.html:2 -->
+<html lang="en" style="%oculus.root-style%">
+```
+
+The sheets are the ones the page's draw uses: `THEME_SHEETS` for a theme of the configuration, and `THEME_SHEETS` plus the block for an app's theme, as `paintLoad` passes them (`app-theme.ts:155-157`). An inline style on `<html>` is what `setProperty` on `document.documentElement.style` writes, so the page's draw overwrites the same properties and no stylesheet order can outrank them. The attribute is escaped with the existing `escapeAttribute` of `data/prose/markdown/markdown.ts:40`, which the class now goes through too (it also escapes `>`); the hook's own `ATTRIBUTE_ESCAPES` table is gone. A throw sends `style=""`.
+
+The hook now imports `$lib/ui/theme/theme`. The layer table of `tests/checks/tree/boundaries.test.ts` binds files under `src/lib` and not `src/hooks.server.ts`, which already imported `$lib/themes/*`, which the server row does not allow either; boundaries passes (verify 3). The sheet assembly stays in one place: `src/lib/themes/` holds 10 items, the folder limit, and `derive.ts` and `vscode-map.ts` are run by the desktop host under Node without Vite, so neither can take the `?raw` imports.
+
+Check: the new G11 row 'sends on the root element the tokens the page derives for the start theme' sends the browser default, the desktop window, `theme: dark` and Ember, and for each compares the root element's tokens in the HTML with what `applyTheme` sets for the same class and sheets (`pageTokens`), and checks the four `--scroll-track` values differ (light, Dark Modern, dark and Ember each have their own). The hook test now hands `vscode.css` its text as well as `tokens.css` and `themes.css` (`:41-58`), so Dark Modern resolves; the rice palettes stay empty in that file, and no row there starts on a rice theme. The throw row checks the root style is empty. On the tree before this round the row fails at its first start: `app.html` had no root placeholder, so `rootTokens` gives `{}` against a non-empty set (read, not run).
+
+Comments made true by the fix: `src/routes/+layout.svelte:41-45` (it said `tokens.css`'s `:root` values give the first paint the same scrollbar; now the first HTML carries the start theme's two), `ui/theme/theme.ts:1-6` and the `applyTheme` comment, `app-theme.ts:8-15`, `appearance.svelte.ts:13-15`, `hooks.server.ts:66-77` and its head comment, and `tokens.css:18-22` (ruling 3). The hook test's head comment names the root element's tokens and the three sheets it hands text.
+
+### 8. P2 and T6: the verify list ran twice in this round
+
+The first run, after the last change to `src/`, ended `test:quick: 177.4 s; failed: svelte-check, eslint`, both in the two test files: `app-theme-start.test.ts:323:58 "Argument of type '{}' is not assignable to parameter of type 'AppOffers'."` and `hooks-server.test.ts:232:68 error void operator is useless here`. The fixes: `themeClass(look.theme, NO_OFFERS, inApp)` (the offers the workbench holds at mount) and a block body for the test's `setProperty`. The second run, after that last change, is quoted under verify 1.
 
 ## DONE / NOT DONE
 
-| Deliverable | Command | Output |
+| Check | Command | Output |
 |---|---|---|
-| Item 1: the first HTML carries the start theme; class escaped and inserted by a replacer function; app theme block in the style element with the shared id unless it holds `<`; computed in `transformPageChunk` from the one read; a throw sends no theme | `npx vitest run tests/server/desktop/app-theme-start.test.ts tests/server/desktop/window-guard.test.ts tests/server/desktop/attached-themes.test.ts tests/server/root/hooks-server.test.ts --reporter=dot` | `Test Files  4 passed (4)`, `Tests  62 passed (62)` |
-| Item 1: the find page draws with `desktopOf(window, '') !== undefined` | reading `src/routes/find/+page.svelte:64`; the look on landing | `void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);` |
-| Item 2: `themeSheet` and `APP_THEME_STYLE_ID` in vscode-map.ts; `bodyClass`, `CRT_CLASS`, the rice classes, `configLooks`, `startRows` in start-theme.ts; `requestStart` in theme.ts; `startOf`, `startClass`, `windowStart` signatures kept; the hook only calls | same run; `npx vitest run tests/checks/tree/boundaries.test.ts --reporter=dot` | `Tests  62 passed (62)`; `Test Files  1 passed (1)`, `Tests  11 passed (11)` |
-| Item 3: `oculus-desktop` appended to `session.defaultSession`'s user agent at start; read as a whole word | reading `src/desktop/app.ts:164` (`ses.setUserAgent(\`${ses.getUserAgent()} ${DESKTOP_MARK}\`);`); G11 C1, C2 row (the mark inside a longer word is not marked) | in the 62 passed; the host's call is seen at the look on landing |
-| Item 4: comments made true; Doc text | reading, listed under "Comments" | below |
-| C1 to C6, C10 to C16 as tests | the run above | 62 passed |
-| Verify 1 | `npm run diagrams && npm run test:quick` | `ok      prettier (0.7 s): All matched files use Prettier code style!`, `ok      ASCII gate (0.8 s)`, `ok      svelte-kit sync (2.8 s)`, `ok      eslint (30.2 s)`, `ok      svelte-check (32.0 s): 1792703212354 COMPLETED 536 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok      vitest (39.2 s): Duration  22.59s (transform 30.93s, setup 0ms, import 59.94s, tests 15.26s, environment 5ms)`, `ok      vitest slow (45.7 s): Duration  28.97s (transform 11.37s, setup 0ms, import 40.47s, tests 11.70s, environment 1ms)`, `ok      vitest checks (61.9 s): Duration  44.94s (transform 10.41s, setup 0ms, import 37.57s, tests 37.89s, environment 2ms)`, `test:quick: 64.8 s; every command passed` |
-| Verify 2 | the G118 and G11 files alone, above | `Tests  62 passed (62)` |
-| Verify 3 | `npx vitest run tests/checks/tree/boundaries.test.ts` | `Tests  11 passed (11)` |
-| Verify 4 | `wc -l` (below); `sh utils/folder-check.sh` | every file under its limit; folder-check exit 0, nothing printed |
-| Verify 5 | `sh utils/unused-exports.sh` compared with the base's | below |
-| Verify 6 | the history-word grep | below |
-| Verify 7 | the name grep | below |
-| ASCII | `LC_ALL=C grep -n '[^ -~]'` over the 18 changed files; the perl gate of spec.md | grep printed nothing (exit 1); perl printed nothing (`bfs: error: bin: No such file or directory.`: the worktree has no `bin/`) |
+| Verify 1 | `npm run diagrams && npm run test:quick` | `test:quick: 30 changed file(s), from git since HEAD`, `test:quick: 23 test file(s)`, `ok      prettier (2.5 s): All matched files use Prettier code style!`, `ok      ASCII gate (4.7 s)`, `ok      svelte-kit sync (5.2 s)`, `ok      eslint (28.4 s)`, `ok      svelte-check (29.6 s): 1792706328740 COMPLETED 536 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok      vitest (63.6 s): Duration  42.63s (transform 70.00s, setup 0ms, import 136.35s, tests 20.18s, environment 4.02s)`, `ok      vitest slow (67.5 s): Duration  46.11s (transform 35.51s, setup 0ms, import 98.86s, tests 43.36s, environment 1ms)`, `ok      vitest checks (116.5 s): Duration  95.45s (transform 13.10s, setup 0ms, import 46.16s, tests 166.26s, environment 2ms)`, `test:quick: 122.2 s; every command passed` |
+| Verify 2 | `npx vitest run tests/server/desktop/app-theme-start.test.ts tests/server/desktop/window-guard.test.ts tests/server/desktop/attached-themes.test.ts tests/server/root/hooks-server.test.ts --reporter=dot` | `Test Files  4 passed (4)`, `Tests  64 passed (64)` |
+| Verify 3 | `npx vitest run tests/checks/tree/boundaries.test.ts --reporter=dot` | `Test Files  1 passed (1)`, `Tests  11 passed (11)` |
+| Verify 4 | `wc -l` (Files, below); `sh utils/folder-check.sh` | every file under its limit; folder-check exit 0, nothing printed |
+| Verify 5 | `sh utils/unused-exports.sh` against the base's list | below |
+| Verify 6 | history-word grep | below |
+| Verify 7 | name grep | below |
+| ASCII | `LC_ALL=C grep -n '[^ -~]'` over this round's 12 files; test:quick's ASCII gate | grep printed nothing, exit 1; `ok      ASCII gate (4.7 s)` |
 
-The verify list ran twice: once before the last comment edits, once after them (quoted above). No whole-suite command was run.
-
-test:quick printed `25 changed file(s), from git since HEAD`; the `diff -rq` against the base copy lists the 18 files below, and the other 7 are under `docs/diagrams/`, which the base copy does not hold, written by `npm run diagrams`.
+`npm run diagrams` wrote under `docs/diagrams/`, which test:quick counts among its 30 changed files.
 
 ## Files
 
-From `diff -rq` against the base copy, line counts base -> now (`wc -l`):
+`diff -rq src ../migration-O39-partE-base/src` lists 18 files; with the three test files, line counts base -> now (`wc -l`):
 
-| File | Lines | In the write list |
+| File | Lines | Changed in this round |
 |---|---|---|
-| src/app.html | 13 -> 13 | yes |
-| src/hooks.server.ts | 109 -> 177 | yes |
-| src/routes/+layout.ts | 2 -> 3 | yes |
-| src/routes/+page.server.ts | 91 -> 93 | yes |
-| src/routes/+page.ts | 34 -> 35 | no: its comment "which draws such a theme from them at the first paint" was false (the page's script draws after the first paint), now says the first draw is made from them, the theme the first HTML was sent with |
-| src/routes/find/+page.svelte | 134 -> 136 | yes |
+| src/app.html | 13 -> 13 | yes, the root placeholder |
+| src/hooks.server.ts | 109 -> 191 | yes |
+| src/routes/+layout.ts | 2 -> 3 | no |
+| src/routes/+layout.svelte | 50 -> 50 | yes, comment (ruling 7) |
+| src/routes/+page.server.ts | 91 -> 93 | no |
+| src/routes/+page.ts | 34 -> 35 | no (outside the main write list, a comment, accepted by the refuter) |
+| src/routes/find/+page.svelte | 134 -> 136 | no |
 | src/lib/server/machine/apps/routes/theme.ts | 67 -> 107 | yes |
-| src/lib/themes/vscode-map.ts | 585 -> 614 | yes |
-| src/lib/ui/theme/app-theme.ts | 226 -> 219 | yes |
-| src/lib/ui/theme/theme.ts | 168 -> 140 | yes |
-| src/lib/data/helpers/editor/start-theme.ts | 73 -> 153 | yes |
-| src/lib/shell/window/appearance.svelte.ts | 181 -> 184 | yes |
-| src/lib/shell/Workbench.svelte | 456 -> 456 | no: the doc comment of `appThemes` said "so such a theme is drawn from the first paint", false for the same reason; now "so the first draw of such a theme is made without a load" |
-| src/desktop/app.ts | 393 -> 398 | yes |
-| src/desktop/windows/start-colours.ts | 115 -> 113 | yes |
-| tests/checks/tree/boundaries.test.ts | 848 -> 853 | yes |
-| tests/server/desktop/app-theme-start.test.ts | 271 -> 432 | yes |
-| tests/server/root/hooks-server.test.ts | 55 -> 360 | yes |
-| docs/diagrams/ (7 files, by test:quick's count) | not counted | yes |
+| src/lib/themes/vscode-map.ts | 585 -> 614 | no |
+| src/lib/themes/tokens.css | 343 -> 345 | yes |
+| src/lib/ui/theme/app-theme.ts | 226 -> 222 | yes |
+| src/lib/ui/theme/theme.ts | 168 -> 154 | yes |
+| src/lib/data/helpers/editor/start-theme.ts | 73 -> 154 | yes, `configLooks`'s comment |
+| src/lib/shell/window/appearance.svelte.ts | 181 -> 184 | yes, comment |
+| src/lib/shell/Workbench.svelte | 456 -> 456 | no (outside the main write list, a comment, accepted by the refuter) |
+| src/lib/state/shared/words/appearance.ts | 696 -> 688 | yes |
+| src/desktop/app.ts | 393 -> 398 | no |
+| src/desktop/windows/start-colours.ts | 115 -> 113 | no |
+| tests/checks/tree/boundaries.test.ts | 848 -> 853 | no |
+| tests/server/desktop/app-theme-start.test.ts | 271 -> 458 | yes |
+| tests/server/root/hooks-server.test.ts | 55 -> 428 | yes |
 
-Edits to an existing assertion, allow list or predicate (from `diff` against the base copy): one. `tests/checks/tree/boundaries.test.ts`, the `ui` row: before `'data/helpers/files/languages'` as the last entry; after `'data/helpers/files/languages',` and `'data/helpers/editor/start-theme'`, with its reason in the table's comment. The existing G11 row and the six existing G118 rows are unchanged; `app-theme-start.test.ts` gained two members of `Modules` (`requestStart`, `applyTheme`) and one import of `theme.ts`.
-
-## What was built
-
-- `src/app.html`: `%oculus.theme-style%` in the head after `%sveltekit.head%` (prettier puts both on one line), `class="%oculus.body-class%"` on `<body>`.
-- `src/hooks.server.ts`: `pageTheme(event)` calls `requestStart(apps.held(), locals.config().config, desktopMarked(user-agent), route.id === '/')`, converts an app theme's file with `themeSheet(..., APP_THEME_CLASS)` over the `?raw` sheets, escapes `&`, `"`, `<` in the class, and sends `<style id="oculus-app-theme">` unless the block holds `<`; any throw gives no theme. `transformPageChunk` replaces every `%oculus.<name>%` in one pass with a replacer function (an unknown name is left as it is), computing the theme once per request.
-- `src/lib/server/machine/apps/routes/theme.ts`: `requestStart(held, config, marked, crt): { classes, file }`.
-- `src/lib/data/helpers/editor/start-theme.ts`: `startRows` (the row reading `windowStart` held, which now calls it), `DESKTOP_MARK`, `desktopMarked`, `CRT_CLASS`, `RICE_PLAIN_CLASS`, `RICE_SANS_CLASS` (module-local), `BodyLooks` (moved from `ui/theme/theme.ts`), `configLooks`, `bodyClass`.
-- `src/lib/ui/theme/theme.ts`: `applyTheme` calls `bodyClass`; `themeClasses` imports `CRT_CLASS`.
-- `src/lib/ui/theme/app-theme.ts`: `convertAppTheme`, `STYLE_ID` and `AppThemeSheet` replaced by `themeSheet`, `APP_THEME_STYLE_ID`, `ThemeSheet`.
-- `src/desktop/windows/start-colours.ts`: `appThemeBlock` became `appThemeBlocks`, which parses the block `themeSheet` makes, so the host, the server and the page share one conversion.
-- `src/desktop/app.ts:161-164`: the mark on the default session.
-
-## Judgment calls the brief left open (each reversible)
-
-1. Placeholders in `app.html` named `%oculus.body-class%` and `%oculus.theme-style%`, beside `%oculus.title%`; a placeholder the hook does not know is left in the HTML.
-2. `desktopMarked(agent)` in start-theme.ts beside the constant, splitting the user agent on whitespace; the hook calls it.
-3. `configLooks(config)`, a reader of `crt.on`, `rice.brackets`, `rice.monospace` beside `windowStart`'s reading of `theme`, `app_theme`, `themes:`. The page reads the same three through the zod `lookShape` of `state/shared/words/appearance.ts:330-370`, which the server may not import, so the rule (a non-boolean or a non-map gives the default: off, on, on) is written twice. `appearance.ts` is outside the write list and was not changed.
-4. The host's window fill reads the block through `themeSheet` and `parseBlocks` in place of `mapTheme`'s entries, so the three readers share one conversion. The tokens are the same entries; window-guard and the G118 rows pass (62 passed).
-5. `GIT_DEFAULTS`, `basesOf`, `mapTheme`, `TypeDefaults`, `Context`, `Mapped` stay exported: `utils/migrations/convert-vscode-themes.ts:47-56` imports them, which knip `--production` does not count.
-6. A request carries the mark from every window of the session, the find bar's view included, and to every origin its frames load (Decisions 3).
-
-## Before and after, for the look
-
-- C8, the desktop app (packaged after `npm run app:package` from landed main, and `npm run app`), on the scratch setup of the booking at `plan.md:664`, started on Ember and on the default config, recorded at 60 frames a second: before, the main window's first frame was the light ground (rgb 238,242,243) for about 32 frames; after, the main window's first frame, a float window's, a reload's (Cmd-R) and the find bar's (Cmd-F) are the start theme's ground: Ember's red side bar ground, and Dark Modern's `#181818` on the default config.
-- C9, a browser tab on the scratch server (port 8797), on `theme: dark` and on Ember, reloaded under a recording: before, a light first paint then the theme; after, no light frame. On the default config a browser tab starts on Light, as before.
-- The find bar opened in a browser tab (`/find`): before, it drew Dark Modern (the desktop start) after a light first paint; after, it draws the browser start, Light, from its first paint.
-- With `crt.on: true`: the workbench's first paint carries the CRT overlay; the find bar and the presenter's pages show none, as their script draws.
-- What the first paint does not carry: the wallpaper and its `wall` class (Decisions 5), and the derived tokens the script sets on the root element (`--accent-bg`, `--scroll-thumb`, `--scroll-track` among them, `tokens.css:18-20`), so a dark theme's first frames draw the scrollbar and the selected-row surface in the light theme's derived colours until the script draws. This is seen at the look as scrollbar colour, not ground.
+Edits to an existing assertion, allow list or predicate in this round: none. The changed C11 rows and the new rows are this step's own.
 
 ## Unused exports (verify 5)
 
-`diff` of the base's `unused-exports.txt` with the run after the last change:
+`diff` of `.agents/worktrees/migration-O39-partE-base/unused-exports.txt` with the run after the last change, the same lines as after the first build:
 
-- `src/lib/themes/vscode-map.ts: MINIMUM, table, GIT_DEFAULTS, basesOf, parseColour, mapTheme` (added `GIT_DEFAULTS`, `basesOf`, `mapTheme`) and `src/lib/themes/vscode-map.ts: TokenRule, TypeDefaults, Context, Mapped` (added the last three): kept, each imported by `utils/migrations/convert-vscode-themes.ts:47-56`; they appear because `app-theme.ts` and `start-colours.ts` now import `themeSheet` in their place.
-- `src/lib/ui/theme/theme.ts: CRT_CLASS` removed from the list (moved).
-- `RICE_PLAIN_CLASS` and `RICE_SANS_CLASS` were made module-local, so no line for them.
+- `src/lib/themes/vscode-map.ts: MINIMUM, table, GIT_DEFAULTS, basesOf, parseColour, mapTheme` and `src/lib/themes/vscode-map.ts: TokenRule, TypeDefaults, Context, Mapped`: the six added names are kept, each imported by `utils/migrations/convert-vscode-themes.ts:47-56`, which the count does not see.
+- `src/lib/ui/theme/theme.ts: CRT_CLASS` gone (moved to start-theme.ts and imported).
+
+`derivedTokens` (imported by `hooks.server.ts:12`) and `NO_OFFERS` raise no line. `RequestStart` is local.
+
+The helpers this round writes, grepped first with `grep -rn "deriveTokens(resolveTheme\|function attribute\b\|function escapeAttr\|iconsShape\|function rootTokens\|function pageTokens\|derivedTokens" src tests`: the derivation was written once, inside `applyTheme`, and is now `derivedTokens`, which `applyTheme` calls; the grep found `escapeAttribute` in `markdown.ts:40`, which the hook now uses in place of its own escape. `iconsShape`, `rootTokens` and `pageTokens` had no match.
 
 ## History words (verify 6)
 
-Grep of the added comment lines and test titles of the 18 files for the words of spec.md:44 printed one hit: `src/hooks.server.ts: > // before the app starts, each in a placeholder of app.html this replaces per request in one pass,`. Judged: "before the app starts" is a time within one request, not a comparison with an earlier state of the code.
+Grep of the comment lines and test titles added or changed against the base copy, for the words of spec.md:44 and package ids or dates, printed five hits:
+
+- `hooks.server.ts`: "so a frame that paints the mounted page before its draw has run": the order of a frame and a draw within one page load. Kept.
+- `hooks.server.ts`: "before the app starts, each in a placeholder": a time within one request. Kept.
+- `appearance.ts`: "so a half-edited file still draws a page": the existing sentence, rewrapped; "still" is the page drawing despite a bad value. Kept.
+- `app-theme.ts`: "whether the draw is still wanted once the load has returned": the existing sentence, rewrapped. Kept.
+- `theme.ts`: "a frame that paints the page before its script draws": within one page load. Kept.
+
+None compares with an earlier state of the code.
 
 ## Names (verify 7)
 
-`grep -rn -E "convertAppTheme|appThemeBlock\b|AppThemeSheet|'oculus-app-theme'|\bSTYLE_ID\b" src tests config docs README.md utils --exclude=local.yml --exclude-dir=diagrams` prints only `src/lib/ui/display/icon-theme/held.svelte.ts:22,58,68` (its own `STYLE_ID = 'oculus-icon-fonts'`, another element) and `src/lib/themes/vscode-map.ts:559: export const APP_THEME_STYLE_ID = 'oculus-app-theme';`. `oculus-desktop` appears once, `start-theme.ts:94`. The new names are used in start-theme.ts, theme.ts (route), vscode-map.ts, app-theme.ts, ui theme.ts, hooks.server.ts, start-colours.ts, app.ts and the three test files.
+`grep -rn -E "RequestStart|derivedTokens|root-style|rootStyle|configLooks|ATTRIBUTE_ESCAPES" src tests config docs README.md --exclude=local.yml` prints `hooks.server.ts:12, 63, 69, 94, 96, 103, 128, 175`, `app.html:2`, `ui/theme/theme.ts:6, 100, 115, 127`, `routes/theme.ts:27, 70, 85, 96`, `appearance.ts:41, 160, 329, 357`, `start-theme.ts:129`. `ATTRIBUTE_ESCAPES` has no hit left. `grep -rn "first HTML"` over `src` lists every comment that names what the first HTML carries; each one that lists its parts names the derived tokens (`app-theme.ts:10-12`, `appearance.svelte.ts:13-14`, `tokens.css:19-21`, `+layout.svelte:44-45`, `hooks.server.ts:128`); the others say only that the HTML carries the start theme and stay true.
 
-## Comments (item 4)
+## Judgment calls
 
-- `src/routes/+layout.ts:1`: rewritten.
-- `hooks.server.ts` head comment on the placeholders and the one read: rewritten.
-- `app-theme.ts:1-15`: rewritten; `paintAppTheme`'s doc comment rewritten; `drawConfiguredTheme`'s still true.
-- `appearance.svelte.ts:13-23`: rewritten.
-- `start-theme.ts:1-20`: rewritten; `windowStart`'s doc comment rewritten.
-- `start-colours.ts:1-24`: rewritten; `appThemeBlocks`' doc comment new.
-- `server/machine/apps/routes/theme.ts:1-20`: rewritten.
-- `ui/theme/theme.ts`, the comment on `applyTheme`: rewritten.
-- `+page.server.ts`, the paragraph on the one read (`:15-20`) and on app theme files (`:34-40`): rewritten.
-- The find page's comment at its draw: new.
-- `vscode-map.ts:1-8`: rewritten.
-- `src/routes/+page.ts:15-17` and `Workbench.svelte` `appThemes`: rewritten (outside the write list, see Files).
-- Still true, read: `docs/HELP.md:513` ("the page draws it from its first paint"), `config/options/appearance.yml:35,42`, `config/defaults/appearance.yml:59`, `tokens.css:18-20`, `+layout.svelte:41-45`, `utils/migrations/convert-vscode-themes.ts:30-33`.
+1. The derived tokens go in an inline `style` on `<html>`, a fourth placeholder `%oculus.root-style%`, and not in a `<style>` block: inline is where `applyTheme` writes them, and in development Vite injects `tokens.css` as a style element appended to the head (`node_modules/vite/dist/client/client.mjs:1229-1239`, `updateStyle`), after the head's own elements, where its `:root` rule would win over a block of equal specificity.
+2. The hook imports `derivedTokens` and `THEME_SHEETS` from `ui/theme/theme.ts` (see ruling 7 for why the derivation is not moved).
+3. The C4 row is tagged slow with the C6 rows, by the file's 100 ms rule.
+4. The class is escaped with `escapeAttribute`, which also escapes `>`; C14's expected class has no `>` and is unchanged.
+
+## Before and after, for the look
+
+- C8, the desktop app on the scratch setup of `plan.md:664`, recorded at 60 frames a second: before, the main window's first frame was the light ground for about 32 frames; after, the main window's, a float window's, a reload's (Cmd-R) and the find bar's (Cmd-F) first frame are the start theme's ground: Ember's red on Ember, Dark Modern's `#181818` on the default config.
+- C9, a browser tab on the scratch server (port 8797), on `theme: dark` and on Ember, reloaded under a recording: before, a light first paint then the theme; after, no light frame.
+- The find bar in a browser tab (`/find`): before, Dark Modern after a light first paint; after, Light from its first paint.
+- `crt.on: true`: the workbench's first paint carries the CRT overlay; the find bar and the presenter's pages show none.
+- New in this round, the derived tokens: in the desktop window with `theme` naming the colour theme of an app that is not approved (or whose file is gone), reload under a recording. Before this round the workbench's first frames, until `/api/app-theme` answered, drew on Dark Modern's ground with the light theme's scrollbar (thumb `#8593a7` on track `#fff`) and the light selected-row colour `#e6d6d2`; after, the scrollbar and a selected row are Dark Modern's from the first frame. In devtools, `<html>`'s `style` attribute in the page source holds `--scroll-track`, `--accent-bg` and the `-txt` tokens before any script runs.
+- The wallpaper and its `wall` class still come with the script's first draw (Decisions 5).
 
 ## Limitations and sharp edges
 
-- The derived tokens and the wallpaper come with the script (see "Before and after").
-- `firstAppThemes` now runs twice per page boot, once in the HTML request and once in the load; each reads and resolves the named theme files. Not measured.
+- `firstAppThemes` runs twice per page boot, once in the HTML request and once in the load, and the HTML request now also derives the tokens over the theme sheets (one `parseBlocks` of tokens.css, themes.css, the rice palettes and vscode.css per page request). Neither cost is measured.
 - When the config changes between the HTML request and the data request, the page redraws once (Decisions 4).
-- The host's `setUserAgent` call is not reached by any test: no test starts Electron. The look on landing is its proof.
+- The host's `setUserAgent` call is reached by no test (no test starts Electron); the look on landing is its proof.
 - The `<` guard has no row: no theme file reaches it (ruling C15).
 
 ## Anything in the brief wrong or impossible
 
-C15, C6 and C10 as handed back and ruled above. Nothing else.
+Ruling 3's text predates ruling 7's finding; the comment says what is true after ruling 7's fix (see ruling 3). Nothing else.
 
 ## Doc text
 
 G11 (`agents/guarded.md`):
 - Code: `src/hooks.server.ts`, `src/app.html`.
-- Test: add `tests/server/root/hooks-server.test.ts`, describe 'a page sent with the theme it starts on', every row: 'starts a browser on the first row and the desktop window on app_theme, by the mark (C1, C2)', "sends an approved app's theme as its class and the block of its file in the shared style element (C4)", 'sends $row the start the workbench gets (C6)' (float, find, audience, print), 'sends the start theme and the title for a theme option naming nothing, in a config the read answers with a finding (C10)', 'sends the HTML with no theme and the title when the theme cannot be computed', 'sends the find page in a browser the browser start (C13)', 'writes a class holding a quote, a bracket, an ampersand and a replacement pattern escaped and literal (C14)', 'sends a theme whose file holds a closing tag in a colour with its block, the colour falling back (C15)', 'reads no config and no apps for a request to an API route (C16)'.
+- Test: `tests/server/root/hooks-server.test.ts`, describe 'a page sent with the theme it starts on', every row: 'starts a browser on the first row and the desktop window on app_theme, by the mark (C1, C2)', "sends an approved app's theme as its class and the block of its file in the shared style element (C4)", 'sends $row the start the workbench gets (C6)' (float, find, audience, print), 'sends on the root element the tokens the page derives for the start theme', 'sends the start theme and the title for a theme option naming nothing, in a config the read answers with a finding (C10)', 'sends the HTML with no theme and the title when the theme cannot be computed', 'sends the find page in a browser the browser start (C13)', 'writes a class holding a quote, a bracket, an ampersand and a replacement pattern escaped and literal (C14)', 'sends a theme whose file holds a closing tag in a colour with its block, the colour falling back (C15)', 'reads no config and no apps for a request to an API route (C16)'. C4 and C6 are tagged slow.
 
 G118 (`agents/guarded.md`):
-- Text, after "by one rule (`startOf`): ... else the first row.": "The page's first HTML is sent with that theme: the body class its first draw sets, the CRT class on the workbench alone, and for an app's theme the block of its file in the style element the first draw replaces; a request of the desktop app's window carries the word `oculus-desktop` in its user agent and starts on `app_theme`, a browser's starts on the first row."
-- Code: add `src/lib/server/machine/apps/routes/theme.ts` (`requestStart`) beside `firstAppThemes`, `src/lib/data/helpers/editor/start-theme.ts` (`bodyClass`, `configLooks`, `desktopMarked`), `src/lib/themes/vscode-map.ts` (`themeSheet`), `src/lib/ui/theme/theme.ts` (`applyTheme`).
-- Test: add `tests/server/desktop/app-theme-start.test.ts`, describe 'the theme a page is sent with', 'starts on $row', every row.
+- Text, after "by one rule (`startOf`): ... else the first row.": "The page's first HTML is sent with that theme: the body class its first draw sets, the CRT class on the workbench alone, the tokens its draw derives for that class on the root element, and for an app's theme the block of its file in the style element the first draw replaces; a request of the desktop app's window carries the word `oculus-desktop` in its user agent and starts on `app_theme`, a browser's starts on the first row. `crt.on`, `rice.brackets` and `rice.monospace` are read by one function, `configLooks`, for the page and the server."
+- Code: add `src/lib/server/machine/apps/routes/theme.ts` (`requestStart`) beside `firstAppThemes`, `src/lib/data/helpers/editor/start-theme.ts` (`bodyClass`, `configLooks`, `desktopMarked`), `src/lib/themes/vscode-map.ts` (`themeSheet`), `src/lib/ui/theme/theme.ts` (`applyTheme`, `derivedTokens`), `src/lib/state/shared/words/appearance.ts` (`lookShape`).
+- Test: `tests/server/desktop/app-theme-start.test.ts`, describe 'the theme a page is sent with', 'starts on $row', every row, the three C11 rows included.
