@@ -8,10 +8,14 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
-- O64 (landed 2026-10-22, not taken: Axel's server on 8790 was not running). On TEST: the Inbox and Calendar Refresh buttons turn while their read runs; the Usage Refresh stays drawn while it runs; CommitBox's Suggest says what runs; the moving bar of a running git command sits under the Repositories header, under the selected repository's name, and not across the view; the folded Repositories head; the status-bar sync item; `Progress.svelte` in its four users (NoticeEntry, Literature, Results, RepoList) draws as before.
 
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
+
+- O64, the Calendar Refresh turning: a press makes the server fetch the ICS calendar address, which the session never fetches; `Calendar.svelte:199` hands its head `refreshing={refreshing()}` as `Inbox.svelte:125` does, and the Inbox's turning was seen.
+- O64, CommitBox's Suggest saying what runs: Suggest is disabled while nothing is staged (`CommitBox.svelte:188`), and staging writes the hub's git index, which a look never does.
+- O64, the moving bar under a running git action's repository name, under the Repositories header, and on the folded Repositories head: every git action that runs from the view (sync, publish, fetch, commit) writes; held by the rows of O64's `RepoList` and `TreeSection` tests named in its landing report.
+- O64, `Progress.svelte` in `NoticeEntry`: a notice carries progress only from a clone (`clone.svelte.ts:109`), which writes, or from an app's progress call, which runs an app's task.
 
 - Q97: the one-pane System arrangement. It no longer exists: S4 (1184e5f38) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
@@ -21,6 +25,8 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 - O41, the motion under the system's reduce-motion setting: the setting is a system setting the session does not change; `Progress.svelte` and `Glyph.svelte` hold the still rule, read at O41's review.
 
 ## Taken
+
+- O64, 2026-10-22, TEST on Axel's server on 8790 (pid 51979, started 22:45:58 from `~/workspace/oculus`, main with O64). Inbox: the Refresh glyph has no `turning` class at rest, carries `turning` with the animation `glyph-turn` while the read runs, and stops when the answer comes (more than 13 s). Usage: the Refresh buttons measure 0x0 at rest; after a press the button measures 20x20 and turns for about 5 s, then goes back to 0x0. Literature search, query "block term tensor decomposition": the bar `role="progressbar"` labelled "Searching..." measures 550x4 from the first sample at 0.2 s while the sources answer, and is gone once the 77 papers are listed. Search, pattern "block-term" over every root: the same bar, 550x4, from 36 ms, gone once "69 files, 4818 ms" is shown. Repositories at rest draws as before, and the status-bar sync item "0 down 1 up" is drawn. `git status --short` over the hub's `.oculus` and oculus's `config` (`local.yml` excluded) empty after. Seen beside the look and not O64's change: the Inbox's "as of 22:46" and "last read 22:46" did not change after the 22:48 Refresh; not verified whether that is a defect. A stray click in the Repositories graph opened a read-only diff tab "O37-refuter.md (14fa4e5)" on TEST, left there. Defects: none.
 
 - O39 part A, the desktop part, 2026-10-22, on a scratch setup (Axel's yes): a scratch HOME, a scratch hub from `tests/fixtures/hubs/demo` with the app `ember` and its theme Ember, port 8797, a detached checkout of main at e99e5cd0, the app approved and Ember picked by Cmd-K `:theme`, the app started again under a screen recording. The window's first frame is a light ground (rgb 238,242,243 as recorded) for 32 frames before the page draws Ember. Defect, booked to O39 in `plan.md` (Booked 2026-10-22): the window is shown on `ready-to-show`, at the page's first paint, and the first HTML carries no theme, so that paint is the light `:root` ground for every start theme.
 

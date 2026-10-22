@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built (report `agents/reviews/O54-report.md`, saved from the builder's final message); first review running.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built (report `agents/reviews/O54-report.md`, saved from the builder's final message); reviewed (`agents/reviews/O54-refuter.md`); repair round 1 next.
 - O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: building (base 3a35d993).
-- O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: building (base 200f12da).
+- O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: building after the round-0 cases ruling (`agents/briefs/O39-partE-cases.md`; base 200f12da).
 
 Queued, in order (7 steps):
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
@@ -13,7 +13,7 @@ Queued, in order (7 steps):
 - O39 (oculus in its own repository): after part E lands, the desktop look again, then the tick.
 
 Owed looks:
-- O64, on TEST once Axel's server on 8790 runs again (`agents/reviews/owed-looks.md`, To take).
+- none (O64's taken 2026-10-22; the parts that write or fetch the calendar are under "Cannot be taken on this hub" in `agents/reviews/owed-looks.md`).
 
 Landed, newest first:
 - O64 (motion where work is in progress), 2026-10-22.
