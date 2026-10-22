@@ -55,8 +55,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 - step: O49
-  brief_check: "running: ab729638069c01a99"
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a33eecffdfbceb611
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 374eeaa2
+  worktree: .agents/worktrees/migration-O49
+  brief_check: agents/reviews/O49-brief-check.md (ab729638069c01a99, claude-opus-5-5, 215648 tokens, 83 tool uses, 9 min 38 s)
+  report: agents/reviews/O49-report.md
+  round: 0
+  landing: not-started
+  shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 64 and 75-76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
 ```
 
 ## The standing demands (from Axel, in force)

@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O50 (who the user is: the workspace setting `self`). State: refuted over round 1; landing after O52, with fixes at landing.
 - O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing next.
-- O49 (an Open View submenu in the tab strip's menus). State: prepared; builder launch next.
+- O49 (an Open View submenu in the tab strip's menus). State: building.
 
 Queued, in order (10 steps):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
