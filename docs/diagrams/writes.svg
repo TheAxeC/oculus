@@ -2644,15 +2644,15 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3831.96C133.81,-3831.96 161.95,-3831.96 190.09,-3831.96 190.09,-3878.63 190.09,-3925.29 190.09,-3971.96 222.16,-3971.96 254.23,-3971.96 286.31,-3971.96"/>
 <polygon fill="currentColor" stroke="currentColor" points="286.3,-3974.06 292.3,-3971.96 286.3,-3969.86 286.3,-3974.06"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:300 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:296 -->
 <g id="node168" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:300</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:296</title>
 <polygon fill="none" stroke="currentColor" points="284.09,-3996.96 284.09,-4018.96 573.57,-4018.96 573.57,-3996.96 284.09,-3996.96"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="290.09" y="-4003.96" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:300 textMap.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="290.09" y="-4003.96" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:296 textMap.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:300 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:296 -->
 <g id="edge152" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:300</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:296</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3839.96C131.81,-3839.96 157.95,-3839.96 184.09,-3839.96 184.09,-3895.96 184.09,-3951.96 184.09,-4007.96 214.95,-4007.96 245.81,-4007.96 276.67,-4007.96"/>
 <polygon fill="currentColor" stroke="currentColor" points="276.58,-4010.06 282.58,-4007.96 276.58,-4005.86 276.58,-4010.06"/>
 </g>

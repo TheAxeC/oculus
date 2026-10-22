@@ -3,7 +3,11 @@
 // documented computed lookup. The finding sentences of config/text/findings.yml are held to the
 // source by their literals alone: every `findings.` string literal under src is a key of that file
 // and every key of it is such a literal, whatever expression the formatter is handed the catalog
-// through.
+// through. The gate covers the catalog files' keys too: every top-level key of a file under
+// config/catalogs/ is named outside a comment by a module or component under src, as a property or
+// a quoted string, the catalog files' shapes left out since they name every key, or is drawn as a
+// `from: vocab.<key>` list by a shipped schema or a template of docs/templates.md. A key whose name
+// is a common word is read by any property of that name, which a check by name cannot tell apart.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { registered } from '../../../src/lib/state/shared/words/languages.ts';
@@ -709,5 +713,60 @@ describe('text keys', () => {
             "words(textCatalog(config), 'server.chat.' + name);",
             'words(catalog);'
         ]);
+    });
+});
+
+/** The folder of the catalog files' shapes, relative to src, whose keys name every catalog key. */
+const SHAPES_DIR = 'lib/data/shapes/catalog-files/';
+
+/**
+ * The code of every module and component under src that may read a catalog file's key, the shapes
+ * left out, each with its comments turned to spaces, so a key named only in a comment is not read.
+ */
+function keyReaderCode(): string[] {
+    return treeFiles(SRC)
+        .filter((rel) => /\.(ts|svelte|js|mjs|cjs)$/.test(rel) && !rel.startsWith(SHAPES_DIR))
+        .map((rel) => codeOf(join(SRC, rel)));
+}
+
+/**
+ * The text of the shipped schemas and of the templates a hub's schemas are copied from, comment
+ * lines left out: a field there draws a vocabulary list as `from: vocab.<key>`, read through the
+ * vocabulary file's keys with no code naming the key.
+ */
+function schemaFilesText(): string {
+    const dir = join(engineDir(), 'config', SCHEMAS);
+    const files = [
+        ...readdirSync(dir)
+            .filter((name) => name.endsWith('.yml'))
+            .map((name) => join(dir, name)),
+        join(engineDir(), 'docs', 'templates.md')
+    ];
+    return files
+        .flatMap((file) => readFileSync(file, 'utf8').split('\n'))
+        .filter((line) => !line.trimStart().startsWith('#'))
+        .join('\n');
+}
+
+describe('catalog file keys', () => {
+    it('has a reader for every top-level key of every catalog file', () => {
+        const dir = join(engineDir(), 'config', CATALOGS);
+        const code = keyReaderCode();
+        const schemas = schemaFilesText();
+        const read = (key: string): boolean => {
+            const name = RegExp.escape(key);
+            const named = new RegExp(`\\.${name}\\b|['"]${name}['"]`);
+            const drawn = new RegExp(`from:\\s*vocab\\.${name}\\b`);
+            return drawn.test(schemas) || code.some((text) => named.test(text));
+        };
+        const orphaned = readdirSync(dir)
+            .filter((name) => name.endsWith('.yml'))
+            .sort()
+            .flatMap((name) =>
+                Object.keys(parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>)
+                    .filter((key) => !read(key))
+                    .map((key) => `${name}: ${key}`)
+            );
+        expect(orphaned).toEqual([]);
     });
 });

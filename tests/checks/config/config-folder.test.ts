@@ -216,7 +216,6 @@ describe("oculus's own config directory", () => {
             'priority_levels',
             'fund_stages',
             'focus_lane_tones',
-            'archive_order',
             'tiers',
             'publication_kinds',
             'lifecycle',

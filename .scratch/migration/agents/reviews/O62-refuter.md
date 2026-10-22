@@ -163,3 +163,10 @@ The report states the other host-visible changes, each with before and after: th
 - Whether main's current head still has `wallpaper.ts` and `EntryForm.svelte` out of prettier's style. Running `npx prettier --check` on those two files in the main checkout would settle it.
 
 Usage: acc2eb3d4addcfcb2, claude-opus-5-5, 157328 tokens, 34 tool uses, 15 min 12 s
+
+## Closed
+
+- S1: fixed at landing. `npm run diagrams` is run on main after the cherry-pick, so `writes.dot` and `writes.svg` place the parse site at `vocab.ts:296`; the regenerated diagrams carry the base's drift with them, named in the booking.
+- T1: no code change. The builder's commands were read-only; the launch prompt allows `git status`, `git diff` and `git show`, and `git log --oneline -1` is outside it. Named in the booking.
+- B1: closed in the booking, which states the before and after of a hub schema field written `from: vocab.archive_order`: before, the field offered the eleven words of the shipped list; after, the schema check reports a `from` that names no vocab list and the field offers nothing. No hub sets it (`grep` over the hub's `.oculus`, exit 1).
+- The prettier warning on `wallpaper.ts` and `EntryForm.svelte` is outside the step: those files are at base bytes in the worktree, and main's `npm run format:check` passed at O58's landing.

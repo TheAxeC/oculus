@@ -9,6 +9,9 @@
 //
 // A hook loads the configuration once, since the first load costs more than a later one, so no case
 // pays for it.
+//
+// @module-tag slow: its cases write a hub of their own and time out under the load of a full npm
+// test, so npm test leaves it out.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';

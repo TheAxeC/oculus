@@ -283,10 +283,6 @@ export const vocabFileShape = z.strictObject({
         .describe(
             "The hue of a host's score chip by the tier its score falls in (strong, good, mid or weak); a tier with no hue draws muted."
         ),
-    archive_order: z
-        .array(text)
-        .optional()
-        .describe('The outcome categories of the Archive, in the order it groups them.'),
     tiers: z
         .record(z.string(), tierWord)
         .optional()

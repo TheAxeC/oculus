@@ -94,6 +94,14 @@ const KIT_SETUP_PLUGIN = 'vite-plugin-sveltekit-setup';
  */
 export const TYPES_WRITTEN = 'OCULUS_TYPES_WRITTEN';
 
+/**
+ * The environment variable a `vite build` sets to its own process id once its types are written
+ * (`typesLocked`), so the client build SvelteKit starts in the same process, which resolves this
+ * config again and writes no types, neither takes the types lock nor waits for the runs that read
+ * them. A child process inherits the variable under another id, so it does not skip.
+ */
+const TYPES_WRITER = 'OCULUS_TYPES_WRITER';
+
 /** The lock file in the kit folder that a process writing SvelteKit's types holds. */
 const TYPES_LOCK = 'oculus-types.lock';
 
@@ -296,8 +304,9 @@ function kitSyncRun(argv: readonly string[]): boolean {
  * `configResolved`, which runs once every `config` hook has run, and then writes the file the
  * variable TYPES_WRITTEN names, when it names one: that is how npm run test:landing knows the types
  * are written. The build's other passes write no types: its client build is SvelteKit's
- * secondary build, which skips the write, and its workers resolve this config without SvelteKit's
- * hooks (`kitOptionsOnly`). A vitest start or the development server does nothing here. The folder
+ * secondary build, which skips the write and, finding TYPES_WRITER set to this process, takes no
+ * lock and waits for no run, and its workers resolve this config without SvelteKit's hooks
+ * (`kitOptionsOnly`). A vitest start or the development server does nothing here. The folder
  * is resolved from the working folder, as SvelteKit resolves its output folder.
  */
 function typesLocked(kitDir: string): Plugin {
@@ -313,6 +322,7 @@ function typesLocked(kitDir: string): Plugin {
                     return;
                 }
                 if (env.command !== 'build') return;
+                if (process.env[TYPES_WRITER] === String(process.pid)) return;
                 held = await lockToWrite(resolve(kitDir));
                 process.once('exit', held);
             }
@@ -321,6 +331,7 @@ function typesLocked(kitDir: string): Plugin {
             if (held === null) return;
             held();
             held = null;
+            process.env[TYPES_WRITER] = String(process.pid);
             const written = process.env[TYPES_WRITTEN];
             if (written !== undefined && written !== '') writeFileSync(written, '');
         }

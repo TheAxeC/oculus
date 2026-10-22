@@ -5,8 +5,8 @@ The orchestrator's own catch-up note for the cockpit-to-oculus migration. Rewrit
 ```yaml
 verify:                      # the quick list (Z351, Z421): from the repository root in the worktree, by builders and reviewers; a reviewer adds `-- --base <base>`.
 - npm run test:quick
-verify_landing:              # the landing list (Z351, Z366): from the repository root on main, by the orchestrator at each landing.
-- npm run test:landing
+verify_landing:              # the landing list (standing demand "Only related tests at a landing"): by the orchestrator at each landing, where open item 241 rules.
+- npx vitest run <the test files that name or import a changed file, and the changed test files, those under tests/checks and those tagged slow included>
 worktree_root: .agents/worktrees
 standards: [.scratch/migration/agents/spec.md]
 executor: agent
@@ -34,26 +34,11 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O50
   brief_check: agents/reviews/O50-brief-check.md (a5cae3c5b6723f862, claude-opus-5-5, 257554 tokens, 86 tool uses, 12 min 53 s)
   report: agents/reviews/O50-report.md
-  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build); round 0 build 199848 tokens, 274 tool uses, 36 min 19 s
+  builder_usage: 211205 tokens, 72 tool uses, 10 min 31 s (hand-back of C14 before the build); round 0 build 199848 tokens, 274 tool uses, 36 min 19 s; round 1 182663 tokens, 238 tool uses, 50 min 34 s
   round: 1
-  reviewer_report: agents/reviews/O50-refuter.md (ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s)
+  reviewer_report: agents/reviews/O50-refuter.md (ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s); over round 1: ae22da9a7c93e0180, claude-opus-5-5, 239932 tokens, 75 tool uses, 18 min 52 s
   landing: not-started
   shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
-- step: O62
-  executor: agent
-  worker: claude:opus
-  session_id: a2be218df230a06d7
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: a2288789
-  worktree: .agents/worktrees/migration-O62
-  brief_check: agents/reviews/O62-brief-check.md (a05874f9b03fbf13d, claude-opus-5-5, 158684 tokens, 43 tool uses, 5 min 57 s)
-  report: agents/reviews/O62-report.md
-  builder_usage: 171924 tokens, 52 tool uses, 12 min 57 s
-  round: 0
-  reviewer_report: agents/reviews/O62-refuter.md (acc2eb3d4addcfcb2, claude-opus-5-5, 157328 tokens, 34 tool uses, 15 min 12 s)
-  landing: not-started
-  shared_paths: config/catalogs/vocab.yml and src/lib/data/shapes/catalog-files/vocab.ts with O59 (O59 writes vocab.yml 76-167 and vocab.ts 42-53, O62 vocab.yml 207-210 and vocab.ts 286-289: disjoint ranges, simple to merge); tests/checks/config/config-folder.test.ts with O58 (O58 lines 194 and 324, O62 line 220: simple to merge)
 - step: O52
   executor: agent
   worker: claude:opus
@@ -70,6 +55,7 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 - step: O49
+  brief_check: "running: ab729638069c01a99"
   landing: preparing
 ```
 
@@ -178,6 +164,7 @@ dispatch:         # steps in flight, up to six (Z632)
 
 - Every item of a brief names where it comes from: Axel's words, a ruling by its name, or the step's line in plan.md. An item with no such source is not written, and the brief check's prompt asks it to name every item that has none (Axel, 2026-10-13, after D71's brief added a Clone design he never asked for).
 - Every builder's prompt says, as a requirement it is judged on, that it runs only the test files of what it changes while building and the verify list once at the end of each run, as `agents/spec.md` "Token discipline" says, and that its report states how many times it ran the list and any whole-suite command; a run beyond that rule is a finding of the review (Axel, 2026-10-13, after D72's builder spent 73 min on 33 whole-suite runs and waits).
+- Only related tests at a landing (Axel, 2026-10-22: "From now on, during landing, you are only allowed to run tests related to files that have changed. This is now a new standing demand"): a landing runs the test files that name or import a changed file and the changed test files, wherever they are (under `tests/checks` and tagged slow included), and no other test: never `npm run test:landing`, `npm test`, `npm run test:checks`, `npm run test:slow` or the essential list of `npm run test:quick`. It replaces `npm run test:landing` wherever this file or plan.md names it for a landing (`verify_landing`, Z492). How `land.sh`'s check follows it is open item 240; where it runs is open item 241.
 
 ## The pause
 
@@ -207,7 +194,14 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None open.
+- Open item 240 (2026-10-22): how the landing's check follows the standing demand "Only related tests at a landing". The `land` skill's `land.sh` runs the plan's verify list, `npm run test:quick`, on main; that list runs the essential list `tests/tiers/essential.txt`, tests related to no changed file, and leaves out the related tests under `tests/checks` and the ones tagged slow (`tests/tiers/quick.mjs:1-28`, `:203-205`, `:272`).
+  - (a) `tests/tiers/quick.mjs` gains a related-only selection (no essential list; the related and changed tests under `tests/checks` and tagged slow included; no 45 s limit), and it becomes the verify list for builders, reviewers and the landing alike. Pro: one command, `land.sh` follows the demand unchanged, builders' runs get shorter too. Con: builders and reviewers lose the essential list as a wide net.
+  - (b) The same selection, used at the landing only, `verify:` kept as it is for builders and reviewers. Pro: builders keep the essential net. Con: `land.sh` always runs `verify:`, so the landing replays the script's steps by hand with the other command, departing from the skill's script at every landing.
+  - Recommendation: (a). The lazy option is to keep `npm run test:quick` at the landing as it is, which breaks the demand and is not offered. The change to `quick.mjs` lands at the first landing after the ruling.
+- Open item 241 (2026-10-22): where the landing's tests run. Standing demand Z492 says the landing gate never runs in main's checkout but in `.agents/worktrees/gate`; the `land` skill's `land.sh` runs its check on main, and the landings of O58, O59 and O62 ran on main (plan.md, their bookings: "Verification on main").
+  - (a) On main, as `land.sh` does; Z492 retired. Pro: the skill's own script, and related tests take seconds. Con: main's checkout is the one Axel's server on 8790 runs from, and the test run's `svelte-kit sync` rewrites its `.svelte-kit` types.
+  - (b) In the gate worktree, as Z492 says, the staged change then copied to main. Pro: Axel's running server never sees a test run. Con: every landing applies the range twice and keeps the gate's `node_modules` current, outside `land.sh`.
+  - Recommendation: (b), since it ends the cause Z492 was written for. (a) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -423,6 +417,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O62 landed). O62 is on main; fixes at landing: `write.test.ts` tagged slow, and `vite.config.ts`'s client build no longer waits on the types lock. Axel's standing demand "Only related tests at a landing" booked; open items 240 (how `land.sh`'s check follows it) and 241 (main or the gate worktree). In flight (3 of 6): O50 (refuted over round 1, landing with fixes), O52 (refuted over round 1, ready for /land), O49 (brief checked, preparation commit next). Next: /spec O49 on, /land O52, /land O50, /spec O57 and O61.
 - 2026-10-22 (O58 landed). O58 is on main; four test files that time out only under the full run's load tagged slow at landing. Open items: 239 (O58's look). Ruled: 238 (a). In flight (3 of 6): O50 (repair round 1 building), O62 (refuted, ready for /land), O52 (refuted over round 1, ready for /land); O54 waits for O50. Next: /land O62, /land O52, /spec O49 and O57.
 - 2026-10-22 (O59 landed). O59 is on main with the fixes of main's own red lines, the dev server's watch and eslint's ignore of `.agents/`, every command of `npm run test:landing` passing on main. Open items: none. In flight (4 of 6): O50 (round 1 building), O52 (round 1 built, its run of /refute next), O58 and O62 (refuted, ready for /land); O54 not yet prepared. Next: /spec O54, save O52's round-1 report and /refute it, /land O58 and O62.
 - 2026-10-22 (go given, by agents in parallel). Axel ruled O49 to O63 by agents, Parallel order and Brief check scope, and gave the go. First wave: `/spec` O59, O50, O62, O58, O54 and O52; O39's look and tick at any time. Open items: none. In flight: none yet.

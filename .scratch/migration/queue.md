@@ -1,13 +1,12 @@
-In flight (4 of 6 slots in use):
-- O50 (who the user is: the workspace setting `self`). State: repair round 1 building.
-- O62 (`archive_order` removed, orphan test over catalog keys). State: refuted, no round; landing next.
-- O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing after O62.
-- O49 (an Open View submenu in the tab strip's menus). State: brief being written.
+In flight (3 of 6 slots in use):
+- O50 (who the user is: the workspace setting `self`). State: refuted over round 1; landing after O52, with fixes at landing.
+- O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing next.
+- O49 (an Open View submenu in the tab strip's menus). State: brief checked; preparation commit next.
 
 Queued, in order (10 steps):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
 - O57 (the portfolio chat's index over every hub). Waits: a free slot.
-- O61 (one home for each vocabulary word). Waits: after O62 has landed.
+- O61 (one home for each vocabulary word). Waits: a free slot.
 - O53 (a project's `lead:` a list of person keys). Waits: after O50.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
 - O51 (a per-pane Hide Tab Row). Waits: after O49.
@@ -20,6 +19,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
+- O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, landing commit.
 - O58 (`config/catalogs/meta.yml` removed), 2026-10-22, f17c205c.
 - O59 (status flag `terminal` renamed `closes_deadline`), 2026-10-22, 6bb17666.
 - O48 (editor and terminal transparency settings), 2026-10-21.

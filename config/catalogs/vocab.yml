@@ -204,10 +204,6 @@ fund_stages:
 focus_lane_tones: { funding: gold, jobs: grey-d, teaching: teal }
 
 
-# The Archive's outcome categories, in the order the Archive groups them, which differs from the order of `types`.
-archive_order: [published, submitted, in-prep, abandoned, nogo, dropped, disproved, tech-report, software, finished, archived]
-
-
 # The project tiers whose decisions are flags, each read with the tier as the manifest writes it, and a tier without a flag is not one of them:
 # - `finished`: finished or contributed work: the audit's rules over finished work, the cross-link group of finished projects, a venue's past papers, the Map's finished members.
 # - `software`: software projects: a card's and a board's software line, and a board that offers no New project.

@@ -243,3 +243,282 @@ const folder = workspace.folders.find((one) => one.real === real);
 - The report's `git diff --stat HEAD` claim on `src/lib/views/shared` and `undo.ts`. I checked the same fact with `git diff 0379bb5d --stat`, which lists neither, so the claim holds. `HEAD` itself was not run.
 
 Usage: ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s
+
+## Repair round 1, refuted
+
+Unresolved first: the round adds a red to the tree checks. `tests/checks/tree/duplication.test.ts` now reports `tests/data/hubs/hubs-fixture.ts:41 and tests/data/snapshot/references.test.ts:577 hold the same 10 lines`. That check is part of the landing list, so `npm run test:landing` will be red on main until this is fixed. Details are under Standards ST1.
+
+### Verification
+
+All runs were made from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O50` unless named otherwise. `git status --short` gave 54 lines before and after my runs. I changed nothing in the worktree.
+
+1. Round brief and brief Verify 2, the list: `npm run test:quick -- --base 0379bb5d`. I ran it twice.
+   - Run 1 was red, all of it timeouts. I captured only the tail of this run:
+```
+ FAIL  |unit| tests/server/machine/lsp/adapters/hub-keys.test.ts > the answer to prepareRename and rename of a hub key > gives the key and its range when nothing refuses it
+Error: Test timed out in 5000ms.
+ Test Files  3 failed | 222 passed | 9 skipped (234)
+      Tests  8 failed | 2520 passed | 101 skipped (2629)
+test:quick: 244.3 s (limit 45.0 s); failed: vitest
+```
+     The tail also showed a timeout in `tests/routes/edit/undo/undo.test.ts` ('puts a subtask line back as it was'). The tail did not show the third failed file.
+   - Run 2, with no change in between (load average 15.05 at its start):
+```
+test:quick: 54 changed file(s), from git since 0379bb5d
+test:quick: 234 test file(s), 9 essential
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.3 s)
+ok      svelte-kit sync (3.3 s)
+ok      eslint (2.3 s)
+ok      svelte-check (9.6 s): 1792681306500 COMPLETED 533 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (94.1 s): Duration  81.97s (transform 51.58s, setup 0ms, import 117.56s, tests 190.76s, environment 2.52s)
+test:quick: 97.6 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+```
+   - The timeouts, each file run alone:
+     - `hub-keys.test.ts` is a file the step changes. Alone (`npx vitest run tests/server/machine/lsp/adapters/hub-keys.test.ts --reporter=verbose`): `Test Files  1 passed (1)`, `Tests  14 passed (14)`, Duration 2.11s.
+     - The step does not change the other three (none appears in `git status --short`; `grep -c` printed 0):
+       - `undo.test.ts`: `Tests  56 passed (56)`.
+       - `watch-no-primary.test.ts`: `Tests  2 passed (2)` (2900 ms, 1216 ms).
+       - `window-guard.test.ts`: `Tests  27 passed (27)`.
+2. Brief Verify 1, the 13 named files (`npx vitest run tests/server/edit/config-key.test.ts ... tests/checks/tree/boundaries.test.ts --reporter=dot`):
+```
+ FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib
++   "state/boards/collection.ts imports data/snapshot/normalise-parts/plans",
++   "views/shared/forms/Followups.svelte imports data/model",
+ Test Files  1 failed | 12 passed (13)
+      Tests  1 failed | 215 passed | 9 skipped (225)
+```
+   This red was already on the base. In a scratch copy of the base `src`/`config` (`diff -rq` against `migration-O50-base` printed nothing), the same file gave the same two lines, `Tests  1 failed | 10 passed (11)`.
+3. The round's test files together (`npx vitest run tests/state/system/settings/theme-groups.test.ts tests/server/machine/lsp/adapters/hub-keys.test.ts tests/data/snapshot/rename.test.ts tests/data/snapshot/references.test.ts --reporter=verbose`): `Test Files  4 passed (4)`, `Tests  98 passed (98)`. This matches the report. The slow describe run as the report quotes it (`--tags-filter=slow --testTimeout 20000`): `Tests  4 passed | 33 skipped (37)`, at 740, 650, 624 and 635 ms.
+4. First runs on the round-0 tree. Scratch copy: the worktree's `src` with the round-1 files put back as they were in round 0:
+   - `lookup.ts`, `portfolio.ts`, `editors/sources.ts` and `Person.svelte` from `migration-O50-round-1`;
+   - `open.ts` and `hub-keys.ts` from `migration-O50-base` (neither is in `files.txt`);
+   - every `src` path of `files.txt` checked byte-equal to the snapshot;
+   - the worktree's tests.
+```
+ FAIL  ... theme-groups.test.ts > the people of the choice self > draws { ada: '', bob: 'ada' } ...
+AssertionError: expected [ 'ada', 'ada' ] to deeply equal [ 'ada (ada)', 'ada (bob)' ]
+ <heavy angle> tests/state/system/settings/theme-groups.test.ts:419:41
+ FAIL  ... draws { k1: 'Kim', k2: 'Kim', x: 'Kim (k1)' } ...
+AssertionError: expected [ 'Kim (k1)', 'Kim (k2)', 'Kim (k1)' ] to deeply equal [ 'Kim (k1)', 'Kim (k2)', <ellipsis>(1) ]
+ FAIL  ... hub-keys.test.ts > ... > goes from the setting self of the open workspace file in another workspace folder to the primary hub's person
+AssertionError: expected undefined to match object { result: [ { <ellipsis>(2) } ] }
+ <heavy angle> tests/server/machine/lsp/adapters/hub-keys.test.ts:210:28
+ FAIL  ... hub-keys.test.ts > ... > renames from the open workspace file of another workspace folder the primary hub's person
+AssertionError: expected undefined to deeply equal [ <ellipsis>(4) ]
+ <heavy angle> tests/server/machine/lsp/adapters/hub-keys.test.ts:232:25
+ Test Files  2 failed | 2 passed (4)
+      Tests  4 failed | 94 passed (98)
+```
+5. The same rows on the base copy. Scratch tree: base `src`/`config`/`utils` (`base-identical`) with the worktree's tests (`npx vitest run tests/data/snapshot/rename.test.ts tests/data/snapshot/references.test.ts --testTimeout=60000`):
+```
+AssertionError: expected [] to deeply equal [ { root: 'hub', <ellipsis>(3) } ]
+ <heavy angle> tests/data/snapshot/references.test.ts:625:23
+AssertionError: expected [] to deeply equal [ { root: 'lab', <ellipsis>(3) } ]
+ <heavy angle> tests/data/snapshot/references.test.ts:625:23
+ FAIL ... rename.test.ts > the rename of a hub key > edits 'the person the setting self of the op<ellipsis>'
+ FAIL ... rename.test.ts > the rename of a hub key > edits 'the person the setting self names, in<ellipsis>'
+AssertionError: expected { <ellipsis>(3) } to deeply equal { <ellipsis>(4) }
+ <heavy angle> tests/data/snapshot/rename.test.ts:406:24
+ Test Files  2 failed (2)
+      Tests  4 failed | 60 passed (64)
+```
+6. ASCII gate (Verify 3 and the round brief), run as `git status --short | awk '{print $2}' | grep -v '^\.scratch/' | grep -v '\.svg$' | xargs env LC_ALL=C perl -ne '<the spec.md gate>'` over 45 files: it printed nothing, `gate exit 0`. A plain non-ASCII scan of `docs/diagrams/*.svg` printed nothing. The gate over `O50-report.md` printed nothing.
+7. Verify 4:
+   - `grep -rn -w --exclude=local.yml self src config docs tests README.md` gives 136 lines, 0 of them under `docs/diagrams`.
+   - The `file:line` set of my run against the 136 lines quoted at report 534-807: `diff` printed nothing.
+   - The C11 grep:
+```
+src/lib/server/sessions/stores/hooks.ts:157:        if (isMap(person) && person.self === true && typeof person.name === 'string') {
+src/lib/views/boards/person/Person.svelte:151:    const isSelf = $derived(join.person?.self === true);
+```
+8. Verify 5: `sh utils/unused-exports.sh > <scratch>/unused-now.txt; diff ../migration-O50-base/unused-exports.txt <scratch>/unused-now.txt` gives `diff exit 0`.
+9. Verify 6: `git diff 0379bb5d -- src tests config docs ':!docs/diagrams' | grep '^+' | grep -i -E "before|used to|no longer|still|...|O[0-9]{2}[a-z]?\b|20[0-9][0-9]-[0-9]"`:
+```
+189:+// into a tab is a link before it is saved and a file open under two root keys is one file. A key
+296:+     * published portfolio, so a write on its way shows the state before it until the portfolio
+```
+   Neither line is history. Both describe the state at run time; the first is pre-existing head-comment text in `hub-keys.ts`, rewrapped.
+10. The report's evidence commands, rerun:
+    - The reuse grep on the base copy (`grep -rnF --exclude=local.yml "<name>" src` for each of the 12 names) gives the same hits the report gives.
+    - `node -e` with `yaml`'s `parse` on a duplicated `self:` gives `Map keys must be unique at line 3, column 3:`.
+    - `grep -c signal 'src/routes/api/write/+server.ts'` gives 0.
+    - `grep -c "'self'" src/lib/data/helpers/hub-names.ts` gives 0.
+    - These cited places hold the code the report names: `open.ts:184` (`findings.workspace.file_unparsed`), `lists.ts:151` (`duplicate_key`), `hub-layer.ts:70` (`hub_key_unknown`), `workspace-layer.ts:185` (`settings_value`).
+    - `writes.svelte.ts` holds `keepalive` only at 202-214.
+    - `byId` (`normalise.ts:151-157`) is a stable sort, so the last of two equal keys is the one kept.
+    - `diff -q` against the base for `wallpaper.ts` and `EntryForm.svelte` printed nothing.
+11. Other checks:
+    - `npx vitest run tests/checks/diagrams/diagrams.test.ts --testTimeout=120000`: `Tests  47 passed (47)`.
+    - `npx vitest run tests/checks/tree/duplication.test.ts tests/checks/source/keys.test.ts --testTimeout=120000`: `Tests  3 failed | 24 passed (27)`. One of the three is new with this round:
+```
+ FAIL  |unit| tests/checks/tree/duplication.test.ts > a rule written twice > is not held anywhere under tests
++   "tests/data/hubs/hubs-fixture.ts:41 and tests/data/snapshot/references.test.ts:577 hold the same 10 lines (8e0af16b0cb5)",
+```
+      On the base tree (base `src` and base `references.test.ts`/`reference-hub.ts`), the same file fails only its two `src` rows (Lanes/Followups/Subtasks/EntryCard), `Tests  2 failed | 16 passed (18)`. So the `tests` row is red only because of this round.
+
+### Verdicts
+
+Brief items (whole diff since `0379bb5d`):
+1. **Holds.** `config/defaults/sources.yml:73-74` has `self: ''` with its comment. `config/options/sources.yml:112-118` has heading `sources`, section `People`, a choice, `empty`, `from: people`, and the help the brief asks for.
+2. **Holds.**
+   - `SOURCES` gains `people`.
+   - The page: `Settings.svelte:195` and `editors/sources.ts` (`ownPeople`, labels, the source case).
+   - The server: `config-sources.ts:64-71`, `writes.ts:139`, `hooks.ts:140-145`.
+   - The editor's schema: `engine.ts:98-99`.
+   - The index: `OPTION_SOURCES` with `people`, `settingsNode`, and the workspace file passed from `portfolio.ts:750` to `build.ts:236-247`.
+   - This round's B1 closes the editor half (`hub-keys.ts:93`). See B1 for the labels.
+3. **Holds.** `normalise.ts:375-396`: `person(entry, owner)` takes nothing named `self` from the entry. `model-entities.ts:790` is rewritten.
+4. **Holds.** `validate.ts:298-317` (`checkSelf`, `self_unknown`). The file is `join(hub, config.registries.people)` (`index.ts:527-531`), the convention `unreadSources` uses (`lists.ts:89`).
+5. **Holds.** The `ownerName` code is unchanged, and its doc and `chat.ts:28-31` are rewritten.
+6. **Holds.**
+   - `Person.svelte:206-223` is one `{#if}/{:else}`. The button's pressed state comes from `isSelf`.
+   - `markSelf` returns early for a person with a `root` and for the person already set.
+   - `setSelf` (`ui.svelte.ts:457-460`) goes through `writeOption`, which makes the unsaved-workspace offer (`:247-249`).
+7. **Holds.** The documents, the fixture and the four tests' data are carried (the self grep above).
+8. **Holds** for the builder: the hub is not in the diff. The move is the landing's.
+
+Round brief items:
+1. **Holds.**
+   - `keysRootOf` (`lookup.ts:89-91`) is used by `graphOf` (`:100`) and by `hub-keys.ts:93`.
+   - The grep the item names prints three lines. `hub-keys.ts:108` (a URI) and `elsewhere.ts:16` (the root on disk) name where a file is; they do not choose a graph.
+   - `graphOf` has one caller in `src`.
+2. **Holds.**
+   - The rename row in `lab` is at `rename.test.ts:239-248`. The adapter rows are at `hub-keys.test.ts:200-241`.
+   - The adapter rows fail on the round-0 tree (run 4 above).
+   - R1-1, judged by reading:
+     - The `lab` rename row plans in `graphOf(laid, 'hub')` (`reference-hub.ts:341`). The `lab` scan is in that graph only through `of: 'hub'`, which `build.ts:246` sets.
+     - Without `of`, the `lab` file would be missing from `edited`, and `rename.test.ts:406` would fail.
+     - The `references.test.ts` row 'the file under another folder' asserts `of: 'hub'` directly.
+     - So the row tests `of`. The run on the base copy (run 5) is the only failing run, and it fails for the wider reason that the base has no workspace scan.
+   - The quoted failing lines are stale; see P1.
+3. **Holds.**
+   - `references.test.ts:540-627` builds through `watchPortfolio`, so `settingsFileOf` runs.
+   - The rows 'unsaved' and 'no folder' give `[]`. By reading, either would throw or scan if `settingsFileOf`'s guards were absent.
+   - The rows are tagged slow, so they run only in the landing list (at about 650 ms each). See ST1 for the duplicated watcher setup.
+4. **Holds.** `folderOfHub` (`open.ts:105-112`) is used by `hubNameOf` (`:114-116`) and `settingsFileOf` (`portfolio.ts:266`), and `realPath` is no longer imported in `portfolio.ts`. The reuse grep is quoted and reproduced.
+5. **Holds.** `Person.svelte:206-223`.
+6. **Holds** for the rule the item states. The two named inputs give `ada (ada)`/`ada (bob)` and `Kim (k1)`/`Kim (k2)`, and they fail on the round-0 tree. The aim "every item can be told apart" still fails for one input; see B1.
+7. **Holds**, with one omission:
+   - The key cases (empty, duplicated, colliding) and the press cases (in flight, after close, superseded) are stated at report 502-520, and the evidence reproduces.
+   - The editor before and after is at 522-525, but it leaves out settings drawn from vocabulary lists; see B2.
+8. **Holds.** The 136 lines are quoted with a judgment on each. My run gives the same set. I read each "about the person" hit and agree with it.
+
+Cases of the brief and the cases ruling:
+- C1. Met by reading (`config-sources.ts:64-71`, `editors/sources.ts`, `Settings.svelte:195`). The look on landing is its proof.
+- C2. Met by reading (`config-fit.ts` `notListed`, `server.config_key.not_in_source`).
+- C3. Met. The normalise rows pass (Verify 1, 12 files passed). The first refuter reproduced their failure on the base.
+- C4. Met by reading (`validate.ts:309-316`, `index.ts:527-531`).
+- C5. Met (C3's rows, and the record schema unchanged).
+- C6. Met by reading (`hooks.ts:157`, `chat.ts:115`).
+- C7. Met by reading (`Person.svelte:151-161`, `:206-223`). The look on landing is its proof.
+- C8. Met by reading (`ui.svelte.ts:247-249`).
+- C9. Met (`grep -c "'self'" hub-names.ts`: 0).
+- C10. Met by reading (`selfKey` uses `str`; `workspace-layer.ts:185`).
+- C11. Met (grep quoted above).
+- C12. Met by reading (`engine.ts:98-99`).
+- C13. Partial. An empty name and equal names are told apart, and a workspace with no primary hub offers only the empty item. A cascading input is still drawn twice under one label; see B1.
+- C14. Met. Both rename rows pass. On the base they fail at `rename.test.ts:406:24` (run 5). The unsaved half is now covered by the `references.test.ts` 'unsaved' row through the production path.
+- Round case 1. Met (run 4: before, `undefined`; after, passes).
+- Round case 2. Met. It passes now. By reading, it fails without `of` (R1-1 above).
+- Round case 3. Met (verification 3).
+- Round case 4. Met for its named inputs (verification 4 and 3).
+
+### Spec
+
+1. SP1. A head-comment change that no item asks for, and that the report does not list.
+   - Place: `tests/data/snapshot/references.test.ts:1`:
+```
+-// Layer 1, data tests. The reference index of the snapshot build (data/snapshot/references/): the
++// Layer 4, data tests. The reference index of the snapshot build (data/snapshot/references/): the
+```
+   - The other seven files in `tests/data/snapshot/` say `Layer 1, data tests` (`head -1`). The round report's per-item list does not mention the change.
+   - Failure scenario: none at run time. A reader of the folder finds one data test numbered differently from its siblings, with no reason given.
+   - Fix at landing: keep it only if the new server import is the reason, and say so in the paragraph the round added. Otherwise put `Layer 1` back.
+
+### Proof
+
+1. P1. The failing lines the report quotes were taken before the last change and do not reproduce at those lines. The spec says: "Every count, line count, timing and `file:line` in the report is taken after your last change".
+   - Report 377-378 gives `hub-keys.test.ts:213:28` and `:226:25`. My round-0 run gives `:210:28` and `:232:25`.
+   - Report 382 gives `rename.test.ts:403:24`. My base run gives `:406:24`.
+   - Report 386 gives `references.test.ts:624:23`. My base run gives `:625:23`.
+   - The failures themselves reproduce (runs 4 and 5).
+   - Failure scenario: the landing reader opens the quoted line to read the failing assertion and finds a different statement.
+   - No decision rests on these lines. The verdicts used my lines.
+
+### Standards
+
+1. ST1. The new watcher harness copies an existing one, and the tree check that guards against copies is now red.
+   - Place: `tests/data/snapshot/references.test.ts:570-596` (`watchedIndex`). It repeats the `watchPortfolio(new Hub(), { engine, icons, host, open, settings, problems }, { debounce: 20, ... })` setup of `published` in `tests/data/hubs/hubs-fixture.ts:37-58`:
+```
+    const watcher = watchPortfolio(
+        new Hub(),
+        {
+            engine: engineDir(),
+            icons: { set: {} },
+            host: { name: 'test', address: '127.0.0.1' },
+            open: () => workspace.open(),
+            settings: (dir) => loadConfig(engineDir(), { hub: dir }),
+            problems: () => []
+        },
+```
+   - What is wrong:
+     - The spec says "before writing a helper, type or schema, grep `src` and `tests` for its name and its key call and reuse what exists".
+     - The report's reuse grep covers `src` only.
+     - `duplication.test.ts` flags the pair: `tests/data/hubs/hubs-fixture.ts:41 and tests/data/snapshot/references.test.ts:577 hold the same 10 lines (8e0af16b0cb5)`. On the base tree that row is green (verification 11).
+   - Failure scenario: `npm run test:landing` runs the tree checks on main and is red on this row. A later change to the watcher's environment (a new option, a different `settings` loader) has to be made in two harnesses.
+   - Fix: widen `published` in `hubs-fixture.ts` to take a saved `Workspace` and the build options (or the `schemas` callback), and build `watchedIndex` on it.
+2. ST2. The verify list ran four times.
+   - The report states it at 419: "The verify list ran four times this round. Runs 3 and 4 are beyond what `spec.md` allows."
+   - Spec, Token discipline: "A red line in a file the step does not change is rerun alone and named with that run in the report, and the list is not run again for it."
+   - Run 2's red was in `undo.test.ts`, a file the step does not change. Runs 3 and 4 had no change in between.
+   - Each timeout, judged by its one-file run:
+     - `undo.test.ts`, run 2: not a step file, `Tests  56 passed (56)` alone.
+     - `window-guard.test.ts`, run 3: not a step file, `Tests  27 passed (27)` alone.
+     - `watch-no-primary.test.ts`, run 3: not a step file, `Tests  2 passed (2)` alone.
+     - Run 1's red was `svelte-check` in `theme-groups.test.ts`, a step file. The builder fixed it, and run 2 was the allowed rerun.
+3. ST3. `guarded.md` does not name the new test describes and rows.
+   - `grep -c` for 'the open workspace file in the reference index', 'a setting of the open workspace file' and 'the people of the choice self' over `.scratch/migration/agents/guarded.md` finds none of them. The 4 lines it counts come from other text that mentions "unsaved workspace".
+   - Spec: "A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there by file and title."
+   - The builder raised this as R1-2 (report 336 and 811-815), because the builder may not edit the ledger.
+   - Failure scenario: a later step deletes the rows as unnamed, or never runs them as the test of G66, G67 or G119.
+   - Fix at landing: write the listed names into G66, G67 and G119.
+4. ST4. The doc comment of `ownPeople` (`editors/sources.ts:110-115`), "so every item can be told apart", is false for the input in B1. This is a sentence the diff makes false. It has the same fix as B1.
+
+### Behaviour
+
+1. B1. One picker input still draws two items under one label.
+   - Place: `src/lib/state/system/config/editors/sources.ts:116-132`. `taken` holds the keyed labels of the items whose words are shared, and an item whose plain words equal one of those labels is keyed once:
+```
+    const taken = new Set(own.filter((one) => shared.has(one.id)).map(keyed));
+    return own.map((one) => ({
+        id: one.id,
+        label: shared.has(one.id) || taken.has(one.words) ? keyed(one) : one.words
+    }));
+```
+     That keyed label is never checked against the other plain words.
+   - Failure scenario, run through `listsOf` and `poolOf` over the shipped option on a scratch copy of the worktree `src`: people `{ k1: 'Kim', k2: 'Kim', x: 'Kim (k1)', y: 'Kim (k1) (x)' }` draw `["Kim (k1)","Kim (k2)","Kim (k1) (x)","Kim (k1) (x)"]`.
+     - `x` and `y` read alike in the Settings choice.
+     - The input is contrived (a name that copies another item's label), but the round's purpose and the doc comment claim it cannot happen.
+   - Fix: key items until the labels are unique (repeat the `taken` step until nothing changes), or key every item whose words equal any item's final label.
+2. B2. The stated editor before and after leaves out settings drawn from vocabulary lists.
+   - Report 525 says the settings whose option draws from `domains`, `clusters` or `people` become hub-key links.
+   - `settingsNode` (`references.ts:137-144`) reads every option whose `from` is in `OPTION_SOURCES`. That includes `entry_statuses`, `tiers`, `status_chips` and `project_types`.
+   - The options that draw from them: `config/options/behavior.yml:122`, `:128`, `:134` (`focus.applications_open`, `focus.education_open`, `focus.applications_sent`, `from: entry_statuses`) and `config/options/layout.yml:132`, `:156`, `:177`.
+   - Their definitions are in `vocab.yml`, an engine file present in every graph (`lookup.ts:100`).
+   - Failure scenario:
+     - A workspace file with `focus.applications_open` set becomes a link to `vocab.yml`.
+     - Find References on a status word lists the workspace file.
+     - The look on landing has no stated before and after for this.
+   - The rename of a vocabulary value stays refused (the `rename.test.ts` row 'a vocabulary value'), so only the links and references change.
+
+### Declined to judge
+
+- The third failing file of my first `test:quick` run. I captured only the tail. The second run, with no change in between, was green.
+- Whether the base commit's diagrams match the base source. That needs a checkout of `0379bb5d`, which needs a git command outside the three I may run. The worktree's diagrams match its source (47 passed).
+- The look on landing for C1, C7 and C13, and for B2: the Settings row and its labels, the button pressed and unpressed and its press, and the editor links in the workspace file. Neither builder nor reviewer runs a page.
+- The report's claim that the server applies two writes in the order they arrive (report 520). It is a judgment about the write route's ordering, and settling it needs a run against a live server, which I may not start.
+- The report's claim of load averages and top processes during its runs (report 488). It is a past measurement and cannot be rerun. No decision rests on it.
+
+Usage: ae22da9a7c93e0180, claude-opus-5-5, 239932 tokens, 75 tool uses, 18 min 52 s
