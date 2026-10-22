@@ -4,6 +4,8 @@
 // The roots are a temporary directory the case plants a deck in; a folder outside it is planted
 // beside it, so a path that climbs out of the root or leaves it through a link has something real
 // to reach. Nothing outside the temporary directory is read or written.
+// @module-tag slow: its cases time out under the load of a full npm test, so npm test leaves
+// it out.
 
 import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';

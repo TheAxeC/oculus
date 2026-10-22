@@ -1,32 +1,33 @@
-In flight (4 of 6 slots in use):
-- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208, 226 and 227. State: round 1 sent, building.
-- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: refuted, no round; ready for /land.
-- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: refuted, no round; ready for /land.
-- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: round 1 built; its run of /refute next.
+In flight (3 of 6 slots in use):
+- O50 (who the user is: the workspace setting `self`). State: repair round 1 building.
+- O62 (`archive_order` removed, orphan test over catalog keys). State: refuted, no round; landing next.
+- O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing after O62.
 
 Queued, in order (11 steps):
-- O54 (the hubs of a workspace resolve own hub first; every record's internal id is `<hub>:<key>` and never shown or written; Add asks which hub), rulings 203, 236, No hub prefix shown and 231 to 235. Waits: a free slot, after O64.
-- O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
-- O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
-- O61 (one home for each vocabulary word: stage words are types with their flags, chips are form and situation labels, the status list split into `chips:`, `statuses:` and `lead_statuses:`, each stage word an idea, in flight, done or neither, one spelling per word), rulings 218, 219, 221, 222. Waits: after O59 and O62 have landed.
-- O53 (a project's `lead:` a list of person keys; the views show the team without `self`; the portfolio chat names `self`; no owner key), rulings 205, Owner and self, 209. Waits: after O50.
-- O56 (a new project, a new entry and Save to Literature ask which hub when more than one could take it), ruling 210. Waits: after O54.
-- O51 (a per-pane Hide Tab Row; the hidden row shows while the pointer is at the pane's top edge), ruling Headerless panes. Waits: after O49.
-- O55 (the project boards by kind, role and state: three tiers, `roles:`, the `type:` and `status:` blocks, `hub:` and `match:`, a project on every board it meets, the six shipped boards, Projects and Archive from the type's state, a project no board takes a finding, collections with `lead:`, `collaborators:` and `supervisors:`), rulings 206, 207, 211, 213, 215, 217; after O50, O53 and O61. Waits: after O53, O56 and O61.
-- O60 (each part of `config/` overridden where ruling 214 puts it: the vocabulary lists and `roles:` in the hub list, added project-form fields, the workspace's catalogs and interface words), ruling 214; after O55 and O61; its /spec raises an open item on multi-language support (plan.md, O60 Step 0). Waits: after O55, with O63.
-- O63 (the audit's hub conventions as hub settings, off unless set; the author-chip check removed), ruling 220; after O55 and O61. Waits: after O55, with O60.
-- O39 (oculus in its own repository): part A landed; part B done (the repository pushed, the Release published); part C done (row i on ruling 195, row j closed by ruling 196); part D landed; left: the owed desktop look of part A, then the tick and the closing booking (ruling O39 closing). Waits: at any time, in no slot.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
+- O49 (an Open View submenu in the tab strip's menus). Waits: a free slot.
+- O57 (the portfolio chat's index over every hub). Waits: a free slot.
+- O61 (one home for each vocabulary word). Waits: after O62 has landed.
+- O53 (a project's `lead:` a list of person keys). Waits: after O50.
+- O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
+- O51 (a per-pane Hide Tab Row). Waits: after O49.
+- O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
+- O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
+- O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
+- O39 (oculus in its own repository): left: the owed desktop look of part A, then the tick. Waits: at any time, in no slot.
 
-Owed looks (1):
-- O39 part A: a desktop window on an app's theme from its first paint; the page parts taken 2026-10-21 (`agents/reviews/owed-looks.md`).
+Owed looks (2):
+- O58: the Settings view's Catalogs group without `meta.yml` (open item 239).
+- O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
-- O59 (the status flag `terminal` renamed `closes_deadline` in the vocabulary, its reader `closesDeadline` and the documents; the type flag keeps `terminal`), ruling 216; with it main's own red lines, the dev server's watch and eslint's ignore of `.agents/` (Step 0). Landed 2026-10-22.
-- O48 (the editor and the terminal each get a transparency setting, `editor.opacity` and `terminal.opacity`, ruling 200 (a)): the source editor, its read-only code window, the Diff view's files and the Merge view take the editor's share, the Terminal view the terminal's; the Settings rows draw an empty number box while the key is left out. Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
-- O39 part D (the README rewritten, `HELP.md` moved to `docs/HELP.md`, `DESIGN.md` deleted with every citation of it, Axel made the user in the text and John Smith in example data, the window title `Oculus`, `convert-decks.mjs` deleted). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
-- O47 (the line edits of the cards and the Focus board's follow-ups): the subtask edit (ruling 198), `followup:` as a list (ruling 197), memories and wallpapers found in subfolders, the Focus board's funding, conference and education follow-up lines; lands after O39 part D, then its documents; with the Timeline and Bookmarks layout and the editor and terminal margins (ruling 199). Landed 2026-10-21, with its look on TEST; no verify command run, by Axel's order.
-- O39 part A (the new repository's own files and `CLAUDE.md`; Theme and Code theme as two lists under their rows' groups, `code_themes.vscode` and `code_themes.shiki`; an app's colour theme from a window's first paint; no refusal of a workspace folder inside a hub), 2026-10-21, the commit "Land O39 part A".
-- O46 (every key the editor completes carries its description; settings and state out of browser storage into the workspace file's `settings:` and oculus's state files; the collapsible Settings lists; Add Command... into the repository's `.oculus/commands.yml`; Schedule... approving its chain), 2026-10-20, the commit "Land O46".
+- O58 (`config/catalogs/meta.yml` removed), 2026-10-22, commit below.
+- O59 (status flag `terminal` renamed `closes_deadline`), 2026-10-22, 6bb17666.
+- O48 (editor and terminal transparency settings), 2026-10-21.
+- O39 part D (README rewritten, HELP.md moved, DESIGN.md deleted), 2026-10-21.
+- O47 (the line edits of the cards and the Focus follow-ups), 2026-10-21.
+- O39 part A (the new repository's own files, theme lists, first-paint theme), 2026-10-21.
+- O46 (editor key descriptions, settings out of browser storage), 2026-10-20.
 - O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.
 - O45 (Recover places one folder of an archive, the key `folder`), 2026-10-20, 323841f59.
 - O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`), 2026-10-20, 5a6cb4a70.

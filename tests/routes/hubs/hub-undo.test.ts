@@ -5,6 +5,8 @@
 // file goes back to what it was and the lab's file is left byte for byte.
 //
 // What this does NOT cover: the History view showing the record.
+// @module-tag slow: its case builds two hubs and times out under the load of a full npm test, so
+// npm test leaves it out.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

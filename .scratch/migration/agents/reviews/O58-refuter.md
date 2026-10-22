@@ -147,3 +147,9 @@ The report states the one visible change with its before and after: the Settings
 - The changed tests' failing lines on the unchanged tree. Judged by reading only, because a rerun needs the row removed from the test file.
 
 Usage: aac7aef6659cb68a7, claude-opus-5-5, 148061 tokens, 41 tool uses, 14 min 18 s
+
+## Closed
+
+- S1, the builder's read-only `git status --short` and `git diff --stat`: closed with no change to the code; the launch prompt allowed reading with `git status`, `git diff` and `git show`, as the plan-orchestration skill's prompt states, and the reviewer's own `git diff 21c13dd7 --stat` matches the numbers.
+- The note on the import order at `src/lib/data/shapes/catalog-files.ts:19`: fixed at landing, the `file-nesting.ts` import placed after `common.ts` so the imports stay in path order.
+- The brief's count of two changed tests (the `EXPECTED` row also feeds a third test, not edited): an error of the brief, recorded in the booking; nothing to change.

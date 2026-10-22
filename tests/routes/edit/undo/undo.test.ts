@@ -4,8 +4,10 @@
 // The hub, the deck file and the change log are the fixture beside this file, all under the system
 // temporary directory, so no case here reaches ~/.oculus or the checkout.
 //
-// The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
-// configuration once, since the first load costs more than a later one, so no case pays for it.
+// The cases tagged slow take 100 ms or more. A hook loads the configuration once, since the first
+// load costs more than a later one, so no case pays for it.
+// @module-tag slow: its cases time out under the load of a full npm test, so npm test leaves it
+// out.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

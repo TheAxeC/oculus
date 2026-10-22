@@ -153,3 +153,133 @@ none
 - **The report's two test:quick timings (398.5 s and 93.2 s).** Not reproduced. My one run took 89.8 s, also over the 45 s limit, with every command passing.
 
 Usage: aa46c6d7fba77e682, claude-opus-5-5, 180969 tokens, 41 tool uses, 12 min 24 s
+
+## Repair round 1, refuted
+
+All commands below were run from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O52`, with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. No ADR folder exists (`docs/adr` is absent per the brief); no ADR touches the step.
+
+### Verification lines
+
+1. `npm run test:quick`, exit 0:
+```
+test:quick: 16 changed file(s), from git since HEAD
+test:quick: 9 test file(s), 9 essential
+ok      prettier (31.6 s): All matched files use Prettier code style!
+ok      ASCII gate (35.8 s)
+ok      svelte-kit sync (51.1 s)
+ok      vitest (63.6 s): Duration  39.71s (transform 61.42s, setup 0ms, import 77.61s, tests 24.03s, environment 32.56s)
+ok      eslint (66.4 s)
+ok      svelte-check (68.6 s): 1792678614950 COMPLETED 534 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 120.0 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+```
+2. The ASCII gate of `spec.md` over `config/text/views/boards/focus.yml`, `FoldHead.svelte`, `CommandCenterView.svelte`, `Tasks.svelte` and `career/CareerPanel.svelte` printed nothing: `ascii exit=0`. `LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O52-report.md` printed nothing.
+3. C1 and C2 greps (`F=src/lib/views/boards/focus`):
+```
+src/lib/views/boards/focus/career/CareerPanel.svelte:113:        <FoldHead
+src/lib/views/boards/focus/CommandCenterView.svelte:141:        <FoldHead
+src/lib/views/boards/focus/Tasks.svelte:77:        <FoldHead
+c1a exit=0
+c1b exit=1
+c1c exit=1
+c2 exit=1
+```
+4. The report's evidence, rerun:
+- `grep -n "beforematch" node_modules/svelte/elements.d.ts`:
+```
+451:<tab>'on:beforematch'?: EventHandler<Event, T> | undefined | null;
+452:<tab>onbeforematch?: EventHandler<Event, T> | undefined | null;
+453:<tab>onbeforematchcapture?: EventHandler<Event, T> | undefined | null;
+```
+  `grep -n "until-found" node_modules/svelte/elements.d.ts`: `772:<tab>hidden?: boolean | 'until-found' | '' | undefined | null;`. `node_modules/svelte/package.json`: `"version": "5.57.1"`. The report's claim reproduces.
+- `compile(src, { generate: 'client' })` of `CareerPanel.svelte`, lines matching `beforematch|'hidden'`:
+```
+$.template_effect(() => $.set_attribute(div, 'hidden', $.get(unfolded) ? false : 'until-found'));
+$.event('beforematch', div, () => $.set(unfolded, true));
+```
+  The server compile gives ``$$renderer.push(`<!----> <div class="body svelte-wccrs8"${$.attr('hidden', unfolded ? false : 'until-found')}>`);``, and `warnings []`. The listener claim reproduces.
+- `node_modules/svelte/src/internal/client/dom/elements/attributes.js` around lines 181-195: `if (attributes[attribute] === (attributes[attribute] = value)) return;`, then `value == null` gives `removeAttribute`, a non-string value with a setter gives `element[attribute] = value`, and otherwise `setAttribute`. `'until-found'` goes through `setAttribute`, and `false` goes through the `hidden` property, which removes the attribute. The report's reading reproduces.
+- `awk` widths of `FoldHead.svelte:69-70`: `69: 98`, `70: 38`. Reproduces.
+- The history-word grep over `CareerPanel.svelte:18-23` hits only line 21 (`beforematch`, an event name). Over `FoldHead.svelte:69-70` it prints nothing (exit 1). Reproduces.
+- The `cmp` of `src/lib/server/content/wallpaper.ts` and `EntryForm.svelte` against the base copy printed `wallpaper-same` and `entryform-same`. `git status --short` lists neither.
+- `wc -l`: `CareerPanel.svelte` 410 and `FoldHead.svelte` 99. Reproduces.
+- `.scratch/migration/agents/guarded.md:3`: "Views have no entry: the look on TEST covers them." Reproduces.
+- WebFetch of https://developer.chrome.com/docs/css-ui/hidden-until-found: the four sentences the report quotes are on the page. The same page also says "`hidden=until-found` element itself will still have a box." and "CSS properties such as border and explicit size will still affect the rendering." (see B1 below).
+
+The round delta, from `diff -u` of each `files.txt` path in the snapshot against the worktree: only `career/CareerPanel.svelte` (the head comment's last paragraph at lines 18-23, and the body `div` at lines 120-124) and `FoldHead.svelte:69-70` changed. The other eleven paths printed exit 0. `git status --short` lists no changed path outside `files.txt` except `.scratch/migration/agents/briefs/O52.md` (`diff` against the main checkout's copy printed `SAME_AS_MAIN`), the untracked `briefs/O52-round1.md` (same as main) and the untracked `reviews/O52-report.md`.
+
+### Verdicts, step brief, whole diff since the base
+
+- Item 1, `FoldHead.svelte`: holds. Lines 37-56 hold the markup and lines 58-98 the geometry, including `.words` with the four ellipsis properties and `.end` with `flex: 0 0 auto`. The head comment is at lines 2-13.
+- Item 2, the command center: holds (`CommandCenterView.svelte:114-116` and `:141-148`; `.head`, `.head > b` and `.pill` are removed).
+- Item 3, Tasks: holds (`Tasks.svelte:77-83`; `.head` and `.head > b` are removed).
+- Item 4, the career banner: holds. It is `<section class="career" data-surface>` at line 112 with `padding: 4px 8px` and `FoldHead` first, the body is mounted and hidden, and the `summary` rules are gone. The folded box now differs from the command center's: see Behaviour B1.
+- Item 5, same x and one row height: holds by reading for the row (22 px) and the x positions. The folded career box's total height does not match the command center's (Behaviour B1).
+- Item 6, `focus.career_heading`: holds (`focus.yml:10`, read at `CareerPanel.svelte:116`).
+- C1: met (greps above).
+- C2: met (the C2 grep exits 1, and the three boxes carry `padding: 4px 8px`).
+- C3: met by reading. The proof is the look on landing.
+- C4: met by reading for the row. The proof is the look on landing.
+- C5: met by reading.
+- C6: met by reading.
+- C7: met (`CareerPanel.svelte:111`, `{#if career !== null}`).
+- C8: met (`data-surface` at line 112, `body.wall` rules at 276 and 281).
+- C9: met by reading. The body stays mounted under `hidden="until-found"`.
+
+### Verdicts, round brief
+
+- Item 1, B2: holds. The body carries `hidden={unfolded ? false : 'until-found'}` and `onbeforematch={() => (unfolded = true)}`. The compiled output adds a real `beforematch` listener and sets the attribute to `until-found` while folded, on the server and the client. There is no cast, and svelte-check reports 0 errors. The round brief's premise that the element types do not list `beforematch` is false (`elements.d.ts:452`), so the typed attribute meets the requirement the attachment or action was named for: a real listener and no cast hiding a type error. The change introduces Behaviour B1.
+- Item 2, S1: holds (`FoldHead.svelte:69-70`, 98 and 38 columns).
+- Item 3, B1: violated (Proof P1, Behaviour B1). The 32 px "after" figure the report states is false under item 1's `hidden="until-found"`.
+- Case 1 (C9 read again): met by reading.
+- Case 2 (a find in the folded panel): met by reading for the listener. The proof is the look on landing. No test is due (`guarded.md:3`).
+- Case 3 (fold again): met by reading. Svelte's cached value is `false` after an unfold, so the fold sets `'until-found'` again.
+
+### 1. Spec
+
+none
+
+### 2. Proof
+
+- **P1. The report's B1 height figures are false after the round's own B2 change.**
+  - Place: `.scratch/migration/agents/reviews/O52-report.md`, "### B1: the folded career box's height".
+  - Quoted: "It is 32 px after (1 + 4 + 22 + 4 + 1: border, padding, the 22 px row, padding, border). That is the same as the command center's folded box, so everything under the banner moves 4 px down while it is folded."
+  - What is wrong: the sum leaves out the folded body. Under `hidden="until-found"`, the body's `padding: 4px 0 0` (`CareerPanel.svelte:288-290`) is still drawn (see B1). By reading, the folded box is 1 + 4 + 22 + 4 + 4 + 1 = 36 px. That is 4 px taller than the command center's folded box and 8 px taller than before the step.
+  - Failure scenario: the look on TEST measures the folded career box against the report's 32 px and the command center's box. It finds 36 px and a 4 px band under the row, and the report's before and after cannot be used to read the look. This is round item 3, violated.
+- **P2. The round-0 rows of the report now describe the old body.** The DONE row 4, the C9 row and judgment call 5 still read `<div class="body" hidden={!unfolded}>` (line 119) and "the form `TabView.svelte:48` uses". After round 1 the body is at lines 120-124 with `hidden="until-found"`. The appended section states the change, but the earlier rows are not marked as replaced. Failure scenario: a reader of the DONE table takes plain `hidden` as the state of the tree.
+
+### 3. Standards
+
+none. The two comments changed this round are wrapped at 100 columns (`CareerPanel.svelte:18-23` at 98, 98, 100, 99, 97 and 77 columns, and `FoldHead.svelte:69-70`). They carry no history word, and they are ASCII.
+
+### 4. Behaviour
+
+- **B1. The folded career box gains a 4 px empty band under its heading row.**
+  - Place: `src/lib/views/boards/focus/career/CareerPanel.svelte:120-124` together with `:286-290`.
+  - Quoted:
+    ```
+            <div
+                class="body"
+                hidden={unfolded ? false : 'until-found'}
+                onbeforematch={() => (unfolded = true)}
+            >
+    ...
+        .body {
+            padding: 4px 0 0;
+        }
+    ```
+  - What is wrong: the HTML rendering stylesheet maps the two states differently. `[hidden]:not([hidden=until-found i]):not(embed)` gets `display: none`, and `[hidden=until-found i]:not(embed)` gets `content-visibility: hidden` (WebFetch of html.spec.whatwg.org/multipage/rendering.html). MDN's hidden page says that elements in this state "generate boxes", "participate in page layout", and have "their margin, borders, padding, and background ... rendered". The Chrome page the report cites says the element "will still have a box". So while the banner is folded, the body is a box of zero content height with its 4 px top padding still drawn.
+  - Failure scenario: open the Focus board on a hub with a career file and leave the banner folded (the default). The career box is 36 px high, and its 22 px row stands 4 px from the top edge and 8 px from the bottom. The command center's folded box is 32 px with 4 px on each side, so the two headings no longer look alike in their boxes. Before round 1, with plain `hidden` and `display: none`, the body drew nothing. The report's before and after does not state this (it states 32 px).
+  - Verdict named: round item 3 violated. The step's item 4 and item 5 hold for the row but not for the box, and ruling Focus headings (career heading aligned with the command center's) is met for x and row height but not for the folded box.
+  - Fix in scope, judged by reading: take the 4 px off the body while it is hidden, for example `.body:not([hidden]) { padding-top: 4px; }` or the same spacing as a margin on the body's first child inside the contained box. Either keeps the find-in-page reveal, since the body stays `display: block`, and the folded box returns to 32 px.
+
+### Declined to judge
+
+- **The live find-in-page reveal on TEST and in the desktop app.** I started no page. Whether the Electron window offers find-in-page at all is not verified; the round-0 refuter found no find key binding in `config` or `src`. That is for the look on landing.
+- **The 36 px figure is by reading the CSS and the cited specifications, not measured.** The look on TEST settles it.
+- **Whether any of the 16 changed files in test:quick's selection differ from `git status`.** The selection is the tool's own git read. The full `diff -rq` of the base copy against the worktree over `src`, `config`, `tests` and `utils` did not finish within 120 s and was stopped. The changed set rests on `git status --short` and the two `cmp` runs.
+- **The report's test:quick timing (143.0 s).** Not reproduced. My one run took 120.0 s, also over the 45 s limit, with every command passing.
+
+Reviewer usage: a71c9aeb58e432ce4, claude-opus-5-5, 140872 tokens, 30 tool uses, 7 min 39 s

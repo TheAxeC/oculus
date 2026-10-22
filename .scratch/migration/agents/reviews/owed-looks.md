@@ -8,6 +8,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
+- O58: the Settings view's Catalogs group lists no `meta.yml` and no row "The tool identity: the title and the subtitle the window carries.". The Settings view is a unique view held by the System page with a filter set, so it cannot be opened on TEST without moving it (open item 239).
 - O39 part A, the desktop part: in the desktop app, a window started on an app's colour theme filled with that theme's background from the first paint. The page parts were taken 2026-10-21 (under "Taken").
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)

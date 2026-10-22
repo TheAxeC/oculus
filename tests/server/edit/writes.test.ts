@@ -8,6 +8,8 @@
 //
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
+// @module-tag slow: its cases write a hub of their own and time out under the load of a full npm
+// test, so npm test leaves it out.
 
 import { mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

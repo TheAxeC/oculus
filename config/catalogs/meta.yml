@@ -1,5 +1,0 @@
-# Oculus identity metadata. The browser tab title comes from the text catalog's `app.title` key.
-
-meta:
-    title: 'Oculus'
-    subtitle: 'Private working dashboard - **never deploy**. Showcase = the Present view.'

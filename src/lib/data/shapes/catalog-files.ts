@@ -14,9 +14,9 @@
 import type { z } from 'zod';
 import { agentsFileShape, agentsWords } from './catalog-files/agents.ts';
 import { under, type Owned } from './catalog-files/common.ts';
+import { nestingFileShape } from './catalog-files/file-nesting.ts';
 import { glyphsFileShape, iconsFileShape } from './catalog-files/glyphs.ts';
 import { latexFileShape, unimathFileShape } from './catalog-files/latex.ts';
-import { metaFileShape, nestingFileShape } from './catalog-files/meta.ts';
 import { optionsFileShape, readSpecWords } from './catalog-files/options.ts';
 import { textFileShape } from './catalog-files/text.ts';
 import { vocabFileShape } from './catalog-files/vocab.ts';
@@ -61,7 +61,6 @@ export const CATALOG_FILES: readonly CatalogFile[] = [
             'latex_editing.symbols'
         )
     },
-    { name: 'catalogs/meta', file: 'catalogs/meta.yml', shape: metaFileShape, owned: under() },
     {
         name: 'catalogs/unimath',
         file: 'catalogs/unimath.yml',

@@ -126,3 +126,90 @@ Open the Focus board on TEST. Check folded and unfolded, under a light theme, a 
 - The brief's "Report" section asks the before/after to describe the career control as "a button named "Fold <line>" or "Unfold <line>"". Ruling 225, given in the dispatch and in the brief's own item 6 and Decision 4, names it "Fold Career strategy" / "Unfold Career strategy". The build and the before/after above follow ruling 225, and the "Report" sentence is the brief's leftover from before that ruling.
 - `spec.md` ("Where you work") says a builder runs no git command, read-only ones included. The dispatch message allows `git status`, `git diff` and `git show`. I ran `git status --short` twice, `git diff` on the brief and on `docs/diagrams` (`--stat` and the dot files), and `git log --oneline -1` once at the start. That last one is in neither list. None of them changes state.
 - The verify list ran over its 45 s limit both times (398.5 s, then 93.2 s), and the first run's 10 vitest timeouts were in files this step does not change. Whether other suites were running on the machine at the time is not verified; the worktree's state file lists O59 and O62 in flight beside O52.
+
+## Repair round 1
+
+Everything in the round brief is done.
+
+One premise of the round brief did not reproduce. Item 1 asks for "the way Svelte 5 attaches an event the element types do not list (an attachment or an action)". The element types do list it: `grep -n "beforematch" node_modules/svelte/elements.d.ts` prints `452:<tab>onbeforematch?: EventHandler<Event, T> | undefined | null;` (Svelte 5.57.1), and line 772 types `hidden?: boolean | 'until-found' | '' | undefined | null;`. So the body takes the typed `onbeforematch` attribute, with no cast, no attachment and no action. Compiling `CareerPanel.svelte` with `svelte/compiler` (`compile(src, { generate: 'client' })`) prints `$.event('beforematch', div, () => $.set(unfolded, true));` and `$.template_effect(() => $.set_attribute(div, 'hidden', $.get(unfolded) ? false : 'until-found'));`. That is, Svelte adds a real `beforematch` listener on the element. This is a decision the orchestrator may reverse.
+
+No test was written. `agents/guarded.md:3` says "Views have no entry: the look on TEST covers them.", so `spec.md`'s test rule calls for none, and the proof of cases 2 and 3 is the look on landing.
+
+The paths are within the round's write list: `CareerPanel.svelte`, `FoldHead.svelte` lines 69-70, and this report. `npm run format` rewrote `src/lib/server/content/wallpaper.ts` and `src/lib/views/shared/forms/entry/edit/EntryForm.svelte` again, and both were copied back from the base copy (`cmp` printed "back to base" for each).
+
+### B2: the browser's find reaches the folded career panel
+
+What changed, in `src/lib/views/boards/focus/career/CareerPanel.svelte`:
+- Lines 120-124. The body was `<div class="body" hidden={!unfolded}>`. It is now:
+  ```svelte
+  <div
+      class="body"
+      hidden={unfolded ? false : 'until-found'}
+      onbeforematch={() => (unfolded = true)}
+  >
+  ```
+  The body stays mounted under `{#if career !== null}`.
+- Lines 18-23, the head comment's last paragraph, are rewritten to say the folded panel is hidden until found, stays mounted, and unfolds on `beforematch` when find-in-page matches inside it.
+
+How Svelte sets the attribute (`node_modules/svelte/src/internal/client/dom/elements/attributes.js:181-195`):
+- The string `'until-found'` goes through `element.setAttribute('hidden', 'until-found')`.
+- `false` goes through the `hidden` property setter, which removes the attribute.
+- Svelte caches the last value it set, so a fold after a reveal sets `until-found` again whether or not the browser removed the attribute on reveal.
+
+The sentences of Chromium's documentation the choice rests on (https://developer.chrome.com/docs/css-ui/hidden-until-found, read with WebFetch):
+- "By adding `hidden=until-found` to the container for your hidden content, you make it possible for the browser to search text in that hidden region"
+- the `beforematch` event "will be fired on the `hidden=until-found` element right before the element is revealed by the browser."
+- "`hidden=until-found` applies the `content-visibility:hidden` CSS property instead of the `display:none` property that the regular hidden attribute applies."
+- of content under the regular attribute: "content hidden in the collapsed sections becomes impossible to search using a find-in-page search."
+
+Before and after:
+- Before, after round 0: the folded career text was under plain `hidden`, so find-in-page found nothing in it.
+- After: a find of a word in the folded career text matches. The browser fires `beforematch` on the body, `unfolded` becomes true, and the panel is drawn unfolded with the fold control reading "Fold Career strategy".
+
+### S1: the comment at `FoldHead.svelte:69-70`
+
+`FoldHead.svelte:69-70` now reads, at 98 and 38 columns (`awk '{print length}'`):
+
+```
+    /* The fold control, the glyph and the title: one line that shrinks to the pane and pushes the
+       end of the row to the right. */
+```
+
+Before, line 69 ended at "pushes" with "the" carried to line 70, although it fit within 100 columns.
+
+### B1: the folded career box's height
+
+By reading the CSS, not measured:
+- **Folded:** the box was 28 px before the step (1 + 26 + 1: border, the 26 px `<summary>` row, border). It is 32 px after (1 + 4 + 22 + 4 + 1: border, padding, the 22 px row, padding, border). That is the same as the command center's folded box, so everything under the banner moves 4 px down while it is folded.
+- **Unfolded:** the total is unchanged. Before it was 1 + 26 + (4 + content + 4) + 1. After it is 1 + 4 + 22 + (4 + content) + 4 + 1. Both are content + 36.
+
+### Cases
+
+The first run was on the round-0 tree, before any change: `grep -n 'hidden\|beforematch\|until-found\|ontoggle\|unfolded' src/lib/views/boards/focus/career/CareerPanel.svelte` printed lines 19, 85, 86, 116, 117 and `119:        <div class="body" hidden={!unfolded}>`. Nothing mentioned `until-found` or `beforematch`.
+
+1. **C9, read again.**
+   - Round 0: the folded body is in the document under plain `hidden` (line 119).
+   - After: the body is in the document whenever there is a career file, and carries `hidden="until-found"` while `unfolded` is false (line 122, `hidden={unfolded ? false : 'until-found'}`). Met by reading.
+2. **A find in the folded panel.**
+   - Round 0: by reading the attribute, plain `hidden` (display none) is not searched, so a find matches nothing in the panel.
+   - After: line 123, `onbeforematch={() => (unfolded = true)}`, compiles to `$.event('beforematch', div, ...)`, so a match unfolds the panel. Met by reading. Proof: the look on landing, with Cmd+F for a word of the career text while the banner is folded.
+   - No client test: `guarded.md` has no entry for views.
+3. **The fold control pressed while unfolded.**
+   - Round 0: `ontoggle={() => (unfolded = !unfolded)}` (line 117) folds the panel under plain `hidden`.
+   - After: the same toggle (line 118) sets `unfolded` to false, and `set_attribute` puts `hidden="until-found"` back. Met by reading. Proof: the look on landing.
+
+### Verify
+
+- `npm run diagrams && npm run test:quick`, run once after the last change, printed:
+  - `ok prettier (1.1 s): All matched files use Prettier code style!`
+  - `ok ASCII gate (2.0 s)`
+  - `ok svelte-kit sync (30.2 s)`
+  - `ok vitest (95.3 s)`
+  - `ok svelte-check (112.1 s): ... 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+  - `ok eslint (112.5 s)`
+  - `test:quick: 143.0 s (limit 45.0 s); every command passed`
+
+  It is over the time limit. No whole-suite command was run.
+- The ASCII gate of `spec.md` over `CareerPanel.svelte` and `FoldHead.svelte` printed nothing, exit 0.
+- History-word grep over the comment lines changed this round: `grep -i -E 'before|used to|no longer|still|...'` over `CareerPanel.svelte:18-23` and `FoldHead.svelte:69-70` hits only `beforematch`, an event name. Kept.
+- Line counts: `CareerPanel.svelte` is 410 lines and `FoldHead.svelte` is 99 lines.

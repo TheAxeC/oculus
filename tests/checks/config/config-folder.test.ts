@@ -191,7 +191,6 @@ describe("oculus's own config directory", () => {
         'schemas/cpp-schema.yml': ['cpp_schema'],
         'schemas/deck-schema.yml': ['deck_schema'],
         'schemas/manifest-schema.yml': ['manifest_schema', 'groups'],
-        'catalogs/meta.yml': ['meta'],
         'defaults/sources.yml': [
             'scan',
             'new_project_dir',
@@ -321,7 +320,6 @@ describe("oculus's own config directory", () => {
     // A catalog or text file with a part its whole-file shape refuses gives one finding for that
     // part, worded from the catalog, that names the file and the key; the rest of the file is kept.
     it.each([
-        ['catalogs/meta.yml', 'bogus: 1\n', 'bogus', 'key bogus is not a key this file takes'],
         ['catalogs/icons.yml', 'icons: [1]\n', 'icons', 'icons must be a map'],
         [
             'catalogs/vocab.yml',

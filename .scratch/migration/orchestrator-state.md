@@ -54,21 +54,6 @@ dispatch:         # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/O62-refuter.md (acc2eb3d4addcfcb2, claude-opus-5-5, 157328 tokens, 34 tool uses, 15 min 12 s)
   landing: not-started
   shared_paths: config/catalogs/vocab.yml and src/lib/data/shapes/catalog-files/vocab.ts with O59 (O59 writes vocab.yml 76-167 and vocab.ts 42-53, O62 vocab.yml 207-210 and vocab.ts 286-289: disjoint ranges, simple to merge); tests/checks/config/config-folder.test.ts with O58 (O58 lines 194 and 324, O62 line 220: simple to merge)
-- step: O58
-  executor: agent
-  worker: claude:opus
-  session_id: ad4a5ade2495e90dd
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 21c13dd7
-  worktree: .agents/worktrees/migration-O58
-  brief_check: agents/reviews/O58-brief-check.md (a27ff5fa5d0557791, claude-opus-5-5, 177807 tokens, 59 tool uses, 8 min 26 s)
-  report: agents/reviews/O58-report.md
-  builder_usage: 136413 tokens, 38 tool uses, 8 min 2 s
-  round: 0
-  reviewer_report: agents/reviews/O58-refuter.md (aac7aef6659cb68a7, claude-opus-5-5, 148061 tokens, 41 tool uses, 14 min 18 s)
-  landing: not-started
-  shared_paths: tests/checks/config/config-folder.test.ts with O62 (O58 lines 194 and 324, O62 line 220: simple to merge); docs/diagrams/ with O59 and O62, regenerated at each landing
 - step: O52
   executor: agent
   worker: claude:opus
@@ -79,14 +64,16 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O52
   brief_check: agents/reviews/O52-brief-check.md (a95389eccf26b9f17, claude-opus-5-5, 172686 tokens, 43 tool uses, 5 min 59 s)
   report: agents/reviews/O52-report.md
-  builder_usage: 197523 tokens, 51 tool uses, 23 min 27 s
+  builder_usage: 197523 tokens, 51 tool uses, 23 min 27 s; round 1 228747 tokens, 16 tool uses, 6 min 6 s
   round: 1
-  reviewer_report: agents/reviews/O52-refuter.md (aa46c6d7fba77e682, claude-opus-5-5, 180969 tokens, 41 tool uses, 12 min 24 s)
+  reviewer_report: agents/reviews/O52-refuter.md (aa46c6d7fba77e682, claude-opus-5-5, 180969 tokens, 41 tool uses, 12 min 24 s); over round 1: a71c9aeb58e432ce4, claude-opus-5-5, 140872 tokens, 30 tool uses, 7 min 39 s
   landing: not-started
   shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 ```
 
 ## The standing demands (from Axel, in force)
+- A decision for Axel is an open item booked in this file, or it is not raised; never loose options in a report or a brief draft (Axel, 2026-10-22).
+- A command that takes more than a moment runs in the background while other work goes on; no foreground wait loop (Axel, 2026-10-22, a hard rule).
 - A brief check never widens a step (Axel, 2026-10-22, ruling Brief check scope): a finding whose fix would widen the step's paths, add a requirement or add a case beyond the step's line goes to Axel as an open item, never into the brief.
 - O37, O38 and O39 (Axel, 2026-10-16, ruling O33 split): O37 starts from `agents/briefs/O37-start.patch`, whose every change its builder owns; no one runs /diagnose or starts a diagnosis agent for O37, the builder included; O38 runs once O37 has landed and O39 once O38 has landed (Axel's approvals, open items 121 and 122), every deletion and skill edit of O38 still on his yes path by path. Not a single thing of O33's phase A may be missed ("No looks, no bugs, nothing"): every defect is in O37's Step 0 and every owed look in `agents/reviews/owed-looks.md` "To take".
 - O33's brief (`agents/briefs/O33.md`) is not used for O37, O38 or O39 (Axel, 2026-10-16): each brief is written from the step's plan.md line and Step 0, O33's line at plan.md:495 with its Step 0, and every ruling they name.
@@ -218,7 +205,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None open.
+- Open item 239 (2026-10-22): O58's look cannot be taken on TEST. O58 removes `config/catalogs/meta.yml`, so the Settings view's Catalogs group should no longer list it. The Settings view is a unique view: on TEST, opening it brings up the Settings tab your System page holds, with your filter `opacity` set, which hides the Catalogs group. (a) I move that Settings tab to TEST, clear the filter, take the look, then type `opacity` back and move the tab back to the System page. Pro: the look is taken now, and your page ends as it was. Con: your System page is changed for a minute. (b) the look stays owed (`agents/reviews/owed-looks.md`) and is taken when you next close or clear that Settings tab. Pro: your page is not touched. Con: the look waits on you. Recommended: (a); (b) is the lazy option. O58 lands now either way, with the look named as not taken.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -243,6 +230,7 @@ None open.
 
 ## Closed items
 
+- Open item 238 (2026-10-22): O54, your saved tabs. Oculus saves your open tabs in `~/.oculus/layouts.json` and `views.json`, and a tab that shows a record stores its id there, today the bare key for the primary hub's record (your EEG-sAAD tab holds `"id": "eeg-saad-challenge"`) and `<hub>:<key>` for another hub's. Ruling 236 makes every internal id `<hub>:<key>`, and ruling No hub prefix shown forbids writing that joined id to a file, so after O54 a tab stores the hub and the key as two fields. The no-migration rule forbids code that reads the old form. (a) at O54's landing the orchestrator changes those two files once, adding the hub to every record tab, so every tab opens its record as before. Pro: no tab lost; no code carries the old form. Con: one write by hand to files in `~/.oculus` while your server runs, made when the page holds no unsaved layout. (b) leave the files: after O54 every saved record tab opens as not found and you open those records again. Pro: nothing to do. Con: every record tab of every saved page is lost. Recommended: (a); (b) is the lazy option. O54 waits for O50 to land, so nothing is built before you rule. Ruled (a) by Axel, 2026-10-22; booked in plan.md Rulings.
 - Open item 237 (2026-10-22): O54's draft brief on disk, a clash between the `spec` skill and the ban on `git restore`. `agents/briefs/O54.md` holds the brief written before rulings 231 to 236, uncommitted. The `spec` skill refuses a step whose brief path holds an uncommitted change (`~/.claude/skills/spec/SKILL.md:88`), and the way it gives to clear it, `git restore` (`SKILL.md:452`), is banned. (a) commit the draft as it stands, as a ledger record of O54 marked superseded, so the path is clean; the next `/spec O54` writes the new brief over it under rulings 203, 231 to 236 and No hub prefix shown. Pro: no git restore, nothing lost, `/spec` runs as written. Con: a superseded brief is in one commit of the history. (b) delete the file and let `/spec` write a fresh one. Con: the draft is lost from the ledger (a copy stays in the session scratchpad only). Recommended: (a); (b) is the lazy option. Ruled by Axel, 2026-10-22: neither option; the brief is restored to main's copy with `git restore`, as the `spec` skill says, and `git restore` is allowed again.
 - Open item 235 (2026-10-22): O54's tests have no file they may live in. The plan's rule (`agents/spec.md:59`): "A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there". `grep -c "hub-portfolio\|hub-routing\|hub-undo" agents/guarded.md` prints 0, so `tests/data/hubs/hub-portfolio.test.ts`, `tests/routes/hubs/hub-routing.test.ts` and `hub-undo.test.ts` are not named, and O54's cases (for example "main and lab both hold `alpha`: the ids are `main:alpha` and `lab:alpha`, and no page shows either joined id") have no test file. (a) name `hub-portfolio.test.ts` under G32 (what the hub shows is what its files say) and the other two under G8 (each write kind changes only the file and key it names), and O54's cases become test rows there. (b) O54's cases are checked by reading only, so nothing fails when the behaviour later breaks. Recommended: (a); (b) is the lazy option. Ruled (a) by Axel, 2026-10-22; booked in plan.md Rulings; O54's line widened.
 - Open item 234 (2026-10-22): O54, the Audit reports a missing venue the portfolio has. The Audit checks each hub on that hub's own build, before the hubs are merged (`src/lib/server/root/watch/portfolio.ts:749-760`, `projects: Object.values(part.snapshot.entities.projects)`). Lab's project with `venue_id: nature`, where only main holds `nature`, loses its venue in lab's own build (`src/lib/data/snapshot/normalise.ts:730`, `delete item.venueId`), and the Audit rule `gaps` then reports "no venue" (`src/lib/server/content/audit/projects.ts:206-216`, `audit.msg_no_venue`), though the portfolio resolves it to main's `nature`. (a) the Audit judges each hub's records with their references resolved across the hubs, as the portfolio does. (b) leave it: every reference across hubs gives a false "no venue". Recommended: (a); (b) is the lazy option. Not an option but required by ruling No hub prefix shown either way: the Audit view today shows a finding's scope as `lab:alpha` (`Audit.svelte:137` shows `finding.scope`, which `rules.ts:282` builds as `<hub>:<scope>`); it shows `alpha` with the hub chip. Ruled (a) by Axel, 2026-10-22; booked in plan.md Rulings; O54's line widened.
@@ -432,6 +420,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O58 landed). O58 is on main; four test files that time out only under the full run's load tagged slow at landing. Open items: 239 (O58's look). Ruled: 238 (a). In flight (3 of 6): O50 (repair round 1 building), O62 (refuted, ready for /land), O52 (refuted over round 1, ready for /land); O54 waits for O50. Next: /land O62, /land O52, /spec O49 and O57.
 - 2026-10-22 (O59 landed). O59 is on main with the fixes of main's own red lines, the dev server's watch and eslint's ignore of `.agents/`, every command of `npm run test:landing` passing on main. Open items: none. In flight (4 of 6): O50 (round 1 building), O52 (round 1 built, its run of /refute next), O58 and O62 (refuted, ready for /land); O54 not yet prepared. Next: /spec O54, save O52's round-1 report and /refute it, /land O58 and O62.
 - 2026-10-22 (go given, by agents in parallel). Axel ruled O49 to O63 by agents, Parallel order and Brief check scope, and gave the go. First wave: `/spec` O59, O50, O62, O58, O54 and O52; O39's look and tick at any time. Open items: none. In flight: none yet.
 - 2026-10-22 (go given). Axel ruled O39 closing (the owed desktop look, then the tick and booking) and gave the go for the inline order; O52 is building in the main checkout. Open items: none.
