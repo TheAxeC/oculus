@@ -37,9 +37,6 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
   shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
-- step: O51
-  brief_check: "running: a760fccefd58a7066"
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,7 +174,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-(none)
+- Open item 245 (2026-10-22, O51, brief check findings 1.1 and 6.3): Hide Tab Row and Show Tab Row are store operations that name a pane by its path, and `src/lib/state/workbench/layout/saved/rerun.ts` reruns an operation another browser tab's save overtook. An operation listed in its `PATH_OPERATIONS` table (`lockPane` at line 41 is one) has its pane named again by its tabs before the rerun; one not listed reruns with its raw path, so a hide made in one tab while another tab moved the panes hides the row of whatever pane now stands at that path. Guarded entry G102 says an operation whose node the other tab removed is dropped, never applied to another node. O51's line names neither file. (a) O51 widens to `rerun.ts` (one `PATH_OPERATIONS` row for the new operation) and to G102's test `tests/state/workbench/layout/saved/layout-workspaces.test.ts` (a row of the two-tabs table for the new operation, in both orders): a few lines, and the cross-tab rerun stays right for the new operation as it is for every other path operation; (b) O51 stays as its line reads and the new operation reruns with its raw path, which breaks G102 for it. Recommended: (a); (b) is the lazy option.
+- Open item 246 (2026-10-22, O51, brief check finding 1.11): a hidden row shows at the top edge and must stay shown while a menu opened from it is open (the `...` menu, the strip's right-click menu), since the menu's list is drawn outside the row and the pointer leaves the row to reach it. `src/lib/ui/menu/Menu.svelte:131` and `src/lib/ui/menu/ContextMenu.svelte:49` keep their open state inside (`let open = $state(false)`) and hand it to no caller, and `agents/spec.md:87` asks that a visible behaviour be state, never a read of the page. O51's line names neither file. (a) O51 widens to both primitives: each gains a bindable `open` prop, its default the closed state, so every file that uses them today is unchanged and the pane strip reads whether its menu is open; (b) the row hides when the pointer leaves it even while its menu is open, so the menu stays open over a row that has gone. Recommended: (a); (b) is the lazy option.
 
 ## Closed items
 
@@ -408,6 +406,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O51 stopped at /spec). O51's brief check (`agents/reviews/O51-brief-check.md`) found two findings that widen the step's paths (1.1 and 1.11), raised as open items 245 and 246; its other findings are closed in the brief when /spec runs again after the ruling. Open items: 245, 246. In flight (1 of 6): O54 (building). Next: /spec O61 and /spec O53.
 - 2026-10-22 (O57 landed). O57 is on main, landed in the gate worktree; fix at landing: round 1 Standards 1, two doc comments rewrapped at 100 columns; the look not taken (the Settings filter hides the row). Axel ruled 243 (a) and 244 (a), booked in plan.md Rulings and on O61's line; the hub's workspace and people changes committed in the hub as b37832017 at his word. Open items: none. In flight (3 of 6): O54 (building), O51 (/spec, brief check returned with two findings that widen the step). Next: O51's stop with open items 245 and 246; /spec O53 (unblocked by O57) and /spec O61 (unblocked by 243 and 244).
 - 2026-10-22 (O49 landed). O49 is on main, landed in the gate worktree; fix at landing: round 1 R1, the Float phrase of `docs/HELP.md:76`. Open items: 243, 244. In flight (2 of 6): O57 (reviewed, findings to close), O54 (/spec, premise checks). Next: close O57's review findings and /land O57; /spec O51 (unblocked by O49); O54's brief; O53 after O57.
 - 2026-10-22 (O50 landed). O50 is on main, landed in the gate worktree; fixes at landing: the layer-4 head comment's reason in `references.test.ts`, `watchedOnce` shared by the two watcher harnesses, G66, G67 and G119 naming the new tests, and `ownPeople` keying labels until none collide. The hub's line moved once (`settings.self: axel-faes` in `.oculus/workspaces/research-hub.yml`, no `self` left in `.oculus/data/people/people.yml`), on disk and not committed: the runner's permission check refused the hub commit. Open items: none. In flight (2 of 6): O49 (ready for /land), O57 (building). Next: /spec O54, O61 and O53; /land O49.
