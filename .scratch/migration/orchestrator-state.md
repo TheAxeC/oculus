@@ -39,6 +39,19 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O51
+  executor: agent
+  worker: claude:opus
+  session_id: aba446840547d8ea4
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 87e9c76c
+  worktree: .agents/worktrees/migration-O51
+  brief_check: agents/reviews/O51-brief-check.md (a760fccefd58a7066, claude-opus-5-5, 216679 tokens, 58 tool uses, 8 min 23 s)
+  report: agents/reviews/O51-report.md
+  round: 0
+  landing: not-started
+  shared_paths: with O54: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
+- step: O61
   landing: preparing
 ```
 
@@ -413,6 +426,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O51 launched; ruling 248). O51 prepared again under rulings 245 (a) and 246 (a) (base 87e9c76c, every brief check finding closed in `agents/reviews/O51-brief-check.md`, Closed) and its builder launched on claude-opus-5-5. Axel ruled 248 (c), booked in plan.md Rulings and on O61's line. O53 waits for O54's landing: both rewrite `src/lib/data/snapshot/hubs/merge.ts` and `normalise.ts`, not simple to merge. Open items: none. In flight (3 of 6): O54 (building), O51 (building), O61 (/spec, the brief). Next: O61's brief and brief check; O54's and O51's reports.
 - 2026-10-22 (O61 stopped at /spec, second stop; rulings 245 to 247). Axel ruled 245 (a), 246 (a) and 247 (a), booked in plan.md Rulings and on O51's and O61's lines. O61's /spec stopped at the library choice of ruling 222's closest word, open item 248; its premise notes are kept for the rerun. Open items: 248. In flight (1 of 6): O54 (building). Next: /spec O51 (brief and brief check standing, findings closed by rulings 245 and 246), /spec O53.
 - 2026-10-22 (O51 stopped at /spec). O51's brief check (`agents/reviews/O51-brief-check.md`) found two findings that widen the step's paths (1.1 and 1.11), raised as open items 245 and 246; its other findings are closed in the brief when /spec runs again after the ruling. Open items: 245, 246. In flight (1 of 6): O54 (building). Next: /spec O61 and /spec O53.
 - 2026-10-22 (O57 landed). O57 is on main, landed in the gate worktree; fix at landing: round 1 Standards 1, two doc comments rewrapped at 100 columns; the look not taken (the Settings filter hides the row). Axel ruled 243 (a) and 244 (a), booked in plan.md Rulings and on O61's line; the hub's workspace and people changes committed in the hub as b37832017 at his word. Open items: none. In flight (3 of 6): O54 (building), O51 (/spec, brief check returned with two findings that widen the step). Next: O51's stop with open items 245 and 246; /spec O53 (unblocked by O57) and /spec O61 (unblocked by 243 and 244).
