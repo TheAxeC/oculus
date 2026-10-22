@@ -36,7 +36,7 @@ dispatch:         # steps in flight, up to six (Z632)
   report: agents/reviews/O59-report.md
   builder_usage: 188321 tokens, 68 tool uses, 10 min 24 s
   round: 0
-  reviewer_report: running: a829b81915b79ee67 (claude-opus-5-5)
+  reviewer_report: agents/reviews/O59-refuter.md (a829b81915b79ee67, claude-opus-5-5, 178609 tokens, 53 tool uses, 6 min 16 s)
   landing: not-started
 - step: O50
   landing: preparing
@@ -55,8 +55,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: config/catalogs/vocab.yml and src/lib/data/shapes/catalog-files/vocab.ts with O59 (O59 writes vocab.yml 76-167 and vocab.ts 42-53, O62 vocab.yml 207-210 and vocab.ts 286-289: disjoint ranges, simple to merge); tests/checks/config/config-folder.test.ts with O58 (O58 lines 194 and 324, O62 line 220: simple to merge)
 - step: O58
-  landing: preparing
-  brief_check: "reported: a27ff5fa5d0557791"
+  executor: agent
+  worker: claude:opus
+  session_id: ad4a5ade2495e90dd
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 21c13dd7
+  worktree: .agents/worktrees/migration-O58
+  brief_check: agents/reviews/O58-brief-check.md (a27ff5fa5d0557791, claude-opus-5-5, 177807 tokens, 59 tool uses, 8 min 26 s)
+  report: agents/reviews/O58-report.md
+  round: 0
+  landing: not-started
+  shared_paths: tests/checks/config/config-folder.test.ts with O62 (O58 lines 194 and 324, O62 line 220: simple to merge); docs/diagrams/ with O59 and O62, regenerated at each landing
 - step: O52
   landing: preparing
   brief_check: "reported: a95389eccf26b9f17"
@@ -194,6 +204,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 225 (2026-10-22): O52, the Focus board's headings in one shape. O52's brief check found that a career file with no title, no next milestone and no host in flight (the normaliser allows it: a half-filled career file draws the half it has) leaves the career banner's line empty, so its fold control is named "Unfold " with nothing after it, the name a screen reader reads and the tooltip shows. Naming it needs a heading word the text catalog does not have (`config/text/views/boards/focus.yml` holds no career heading), which widens O52 beyond its line, so it is yours (ruling Brief check scope). (a) O52 adds the key `focus.career_heading: Career strategy` and names the fold control "Fold Career strategy" / "Unfold Career strategy", the row's title staying the career line; the path `config/text/views/boards/focus.yml` is added. Pro: the control always says what it folds, and the name matches the heading the plan's line calls Career strategy. Con: one more text key and path. (b) the control keeps the career line as its name and nothing is added. Pro: O52 stays on its paths. Con: an empty career file gives a control named "Unfold ". Recommended: (a), since it ends the nameless control; (b) is the lazy option. O52 is built now on its line; on (a) the key goes into O52's repair round with the path widened.
 
 
 
