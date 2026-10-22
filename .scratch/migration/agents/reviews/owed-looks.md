@@ -8,7 +8,6 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
-- O39 part A, the desktop part: in the desktop app, a window started on an app's colour theme filled with that theme's background from the first paint. The page parts were taken 2026-10-21 (under "Taken").
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -20,6 +19,8 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 - O41, the motion under the system's reduce-motion setting: the setting is a system setting the session does not change; `Progress.svelte` and `Glyph.svelte` hold the still rule, read at O41's review.
 
 ## Taken
+
+- O39 part A, the desktop part, 2026-10-22, on a scratch setup (Axel's yes): a scratch HOME, a scratch hub from `tests/fixtures/hubs/demo` with the app `ember` and its theme Ember, port 8797, a detached checkout of main at e99e5cd0, the app approved and Ember picked by Cmd-K `:theme`, the app started again under a screen recording. The window's first frame is a light ground (rgb 238,242,243 as recorded) for 32 frames before the page draws Ember. Defect, booked to O39 in `plan.md` (Booked 2026-10-22): the window is shown on `ready-to-show`, at the page's first paint, and the first HTML carries no theme, so that paint is the light `:root` ground for every start theme.
 
 - O58, 2026-10-22, TEST (ruling 239 (a)): the Settings tab of the System page moved to TEST by its pane menu's Move tab to page..., its filter `opacity` cleared. The Catalogs group ("The catalog files the configuration is merged from, in config/catalogs/.") lists `catalogs/agents.yml`, `file-nesting.yml`, `glyphs.yml`, `icons.yml`, `latex.yml`, `unimath.yml` and `vocab.yml`: no `meta.yml`, and the text "The tool identity" is nowhere on the page (read from `document.body.innerText`). The filter `opacity` typed back and the tab moved back by Move tab to System; it now sits after Account setup in that pane, where it stood before it, since a moved tab is appended and the tab menu has no reorder item. `git status --short` over the hub's `.oculus` and oculus's `config` (`local.yml` excluded) empty after. Defects: none.
 

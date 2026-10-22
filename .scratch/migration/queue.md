@@ -10,10 +10,9 @@ Queued, in order (6 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O39 (oculus in its own repository): left: the owed desktop look of part A, then the tick. Waits: Axel's look in the desktop app (the steps are in the session's answer of 2026-10-22); in no slot.
+- O39 (oculus in its own repository): the desktop look of part A taken and failed (first frame light, not the start theme); left: the fix (the first HTML carries the start theme), then the tick. In no slot.
 
-Owed looks (1):
-- O39 part A: a desktop window on an app's theme from its first paint.
+Owed looks: none.
 
 Landed, newest first:
 - O51 (a per-pane Hide Tab Row), 2026-10-22.
