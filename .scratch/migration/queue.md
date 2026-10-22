@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
-- O51 (a per-pane Hide Tab Row). State: building, under rulings 245 (a) and 246 (a).
+- O51 (a per-pane Hide Tab Row). State: building, resumed after the cases ruling `agents/briefs/O51-cases.md` (frames clipped under a hidden pane's top, `FrameLayer.svelte` added to its paths).
 - O61 (one home for each vocabulary word). State: /spec, brief check running; the builder waits for Axel's rulings on open items 252 (`type:` renamed `stage:`) and 253 (the form as its own field).
 
 Queued, in order (6 steps):
