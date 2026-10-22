@@ -111,3 +111,124 @@ Cases of the brief's "Cases":
 - Whether the index growing with every hub's projects and files needs a cap is ruling 212's matter (the user's), not this review's.
 
 Reviewer usage: a46362af9cc54a265, claude-opus-5-5, 237825 tokens, 55 tool uses, 11 min 55 s.
+
+## Repair round 1, refuted
+
+### Verification (rerun by the reviewer)
+
+All commands ran from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O57`, in the foreground, with `export PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`.
+
+```
+uptime (before) -> 18:58  up 9 days,  5:22, 1 user, load averages: 5.50 6.66 8.16
+npm run diagrams && npm run test:quick   -> exit 0
+test:quick: 24 changed file(s), from git since HEAD
+test:quick: 201 test file(s), 7 essential
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      ASCII gate (1.5 s)
+ok      svelte-kit sync (3.6 s)
+ok      eslint (2.5 s)
+ok      svelte-check (13.6 s): 1792688361667 COMPLETED 535 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (79.5 s): Duration  63.09s (transform 60.74s, setup 0ms, import 125.90s, tests 112.57s, environment 2.59s)
+test:quick: 83.4 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+uptime (after)  -> 19:00  up 9 days,  5:23, 1 user, load averages: 10.97 8.52 8.73
+git status --short | wc -l -> 24 (22 modified, plus the untracked .scratch/migration/agents/briefs/O57-round1.md and .scratch/migration/agents/reviews/O57-report.md), the same after `npm run diagrams`
+
+Verify 1: npx vitest run tests/routes/sessions/terminal-actions.test.ts tests/routes/sessions/compose.test.ts tests/routes/sessions/terminal.test.ts tests/routes/sessions/terminal-edit.test.ts tests/routes/sessions/latex-approvals.test.ts tests/server/machine/runs/commands/run.test.ts tests/server/machine/runs/schedules tests/data/sources/config/settings.test.ts tests/checks/config/config-folder.test.ts tests/checks/config/templates.test.ts --reporter=dot
+ Test Files  16 passed (16)
+      Tests  215 passed | 2 skipped (217)
+
+Verify 3: git status --short paths (svg left out) | xargs env LC_ALL=C perl -ne '<the spec.md gate>' -> prints nothing, ascii-exit 0
+Verify 4: sh utils/unused-exports.sh > <scratch>/unused-after.txt; diff ../migration-O57-base/unused-exports.txt <scratch>/unused-after.txt -> nothing, unused-diff-exit 0
+Verify 7: wc -l -> hub-names.ts 435, config.ts 91, files.ts 197, problems.ts 69, chat.ts 140, context.ts 101, settings.test.ts 863, terminal-actions.test.ts 810, terminal-fixture.ts 342, config-folder.test.ts 808 (all at or under 880)
+
+Report's quoted commands, rerun:
+npx vitest run tests/routes/sessions/terminal-actions.test.ts -t "chat action" --reporter=verbose
+ -> G35 case 74ms; 12 rows of 'writes one section per hub of the workspace into the index' 182ms to 841ms
+      Tests  13 passed | 20 skipped (33)         (report: same counts, rows 194 ms to 745 ms)
+npx vitest run tests/data/sources/config/settings.test.ts -t chatContext --reporter=verbose
+ -> 13 rows of 'answers for %s the keys of the collections list it names, or its default and a problem', the last two 'a hub whose list leaves out tasks' 196ms and 'a hub whose list leaves out tasks, writing 3' 188ms
+      Tests  13 passed | 74 skipped (87)         (report: same)
+grep -n "HUB_FILE\|unread" tests/routes/sessions/terminal-actions.test.ts -> nothing, grep-exit 1 (report: prints nothing, reproduced)
+sed -n 50,70p src/lib/server/machine/pty/start/context.ts -> orderedHubs returns the two filters of allHubs, no `seen` set (reproduced)
+sed -n 598,625p src/lib/data/index.ts -> readOtherHub returns `findings: [...findings, ...sourcesFindings(...)]` with `findings` from `loaded` (the report's reading reproduced)
+diff -rq -x local.yml migration-O57-base/{src,tests,utils,config,docs} migration-O57/... | wc -l -> 22 (report: "still lists the same 22 files", reproduced)
+Round delta: diff -u of each path of ../migration-O57-round-1/files.txt against the worktree -> changed: context.ts, settings.test.ts, terminal-actions.test.ts; no path changed outside files.txt except the two untracked .scratch files (the round brief, identical to main's copy by `diff`, and the report)
+Not rerun: the round's "before" runs on the round-0 tree (the B1 rows failing 3 of 13, the 12-test chatContext run); the rule asks no reviewer rerun on an earlier tree, and the snapshot copies agree with the quoted round-0 lines.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since 8c53e525:
+
+- 1: holds. `HUB_LIST` row `chat_context` after `collections` (hub-names.ts) with its doc; defaults key and comment (config/defaults/sources.yml:48-49); option entry with `heading: sources`, `section: Collections`, `control: multi`, `from: collections` (config/options/sources.yml:59-64); `EXPECTED` row (config-folder.test.ts:198); template lines (docs/templates.md:86-87); config-folder and templates tests pass (verify 1).
+- 2: holds, with the departure of round 0's Spec S1 kept by the round brief's ruling 1 (the premise that files.ts may import `collectionFiles` is wrong: collections.ts is server-only). Diff of files.ts unchanged this round.
+- 3: holds. `portfolioContext` over `orderedHubs` (allHubs, primary first, each once since `allHubs` maps `open.hubs` once each, roots.ts:75-87); the primary's venue catalogue and pillars registry at the head, now headed by their absolute path under ruling Z972 (context.ts:86-89); a section per hub with heading, manifests and the `chatContext` keys resolved through the hub's own `collectionFiles` first entry (context.ts:40-51); closing section with no primary (context.ts:91-98).
+- 4: holds. chat.ts:123 writes `portfolioContext(config, open, options.hubSettings)` for both chats; unchanged this round.
+- 5: holds. Both sentences of `chat_instruction` reworded, the rest word for word; with the head files now absolute, "every folder in a section is relative to that hub's folder unless it is absolute" leaves no relative path outside a section.
+- 6: holds. HELP.md:103 and the data-map block of 25 keys; unchanged this round.
+- 7: holds. G120 table case with 12 rows under the exact title (terminal-actions.test.ts:787); G35 case with its title; one `it.each` table for `chatContext` in settings.test.ts (G13's "one case per setting reader" now met); `EXPECTED` row.
+
+Cases of the brief's "Cases":
+
+- C1: met, row 1 (`threeHubLines`), now also the absolute head lines of the venue catalogue and the pillars registry.
+- C2: met, row 3.
+- C3: met, row 4.
+- C4: met, settings row '[funding, nosuch]'.
+- C5: met, settings row 'a hub whose list leaves out tasks', a `loadConfig` map, the five keys, no problem, flag `false` (`settingProblems` holds no `chat_context`).
+- C6: met, settings row '3' (synthetic) and row 'a hub whose list leaves out tasks, writing 3' (`loadConfig` map), each with `chat_context: words` and flag `true`.
+- C7: met, row 2, project chat of beta gives `threeHubLines`, the head `# <W>/hub/.oculus/data/research/venues.yml (venue catalogue)` with the primary's folder.
+- C8: met, config-folder.test.ts passes (verify 1).
+- C9: met, templates.test.ts passes (verify 1).
+- C10: met, G35 case passes.
+- C11: met, row 5.
+- C12: met, row 6.
+- C13: met, row 7.
+- C14: met, settings row '[funding, funding]' and row 8.
+- C15: met, settings row '[]' and row 9.
+- C16: met, row 10 for the index; the settings finding the build reports is met by reading `readOtherHub` (src/lib/data/index.ts:601-622, `...findings` of `loaded`), as the round brief rules.
+- C17: met, row 11.
+- C18: met by reading (round 0's reading of catalog/schemas/engine.ts; no file of it changed this round).
+- C19: met, row 12, the absolute venue heading at the head and `## .oculus/data/research/venues.yml` in the primary's section.
+
+Items of the round brief:
+
+- 1 (S1, no change): holds. files.ts is not in the round delta.
+- 2 (P1): holds. The `unread` field, its value on the C16 row and the block are gone (grep prints nothing), the now-unused `HUB_FILE` import with them; the row keeps its index assertion; the report states the reading of `readOtherHub`. The removed assertion read the fixture's own parse, so no guard of the build's behaviour was lost by its removal.
+- 3 (St1): holds. `orderedHubs` returns the two filters directly (context.ts:57-67); the doc keeps "each once".
+- 4 (St2): holds. One `it.each` for `chatContext` with 13 rows, each giving the map, the value, the problems and the `settingProblems` flag; both inputs of the removed case are rows on `loadConfig` maps, its `not.toContain` and `toContain` now the flag column. One finding on two comment widths, Standards 1 below, does not change the verdict.
+- 5 (B1): holds. Head files headed by `join(primary.hub, registries.<name>)`; section files keep relative headings; head comment of context.ts says so (lines 1-8); rows C1, C7 and C19 expect the absolute heading, and the planted pillars registry gives the pillars heading a row. The `addFile` signature change (file and heading line in place of hub, path, level, suffix) is what the absolute heading needs and goes no further.
+
+### Findings
+
+#### 1. Spec
+
+none
+
+#### 2. Proof
+
+none
+
+#### 3. Standards
+
+- tests/data/sources/config/settings.test.ts:791 and tests/routes/sessions/terminal-actions.test.ts:605, added this round: "    /** A map over a catalog whose chat_context default is DEFAULT and LIST, with `held` laid over. */" (102 columns) and "    /** The lines of the head's venue catalogue of the primary `hub`, headed by its absolute path. */" (101 columns); what is wrong: spec.md, "What every package obeys": "A comment edited by the step is rewrapped as a whole paragraph at 100 columns"; prettier (printWidth 100) does not wrap comments, so the verify list passes over them. Failure scenario: none in behaviour; the two comments run past the width every other comment of the step keeps, and a later comment-width pass flags lines this step wrote. The tree holds 39 comment lines over 100 columns in src and tests already (`find src tests -name '*.ts' | xargs awk 'length > 100 && /^ *(\/\/|\*|\/\*\*)/'`), so the rule is not enforced by a check. Proposed fix at landing: break each into a `/** ... */` block of lines at or under 100 columns. Verdict: none (round item 4 and item 5 hold).
+
+#### 4. Behaviour
+
+none. The one user-visible change of the round, the head files' headings from `# .oculus/data/research/venues.yml (venue catalogue)` and `# .oculus/data/pillars/pillars.yml` to the same paths joined to the primary's absolute folder, is stated by the report with before (the C7 diff of the round-0 run) and after (the head of C1's index quoted).
+
+### Declined to judge
+
+- The test:quick time: 83.4 s against the 45 s limit at load averages 5.50 to 10.97, every command passed; the exit code depends on red commands only, and no decision rests on the figure.
+- The G120 rows took 182 ms to 841 ms each in my verbose run under a load near 10; spec.md asks "well under a second"; I report the figures only.
+- The round's "before" runs on the round-0 tree (3 failed of 13 for B1; 12 tests for chatContext) were not repeated; the snapshot under migration-O57-round-1 holds the round-0 code they quote.
+- Earlier sections of the builder's report keep round-0 figures the round changed (the Files table's context.ts 103, settings.test.ts 852 and terminal-actions.test.ts 812; "Doc text" naming terminal-actions.test.ts:784, now :787; the quoted C1 index's relative head lines); the "Repair round 1" section gives the current values and no decision rests on the old ones (G120 names its test by title).
+- The Settings view row of `chat_context` needs the look on TEST; no page was run.
+- The tree checks under tests/checks other than the two the brief names (size, boundaries, folder count) were not run; the brief's verify list does not name them.
+
+Reviewer usage: a2c70600ff89b59d5, claude-opus-5-5, 150992 tokens, 25 tool uses, 5 min 23 s.
+
+### Closed
+
+- Standards 1: fixed at landing, inside round items 4 and 5's paths: the doc comments at `tests/data/sources/config/settings.test.ts:791` and `tests/routes/sessions/terminal-actions.test.ts:605` are rewrapped into blocks of lines at or under 100 columns.

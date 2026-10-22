@@ -72,6 +72,7 @@ export {
     type OpenSettings,
     type SearchSettings,
     autofetchMin,
+    chatContext,
     confirmDelete,
     fileIconAtArrow,
     openSettings,

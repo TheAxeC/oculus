@@ -45,6 +45,9 @@ collections:
   - { key: leads,          file: ".oculus/data/academic/leads.yml" }
   - { key: radar,          file: ".oculus/data/literature/radar.yml" }
 
+# The keys of the hub's `collections:` list whose files the index of a portfolio chat and of a project chat holds for this hub, in this order, after the hub's project manifests. A word that names no key of the hub's own list adds nothing.
+chat_context: [funding, events, education, applications, joint-work, tasks]
+
 
 # Career strategy: the order of work, hosts, eligibility and dropped options live in the career file and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
 career_file: .oculus/data/academic/career.yml

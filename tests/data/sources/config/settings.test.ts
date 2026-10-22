@@ -2,17 +2,19 @@
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
 // view's program names, the LaTeX formatter and its auto build, the usage refresh, the automatic
 // fetch, the editor's paint limit, the Files view's delete prompt, the apps' limits and closed
-// folders and the Repositories view's scan depth of sources.yml). Each reader is run over a map
-// that carries its own options catalog, whose every default differs from the shipped one, so a
-// default written in code instead of read from the entry fails a row. A wrong value answers the
-// entry's default and a problem naming the key; a missing key answers the default and no problem; a
-// catalog with no entry for a key throws.
+// folders, and the Repositories view's scan depth and the chat's collection keys of sources.yml).
+// Each reader is run over a map that carries its own options catalog, whose every default differs
+// from the shipped one, so a default written in code instead of read from the entry fails a row. A
+// wrong value answers the entry's default and a problem naming the key; a missing key answers the
+// default and no problem; a catalog with no entry for a key throws.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
+import { it, plantScratch } from '../../../fixtures/scratch.ts';
 import {
     autofetchMin,
     calendarSettings,
     changesKeep,
+    chatContext,
     confirmDelete,
     engineDir,
     latexFormatting,
@@ -36,6 +38,7 @@ const SHIPPED_AT = { engine: engineDir(), hub: null, from: loadConfig(engineDir(
 import { latexBuild } from '../../../../src/lib/data/sources/config/settings/latex.ts';
 import { paintLimit, programApps } from '../../../../src/lib/data/sources/config/settings/files.ts';
 import type { SettingProblem } from '../../../../src/lib/data/sources/config/settings/reader.ts';
+import { settingProblems } from '../../../../src/lib/data/sources/config/settings/problems.ts';
 
 type Entries = Record<string, Record<string, unknown>>;
 
@@ -44,10 +47,11 @@ const SHIPPED: Entries = (loadConfig(engineDir()).config.options as Record<strin
     'behavior.yml'
 ];
 
+/** The shipped entries of sources.yml: the scan depth's, and the chat's collection keys'. */
+const SOURCES = (loadConfig(engineDir()).config.options as Record<string, Entries>)['sources.yml'];
+
 /** The shipped entry of sources.yml that the scan depth is read by. */
-const SCAN_DEPTH = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
-    'sources.yml'
-].repository_scan_depth;
+const SCAN_DEPTH = SOURCES.repository_scan_depth;
 
 /** The default each synthetic entry answers, every one different from the shipped default. */
 const DEFAULTS: Record<string, unknown> = {
@@ -773,6 +777,90 @@ describe('repositoryScanDepth', () => {
         'answers for %s the depth the entry allows, or its default and a problem',
         (_row, held, value, problems) => {
             expect(read(held)).toStrictEqual({ value, problems });
+        }
+    );
+});
+
+describe('chatContext', () => {
+    const DEFAULT = ['tasks', 'leads', 'funding'];
+    /** A collections list of three collections and the feed leads. */
+    const LIST = ['funding', 'events', 'tasks', 'leads'].map((key) => ({
+        key,
+        file: `${key}.yml`
+    }));
+    /**
+     * A map over a catalog whose chat_context default is DEFAULT and LIST, with `held` laid
+     * over.
+     */
+    const synthetic = (held: Record<string, unknown>) => (): Record<string, unknown> => ({
+        options: {
+            'sources.yml': { chat_context: { ...SOURCES.chat_context, default: DEFAULT } }
+        },
+        collections: LIST,
+        ...held
+    });
+    /** The five keys of oculus's default chat_context a hub's own collections list holds. */
+    const FIVE = ['funding', 'events', 'education', 'applications', 'joint-work'];
+    const FIVE_LIST = `collections:\n${FIVE.map((key) => `  - { key: ${key}, file: ${key}.yml }\n`).join('')}`;
+    /** The merged map `loadConfig` reads for a planted hub whose settings file holds `text`. */
+    const planted = (text: string) => (): Record<string, unknown> =>
+        loadConfig(engineDir(), {
+            hub: plantScratch('oculus-chat-context-', { '.oculus/config.yml': text })
+        }).config;
+    const WORDS = ['chat_context: words'];
+
+    // Each row: the input, the map read, the keys answered, the problems pushed, and whether
+    // settingProblems of the map holds chat_context, so a finding of the build names it.
+    it.each([
+        ['the key missing', synthetic({}), DEFAULT, [], false],
+        [
+            '[funding, nosuch]',
+            synthetic({ chat_context: ['funding', 'nosuch'] }),
+            ['funding'],
+            [],
+            false
+        ],
+        [
+            '[funding, funding]',
+            synthetic({ chat_context: ['funding', 'funding'] }),
+            ['funding'],
+            [],
+            false
+        ],
+        ['[]', synthetic({ chat_context: [] }), [], [], false],
+        ['one word', synthetic({ chat_context: 'events' }), ['events'], [], false],
+        ['3', synthetic({ chat_context: 3 }), DEFAULT, WORDS, true],
+        ['null', synthetic({ chat_context: null }), DEFAULT, WORDS, true],
+        ['a map', synthetic({ chat_context: { funding: true } }), DEFAULT, WORDS, true],
+        [
+            'a list holding a number',
+            synthetic({ chat_context: ['funding', 3] }),
+            DEFAULT,
+            WORDS,
+            true
+        ],
+        [
+            'a list without tasks',
+            synthetic({ collections: LIST.filter((one) => one.key !== 'tasks') }),
+            ['leads', 'funding'],
+            [],
+            false
+        ],
+        ['a list that is no list', synthetic({ collections: 'funding' }), [], [], false],
+        ['a hub whose list leaves out tasks', planted(FIVE_LIST), FIVE, [], false],
+        [
+            'a hub whose list leaves out tasks, writing 3',
+            planted(`${FIVE_LIST}chat_context: 3\n`),
+            FIVE,
+            WORDS,
+            true
+        ]
+    ] as const)(
+        'answers for %s the keys of the collections list it names, or its default and a problem',
+        (_row, mapOf, value, problems, flagged) => {
+            const map = mapOf();
+            expect(outcome((p) => chatContext(map, p))).toStrictEqual({ value, problems });
+            expect(settingProblems(map).some((one) => one.key === 'chat_context')).toBe(flagged);
         }
     );
 });

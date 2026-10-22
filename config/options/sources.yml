@@ -56,6 +56,12 @@ options:
             file:
                 help: the YAML file of the collection, relative to the hub
                 control: file
+    chat_context:
+        heading: sources
+        section: Collections
+        help: The keys of the hub's collections list whose files the index of a portfolio chat and of a project chat holds for this hub, in this order, after the hub's project manifests. A word that names no key of the hub's collections list adds nothing.
+        control: multi
+        from: collections
     publications_file:
         heading: sources
         section: Registry and feed files

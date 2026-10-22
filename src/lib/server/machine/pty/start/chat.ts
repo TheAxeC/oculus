@@ -13,7 +13,6 @@ import { writeTextAtomic } from '../../../core/json.ts';
 import { words } from '../../../core/words.ts';
 import { projectDirectory } from '../../../files/files.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
-import { primaryConfig } from '../../../files/roots.ts';
 import { TerminalRefused } from '../refusal.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
@@ -41,7 +40,7 @@ export type ChatOptions = StartOptions & {
     openFor: () => OpenWorkspace;
     /**
      * The settings of a hub of the workspace other than the primary, by its folder: the server's
-     * kept parse of them, which a hub task and the chat's context of the primary's projects read.
+     * kept parse of them, which a hub task reads, and the chat's index reads for every such hub.
      */
     hubSettings: HubSettings;
 };
@@ -121,8 +120,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    const primary = primaryConfig(config, open, options.hubSettings);
-    writeTextAtomic(index, portfolioContext(home, primary), 0o600);
+    writeTextAtomic(index, portfolioContext(config, open, options.hubSettings), 0o600);
     try {
         return await startTerminal(
             {

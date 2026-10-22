@@ -1,11 +1,22 @@
 // Layer 1, data. The typed readers of the settings of files, the editor and repositories: the
 // search, the extensions handed to a program, the Trash confirmation, the Files view's icon place,
-// the repository scan depth of sources.yml, the editor's paint limit and the automatic fetch. Each
-// reads its key through settingReader (reader.ts); the readers the page calls before the config
-// channel's first message answer a fixed value for a configuration that holds no catalog yet.
+// the repository scan depth and the chat's collection keys (`chatContext`) of sources.yml, the
+// editor's paint limit and the automatic fetch. Each reads its key through settingReader
+// (reader.ts), except `chatContext`, which reads its value by kind alone; the readers the page
+// calls before the config channel's first message answer a fixed value for a configuration that
+// holds no catalog yet.
 
 import type { ProgramApps } from '../../../helpers/files/opens-in-program.ts';
-import { noRule, settingReader, type SettingProblem, type SettingReader } from './reader.ts';
+import { byKey } from '../../../helpers/guards.ts';
+import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
+import { valueProblem, type ValueProblem } from '../catalog/value-rule.ts';
+import {
+    heldAt,
+    noRule,
+    settingReader,
+    type SettingProblem,
+    type SettingReader
+} from './reader.ts';
 
 /** The search settings of behavior.yml. */
 export type SearchSettings = {
@@ -116,6 +127,57 @@ export function repositoryScanDepth(
     problems: SettingProblem[] = []
 ): number {
     return settingReader(config, problems, 'sources.yml').number('repository_scan_depth');
+}
+
+/** The key of sources.yml that names the collections a chat's index holds for a hub. */
+const CHAT_CONTEXT = 'chat_context';
+
+/**
+ * The words of a `chat_context` value by the kind of its `multi` control alone, a list of words or
+ * one word, or the rule's problem for a value of another kind. The list the entry's `from` names is
+ * not checked here: `chatContext` leaves out each word it does not hold.
+ */
+function contextWords(
+    entry: CatalogEntry,
+    value: unknown
+): { words: string[] } | { problem: ValueProblem } {
+    const problem = valueProblem(entry, value, { sourced: null });
+    if (problem !== null) return { problem };
+    if (typeof value === 'string') return { words: [value] };
+    if (Array.isArray(value) && value.every((one) => typeof one === 'string')) {
+        return { words: value };
+    }
+    throw noRule(CHAT_CONTEXT, 'sources.yml');
+}
+
+/**
+ * Read `chat_context` of sources.yml: the keys of the merged map's `collections:` list whose files
+ * a portfolio or project chat's index holds for the hub, in the order written and each once. A
+ * value of another kind than the `multi` control takes is a problem naming the key, and the entry's
+ * default is read in its place. The list is the one the entry's `from` names, the keys of every
+ * entry of `collections:` with the feeds `leads` and `radar` among them; a word that names none of
+ * them adds nothing and is no problem, since the merged map cannot tell a word the hub wrote from
+ * oculus's default and a hub whose own list is shorter wrote nothing wrong, while the Settings view
+ * and the server's write refuse such a word by the same `from`. It throws only when the catalog
+ * holds no entry for the key, or a default of another kind.
+ */
+export function chatContext(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): string[] {
+    const entries = byKey(catalogOf(config), 'sources.yml');
+    const entry = entries === undefined ? undefined : byKey(entries, CHAT_CONTEXT);
+    if (entry === undefined) throw noRule(CHAT_CONTEXT, 'sources.yml');
+    const held = heldAt(config, CHAT_CONTEXT, problems);
+    const written = held.present ? contextWords(entry, held.value) : null;
+    if (written !== null && 'problem' in written) {
+        problems.push({ key: CHAT_CONTEXT, where: 'value', problem: written.problem, spec: entry });
+    }
+    const read =
+        written !== null && 'words' in written ? written : contextWords(entry, entry.default);
+    if ('problem' in read) throw noRule(CHAT_CONTEXT, 'sources.yml');
+    const listed = sourcedItems(entry, config) ?? [];
+    return [...new Set(read.words)].filter((word) => listed.includes(word));
 }
 
 /**

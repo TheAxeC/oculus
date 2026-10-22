@@ -1,13 +1,14 @@
 // Layer 4, test helper. The synthetic hub, state folder and engine directories the terminal route
-// suites read, the tmux double that records every argv and runs nothing, and the helpers that build
-// a request and the options bag handleTerminal is called with. Nothing here runs tmux, `claude` or
-// `codex`; the only real path is the temporary directory the helper hands out.
+// suites read, the workspaces of several hubs the chat cases read, the tmux double that records
+// every argv and runs nothing, and the helpers that build a request and the options bag
+// handleTerminal is called with. Nothing here runs tmux, `claude` or `codex`; the only real path is
+// the temporary directory the helper hands out.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
-import { scratchDir } from '../../fixtures/scratch.ts';
+import { plantFile, scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
 import {
     engineDir,
@@ -208,6 +209,71 @@ export function worldOf(
         localFor: () =>
             hub === undefined ? localDefaults() : loadMachine([{ name: 'hub', dir: hub }], 'hub'),
         hubSettings: (dir) => loadConfig(engineDir(), { hub: dir })
+    };
+}
+
+/**
+ * A folder of a chat case's workspace: its name, the text of its `.oculus/config.yml` when it is a
+ * hub (a folder with none is no hub), and the files it holds by their paths relative to it. Each
+ * file holds the one line `planted: <name>/<path>`, so an index that holds it says which folder's
+ * file it read.
+ */
+export type ChatFolder = { name: string; settings?: string; files: readonly string[] };
+
+/** A chat case's workspace: where each folder lies, and what a request over it is given. */
+export type ChatWorld = {
+    /** The folder planted under a name. */
+    at: (name: string) => string;
+    /** The sessions file, beside which the chat's index is written. */
+    sessions: string;
+    options: Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings' | 'configFor'>;
+};
+
+/**
+ * A workspace of `folders` in their order, each planted in a scratch folder of its own, with
+ * `primary` as its primary hub when one is named. A request reads the primary's settings as its
+ * merged config (oculus's alone with no primary) and every other hub's from that hub's own file,
+ * each parsed once, as the server keeps one parse of a hub while no file of it changes; its machine
+ * values are oculus's defaults with the sessions file in the scratch folder.
+ */
+export function chatWorld(folders: readonly ChatFolder[], primary?: string): ChatWorld {
+    const root = scratchDir('oculus-chat-world-');
+    const dirs = new Map<string, string>();
+    for (const one of folders) {
+        const dir = join(root, one.name);
+        expect(resolve(dir).startsWith(root + sep)).toBe(true);
+        mkdirSync(dir, { recursive: true });
+        if (one.settings !== undefined) plantHub(dir, one.settings);
+        for (const file of one.files) plantFile(dir, file, `planted: ${one.name}/${file}\n`);
+        dirs.set(one.name, dir);
+    }
+    const at = (name: string): string => {
+        const dir = dirs.get(name);
+        if (dir === undefined) throw new Error(`no folder ${name} is planted`);
+        return dir;
+    };
+    const workspace = workspaceWith(
+        folders.map((one) => ({ name: one.name, dir: at(one.name) })),
+        primary
+    );
+    const sessions = join(root, 'state', 'sessions.json');
+    mkdirSync(join(root, 'state', 'chat'), { recursive: true });
+    const parsed = new Map<string, ReturnType<typeof loadConfig>>();
+    const settingsOf = (dir: string): ReturnType<typeof loadConfig> => {
+        const held = parsed.get(dir) ?? loadConfig(engineDir(), { hub: dir });
+        parsed.set(dir, held);
+        return held;
+    };
+    const merged = primary === undefined ? BASE_CHAT_CONFIG : settingsOf(at(primary)).config;
+    return {
+        at,
+        sessions,
+        options: {
+            openFor: () => workspace.open(),
+            localFor: () => ({ ...localDefaults(), sessionsOverrides: sessions }),
+            hubSettings: settingsOf,
+            configFor: () => merged
+        }
     };
 }
 

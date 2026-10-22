@@ -77,20 +77,30 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 16 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 25 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                 # the folders projects are found in
-new_project_dir:      # the folder a new project is made in, per tier
 portfolio_deck:       # the hub's own deck
 collections:          # the data files and the two feeds (leads, radar), one { key, file } each
+chat_context:         # the collections whose files a chat's index holds for the hub
+new_project_dir:      # the folder a new project is made in, per tier
 publications_file:    # a website's publication list, for the Audit
 linkedin_dir:         # a website's LinkedIn folder
 career_file:          # the career strategy
 memories_dir:         # the photo wall's pictures
 wallpaper_dir:        # the backdrop's pictures
+bookmarks:            # where the reader's own bookmarks are kept
+schedules:            # where the schedules are kept
+apps_dir:             # where the machine's apps are kept
 wallpaper.image:      # the backdrop shown
 docs:                 # the hub's documents, each a tab of a page
+counts:               # the counts the tabs draw
+statuses:             # the status words, with their colours and roles
+career_host_status:   # the career card's host statuses
+career_score_dims:    # the career card's score axes
+career_score_tones:   # the career card's score hues
+leads_fit:            # the fit colours of the Position Leads
 slurm.resource:       # the cluster Live HPC polls
 lint.writing_skip:    # the files the writing rules skip
 lint.writing_glyphs:  # the files the writing rules let draw arrows and glyphs

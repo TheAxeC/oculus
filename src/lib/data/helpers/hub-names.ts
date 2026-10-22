@@ -319,17 +319,18 @@ export function offerAlong(
  * the group the Settings view draws it in. Each key is a dotted path into the hub file; a value the
  * file holds at one of these paths replaces oculus's value whole, and a key outside the list is a
  * finding and is not applied. They are the keys that describe this hub rather than the engine: its
- * folders and the files of its records, where the reader's bookmarks, the schedules and the
- * machine's apps are kept, the cluster its jobs run on, the files its writing rules skip or let
- * draw arrows, the values its apps' settings hold, the counts its tabs draw, its status words, and
- * its own words, which oculus ships none of: the career card's host statuses, score axes and score
- * hues, and the fit colours of its Position Leads. Its domains and theme words are its own registry
- * files'.
+ * folders and the files of its records, which of its records a chat's index holds, where the
+ * reader's bookmarks, the schedules and the machine's apps are kept, the cluster its jobs run on,
+ * the files its writing rules skip or let draw arrows, the values its apps' settings hold, the
+ * counts its tabs draw, its status words, and its own words, which oculus ships none of: the career
+ * card's host statuses, score axes and score hues, and the fit colours of its Position Leads. Its
+ * domains and theme words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
     { key: 'portfolio_deck', file: 'sources.yml' },
     { key: 'collections', file: 'sources.yml' },
+    { key: 'chat_context', file: 'sources.yml' },
     { key: 'new_project_dir', file: 'sources.yml' },
     { key: 'publications_file', file: 'sources.yml' },
     { key: 'linkedin_dir', file: 'sources.yml' },

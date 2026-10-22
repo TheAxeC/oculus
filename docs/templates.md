@@ -83,6 +83,9 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #   - { key: leads,          file: ".oculus/data/academic/leads.yml" }
 #   - { key: radar,          file: ".oculus/data/literature/radar.yml" }
 
+# The keys of the collections list whose files a chat's index holds for this hub, in this order.
+# chat_context: [funding, events, education, applications, joint-work, tasks]
+
 # A website's publication list, compared with the manifests by the Audit view. None by default.
 # publications_file: path/to/publications.yml
 

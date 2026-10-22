@@ -1,5 +1,5 @@
 // Layer 2, route tests. POST /api/terminal update-task, LaTeX and interactive chat cases. Chat
-// checks cover argv and private index lifecycle.
+// checks cover argv, the private index's lifecycle and the section it holds for each hub.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag
 // holding a `run` that records the argv and answers the list itself. The only real path any case
@@ -37,7 +37,9 @@ import {
     command,
     answer,
     configOf,
-    worldOf
+    worldOf,
+    chatWorld,
+    type ChatFolder
 } from './terminal-fixture.ts';
 
 /** This file's scratch folder and what the fixture planted in it, made before its first case. */
@@ -528,7 +530,9 @@ describe('POST /api/terminal, the chat action', () => {
 
         const index = chatIndexPath(join(task.chatState, 'sessions.json'), terminal.id);
         expect(index.startsWith(task.chatState + sep)).toBe(true);
-        expect(readFileSync(index, 'utf8')).toContain('## projects/active/alpha');
+        const written = readFileSync(index, 'utf8');
+        expect(written).toContain(`# HUB hub: ${task.chatHub}\n`);
+        expect(written).toContain('\n### projects/active/alpha\n');
         expect(statSync(index).mode & 0o777).toBe(0o600);
         const system = [
             CHAT_CATALOG['server.chat.chat_instruction']
@@ -541,7 +545,11 @@ describe('POST /api/terminal, the chat action', () => {
                 .replace('{2}', task.chatProject),
             CHAT_CATALOG['server.chat.chat_index_note'].replace('{0}', index)
         ].join('\n\n');
-        expect(system).toContain(`The hub root is \`${task.chatHub}\``);
+        expect(system).toContain(`This chat runs in the hub whose folder is \`${task.chatHub}\`.`);
+        expect(system).toContain(
+            "every folder in a section is relative to that hub's folder unless it is absolute"
+        );
+        expect(system).toContain('against the folder of the hub whose section lists it');
         expect(system).toContain(`Your working directory is \`${task.chatProject}\``);
         expect(system).not.toMatch(/\{[012]\}|CONTEXT\.md|NEXT\.md|METHOD_NOTES|RELATED_WORK/);
         const expected = command([
@@ -575,4 +583,231 @@ describe('POST /api/terminal, the chat action', () => {
         expect(lineOf(ownedStart)[0]).toContain('research hub of John Smith (oculus)');
         expect(lineOf(ownedStart)[0]).not.toContain('its owner');
     });
+
+    const VENUES = '.oculus/data/research/venues.yml';
+    const PILLARS = '.oculus/data/pillars/pillars.yml';
+    const FUNDING = '.oculus/data/academic/funding.yml';
+    const EVENTS = '.oculus/data/academic/events.yml';
+    const PEOPLE = '.oculus/data/people/people.yml';
+    const LEADS = '.oculus/data/academic/leads.yml';
+    const MANIFESTS = '## PROJECT MANIFESTS (status/venue source of truth)';
+    const manifest = (name: string): string => `projects/active/${name}/project.yml`;
+    /** The lines of a file of a hub's section: its heading and its planted line. */
+    const fileLines = (hub: string, path: string): string[] => [
+        `## ${path}`,
+        `planted: ${hub}/${path}`
+    ];
+    /** The lines of a project of a hub's section: its folder's heading and its planted line. */
+    const projectLines = (hub: string, name: string): string[] => [
+        `### projects/active/${name}`,
+        `planted: ${hub}/${manifest(name)}`
+    ];
+    /**
+     * The lines of the head's venue catalogue of the primary `hub`, headed by its absolute
+     * path.
+     */
+    const venueLines = (at: (name: string) => string): string[] => [
+        `# ${join(at('hub'), VENUES)} (venue catalogue)`,
+        `planted: hub/${VENUES}`
+    ];
+
+    /**
+     * Three hubs, `hub` the primary holding a pillars registry, none setting chat_context, `other`
+     * holding a venue file too.
+     */
+    const THREE_HUBS: ChatFolder[] = [
+        {
+            name: 'hub',
+            settings: '{}\n',
+            files: [manifest('alpha'), VENUES, PILLARS, FUNDING, EVENTS, PEOPLE]
+        },
+        { name: 'other', settings: '{}\n', files: [manifest('beta'), VENUES, EVENTS] },
+        { name: 'third', settings: '{}\n', files: [manifest('gamma')] }
+    ];
+    const threeHubLines = (at: (name: string) => string): string[] => [
+        ...venueLines(at),
+        `# ${join(at('hub'), PILLARS)}`,
+        `planted: hub/${PILLARS}`,
+        `# HUB hub: ${at('hub')}`,
+        MANIFESTS,
+        ...projectLines('hub', 'alpha'),
+        ...fileLines('hub', FUNDING),
+        ...fileLines('hub', EVENTS),
+        `# HUB other: ${at('other')}`,
+        MANIFESTS,
+        ...projectLines('other', 'beta'),
+        ...fileLines('other', EVENTS),
+        `# HUB third: ${at('third')}`,
+        MANIFESTS,
+        ...projectLines('third', 'gamma')
+    ];
+
+    /**
+     * One workspace per row: its folders in order, its primary, the chat (the portfolio, or a
+     * project chat of beta, a project of `other`), and the index's lines that are not empty.
+     */
+    const INDEX_ROWS: {
+        folders: ChatFolder[];
+        primary?: string;
+        chat: 'beta' | null;
+        lines: (at: (name: string) => string) => string[];
+    }[] = [
+        { folders: THREE_HUBS, primary: 'hub', chat: null, lines: threeHubLines },
+        { folders: THREE_HUBS, primary: 'hub', chat: 'beta', lines: threeHubLines },
+        {
+            folders: [
+                { name: 'hub', settings: 'chat_context: [events]\n', files: [FUNDING, EVENTS] },
+                { name: 'other', settings: 'chat_context: [funding]\n', files: [EVENTS, FUNDING] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                ...fileLines('hub', EVENTS),
+                `# HUB other: ${at('other')}`,
+                ...fileLines('other', FUNDING)
+            ]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: '{}\n', files: [] },
+                { name: 'other', settings: 'chat_context: [leads]\n', files: [LEADS, EVENTS] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                `# HUB other: ${at('other')}`,
+                ...fileLines('other', LEADS)
+            ]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] },
+                { name: 'tool', files: ['project.yml'] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                MANIFESTS,
+                ...projectLines('hub', 'alpha'),
+                `### ${at('tool')}`,
+                'planted: tool/project.yml'
+            ]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] },
+                { name: 'third', settings: '{}\n', files: [] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                MANIFESTS,
+                ...projectLines('hub', 'alpha'),
+                `# HUB third: ${at('third')}`
+            ]
+        },
+        {
+            folders: [
+                { name: 'other', settings: '{}\n', files: [manifest('beta')] },
+                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                MANIFESTS,
+                ...projectLines('hub', 'alpha'),
+                `# HUB other: ${at('other')}`,
+                MANIFESTS,
+                ...projectLines('other', 'beta')
+            ]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: 'chat_context: [funding, funding]\n', files: [FUNDING] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [`# HUB hub: ${at('hub')}`, ...fileLines('hub', FUNDING)]
+        },
+        {
+            folders: [{ name: 'hub', settings: 'chat_context: []\n', files: [FUNDING, EVENTS] }],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [`# HUB hub: ${at('hub')}`]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: '{}\n', files: [] },
+                { name: 'other', settings: 'chat_context: [funding\n', files: [FUNDING, EVENTS] }
+            ],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                `# HUB other: ${at('other')}`,
+                ...fileLines('other', FUNDING),
+                ...fileLines('other', EVENTS)
+            ]
+        },
+        {
+            folders: [
+                { name: 'hub', settings: '{}\n', files: [manifest('alpha'), VENUES] },
+                { name: 'other', settings: '{}\n', files: [manifest('beta'), VENUES] },
+                { name: 'tool', files: ['project.yml'] }
+            ],
+            chat: 'beta',
+            lines: (at) => [
+                `# HUB hub: ${at('hub')}`,
+                MANIFESTS,
+                ...projectLines('hub', 'alpha'),
+                `# HUB other: ${at('other')}`,
+                MANIFESTS,
+                ...projectLines('other', 'beta'),
+                '# WORKSPACE FOLDERS (no hub)',
+                MANIFESTS,
+                `### ${at('tool')}`,
+                'planted: tool/project.yml'
+            ]
+        },
+        {
+            folders: [{ name: 'hub', settings: 'chat_context: [venues]\n', files: [VENUES] }],
+            primary: 'hub',
+            chat: null,
+            lines: (at) => [
+                ...venueLines(at),
+                `# HUB hub: ${at('hub')}`,
+                `## ${VENUES}`,
+                `planted: hub/${VENUES}`
+            ]
+        }
+    ];
+
+    it.each(INDEX_ROWS)(
+        'writes one section per hub of the workspace into the index',
+        async (row) => {
+            const world = chatWorld(row.folders, row.primary);
+            const response = await handleTerminal(
+                request({ action: 'chat', id: row.chat, cols: 80, rows: 24 }),
+                TOKEN,
+                {
+                    ...world.options,
+                    engine: task.chatEngine,
+                    run: tmux().run,
+                    projectFor: (id) =>
+                        id === 'beta'
+                            ? { title: 'Beta', folder: 'projects/active/beta', root: 'other' }
+                            : null
+                }
+            );
+            expect(response.status).toBe(200);
+            const terminal = (await answer(response)).terminal as { id: string };
+            const index = readFileSync(chatIndexPath(world.sessions, terminal.id), 'utf8');
+            expect(index.split('\n').filter((line) => line !== '')).toEqual(row.lines(world.at));
+        }
+    );
 });

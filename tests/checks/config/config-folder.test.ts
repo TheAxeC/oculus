@@ -195,6 +195,7 @@ describe("oculus's own config directory", () => {
             'scan',
             'new_project_dir',
             'collections',
+            'chat_context',
             'career_file',
             'publications_file',
             'linkedin_dir',

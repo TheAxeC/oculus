@@ -12,6 +12,7 @@ import {
 } from './connectors.ts';
 import {
     autofetchMin,
+    chatContext,
     confirmDelete,
     fileIconAtArrow,
     openSettings,
@@ -43,6 +44,7 @@ const PROBLEM_READERS: ((
     refreshSettings,
     autofetchMin,
     repositoryScanDepth,
+    chatContext,
     paintLimit,
     processesSettings,
     latexFormatting,

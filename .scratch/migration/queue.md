@@ -1,11 +1,10 @@
-In flight (3 of 6 slots in use):
-- O57 (the portfolio chat's index over every hub). State: repair round 1 built; the review over round 1 is running, then /land.
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: prepared at 18fa0365; builder launching.
-- O51 (a per-pane Hide Tab Row). State: /spec, brief check running.
+In flight (2 of 6 slots in use):
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building.
+- O51 (a per-pane Hide Tab Row). State: /spec; the brief check found two widenings, raised as open items 245 and 246.
 
 Queued, in order (7 steps):
-- O61 (one home for each vocabulary word). Waits: Axel's rulings on open items 243 and 244.
-- O53 (a project's `lead:` a list of person keys). Waits: O57's landing (both change `chat.ts` lines 100-125 and `config/text/server.yml` line 57); then /spec from Steps 5.
+- O61 (one home for each vocabulary word). Waits: nothing; rulings 243 (a) and 244 (a) given; /spec next.
+- O53 (a project's `lead:` a list of person keys). Waits: nothing since O57 landed; /spec next.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
@@ -16,6 +15,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
+- O57 (the portfolio chat's index over every hub), 2026-10-22.
 - O49 (an Open View submenu in the tab strip's menus), 2026-10-22.
 - O50 (who the user is: the workspace setting `self`), 2026-10-22.
 - O52 (the Focus board's section headings in one shape), 2026-10-22.
