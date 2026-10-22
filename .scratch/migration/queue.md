@@ -1,10 +1,10 @@
 In flight (2 of 6 slots in use):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building.
-- O51 (a per-pane Hide Tab Row). State: /spec; the brief check found two widenings, raised as open items 245 and 246.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
+- O61 (one home for each vocabulary word). State: /spec, premise checks and the brief.
 
 Queued, in order (7 steps):
-- O61 (one home for each vocabulary word). Waits: nothing; rulings 243 (a) and 244 (a) given; /spec next.
-- O53 (a project's `lead:` a list of person keys). Waits: nothing since O57 landed; /spec next.
+- O53 (a project's `lead:` a list of person keys). Waits: nothing; /spec after O61's brief check starts.
+- O51 (a per-pane Hide Tab Row). Waits: Axel's rulings on open items 245 (the cross-tab rerun row in `rerun.ts`) and 246 (an `open` prop on the two menu components).
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
