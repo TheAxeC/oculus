@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: brief checked, worktree being prepared.
-- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204 and 208. State: brief being written.
+- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: building.
+- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204 and 208. State: brief check running.
 
 Queued, in order (14 steps):
 - O62 (`archive_order` removed from the vocabulary with its shape and test row; no code reads it), a defect. Waits: a free slot.
