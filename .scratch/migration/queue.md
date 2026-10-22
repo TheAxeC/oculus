@@ -1,7 +1,8 @@
-In flight (3 of 6 slots in use):
+In flight (4 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
 - O64 (motion where work is in progress: Inbox and Calendar Refresh turn, the Usage Refresh stays drawn while it runs, the commit message suggestion says what runs, one git line under the repository's name; ruling 249). State: built (report `agents/reviews/O64-report.md`), its review by /refute next. Shares only `docs/HELP.md` line ranges and `docs/diagrams/` with O54 and O65: simple to merge.
-- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: /spec, the brief rewritten for ruling 258 (b), then its preparation commit and the launch.
+- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: building (base 3a35d993).
+- O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: /spec, premises and brief.
 
 Queued, in order (7 steps):
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
@@ -10,7 +11,7 @@ Queued, in order (7 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O39 (oculus in its own repository): the desktop look of part A taken and failed (first frame light, not the start theme); left: the fix (the first HTML carries the start theme), then the tick. In no slot.
+- O39 (oculus in its own repository): after part E lands, the desktop look again, then the tick.
 
 Owed looks: none.
 
