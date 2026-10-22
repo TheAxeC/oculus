@@ -216,7 +216,7 @@ Each finding, with what was done in `agents/briefs/O50.md`.
 
 - Names, `config/defaults/sources.yml:28` made false: added to item 7 and to Verify 8; inside the line (the old form is removed).
 - Names, `Settings.svelte:187-196` and `ListInputs.portfolio` carry no people: item 2 now has Settings hand the portfolio's people into `listsOf`, and the path is added; inside the line ("Settings draws the row with a picker of the people registry" cannot hold without it).
-- Names, `OPTION_SOURCES` in `references.ts`: not closed in the brief. It adds a requirement beyond the step's line (a rename of a person key carried to `settings.self`), so it is open item 226 (ruling Brief check scope); the brief says the reference index is not changed.
+- Names, `OPTION_SOURCES` in `references.ts`: not closed in the brief. It adds a requirement beyond the step's line (a rename of a person key carried to `settings.self`), so it was raised as open item 226 (ruling Brief check scope); Axel ruled (a), and item 2, C14 and the paths list now carry it.
 - Premises, `record.ts:120`, the HELP.md range and grep, the template range, `ui.svelte.ts:433-437`, `workspace-file.ts:51-57`: corrected in "What is on the tree" and the paths list.
 - Premises, guarded entries: the paragraph rewritten to name G32, G56, G64, G12 and G13 with their tests; their tests join Verify 1 and the test-edit rule.
 - Premises, file sizes: `model-entities.ts` at 876 of 880 is stated.
