@@ -27,6 +27,7 @@ dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
+- A brief check never widens a step (Axel, 2026-10-22, ruling Brief check scope): a finding whose fix would widen the step's paths, add a requirement or add a case beyond the step's line goes to Axel as an open item, never into the brief.
 - O37, O38 and O39 (Axel, 2026-10-16, ruling O33 split): O37 starts from `agents/briefs/O37-start.patch`, whose every change its builder owns; no one runs /diagnose or starts a diagnosis agent for O37, the builder included; O38 runs once O37 has landed and O39 once O38 has landed (Axel's approvals, open items 121 and 122), every deletion and skill edit of O38 still on his yes path by path. Not a single thing of O33's phase A may be missed ("No looks, no bugs, nothing"): every defect is in O37's Step 0 and every owed look in `agents/reviews/owed-looks.md` "To take".
 - O33's brief (`agents/briefs/O33.md`) is not used for O37, O38 or O39 (Axel, 2026-10-16): each brief is written from the step's plan.md line and Step 0, O33's line at plan.md:495 with its Step 0, and every ruling they name.
 - Before the oculus repository is made public, its ledger is taken out of its history with `git filter-repo --path .scratch/ --invert-paths` (Axel, 2026-10-15, ruling O33 ledger): the ledger holds his verbatim words and the hub's private paths, and lives in the repository only while it is private.
@@ -357,6 +358,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (go given, by agents in parallel). Axel ruled O49 to O63 by agents, Parallel order and Brief check scope, and gave the go. First wave: `/spec` O59, O50, O62, O58, O54 and O52; O39's look and tick at any time. Open items: none. In flight: none yet.
 - 2026-10-22 (go given). Axel ruled O39 closing (the owed desktop look, then the tick and booking) and gave the go for the inline order; O52 is building in the main checkout. Open items: none.
 - 2026-10-22 (discussion, no build). Ruled 219 to 222 (a); O61 widened, O63 booked; queue.md lists O49 to O63 in their order. Open items: none. Nothing starts until Axel ends the discussion; O52 runs first then.
 - 2026-10-22 (discussion, no build). Ruled 213 (a), 218 (a); O61 booked. The vocabulary reviewed: open items 219 to 222 raised; `archive_order` read by no code, step O62. Nothing starts until Axel ends the discussion; O52 runs first then.
