@@ -211,3 +211,36 @@ The goal: a pane whose tab row the reader hides from its pane menu, shown while 
 - Whether Title Case "Hide Tab Row" beside the sentence-case `pane_` labels ("Close pane", "Fold pane") is right: the ruling dictates the words, and no spec.md rule covers label casing.
 
 Usage: a760fccefd58a7066, claude-opus-5-5, 216679 tokens, 58 tool uses, 8 min 23 s
+
+## Closed
+
+Each finding is closed by a change to `agents/briefs/O51.md` as written again on main at 81740255, after rulings 245 (a) and 246 (a).
+
+- 1.1, 6.3: ruling 245 (a). Item 3 adds the `PATH_OPERATIONS` row in `rerun.ts` and G102's row in both orders; `rerun.ts` lines 31-45 and `layout-workspaces.test.ts` lines 241-283 join the paths; case C15; Verify 2 runs the G102 table.
+- 1.2, 3.3, 6.2: item 2 has `keptPane` carry `rowHidden` and both doc comments name it; item 7 names the doc comments of `repane` (`model.ts:353-359`) and `keptPane` (`tree.ts:172-178`); "What is on the tree" names both places that carry the flags; case C14.
+- 1.3, 1.6, 1.7, 1.8, 1.10, 3.1, 3.7, 3.9, 3.10, 3.12, 3.13, 4.5, 4.6, 5.1 to 5.3, 5.5 to 5.11, 7.1, 8.1, 8.2, 8.4: hold; no change.
+- 1.4: the Read list takes `pane-view.ts` 128-400, so `stripMenu`'s body is read.
+- 1.5: item 7 names `floatMenu`'s doc comment (`pane-view.ts:280-283`).
+- 1.9, 3.2: the `Pane` type is named at `model.ts:59-68`, its doc comment 48-58.
+- 1.11: ruling 246 (a). Item 4 gives `Menu.svelte` and `ContextMenu.svelte` a bindable `open` prop; both files join the paths; item 5 reads the menu's open state from it; item 7 names their head comments.
+- 1.12: item 6 keeps the edge and the shown state in `PaneStrip.svelte` and `pane-view.ts`, and a split of `panes/` or `strip/` widens the paths to the moved files and their importers, named in the report.
+- 3.4: `paneMenu` is named at 134-167 with Move into New Window as today's last item; item 1 puts the new item after it.
+- 3.5: the doc comments are named at 129-133 and 169-173.
+- 3.6: `stripPick` is named at 279-305, its `isPaneItem` branch at 281-284.
+- 3.8, 6.5: the FloatLayer sentence is named at lines 22-26 with the resize by the edges; item 5 says a press on the 6 px margin or a docked float's sash still resizes; case C16.
+- 3.11: "What is on the tree" names G31 and G102 beside G29; the Read list takes the three entries.
+- 3.14: "What is on the tree" names the base copy `.agents/worktrees/migration-O51-base/` with `unused-exports.txt`; Verify 5 compares with that path.
+- 3.15: the Read list takes `pane-view.ts` 300-400, `tree.ts` 170-190, `index.ts`, `rerun.ts`, the two menu files, `menu-items.ts` 100-179, `PaneBody.svelte`, `float-gesture.ts` 40-130 and `FloatLayer.svelte` 130-160.
+- 4.1: item 5 keeps the row shown for focus that came by a key press only, and decision 8 says why; C1 and C3 name a pointer pick; case C21 covers a keyboard pick.
+- 4.2, 6.4: item 5 says a pane whose row is `none` hides and shows its path bar alone, and one with neither shows nothing; decision 4 and case C11 say the same.
+- 4.3, 6.9: item 1 names the ids `hide-tab-row` and `show-tab-row`; case C20 checks them empty, duplicated and colliding with every id and prefix and against `isFloatItem` and `isPaneItem` (`grep -rn "hide-tab-row\|show-tab-row" src config --exclude=local.yml` exits 1 on main).
+- 4.4: C12 is taken on screen on TEST at landing, and says no new box changes a shown row's layout.
+- 5.4: item 5 says the hidden row stays mounted and in the tab order.
+- 6.1: item 1 puts the pick before `if (active === '') return;`; case C13.
+- 6.6: item 5 keeps the row shown during a drag started from it; case C17.
+- 6.7: item 5 sets the shown row on the pane's own background; case C18.
+- 6.8: item 1 names the body menu; case C19.
+- 8.3: the closing paragraph of "What to build" names the saved pane key `rowHidden`.
+- 8.5: item 7 asks the HELP bullet to name the path bar and the strip's right-click menu under `editor_actions: hidden`; it is no longer dictated, so the builder words it.
+
+Dictated lines added after the check, held line by line: `hide-tab-row` and `show-tab-row` (item 1: kebab ids as `move-to-page` and `show-a-page`, ASCII, holds); the G102 row title `a hide of the tab row of a pane the other tab moved lands on that pane` (item 3: ASCII, no history word, no package id, the table's shape of `a fold of a pane the other tab moved lands on that pane`, holds); the marker ` hidden` in `panesOf` (item 3: as ` folded`, holds).
