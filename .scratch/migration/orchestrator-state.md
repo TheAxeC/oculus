@@ -39,21 +39,6 @@ dispatch:         # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/O50-refuter.md (ac99976ef654d4063, claude-opus-5-5, 212679 tokens, 69 tool uses, 23 min 17 s); over round 1: ae22da9a7c93e0180, claude-opus-5-5, 239932 tokens, 75 tool uses, 18 min 52 s
   landing: not-started
   shared_paths: docs/diagrams/ with O52, O58, O59 and O62, regenerated at each landing; ruling 226 widened the brief after the launch (473f5e1b), copied into the worktree and sent to the builder
-- step: O52
-  executor: agent
-  worker: claude:opus
-  session_id: a705c557e720c4b27
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: d7625582
-  worktree: .agents/worktrees/migration-O52
-  brief_check: agents/reviews/O52-brief-check.md (a95389eccf26b9f17, claude-opus-5-5, 172686 tokens, 43 tool uses, 5 min 59 s)
-  report: agents/reviews/O52-report.md
-  builder_usage: 197523 tokens, 51 tool uses, 23 min 27 s; round 1 228747 tokens, 16 tool uses, 6 min 6 s
-  round: 1
-  reviewer_report: agents/reviews/O52-refuter.md (aa46c6d7fba77e682, claude-opus-5-5, 180969 tokens, 41 tool uses, 12 min 24 s); over round 1: a71c9aeb58e432ce4, claude-opus-5-5, 140872 tokens, 30 tool uses, 7 min 39 s
-  landing: not-started
-  shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 - step: O49
   executor: agent
   worker: claude:opus
@@ -163,7 +148,7 @@ dispatch:         # steps in flight, up to six (Z632)
 - queue.md is only ever rewritten whole (Z473): every change writes the full file from the state of the plan, each section read and checked line by line, never a replacement of one line in place.
 - No new steps, ever (Z468): the orchestrator never adds a step to the plan. Whatever a finding needs is folded whole into an existing step (its line widened, its brief or its next round), and nothing it would have done is dropped.
 - A file feature works from the file opened in the editor (Z488, Axel, 2026-10-05, "This goes for literally everything"): every step that gives a file a feature puts it in the open file's editor (its breadcrumb bar (Z536), its gutter, its marks, a tab beside it), as VS Code does, never in a separate view opened by a right-click; every brief is read against this before dispatch. `docs/` files keep their Doc view (Z489).
-- The landing gate never runs in main's checkout (Z492, Axel, 2026-10-05): `npm run diagrams && npm run test:landing` runs in the gate worktree `.agents/worktrees/gate`, brought to main's head and given the step's range by cherry-pick, its `node_modules` a `cp -c` clone of main's renewed when `package.json` or the lockfile changes; fixes at landing are made there and the gate rerun; once green the same range is cherry-picked onto main, the landing fixes and diagrams copied, `git diff --cached` on main compared with the gate's, then the look on TEST and the commit.
+- The landing gate never runs in main's checkout (Z492, Axel, 2026-10-05): `npm run diagrams && npm run test:quick` (the related tests only, rulings 240 (a) and 241 (b)) runs in the gate worktree `.agents/worktrees/gate`, brought to main's head and given the step's range by cherry-pick, its `node_modules` a `cp -c` clone of main's renewed when `package.json` or the lockfile changes; fixes at landing are made there and the gate rerun; once green the same range is cherry-picked onto main, the landing fixes and diagrams copied, `git diff --cached` on main compared with the gate's, then the look on TEST and the commit.
 - Make sure it works, every step (Z467): the landing look exercises the step's feature itself on TEST across real cases, for a file feature at least ten files of different types, each case recorded with what was seen; nothing is committed to main before that look passes.
 - The night run (Axel, 2026-09-15 21:32, "Back to the night run, you have 9h40m available (and no hpc access). Please resume"): the window ends at 07:12 on 2026-09-16; no package that cannot land inside it is dispatched, no HPC command; the pause of 20:15 is lifted, the reviewers for D1 and O28b dispatched at 21:33, D3 dispatched under the rolling window.
 - The pause, lifted 21:32 (Axel, 2026-09-15 20:15, "let the current agents finish and then pause"): no new agent is launched after O28b's and D1's workers report; their reports, diffs and check runs are recorded, the orchestrator reads the diffs, their worktrees stay, and D3 waits in the queue; D2, whose worker had finished, is landed. Lifting the pause resumes at O28b's and D1's reviews.
@@ -448,6 +433,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O52 landed). O52 is on main, landed in the gate worktree (rulings 240 (a) and 241 (b)); fixes at landing: the folded career box's padding, and ruling 240 (a)'s related-only `tests/tiers/quick.mjs` with `essential.txt` deleted. Open items: none. In flight (3 of 6): O50, O49 (ready for /land), O57 (building). Next: /land O50, then /spec O54, O61 and O53; /land O49.
 - 2026-10-22 (rulings 240 to 242, O57 building). Axel ruled 240 (a), 241 (b) and 242 (a); G120 added to `agents/guarded.md`; O57 prepared from base 8c53e525 and its builder launched. O49's review over round 1 found one phrase (R1), fixed at landing. Open items: none. In flight (4 of 6): O50, O52, O49 (each ready for /land), O57 (building). Next: /land O52 in the gate worktree with ruling 240 (a)'s change to `tests/tiers/quick.mjs`, then /land O50 and /land O49; after O50, /spec O54, O61 and O53.
 - 2026-10-22 (O49 round 1 built). O49's builder handed back round 1 (`agents/reviews/O49-report.md`, "Repair round 1"); the delta against `migration-O49-round-1` holds the six rulings and nothing else; the review over round 1 is running. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (review over round 1 running). Next: the review's report, then /land O49 once 240 and 241 are ruled; O57 on 242's ruling; O61 after O50.
 - 2026-10-22 (O57 stopped at its brief check). The brief check (`agents/reviews/O57-brief-check.md`) found that O57's multi-hub cases need a guarded entry no entry holds; open item 242 raised, the other findings closed in the report's Closed section for the brief's rewrite. O57 holds no slot until Axel rules. Open items: 240, 241, 242. In flight (3 of 6): O50, O52 (landings wait on 240 and 241), O49 (round 1 building). Next: O49's round-1 report and its run of /refute; O57 on 242's ruling; O61 after O50.

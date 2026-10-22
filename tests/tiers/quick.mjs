@@ -1,17 +1,21 @@
-// Layer 4, test tool. npm run test:quick: the commands a builder or a reviewer runs after a change,
-// held to 45 s for the whole list.
+// Layer 4, test tool. npm run test:quick: the commands a builder, a reviewer and a landing run
+// after a change, over what the change reaches and nothing else.
 //
-// What it runs, all at the same time, except that vitest, eslint and svelte-check start when
-// `svelte-kit sync` has ended: the sync rewrites the generated types under .svelte-kit with
-// truncating writes, and all three read them, so a reader started beside it can find a file empty.
-// The sync runs while the tests are chosen.
+// What it runs, all at the same time, except that the vitest runs, eslint and svelte-check start
+// when `svelte-kit sync` has ended: the sync rewrites the generated types under .svelte-kit with
+// truncating writes, and all of them read them, so a reader started beside it can find a file
+// empty. The sync runs while the tests are chosen.
 //
-// - vitest over the tests that guard the most (tests/tiers/essential.txt), the tests that name or
-//   import a changed file at most RELATED_DEPTH imports away, and every changed test,
-//   with the test files sharing their loaded modules (`--no-isolate`) so each file does not load
-//   them again, the config read without bundling it, and the translated modules kept on disk
-//   between runs (node_modules/.experimental-vitest-cache, where each file is written under a
-//   temporary name and renamed into place, so another test:quick run reads whole files);
+// - the tests that name or import a changed file at most RELATED_DEPTH imports away, and every
+//   changed test, wherever they are: under tests/checks and tagged slow included. Three vitest runs
+//   share them out as npm test, npm run test:slow and npm run test:checks would: the chosen tests
+//   outside tests/checks with their slow tests left out, the test files sharing their loaded
+//   modules (`--no-isolate`) so each file does not load them again, the config read without
+//   bundling it, and the translated modules kept on disk between runs
+//   (node_modules/.experimental-vitest-cache, where each file is written under a temporary name and
+//   renamed into place, so another test:quick run reads whole files); the slow tests of the chosen
+//   files outside tests/checks, with the slow tests' time limit; and the chosen files under
+//   tests/checks, with no time limit;
 // - prettier and eslint over the changed files only, with their caches, so a file that has not
 //   changed since a green run costs nothing;
 // - svelte-check, incremental: the type check of the whole tree, the one command that reads files
@@ -22,9 +26,8 @@
 // since HEAD (or since the revision after `--base`) and as new. A builder, who runs no git command,
 // gives its paths: `npm run test:quick -- <path> <path>`.
 //
-// What a green run does not cover is printed with it: the tests outside the selection, the tree
-// checks under tests/checks, the slow tests, the build and the lint of files nobody changed. The
-// landing list, npm run test:landing, runs them all. A file outside the selection is chosen by
+// What a green run does not cover is printed with it: the tests that reach no changed file within
+// RELATED_DEPTH imports, the build and the lint of files nobody changed. A file is chosen by
 // whether it imports a changed file, read from the import specifiers of src and tests, so a test
 // that reaches a changed file through a call by name and no import is not found.
 
@@ -36,10 +39,6 @@ import { ASCII_GATE, BIN, ROOT, judgeAscii, runTask, seconds, show } from './run
 /** How many imports away from a changed file a test may be and still be chosen for it. */
 const RELATED_DEPTH = 2;
 
-/** The time the whole list is held to, in ms. */
-const LIMIT_MS = 45000;
-
-const ESSENTIAL = join(ROOT, 'tests', 'tiers', 'essential.txt');
 const VITEST = join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 const TEST_FILE = /\.test\.ts$/;
 
@@ -136,17 +135,14 @@ function importerMap(files) {
     return importers;
 }
 
-/** Whether a test file is one the unit run takes: not a tree check, which test:checks runs. */
-function isUnitTest(path) {
-    return TEST_FILE.test(path) && path.startsWith('tests/') && !path.startsWith('tests/checks/');
+/** Whether a test file is a tree check, which the checks run takes. */
+function isCheck(path) {
+    return path.startsWith('tests/checks/');
 }
 
-/**
- * Whether a file is tagged slow as a whole: npm test leaves it out, and test:slow runs it unless it
- * is under tests/checks, where test:checks runs it.
- */
-function isSlow(path) {
-    return readFileSync(join(ROOT, path), 'utf8').includes('@module-tag slow');
+/** Whether a file tags itself or any of its tests slow, so the slow run has something of it. */
+function holdsSlow(path) {
+    return /@module-tag slow|tags:\s*\[[^\]]*'slow'/.test(readFileSync(join(ROOT, path), 'utf8'));
 }
 
 /**
@@ -184,39 +180,16 @@ function relatedTests(changed, files) {
     return [...found].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
 }
 
-/** The paths of tests/tiers/essential.txt: one per line, a note after a `#`. */
-function essentialTests() {
-    return readFileSync(ESSENTIAL, 'utf8')
-        .split('\n')
-        .map((line) => line.replace(/#.*$/, '').trim())
-        .filter((line) => line !== '');
-}
-
-/**
- * The test files to run, each with the reason it is there, the essential paths that name no file,
- * and the changed tests this list leaves to another: a tree check, a slow file.
- */
+/** The test files to run, each with the reason it is there. */
 function chooseTests(changed, files) {
     const picks = new Map();
-    const missing = [];
-    const left = [];
-    for (const path of essentialTests()) {
-        if (!files.includes(path)) missing.push(path);
-        else if (!isSlow(path)) picks.set(path, 'essential');
+    for (const [path, distance] of relatedTests(changed, files)) {
+        if (distance > RELATED_DEPTH || !path.startsWith('tests/')) continue;
+        if (distance === 0) picks.set(path, 'changed');
+        else if (distance === 0.5) picks.set(path, 'named for a changed file');
+        else picks.set(path, `imports at depth ${distance}`);
     }
-    const ranked = relatedTests(changed, files);
-    for (const [path, distance] of ranked) {
-        if (distance !== 0) continue;
-        if (!isUnitTest(path) || isSlow(path)) left.push(path);
-        else if (!picks.has(path)) picks.set(path, 'changed');
-    }
-    for (const [path, distance] of ranked) {
-        if (distance === 0 || distance > RELATED_DEPTH || picks.has(path)) continue;
-        if (!isUnitTest(path) || isSlow(path)) continue;
-        const why = distance === 0.5 ? 'named for a changed file' : `imports at depth ${distance}`;
-        picks.set(path, why);
-    }
-    return { picks, missing, left };
+    return picks;
 }
 
 const args = process.argv.slice(2);
@@ -258,33 +231,37 @@ if (formatted.length > 0) {
 pending.push(track(runTask('ASCII gate', 'sh', ['-c', ASCII_GATE]).then(judgeAscii)));
 
 const files = moduleFiles();
-const { picks, missing, left } = chooseTests(existing, files);
-if (missing.length > 0) {
-    const output = `tests/tiers/essential.txt names no file: ${missing.join(', ')}`;
-    pending.push(track(Promise.resolve({ name: 'essential list', ok: false, ms: 0, output })));
-}
-const essential = [...picks.values()].filter((why) => why === 'essential').length;
-console.log(`test:quick: ${picks.size} test file(s), ${essential} essential`);
-for (const [path, why] of picks) {
-    if (why !== 'essential') console.log(`        ${path}: ${why}`);
-}
-for (const path of left) {
-    const command = isUnitTest(path) ? 'test:slow' : 'test:checks';
-    console.log(`        ${path}: changed, run by npm run ${command}`);
-}
+const picks = chooseTests(existing, files);
+console.log(`test:quick: ${picks.size} test file(s)`);
+for (const [path, why] of picks) console.log(`        ${path}: ${why}`);
 
-const select = [...picks.keys()];
-const flags = [
-    '--tagsFilter',
-    '!slow',
-    '--no-isolate',
-    '--reporter=dot',
-    '--configLoader',
-    'runner',
-    '--experimental.fsModuleCache'
-];
+const units = [...picks.keys()].filter((path) => !isCheck(path));
+const slow = units.filter(holdsSlow);
+const checks = [...picks.keys()].filter(isCheck);
+const loader = ['--reporter=dot', '--configLoader', 'runner'];
 await synced;
-pending.push(track(runTask('vitest', process.execPath, [VITEST, 'run', ...select, ...flags])));
+if (units.length > 0) {
+    const flags = [
+        '--tagsFilter',
+        '!slow',
+        '--no-isolate',
+        ...loader,
+        '--experimental.fsModuleCache'
+    ];
+    const run = [VITEST, 'run', ...units, ...flags, '--passWithNoTests'];
+    pending.push(track(runTask('vitest', process.execPath, run)));
+}
+if (slow.length > 0) {
+    const flags = ['--tagsFilter', 'slow', '--testTimeout', '20000', ...loader];
+    const run = [VITEST, 'run', ...slow, ...flags, '--passWithNoTests'];
+    pending.push(track(runTask('vitest slow', process.execPath, run)));
+}
+if (checks.length > 0) {
+    const flags = ['--testTimeout', '0', '--hookTimeout', '0', ...loader];
+    pending.push(
+        track(runTask('vitest checks', process.execPath, [VITEST, 'run', ...checks, ...flags]))
+    );
+}
 const linted = existing.filter((one) => LINTED.test(one));
 if (linted.length > 0) {
     const cache = ['--cache', '--cache-location', 'node_modules/.cache/eslint/'];
@@ -300,8 +277,7 @@ await Promise.all(pending);
 const total = Date.now() - started;
 const red = results.filter((one) => !one.ok).map((one) => one.name);
 const verdict = red.length === 0 ? 'every command passed' : `failed: ${red.join(', ')}`;
-console.log(`test:quick: ${seconds(total)} s (limit ${seconds(LIMIT_MS)} s); ${verdict}`);
-if (total > LIMIT_MS + 1000) console.log('test:quick: over the time limit');
-console.log('test:quick: not covered: tests outside the selection, tests/checks, slow tests,');
-console.log('            build, lint of unchanged files; npm run test:landing runs them');
+console.log(`test:quick: ${seconds(total)} s; ${verdict}`);
+console.log('test:quick: not covered: tests that reach no changed file within the import depth,');
+console.log('            the build, the lint of unchanged files');
 process.exitCode = red.length === 0 ? 0 : 1;

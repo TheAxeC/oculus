@@ -213,3 +213,5 @@ The first run was on the round-0 tree, before any change: `grep -n 'hidden\|befo
 - The ASCII gate of `spec.md` over `CareerPanel.svelte` and `FoldHead.svelte` printed nothing, exit 0.
 - History-word grep over the comment lines changed this round: `grep -i -E 'before|used to|no longer|still|...'` over `CareerPanel.svelte:18-23` and `FoldHead.svelte:69-70` hits only `beforematch`, an event name. Kept.
 - Line counts: `CareerPanel.svelte` is 410 lines and `FoldHead.svelte` is 99 lines.
+
+Note at landing: the rows above that name `<div class="body" hidden={!unfolded}>` at line 119 describe round 0. After repair round 1 the body is at `CareerPanel.svelte:120-124` with `hidden={unfolded ? false : 'until-found'}` and an `onbeforematch` handler, and its top padding is drawn only while it is shown.

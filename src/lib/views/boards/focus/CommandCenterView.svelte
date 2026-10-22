@@ -10,6 +10,7 @@
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import FoldHead from './FoldHead.svelte';
     import { categoryLabel, runHeading } from './rows';
 
     const {
@@ -110,6 +111,10 @@
     <RootChip record={{ root: text }} />
 {/snippet}
 
+{#snippet pill()}
+    <ToolButton label={pillText()} glyph="hpc" onclick={() => openView('hpc')} />
+{/snippet}
+
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
     {#if rows.length > 0}
         <div class="grp">
@@ -133,31 +138,14 @@
 
 {#if anything}
     <section class="week" data-surface>
-        <div class="head">
-            <ToolButton
-                bare
-                label={open
-                    ? t('focus.fold', t('focus.command.command_center'))
-                    : t('focus.unfold', t('focus.command.command_center'))}
-                glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
-                expanded={open}
-                onclick={ontoggle}
-            />
-            <b
-                ><Glyph name={t('focus.command.command_center_glyph')} />{t(
-                    'focus.command.command_center'
-                )}</b
-            >
-            {#if pillText()}
-                <span class="pill"
-                    ><ToolButton
-                        label={pillText()}
-                        glyph="hpc"
-                        onclick={() => openView('hpc')}
-                    /></span
-                >
-            {/if}
-        </div>
+        <FoldHead
+            glyph={t('focus.command.command_center_glyph')}
+            title={t('focus.command.command_center')}
+            name={t('focus.command.command_center')}
+            {open}
+            {ontoggle}
+            end={pillText() === '' ? undefined : pill}
+        />
         {#if open}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render group(
@@ -300,25 +288,6 @@
     :global(body.wall [data-surface]) .week {
         background: transparent;
         backdrop-filter: none;
-    }
-    .head {
-        display: flex;
-        column-span: all;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .head > b {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        margin-right: auto;
-        font-size: var(--fs-md);
-        font-weight: 600;
-    }
-    .pill {
-        flex: 0 0 auto;
     }
     .grp {
         margin-top: 4px;

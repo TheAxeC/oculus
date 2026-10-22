@@ -90,6 +90,6 @@ digraph layers {
     "ui to state" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="928.65,91.58!"];
     "ui to themes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="928.65,178.58!"];
     "views to data" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1516.37,101.58!"];
-    "views to state" [label="1317", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="656.81,23.58!"];
-    "views to ui" [label="1037", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,64.58!"];
+    "views to state" [label="1318", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="656.81,23.58!"];
+    "views to ui" [label="1038", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,64.58!"];
 }

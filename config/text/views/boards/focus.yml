@@ -7,6 +7,7 @@ text:
         cards_group: Funding | positions | teaching
         career_caveat: Caveat
         career_glyph: focus
+        career_heading: Career strategy
         career_next: 'Next: {0}'
         career_rules: Rules
         career_score_tip: '{0}: {1}'

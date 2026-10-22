@@ -10,11 +10,11 @@
 
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
+    import FoldHead from './FoldHead.svelte';
     import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { useState } from '$lib/state/client/use';
 
@@ -74,18 +74,13 @@
 
 {#if anything}
     <section class="tasks" data-surface>
-        <div class="head">
-            <ToolButton
-                bare
-                label={open
-                    ? t('focus.fold', t('focus.tasks.heading'))
-                    : t('focus.unfold', t('focus.tasks.heading'))}
-                glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
-                expanded={open}
-                onclick={ontoggle}
-            />
-            <b><Glyph name={t('focus.tasks.heading_glyph')} />{t('focus.tasks.heading')}</b>
-        </div>
+        <FoldHead
+            glyph={t('focus.tasks.heading_glyph')}
+            title={t('focus.tasks.heading')}
+            name={t('focus.tasks.heading')}
+            {open}
+            {ontoggle}
+        />
         {#if open}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render group(
@@ -126,22 +121,6 @@
     :global(body.wall [data-surface]) .tasks {
         background: transparent;
         backdrop-filter: none;
-    }
-    .head {
-        display: flex;
-        column-span: all;
-        align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
-    }
-    .head > b {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        margin-right: auto;
-        font-size: var(--fs-md);
-        font-weight: 600;
     }
     .grp {
         margin-top: 4px;

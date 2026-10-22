@@ -1,11 +1,13 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The career banner at the top of the
-    // board. Folded, it is one line drawn like the command center's heading: the career file's
-    // title, its next milestone and how many hosts are in flight. Unfolded, it is the whole panel:
-    // the situation, one fact a row, the next milestone, the order of work, the host pipeline with
-    // its status buttons (CareerHosts.svelte), the criteria, the eligibility rules and what was
-    // dropped. A web address written in a fact, the milestone, a task, a note, a criterion or the
-    // caveat is a link (ui/display/text/LinkedText.svelte).
+    // board. Its heading is the row the command center and the tasks section draw theirs with
+    // (FoldHead.svelte): the fold control, named "Fold Career strategy" or "Unfold Career
+    // strategy", then the career file's title, its next milestone and how many hosts are in flight,
+    // one line cut with an ellipsis. Unfolded, it is the whole panel: the situation, one fact a
+    // row, the next milestone, the order of work, the host pipeline with its status buttons
+    // (CareerHosts.svelte), the criteria, the eligibility rules and what was dropped. A web address
+    // written in a fact, the milestone, a task, a note, a criterion or the caveat is a link
+    // (ui/display/text/LinkedText.svelte).
     //
     // Its Edit control opens the editor of the career file's sections, built from the file's own
     // `schema:` (views/shared/forms/entry/edit/EntryEditor.svelte), in place of the read-only
@@ -13,9 +15,12 @@
     // while edits are unsaved, and closing it over them asks first. The file has no Add and no
     // Delete: it is one file, not a list of entries.
     //
-    // Folded by default, so the banner takes one line above the command center. It draws nothing
-    // when the hub holds no career file, which is the ordinary case for a hub that keeps no career
-    // plan, and the board then starts at the command center.
+    // Folded by default, so the banner takes one line above the command center. Folded, the panel
+    // is hidden until found and stays mounted, so the editor keeps its refusals, its result words
+    // and a save in flight across a fold and an unfold, and the browser's find-in-page searches its
+    // text while it is folded: a match inside it fires `beforematch`, which unfolds the banner. It
+    // draws nothing when the hub holds no career file, which is the ordinary case for a hub that
+    // keeps no career plan, and the board then starts at the command center.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
@@ -23,6 +28,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import CareerHosts from './CareerHosts.svelte';
+    import FoldHead from '../FoldHead.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
     import { hostStatuses, inFlight, scoreDims, summaryOf } from '$lib/state/boards/career';
@@ -103,15 +109,19 @@
 {/snippet}
 
 {#if career !== null}
-    <details class="career" data-surface bind:open={unfolded}>
-        <summary>
-            <Glyph
-                name={unfolded ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
-            />
-            <Glyph name={t('focus.career_glyph')} />
-            <b>{summary}</b>
-        </summary>
-        <div class="body">
+    <section class="career" data-surface>
+        <FoldHead
+            glyph={t('focus.career_glyph')}
+            title={summary}
+            name={t('focus.career_heading')}
+            open={unfolded}
+            ontoggle={() => (unfolded = !unfolded)}
+        />
+        <div
+            class="body"
+            hidden={unfolded ? false : 'until-found'}
+            onbeforematch={() => (unfolded = true)}
+        >
             {#if page !== null}
                 <ToolButton
                     small
@@ -237,7 +247,7 @@
                 {/if}
             {/if}
         </div>
-    </details>
+    </section>
 {/if}
 
 {#if discarding}
@@ -251,9 +261,10 @@
 {/if}
 
 <style>
-    /* Drawn in the command center's box (CommandCenterView.svelte `.week`), with its own edge
-       colour, which no other Focus section takes. */
+    /* Drawn in the command center's box (CommandCenterView.svelte `.week`), its padding and its
+       borders, with its own edge colour, which no other Focus section takes. */
     .career {
+        padding: 4px 8px;
         border: 1px solid var(--line);
         border-left: 3px solid var(--c-purple);
         border-radius: var(--input-radius);
@@ -272,27 +283,12 @@
         backdrop-filter: none;
     }
 
-    /* The folded banner is one line in the type of the command center's heading; a line longer
-       than the pane is cut with an ellipsis, and the unfolded panel shows all of it. */
-    .career > summary {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
-        font-size: var(--fs-md);
-        cursor: pointer;
-    }
-
-    .career > summary > b {
-        min-width: 0;
-        overflow: hidden;
-        font-weight: 600;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    .body {
-        padding: 4px 8px;
+    /* The panel under the heading row, inset from the box's edges by the box's own padding, and 4px
+       under the row as the command center's first group stands under its heading. */
+    /* The gap above the body is drawn only while it is shown, since a body hidden until found
+       still draws its padding and would make the folded box taller than the command center's. */
+    .body:not([hidden]) {
+        padding: 4px 0 0;
     }
 
     .seclbl {

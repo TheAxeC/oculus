@@ -283,3 +283,13 @@ none. The two comments changed this round are wrapped at 100 columns (`CareerPan
 - **The report's test:quick timing (143.0 s).** Not reproduced. My one run took 120.0 s, also over the 45 s limit, with every command passing.
 
 Reviewer usage: a71c9aeb58e432ce4, claude-opus-5-5, 140872 tokens, 30 tool uses, 7 min 39 s
+
+## Closed
+
+- First review P1 (the report's open items from the base's copy): no change to the tree; the state of record is `orchestrator-state.md`, where item 225 is closed, and the report's prose says (a) was ruled.
+- First review S1: closed in repair round 1 (round item 2).
+- First review S2 (`git log` run by the builder): no state changed and the report disclosed it; nothing in the tree to fix.
+- First review B1: closed in repair round 1 (round item 3), and the box height made true at landing (round 1 B1 below).
+- First review B2: closed in repair round 1 (round item 1, `hidden="until-found"` with `beforematch`).
+- Round 1 B1 and P1: fixed at landing in `CareerPanel.svelte`: the body's 4 px top padding is drawn only while the body is shown (`.body:not([hidden])`), so the folded box is 1 + 4 + 22 + 4 + 1 = 32 px, the command center's, as the report states; the find-in-page reveal is kept, since the folded body stays a box.
+- Round 1 P2: closed by a note at landing under the report's DONE table, naming the body as round 1 left it (`hidden="until-found"`, lines 120-124).
