@@ -49,7 +49,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O64-brief-check.md (a807f5f7c26db7f22, claude-opus-5-5, 192674 tokens, 55 tool uses, 7 min 16 s)
   report: agents/reviews/O64-report.md
   builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8); 284544 tokens, 117 tool uses, 16 min 50 s (the build after the cases ruling)
-  round: 0
+  reviewer_report: agents/reviews/O64-refuter.md (a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s)
+  round: 1
   landing: not-started
   shared_paths: with O54 and O65: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 115-124 and 160-169): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O65
@@ -66,6 +67,7 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O39 part E
+  brief_check: "running: aece82159cd53f676"
   landing: preparing
 ```
 
