@@ -49,9 +49,12 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O57
   brief_check: agents/reviews/O57-brief-check.md (ab90eaaac353fc610, claude-opus-5-5, 229799 tokens, 84 tool uses, 9 min 57 s)
   report: agents/reviews/O57-report.md
+  builder_usage: 285702 tokens, 97 tool uses, 24 min 54 s
   round: 0
   landing: not-started
   shared_paths: with O50: config/defaults/sources.yml (O50 lines 5, 28 and after 72, O57 after 46), config/options/sources.yml (O50 after 111, O57 after 58), chat.ts (O50 lines 29-30, O57 lines 1-3, 16-18, 42-46, 100-125), config-folder.test.ts (O50 after 208, O57 after 197), docs/data-map.md (O50 line 158, O57 lines 78-98), docs/templates.md (O50 after 294 and 843-866, O57 after 84), docs/HELP.md (O50 after 300, O57 line 103); with O49: docs/HELP.md (O49 lines 65 and 76): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
+- step: O54
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -189,7 +192,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 243 (2026-10-22, O61, ruling 218): which type flags the stage words that are chips today carry once they are type words. Rulings 218 and 219 give them `idea`, `live` or `terminal` and the flags they carry as chips (`submit_ready` on submit-ready, `pauses_countdown` and `deadline_met` on submitted, `new_idea` on nascent, `published` on published), but not the type flags a project held through its old type: `on_map` (the Map draws it) and `standard` (the audit's README rule) are on `idea` and `active` only, `placed` (the audit asks for a venue) and `public` (the website audit expects it) on `submitted`, `published` and `phd` only. A project written today as `type: active` with the chip `building` becomes `type: building`, and under (b) it leaves the Map and the README rule. (a) each stage word carries the flags of the old type it refines: `on_map` and `standard` on every word of the idea and in-flight groups (idea, nascent, scoping, de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted); `placed` and `public` on in-prep, submit-ready, submitted, revision, accepted and published, so the publication-kind rows read papers in preparation from in-prep and submit-ready and papers in review from submitted and revision; (b) the flags stay only on the words that carry them today and the new type words carry none. Recommended: (a); (b) is the lazy option, since it drops projects from the Map and the audit by a change of where their stage is written.
+- Open item 244 (2026-10-22, O61, ruling 222): which spelling each word with two keeps. The pairs are `in-prep` / `in prep`, `under-review` / `under review`, `not-applied` / `not applied`, `not-attending` / `not attending` and `cancelled` / `canceled`; the hub's entries write `not applied` 9 times (applications) and `not-attending` once (events), and none writes the others. (a) the hyphenated spelling, as every stage word writes its own (in-prep, submit-ready, de-risking), and `cancelled`: the hub's 9 `not applied` entries become findings naming `not-applied`, and the apply control of a Position Lead writes `not-applied`; (b) the spaced spelling and `cancelled`: `in-prep` stays a type word and becomes `in prep` as an entry status, two spellings of one word across the two lists. Recommended: (a).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

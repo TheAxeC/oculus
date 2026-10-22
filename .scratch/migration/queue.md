@@ -1,10 +1,10 @@
-In flight (2 of 6 slots in use):
+In flight (3 of 6 slots in use):
 - O49 (an Open View submenu in the tab strip's menus). State: refuted over round 1; landing next, R1 fixed at landing.
-- O57 (the portfolio chat's index over every hub). State: building.
+- O57 (the portfolio chat's index over every hub). State: built; review running.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: /spec, premise checks.
 
-Queued, in order (9 steps):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: nothing; /spec next.
-- O61 (one home for each vocabulary word). Waits: nothing; /spec next.
+Queued, in order (8 steps):
+- O61 (one home for each vocabulary word). Waits: Axel's rulings on open items 243 and 244.
 - O53 (a project's `lead:` a list of person keys). Waits: nothing; /spec next.
 - O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
 - O51 (a per-pane Hide Tab Row). Waits: after O49.
