@@ -1,0 +1,8 @@
+# O49: the ruling on the cases (round 0)
+
+The builder handed back C13 before any code change (`agents/reviews/O49-report.md`). Each ruling below stays inside the step's part and is built in this run, the rest of the brief unchanged.
+
+1. C13 and item 3. The pick re-checks the test the menu was drawn with: it opens nothing when `viewFor(view)` is undefined or the registration it answers has `listed === false` (the test of `listedViews`, `src/lib/state/workbench/navigation/catalogue.ts:381`). A disabled app keeps its views registered with `listed: false` (`src/routes/views.ts:160`, `appActive` in `src/lib/data/helpers/files/apps/apps.ts:18`), so C13 holds as the brief states it: an app disabled while the menu lists its view, the pick opens nothing. An app whose approval is withdrawn is the same case. A removed app (`viewFor` undefined) opens nothing too.
+2. Item 4, the hint of a unique view held by a page with no name. The hint is the page's number, `t('ui.page_default', at + 1)` with `at` the page's index in the list of pages, as the pane menu's move-to-page items name such a page (`src/lib/shell/panes/pane-view.ts:48-54`). No new text key. A hint is never the empty string.
+3. C4 and item 2. Item 2 is built as written: the Apps group lists what `arrange` gives it, each app's own entry (`registrationOfApp`, group `apps`, listed) included beside the Apps view and the contributed views. C4's expected result is read with those entries in it.
+4. `isPage` is not exported from `src/lib/state/workbench/layout/index.ts`, which is not in the write list. The new module tells a page from a float by whether the holder's id is among `pages()`, and the write list stays as it is.
