@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
-- O51 (a per-pane Hide Tab Row). State: building, resumed after the cases ruling `agents/briefs/O51-cases.md` (frames clipped under a hidden pane's top, `FrameLayer.svelte` added to its paths).
+- O51 (a per-pane Hide Tab Row). State: built under the cases ruling `agents/briefs/O51-cases.md`, report saved; /refute running (reviewer on claude-opus-5-5); then /land with the look on TEST.
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
 
 Queued, in order (6 steps):
