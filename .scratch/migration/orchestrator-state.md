@@ -68,8 +68,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: tests/checks/config/config-folder.test.ts with O62 (O58 lines 194 and 324, O62 line 220: simple to merge); docs/diagrams/ with O59 and O62, regenerated at each landing
 - step: O52
-  landing: preparing
-  brief_check: "reported: a95389eccf26b9f17"
+  executor: agent
+  worker: claude:opus
+  session_id: a705c557e720c4b27
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: d7625582
+  worktree: .agents/worktrees/migration-O52
+  brief_check: agents/reviews/O52-brief-check.md (a95389eccf26b9f17, claude-opus-5-5, 172686 tokens, 43 tool uses, 5 min 59 s)
+  report: agents/reviews/O52-report.md
+  round: 0
+  landing: not-started
+  shared_paths: docs/diagrams/ with O58, O59 and O62, regenerated at each landing; the brief was widened by ruling 225 after the preparation commit (4f90792d), copied into the worktree before the launch
 ```
 
 ## The standing demands (from Axel, in force)
