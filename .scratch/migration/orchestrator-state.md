@@ -34,7 +34,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O54
   brief_check: agents/reviews/O54-brief-check.md (ad3e2648214fa3664, claude-opus-5-5, 247636 tokens, 97 tool uses, 14 min 51 s)
   report: agents/reviews/O54-report.md
-  builder_usage: 306087 tokens, 83 tool uses, 14 min 1 s (hand-back of C3)
+  builder_usage: 306087 tokens, 83 tool uses, 14 min 1 s (hand-back of C3); 141726 tokens, 1083 tool uses, 3 h 10 min 19 s (the build after the cases ruling)
   round: 0
   landing: not-started
   shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
@@ -48,8 +48,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O64
   brief_check: agents/reviews/O64-brief-check.md (a807f5f7c26db7f22, claude-opus-5-5, 192674 tokens, 55 tool uses, 7 min 16 s)
   report: agents/reviews/O64-report.md
-  builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8); 284544 tokens, 117 tool uses, 16 min 50 s (the build after the cases ruling)
-  reviewer_report: agents/reviews/O64-refuter.md (a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s)
+  builder_usage: 188825 tokens, 33 tool uses, 5 min 23 s (hand-back of C8); 284544 tokens, 117 tool uses, 16 min 50 s (the build after the cases ruling); 307182 tokens, 29 tool uses, 3 min 51 s (repair round 1)
+  reviewer_report: agents/reviews/O64-refuter.md (a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s); over round 1: aabffa79636343fa8, claude-opus-5-5, 166633 tokens, 36 tool uses, 4 min 56 s
   round: 1
   landing: not-started
   shared_paths: with O54 and O65: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 115-124 and 160-169): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
@@ -67,7 +67,7 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O39 part E
-  brief_check: "running: aece82159cd53f676"
+  brief_check: agents/reviews/O39-partE-brief-check.md (aece82159cd53f676, claude-opus-5-5, 221577 tokens, 71 tool uses, 10 min 19 s)
   landing: preparing
 ```
 

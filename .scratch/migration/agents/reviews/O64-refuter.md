@@ -99,3 +99,31 @@ Declined to judge
 - The builder's claim that `ConnectorHead.svelte:2-4` ("the one explicit refresh") stays true, contrary to the brief: on reading it stays true, since Refresh is still the bar's one explicit refresh; the brief's listing of it is the orchestrator's to correct.
 
 Usage: a33ea399d56edb98b, claude-opus-5-5, 185824 tokens, 47 tool uses, 15 min 17 s
+
+## Repair round 1, refuted
+
+Usage: aabffa79636343fa8, claude-opus-5-5, 166633 tokens, 36 tool uses, 4 min 56 s.
+
+Verification (from `.agents/worktrees/migration-O64`): `npm run diagrams && npm run test:quick -- --base 4c89702d` ended "test:quick: 50.2 s; every command passed" (prettier, ASCII gate, svelte-kit sync, eslint, svelte-check 536 files 0 errors 0 warnings, vitest slow, vitest, vitest checks); the perl ASCII gate over src, tests and config printed 0 lines; `LC_ALL=C grep -n '[^ -~]'` over the changed paths printed nothing; `wc -l`: Progress.svelte 78, RepoList.svelte 363; `git diff 4c89702d --numstat`: Progress.svelte 5 2, RepoList.svelte 71 17; `sh utils/unused-exports.sh` against the base list: diff exit 0; the history-word grep over the lines the round added: no hit.
+
+Verdicts for the whole diff since 4c89702d: items 1 to 5 hold; the cases ruling's items and its status-bar ruling hold; C1 to C20, C22 and C23 met (C1, C2, C8 to C11 and C23 by reading, with the look named for each); C21 not verifiable here, settled by the look (narrow the Repositories pane during a fetch).
+
+Round findings:
+- T1 closed: `Progress.svelte:22-32` is a `span` with `display: block` (`:36`), role, label and `aria-value*` unchanged; inside the row's button it sits in `TreeItem.svelte`'s `<span class="name">` (`:155-156`); its four users (`NoticeEntry.svelte:47`, `Literature.svelte:217`, `Results.svelte:135`, `RepoList.svelte:176`) each place it as a flex item, which draws the same; no stylesheet or test outside targets the track.
+- T2 closed: `RepoList.svelte:240-242` declares `busyWords`, used at `:245`, `:256` and `:278`; `grep -n "? words"` exits 1.
+- P1 closed: the seven quoted greps rerun give the same lines (sorted diff exit 0).
+
+Spec: none. Proof: none (no test changed). Behaviour: none.
+
+Standards:
+- T3. `O64-report.md`, "Files": no row for `src/lib/ui/display/meters/Progress.svelte` (`spec.md:35`, every changed path in the table). Failure scenario: the landing books its paths from the table and leaves out a primitive four views share.
+- T4. `O64-report.md`, C12: "`Progress.svelte:62-68` ... are unchanged"; after round 1 the file is changed and its reduce-motion rule is at `:65-71` (`spec.md:14`). Failure scenario: a reader opens `:62-68` and finds the keyframes.
+- T5. `O64-report.md`, T2 block: lines `243` and `254` quoted for the uses, which are at `:245` and `:256`, and the `@const` at `:240-242` (`spec.md:14`). Failure scenario: a reader jumps to `:243` and lands on an opening tag.
+
+Declined to judge: whether the four users draw the bar pixel for pixel as on main (the look at landing: a notice with progress, a Literature search, a running Search, the Repositories row during a fetch); whether a validator accepts `role="progressbar"` inside a `button` (no validator installed; by the HTML content model the span is phrasing content, not interactive); how many times the builder ran the verify list in the round (only its transcript settles it).
+
+### Closed
+
+- T3, T4, T5: fixed at landing in the report, in the main ledger's `agents/reviews/O64-report.md` (the Progress.svelte row added to "Files", C12's sentence rewritten to `:65-71`, the T2 block's lines set to `240-242`, `245`, `256`); small and inside the brief, never sent back (`refute_after_repair: yes`).
+- S1 of the first review: closed with no work: the brief's grep was wider than its claim, and its conclusion holds (the narrower grep prints 0), so nothing built rests on it.
+- T1, T2 and P1 of the first review: closed in repair round 1, as above.

@@ -114,12 +114,12 @@ Each case was read through its code path on the base, with the lines quoted. Eac
 | 1 Inbox and Calendar Refresh | DONE | `inbox.svelte.ts:64` `let pressed = $state(0)`, `:96`/`:100` raised and lowered in `try`/`finally`, `:114` `refreshing: () => pressed > 0`; the same at `calendar.svelte.ts:44`, `:72`, `:76`, `:87`; `ConnectorHead.svelte:86` `<ToolButton label={words.refresh} glyph="refresh" turning={refreshing} onclick={onrefresh} />`; `Inbox.svelte:125` and `Calendar.svelte:199` `refreshing={refreshing()}`. Final list run: `ok svelte-check (23.5 s): ... 0 ERRORS 0 WARNINGS` |
 | 2 Usage Refresh held drawn | DONE | `Usage.svelte:199` `<span class="act" class:held={refreshing(account.label)}>`, `:374-376` `.act.held { display: inline-flex; }`; `Card.svelte` unchanged (`diff -q` against the base copy prints nothing) |
 | 3 Suggest turns, words, key | DONE | `changes.yml:26` `running_suggest: Writing the commit message...` (between `running_stash_pop` and `running_sync`), `suggest_pending` removed from `git:`; `repositories.svelte.ts:75` `suggest: () => t('git.running_suggest')`; `CommitBox.svelte:182` `label={suggesting ? t('git.running_suggest') : t('git.suggest')}`, `:185` `turning={suggesting}` |
-| 4 One git line under the name | DONE | `RepoList.svelte:173-179` the `named` snippet (name text plus `<span class="running"><Progress percent={null} .../></span>`), `:193-196` and `:233-236` handed as `words` to the section head and to each row, `:186` and `:215` the accessible names, `:331-347` `.named`/`.running` CSS; `Repo.svelte` line, `.bar`, `.head` rule, `Progress` import, `running` and `selectors` removed; `TreeSection.svelte:73-74` passes `{name}` and `{words}` to its head |
+| 4 One git line under the name | DONE | `RepoList.svelte:173-179` the `named` snippet (name text plus `<span class="running"><Progress percent={null} .../></span>`), `:193-196` and `:233-236` handed as `words` to the section head and to each row, `:186` and `:215` the accessible names, `:335-351` `.named`/`.running` CSS; `Repo.svelte` line, `.bar`, `.head` rule, `Progress` import, `running` and `selectors` removed; `TreeSection.svelte:73-74` passes `{name}` and `{words}` to its head |
 | Ruling: status bar sync item (C23) | DONE | `repositories.svelte.ts:278-286` `running(roots, among?)`; `status.ts` `running: (root: string, among?: readonly string[])`; `+page.svelte:234` `running: (root, among) => repositories.running(rootsOfRepository(root), among)`; `RepoItems.svelte:127` `const syncing = $derived(git.running(repo.root, SYNC_ACTIONS));` |
 | 5 Help | DONE | `docs/HELP.md:305`, `:310`, `:485` rewritten (quoted under the visible changes) |
 | Verify 1 `npm run diagrams && npm run test:quick` | DONE | Final run: `test:quick: 56.7 s; every command passed` (lines quoted below) |
 | Verify 2 cases C1 to C23 | DONE | The result table below |
-| Verify 3 `wc -l` | DONE | The largest component is `RepoList.svelte` at 359 (limit 520); the largest source file is `repositories.svelte.ts` at 637 (limit 880) |
+| Verify 3 `wc -l` | DONE | The largest component is `RepoList.svelte` at 363 (limit 520); the largest source file is `repositories.svelte.ts` at 637 (limit 880) |
 | Verify 4 unused exports | DONE | `sh utils/unused-exports.sh` against `migration-O64-base/unused-exports.txt`: `diff` exit 0, no line added |
 | Verify 5 history words | DONE | Quoted below |
 | Verify 6 name grep | DONE | Quoted below |
@@ -171,14 +171,14 @@ test:quick: not covered: tests that reach no changed file within the import dept
   - Look: Repositories view and the Session view's Changes, staged changes, press the spark: it turns; a line runs under the repository's name; the message line says "Writing the commit message..." with no Cancel. After the answer the box holds the message and nothing moves.
 - C9.
   - Only `RepoList` draws a line. `Repo.svelte` has no `Progress`, `.bar` or `running` (grep of `Progress\|running\|\.bar` in `Repo.svelte` prints nothing).
-  - The line sits in `.named`, a block of the row's height (`line-height: calc(var(--tree-row) * var(--text-scale, 1))`, `RepoList.svelte:331-337`). That block is the only content of `TreeItem`'s `.name` span, so the line at `bottom: 0` lies on the row's foot, as wide as the name's box.
+  - The line sits in `.named`, a block of the row's height (`line-height: calc(var(--tree-row) * var(--text-scale, 1))`, `RepoList.svelte:335-341`). That block is the only content of `TreeItem`'s `.name` span, so the line at `bottom: 0` lies on the row's foot, as wide as the name's box.
   - Look: commit, push or fetch; one line, under the name only, and none on the header.
 - C10.
   - While `collapsed` holds `repos`, `folded` is the first listed repository's running action (`RepoList.svelte:148-152`). The head draws `named('Repositories', folded)` through `TreeSection`'s `words`, so the line is under the word only, and the head's name is "Repositories, <words>".
   - While the section is open, `folded` is null, so the head draws no line.
   - Look: fold Repositories and run a fetch; the line is under the word Repositories, as wide as that word.
 - C11. Each row reads `runningOn(root)` (`:202`), so the line is on the row of the repository the action runs on. Look: sync the other repository from the status bar; its row draws the line, and the selected row draws none.
-- C12. `Progress.svelte:62-68` and `Glyph.svelte:89-92` are unchanged, so everything is drawn still and the line is still drawn. Look: Reduce motion on.
+- C12. The reduce-motion rule of `Progress.svelte` (`:65-71`, unchanged in content by round 1, which moved its lines) and `Glyph.svelte:89-92` hold, so everything is drawn still and the line is still drawn. Look: Reduce motion on.
 - C13. `unstage` has no words: no line, and "Working". Look: unstage a file.
 - C14. `postCommand` never throws, and the `finally` runs on a refusal and on `unreachable`, so the turn stops at the answer and `said` shows the same words as on main. Look: read only.
 - C15. `refreshing` is per store, and the Inbox's and the Calendar's are separate objects. Look: with both open, press the Inbox's; only its glyph turns.
@@ -215,17 +215,66 @@ None is history:
 
 ### Verify 6, names
 
-The grep ran across `src tests config docs README.md` with `--exclude=local.yml`; output under `docs/diagrams` was dropped. The rows below summarise the output.
+The greps, run from the worktree root after the repair round's last change, as printed (`(exit 1)` marks a grep that found nothing):
 
-| Name | Where it appears now |
-| --- | --- |
-| `suggest_pending` | `Deposit.svelte:336` and `deposit.yml:62`. That is the `deposit.` group's own key and a different catalog line, so it is left alone. No `git.suggest_pending` remains. |
-| `data-repo-running`, `data-repo-row` | No hit. |
-| `running_suggest` | `repositories.svelte.ts:75`, `CommitBox.svelte:182`, `changes.yml:26`. |
-| `row_running` | `RepoList.svelte:156`, `repositories.yml:123`. |
-| `refreshing` | The new readers are `inbox.svelte.ts:53,114`, `calendar.svelte.ts:33,87`, `ConnectorHead.svelte:6,35,43,86`, `Inbox.svelte:62,125`, `Calendar.svelte:67,199` and `Usage.svelte:199`. The other hits are other concepts (`queries`, `lines`, the usage refresher's state). |
-| `.running` class in the Repositories views | `RepoList.svelte:175`, `:339` only. |
-| `TreeSection` `words` and `name` | No mention in `docs` or `README.md`. |
+```
+$ grep -rn "suggest_pending" src tests config docs README.md --exclude=local.yml
+src/lib/views/boards/deposit/Deposit.svelte:336:                label={suggesting ? t('deposit.suggest_pending') : t('deposit.suggest')}
+config/text/views/boards/deposit.yml:62:        suggest_pending: Suggesting...
+$ grep -rn "data-repo-running\|data-repo-row" src tests config docs README.md --exclude=local.yml
+(exit 1)
+$ grep -rn "running_suggest" src tests config docs README.md --exclude=local.yml
+src/lib/state/sources/repositories/repositories.svelte.ts:75:    suggest: () => t('git.running_suggest')
+src/lib/views/shared/changes/CommitBox.svelte:182:                label={suggesting ? t('git.running_suggest') : t('git.suggest')}
+config/text/views/sessions/changes.yml:26:        running_suggest: Writing the commit message...
+$ grep -rn "row_running" src tests config docs README.md --exclude=local.yml
+src/lib/views/sources/repositories/RepoList.svelte:156:        return running === null ? undefined : t('repositories.row_running', label, running.words);
+config/text/views/sources/repositories.yml:123:        row_running: '{0}, {1}'
+$ grep -rn "refreshing" src tests config docs README.md --exclude=local.yml
+src/lib/server/machine/usage/refresh.ts:161:            state: 'refreshing',
+src/lib/server/machine/usage/refresh.ts:205:        publish(account, 'refreshing', '');
+src/lib/state/life/calendar.svelte.ts:33:    refreshing: () => boolean;
+src/lib/state/life/calendar.svelte.ts:87:        refreshing: () => pressed > 0,
+src/lib/state/shared/stores/shapes.ts:461:export type Read<T> = { data: T | undefined; refreshing: boolean };
+src/lib/state/feeds/inbox.svelte.ts:53:    refreshing: () => boolean;
+src/lib/state/feeds/inbox.svelte.ts:114:        refreshing: () => pressed > 0,
+src/lib/state/system/lines.svelte.ts:158:        const { data, refreshing } = queries.read(KEY, count, { enabled: inBrowser() });
+src/lib/state/system/lines.svelte.ts:160:        return refreshing ? { count: data.count, error: '', loading: true } : data;
+src/lib/state/system/machine/usage/usage-refresh.svelte.ts:40:    refreshing: (label: string) => boolean;
+src/lib/state/system/machine/usage/usage-refresh.svelte.ts:94:        refreshing: (label) => (byKey(pressed, label) ?? 0) > 0,
+src/lib/state/workbench/navigation/status.ts:165: * The usage refreshers taken together: down when one is down, refreshing while one runs, ok when
+src/lib/state/workbench/navigation/status.ts:174:    if (states.includes('refreshing')) return t('statusbar.usage_refreshing');
+src/lib/state/client/queries/queries.svelte.ts:212:            refreshing: state !== undefined && (state.fetchStatus !== 'idle' || state.isInvalidated)
+src/lib/data/model/model-sessions.ts:720:    /** `refreshing` while a tick runs, `running` after a good one, `down` after a failed one. */
+src/lib/data/model/model-sessions.ts:721:    state: 'running' | 'refreshing' | 'down';
+src/lib/views/personal/calendar/Calendar.svelte:67:        calendar: { openEvent, refresh, refreshing, state: payload },
+src/lib/views/personal/calendar/Calendar.svelte:199:        refreshing={refreshing()}
+src/lib/views/shared/forms/accounts/ConnectorHead.svelte:6:    // Refresh carries the refresh glyph beside its words, and the glyph turns while `refreshing`
+src/lib/views/shared/forms/accounts/ConnectorHead.svelte:35:        refreshing,
+src/lib/views/shared/forms/accounts/ConnectorHead.svelte:43:        refreshing: boolean;
+src/lib/views/shared/forms/accounts/ConnectorHead.svelte:86:    <ToolButton label={words.refresh} glyph="refresh" turning={refreshing} onclick={onrefresh} />
+src/lib/views/feeds/inbox/Inbox.svelte:62:        inbox: { archive, busy, refresh, refreshing, reply, split, state: plate, triage },
+src/lib/views/feeds/inbox/Inbox.svelte:125:        refreshing={refreshing()}
+src/lib/views/system/machine/usage/Usage.svelte:28:    // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own
+src/lib/views/system/machine/usage/Usage.svelte:62:        usageRefresh: { refreshRefusal, refreshing, refreshUsageAccount }
+src/lib/views/system/machine/usage/Usage.svelte:145:        if (refresher.state === 'refreshing') {
+src/lib/views/system/machine/usage/Usage.svelte:146:            return t('usage.refresher', t('usage.refresher_refreshing'));
+src/lib/views/system/machine/usage/Usage.svelte:199:                                <span class="act" class:held={refreshing(account.label)}>
+src/lib/views/system/machine/usage/Usage.svelte:204:                                        turning={refreshing(account.label)}
+config/text/statusbar.yml:74:        usage_refreshing: refreshing
+config/text/views/system/machine/usage.yml:34:        refresher_refreshing: refreshing
+$ grep -rn "class=\"running\"\|\.running {" src/lib/views/sources/repositories
+src/lib/views/sources/repositories/RepoList.svelte:175:        >{text}{#if running !== null}<span class="running"
+src/lib/views/sources/repositories/RepoList.svelte:343:    .running {
+$ grep -rn "TreeSection" docs README.md
+(exit 1)
+```
+
+Each hit judged:
+
+- `suggest_pending`: both hits are the `deposit.` group's own key, a different catalog line from the removed `git.suggest_pending`, so they are left alone.
+- `refreshing`: the new readers are the lines in `inbox.svelte.ts`, `calendar.svelte.ts`, `ConnectorHead.svelte`, `Inbox.svelte`, `Calendar.svelte` and `Usage.svelte:199`. Every other hit is another concept (the usage refresher's state, `queries`, `lines`, the status bar's usage words) and is unchanged.
+- The other greps need no judgment: each hit is a line this step wrote, and an `(exit 1)` grep found nothing.
 
 Head comments, doc comments and help lines:
 
@@ -264,9 +313,10 @@ Made from `diff -rq` of `src tests utils config` against `migration-O64-base`; t
 | `src/lib/views/personal/calendar/Calendar.svelte` | 434 | +2 -1 | yes |
 | `src/lib/views/shared/changes/CommitBox.svelte` | 316 | +7 -1 | yes |
 | `src/lib/views/shared/forms/accounts/ConnectorHead.svelte` | 124 | +9 -1 | yes |
-| `src/lib/views/sources/repositories/RepoList.svelte` | 359 | +63 -13 | yes |
+| `src/lib/views/sources/repositories/RepoList.svelte` | 363 | +71 -17 | yes |
 | `src/lib/views/sources/repositories/repo/Repo.svelte` | 427 | +5 -28 | yes |
 | `src/lib/views/system/machine/usage/Usage.svelte` | 387 | +10 -3 | yes |
+| `src/lib/ui/display/meters/Progress.svelte` | 78 | +5 -2 | yes (repair round 1, `O64-round1.md` T1) |
 | `src/routes/+page.svelte` | 330 | +1 -1 | no: the page's `StatusGit` passes `among` to the store (the ruling's fix) |
 | `config/text/views/sessions/changes.yml` | 116 | +1 -1 | yes |
 | `config/text/views/sources/repositories.yml` | 337 | +1 -0 | yes (ruling) |
@@ -341,3 +391,85 @@ Made from `diff -rq` of `src tests utils config` against `migration-O64-base`; t
 - **No browser look was taken.** Every visible result above rests on reading the code. In particular, that `.named`'s `line-height` centres the words exactly where the flex centring put them is a reading; the look on landing checks it, in the row and in the folded head.
 - **The folded head names only one running action.** When several repositories run actions with words, it shows the first listed one's words.
 - **Two clients see different turning states.** The pending presses are per client, so a second browser tab does not turn its Refresh for a press made in the first. The brief scopes this to "every view of the page".
+
+## Repair round 1
+
+All three items of `agents/briefs/O64-round1.md` are done. Nothing else was changed, apart from line references in this report that the repair moved.
+
+### T1, the progress track is a span drawn as a block
+
+`src/lib/ui/display/meters/Progress.svelte` changes:
+
+- `:20-21` adds a comment saying why the track is a span: a span is valid wherever phrasing content is, inside a button included.
+- `:22-32` makes the track a `<span class="track" ...>`, where it was a `<div>`.
+- `:36` adds `display: block;` to `.track`.
+
+These stay as they were: `role="progressbar"`, `aria-label`, the `aria-value*` attributes, the `.fill` span and the reduce-motion rule. The file is 78 lines (+5 -2 against the base).
+
+The brief says 5 users. `grep -rln "meters/Progress" src` now prints 4; the fifth on the base was `repo/Repo.svelte`, whose use this step removed. Each of the 4 places the track as a child of a flex container. A flex item is blockified, so a `span` lays out exactly as the `div` did, and `display: block` keeps the track a block anywhere else.
+
+| User | Where the track sits | Why it draws as before |
+| --- | --- | --- |
+| `src/lib/shell/status/notices/NoticeEntry.svelte:47` | In `<div class="progress">`, which is `display: flex` (`:97-102`) | A flex item either way. `flex: 1 1 auto` and `min-width: 0` apply as before, beside the Cancel button. |
+| `src/lib/views/feeds/literature/Literature.svelte:217` | In `<div class="running">`, which is `display: flex` (`:257-259`) | A flex item either way, filling the line. |
+| `src/lib/views/sources/search/Results.svelte:135` | In `<div class="running">`, which is `display: flex` (`:281-283`) | A flex item either way, filling the line. |
+| `src/lib/views/sources/repositories/RepoList.svelte:176` | In `<span class="running">`, which is `display: flex` (`:343-351`), inside the row's button | A flex item either way. It is now valid HTML inside the button: span in span in button. |
+
+The look on landing:
+- A notice with progress, such as an app install.
+- Literature search while it runs.
+- Search while a run is under way.
+- The Repositories row during a fetch.
+
+In each, the bar is drawn as on main.
+
+### T2, the shadowing name
+
+In `src/lib/views/sources/repositories/RepoList.svelte`, the `actions` snippet's `{@const words = ...}` is renamed `busyWords`, with every use renamed too:
+
+```
+240-242: {@const busyWords = working
+             ? repositories.busyWords(root)
+             : ''}
+245:    title={working ? busyWords : branchTitle(git)}
+256:    title={working ? busyWords : branchState(git)}
+277-279: title={working
+             ? busyWords
+             : t('repositories.publish')}
+```
+
+Prettier broke the third use over three lines. `grep -n "? words" RepoList.svelte` now prints nothing, so the only `words` in the snippets is the `TreeItem` and `TreeSection` snippet.
+
+The renamed `@const` and the store method share a name, `busyWords`. The method is reached as `repositories.busyWords`, so there is no shadowing between them.
+
+### P1, the greps quoted
+
+"Verify 6, names" now quotes the greps' output as printed, run after this round's last change, and judges each hit; the summary table is gone. Prettier's rewrap of `RepoList.svelte` moved some lines. The `file:line` references to that file in this report were taken again:
+- The CSS is now `:335-351`, and `.named` is `:335-341`.
+- The file is 363 lines (+71 -17).
+
+### Checks after the last change of the round
+
+The list was run once in this round, after the last change, preceded by `npm run diagrams`. It passed every command; no whole-suite command was run. Across the step, that makes three runs of the list (two in the build, one in this round).
+
+```
+test:quick: 25 changed file(s), from git since HEAD
+test:quick: 14 test file(s)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (7.7 s)
+ok      vitest slow (27.7 s): Duration  19.43s (transform 6.98s, setup 0ms, import 21.66s, tests 13.76s, environment 2ms)
+ok      vitest checks (43.3 s): Duration  35.06s (transform 2.10s, setup 0ms, import 6.23s, tests 28.36s, environment 0ms)
+ok      svelte-check (43.4 s): 1792700706212 COMPLETED 536 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (43.5 s)
+ok      vitest (66.1 s): Duration  57.98s (transform 152.35s, setup 0ms, import 174.21s, tests 1.90s, environment 432ms)
+test:quick: 74.1 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+```
+
+Other checks:
+- `LC_ALL=C grep -n '[^ -~]'` over `Progress.svelte`, `RepoList.svelte` and this report exits 1, printing nothing.
+- `sh utils/unused-exports.sh` against the base list: `diff` exits 0, so no line was added.
+- No test was added or changed.
+- `Progress.svelte` is outside the first build's write list, and the round brief widens the write list to cover it.
