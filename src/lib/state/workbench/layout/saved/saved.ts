@@ -17,10 +17,12 @@
 // already uses, a tab id held twice, a second float docked on one edge, a window place with a size
 // that is not finite or is under 200) is dropped on reading and the rest kept, and so is a kept
 // layout that does not add up. A pane carries `locked` (a pane without the field reads as
-// unlocked), `added` (a pane without the field reads as one its page's arrangement defined, and a
-// float's pane never carries it), `documents` (a pane without the field reads as not the documents
-// pane of a workbench, and a float's pane never carries it) and `recent`, the ids of the other tabs
-// it showed, and a saved pane whose pinned tabs are not first is put in that order on reading.
+// unlocked), `rowHidden` (`true` alone reads as a hidden tab row; a pane without the field, or
+// with any other value, shows its row), `added` (a pane without the field reads as one its page's
+// arrangement defined, and a float's pane never carries it), `documents` (a pane without the field
+// reads as not the documents pane of a workbench, and a float's pane never carries it) and
+// `recent`, the ids of the other tabs it showed, and a saved pane whose pinned tabs are not first
+// is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
@@ -381,6 +383,8 @@ function readPane(
     if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
     // A pane without `locked` is unlocked.
     if (value.locked === true) read.locked = true;
+    // A pane saved without `rowHidden`, or with any other value, shows its tab row.
+    if (value.rowHidden === true) read.rowHidden = true;
     // A pane saved without `added`, or with any other value, is one its page's arrangement defined.
     if (value.added === true) read.added = true;
     // A pane saved without `documents`, or with any other value, is not a workbench's documents

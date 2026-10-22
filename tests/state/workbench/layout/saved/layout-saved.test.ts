@@ -57,6 +57,15 @@ describe('a saved envelope of the current version', () => {
     const held = folderTabs('projects/beta', 'beta', 'k');
     const workbenchOf = (root: Layout): Record<string, unknown> => ({ root });
 
+    /** The shares of a row of four panes. */
+    const QUARTERS = [0.25, 0.25, 0.25, 0.25];
+
+    /** A pane of one tab whose tab row is hidden, as the layout holds it. */
+    function hiddenPane(id: string): Layout {
+        const shown = pane([id]);
+        return shown.kind === 'pane' ? { ...shown, rowHidden: true } : shown;
+    }
+
     const rows: {
         name: string;
         envelope: unknown;
@@ -133,6 +142,27 @@ describe('a saved envelope of the current version', () => {
             ),
             trees: [bench(help('t4'))],
             kept: [paneOf(...held)]
+        },
+        {
+            name: 'the current version with a pane whose tab row is hidden',
+            envelope: saved({
+                root: {
+                    kind: 'split',
+                    dir: 'row',
+                    sizes: QUARTERS,
+                    children: [
+                        { ...pane(['a']), rowHidden: true },
+                        { ...pane(['b']), rowHidden: false },
+                        { ...pane(['c']), rowHidden: 'yes' },
+                        pane(['d'])
+                    ]
+                }
+            }),
+            trees: [
+                bench(
+                    split('row', QUARTERS, [hiddenPane('a'), pane(['b']), pane(['c']), pane(['d'])])
+                )
+            ]
         }
     ];
 

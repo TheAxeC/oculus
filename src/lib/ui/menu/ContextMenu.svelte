@@ -3,8 +3,10 @@
     // the list MenuList.svelte draws, on the body through bits-ui's Portal, at the pointer. The
     // keyboard opens the same list with the context menu key or Shift+F10 on the focused control
     // inside, at that control's right edge, so every item a right-click offers is reached without
-    // a pointer. It holds only where the list opens from: what the items are and what a pick means
-    // are the caller's, and the keys, the placing, the submenus and the closing are bits-ui's.
+    // a pointer. It holds only where the list opens from and whether it is open (`open`, closed at
+    // first), which a caller may bind to know when the list is open: what the items are and what a
+    // pick means are the caller's, and the keys, the placing, the submenus and the closing are
+    // bits-ui's.
     //
     // The wrapper takes no box of its own, so what it wraps is laid out as if it were not there.
     // With no items a right-click opens nothing. The list closes on a pick, on Escape and on a
@@ -42,11 +44,20 @@
         /** A pick, with the pointer event, so a caller can read its modifiers. */
         onpick: (id: string, event: MouseEvent) => void;
         children: Snippet;
+        /** Whether the list is open; a caller binds it to know, and it starts closed. */
+        open?: boolean;
     };
 
-    let { label, items = [], read, lead = [], onpick, children, own = false }: Props = $props();
-
-    let open = $state(false);
+    let {
+        label,
+        items = [],
+        read,
+        lead = [],
+        onpick,
+        children,
+        own = false,
+        open = $bindable(false)
+    }: Props = $props();
 
     /** What the last right-click read, for a menu that reads its items then. */
     let heard: MenuItem[] = $state([]);

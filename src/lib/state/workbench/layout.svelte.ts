@@ -70,6 +70,7 @@ import {
     resize,
     restore,
     setLocked,
+    setRowHidden,
     settleFocus,
     showable,
     tabsOf,
@@ -203,6 +204,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         resizeSplit: (path: number[], sizes: number[], page?: string) => void;
         /** Lock the pane at `path`, or unlock it. */
         lockPane: (path: number[], locked: boolean, page?: string) => void;
+        /** Hide the tab row of the pane at `path`, or show it again. */
+        hideTabRow: (path: number[], hidden: boolean, page?: string) => void;
         focused: (page?: string) => Focus | null;
         openView: Opening['openView'];
         openBeside: Opening['openBeside'];
@@ -681,6 +684,11 @@ export function createLayout(
         change((tree) => setLocked(tree, path, locked), page);
     }
 
+    /** Hide the tab row of the pane at `path`, or show it again: Hide Tab Row of the pane menu. */
+    function hideTabRow(path: number[], hidden: boolean, page?: string): void {
+        change((tree) => setRowHidden(tree, path, hidden), page);
+    }
+
     /** The maximised pane of a page, or null when every pane of it is shown. */
     function focused(page?: string): Focus | null {
         return focusedPane(workbench(page));
@@ -818,6 +826,7 @@ export function createLayout(
         expandChild,
         resizeSplit,
         lockPane,
+        hideTabRow,
         focused,
         openView: (view, state, page, options) =>
             revealed(placed.openView(view, state, page, options)),

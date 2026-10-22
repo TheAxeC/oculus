@@ -80,8 +80,8 @@ digraph layers {
     "routes to views" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="269.01,61.58!"];
     "server to data" [label="504", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1516.37,235.58!"];
     "shell to data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1193.38,142.58!"];
-    "shell to state" [label="187", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,132.58!"];
-    "shell to ui" [label="110", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,106.58!"];
+    "shell to state" [label="188", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,132.58!"];
+    "shell to ui" [label="111", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="518.02,106.58!"];
     "src to data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="155.79,313.58!"];
     "src to routes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="84.56,206.58!"];
     "src to server" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="84.56,292.58!"];

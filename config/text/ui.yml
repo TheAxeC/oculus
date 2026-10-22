@@ -48,11 +48,13 @@ text:
         pane_expand: Expand pane
         pane_expand_glyph: expand
         pane_fold: Fold pane
+        pane_hide_tab_row: Hide Tab Row
         pane_maximise: Maximise pane
         pane_menu: Pane
         pane_menu_glyph: list
         pane_more_glyph: more
         pane_restore: Restore panes
+        pane_show_tab_row: Show Tab Row
         pin_glyph: pin
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         prose_code_copied: Copied

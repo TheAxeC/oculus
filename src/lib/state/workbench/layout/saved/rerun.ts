@@ -39,6 +39,7 @@ const PATH_OPERATIONS: Readonly<Record<string, PathArgs>> = {
     expandChild: { path: 0, child: 1, page: 2 },
     resizeSplit: { path: 0, page: 2 },
     lockPane: { path: 0, page: 2 },
+    hideTabRow: { path: 0, page: 2 },
     openInPane: { path: 3, page: 2 },
     floatPane: { path: 0, page: 1 },
     windowPane: { path: 0, page: 2 }

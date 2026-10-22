@@ -1,20 +1,21 @@
-In flight (3 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
-- O51 (a per-pane Hide Tab Row). State: repair round 1 built (path-bar menus keep a hidden row shown, the HELP bullet, two local types, `docs/apps.md`, the report's evidence); the review over the round running; then /land with the look on TEST.
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
 
-Queued, in order (6 steps):
+Queued, in order (7 steps):
 - O53 (a project's `lead:` a list of person keys). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge); Axel's rulings on open items 251 (which field names a project's people) and 254 (the fix of the hub's `authors:` data).
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
+- O64 (motion where work is in progress: Inbox and Usage Refresh, commit message generation, the git bar under the selected repository; ruling 249). Waits: a free slot; /spec reads its premises.
 - O39 (oculus in its own repository): left: the owed desktop look of part A, then the tick. Waits: at any time, in no slot.
 
 Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
+- O51 (a per-pane Hide Tab Row), 2026-10-22.
 - O57 (the portfolio chat's index over every hub), 2026-10-22.
 - O49 (an Open View submenu in the tab strip's menus), 2026-10-22.
 - O50 (who the user is: the workspace setting `self`), 2026-10-22.

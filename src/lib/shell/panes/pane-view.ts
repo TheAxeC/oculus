@@ -1,13 +1,18 @@
-// Layer 3, shell. The pane menu's page items, apart from the component so the numbering they draw,
-// the pages they offer and the two choices they are gathered under can be read by a test; and the
-// right-click menu of a pane's strip and of an empty pane's body, VS Code's editor group menu, with
-// what each of its picks runs, but for the Open View item, which it is handed and places, and whose
-// submenu and picks are strip/open-view.svelte.ts's; and the path and tab helpers a pane reads
-// (`isPaneDrop`, `shownTabPath`, `openLabels`).
+// Layer 3, shell. The pane menu, apart from the component so the numbering its page items draw,
+// the pages they offer and the two choices they are gathered under can be read by a test, with
+// what each of its picks runs (`panePicked`) but Close and the float items, which the pane runs;
+// the right-click menu of a pane's strip and of an empty pane's body, VS Code's editor group menu,
+// with what each of its picks runs, but for the Open View item, which it is handed and places, and
+// whose submenu and picks are strip/open-view.svelte.ts's; and the path, drop and tab helpers a
+// pane reads (`isPaneDrop`, `stripHovered`, `shownTabPath`, `openLabels`).
 
 import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
+import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
+import { withoutOwn, type Dragging, type Drop, type Rect } from '$lib/state/workbench/drag.svelte';
+import type { StripShape } from './strip/strip-shape';
 import {
+    carriedIndex,
     fold,
     instanceLabel,
     panes,
@@ -28,10 +33,10 @@ import {
 } from '$lib/state/workbench/navigation/pages';
 
 /** What tells a move-to-page item from the menu's fixed items. */
-export const PAGE = 'page:';
+const PAGE = 'page:';
 
 /** What tells a show-a-page-here item from the menu's fixed items. */
-export const EMBED = 'embed:';
+const EMBED = 'embed:';
 
 /**
  * Every page but the one on screen, as the item that moves the active tab onto it. A page with
@@ -85,6 +90,34 @@ export const MOVE_LIST = 'move-to-page';
 /** The choice that holds the show-a-page-here items. */
 export const EMBED_LIST = 'show-a-page';
 
+/** The items that hide a pane's tab row and its path bar, and that show them again. */
+const HIDE_TAB_ROW = 'hide-tab-row';
+const SHOW_TAB_ROW = 'show-tab-row';
+
+/**
+ * What a pane's top offers the pane menu: `shown` while its row and path bar are drawn, `hidden`
+ * while the pane hides them, and `none` while the pane draws neither a row nor a path bar, so
+ * hiding them would change nothing.
+ */
+type TopRow = 'shown' | 'hidden' | 'none';
+
+/**
+ * What a pane's top offers the pane menu from what it draws, a row (`shape`) or a path bar
+ * (`barred`), and whether the pane hides them (`hidden`).
+ */
+export function topRow(shape: StripShape, barred: boolean, hidden: boolean): TopRow {
+    if (shape.row === 'none' && !barred) return 'none';
+    return hidden ? 'hidden' : 'shown';
+}
+
+/** Hide Tab Row while the pane's top shows, Show Tab Row while it is hidden, else nothing. */
+function rowItems(row: TopRow, t: (key: string, ...args: (string | number)[]) => string): Item[] {
+    if (row === 'none') return [];
+    return row === 'shown'
+        ? [{ id: HIDE_TAB_ROW, label: t('ui.pane_hide_tab_row') }]
+        : [{ id: SHOW_TAB_ROW, label: t('ui.pane_show_tab_row') }];
+}
+
 /** The choice that lists the pages a tab can move to, or nothing when there is no other page. */
 function moveChoice(
     pages: readonly Page[],
@@ -128,8 +161,10 @@ export function foldable(layout: Layout, path: number[]): boolean {
 
 /**
  * The pane menu of a pane: Close, Maximise or Restore, Fold where it would change the tree, the
- * two page choices, the splits right and down and Float while the pane holds a tab. A float's pane
- * has the float's menu instead.
+ * two page choices, the splits right and down, Float and in the desktop app Move into New Window
+ * while the pane holds a tab, and last Hide Tab Row or Show Tab Row (`row`) where the pane draws a
+ * row or a path bar, which changes how the pane is drawn rather than what it holds or where it is.
+ * A float's pane has the float's menu instead.
  */
 export function paneMenu(
     facts: {
@@ -142,11 +177,13 @@ export function paneMenu(
         holdsTab: boolean;
         /** Whether the page is in the desktop app, which offers the moves into a new window. */
         windows?: boolean;
+        /** What the pane's top offers: Hide Tab Row, Show Tab Row or neither. */
+        row: TopRow;
     },
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
     if (facts.float !== undefined) {
-        return floatMenu(facts.float, facts.pages, t, facts.windows === true);
+        return floatMenu(facts.float, facts.pages, t, facts.windows === true, facts.row);
     }
     return [
         { id: 'close', label: t('ui.pane_close') },
@@ -162,16 +199,25 @@ export function paneMenu(
         ...(facts.holdsTab ? [{ id: FLOAT_PANE, label: t('ui.float') }] : []),
         ...(facts.holdsTab && facts.windows === true
             ? [{ id: WINDOW_PANE, label: t('ui.window_move') }]
-            : [])
+            : []),
+        ...rowItems(facts.row, t)
     ];
 }
 
 /**
  * The ids of the pane menu's items that the strip's menu has no item of its own for: Maximise,
- * Restore, Fold and the two page choices. The strip's menu repeats them when the editor actions
- * are hidden, so no pane operation is left to the hidden `...` button.
+ * Restore, Fold, the two page choices, Hide Tab Row and Show Tab Row. The strip's menu repeats
+ * them when the editor actions are hidden, so no pane operation is left to the hidden `...` button.
  */
-const PANE_ONLY: readonly string[] = ['maximise', 'restore', 'fold', MOVE_LIST, EMBED_LIST];
+const PANE_ONLY: readonly string[] = [
+    'maximise',
+    'restore',
+    'fold',
+    MOVE_LIST,
+    EMBED_LIST,
+    HIDE_TAB_ROW,
+    SHOW_TAB_ROW
+];
 
 /** Whether a pick of the strip's menu is a pane menu item that `pick` of the pane runs. */
 export function isPaneItem(id: string): boolean {
@@ -278,20 +324,62 @@ export function isFloatItem(id: string): boolean {
 }
 
 /**
- * The pane menu of a float's pane: Close, the float's items, and the choice that lists the pages
- * its active tab can move to. A float has no maximise, fold, split or page to show beside it.
+ * The pane menu of a float's pane: Close, the float's items, the choice that lists the pages its
+ * active tab can move to, and last Hide Tab Row or Show Tab Row (`row`), as the pane menu of a
+ * page has them. A float has no maximise, fold, split or page to show beside it.
  */
 export function floatMenu(
     place: FloatPlace,
     pages: readonly Page[],
     t: (key: string, ...args: (string | number)[]) => string,
-    windows = false
+    windows: boolean,
+    row: TopRow
 ): Item[] {
     return [
         { id: 'close', label: t('ui.pane_close') },
         ...floatItems(place, t, windows),
-        ...moveChoice(pages, '', t)
+        ...moveChoice(pages, '', t),
+        ...rowItems(row, t)
     ];
+}
+
+/** The store operations a pick from the pane menu runs. */
+type PaneDeps = Pick<
+    LayoutStore,
+    | 'maximisePane'
+    | 'restorePanes'
+    | 'foldPane'
+    | 'hideTabRow'
+    | 'embedPage'
+    | 'moveInstanceToPage'
+    | 'splitInstance'
+>;
+
+/**
+ * Run a pick from the pane menu over the pane's active tab, its path and its page, all but Close
+ * and the float items, which the pane runs. The pane is maximised, folded, shown beside a page and
+ * has its row hidden or shown whether or not it holds a tab, so those are picked before the items
+ * that act on the active tab, which a pane with no tab leaves alone.
+ */
+export function panePicked(
+    id: string,
+    pane: { active: string; path: number[]; page: string },
+    deps: PaneDeps
+): void {
+    const { active, path, page } = pane;
+    if (id === 'maximise') deps.maximisePane(path, page);
+    else if (id === 'restore') deps.restorePanes(page);
+    else if (id === 'fold') deps.foldPane(path, page);
+    else if (id === HIDE_TAB_ROW || id === SHOW_TAB_ROW) {
+        deps.hideTabRow(path, id === HIDE_TAB_ROW, page);
+    } else if (id.startsWith(EMBED)) deps.embedPage(id.slice(EMBED.length), path, 'right', page);
+    else if (active !== '' && id.startsWith(PAGE)) {
+        deps.moveInstanceToPage(active, id.slice(PAGE.length));
+    } else if (active !== '' && id === 'split_right') {
+        deps.splitInstance(active, path, 'right', page);
+    } else if (active !== '' && id === 'split_down') {
+        deps.splitInstance(active, path, 'bottom', page);
+    }
 }
 
 /**
@@ -526,6 +614,26 @@ export function isPaneDrop(
 ): boolean {
     if ((drop.page ?? current) !== page) return false;
     return drop.path.length === path.length && drop.path.every((step, at) => step === path[at]);
+}
+
+/**
+ * Report a drag over a pane's strip, the pointer at a drawn index or off the tabs (null), through
+ * the drag store's `hover`. A page has no tab to put among a pane's, so over a strip it is refused
+ * in words as well; a tab or a view lands at the index among the pane's own tabs (`tabs`, split by
+ * the collections the hubs list), the pane's own dragged tab (`own`) left out.
+ */
+export function stripHovered(
+    carried: Dragging,
+    index: number | null,
+    pane: { tabs: Parameters<typeof carriedIndex>[0]; own: number; path: number[]; page: string },
+    hover: (drop: Drop | null, rect?: Rect | null, refused?: boolean) => void
+): void {
+    if (carried.kind === 'page') hover(null, null, true);
+    else if (index === null) hover(null);
+    else {
+        const at = carriedIndex(pane.tabs, withoutOwn(index, pane.own), pane.own, true);
+        hover({ kind: 'strip', path: pane.path, index: at, page: pane.page });
+    }
 }
 
 /** The labels of the tabs open on every page, which an untitled text file is named past. */

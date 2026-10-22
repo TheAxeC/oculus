@@ -173,8 +173,8 @@ export type KeepRule = (view: ViewId) => 'documents' | Keeps;
  * The empty pane to leave where a pane's last tab was, or null when the pane goes. A locked pane
  * stays whatever else is true of it. Any other pane of a page stays unless it is added, a pane made
  * while the page was used, which goes with its last tab. A pane that stays keeps its lock, its
- * added mark and its documents mark, and is a terminals pane when the rule names a terminals pane
- * for its last tab's view.
+ * hidden tab row, its added mark and its documents mark, and is a terminals pane when the rule
+ * names a terminals pane for its last tab's view.
  */
 function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null {
     const locked = pane.locked === true;
@@ -182,6 +182,7 @@ function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null {
     const left = keep?.(view) === 'terminals' ? emptiedTerminals() : emptyPane();
     if (pane.added === true) left.added = true;
     if (locked) left.locked = true;
+    if (pane.rowHidden === true) left.rowHidden = true;
     if (pane.documents === true) left.documents = true;
     return left;
 }
@@ -374,6 +375,20 @@ export function setLocked(layout: Layout, path: number[], locked: boolean): Layo
     const next: Pane = { ...pane };
     if (locked) next.locked = true;
     else delete next.locked;
+    return rewrite(layout, path, () => next) ?? layout;
+}
+
+/**
+ * The tree with the tab row of the pane at `path` hidden or shown again. Showing it takes the field
+ * away rather than setting it false, so a pane whose row was never hidden and one shown again read
+ * the same. A path naming no pane changes nothing.
+ */
+export function setRowHidden(layout: Layout, path: number[], hidden: boolean): Layout {
+    const pane = paneAt(layout, path);
+    if (pane === null) return layout;
+    const next: Pane = { ...pane };
+    if (hidden) next.rowHidden = true;
+    else delete next.rowHidden;
     return rewrite(layout, path, () => next) ?? layout;
 }
 

@@ -24,16 +24,21 @@
     //
     // Every item of the pane menu is an operation the pointer has another path to, which is what
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
-    // Escape.
+    // Escape. Its last item, Hide Tab Row or Show Tab Row, is offered while the pane draws a row or
+    // a path bar. A pick runs through pane-view.ts's `panePicked`, except Close, which asks first,
+    // and the float items, which go through the strip menu's picks.
     //
-    // The pane's top row is strip/PaneStrip.svelte's, drawn under show_tabs and editor_actions. Its
-    // right end is the pane's header, drawn as an editor group's: the split to the right as a bare
-    // icon button, drawn while the pane shows a tab, the lock mark of a locked group, and the menu
-    // as its bare more-actions opener. The one pane the next view opened would land in draws its
-    // strip focused, and it is the active pane of the page the reader is in, so one pane strip in
-    // the window carries the accent and that tab is where a view will land. The split button is the
-    // pointer's shortcut to an item the menu already holds, so it takes no stop of its own and the
-    // pane's stops stay the strip and the menu.
+    // The pane's top row is strip/PaneStrip.svelte's, drawn under show_tabs and editor_actions in
+    // the shape the pane reads (strip/strip-shape.ts), and out of sight over the top of the view
+    // while the pane hides it. A hidden pane is one stacking context, and so is its body, so the
+    // row shown over the view stands above the view's own depths, and a sash's reach over the
+    // pane's edge stands above the row. Its right end is the pane's header, drawn as an editor
+    // group's: the split to the right as a bare icon button, drawn while the pane shows a tab, the
+    // lock mark of a locked group, and the menu as its bare more-actions opener. The one pane the
+    // next view opened would land in draws its strip focused, and it is the active pane of the page
+    // the reader is in, so one pane strip in the window carries the accent and that tab is where a
+    // view will land. The split button is the pointer's shortcut to an item the menu already holds,
+    // so it takes no stop of its own and the pane's stops stay the strip and the menu.
     //
     // A right-click on a tab opens that tab's menu (strip/tab-menu-state.svelte.ts), whose closes
     // go through the pane's close question (strip/close-question.svelte.ts). The pane also provides
@@ -46,21 +51,22 @@
     // and any other view opens in this pane), the four splits of the active tab, Lock Group, the
     // Tab Bar and Editor Actions Position submenus (which write the two settings), Close through
     // the pane menu's own close and its question, and New Terminal. With editor_actions hidden it
-    // also holds the pane menu's other items (Maximise or Restore, Fold, the page choices), and
-    // Close is always offered, so nothing needs the `...` button.
+    // also holds the pane menu's other items (Maximise or Restore, Fold, the page choices, Hide Tab
+    // Row or Show Tab Row), and Close is always offered, so nothing needs the `...` button.
 
     import {
-        EMBED,
-        PAGE,
         foldable,
         openLabels,
         isFloatItem,
         isPaneDrop,
         isPaneItem,
         paneMenu,
+        panePicked,
         stripMenu,
         shownTabPath,
-        stripPicked
+        stripHovered,
+        stripPicked,
+        topRow
     } from '$lib/shell/panes/pane-view';
     import { createCloseQuestion } from './strip/close-question.svelte';
     import { createOpenView } from './strip/open-view.svelte';
@@ -69,15 +75,16 @@
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { caretSymbols, crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
-    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
-    import { markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
+    import { markAt } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
     import PaneBody from './PaneBody.svelte';
     import PaneStrip from './strip/PaneStrip.svelte';
     import StripSaid from './strip/StripSaid.svelte';
+    import { stripShape } from './strip/strip-shape';
+    import { useStripActions } from '$lib/shell/titlebar/strip-actions.svelte';
     import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
     import {
         carriedIndex,
@@ -101,21 +108,16 @@
             closePane,
             currentPage,
             dockFloat,
-            embedPage,
             floatPane,
             floats,
             focused,
-            foldPane,
             freeFloat,
             keepPreview,
             layout,
             lockPane,
-            maximisePane,
-            moveInstanceToPage,
             openingInstance,
             openInPane,
             pages,
-            restorePanes,
             returnFloat,
             showFolderInFiles,
             showInFiles,
@@ -238,6 +240,39 @@
             : null
     );
 
+    /**
+     * The breadcrumb of the active tab's path, then the symbols of its file that hold its caret,
+     * empty for a tab naming no file.
+     */
+    const crumbs = $derived.by(() => {
+        if (shown === undefined) return [];
+        const symbols = documents.symbolsOf(shown.id);
+        const around = caretSymbols(symbols, editorStatus.statusOf(shown.id)?.caret);
+        return tabCrumbs(
+            shown,
+            roots.map((one) => one.key),
+            around,
+            docPlaceFor(shown)
+        );
+    });
+
+    const locked = $derived(node.kind === 'pane' && node.locked === true);
+    /** The window's title bar strip, which the pane's actions go up to under some settings. */
+    const windowStrip = useStripActions();
+    /** The pane's top row under the two settings and its lock (strip/strip-shape.ts). */
+    const shape = $derived(
+        stripShape(showTabs(), editorActions(), tabs, active, locked, windowStrip !== undefined)
+    );
+
+    /** What the pane's top offers: a row or a path bar to hide or to show again, or neither. */
+    const row = $derived(
+        topRow(
+            shape,
+            crumbs.length > 0 || tabActions.of(active) !== undefined,
+            node.kind === 'pane' && node.rowHidden === true
+        )
+    );
+
     const items = $derived<MenuItem[]>(
         paneMenu(
             {
@@ -248,7 +283,8 @@
                 maximised,
                 foldable: foldable(layout(page), path),
                 holdsTab: active !== '',
-                windows: client.desktop !== undefined
+                windows: client.desktop !== undefined,
+                row
             },
             t
         )
@@ -263,7 +299,7 @@
                 holdsTab: active !== '',
                 panes: panes(layout(page)).length,
                 float: float?.place,
-                locked: node.kind === 'pane' && node.locked === true,
+                locked,
                 tabBar: showTabs(),
                 actions: editorActions(),
                 paneItems: items,
@@ -337,87 +373,37 @@
         askAndClose
     });
 
-    /**
-     * The breadcrumb of the active tab's path, then the symbols of its file that hold its caret,
-     * empty for a tab naming no file.
-     */
-    const crumbs = $derived.by(() => {
-        if (shown === undefined) return [];
-        const symbols = documents.symbolsOf(shown.id);
-        const around = caretSymbols(symbols, editorStatus.statusOf(shown.id)?.caret);
-        return tabCrumbs(
-            shown,
-            roots.map((one) => one.key),
-            around,
-            docPlaceFor(shown)
-        );
-    });
-
     function press(id: string, point: { x: number; y: number }): void {
         const tab = tabs.find((one) => one.id === id);
         if (tab === undefined) return;
         start(id, tab.label, point);
     }
 
+    /** A drag over the strip, at a drawn index or off the tabs (pane-view.ts `stripHovered`). */
     function stripHover(index: number | null): void {
         const carried = dragging();
-        if (carried === null) return;
-        // A page has no tab to put among a pane's, so over a strip it is refused in words as well.
-        if (carried.kind === 'page') {
-            hover(null, null, true);
-            return;
-        }
-        if (index === null) {
-            hover(null);
-            return;
-        }
-        const at = carriedIndex(split, withoutOwn(index, own), own, true);
-        hover({ kind: 'strip', path, index: at, page });
+        if (carried !== null) stripHovered(carried, index, { tabs: split, own, path, page }, hover);
+    }
+
+    /**
+     * Close of the pane menu. Closing a pane closes every tab in it at once, and a tab holds a
+     * view's own state, so the pane takes the same question a tab's own close control takes over
+     * the tabs it would take away.
+     */
+    function closeAll(): void {
+        const ids = tabs.map((tab) => tab.id);
+        void askAndClose(
+            `pane:${path.join('.')}`,
+            ids,
+            t('ui.pane_close_confirm', tabs.length),
+            () => closePane(path, page)
+        );
     }
 
     function pick(id: string): void {
-        if (isFloatItem(id)) {
-            stripPick(id);
-            return;
-        }
-        if (id === 'close') {
-            // Closing a pane closes every tab in it at once, and a tab holds a view's own state,
-            // so the pane takes the same question a tab's own close control takes over the tabs it
-            // would take away.
-            const ids = tabs.map((tab) => tab.id);
-            void askAndClose(
-                `pane:${path.join('.')}`,
-                ids,
-                t('ui.pane_close_confirm', tabs.length),
-                () => closePane(path, page)
-            );
-            return;
-        }
-        if (id === 'maximise') {
-            maximisePane(path, page);
-            return;
-        }
-        if (id === 'restore') {
-            restorePanes(page);
-            return;
-        }
-        if (id === 'fold') {
-            foldPane(path, page);
-            return;
-        }
-        // A page is shown beside the pane whether or not the pane holds a tab, so it is picked
-        // before the items that act on the active one.
-        if (id.startsWith(EMBED)) {
-            embedPage(id.slice(EMBED.length), path, 'right', page);
-            return;
-        }
-        if (active === '') return;
-        if (id.startsWith(PAGE)) {
-            moveInstanceToPage(active, id.slice(PAGE.length));
-            return;
-        }
-        if (id === 'split_right') splitInstance(active, path, 'right', page);
-        else if (id === 'split_down') splitInstance(active, path, 'bottom', page);
+        if (isFloatItem(id)) stripPick(id);
+        else if (id === 'close') closeAll();
+        else panePicked(id, { active, path, page }, client.layout);
     }
 </script>
 
@@ -428,6 +414,7 @@
     bind:this={element}
     {@attach answersCommands(paneCommand)}
     class:floated={float !== undefined}
+    class:row-hidden={row === 'hidden'}
     data-pane
     data-pane-path={path.join('.')}
     data-pane-page={page}
@@ -436,35 +423,37 @@
     data-pane-active={active}
     data-pane-view={shown?.view}
 >
-    <ContextMenu label={t('ui.pane_menu')} read={tabMenu.read} onpick={tabMenu.pick}>
-        <PaneStrip
-            {tabs}
-            {active}
-            locked={node.kind === 'pane' && node.locked === true}
-            canSplit={active !== '' && float === undefined}
-            {items}
-            {crumbs}
-            barActions={tabActions.of(active)}
-            oncrumb={(crumb: Crumb) =>
-                crumbPicked(crumb, {
-                    showFolderInFiles,
-                    showInFiles,
-                    goTo: (line, column) => editorStatus.ask(active, { kind: 'goto', line, column })
-                })}
-            onunpin={unpinTab}
-            {dropIndex}
-            focused={activePane}
-            lead={activePane || client.float === page}
-            onselect={(id: string) => activateInstance(id, page)}
-            onclose={closeTab}
-            ondblclick={(id: string) => keepPreview(id)}
-            onpointerdown={press}
-            onhoverindex={held === null ? undefined : stripHover}
-            onsplit={() => pick('split_right')}
-            onunlock={() => lockPane(path, false, page)}
-            onpick={pick}
-        />
-    </ContextMenu>
+    <PaneStrip
+        {tabs}
+        {active}
+        {shape}
+        hidden={row === 'hidden'}
+        menuRead={tabMenu.read}
+        onmenupick={tabMenu.pick}
+        carrying={own >= 0}
+        canSplit={active !== '' && float === undefined}
+        {items}
+        {crumbs}
+        barActions={tabActions.of(active)}
+        oncrumb={(crumb: Crumb) =>
+            crumbPicked(crumb, {
+                showFolderInFiles,
+                showInFiles,
+                goTo: (line, column) => editorStatus.ask(active, { kind: 'goto', line, column })
+            })}
+        onunpin={unpinTab}
+        {dropIndex}
+        focused={activePane}
+        lead={activePane || client.float === page}
+        onselect={(id: string) => activateInstance(id, page)}
+        onclose={closeTab}
+        ondblclick={(id: string) => keepPreview(id)}
+        onpointerdown={press}
+        onhoverindex={held === null ? undefined : stripHover}
+        onsplit={() => pick('split_right')}
+        onunlock={() => lockPane(path, false, page)}
+        onpick={pick}
+    />
     {#if tabMenu.said() !== ''}
         <StripSaid words={tabMenu.said()} />
     {/if}
@@ -513,5 +502,12 @@
        one translucent layer rather than two and shows plainly around whatever the view draws. */
     :global(body.wall) .pane {
         background: transparent;
+    }
+
+    /* A pane whose row is hidden, and its body, are each a stacking context, so the row shown over
+       the view stands above the view's own depths and below a sash's reach over the pane's edge. */
+    .pane.row-hidden,
+    .pane.row-hidden :global([data-pane-body]) {
+        isolation: isolate;
     }
 </style>

@@ -81,7 +81,7 @@ The write changes the project's `project.yml`, and History undoes it. Take `subt
 ## What an app is
 
 - A folder with an HTML page, its scripts and styles, and `app.yml`. oculus picks up a new or changed folder while it runs; no build, no restart.
-- The page runs in a sandboxed frame with no cookies, no storage, no popups and no access to the rest of oculus. It talks to oculus only through the bridge, `/apps/-/oculus.js`.
+- The page runs in a sandboxed frame with no cookies, no storage, no popups and no access to the rest of oculus. It talks to oculus only through the bridge, `/apps/-/oculus.js`. While the pane holding the app hides its tab row (Hide Tab Row), the top of the page is cut off by the band along the pane's top edge, 4 px, or by the row while it shows, and that part takes no pointer, the page keeping its size.
 - A machine app lives in the primary hub's `.oculus/apps/` and may read every channel open to apps. A root app lives in `.oculus/apps/` of another folder of the workspace, travels with that repository, reads files only from its own folder, and gets fewer channels.
 - An app with a `host` also runs a program on this machine (The host), which reaches the languages, debuggers, tasks, terminals, source control and file decorations of oculus (The tools).
 - Open an app from the Apps rail button, the Views catalogue, Open View (the strip's right-click menu, under Apps), or `a` and its digit.

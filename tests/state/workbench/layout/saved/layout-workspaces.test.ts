@@ -239,14 +239,18 @@ describe('a browser tab whose arrangement another tab has moved on from', () => 
     });
 });
 
-/** The panes of the one page the arrangement holds, each as its tabs and whether it is folded. */
+/**
+ * The panes of the one page the arrangement holds, each as its tabs, whether it is folded and
+ * whether its tab row is hidden.
+ */
 function panesOf(client: ClientState): string[] {
     const root = client.layout.pages()[0].workbench.root;
     const children = root.kind === 'split' ? root.children : [root];
     const folded = root.kind === 'split' ? (root.folded ?? []) : [];
     return children.map((node, at) => {
         const name = node.kind === 'pane' ? node.tabs.map((tab) => tab.id).join('+') : node.kind;
-        return folded.includes(at) ? `${name} folded` : name;
+        const shown = folded.includes(at) ? `${name} folded` : name;
+        return node.kind === 'pane' && node.rowHidden === true ? `${shown} hidden` : shown;
     });
 }
 
@@ -263,6 +267,12 @@ describe('two browser tabs that change the panes of one page within a second', (
             first: (client: ClientState) => client.layout.closePane([1]),
             second: (client: ClientState) => client.layout.foldPane([1]),
             panes: ['a', 'c']
+        },
+        {
+            row: 'a hide of the tab row of a pane the other tab moved lands on that pane',
+            first: (client: ClientState) => client.layout.closePane([0]),
+            second: (client: ClientState) => client.layout.hideTabRow([2], true),
+            panes: ['b', 'c hidden']
         }
     ];
     it.each(

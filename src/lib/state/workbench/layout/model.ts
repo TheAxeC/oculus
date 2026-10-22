@@ -50,11 +50,14 @@ export type Keeps = 'terminals';
  * ids of the other tabs the pane showed, the one shown last first, which is where closing the
  * active tab goes next; a tab never shown is not in it. `keeps` is only ever set on a pane with no
  * tab. `locked` marks a pane that a view opened for something does not land in; it stays when its
- * last tab goes, and a tab opened from its own strip or dragged onto it still goes in. `added`
- * marks a pane made while its page was used, which the page's arrangement did not define: it goes
- * with its last tab, where a pane the arrangement defined stays, empty. `documents` marks the pane
- * of a workbench, a page with a `folder`, that a view opened from the page lands in first, whatever
- * the pane holds. A pane in a float never carries `added` or `documents`.
+ * last tab goes, and a tab opened from its own strip or dragged onto it still goes in. `rowHidden`
+ * marks a pane whose tab row and path bar are drawn out of view, so its view fills it from its
+ * top, and shown while the pointer is at its top edge (Hide Tab Row of the pane menu); it stays
+ * when the last tab goes, as the lock does, and a pane without it shows its row. `added` marks a
+ * pane made while its page was used, which the page's arrangement did not define: it goes with its
+ * last tab, where a pane the arrangement defined stays, empty. `documents` marks the pane of a
+ * workbench, a page with a `folder`, that a view opened from the page lands in first, whatever the
+ * pane holds. A pane in a float never carries `added` or `documents`.
  */
 export type Pane = {
     kind: 'pane';
@@ -63,6 +66,7 @@ export type Pane = {
     recent?: string[];
     keeps?: Keeps;
     locked?: true;
+    rowHidden?: true;
     added?: true;
     documents?: true;
 };
@@ -352,10 +356,10 @@ function recentAfter(from: Pane, tabs: readonly Instance[], active: string): str
 
 /**
  * A pane rebuilt with other tabs: what belongs to the pane and not to its tabs goes with it, the
- * lock, the mark of an added pane and the mark of the documents pane always and the kind a pane
- * keeps only while it holds no tab. The pinned tabs are put first and the order the tabs were shown
- * in follows `active`. Every operation that rebuilds a pane builds it here, so a field added to a
- * pane is carried at one place.
+ * lock, the hidden tab row, the mark of an added pane and the mark of the documents pane always
+ * and the kind a pane keeps only while it holds no tab. The pinned tabs are put first and the order
+ * the tabs were shown in follows `active`. Every operation that rebuilds a pane builds it here, so
+ * a field added to a pane is carried at one place.
  */
 export function repane(from: Pane, tabs: Instance[], active: string): Pane {
     const pane: Pane = { kind: 'pane', tabs: pinnedTabsFirst(tabs), active };
@@ -363,6 +367,7 @@ export function repane(from: Pane, tabs: Instance[], active: string): Pane {
     if (recent.length > 0) pane.recent = recent;
     if (tabs.length === 0 && from.keeps !== undefined) pane.keeps = from.keeps;
     if (from.locked === true) pane.locked = true;
+    if (from.rowHidden === true) pane.rowHidden = true;
     if (from.added === true) pane.added = true;
     if (from.documents === true) pane.documents = true;
     return pane;

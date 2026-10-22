@@ -22,8 +22,20 @@
     // does, whose root is a repository's folder and not a served root, and a tab none of whose
     // actions applies hands up none, so with no path it draws no bar.
     //
-    // It draws and reports. Closing, selecting, the drag and every menu item are the pane's, which
-    // hands them in.
+    // A pane whose row is hidden (`hidden`, Hide Tab Row of the pane menu) draws the row and its
+    // path bar out of sight, so the view fills the pane from its top, and draws them again over the
+    // top of the view, the view keeping its size, while the pointer is in the band along the pane's
+    // top edge or over the row, while a menu opened from the row or its path bar is open, while the
+    // keyboard brought the focus into the row, and while a tab of the pane is dragged. The row
+    // stays mounted and in the focus order, so its stop and its handlers stay. A pane whose row is
+    // `none` hides and shows its path bar alone. The box the hidden top covers, the band or the
+    // shown row, is marked `data-pane-top`, so the frame layer clips a frame of the pane's view
+    // below it (shell/frames/FrameLayer.svelte).
+    //
+    // It draws and reports, and draws the right-click menu on its row, so it knows while that menu
+    // is open, and provides the watch every other menu in the row and the path bar reports its
+    // list to (ui/menu/menu-watch.ts). Closing, selecting, the drag, every menu item and what a
+    // pick does are the pane's, which hands them in.
     //
     // The strip's scroll controls, the split-right button and its `...` opener on
     // `ui.pane_more_glyph` are `bare` ToolButton and Menu boxes of `--tab-action`, the same in a
@@ -32,7 +44,9 @@
     // `editor_actions`.
 
     import type { Snippet } from 'svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import { provideMenuWatch } from '$lib/ui/menu/menu-watch';
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import type { Crumb } from './tab-crumbs';
     import { colourOf } from '$lib/ui/controls/editor/kit/theme/colours';
@@ -40,18 +54,29 @@
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { stripShape } from './strip-shape';
+    import type { StripShape } from './strip-shape';
     import { useStripActions } from '$lib/shell/titlebar/strip-actions.svelte';
     import { stripWraps } from '$lib/ui/tabs/tab-strip';
-    import { editorActions, showTabs, wrapTabs } from '$lib/state/shared/words/appearance';
+    import { showTabs, wrapTabs } from '$lib/state/shared/words/appearance';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** Every tab of the pane, in order; the settings decide which are drawn. */
         tabs: Tab[];
         active: string;
-        /** Whether the pane is a locked group. */
-        locked: boolean;
+        /** What the row draws under the two settings (strip-shape.ts), as the pane read it. */
+        shape: StripShape;
+        /** Whether the pane hides its row and path bar, which it does only while it draws one. */
+        hidden: boolean;
+        /**
+         * The items of the right-click menu on the row, the strip's or a tab's, read from the
+         * right-click (strip/tab-menu-state.svelte.ts).
+         */
+        menuRead: (event: MouseEvent) => MenuItem[];
+        /** A pick of that menu. */
+        onmenupick: (id: string, event: MouseEvent) => void;
+        /** Whether a tab of the pane is being dragged, which keeps a hidden row shown. */
+        carrying: boolean;
         /** Whether Split Right is offered: the pane holds a tab and is no float. */
         canSplit: boolean;
         /** The pane menu's items. */
@@ -85,7 +110,11 @@
     const {
         tabs,
         active,
-        locked,
+        shape,
+        hidden,
+        menuRead,
+        onmenupick,
+        carrying,
         canSplit,
         items,
         barActions,
@@ -111,9 +140,46 @@
      */
     const strip = useStripActions();
 
-    const shape = $derived(
-        stripShape(showTabs(), editorActions(), tabs, active, locked, strip !== undefined)
-    );
+    /** The pane's top, whose focus the row keeps while the keyboard is in it. */
+    let top: HTMLDivElement | undefined = $state();
+    /** Whether the pointer is in the band along the pane's top edge or over the shown row. */
+    let pointed = $state(false);
+    /**
+     * How many menus opened from the row or its path bar are open: the `...` list, and a menu a
+     * view hands into the path bar's actions, each reporting to the watch the strip provides
+     * (ui/menu/menu-watch.ts).
+     */
+    let opened = $state(0);
+    /** Whether the right-click menu on the row is open. */
+    let menuOpen = $state(false);
+    /** Whether the focus is in the row and came there by a key. */
+    let keyed = $state(false);
+
+    provideMenuWatch({
+        opened: () => (opened += 1),
+        closed: () => (opened -= 1)
+    });
+
+    /**
+     * Whether a hidden row shows: the pointer at the edge or over the row, a menu opened from the
+     * row or its path bar open, the keyboard's focus in the row, or a tab of the pane dragged.
+     */
+    const showing = $derived(pointed || menuOpen || opened > 0 || keyed || carrying);
+
+    /**
+     * The focus coming into the row keeps it shown when the keyboard brought it, which the
+     * browser's focus ring answers: a Tab, an arrow key, or a closing menu giving the focus back
+     * after a pick by key, and never a press or a menu giving it back after a pick by the pointer.
+     */
+    function focusIn(event: FocusEvent): void {
+        keyed = event.target instanceof Element && event.target.matches(':focus-visible');
+    }
+
+    /** The focus leaving the row for anything outside it. */
+    function focusOut(event: FocusEvent): void {
+        const next = event.relatedTarget;
+        if (!(next instanceof Node) || top?.contains(next) !== true) keyed = false;
+    }
 
     $effect(() => {
         if (shape.up && lead && strip !== undefined) return strip.hand(heading);
@@ -144,37 +210,58 @@
     );
 </script>
 
-{#if shape.row === 'tabs'}
-    <Tabs
-        tabs={shape.tabs}
-        {active}
-        dropIndex={markAt}
-        {onselect}
-        {onclose}
-        {onunpin}
-        {ondblclick}
-        {onpointerdown}
-        onhoverindex={onhoverindex === undefined
-            ? undefined
-            : (i: number | null) => onhoverindex(inAll(i))}
-        menu={actions}
-        beside={beside ? path : undefined}
-        {wrap}
-        {focused}
-    />
-{:else if shape.row === 'title'}
-    <div class="title" class:unfocused={!focused}>
-        <span class="name">{title}</span>
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        <div class="actions">{@render actions()}</div>
+<!-- The pane's top: in place in the pane's column, or, while the pane hides it, over the top of the
+     view. Its handlers only follow the pointer and the focus that show a hidden row. -->
+<ContextMenu label={t('ui.pane_menu')} read={menuRead} onpick={onmenupick} bind:open={menuOpen}>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+        class="top"
+        class:hidden
+        class:shown={hidden && showing}
+        bind:this={top}
+        onpointerenter={() => (pointed = true)}
+        onpointerleave={() => (pointed = false)}
+        onfocusin={focusIn}
+        onfocusout={focusOut}
+    >
+        {#if hidden}
+            <div class="edge" data-pane-top={showing ? undefined : ''}></div>
+        {/if}
+        <div class="rows" data-pane-top={hidden && showing ? '' : undefined}>
+            {#if shape.row === 'tabs'}
+                <Tabs
+                    tabs={shape.tabs}
+                    {active}
+                    dropIndex={markAt}
+                    {onselect}
+                    {onclose}
+                    {onunpin}
+                    {ondblclick}
+                    {onpointerdown}
+                    onhoverindex={onhoverindex === undefined
+                        ? undefined
+                        : (i: number | null) => onhoverindex(inAll(i))}
+                    menu={actions}
+                    beside={beside ? path : undefined}
+                    {wrap}
+                    {focused}
+                />
+            {:else if shape.row === 'title'}
+                <div class="title" class:unfocused={!focused}>
+                    <span class="name">{title}</span>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    <div class="actions">{@render actions()}</div>
+                </div>
+            {/if}
+            {#if barred && !beside}
+                <div class="path">
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render path()}
+                </div>
+            {/if}
+        </div>
     </div>
-{/if}
-{#if barred && !beside}
-    <div class="path">
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render path()}
-    </div>
-{/if}
+</ContextMenu>
 
 {#snippet path()}
     {#if crumbs.length > 0}
@@ -241,6 +328,53 @@
 {/snippet}
 
 <style>
+    /* In place, the top and its rows take no box of their own, so the row and the path bar are laid
+       out in the pane's column as if the two boxes were not there. */
+    .top,
+    .rows {
+        display: contents;
+    }
+
+    /* A hidden top takes no height, so the view fills the pane from its top, and stands over the
+       view: the band along the pane's top edge hears the pointer, and the row with its path bar is
+       moved up out of sight, the pane's box clipping it, until it shows. Its depth puts it over the
+       view's own depths, the pane's body being a stacking context of its own while the row is
+       hidden (PaneView.svelte). */
+    .top.hidden {
+        display: block;
+        position: relative;
+        flex: none;
+        height: 0;
+        z-index: 1;
+    }
+
+    /* The band is 4 px high, the order of a sash, so it takes no click meant for the view's first
+       line. */
+    .top.hidden .edge {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+
+    /* The row shown over a view stands on the pane's own surface, so it reads over the view and
+       over a wallpaper. */
+    .top.hidden .rows {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        transform: translateY(-100%);
+    }
+
+    .top.hidden.shown .rows {
+        transform: none;
+    }
+
     /* The path under the strip: a row of its own, on the surface of the view it heads. */
     .path {
         display: flex;

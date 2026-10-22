@@ -25,6 +25,13 @@
     // the drop, and while the pane over it holds the keep layer that takes a double click
     // (PaneBody.svelte).
     //
+    // A frame over a slot in a pane whose tab row is hidden is clipped at its top by what the
+    // pane's top covers there, the band along the pane's top edge or the row shown over the view,
+    // which the pane strip marks `data-pane-top` (panes/strip/PaneStrip.svelte), so the band hears
+    // the pointer and the shown row is seen over a frame drawn above the page. The frame keeps its
+    // size and its document, and its clipped part takes no pointer. A frame in a pane that shows
+    // its row in place is not clipped.
+    //
     // The sandbox is a fixed attribute of each kind of frame, so the document it holds is
     // sandboxed from its first request.
 
@@ -64,6 +71,20 @@
         return Number.isNaN(depth) ? 0 : depth + 1;
     }
 
+    /**
+     * How far down the top of a frame over `box` the hidden top of the slot's pane covers it: 0
+     * when the pane marks no such box, the pane's top being in place.
+     */
+    function coveredTop(slot: HTMLElement, box: DOMRect): number {
+        const pane = slot.closest('[data-pane]');
+        if (pane === null) return 0;
+        const top = [...pane.querySelectorAll('[data-pane-top]')].find(
+            (one) => one.closest('[data-pane]') === pane
+        );
+        if (top === undefined) return 0;
+        return Math.min(Math.max(top.getBoundingClientRect().bottom - box.top, 0), box.height);
+    }
+
     /** Lay every frame over its slot, or hide it while its slot is not on screen. */
     function place(): void {
         for (const id of frames.ids()) {
@@ -74,12 +95,19 @@
                 slot !== undefined && slot.isConnected && slot.getClientRects().length > 0;
             const box = shown ? slot.getBoundingClientRect() : null;
             const onSurface = slot?.closest('[data-surface]') != null;
+            const cut = box === null || slot === undefined ? 0 : coveredTop(slot, box);
             const where =
                 box === null || slot === undefined
                     ? 'hidden'
-                    : [box.left, box.top, box.width, box.height, depthOver(slot), onSurface].join(
-                          ' '
-                      );
+                    : [
+                          box.left,
+                          box.top,
+                          box.width,
+                          box.height,
+                          depthOver(slot),
+                          onSurface,
+                          cut
+                      ].join(' ');
             if (placed.get(node) === where) continue;
             placed.set(node, where);
             if (box === null || slot === undefined) {
@@ -92,6 +120,7 @@
             node.style.width = `${box.width}px`;
             node.style.height = `${box.height}px`;
             node.style.zIndex = String(depthOver(slot));
+            node.style.clipPath = cut > 0 ? `inset(${cut}px 0 0 0)` : '';
             node.style.display = 'block';
         }
     }

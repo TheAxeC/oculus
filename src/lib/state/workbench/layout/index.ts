@@ -59,6 +59,7 @@ export {
     resize,
     restate,
     setLocked,
+    setRowHidden,
     splitLeaf,
     splitPane
 } from './tree.ts';
