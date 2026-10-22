@@ -1,10 +1,10 @@
 In flight (3 of 6 slots in use):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: building, resumed after the cases ruling `agents/briefs/O54-cases.md` (C3 to `c:c`, the test rows the id change makes false, the app write restriction kept).
 - O51 (a per-pane Hide Tab Row). State: building, resumed after the cases ruling `agents/briefs/O51-cases.md` (frames clipped under a hidden pane's top, `FrameLayer.svelte` added to its paths).
-- O61 (one home for each vocabulary word). State: /spec, brief check running; the builder waits for Axel's rulings on open items 252 (`type:` renamed `stage:`) and 253 (the form as its own field).
+- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
 
 Queued, in order (6 steps):
-- O53 (a project's `lead:` a list of person keys). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge); Axel's ruling on open item 251 (`authors:` as person keys).
+- O53 (a project's `lead:` a list of person keys). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge); Axel's rulings on open items 251 (which field names a project's people) and 254 (the fix of the hub's `authors:` data).
 - O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
