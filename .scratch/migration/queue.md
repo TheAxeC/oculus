@@ -1,12 +1,12 @@
-In flight (2 of 6 slots in use):
-- O57 (the portfolio chat's index over every hub). State: reviewed; findings being closed, then /land.
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: /spec, premise checks.
+In flight (3 of 6 slots in use):
+- O57 (the portfolio chat's index over every hub). State: repair round 1 built; the review over round 1 is running, then /land.
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: prepared at 18fa0365; builder launching.
+- O51 (a per-pane Hide Tab Row). State: /spec, brief check running.
 
-Queued, in order (8 steps):
-- O51 (a per-pane Hide Tab Row). Waits: nothing; /spec next.
+Queued, in order (7 steps):
 - O61 (one home for each vocabulary word). Waits: Axel's rulings on open items 243 and 244.
 - O53 (a project's `lead:` a list of person keys). Waits: O57's landing (both change `chat.ts` lines 100-125 and `config/text/server.yml` line 57); then /spec from Steps 5.
-- O56 (new project, entry and Save to Literature ask which hub). Waits: after O54.
+- O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.

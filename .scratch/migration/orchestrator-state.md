@@ -40,7 +40,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O50: config/defaults/sources.yml (O50 lines 5, 28 and after 72, O57 after 46), config/options/sources.yml (O50 after 111, O57 after 58), chat.ts (O50 lines 29-30, O57 lines 1-3, 16-18, 42-46, 100-125), config-folder.test.ts (O50 after 208, O57 after 197), docs/data-map.md (O50 line 158, O57 lines 78-98), docs/templates.md (O50 after 294 and 843-866, O57 after 84), docs/HELP.md (O50 after 300, O57 line 103); with O49: docs/HELP.md (O49 lines 65 and 76): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O54
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a37648dff2f33b214
+  model: claude-opus-5-5
+  launched: 2026-10-22
+  base: 18fa0365
+  worktree: .agents/worktrees/migration-O54
+  brief_check: agents/reviews/O54-brief-check.md (ad3e2648214fa3664, claude-opus-5-5, 247636 tokens, 97 tool uses, 14 min 51 s)
+  report: agents/reviews/O54-report.md
+  round: 0
+  landing: not-started
+  shared_paths: with O57: src/lib/data/helpers/hub-names.ts (O57 the HUB_LIST rows after line 330, O54 lines 1-115), docs/data-map.md (O57 lines 78-98, O54 line 203), docs/HELP.md (O57 line 103, O54 line 529); with O51: docs/HELP.md (O51 lines 70-71, O54 line 529): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing
 - step: O51
   brief_check: "running: a760fccefd58a7066"
   landing: preparing
