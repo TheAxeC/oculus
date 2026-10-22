@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O50 (who the user is: the workspace setting `self`). State: refuted over round 1; landing after O52, with fixes at landing.
 - O52 (the Focus board's section headings in one shape). State: refuted over round 1; landing next.
-- O49 (an Open View submenu in the tab strip's menus). State: brief checked; preparation commit next.
+- O49 (an Open View submenu in the tab strip's menus). State: prepared; builder launch next.
 
 Queued, in order (10 steps):
 - O54 (own hub first; every internal id `<hub>:<key>`, never shown). Waits: after O50 lands.
@@ -19,7 +19,7 @@ Owed looks (1):
 - O39 part A: a desktop window on an app's theme from its first paint.
 
 Landed, newest first:
-- O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, landing commit.
+- O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, b1686091.
 - O58 (`config/catalogs/meta.yml` removed), 2026-10-22, f17c205c.
 - O59 (status flag `terminal` renamed `closes_deadline`), 2026-10-22, 6bb17666.
 - O48 (editor and terminal transparency settings), 2026-10-21.
