@@ -64,10 +64,13 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O49
   brief_check: agents/reviews/O49-brief-check.md (ab729638069c01a99, claude-opus-5-5, 215648 tokens, 83 tool uses, 9 min 38 s)
   report: agents/reviews/O49-report.md
-  builder_usage: 172788 tokens, 44 tool uses, 5 min 13 s (hand-back of C13 before the build)
+  builder_usage: 172788 tokens, 44 tool uses, 5 min 13 s (hand-back of C13 before the build); round 0 build 235300 tokens, 69 tool uses, 8 min 31 s
   round: 0
   landing: not-started
   shared_paths: docs/HELP.md with O50 (O50 lines 280-314, O49 lines 64 and 75-76: disjoint ranges, simple to merge); docs/diagrams/ with O50 and O52, regenerated at each landing
+- step: O57
+  landing: preparing
+  brief_check: "running: ab90eaaac353fc610"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -428,6 +431,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-22 (O49 built, O57 brief written). O49's builder reported (`agents/reviews/O49-report.md`); its review is running. O57's brief is written and its brief check is running. Open items: 240, 241. In flight (4 of 6): O50 and O52 (refuted over round 1; their landings wait on 240 and 241), O49 (review running), O57 (brief check running). Next: /spec O61, then the reports of O49's review and O57's brief check.
 - 2026-10-22 (O62 landed). O62 is on main; fixes at landing: `write.test.ts` tagged slow, and `vite.config.ts`'s client build no longer waits on the types lock. Axel's standing demand "Only related tests at a landing" booked; open items 240 (how `land.sh`'s check follows it) and 241 (main or the gate worktree). In flight (3 of 6): O50 (refuted over round 1, landing with fixes), O52 (refuted over round 1, ready for /land), O49 (brief checked, preparation commit next). Next: /spec O49 on, /land O52, /land O50, /spec O57 and O61.
 - 2026-10-22 (O58 landed). O58 is on main; four test files that time out only under the full run's load tagged slow at landing. Open items: 239 (O58's look). Ruled: 238 (a). In flight (3 of 6): O50 (repair round 1 building), O62 (refuted, ready for /land), O52 (refuted over round 1, ready for /land); O54 waits for O50. Next: /land O62, /land O52, /spec O49 and O57.
 - 2026-10-22 (O59 landed). O59 is on main with the fixes of main's own red lines, the dev server's watch and eslint's ignore of `.agents/`, every command of `npm run test:landing` passing on main. Open items: none. In flight (4 of 6): O50 (round 1 building), O52 (round 1 built, its run of /refute next), O58 and O62 (refuted, ready for /land); O54 not yet prepared. Next: /spec O54, save O52's round-1 report and /refute it, /land O58 and O62.
