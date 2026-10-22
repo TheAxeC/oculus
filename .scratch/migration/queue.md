@@ -7,7 +7,7 @@ In flight (5 of 6 slots in use):
 
 Queued, in order (12 steps):
 - O64 (the development server ignores the worktrees under `.agents/`, so a build in a worktree no longer reloads Axel's `npm run dev`), a defect. Waits: the next free slot, first.
-- O54 (the hubs of a workspace resolve own hub first; every record's internal id is `<hub>:<key>` and never shown or written; Add asks which hub), rulings 203, 236 and No hub prefix shown. Waits: Axel's rulings on open items 231 to 235.
+- O54 (the hubs of a workspace resolve own hub first; every record's internal id is `<hub>:<key>` and never shown or written; Add asks which hub), rulings 203, 236, No hub prefix shown and 231 to 235. Waits: a free slot, after O64.
 - O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
 - O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
 - O61 (one home for each vocabulary word: stage words are types with their flags, chips are form and situation labels, the status list split into `chips:`, `statuses:` and `lead_statuses:`, each stage word an idea, in flight, done or neither, one spelling per word), rulings 218, 219, 221, 222. Waits: after O59 and O62 have landed.
