@@ -1,13 +1,13 @@
-In flight (6 of 6 slots in use):
-- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: reviewed, landing next.
-- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208 and 226. State: building.
-- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: building.
-- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: building.
-- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: building.
-- O54 (the hubs of a workspace resolve own hub first; a key held by two hubs carries its hub's prefix except the primary's copy; Add asks which hub), rulings 203 and 223. State: /spec, writing the brief.
+In flight (5 of 6 slots in use):
+- O59 (the status flag `terminal` renamed `closes_deadline`), ruling 216. State: landing; the landing checks are red, being compared with a run on unchanged main.
+- O50 (who the user is: the workspace setting `self`, a Settings picker and the Person page's "this is me" button, in place of `self: true` in `people.yml`), rulings Self in the workspace, 204, 208, 226 and 227. State: reported, review next.
+- O62 (`archive_order` removed from the vocabulary with its shape and test row; the orphan test over every catalog file's keys), a defect and ruling 224. State: reported, review next.
+- O58 (`config/catalogs/meta.yml` removed with its shape and every line naming it; no code reads it), a defect. State: reported, review next.
+- O52 (the Focus board's section headings in one shape: the Career strategy, Command center and Tasks headings place their fold circle, glyph and title alike; the career fold control named Career strategy), rulings Focus headings and 225. State: reported, review next.
 
-Queued, in order (11 steps):
+Queued, in order (12 steps):
 - O64 (the development server ignores the worktrees under `.agents/`, so a build in a worktree no longer reloads Axel's `npm run dev`), a defect. Waits: the next free slot, first.
+- O54 (the hubs of a workspace resolve own hub first; a key held by two hubs carries its hub's prefix except the primary's copy; Add asks which hub), rulings 203 and 223. Waits: Axel's rulings on open items 228 to 235.
 - O49 (an Open View submenu, grouped by rail page, in the tab strip's and the empty pane's right-click menus; a unique view open elsewhere is listed with its holder as the hint), rulings 202 and Open View unique. Waits: a free slot.
 - O57 (the portfolio chat's index holds every hub's projects and the collections `chat_context:` names), ruling 212. Waits: a free slot.
 - O61 (one home for each vocabulary word: stage words are types with their flags, chips are form and situation labels, the status list split into `chips:`, `statuses:` and `lead_statuses:`, each stage word an idea, in flight, done or neither, one spelling per word), rulings 218, 219, 221, 222. Waits: after O59 and O62 have landed.

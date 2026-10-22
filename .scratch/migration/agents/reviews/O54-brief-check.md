@@ -1,0 +1,252 @@
+# Brief check: O54
+
+Read on main at b6589f09. `git diff --stat a1a62868 HEAD` shows only ledger files changed since the brief's base (`briefs/O50.md`, `orchestrator-state.md`, `plan.md`, `queue.md`), so the brief's line numbers in `src`, `tests`, `docs` and `config` still apply. Each finding is labelled "correction" (it fits inside the step line) or "widens the step" (it adds paths, a requirement or a case, and goes to Axel under the ruling "Brief check scope").
+
+## 1. Names
+
+Commands run:
+- `grep -rn "splitHubId\|ofHub\b\|bareId\|hubId(\|inHubOf\|collectionsOf\|joinedEntries\|rootOf(" tests docs README.md utils`
+- `grep -rn --exclude=local.yml ... config`
+- `grep -rn "hubNamed\|routedEntry\|routedRoot\|routedTarget\|routedOrder\|\brouted\b\|writes/hubs" src tests docs README.md`
+- `grep -rn "findings.hubs\|id_prefix" src tests` plus the same grep over `config`
+- `grep -rn -e "<hub>:" -e "hub name>:" -e "prefix" docs README.md`
+- `grep -rnE '\$\{[a-zA-Z_.?()]+\}:\$\{' src`
+- `grep -rnE "indexOf\(':'\)|..." src`
+- `grep -rnE '= \`\$\{[a-zA-Z.]+\}:\`' src`
+
+Hits outside "Paths this step writes":
+
+**Hub-id helpers.**
+- `tests/views/shared/forms/entry-add.test.ts:34` mocks `collectionsOfKey` returning `{ root: name }` for every hub other than the primary. The change leaves this true. It is G8's test of `entry-add.ts`, which item 5 changes (the page Add opens), and verify 1 does not run it (see check 4).
+- `tests/data/hubs/hub-portfolio.test.ts:138` uses a local variable named `ofHub`, which is unrelated.
+- Nothing in `config` or `README.md`.
+
+**The merged id form `<hub>:<id>`.**
+
+These sentences become false and lie outside the paths:
+- `docs/apps.md:389`: "A record of a hub other than the primary carries `root` (the hub's name) and has the id `<hub>:<id>`." Widens the step: one docs line is added to the paths.
+- `docs/apps.md:749`, the refusal row for `server.entries.hub_key`, stays true, because item 5 keeps `hubPrefix`.
+
+This code outside the 48 files and outside the paths reads a record's hub from its id, or builds a merged id. Item 4 forbids both, so it has to change. Widens the step (paths):
+- `src/lib/state/sessions/source/write-files.ts:122-131` (`entryHubFile`, `id.indexOf(':')`) and `:160-170` (`` `${root}:${text(body.collection)}` ``, `` `${root}:literature` ``). This is G28's code.
+- `src/lib/server/sessions/stores/hooks.ts:205-222` (`recoverPlaces`, `id.indexOf(':')`). A lab-only dataset with a bare id would be given to the primary, and Recover would run in the wrong hub.
+- `src/lib/state/shared/words/tones.ts:168-185` (`domainEntry`, `written.indexOf(':')`). A lab-only domain would take the primary's colour map.
+- `src/lib/server/edit/writes/entries.ts:268-283` (`hubOwnValues`, `` const lead = `${key}:` ``) and `src/lib/server/edit/writes/manifest.ts:126-135, 373-395` (`hubOwnFields`). Both strip the hub's prefix from `from:` values on a write. The brief's paths give `entries.ts` only lines 518-528, and `manifest.ts` not at all.
+- `src/lib/server/content/audit/rules.ts:282` (`` `${root}:${finding.scope}` ``). This is the audit's scope label and its mute signature, not a record id. The brief should say whether it stays (see check 6).
+
+The following files are in the list of 48, but the qualifier "only where a call of a hub-id helper changes" stops the builder from fixing their false sentences or their own id-shape code. Correction: change the qualifier.
+- `src/lib/state/forms/page-entry.ts:117-122`, its own `hubPrefix`, which takes the hub out of `entry.id`.
+- `src/lib/state/forms/schema.ts:198-199`: "A record's field names a record of its own hub, so a form never offers another hub's".
+- `src/lib/server/content/docs.ts:11,99`, `src/lib/server/files/project/project-files.ts:12,41` and `src/lib/server/machine/runs/seeds/task-start.ts:29`: "named `<hub name>:<id>`".
+
+Test head comments made false (the files are in the paths, item 7 does not list them; correction):
+- `tests/data/hubs/hub-portfolio.test.ts:1-8` ("a reference never crosses from one hub to the other", "the case the prefix exists for").
+- `tests/routes/hubs/hub-routing.test.ts:1-3` ("every other hub's are `<name>:id`").
+
+**`findings.hubs`.** Only `config/text/findings.yml:37-38` and `merge.ts:261`, both in the paths.
+
+**The routing functions of `writes/hubs.ts`.**
+- `src/lib/server/edit/writes.ts`, outside the paths: the callers at :420, :442, :469, :489, :502, :522, :560, :599 and :623, and the comments at :159-162 and :187-188. Item 5 needs it changed (see check 3). Widens the step.
+- `src/lib/server/git/deposit/deposit.ts:241,440` (`routed(into, id, null)`). This file is in the 48 only for `hubId` at :284, and it builds its target with no server at :185. Under item 5 it would find no portfolio (see check 6).
+- `src/lib/server/edit/writes/undo.ts:64` (`holding`, `primaryOf`) is unchanged.
+- `src/lib/server/edit/feeds/feed-route.ts` is in the paths.
+- `docs/diagrams/writes.*` is regenerated by `npm run diagrams`.
+
+## 2. The step line
+
+`plan.md:673` with its sub-bullet `:674`, mapped part by part:
+
+- "resolve own hub first: a reference resolves in its own hub, then in the others" maps to item 2.
+- "a key held by two hubs is a finding only for a reference from a third hub that could mean either, naming both" maps to item 3.
+- "a key held by two hubs (a project, a registry entry, a collection, an entry, a lead) carries its hub's prefix except the primary's copy, a key one hub holds none" maps to item 1, with items 4 and 5 as consequences.
+  - The lead is in item 1's list of tables, but the leads the Leads view shows come from `src/lib/data/snapshot/hubs/feeds.ts` (`mergedFeeds`, called by `server/root/watch/portfolio.ts:36`; read by `Leads.svelte:85` through `feed('leads')`). That file is not in the paths, so the "a lead" part has no buildable requirement. Widens the step (paths).
+- "Add asks which hub's file takes a new entry", together with the correction at `:674`, maps to item 6.
+- "of every hub of the workspace": no item covers the project folders of a workspace with no primary, which are no hub (see check 6).
+
+Items with no part of the line behind them:
+- Items 4 and 5 follow from ruling 223's ids (no ruling names them).
+- Items 7 and 8 come from `spec.md` and G32.
+
+The brief says "Ruling 223 replaces the id sentence of ruling 203". `plan.md` does not say this. It is supported by `orchestrator-state.md:261`, the text of open item 223, and the step line already carries 223's form. Item 3's quotation is attributed to "Ruling 203 (b)", but the words quoted are the step line's; ruling 203 reads "a key held by two hubs is no finding, and only a reference from a third hub that could mean either is one, naming both". Correction.
+
+## 3. Premises
+
+Confirmed:
+- The 48-file list, by `grep -rln ... src | sort` and `diff` against the brief's list: "SAME", 48 lines each.
+- `merge.ts` is 343 lines (`wc -l`). Its head comment "no reference can name a record of another hub" is at lines 4-5.
+- `findings.yml:242` holds `no_key: '{0} is {1}, which is not a key of {2}'`.
+- `hub-names.ts:9-13` matches the quote. The function lines are right: `rootOf` :22, `hubId` :30, `inHubOf` :41, `splitHubId` :54, `bareId` :66, `ofHub` :75, `collectionsOf` :90.
+- The claim that `collectionsOf` would list a hub's unique collection twice holds when read at :90-96.
+- `writes/hubs.ts`: the head comment at 1-13, `routed` :82, `routedEntry` :128, `routedRoot` :153, `routedTarget` :199, `routedOrder` :217, and the quoted sentence at :5.
+- `entries.ts` `hubPrefix` is at :520-527.
+- `entry-add.ts:6-8` and `hubChoices`/`hubAsk` are as quoted.
+- The registries are collection keys in `config/defaults/sources.yml:30-38`.
+- `docs/HELP.md:527` and `docs/data-map.md:203` are as quoted.
+- The hub-portfolio rows at :143 and :207 have the titles quoted.
+- `hubs-fixture.ts` makes two copies of the demo hub.
+- `npx prettier --check` on `wallpaper.ts` and `EntryForm.svelte` warns on both.
+- `ls docs/adr` gives "No such file or directory".
+
+Wrong or incomplete:
+
+1. **G32's tests.** The brief says `hub-portfolio.test.ts` is among G32's tests. `grep -c "hub-portfolio" .scratch/migration/agents/guarded.md` prints 0. `grep -oE "tests/(data/hubs|routes/hubs)[^ ,;)]*" guarded.md` lists only `hub-folders`, `workspace-findings`, `workspace-projects`, `hub-secrets`, `hub-writes` and `make`. `hub-routing.test.ts` and `hub-undo.test.ts` are not named either. Under `spec.md`'s test rule ("A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there"), the C1 to C8 rows have no home until `guarded.md` names those files under G32 and G8. That is a `guarded.md` change, not a brief correction. Widens the step: raise it.
+
+2. **Each hub's build drops a value it cannot resolve before the merge sees it.** `src/lib/data/snapshot/normalise.ts:704-748` deletes `venueId` (:730) and `funder` (:740), filters `affiliations` (:746) and `resourceIds` (:728), and builds every relation table through `relations(projects, known, ...)` from the hub's own keys (:716). So `merge.ts` never sees a lab project's `venue_id: science`, and item 2 and C4 cannot be built inside the paths. Collection entries keep their raw values, so this hits projects and registries only. `normalise.ts` is not in the paths. Widens the step (paths). It is also a file O50 writes (see item 7 below).
+
+3. **The write target holds no portfolio for routing.** Item 5 routes "by the record's root in the portfolio the server published". The write target (`src/lib/server/edit/writes.ts:111-185`) exposes `projects()` and `entities?(kind: 'domains' | 'resources')` only. There are no collections, no other registries and no leads. A target built with no server has `projects: () => []` and no `entities` (:318-319), which is what `deposit.ts:185` builds. Item 5 needs `writes.ts` (the type at :111-185 and `target` at :293-345) and the deposit target. Neither is in the paths. Widens the step (paths).
+
+4. **`joinHubs` runs to line 807.** `grep -n "export function joinHubs\|^}"` gives 752 and 807, and the doc comment starts at about 743. The paths ("lines 740-800") and the read list ("700-800") stop short. Correction.
+
+5. **Seven of the 48 files use a different `rootOf`.** It is the LaTeX root lookup: `server/content/latex/root.ts`, `state/sessions/latex/actions.ts`, `calls.ts`, `saves.ts`, `state/sources/repositories/worktrees.ts` and `views/sources/source/language/latex-editor.ts`. `server/content/latex/endpoint.ts` imports both. None of them is a user of the hub-id helpers. The list also misses `src/lib/server/machine/pty/latex/latex.ts:48` (`rootOf as hubOf`) and the re-export at `src/lib/state/shared/page/hubs.ts:7`. Both stay correct, because `rootOf` keeps its meaning. Correction to the claim "Every user of those helpers".
+
+6. **Verify 1's form of the tree check times out.** `npx vitest run tests/checks/tree/boundaries.test.ts` on main: "Tests 4 failed | 7 passed (11)". One is the two import lines the brief names (`state/boards/collection.ts imports data/snapshot/normalise-parts/plans`, `views/shared/forms/Followups.svelte imports data/model`). The other three are "Test timed out in 5000ms" at :661, :792 and :840. `package.json` runs this file with `--testTimeout 0` (`test:checks`), and verify 1's command omits it. Correction.
+
+7. **O50 is in flight and its paths overlap O54's.**
+   - O50's brief writes `src/lib/data/index.ts` (whole), `normalise.ts`, `writes.ts` lines 135-142 (the write target's fields), `server/root/watch/portfolio.ts`, `views/boards/person/Person.svelte` (one of the 48), `tests/fixtures/hubs/demo/.oculus/data/people/people.yml` (which `hubs-fixture.ts` copies), and the test files of G8 and G32.
+   - The O54 brief names no `shared_paths` and makes no merge judgment.
+   - Correction for the orchestrator's comparison of paths.
+
+8. **No worktree or base copy is named.** The brief refers to "the base copy" and "the base folder" but names neither, nor the worktree. O50's brief names `.agents/worktrees/migration-O50-base/` and its `unused-exports.txt` at line 32. Correction.
+
+9. **There is no "Goal" section.** The plan's opening paragraph names `tools/oculus/DESIGN.md`, and `ls` shows that file is absent from this repository. The goal O54 delivers is therefore read from the step line and rulings 203 (b) and 223.
+
+## 4. Cases and checks
+
+Cases against `spec.md`:
+
+- **C1 to C7 (rows of `hub-portfolio.test.ts`) and C8 (rows of the hub routing tests).** The files are not named in `guarded.md` (check 3, item 1). Every row of `hub-portfolio.test.ts` carries `{ tags: ['slow'] }` (:61 to :258), and `hub-writes.test.ts:9` is `@module-tag slow`. `spec.md` (line 58) says a case goes in a file `npm test` runs, or else, if it can only be slow, that file is run alone with the run quoted and named in the report. The brief says neither. Correction.
+- **Rows that hold on the unchanged tree.** Item 8 and `spec.md` (line 67) require each added row's failing line on the unchanged tree. These rows pass on today's tree, so they have no failing line. Correction: fold each into a table row that has a failing part, or check it by reading.
+  - C1: `lab:nature` and the bare `nature` exist today.
+  - C5: a lab value resolves to `lab:nature` today.
+  - C7: today's `no_key` finding is given.
+  - C3's first clause (`a:alpha`, `b:alpha` with no primary).
+  - C8's second clause (a `lab:` id routes to lab today).
+- **The cases name keys the demo fixture does not hold.** C1 `nature`, C2 `rivera` (the fixture has `rivera-lab`, `people.yml:19`), C4 `science` and C6 `cell` are not keys of `tests/fixtures/hubs/demo`. Its venues are `jmlr`, `tmlr`, `neurips`, `iclr`, `kdd`. The rows have to plant them. C6 needs a third copy, which `hubs-fixture.ts` (in the paths) does not make today. Correction: say the keys are planted.
+- **C9, C10, C11, C12 and C14 are checked by reading.** That is allowed. C10 checks a pure function, which a row could test only once a `guarded.md` entry names it.
+- **Places the step does not change.**
+  - C14 asks to read `feedsOf` in `merge.ts`, which is not where the Leads view's leads come from (`hubs/feeds.ts`, `mergedFeeds`).
+  - C12 reads `hubNamed`, which item 5 replaces.
+
+Checks of "Verify before you report":
+
+1. **Runs, but misses tests and times out.** It omits the tests of entries whose code the step changes:
+   - `tests/data/helpers/hub-names.test.ts` (G28; `hub-names.ts` changes).
+   - `tests/state/boards/board/hub-facets.test.ts` (G92; `facets.ts` uses `splitHubId`).
+   - `tests/views/shared/forms/entry-add.test.ts` (G8; `entry-add.ts`).
+   - `tests/routes/edit/write.test.ts` (G8, row "writes a second hub's personal project in that hub's file and no other", which posts `'two:idea'` through a hand-built target with no portfolio).
+   - G28's tests of `write-files.ts` and `page-entry.ts`.
+
+   The boundaries timeouts are in check 3, item 6. Correction.
+2. **Runs.** The format premise is confirmed.
+3. **Runs.** It proves ASCII only.
+4. **Runs, but is too narrow** (see check 5).
+5. **Runs only once the base copy is named** (check 3, item 8).
+6. **Runs.**
+7. **Runs.**
+
+## 5. The question
+
+The plan's goal, as O54 delivers it: the ids of ruling 223 and the own-hub-first references of ruling 203 (b), in the portfolio, the views and the writes.
+
+Cases:
+- **C1: yes.** It passes on today's tree, where every lab id is prefixed.
+- **C2: no.** It fails until a key one hub holds is bare.
+- **C3: partly.** Its first clause passes today; the bare clause guards the goal.
+- **C4: no**, provided it asserts both `venueId` and the `projectVenue` pair. It cannot be built inside the paths (check 3, item 2).
+- **C5: yes.** It passes today.
+- **C6: no.**
+- **C7: yes.** It passes today, and only guards against a regression.
+- **C8: half.** The bare-id half fails today. The prefixed half passes today.
+- **C9: yes.** `hubChoices` dedups with `new Set` (`entry-add.ts:52-55`). Add's question stays right even while `collectionsOf` lists a collection twice for its other users (`Collection.svelte`, `registry-file.svelte.ts`, `page-file.ts`, `SaveToLiterature.svelte`, `referrers.ts` through `joinedEntries`).
+- **C10: yes, in practice.** A reading can pass where a row would not; a reading guards only C10's own claim.
+- **C11, C12, C13: yes.** All three hold on today's tree.
+- **C14: yes.** Lead writes are routed by `root` today (`feed-route.ts:68,84`), so "reaches that hub's leads file" holds without any change. Reading `feedsOf` can show a prefix while the Leads view, fed by `mergedFeeds`, shows none.
+
+The step line's check (`plan.md:673` names none beyond the line itself): it can pass by the merge alone while the writes, the forms and the id-shape readers outside the list still use the old rule.
+
+Items:
+- **Item 1: yes.** It can pass in `merge.ts` while `mergedFeeds` keeps lead ids bare and a folder-project id collides (check 6).
+- **Item 2: cannot pass inside the paths** (check 3, item 2). It can be met for collection fields while project and registry values stay dropped.
+- **Item 3: no**, given C6.
+- **Item 4: yes.** Verify 4 (`grep -rn "splitHubId\|hubId(\|inHubOf" src`) does not see `write-files.ts:129,163,168`, `page-entry.ts:121`, `hooks.ts:218`, `tones.ts:180`, `entries.ts:279`, `manifest.ts:131` or `rules.ts:282`, so it passes with those readers left in place.
+- **Item 5: yes**, by C8 alone, while `deposit.ts` (no server) and the G8 row with `'two:idea'` break, and the write side of references (`hubOwnValues`, `hubOwnFields`) keeps reading the prefix.
+- **Item 6: yes.** It holds today.
+- **Item 7: yes.** It lists four head comments and two doc lines, while the false sentences named in check 1 stay.
+- **Item 8: yes**, with rows that pass on both trees (C1, C5, C7).
+
+## 6. Implied inputs
+
+Each is one the step implies and the brief does not state, with the result I expect.
+
+1. **A reference from the primary to a key only another hub holds.** For example, a primary project's `collaborators: [rivera]` where only lab holds `rivera`. Expected: it resolves to `rivera` (`root: lab`), the `projectPerson` pair holds, and there is no `no_key` finding. Item 2's text covers it; no case does, and C4 is the reverse direction. Correction: add the case.
+
+2. **A key held by three hubs.** Expected: every non-primary copy is prefixed, and a reference from a fourth hub gives item 3's finding naming all three. Items 1 and 3 say "two or more", so this is covered; no case is needed.
+
+3. **A collection entry key shared while the collection key is not.** Item 1's "the entries of one collection key" covers it: both stay bare. The reverse is a shared collection key with a unique entry key: entry `x` bare inside `lab:events`. Expected: the page of `events:x` finds lab's entry through `collectionsOf`, and the write names (`events`, `x`) and reaches lab. Covered by items 1 and 5; C8 should name the collection by the key the view sends. Correction.
+
+4. **A record whose id changes when the workspace changes, while a tab, a page state, a Focus row or an address names it.** Ruling 223 makes a non-primary id depend on the other hubs: lab-only `x` becomes `lab:x` when the primary or another hub gains `x`, and `lab:x` becomes `x` when the other holder leaves the workspace. A saved layout (`~/.oculus`) then names nothing, or names the primary's `x`, which is another record. The no-migration rule forbids carrying old ids. Expected: the brief says what the tab shows; I recommend "not found", never another record. This has a real cost (a silently different record). Item 5 covers only Add's new entry. Widens the step: a decision for Axel.
+
+5. **A record whose hub is removed while a tab names it.** Expected: not found. This holds today and under the new ids, except through item 4's change of prefix.
+
+6. **The audit's per-hub parts.** The audit scans each hub's own pre-merge build (`portfolio.ts:745-760`, `part.snapshot.entities.projects`). A lab project whose `venue_id` resolves in the primary has lost its `venueId` in lab's build (`normalise.ts:730`), so `audit.msg_no_venue` fires (`audit/projects.ts:206-216`). Expected: no such finding for a value that resolves in another hub. The audit's scope keeps `<hub>:` (`rules.ts:282`) for every non-primary finding; that is a label and a stored mute signature, so it should stay as it is, which the brief should state. Widens the step (paths: the watcher or the audit).
+
+7. **A project folder of a workspace with no primary.** `buildFolderProjects` (`index.ts:541-547`) reads folder projects with bare ids and no hub. Under item 1, hub `a`'s only `alpha` is bare and collides in `byId` with the folder's `alpha`, so one of them is lost. Their references are also unstated (no own hub). Expected: the folder build's copy keeps its bare id and the hub's copy carries `a:`; a folder project's reference resolves in the hubs, with item 3's finding when two hold it. Widens the step: a case beyond the line, for Axel.
+
+8. **A non-primary key that begins with another hub's key and a colon.** For example, lab's `team:x` while team holds a shared `x`. Today every lab id is prefixed (`lab:team:x`), so the ids are distinct. Under the new ids, lab's bare `team:x` collides with team's `team:x`, and one record is dropped. `ambiguousIds` (`merge.ts:253-285`) checks only the primary. Expected: the `id_prefix` finding for such a key of any hub, and no silent drop. Widens the step: it adds a case to C11.
+
+9. **The YAML editor's schema for a value resolved in another hub.** `no_key` comes from a JSON-schema `enum` of the hub's own keys (`schema/record.ts:307`, `check.ts:254-263`), and the same schemas are served to the YAML server (`scopedSchemas`, `schema/set.ts:87-102`). The Findings view would drop the finding (item 2) while the editor still marks lab's `venue_id: science` as an error. Expected: the editor agrees with the Findings view. Widens the step (paths: `schema/set.ts` or `record.ts`).
+
+10. **The form of a record whose value resolves in another hub.** `entityChoices` offers only the record's own hub (`state/forms/schema.ts:198-215`). Expected: the field shows the resolved value and keeps it on save, and the brief says whether the choices include the keys the hub resolves elsewhere. Widens the step: a requirement beyond the 48 files' qualifier.
+
+11. **A value written from a form that names another hub's record.** `hubOwnValues` and `hubOwnFields` strip only the hub's own prefix. Writing the primary's `nature` from a lab entry where lab also holds `nature` is written as `nature` and resolves to lab's, silently. Expected: impossible while the choices stay own-hub. With item 10 widened, it must be refused or kept unambiguous. Tied to item 10.
+
+12. **A rename of a key that another hub's references resolve to.** The reference index is built per hub (`index.ts:801-803`). A rename of the primary's `science` leaves lab's `venue_id: science` unresolved, or resolving elsewhere. Expected: the rename carries to the other hub's files. This overlaps O50's reference-index work. Widens the step: for Axel.
+
+13. **The deposit route.** `deposit.ts:185` builds its target with no server, so item 5's portfolio lookup finds nothing and every deposit answers `server.deposit.no_project`. Expected: the deposit of a primary project and of another hub's project still reaches its manifest. Widens the step (paths: `deposit.ts` beyond its helper call, `writes.ts`).
+
+## 7. ADRs
+
+`ls docs/adr` prints "ls: docs/adr: No such file or directory". `ls docs` shows `apps.md`, `data-map.md`, `diagrams`, `HELP.md`, `palette.md` and `templates.md`. No ADR touches the step, as the brief says.
+
+## 8. Dictated text
+
+No quoted words are dictated for a file:
+- Item 3 asks for "a new sentence under `findings.hubs`" without giving it.
+- Item 7 gives the content of the rewritten comments in unquoted words: "a record of another hub carries its hub's prefix only when the primary or another hub holds the same key, and a reference resolves in its own hub, then in the others".
+
+Read against `spec.md`'s Prose rules, that content is ASCII, has no em dash and no "not X but Y". It leaves out that the key is shared only within one table (item 1) and the third-hub finding (item 3). A comment written from it alone would be incomplete. Correction.
+
+`LC_ALL=C grep -n '[^ -~]' briefs/O54.md` prints nothing.
+
+## 9. Sources
+
+Parts whose only source is the brief's own Decisions:
+- Item 1's no-primary sentence (Decision 4).
+- Item 2's free-text clause (Decision 3).
+- Item 3's "is resolved to none" (Decision 1).
+- Item 5's routing by `root` in the published portfolio with no new request field (Decision 2).
+
+Parts with no source named, neither a ruling nor a Decision:
+- Item 1's "A key held in two different tables ... is not shared".
+- Item 1's "The merge (`merge.ts`) is the one place that gives an id its prefix", which `hubs/feeds.ts` contradicts for leads.
+- Item 4's "one function that answers the merged id of a value named in a given hub".
+- Item 5's last sentence: the prefixed id on the next build, and the page Add opens read back from the answer.
+- C11 to C14, labelled "implied input" only.
+
+Other items cite a ruling, the step line or `spec.md` as listed in check 2. Item 3's quotation is the step line's, though attributed to ruling 203 (b).
+
+## Declined to judge
+
+- Whether item 2 should be built by passing the other hubs' keys into each hub's build or by keeping raw values for the merge. That is a design choice for the orchestrator once `normalise.ts` is in or out of the paths.
+- The ordering of rulings 203 (reopened) and 223. Both are dated 2026-10-22; I took the step line as their merged form, per `orchestrator-state.md:261`.
+- Whether `hub-undo.test.ts` and `hub-secrets.test.ts` hold rows the change makes false. I did not read either file in full.
+- `src/lib/data/snapshot/place.ts`, `ticker.ts`, `palette.ts`, `idents.ts`, `datasets.ts`, `submit.ts`, `sessions/index.ts`, `deck/read.ts` and the Svelte views of the 48. I read only their import lines and the grep hits, not their logic under the new ids.
+- The size rule for `index.ts`, which is 807 lines (`wc -l`) against the 880 limit, after item 2's work. Its growth cannot be measured before the design is chosen.
+- I ran no test beyond the one boundaries run, which wrote nothing to the tree.
+
+Agent usage: ad3e2648214fa3664, claude-opus-5-5, 247636 tokens, 97 tool uses, 14 min 51 s.
+## Closed
+
+O54 stopped at /spec on this report (open items 228 to 235 in `orchestrator-state.md`); the brief was restored to main's copy. The corrections and the paths the step's line needs are applied when /spec runs again after the rulings, without a second brief check:
+- Inside the line, closed then in the brief: the files that read a record's hub from its id or build a merged id outside the 48 (`write-files.ts`, `hooks.ts` `recoverPlaces`, `tones.ts` `domainEntry`, `entries.ts` `hubOwnValues`, `manifest.ts` `hubOwnFields`, `page-entry.ts` `hubPrefix`), the 48 files' qualifier widened to their own id-shape code and false sentences, `normalise.ts` (each hub's build keeps an unresolved value for the merge), `writes.ts` (the write target and its callers) and `deposit.ts` (item 5's routing), `hubs/feeds.ts` (the leads), `docs/apps.md:389`, the test head comments, `joinHubs` to line 807, the LaTeX `rootOf` files dropped from the list, Verify 1 with `--testTimeout 0` and the tests of G28, G92 and G8 named, the base copy named, the keys planted by the rows, rows that pass on both trees folded into rows with a failing part, item 7's content completed, a source on every part, implied input 1 (a reference from the primary to a key only another hub holds) and 3 (an entry key unique inside a shared collection key) as cases, shared paths with O50 judged.
+- Beyond the line, raised to Axel: 228 stored ids across a change of prefix, 229 folder projects with no primary, 230 a key of any hub that begins with another hub's key and a colon, 231 the YAML editor's schemas, 232 a form's choices across hubs, 233 a rename across hubs, 234 the audit's per-hub parts, 235 `guarded.md` naming the hub tests.
