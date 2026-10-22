@@ -59,7 +59,9 @@
     }
 
     onMount(() => {
-        void drawConfiguredTheme(document, true, data.appThemes);
+        // The theme the page starts on is the one its first HTML was sent with: `app_theme` in the
+        // desktop app's find bar, whose bridge the preload gives, and the first theme in a browser.
+        void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);
         input?.focus();
         const stop = [
             bridge?.on('found', (count) => {

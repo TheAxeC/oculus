@@ -3,8 +3,9 @@
 // over the page's strip (decide/window-options.ts, `windowFill` and `windowFrame`). They are the
 // colours of the theme the window's page will start on, read from that theme's stylesheet block, so
 // the window shows the page's own background while the page loads and no colour is restated here.
-// Once the page has drawn a theme, it sends that theme's background and the window takes it
-// (windows/bridge.ts, `TITLE_COLOURS`).
+// The page's first HTML carries the same theme (hooks.server.ts), so the window is shown, at the
+// page's first paint, on that theme's ground. Once the page has drawn a theme, it sends that
+// theme's background and the window takes it (windows/bridge.ts, `TITLE_COLOURS`).
 //
 // The theme is the one the server's page starts on in the app's window: the config is merged as the
 // server merges it for the workspace in force (oculus's files, the primary hub's settings file and
@@ -14,13 +15,13 @@
 // page's first load reads it, for an approved, enabled app alone, and tells the host
 // (server/process.ts, `appThemes`), or, for a window onto an oculus the app did not start, the host
 // asks that oculus for them before the window opens (server/health.ts, `fetchAppThemes`, over
-// `startThemeNames`); the host converts it with the mapping the page converts it with
-// (lib/themes/vscode-map.ts, over the page's tokens.css and themes.css) and reads the colours from
-// the block that makes. A theme whose app is not approved and enabled, or whose file does not
-// resolve, is not among them and is passed over to the next theme of the rule, as its page passes
-// over it. The sheets are the ones the page is styled with, read in the order the page reads them
-// from the checkout that holds the code, which is not the folder `--engine` names when that folder
-// holds config/ alone.
+// `startThemeNames`); the host converts it with the conversion the page and the server convert it
+// with (`themeSheet` of lib/themes/vscode-map.ts, over the page's tokens.css and themes.css) and
+// reads the colours from the block that makes. A theme whose app is not approved and enabled, or
+// whose file does not resolve, is not among them and is passed over to the next theme of the rule,
+// as its page passes over it. The sheets are the ones the page is styled with, read in the order
+// the page reads them from the checkout that holds the code, which is not the folder `--engine`
+// names when that folder holds config/ alone.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -35,13 +36,13 @@ import { loadConfig } from '../../lib/data/sources/config.ts';
 import { openWorkspace } from '../../lib/server/files/workspace/open.ts';
 import { configOptions } from '../../lib/server/files/workspace/paths.ts';
 import { defaultStateFolder } from '../../lib/server/files/workspace/state.ts';
-import { parseBlocks, windowColours, type WindowColours } from '../../lib/themes/parse.ts';
 import {
-    GIT_DEFAULTS,
-    basesOf,
-    mapTheme,
-    type ResolvedTheme
-} from '../../lib/themes/vscode-map.ts';
+    parseBlocks,
+    windowColours,
+    type ThemeBlocks,
+    type WindowColours
+} from '../../lib/themes/parse.ts';
+import { themeSheet, type ResolvedTheme } from '../../lib/themes/vscode-map.ts';
 
 /**
  * The saved names of the app themes a window may start on, over the config merged as
@@ -76,17 +77,17 @@ function themeSheets(code: string): string {
 }
 
 /**
- * The tokens of an app's theme file as the page converts it (ui/theme/app-theme.ts,
- * `convertAppTheme`): the mapping over the bases of the checkout's tokens.css and themes.css.
+ * The theme blocks of an app's theme file as the page converts it (`themeSheet`, over the
+ * checkout's tokens.css and themes.css), keyed by `APP_THEME_CLASS`.
  */
-function appThemeBlock(code: string, file: AppThemeFile): Record<string, string> {
+function appThemeBlocks(code: string, file: AppThemeFile): ThemeBlocks {
     const folder = themesFolder(code);
-    const bases = basesOf(
-        readFileSync(join(folder, 'tokens.css'), 'utf8'),
-        readFileSync(join(folder, 'themes.css'), 'utf8')
-    );
+    const sheets = {
+        tokens: readFileSync(join(folder, 'tokens.css'), 'utf8'),
+        themes: readFileSync(join(folder, 'themes.css'), 'utf8')
+    };
     const theme = file.theme as ResolvedTheme;
-    return Object.fromEntries(mapTheme(theme, file.uiTheme, { git: GIT_DEFAULTS, bases }).entries);
+    return parseBlocks(themeSheet(theme, file.uiTheme, sheets, APP_THEME_CLASS).css);
 }
 
 /**
@@ -108,8 +109,5 @@ export function startColours(
     if (file === null) {
         return windowColours(blocks, 'cls' in start ? start.cls : '');
     }
-    return windowColours(
-        { ...blocks, [APP_THEME_CLASS]: appThemeBlock(code, file) },
-        APP_THEME_CLASS
-    );
+    return windowColours({ ...blocks, ...appThemeBlocks(code, file) }, APP_THEME_CLASS);
 }

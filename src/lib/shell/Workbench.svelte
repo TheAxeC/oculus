@@ -153,7 +153,7 @@
         saveAll?: () => void;
         /**
          * The files of the app themes the `theme` and `app_theme` options name, which the page's
-         * first load carries, so such a theme is drawn from the first paint.
+         * first load carries, so the first draw of such a theme is made without a load.
          */
         appThemes?: FirstThemeFiles;
     };

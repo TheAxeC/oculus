@@ -283,14 +283,17 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
         derived['--scroll-track'] = panel;
     }
 
-    // The Seti icon colours: darkened on a theme whose panel is lighter than its ink, left as the
-    // stylesheet gives them on every other one.
+    // The Seti icon colours: darkened on a theme whose panel is lighter than its ink, the
+    // stylesheet's own value on every other one, so every theme sets the same tokens and a draw
+    // replaces each one an earlier draw, or the page's first HTML, set on the root element.
     const ground = effective['--panel'];
-    if (ground && effective['--ink'] && wcagLuminance(ground) > wcagLuminance(effective['--ink'])) {
-        for (const key of keys) {
-            if (key.startsWith('--seti-'))
-                derived[key] = readable(effective[key], ground, SETI_RATIO);
-        }
+    const ink = effective['--ink'];
+    const lightGround = ground && ink && wcagLuminance(ground) > wcagLuminance(ink) ? ground : '';
+    for (const key of keys) {
+        if (!key.startsWith('--seti-')) continue;
+        derived[key] = lightGround
+            ? readable(effective[key], lightGround, SETI_RATIO)
+            : effective[key];
     }
 
     for (const key of keys) {

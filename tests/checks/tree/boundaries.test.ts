@@ -206,6 +206,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/files/apps/tools/language-kit` is there because the editor's kit registers the
 // languages, grammars and snippets that acting apps add: it takes the kit's types and the schema
 // glob rule from this module, which holds no reader and no I/O.
+// `data/helpers/editor/start-theme` is there as it is in the state row, a pure helper with no
+// reader and no I/O: `ui/theme/theme.ts` joins the body class string a theme lands on the document
+// as through its `bodyClass`, by which the server writes the same string into the page's first
+// HTML, so the page's first draw and the HTML it was sent with carry one class.
 //
 // `data/snapshot/place` is the place of any project's folder: the server finds the folder for the
 // chat, the document route and the file listing through it, and the page draws a project's card,
@@ -228,7 +232,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/keys/oculus/**',
         'data/helpers/files/apps/choices',
         'data/helpers/files/apps/tools/language-kit',
-        'data/helpers/files/languages'
+        'data/helpers/files/languages',
+        'data/helpers/editor/start-theme'
     ],
     shell: [
         'shell/**',

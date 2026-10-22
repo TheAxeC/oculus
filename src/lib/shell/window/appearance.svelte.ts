@@ -10,14 +10,17 @@
 // off macOS, with the drawn theme's background, which the host fills the window with; a page in a
 // browser has no host and sends nothing.
 //
-// The page's first load carries the files of the app themes the `theme` and `app_theme` options
-// name (`files`), and the first draw of each such theme is made from its file, so the theme is
-// drawn from the first paint (`firstDrawFile` of ui/theme/app-theme.ts). A later draw of the theme
-// loads its file from the server, so a theme whose file changed after the first load is drawn as
-// it is now. An app's theme whose file the first load carries as unresolved, or whose file the
-// server does not give, is passed over to the start theme, as the desktop host passes over it for
-// the window's fill and the pages with no `apps` channel pass over it, until the apps' offers
-// change, which is when a theme's file may have changed.
+// The page's first HTML is sent with the theme it starts on, its body class, the tokens derived for
+// it and the block of an app's theme (hooks.server.ts), so the first paint is that theme's, the
+// wallpaper's class and its properties excepted, which come with this module's first draw. The
+// page's first load carries the files of the app themes the `theme` and `app_theme` options name
+// (`files`), and the first draw of each such theme is made from its file (`firstDrawFile` of
+// ui/theme/app-theme.ts), so the first draw keeps what the HTML showed. A later draw of the theme
+// loads its file from the server, so a theme whose file changed after the first load is drawn as it
+// is now. An app's theme whose file the first load carries as unresolved, or whose file the server
+// does not give, is passed over to the start theme, as the server passes over it for the page's
+// first HTML, the desktop host for the window's fill and the pages with no `apps` channel for their
+// draw, until the apps' offers change, which is when a theme's file may have changed.
 
 import { WALL_CLASS, applyWallpaper } from '$lib/ui/theme/theme';
 import { drawTheme, firstDrawFile, type FirstThemeFiles } from '$lib/ui/theme/app-theme';

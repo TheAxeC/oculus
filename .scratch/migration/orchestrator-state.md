@@ -34,7 +34,7 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O54
   brief_check: agents/reviews/O54-brief-check.md (ad3e2648214fa3664, claude-opus-5-5, 247636 tokens, 97 tool uses, 14 min 51 s)
   report: agents/reviews/O54-report.md
-  reviewer_report: agents/reviews/O54-refuter.md (aa1dd67ae57731a87, claude-opus-5-5, 149205 tokens, 78 tool uses, 17 min 26 s); over round 1: running: a16b86dd29919143f (claude-opus-5-5)
+  reviewer_report: agents/reviews/O54-refuter.md (aa1dd67ae57731a87, claude-opus-5-5, 149205 tokens, 78 tool uses, 17 min 26 s); over round 1: a16b86dd29919143f, claude-opus-5-5, 347113 tokens, 113 tool uses, 33 min 36 s
   builder_usage: 306087 tokens, 83 tool uses, 14 min 1 s (hand-back of C3); 141726 tokens, 1083 tool uses, 3 h 10 min 19 s (the build after the cases ruling); 343126 tokens, 333 tool uses, 74 min 33 s (round 1)
   round: 1
   round_1: agents/briefs/O54-round1.md (S1, B1, B2, S2, P1, P2, T1 sent; T2 no work), snapshot .agents/worktrees/migration-O54-round-1
@@ -50,29 +50,12 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O65
   brief_check: agents/reviews/O65-brief-check.md (a6b632fc3fe084af5, claude-opus-5-5, 244624 tokens, 103 tool uses, 16 min 38 s)
   report: agents/reviews/O65-report.md
-  builder_usage: 265990 tokens, 348 tool uses, 70 min 1 s
-  reviewer_report: agents/reviews/O65-refuter.md (a9ee849e1a46ad40f, claude-opus-5-5, 285514 tokens, 70 tool uses, 24 min 12 s)
+  builder_usage: 265990 tokens, 348 tool uses, 70 min 1 s; round 1 284949 tokens, 189 tool uses, 48 min 36 s
+  reviewer_report: agents/reviews/O65-refuter.md (a9ee849e1a46ad40f, claude-opus-5-5, 285514 tokens, 70 tool uses, 24 min 12 s); over round 1: a2f74dc039b54f0ee, claude-opus-5-5, 291871 tokens, 87 tool uses, 15 min 42 s
   round: 1
   round_1: agents/briefs/O65-round1.md (P1, P2, T1, T2, B1 with S3, B2 sent; S1 and S2 recorded at landing; P3 at the look), snapshot .agents/worktrees/migration-O65-round-1
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
-- step: O39 part E
-  executor: agent
-  worker: claude:opus
-  session_id: ae778f34fa099ded2
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 200f12da
-  worktree: .agents/worktrees/migration-O39-partE
-  brief_check: agents/reviews/O39-partE-brief-check.md (aece82159cd53f676, claude-opus-5-5, 221577 tokens, 71 tool uses, 10 min 19 s)
-  report: agents/reviews/O39-partE-report.md
-  reviewer_report: agents/reviews/O39-partE-refuter.md (a6d705f9b51150ea3, claude-opus-5-5, 272567 tokens, 67 tool uses, 17 min 28 s); over round 1: running: aa1b7392be4f5e72b (claude-opus-5-5)
-  builder_usage: round 0 hand-back 252026 tokens, 50 tool uses, 14 min 3 s; build after the cases ruling 350578 tokens, 66 tool uses, 17 min 14 s; round 1 259868 tokens, 140 tool uses, 34 min 37 s
-  cases_ruling: agents/briefs/O39-partE-cases.md (C15 (a), C6 (a), C10 the builder's row)
-  round: 1
-  round_1: agents/briefs/O39-partE-round1.md (T1 with P1, T2, T3, T4, T5, T7, B1 sent; P2 and T6 no work), snapshot .agents/worktrees/migration-O39-partE-round-1
-  landing: not-started
-  shared_paths: with O54, O64 and O65: none of their changed files (git status of part E's paths in each worktree prints nothing); docs/diagrams/ regenerated at each landing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -462,6 +445,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (O39 part E landed). Part E is on main (booked under O39 in `plan.md`, report `agents/reviews/O39-partE-landing.md`), checked in the gate worktree (`test:quick` 77.5 s, every command passed) and on main (`cmp` of the staged diffs: SAME, 29 files); six fixes at landing (R1-T1, T2, T3, P2, T4, B1). The look C9 is met on the built server for `theme: dark` and Ember. Found at the look and folded into O39 (Z468): under the dev server a reload's first frame is white for every theme, since the dev server's first HTML holds no stylesheet; built before O39's closing. In flight (2 of 6): O54 (reviewed over round 1, /land next), O65 (reviewed over round 1, /land next). Next: /land O54, /land O65; then /spec O61, O53 and O56; O39's dev-server first paint and its closing (C8, the desktop look after `npm run app:package`).
 - 2026-10-23 (O54 round 1 reported; its review over round 1 running). The builder reported round 1 (`agents/reviews/O54-report.md`, saved; 343126 tokens, 333 tool uses, 74 min 33 s); the orchestrator read the round's source delta. It handed back: three red rows of its last verify run outside the round's files (two timeouts, one `source.test.ts` assertion), the create-target guard of `write-files.ts:146` by the primary hub, `/api/deposit`'s 404 for a bare id, and P2's mute in the workspace file. The review over round 1 runs (a16b86dd29919143f, claude-opus-5-5) and judges each. In flight (3 of 6): O54 (review over round 1), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.
 - 2026-10-23 (O39 part E round 1 reported). The builder closed every ruling of round 1 (`agents/reviews/O39-partE-report.md`, saved); B1 was a real frame (an app theme with no first-load file paints the mounted workbench before its draw sets the derived tokens), closed by the derived tokens on the root element of the first HTML. The orchestrator read the round's source delta. The review over round 1 runs (aa1b7392be4f5e72b, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.
 - 2026-10-22 (O65 round 1 sent). The review (`agents/reviews/O65-refuter.md`) found item 6 violated by three stale comments (T1) and C13 partial (B1, Cmd+Alt+C in `.bib` taking Monaco's find toggle); the copied settings equal their sources. Repair round 1 in `agents/briefs/O65-round1.md`: Julia's settings by an order that does not depend on a timer, with a test (P1), the test's file-scope record moved (P2), the comments (T1, T2), the one-press LaTeX keys in the files LaTeX Workshop binds them in (B1), Before and after complete (B2). S1 (the builder ran read-only git commands, against spec.md) and S2 are recorded at landing. Open item 259 is not in the round; Axel's ruling on it is carried out at landing. In flight (3 of 6): O54 (round 1 building), O65 (round 1 building), O39 part E (round 1 building). Open items: 259.

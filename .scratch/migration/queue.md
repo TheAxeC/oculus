@@ -1,7 +1,6 @@
-In flight (3 of 6 slots in use):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built; reviewed (`agents/reviews/O54-refuter.md`); repair round 1 reported (`agents/reviews/O54-report.md`); review over round 1 running, then /land (base 18fa0365).
-- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: built (report `agents/reviews/O65-report.md`); reviewed (`agents/reviews/O65-refuter.md`); repair round 1 building (`agents/briefs/O65-round1.md`); open item 259 (Pin Editor's chord) waits for Axel (base 3a35d993).
-- O39 part E (the first-paint fix of O39: the page's first HTML carries the start theme, so the desktop window's first frame is the start theme's ground; found at the desktop look of part A). State: built after the round-0 cases ruling (report `agents/reviews/O39-partE-report.md`); reviewed (`agents/reviews/O39-partE-refuter.md`); repair round 1 reported; review over round 1 running, then /land (base 200f12da).
+In flight (2 of 6 slots in use):
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built; reviewed (`agents/reviews/O54-refuter.md`); repair round 1 reported (`agents/reviews/O54-report.md`); reviewed over round 1 (item 3 and item 11 violated, both fixed at landing); /land next (base 18fa0365).
+- O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: built (report `agents/reviews/O65-report.md`); reviewed (`agents/reviews/O65-refuter.md`); repair round 1 reported; reviewed over round 1 (no item violated; small fixes at landing); /land next, after O54's; open item 259 (Pin Editor's chord) waits for Axel (base 3a35d993).
 
 Queued, in order (7 steps):
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
@@ -10,12 +9,13 @@ Queued, in order (7 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O39 (oculus in its own repository): after part E lands, the desktop look again, then the tick.
+- O39 (oculus in its own repository): part E landed 2026-10-23; left: the first paint under the dev server (a reload's first frame is white for every theme, found at part E's look, booked under O39 in `plan.md`), then the desktop look C8 after `npm run app:package`, then the tick.
 
 Owed looks:
 - none (O64's taken 2026-10-22; the parts that write or fetch the calendar are under "Cannot be taken on this hub" in `agents/reviews/owed-looks.md`).
 
 Landed, newest first:
+- O39 part E (the page's first HTML carries the theme it starts on), 2026-10-23.
 - O64 (motion where work is in progress), 2026-10-22.
 - O51 (a per-pane Hide Tab Row), 2026-10-22.
 - O57 (the portfolio chat's index over every hub), 2026-10-22.

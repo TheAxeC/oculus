@@ -114,9 +114,10 @@
     }
 
     /* No fallback to `--c-amber`: a hue's own value on the panel is a pair
-       tests/checks/look/contrast.test.ts never measured, so the colour rule refuses it. Until
-       applyTheme has set the derived tokens the declaration computes to the inherited ink, which is
-       what the rest of the view is painted in. */
+       tests/checks/look/contrast.test.ts never measured, so the colour rule refuses it. The token
+       is derived for every theme, and the page's first HTML carries it for the theme the page
+       starts on (hooks.server.ts), so the message is drawn in the theme's readable amber from the
+       first paint. */
     /* A message holding a long path breaks inside it rather than running past a narrow pane. */
     .message {
         min-width: 0;

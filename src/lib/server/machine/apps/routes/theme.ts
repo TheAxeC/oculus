@@ -1,7 +1,8 @@
 // Layer 2, server. The /api/app-theme route: a colour theme an approved, enabled app declares, with
 // its `include` chain resolved inside the app's recorded files (read/theme-files/themes.ts). The
-// page converts the answer into oculus's theme tokens, since the server may not import the themes
-// folder.
+// answer is the file, which the page converts into oculus's theme tokens; this module may not
+// import the themes folder, so the request hook, which may, converts the file a page's first HTML
+// carries.
 //
 // The request names the theme by the name the page saves it under (`choice`: the app's view id, a
 // slash and the percent-encoded label, data/helpers/files/apps/choices.ts), so a page that holds
@@ -10,15 +11,23 @@
 // choice naming no app or no theme of it or a theme that no longer resolves, and `closed` for an
 // app that is not approved and enabled.
 //
-// The same read serves two readers that cannot wait for the route: a page's first load carries
-// the themes the `theme` and `app_theme` options name (`firstAppThemes`), so a page whose theme is
-// an app's draws it from its first paint, and the desktop host fills a new window with such a
-// theme's background (desktop/windows/start-colours.ts), both through `appThemeOf`. A desktop host
-// that opens a window onto an oculus it did not start asks this route for those themes instead.
+// The same read serves three readers that cannot wait for the route, all through `appThemeOf`: a
+// page's first load carries the themes the `theme` and `app_theme` options name (`firstAppThemes`),
+// which the page's first draw is made from; the page's first HTML is sent with the theme it starts
+// on (`requestStart`, which hooks.server.ts calls), its body class and the file of an app's theme,
+// so the page's first paint is that theme's; and the desktop host fills a new window with such a
+// theme's background (desktop/windows/start-colours.ts). A desktop host that opens a window onto an
+// oculus it did not start asks this route for those themes instead.
 
 import { json } from '@sveltejs/kit';
 import type { AppThemeFile, AppThemeFiles } from '../../../../data/helpers/files/apps/choices.ts';
-import { appThemeNames } from '../../../../data/helpers/files/apps/choices.ts';
+import { APP_THEME_CLASS, appThemeNames } from '../../../../data/helpers/files/apps/choices.ts';
+import {
+    bodyClass,
+    configLooks,
+    startOf,
+    startRows
+} from '../../../../data/helpers/editor/start-theme.ts';
 import type { AppsHeld } from '../read/held.ts';
 import { resolveTheme } from '../read/theme-files/themes.ts';
 import { heldChoice, refusal } from './choice.ts';
@@ -55,6 +64,37 @@ export function firstAppThemes(held: AppsHeld, config: Record<string, unknown>):
         files[name] = typeof read === 'string' ? null : read;
     }
     return files;
+}
+
+/** The theme a page is sent with: its body class string, and the file of an app's theme or null. */
+type RequestStart = { classes: string; file: AppThemeFile | null };
+
+/**
+ * The theme a page starts on, for the page's first HTML, over the held apps and the merged config:
+ * `startOf` over the rows of `themes:` and the app themes whose file `firstAppThemes` reads, with
+ * the theme `theme` names and, for a request of the desktop app's window (`marked`), the one
+ * `app_theme` names, as the page's first draw chooses it. The class string is the body class the
+ * page's first `applyTheme` sets: the theme's class, `APP_THEME_CLASS` for an app's theme, joined
+ * with the rice toggles' classes and, on a page that draws the CRT overlay (`crt`), the overlay's.
+ */
+export function requestStart(
+    held: AppsHeld,
+    config: Record<string, unknown>,
+    marked: boolean,
+    crt: boolean
+): RequestStart {
+    const files = firstAppThemes(held, config);
+    const drawable = Object.entries(files).flatMap(([name, file]) => (file === null ? [] : [name]));
+    const start = startOf(
+        startRows(config),
+        drawable,
+        config.theme,
+        marked ? config.app_theme : undefined
+    );
+    const file = 'app' in start ? (files[start.app] ?? null) : null;
+    const theme = file !== null ? APP_THEME_CLASS : 'cls' in start ? start.cls : '';
+    const looks = configLooks(config);
+    return { classes: bodyClass(theme, { ...looks, crt: crt && looks.crt }), file };
 }
 
 /** GET /api/app-theme?choice=<saved name>: the resolved theme file of an app. */

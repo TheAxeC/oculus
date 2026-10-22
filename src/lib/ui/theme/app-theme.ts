@@ -1,16 +1,19 @@
 // Layer 3, primitive. An app's colour theme on the page. The app declares a VS Code theme file; the
 // server resolves its `include` chain inside the app and serves the result (GET /api/app-theme),
-// and this converts it with the mapping the shipped VS Code themes are made with
-// (themes/vscode-map.ts, over the same tokens.css and themes.css the page is styled with). The
-// block it makes is `body.app-theme`, put in a style element of the document, and the editor's
-// rules for the theme are held for the editor to read (app-rules.ts).
+// and this converts it with the conversion the shipped VS Code themes are mapped with (`themeSheet`
+// of themes/vscode-map.ts, over the same tokens.css and themes.css the page is styled with). The
+// block it makes is `body.app-theme`, put in the style element whose id is `APP_THEME_STYLE_ID`,
+// and the editor's rules for the theme are held for the editor to read (app-rules.ts).
 //
 // A theme is loaded by the name the `theme` option holds it under (data/helpers/files/apps/
 // choices.ts), so a page that holds only that name, the find page and the presenter's pages, loads
-// it the same way the workbench does. The theme a page starts on comes with the page's first load
-// instead, which the page hands its draw (`ThemeDraw.file`), converted here before the first
-// paint, in the browser and in the desktop app's window alike; the route serves every theme chosen
-// after it.
+// it the same way the workbench does. The theme a page starts on is in the page's first HTML
+// already: the server writes its body class, the tokens derived for it on the root element and,
+// for an app's theme, the block of its file in that style element (hooks.server.ts), so the first
+// paint is the theme's. The page's first load carries the same file, which the page hands its
+// first draw (`ThemeDraw.file`); the draw converts it here and replaces the text of the element the
+// server sent, in the browser and in the desktop app's window alike. The route serves every theme
+// chosen after it.
 
 import {
     APP_THEME_CLASS,
@@ -26,27 +29,20 @@ import {
     startClass,
     themeClass
 } from '$lib/state/shared/words/appearance';
+import type { BodyLooks } from '$lib/data/helpers/editor/start-theme';
 import {
-    GIT_DEFAULTS,
-    basesOf,
-    mapTheme,
-    type OutRule,
+    APP_THEME_STYLE_ID,
+    themeSheet,
     type ResolvedTheme,
-    type UiTheme
+    type ThemeSheet
 } from '$lib/themes/vscode-map';
 import themesCss from '$lib/themes/themes.css?raw';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import { setAppRules } from './app-rules';
-import { THEME_SHEETS, applyTheme, type BodyLooks, type Themeable } from './theme';
-
-/** The id of the style element that holds the app theme's block. */
-const STYLE_ID = 'oculus-app-theme';
-
-/** An app theme converted: its block, the editor's rules and whether it is dark. */
-type AppThemeSheet = { css: string; rules: OutRule[]; dark: boolean };
+import { applyTheme, withThemeBlock, type Themeable } from './theme';
 
 /** A theme the server resolved, with its converted sheet and the words that name it. */
-type AppThemeLoad = { sheet: AppThemeSheet; label: string; app: string };
+type AppThemeLoad = { sheet: ThemeSheet; label: string; app: string };
 
 /** What the style element needs of the document. */
 export type AppThemeDocument = {
@@ -55,23 +51,19 @@ export type AppThemeDocument = {
     createElement: (tag: 'style') => HTMLStyleElement;
 };
 
-/** Convert a resolved VS Code theme file into the `body.app-theme` block and the editor's rules. */
-function convertAppTheme(theme: ResolvedTheme, ui: UiTheme): AppThemeSheet {
-    const mapped = mapTheme(theme, ui, {
-        git: GIT_DEFAULTS,
-        bases: basesOf(tokensCss, themesCss)
-    });
-    const body = mapped.entries.map(([name, value]) => `    ${name}: ${value};`).join('\n');
-    return { css: `body.${APP_THEME_CLASS} {\n${body}\n}`, rules: mapped.rules, dark: mapped.dark };
-}
-
 /** A theme file the server read, converted, with the words that name it. */
 function loadOf(file: AppThemeFile): AppThemeLoad {
     const theme = {
         colors: file.theme.colors,
         tokenColors: file.theme.tokenColors
     } as ResolvedTheme;
-    return { sheet: convertAppTheme(theme, file.uiTheme), label: file.label, app: file.app };
+    const sheet = themeSheet(
+        theme,
+        file.uiTheme,
+        { tokens: tokensCss, themes: themesCss },
+        APP_THEME_CLASS
+    );
+    return { sheet, label: file.label, app: file.app };
 }
 
 /** Load the theme saved under `choice`, converted, or null when the server does not serve it. */
@@ -90,10 +82,12 @@ async function loadAppTheme(
 
 /**
  * Put an app theme's block in the document and hold its rules, or take both away with null. The
- * block's text is answered, for the derivation of the tokens that follows (`applyTheme`).
+ * element the page was sent with, or one an earlier draw made, has its text replaced, so the
+ * document holds one. The block's text is answered, for the derivation of the tokens that follows
+ * (`applyTheme`).
  */
-function paintAppTheme(document: AppThemeDocument, sheet: AppThemeSheet | null): string {
-    const present = document.getElementById(STYLE_ID);
+function paintAppTheme(document: AppThemeDocument, sheet: ThemeSheet | null): string {
+    const present = document.getElementById(APP_THEME_STYLE_ID);
     setAppRules(sheet === null ? null : sheet.rules);
     if (sheet === null) {
         present?.remove();
@@ -104,7 +98,7 @@ function paintAppTheme(document: AppThemeDocument, sheet: AppThemeSheet | null):
         return sheet.css;
     }
     const style = document.createElement('style');
-    style.id = STYLE_ID;
+    style.id = APP_THEME_STYLE_ID;
     style.textContent = sheet.css;
     document.head.append(style);
     return sheet.css;
@@ -160,17 +154,19 @@ function paintLoad(
 ): void {
     const css = paintAppTheme(document, load.sheet);
     const classes = [APP_THEME_CLASS, draw.extra ?? ''].join(' ');
-    applyTheme(document, classes, draw, undefined, `${THEME_SHEETS}\n${css}`);
+    applyTheme(document, classes, draw, undefined, withThemeBlock(css));
 }
 
 /**
  * Put a theme on the document. A theme of the configuration is its classes; an app's is converted,
- * its block put in the document and its tokens derived from it. An app's theme the draw hands the
- * file of (`file`, which the page's first load carries) is drawn from that file at once, before
- * the page paints; any other draw of an app's theme loads its file from the server. Answers false
- * when an app's theme could not be loaded and the page drew `classes` instead, which for an app's
- * theme is the start theme's. `current` says whether the draw is still wanted once the load has
- * returned.
+ * its block put in the document and its tokens derived from it. The page's first paint comes from
+ * the HTML the server sent, which holds the start theme's class, its derived tokens and, for an
+ * app's theme, its block; an app's theme the draw hands the file of (`file`, which the page's first
+ * load carries) is drawn from that file at once, the draw replacing the text of the style element
+ * the server sent, and any other draw of an app's theme loads its file from the server. Answers
+ * false when an app's theme could not be loaded and the page drew `classes` instead, which for an
+ * app's theme is the start theme's. `current` says whether the draw is still wanted once the load
+ * has returned.
  */
 export async function drawTheme(
     document: Themeable & AppThemeDocument,

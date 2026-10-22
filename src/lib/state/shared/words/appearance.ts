@@ -38,7 +38,7 @@ import { z } from 'zod';
 import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph, t } from './text.ts';
 import { CODE_TOKENS, isCodeTheme } from '../../../data/helpers/editor/code-themes.ts';
-import { startOf, startTheme } from '../../../data/helpers/editor/start-theme.ts';
+import { configLooks, startOf, startTheme } from '../../../data/helpers/editor/start-theme.ts';
 import {
     APP_THEME_CLASS,
     splitAppChoice,
@@ -157,10 +157,8 @@ const NO_LOOK: Look = {
     appTheme: '',
     textSize: 1,
     icons: false,
-    brackets: true,
-    monospace: true,
+    ...configLooks({}),
     wallpaper: '',
-    crt: false,
     statusHidden: [],
     statusQuiet: false,
     statusRepository: ''
@@ -321,30 +319,26 @@ export function boundedTextSize(value: unknown): number {
     return Math.min(1.6, Math.max(0.7, Math.round(value * 10) / 10));
 }
 
+/** The `rice.icons` option, under a `rice:` map; anything else is refused. */
+const iconsShape = z.object({ icons: z.boolean() }).transform((rice) => rice.icons);
+
 /**
  * The keys of the look, each read on its own: a key that is missing or of the wrong type reads as
- * the value a config that sets none holds, so a half-edited file still draws a page.
+ * the value a config that sets none holds, so a half-edited file still draws a page. The three
+ * options the body's class is joined with, `crt.on`, `rice.brackets` and `rice.monospace`, are read
+ * by `configLooks` of data/helpers/editor/start-theme.ts, by which the server reads them for the
+ * class it sends the page with, so the two reads cannot disagree.
  */
 const lookShape = z
     .object({
         theme: z.string().catch(NO_LOOK.theme),
         app_theme: z.string().catch(NO_LOOK.appTheme),
-        text_size: z.unknown().transform(boundedTextSize),
-        rice: z
-            .object({
-                icons: z.boolean().catch(NO_LOOK.icons),
-                brackets: z.boolean().catch(NO_LOOK.brackets),
-                monospace: z.boolean().catch(NO_LOOK.monospace)
-            })
-            .catch({
-                icons: NO_LOOK.icons,
-                brackets: NO_LOOK.brackets,
-                monospace: NO_LOOK.monospace
-            }),
+        text_size: z.unknown().optional().transform(boundedTextSize),
+        rice: z.unknown().optional(),
         wallpaper: z
             .object({ show: z.enum(['shown', 'hidden', '']).catch('') })
             .catch({ show: '' }),
-        crt: z.object({ on: z.boolean().catch(false) }).catch({ on: false }),
+        crt: z.unknown().optional(),
         status_bar: z
             .object({
                 hidden: rowsShape(z.string().min(1))
@@ -359,11 +353,9 @@ const lookShape = z
         theme: node.theme,
         appTheme: node.app_theme,
         textSize: node.text_size,
-        icons: node.rice.icons,
-        brackets: node.rice.brackets,
-        monospace: node.rice.monospace,
+        icons: readAs(iconsShape, node.rice) ?? NO_LOOK.icons,
+        ...configLooks(node),
         wallpaper: node.wallpaper.show,
-        crt: node.crt.on,
         statusHidden: node.status_bar.hidden,
         statusQuiet: node.status_bar.quiet,
         statusRepository: node.status_bar.repository

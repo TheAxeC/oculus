@@ -214,3 +214,219 @@ Without a root, the server picks `homeOf` (the primary, else the first hub) or `
 - The report's "scan.ts ... now 669 lines" does not match `wc -l` (scan.ts 133, data/index.ts 666). No decision rests on this.
 
 Usage: aa1dd67ae57731a87, claude-opus-5-5, 149205 tokens, 78 tool uses, 17 min 26 s
+
+## Repair round 1, refuted
+
+Not closed by this round: the S2 list of saved fields in the report leaves out two places in `~/.oculus/layouts.json` that hold a record in the old shape. They are a page's `item` and the kept layouts of closed folder pages (Spec R1). Item 3 is therefore violated. A doc comment rewritten in this round is 104 columns wide (Standards R1), so item 11 is violated. Every other item and every case holds or is met. The verify list (`test:quick`) was red on my run too. Every red row was a timeout or a worker that did not start, and each passed when run alone. None of them is a defect of this step (evidence under Proof).
+
+```
+Verify 1, from the worktree root, PATH node v24.21.0:
+$ npm run test:quick -- --base 18fa0365            EXIT 1
+test:quick: 229 changed file(s), from git since 18fa0365
+test:quick: 299 test file(s)
+ok      ASCII gate (6.1 s)
+ok      prettier (6.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (7.8 s)
+ok      eslint (190.3 s)
+ok      svelte-check (246.4 s): 1792707637720 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (310.8 s)
+FAILED  vitest (382.8 s)
+ FAIL  |unit| tests/routes/apps/app-manage.test.ts > ... > app-manage answers 403 and leaves the record alone   (Test timed out in 5000ms)
+ FAIL  |unit| tests/server/edit/app-store.test.ts > ... (2 rows)                                                  (Test timed out in 5000ms)
+ FAIL  |unit| tests/state/sources/clone-after.test.ts > ... (2 rows)                                              (Test timed out in 5000ms)
+ FAIL  |unit| tests/data/sources/manifests/manifests.test.ts > ... > reads 'a scan of the folder above the stages<horizontal ellipsis>'  (Test timed out in 5000ms)
+ Error: [vitest-pool]: Failed to start forks worker for test files .../tests/ui/html.dom.test.ts.
+ Test Files  4 failed | 221 passed | 63 skipped (288)
+      Tests  6 failed | 2429 passed | 656 skipped (3091)
+FAILED  vitest slow (433.7 s)
+ FAIL  |unit| tests/server/machine/lsp/svelte-trust.test.ts > ... > imports the Svelte config of the repository once the configuration is approved
+ AssertionError: expected false to be true (svelte-trust.test.ts:84, the 20_000 ms ready wait)
+ Test Files  1 failed | 76 passed (77)
+test:quick: 441.9 s; failed: vitest, vitest slow
+(uptime right after: load averages: 18.88 17.71 16.26)
+npm run format: not run (it writes files).
+
+Each red file rerun alone, `npx vitest run <file> --reporter=dot`:
+app-manage.test.ts 23 passed (23); app-store.test.ts 15 passed (15); clone-after.test.ts 11 passed (11);
+manifests.test.ts 34 passed (34); svelte-trust.test.ts 2 passed (2); tests/state/sessions/source/source.test.ts 27 passed (27)
+manifests row timed alone: base copy 287ms, worktree 72ms.
+
+Verify 2 plus G28's files and this round's test files:
+$ npx vitest run --testTimeout 0 tests/checks/tree/boundaries.test.ts tests/data/hubs tests/routes/hubs tests/data/helpers/hub-names.test.ts tests/state/boards/board/hub-facets.test.ts tests/views/shared/forms/entry-add.test.ts tests/routes/edit/write.test.ts tests/state/client/held-unsaved.test.ts tests/state/forms/page-entry.test.ts tests/state/forms/form-draft.test.ts tests/state/sessions/source/source.test.ts tests/state/client/created-ids.test.ts tests/state/forms/entry-save.test.ts tests/server/edit/feeds.test.ts tests/server/core/changes.test.ts tests/routes/edit/undo/undo.test.ts --reporter=dot
+ Test Files  24 passed (24)
+      Tests  361 passed (361)
+
+Case files alone, verbose:
+hub-routing.test.ts  Tests 7 passed (7)  (C16 rows: 'refuses a bare key, with 400 and the sentence that the write needs its hub, and writes nothing (C16)', 'refuses a hub no workspace folder carries, with 404 and the sentence naming the hub, and writes nothing (C16)'; C8 x2, C14)
+hub-undo.test.ts     Tests 2 passed (2)  (C7)
+hub-portfolio.test.ts, first run alone: Tests 3 failed | 13 passed (16); the three were the first G32 rows, 6476ms, 6526ms, 7440ms
+hub-portfolio.test.ts, next three runs alone: Tests 16 passed (16) each
+hub-portfolio.test.ts on the base copy migration-O54-base, alone: Tests 3 failed | 6 passed (9), the first three rows 8742ms, 8394ms, 6884ms
+
+Rows of the round, before and after (the builder's o54-r1-before copy; its 149 snapshot src/config files equal the round snapshot byte for byte; the 7 files outside files.txt equal `git show 18fa0365:`; the 10 test files equal the worktree's):
+$ npx vitest run --testTimeout 0 <the 10 files the report names> --reporter=dot
+ before: Test Files  10 failed (10)   Tests  41 failed | 148 passed (189)
+ after:  Test Files  10 passed (10)   Tests  189 passed (189)
+
+Verify 3: the spec.md ASCII perl gate over the 228 existing paths of `git status --short`: printed nothing (perl exit 0). The report file: no line outside the set.
+Verify 4: no changed .ts over 880, no .svelte over 520. writes.ts 808, writes/hubs.ts 276, hub-writes.test.ts 770, writes.svelte.ts 874, feed-route.ts 187, Palette.svelte 513. (The report gives 272 and 733 for the second and third; no decision rests on them.)
+Verify 5: sh utils/unused-exports.sh exit 0; diff against migration-O54-base/unused-exports.txt: exit 0; "Unused exports (229)".
+Verify 6: 209 hits in the worktree, 215 on the base copy; in the files this round changed the hits equal the snapshot's (page-entry.ts x3, edit/feeds/feeds.ts `line.indexOf(':')`, which is also at the base's line 166).
+Verify 7 over this round's added lines: "before the feed is asked whether it is unique" (idents.ts, an order of steps), variables named `before`, feed-route.ts "before the writes after them" (unchanged line). No history.
+
+Commands the report quotes, rerun:
+C9 to C12 probe (the builder's o54-probe.test.ts, run in its o54-final-run copy, whose src and config equal the worktree's, diff -rq exit 0, and in o54-base-run, whose src equals migration-O54-base):
+final: C9 findings on lab-paper: []
+final: C10 venue choices for a lab project: [iclr, jmlr, kdd, nature ("Nature of lab"), neurips, tmlr, {"id":"science","label":"Science of hub","hub":"hub"}]
+final: C11 layouts.json tab state: {"root":{"kind":"pane","tabs":[{"id":"t1","view":"project","state":{"hub":"lab","key":"lab-paper","label":"Project lab-paper"}}],"active":"t1"}}
+final: C11 stateRecord from: "records.ts" / C11 record the tab opens after the reload: "lab:lab-paper" / held true
+final: C12 muted, the workspace file parking 7653ae880b67: ["7653ae880b67"]
+final: C12 parked (muted) findings: ["lab | projects/ideas/lab-empty | venue_id | 7653ae880b67"]; lab-empty among the open findings: 0
+base:  C9 findings on lab-paper: ["venue_id is science, which is not a key of venues"]
+base:  C12 parked (muted) findings: ["undefined | lab:projects/ideas/lab-empty | venue_id | 7653ae880b67"]; lab-empty among the open findings: 0
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since 18fa0365:
+
+- 1: holds. `hubs/feeds.ts` `rooted` gives each feed entry `root` and `id: hubId(hub, key)` by `FEED_IDENTITY`, so S1 is closed. The C15 row reads `['hub:Shared lead', 'lab:Shared lead']`. The rest is as the first review found.
+- 2: holds. Rows C1, C2+C4, C5 and C13 pass (hub-portfolio 16/16 on three runs alone).
+- 3: violated, Spec R1. The code writes `{hub, key}` in every saved field I read. The report's item-3 list (the S2 list) leaves out a page's `item` and the kept folder layouts in layouts.json.
+- 4: holds. The verify 6 hits are unchanged in the round's files.
+- 5: holds. `feed-field`, `feed-delete` and `linkedin-post` route by `routed` (`splitHubId`) after `routeRefusal`. `bodies.ts` has no `root` on them. A bare id gets 400 with `server.write_route.no_hub_part` (C16 row and hub-writes rows), so B1 is closed. C14 passes.
+- 6: holds. The probe shows C9 `[]` after the round and the `no key` finding on the base.
+- 7: holds. The probe's C10 lists lab's venues, `nature` once (lab's), then `science` with `"hub":"hub"`.
+- 8: holds. Both C8 rows pass.
+- 9: holds. The probe's C12 shows the signature 7653ae880b67 parked on both trees, the scope bare and `hub: lab` after the round. P2 is closed.
+- 10: holds. `entry-add.ts` `leadAsk` and `paperAsk` open `answer.id`. `withHubId` answers each create with its internal id (rows of 'a write that makes a record'), so B2 is closed at the four places its ruling names.
+- 11: violated, Standards R1. The `links.ts:1-6` head comment is now true, so T1 is closed. The `waiting.ts` doc comment rewritten for item 1 has a 104-column line.
+- 12: holds. The C rows are in hub-portfolio (G32) and hub-routing/hub-undo (G8), and the slow files were run alone (above). The new file `created-ids.test.ts` is Standards R2.
+
+Cases, as amended by the cases ruling:
+
+- C1: met (hub-portfolio row passes).
+- C2: met.
+- C3: met (row asserts `a:alpha`, `b:alpha`, `c:c`).
+- C4: met.
+- C5: met.
+- C6: met.
+- C7: met (hub-undo 2/2).
+- C8: met (both rows pass).
+- C9: met (probe rerun, both trees).
+- C10: met (probe rerun).
+- C11: met. The probe rerun on the final tree imports `stateRecord` from records.ts and gives `{"hub":"lab","key":"lab-paper","label":...}` in layouts.json and `lab:lab-paper` after the reload, so P1 is closed.
+- C12: met, both halves (probe rerun).
+- C13: met.
+- C14: met.
+- C15: met.
+- C16: met. A bare key gets 400 with `no_hub_part` and `nowhere:alpha` gets 404 with `no_hub_named`. Both rows assert that nothing is written and that the change log is empty.
+
+### 1. Spec
+
+- **R1.** Report section "S2, every saved field whose shape changed" (items 1 to 15). The code that writes the missing field is `src/lib/views/shared/card/card.ts:131-133`:
+
+  ```ts
+  const first = { view: 'project', state: recordState(item.id, tab) };
+  client.folders.open({ root, path }, { label: item.project.title, item: first });
+  ```
+
+  The field is kept on the page as `item?: FolderItem` (`state/workbench/layout/model.ts:138`) and read back by `itemOf` (`saved/kept.ts:49-52`, called at `saved.ts:546`). `folder-opener.ts:73-75` reads it on Reset layout with `stateRecord(item.state)`. Kept layouts of closed folder pages are `KeptWorkbench { folder, workbench, states }` (`model.ts:197-201`), stored in layouts.json, whose `states` hold the ui-store view states by instance id.
+  - What is wrong: the list gives a page's tabs (1 to 8) and the view states in views.json (9 to 14). It leaves out two places in layouts.json that hold a record in the old shape:
+    - (a) each folder page's `item`, which changes from `{ view: 'project', state: { id, label } }` to `{ view: 'project', state: { hub, key, label } }`;
+    - (b) each `kept[]` entry, both the tab states in its `workbench` and the view states in its `states` map. The list places the view states under views.json only.
+  - The round's ruling 4 says "the list is the whole of it".
+  - Failure scenario (a): at landing the orchestrator rewrites tabs and view states from the list, and a workbench page Axel opened from a project card keeps `item.state = { id: 'eeg-saad-challenge', label }`. On Reset layout, `projectIdOf` gives `''`. The arrangement then drops the Deposit tab, and `openView('project', { id, label })` opens a project tab that names no record.
+  - Failure scenario (b): reopening a folder page Axel closed before landing restores its board `expanded` and `more` lists and its card cursor from `kept[].states`. Those lists hold old string ids, which `recordItemsShape` and `recordShape` read as `[]` and undefined, so they are lost silently. Its project tab opens as not found when only `pages[].workbench` is rewritten.
+  - Verdict: item 3 violated, and ruling 4 (S2) is not closed.
+  - Disposition: small and inside the brief, so the list can be completed at landing, before the ruling-238 change.
+- **R2.** `src/lib/server/edit/writes.ts:553-554`:
+
+  ```ts
+  const home = homeOf(into, app);
+  if (home === null) return noHub(into, app);
+  ```
+
+  This is in the `host` branch, with `homeOf` at `writes/hubs.ts:173-177` (`if (own !== null || app !== null) return own;`).
+  - What is wrong: cases ruling 4 refuses an app's *record* writes when there is no primary. The round extended that refusal to `host`, a career-file write, which is no record, and no item or ruling asks for this. Base `writes.ts:535` (`homeOf(into)`) wrote it to the first hub. The creates (`new-entry`, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) do fall under ruling 4's "every app record write is refused", so for them the change is inside the cases ruling (point 4).
+  - Failure scenario: an app holding `writes: [host]` in a workspace with no primary got 200 on the base, with the host written to the first hub's career file. It now gets 409 "The workspace has no primary hub, so there is nowhere to keep this; ...".
+  - Verdict: none. Whether the career file follows the record rule is the orchestrator's call. `docs/apps.md:427` already states it.
+
+### 2. Proof
+
+- No finding on point 1, the three red rows of the builder's last run. Evidence that the `source.test.ts` row is not a defect of this step:
+  - The row 'takes the new text into a clean tab, with its edits, and keeps no unsaved mark' builds the store with `createSource` over `tests/state/sessions/source/source-server.ts`.
+  - `git diff 18fa0365 --stat` is empty for these files: `source.svelte.ts`, `disk.svelte.ts`, `draft.ts`, `data/helpers/files/address.ts`, `save-text.ts`, `text-edits.ts`, `editor/editor.ts`, `shared/words/text.ts` and `tests/state/sessions/source/`.
+  - The two changed modules it imports change only in parts it does not use. `shared/stores/shapes.ts` changes only the `WritesStore` method types. `diskRelation` in hub-names.ts and `readAs` in shapes.ts are untouched by the diff.
+  - The helper's `settled()` (source-server.ts:198-207) waits one `setTimeout(0)` turn after the open requests. That is a wait on time rather than a signal, and it already existed. My judgment is that load can make it miss.
+  - The row passed in my list run, alone (27/27) and in the scoped run.
+  - `app-manage.test.ts` timed out in my list run as well and passed alone (23/23).
+  - The hub-portfolio G32 rows passed in my list run (vitest slow). Run alone with the default 5000 ms limit, the first three rows failed once at 6.5 to 7.4 s, then passed three times. The same three rows fail at 6.9 to 8.7 s on the unchanged base copy.
+  - My list run also timed out `manifests.test.ts`, a file this step changed. Alone, its row takes 72 ms here and 287 ms on the base.
+- No finding on point 5. The P2 mute in the workspace file is right. `audit_ignore` is a workspace-file option (`config/options/behavior.yml:19`), not a key of `HUB_LIST` (`hub-names.ts:365`), and the Audit view's mute writes it into the open workspace file's `settings:` (`writes/config/lists/audit-mute.ts:1-3`). The ruling's "hub's config" was the wrong place, and the builder said why. The probe rerun on both trees shows the muted finding parked.
+- The report says, under "Open items", that a fix of the `write-files.ts:146` guard "needs the page to know the server's hub order". For leads and Lit Watch this does not hold: the page already has that order. `mergedFeeds` builds `hubFiles` "in the workspace's folder order" (`hubs/feeds.ts:1-3`, `Object.fromEntries(hubs.map(...))`), and `homeOf`'s fallback is `into.hubs.at(0)`. The decision that rests on this claim is whether that guard can be fixed in this step (see Behaviour R3). For `literature-save`, `homeNaming` also depends on whether a hub's engine-path file exists, which the page does not read.
+
+### 3. Standards
+
+- **R1.** `src/lib/state/boards/waiting.ts:11-12`:
+
+  ```
+   * else its title, else its key, and a value that resolves against neither as its key, which
+   * validate reports as a finding. The names are handed in rather than read from the snapshot here, since
+  ```
+
+  - What is wrong: line 12 is 104 columns. This round moved the snapshot's 101-column line onto the next line instead of rewrapping the paragraph. spec.md, "What every package obeys": "A comment edited by the step is rewrapped as a whole paragraph at 100 columns". The report says "Comments over 100 columns that the step added: none left", which is false.
+  - Failure scenario: a reader gets a comment that is wrapped wrongly, and the claim in the report about it is false.
+  - Verdict: item 11 violated. Small, fixable at landing.
+- **R2.** `tests/state/client/created-ids.test.ts` (new, untracked, 104 lines). `grep -n "created-ids" .scratch/migration/agents/guarded.md` prints nothing, and the report names no entry for this file or for the new rows of hub-writes and entry-add.
+  - What is wrong: spec.md's test rule says "A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there by file and title".
+  - Failure scenario: at landing nobody knows which entry the four rows guard, so they are either kept with no entry or deleted.
+  - Verdict: none. The orchestrator names them under G8 ("the hub an Add or a save writes to") at landing, or drops the file.
+- **R3.** The report's "Verify lines" section says "The verify list ... ran 3 times". Runs 1 and 2 came before a later change (the `shapes.ts:77` comment), which forced run 3.
+  - What is wrong: spec.md, "Token discipline", allows the list once after the last change, plus one more run after fixing a red line in a changed file. A run beyond that is a finding. The round's ruling 8 says "runs once".
+  - Failure scenario: none to the code. It costs about 8 to 9 minutes of machine time per extra run.
+  - Verdict: none.
+
+### 4. Behaviour
+
+- **R1 (point 4).** `src/lib/server/edit/writes/hubs.ts:173-191` (`homeOf(into, app)`, `noHub(into, app)` answering `server.workspace.no_primary` with 409), used by `writes.ts:553`, `:565`, `:578-584`, `:691` and `feed-route.ts:116`, `:125`, `:135-143`, `:166`.
+  - What is wrong: an app's create in a workspace with no primary (`new-entry` with no root, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) and an app's `host` write were written to the first hub on the base (`homeOf(into)`, base `writes.ts:535/547/560/669` and `feed-route.ts:95/104/144`). They now answer 409 `no_primary`.
+  - The report states only the after, for creates ("With no primary, an app's create is refused 409 `no_primary`"). It gives no before and does not mention `host`. `docs/apps.md:427` states the after for both.
+  - The creates are inside cases ruling 4. `host` is Spec R2.
+  - Failure scenario: an app builder whose app made leads in a workspace with no primary reads the report and is not told that the app's writes now fail where they used to succeed.
+  - Verdict: none.
+- **R2.** `src/lib/server/edit/writes/hubs.ts:67-80`:
+
+  ```ts
+  const { hub, key } = addressOfId(id);
+  if (hub === '') { ... 400 }
+  if (!keys.includes(hub)) { ... 404 no_hub_named }
+  ```
+
+  - What is wrong: ruling B1 refuses "a bare key, a bare title" with 400. A bare title that holds a colon reads as a hub part and gets 404 with a sentence naming a hub that does not exist. Example: a lead titled `Re: meeting` sent as `{kind:'feed-field', feed:'leads', id:'Re: meeting', ...}` gets "The workspace has no hub named Re".
+  - Nothing is written, and the page always sends internal ids, so only an app or a stale page meets this.
+  - Failure scenario: such an app is told a hub is missing instead of being told that the write needs the record's hub.
+  - Verdict: none. C16 is met.
+- **R3 (point 2).** `src/lib/state/sessions/source/write-files.ts:145-146`:
+
+  ```ts
+  // The hub a write that adds a record names, the primary's when it names none.
+  const home = (root: unknown): string => text(root) || (look.primary() ?? '');
+  ```
+
+  together with `:176-179`, `viewSourceFile('leads'|'radar', merged, look.primary())`.
+  - Outside ruling B2 and the brief, by their text. B2 names the page opened and the entry settled at four places in `writes.svelte.ts`. Items 3 to 5 cover ids and routing. This guard runs before the write is sent and reads no id. The base had the same prediction (base `writtenFile` `new-entry`/`literature-save`/`lead-add`/`radar-add`).
+  - Cost, case 1: in a workspace with no primary, a create that names no hub (Add Lead, Add to Lit Watch, a `new-entry` with no `root`, a Save to Literature with no `root`) is not checked against a source tab holding unsaved text of the first hub's file, which the server writes (`homeOf`). G28's "refused before it is sent" does not hold there.
+  - Cost, case 2: with a primary that does not hold Literature, a Save to Literature with no `root` checks the primary's configured path while the server writes another hub's file (`homeNaming`).
+  - No text is lost. The dirty tab keeps its text and is marked changed, and its later save is refused as a conflict (source.test.ts rows 'keeps the typed text of a dirty tab and marks it changed' and 'refuses the save of a changed file on the base the tab read').
+  - Verdict: none for this step. Disposition: the orchestrator raises or books it as a G28 gap. See the Proof note on hub order.
+- No finding on point 3. `/api/deposit` (`deposit-routes.ts:240`, `if (!(options.idsFor ?? knownIds)().includes(id)) return noProject(text);`) is outside ruling B1 by its text. B1 sets a sentence under `server.write_route` and the C16 row of hub-routing. The deposit route has its own catalog group (`server.deposit.portfolio_no_project`, server.yml:237), writes nothing for a bare id (C16's "nothing is written" holds), and the page sends it `stateRecord(instance.state)`, an internal id (`Deposit.svelte:72`).
+
+### Declined to judge
+
+- `npm run format` (verify 1) and `npm run diagrams`: not run, because both write files in the worktree. Prettier's check inside `test:quick` is green.
+- What Axel's own `~/.oculus/layouts.json` holds under `pages[].item` and `kept[]`: not opened, by the brief's rule. Spec R1 rests on the code that writes and reads those fields.
+- Whether the step's changes are complete for the untracked ledger copies `.scratch/migration/agents/briefs/O54-cases.md` and `O54-round1.md` in the worktree: both equal main's copies (`cmp`). They are not the builder's work and should stay out of the landing's wip commit. Who placed them there would take a git command other than the three allowed.
+- The look at landing (the Leads, Lit Watch and LinkedIn cards' writes, the page Add opens, the Audit chip): no page was run.
+
+Usage: a16b86dd29919143f, claude-opus-5-5, 347113 tokens, 113 tool uses, 33 min 36 s

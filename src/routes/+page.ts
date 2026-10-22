@@ -13,7 +13,8 @@ import type { PageLoad } from './$types';
 // page state of this machine, which the page's client holds the arrangement and the view states in.
 //
 // The files of the app themes the `theme` and `app_theme` options name are handed on the same way:
-// the page hands them to its workbench, which draws such a theme from them at the first paint.
+// the page hands them to its workbench, whose first draw of such a theme is made from them, the
+// theme the page's first HTML was sent with (hooks.server.ts).
 //
 // The write token is handed on rather than installed: it belongs to the client the page builds, and
 // the page puts it in that client's write store. This load runs again on invalidateAll(), so the

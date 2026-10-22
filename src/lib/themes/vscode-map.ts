@@ -1,7 +1,11 @@
 // Layer 3, themes. The mapping of a VS Code colour theme to oculus's theme tokens and to the
 // TextMate rules of the editor. The converter utils/migrations/convert-vscode-themes.ts writes the
-// shipped themes of Visual Studio Code with it, and the page converts an app's colour theme with it
-// (ui/theme/app-theme.ts), so a theme file maps the same way wherever it is read.
+// shipped themes of Visual Studio Code with it, and an app's colour theme is converted into its
+// block by `themeSheet`, which the page calls (ui/theme/app-theme.ts), the server calls for the
+// block a page's first HTML carries (hooks.server.ts) and the desktop host calls for the colours a
+// window takes (desktop/windows/start-colours.ts), so a theme file maps the same way wherever it is
+// read. The id of the style element that holds the block, `APP_THEME_STYLE_ID`, is here for the
+// same reason: the page replaces the element the server sent rather than adding a second one.
 //
 // `mapTheme` is a function of a resolved theme (`colors` and `tokenColors`, the `include` chain
 // applied), its `uiTheme` and a context: the git extension's registered colours (`GIT_DEFAULTS`)
@@ -549,6 +553,31 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
     const grounds = [tokens['--panel'], ...TINTS.map((token) => tokens[token])];
     const rules = mapRules(theme, tokens['--panel'], grounds, unreadable);
     return { dark, entries, registered, base: fromBase, muted, nudged, rules, unreadable };
+}
+
+/** The id of the style element that holds an app's colour theme block on the page. */
+export const APP_THEME_STYLE_ID = 'oculus-app-theme';
+
+/** A theme converted to a stylesheet block: its text, the editor's rules and whether it is dark. */
+export type ThemeSheet = { css: string; rules: OutRule[]; dark: boolean };
+
+/**
+ * A resolved theme as the block `body.<cls>` of `mapTheme`'s tokens, over oculus's base tokens of
+ * the text of tokens.css and themes.css (`sheets`), with its editor rules. The class is handed in,
+ * since the name an app's theme is drawn under is the apps' and not this folder's.
+ */
+export function themeSheet(
+    theme: ResolvedTheme,
+    ui: UiTheme,
+    sheets: { tokens: string; themes: string },
+    cls: string
+): ThemeSheet {
+    const mapped = mapTheme(theme, ui, {
+        git: GIT_DEFAULTS,
+        bases: basesOf(sheets.tokens, sheets.themes)
+    });
+    const body = mapped.entries.map(([name, value]) => `    ${name}: ${value};`).join('\n');
+    return { css: `body.${cls} {\n${body}\n}`, rules: mapped.rules, dark: mapped.dark };
 }
 
 /**

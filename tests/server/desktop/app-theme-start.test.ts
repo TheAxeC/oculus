@@ -17,7 +17,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, vi } from 'vitest';
-import type { AppThemeFiles } from '../../../src/lib/data/helpers/files/apps/choices.ts';
+import { NO_OFFERS, type AppThemeFiles } from '../../../src/lib/data/helpers/files/apps/choices.ts';
 import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
@@ -44,6 +44,7 @@ type Modules = {
     startColours: typeof import('../../../src/desktop/windows/start-colours.ts').startColours;
     themeOffers: typeof import('../../../src/lib/data/helpers/files/apps/choices.ts').themeOffers;
     firstAppThemes: typeof import('../../../src/lib/server/machine/apps/routes/theme.ts').firstAppThemes;
+    requestStart: typeof import('../../../src/lib/server/machine/apps/routes/theme.ts').requestStart;
     heldChoice: typeof import('../../../src/lib/server/machine/apps/routes/choice.ts').heldChoice;
     words: typeof import('../../../src/lib/state/shared/words/appearance.ts');
     drawConfiguredTheme: typeof import('../../../src/lib/ui/theme/app-theme.ts').drawConfiguredTheme;
@@ -67,6 +68,7 @@ beforeAll(async () => {
         startColours: colours.startColours,
         themeOffers: choices.themeOffers,
         firstAppThemes: theme.firstAppThemes,
+        requestStart: theme.requestStart,
         heldChoice: choice.heldChoice,
         words,
         drawConfiguredTheme: page.drawConfiguredTheme,
@@ -267,5 +269,190 @@ describe("an app's colour theme from a window's first paint", () => {
         expect(started.classes.split(' ')).not.toContain('app-theme');
         expect(started.colours).toEqual(LIGHT);
         expect(fetched).not.toHaveBeenCalled();
+    });
+});
+
+/** The held apps a start is read over: Dusk approved, not approved, or its file gone. */
+type HeldAs = 'approved' | 'unapproved' | 'unresolved';
+
+// The start a page is sent with (`requestStart`), by the rule its first draw starts on: the theme
+// `theme` names, else in the desktop app's window the one `app_theme` names, else the first row,
+// an app's theme counting only when its app is approved and enabled and its file resolves, and the
+// class string joined with the rice looks and, on a page that draws the CRT overlay, the overlay's,
+// as the page's first `applyTheme` joins them.
+describe('the theme a page is sent with', () => {
+    let held: Record<HeldAs, AppsHeld>;
+    let dusk = '';
+
+    beforeAll(() => {
+        const fixture = plantDusk();
+        dusk = duskChoice(fixture);
+        const gone = plantDusk();
+        const resolvable = approvedHeld(gone);
+        writeFileSync(
+            join(gone.machine, 'notes', 'dusk.json'),
+            JSON.stringify({ include: './gone.json', colors: {} })
+        );
+        held = {
+            approved: approvedHeld(fixture),
+            unapproved: fixture.scan(new Set()),
+            unresolved: resolvable
+        };
+    });
+
+    /**
+     * The body class the page sets for `config`, read through the page's own reader: the workbench's
+     * draw as shell/window/appearance.svelte.ts makes it, with the CRT overlay the config sets, and
+     * the draw of a page with no `apps` channel, which draws no overlay.
+     */
+    async function pageClass(
+        config: Record<string, unknown>,
+        inApp: boolean,
+        drawnBy: 'workbench' | 'find'
+    ): Promise<string> {
+        loaded.words.setAppearance(config, CLASSES);
+        const page = pageDocument();
+        if (drawnBy === 'find') {
+            await loaded.drawConfiguredTheme(page.document, inApp, {});
+            return page.document.body.className;
+        }
+        const look = loaded.words.configuredLook();
+        await loaded.drawTheme(page.document, {
+            choice: look.theme,
+            app: false,
+            classes: loaded.words.themeClass(look.theme, NO_OFFERS, inApp),
+            crt: look.crt,
+            brackets: look.brackets,
+            monospace: look.monospace
+        });
+        return page.document.body.className;
+    }
+
+    it.each([
+        { row: 'the shipped config in a browser (C1)', options: {}, marked: false, classes: '' },
+        {
+            row: 'the shipped config in the desktop window (C2)',
+            options: {},
+            marked: true,
+            classes: 'vscode-dark-modern'
+        },
+        {
+            row: 'theme dark in a browser (C3)',
+            options: { theme: 'dark' },
+            marked: false,
+            classes: 'dark'
+        },
+        {
+            row: 'theme dark in the desktop window (C3)',
+            options: { theme: 'dark' },
+            marked: true,
+            classes: 'dark'
+        },
+        {
+            row: "theme naming an approved app's theme (C4)",
+            options: { theme: 'dusk' },
+            marked: false,
+            classes: 'app-theme',
+            file: true
+        },
+        {
+            row: 'theme naming the theme of an app that is not approved, in a browser (C5)',
+            options: { theme: 'dusk' },
+            held: 'unapproved',
+            marked: false,
+            classes: ''
+        },
+        {
+            row: 'theme naming the theme of an app that is not approved, in the desktop window (C5)',
+            options: { theme: 'dusk' },
+            held: 'unapproved',
+            marked: true,
+            classes: 'vscode-dark-modern'
+        },
+        {
+            row: 'theme naming an app theme whose file does not resolve, in a browser (C5)',
+            options: { theme: 'dusk' },
+            held: 'unresolved',
+            marked: false,
+            classes: ''
+        },
+        {
+            row: 'theme naming an app theme whose file does not resolve, in the desktop window (C5)',
+            options: { theme: 'dusk' },
+            held: 'unresolved',
+            marked: true,
+            classes: 'vscode-dark-modern'
+        },
+        {
+            row: 'the CRT overlay on and the rice toggles off over a rice theme (C11)',
+            options: {
+                theme: 'kanagawalotus',
+                crt: { on: true },
+                rice: { brackets: false, monospace: false }
+            },
+            marked: false,
+            classes: 'rice kanagawalotus crt rice-plain rice-sans',
+            drawnBy: 'workbench'
+        },
+        {
+            row: 'the same looks on a page that draws no CRT overlay (C11)',
+            options: {
+                theme: 'kanagawalotus',
+                crt: { on: true },
+                rice: { brackets: false, monospace: false }
+            },
+            marked: false,
+            crt: false,
+            classes: 'rice kanagawalotus rice-plain rice-sans',
+            drawnBy: 'find'
+        },
+        {
+            row: 'rice.monospace written as a word, which reads as its default (C11)',
+            options: {
+                theme: 'kanagawalotus',
+                crt: { on: true },
+                rice: { brackets: false, monospace: 'x' }
+            },
+            marked: false,
+            classes: 'rice kanagawalotus crt rice-plain',
+            drawnBy: 'workbench'
+        },
+        {
+            row: "app_theme naming an approved app's theme and theme empty, in the desktop window (C12)",
+            options: { theme: '', app_theme: 'dusk' },
+            marked: true,
+            classes: 'app-theme',
+            file: true
+        },
+        {
+            row: "app_theme naming an approved app's theme and theme empty, in a browser (C12)",
+            options: { theme: '', app_theme: 'dusk' },
+            marked: false,
+            classes: ''
+        }
+    ] as {
+        row: string;
+        options: Record<string, unknown>;
+        held?: HeldAs;
+        marked: boolean;
+        crt?: boolean;
+        classes: string;
+        file?: boolean;
+        drawnBy?: 'workbench' | 'find';
+    }[])('starts on $row', async ({ options, held: as, marked, crt, classes, file, drawnBy }) => {
+        const named = Object.fromEntries(
+            Object.entries(options).map(([key, value]) => [key, value === 'dusk' ? dusk : value])
+        );
+        const config = { ...shipped, ...named };
+        const start = loaded.requestStart(held[as ?? 'approved'], config, marked, crt ?? true);
+        expect(start.classes).toBe(classes);
+        if (file === true) {
+            expect(start.file?.theme.colors['sideBar.background']).toBe('#102030');
+        } else {
+            expect(start.file).toBeNull();
+        }
+        if (drawnBy !== undefined) {
+            expect(start.classes).toBe(await pageClass(config, marked, drawnBy));
+        }
     });
 });

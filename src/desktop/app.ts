@@ -15,6 +15,7 @@ import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DESKTOP_MARK } from '../lib/data/helpers/editor/start-theme.ts';
 import type { AppThemeFiles } from '../lib/data/helpers/files/apps/choices.ts';
 import type { RecentEntry } from '../lib/data/helpers/keys/oculus/menu-commands.ts';
 import { engineDir } from '../lib/data/sources/config.ts';
@@ -157,6 +158,10 @@ async function run(
     const pick = createPicker(windows, t, (message) => server?.send(message));
 
     const ses = session.defaultSession;
+    // Every window of the app loads its pages on this session, so the mark rides every request
+    // they make, a reload's included, and tells the server the page is in the app's window, which
+    // starts on `app_theme`; a browser's request never carries it.
+    ses.setUserAgent(`${ses.getUserAgent()} ${DESKTOP_MARK}`);
     const originOf = (url: string): string => {
         try {
             return new URL(url).origin;

@@ -1,20 +1,158 @@
 # O65 report: a status bar that scrolls sideways, and editor keys that work as VS Code's do
 
-Everything in the brief is done. The cases marked "Look" are checked by reading; their proof is the look at landing, which the builder does not run (spec.md:64). Two findings need the orchestrator's choice; they are under "Judgment calls" as J1 and J2.
+Not done: nothing in the brief or in repair round 1's rulings. Three facts the orchestrator needs before reading on:
+
+- The verify list was started four times this round and ran to its end twice. The first full run failed at svelte-check on a type error in the new LaTeX keys test; two later runs were stopped before their end, each because a further change followed (both under "Changes beyond the rulings"). The fourth run, after the last change, passed; its lines are under "Verification".
+- `tests/checks/source/comment-width.test.ts` fails on two comment lines this step does not touch, `tests/data/snapshot/reference-hub.ts:4` and `tests/data/snapshot/references.test.ts:544`. The same two lines fail the same check on the base copy (run quoted under "Verification"), so the failure is not this step's; the two files are outside the step's concern and were left unchanged. `test:quick` does not run that check.
+- The look at landing is still owed for every case marked "Look"; the builder runs no page (spec.md:64).
 
 ## Open items of the state file
 
-Verbatim from `.scratch/migration/orchestrator-state.md:190-194`:
+Verbatim from `.scratch/migration/orchestrator-state.md:190-195` in the worktree:
 
 > ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 >
 > An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-The section holds no entry.
+The section holds no entry in the worktree's copy. The refuter's B2 names open item 259 (the palette's Pin Editor sentence); it is in the orchestrator's state file on main, which the builder does not read, and it is listed under "Before and after" below.
+
+## Repair round 1: the rulings
+
+| Ruling | State | Check that shows it |
+|---|---|---|
+| 1 P1, Julia's settings by rank | DONE | Julia row, base copy red and after green |
+| 2 P2, `modes` in the mocked module | DONE | comment-rules runs, `grep` below |
+| 3 T1, the "given up" comments | DONE | grep below, exit 1 for the stale words |
+| 4 T2, the Julia `declare module` | DONE | read; the test is its one reader |
+| 5 B1 and S3, LaTeX keys by file | DONE | four latex-keys rows, base copy red and after green |
+| 6 B2, "Before and after" complete | DONE | section below |
+| 7 S1, S2, P3 | no work; verify list count given | "Verification" |
+
+### Ruling 1 (P1): Julia's settings do not depend on which load resolves first
+
+`src/lib/ui/controls/editor/kit/rite/settings.ts` no longer reacts to `onLanguageEncountered` and has no `setTimeout`. Every language's settings, Julia's included, go to Monaco's language configuration service at rank 101, one above the 100 at which Monaco's public `setLanguageConfiguration` registers every language's settings, its own Julia settings included (`standaloneLanguages.js:94`). Monaco resolves a language's settings field by field, a higher rank winning (`languageConfigurationRegistry.js:181-206`), so VS Code's Julia brackets and pairs hold whenever Monaco's own arrive.
+
+```ts
+// settings.ts
+export type Registry = {
+    register(languageId: string, configuration: Configuration, priority: number): Monaco.IDisposable;
+};
+export const OCULUS_RANK = 101;
+export function registerSettings(registry: Registry): void {
+    for (const [id, configuration] of settings()) {
+        registry.register(id, configuration, OCULUS_RANK);
+    }
+}
+
+// load.ts, in start(), after the detached editor that starts the services with the overrides
+async function languageSettings(): Promise<LanguageConfigurationService> {
+    const [standalone, registry] = await Promise.all([
+        import('monaco-editor/editor/standalone/browser/standaloneServices'),
+        import('monaco-editor/editor/common/languages/languageConfigurationRegistry')
+    ]);
+    return standalone.StandaloneServices.get(registry.ILanguageConfigurationService);
+}
+...
+const settings = await languageSettings();
+registerSettings(settings);
+```
+
+`languageSettings()` runs after the detached editor of `start()` has started Monaco's services with the overrides (`load.ts`, the `monaco.editor.create(...)` with `widgets.services`, `diffProviderFactoryService` and `editorProgressService`), so `StandaloneServices.get` finds them started and the overrides stay in force (`standaloneServices.js:687-701`: `get` starts the services only when they are not started).
+
+The test, `tests/ui/controls/editor/kit/comment-rules.test.ts`, describe "Julia's settings", row "keep VS Code's brackets and auto-closing pairs when Monaco gives its own after them". Its stand-in sits over Monaco's real `LanguageConfigurationRegistry`; its `setLanguageConfiguration` registers at 100, its `register` at the rank handed, and its `onLanguageEncountered` calls its callback at once. The row gives oculus's settings, lets any deferred work run, then gives Monaco's own Julia `conf` (imported from `definitions/julia/julia.js`) through `setLanguageConfiguration`, and asserts that Monaco's pairs differ from VS Code's and that the resolved brackets and auto-closing pairs are VS Code's.
+
+- Base copy (`base-run-round1-last.log`): `FAIL ... Julia's settings > keep VS Code's brackets and auto-closing pairs when Monaco gives its own after them`, `AssertionError: expected [ [ '{', '}' ], [ '[', ']' ], <horizontal ellipsis>(1) ] to deeply equal undefined` (the base gives Julia no settings).
+- The worktree before this round's change to `settings.ts` (the round-0 code, `onLanguageEncountered` then `setTimeout`): `Tests  1 failed | 32 passed (33)`, the Julia row failing with `AssertionError: expected [ { open: '{', close: '}' }, <horizontal ellipsis>(4) ] to deeply equal [ { open: '{', close: '}' }, <horizontal ellipsis>(4) ]`: Monaco's pairs won.
+- After: `Tests  34 passed (34)` for the file (`npx vitest run tests/ui/controls/editor/kit/comment-rules.test.ts`).
+
+### Ruling 2 (P2): `modes` lives in the mocked module
+
+The record of the settings Monaco's modules give is made inside the factory of `vi.mock('monaco-editor/editor/editor.api.js', ...)` and exported from the mocked module as `modes`; `jsonMode()` reads it by `await import(EDITOR_API)`. No `vi.hoisted` and no mutable value is left at file scope: `grep -n "vi.hoisted\|^const modes\|^let " tests/ui/controls/editor/kit/comment-rules.test.ts` prints nothing. The stand-in of `monacoStandIn()` is made inside each describe.
+
+### Ruling 3 (T1): the comments that said the chords were given up
+
+The three comments now say what the palette lists: the actions of the editor's Cmd+K chords (and of Ctrl+K on macOS), each with the chord that runs it in the editor.
+
+- `src/lib/shell/keys/Palette.svelte:29-30`: "and the actions of the editor's Cmd+K chords (and of Ctrl+K on macOS), each with the chord that runs it in the editor beside it."
+- `src/lib/state/workbench/palette.ts:5-8`: "and those of the editor's Cmd+K chords (and of Ctrl+K on macOS). Each is under the editor's own label with the keys that run it in the editor as the hint".
+- `src/lib/state/workbench/navigation/editor-status.svelte.ts:14-17`: "those of the editor's Cmd+K chords (and of Ctrl+K on macOS) with the chord that runs each in the editor (F1, which the editor gives up to the workbench and which opens the palette's command mode, has no action to list)".
+
+The second grep, `grep -rn "gave up\|give up\|gives up\|given up\|freed" src docs config tests --exclude=local.yml`, read hit by hit. True and kept: `chords.ts:1-2` (F1, F8, Shift+F8 are given up, `freedKeys`), `kit/load.ts:2` ("the keys the editor gives up"), `keys/monaco-keys.ts:5`, `shell/Workbench.svelte:308` (F1's Monaco binding freed), `views/system/help/keys/Keys.svelte:19` ("a key bound or freed"), and the new `editor-status.svelte.ts:16` (F1). The others are about other things (a request the page gave up on, `literature/handler.ts:136,170`). A wider grep for the same claim in other words, `grep -rn "old chord\|removed chord" src tests docs config --exclude=local.yml`, found three more false comments, each rewritten to name the chord that runs the action in the editor: `ui/controls/editor/types.ts:21-22` and `editor-status.svelte.ts:39-40` ("a removed chord's old chord" became "the chord that runs it in the editor"), and `state/workbench/palette.ts:93` ("an editor action's keys or old chord" became "the keys of an editor action"). After the edits both greps print no stale hit: `grep -rn "gave up\|old chord\|removed chord" src tests docs config --exclude=local.yml` prints only the two `literature/handler.ts` lines.
+
+### Ruling 4 (T2): the Julia `declare module`
+
+`src/monaco-modules.d.ts` keeps `export const conf` in `declare module 'monaco-editor/languages/definitions/julia/julia.js'`, since the Julia row of ruling 1 reads it (`const { conf } = await import('monaco-editor/languages/definitions/julia/julia.js')`); `src` no longer imports the module (`grep -rn "julia/julia.js" src tests` prints the declaration and the test line alone). The new `declare module 'monaco-editor/editor/common/languages/languageConfigurationRegistry'` declares the service key and type that `load.ts` reads and the `LanguageConfigurationRegistry` class with the two members the test calls, `register` and `getLanguageConfiguration`. The head comment names each reader: the service through which `load.ts` gives oculus's settings and the apps' settings, the registry the test resolves over, and Monaco's Julia module whose settings the test gives. The sentence "Each subpath is declared here as the part of it that the tree uses" holds.
+
+### Ruling 5 (B1 and S3): the one-press LaTeX keys in the files LaTeX Workshop binds them in
+
+The files each key of the LaTeX tab is bound in are one table, read from LaTeX Workshop v10.19.0's `package.json`:
+
+```ts
+// data/helpers/keys/oculus/editor-keys.ts
+export type LatexFileKind = 'tex' | 'bib' | 'style';
+export type LatexScope = 'tex' | 'texOrBib' | 'texOrStyle';
+export const LATEX_SCOPES = {
+    build: 'texOrStyle', clean: 'texOrStyle', view: 'texOrStyle',
+    synctex: 'tex', mathPreview: 'tex', promote: 'tex', demote: 'tex',
+    item: 'tex', surround: 'tex', selectLine: 'tex', tabFocus: 'tex',
+    text: 'texOrBib', math: 'texOrBib'
+} as const satisfies Record<string, LatexScope>;
+export function inLatexScope(scope: LatexScope, kind: LatexFileKind): boolean {
+    if (scope === 'tex') return kind === 'tex';
+    if (scope === 'texOrBib') return kind !== 'style';
+    return kind !== 'bib';
+}
+
+// views/sources/source/latex/latex-tab.svelte.ts, actions()
+const keyed = <K extends EditorKey>(scope: keyof typeof LATEX_SCOPES, key: K): K | undefined =>
+    inLatexScope(LATEX_SCOPES[scope], kind) ? key : undefined;
+add('oculus.latex.build', t('latex.cmd_build'), press.build, keyed('build', LATEX_PRESSES.build), menu);
+```
+
+So in a `.bib` file Cmd+Alt+B and Cmd+Alt+C are bound to nothing of the tab's and reach Monaco (Cmd+Alt+C toggles the find widget's case, `findModel.js:28-31`); in `.sty` and `.cls` Cmd+Alt+J and Cmd+Alt+M are bound to nothing, and Cmd+Alt+B, C and V stay bound. The presses are the same `KeyPress` values off macOS, where Cmd is Ctrl, so the Ctrl forms follow. A command whose key a file does not take stays in the tab's actions with no key, so the palette runs it; View, SyncTeX and Math Preview stay out of a `.bib` tab's actions, as before this round, since a `.bib` file has no PDF of its own.
+
+Where the files are said:
+
+- Keys view (`views/system/help/keys/rows.ts`, `inFiles`): every LaTeX row ends with its files, from `config/text/views/academic/latex.yml`: `keys_tex: '{0}, in a .tex tab'`, `keys_tex_or_bib: '{0}, in a .tex or .bib tab'`, `keys_tex_or_style: '{0}, in a .tex, .sty or .cls tab'`.
+- `docs/HELP.md:161-170`: "LaTeX build / clean / view PDF, in a `.tex`, `.sty` or `.cls` tab"; "show the caret's line in the PDF, in a `.tex` tab"; "Math Preview, in a `.tex` tab / TeX view"; "promote / demote sections, in a `.tex` tab"; the text and math chords "in a `.tex` or `.bib` tab"; `\item`, Surround, select the line and tab focus "in a `.tex` tab".
+- The Build button's tooltip in a `.bib` tab names no key (`LatexButtons.svelte:45`, `latex.bar_build_bare`: "Build the LaTeX project").
+
+The test, `tests/views/sources/source/latex-keys.client.test.ts` (new), describe "the keys of a LaTeX tab, by the kind of file it shows", one row per kind, titled "$kind takes the keys LaTeX Workshop binds there". Each row makes the tab as Source.svelte makes it, in an effect root over a fresh client whose root question never answers, with one text chord (`b`, `textbf`) and one math chord (`b`, `mathbf`) and the LaTeX extension's commands handed in, and checks the commands with a key and the commands listed with none:
+
+| Row | Keyed | Listed with no key |
+|---|---|---|
+| a TeX file, `paper/main.tex` | all 13 | none |
+| a .bib file, `paper/refs.bib` | text.textbf, math.mathbf | build, clean, promote, demote, item, surround, selectLine, tabFocus |
+| a package, `paper/style.sty` | build, clean, view | synctex, mathPreview, promote, demote, item, surround, selectLine, tabFocus, text.textbf, math.mathbf |
+| a class, `paper/paper.cls` | build, clean, view | as the package |
+
+- Base copy (`base-run-round1-last.log`), all four red: TeX `expected [ 'build', 'clean', 'demote', <horizontal ellipsis>(8) ] to deeply equal [ 'build', 'clean', 'demote', <horizontal ellipsis>(10) ]` (the base has no select-line and tab-focus chords); `.bib` `expected [ 'build', 'clean', 'demote', <horizontal ellipsis>(5) ] to deeply equal [ 'math.mathbf', 'text.textbf' ]`; package and class `expected [ 'build', 'clean', 'demote', <horizontal ellipsis>(8) ] to deeply equal [ 'build', 'clean', 'view' ]`.
+- The worktree before this round's change to `latex-tab.svelte.ts`: `Tests  3 failed | 1 passed (4)`; `.bib` keyed `build, clean, math.mathbf, text.textbf`; package and class keyed `build, clean, mathPreview, synctex, view`; the TeX row passed.
+- After: `Tests  4 passed (4)` (`npx vitest run tests/views/sources/source/latex-keys.client.test.ts`), and both new test files pass inside the verify run's `vitest`.
+
+### Ruling 6 (B2)
+
+"Before and after, for the look" below lists every user-visible change of the step, the review's five among them and ruling 5's.
+
+### Ruling 7 (S1, S2, P3)
+
+No work. This round ran no git command; the unchanged tree was read and run in the base copy and in a run copy of it in the session scratchpad (below). The verify list's count this round is under "Verification".
+
+## Changes beyond the rulings
+
+- An app's language settings rank above oculus's. With oculus's settings at rank 101, an app's settings given through `setLanguageConfiguration` at 100 would lose every field oculus sets, for an app that adds a language oculus gives settings for (an app's `shellscript`, `make`, `common-lisp` or `fortran-free-form`; `language-kit.ts:135` drops only the ids highlight.js ships). `applyAppLanguages(monaco, settings, kit, before)` now gives each app configuration through the same service at `OCULUS_RANK + 1`, and `load.ts` hands it the service at both calls. Row "an app's settings of a language > win over the settings oculus gives the language" in `comment-rules.test.ts`: oculus gives Shell `{ lineComment: '#' }`, an app gives `{ lineComment: '//' }`, and the resolved comment rule is the app's. Base copy: `AssertionError: expected undefined to deeply equal { lineComment: '#' }` (the base gives Shell no settings, so the row stops at its first assertion). After: passes, within `Tests  34 passed (34)`. `src/lib/ui/controls/editor/kit/languages/register.ts` is outside the round's path list; it is where an app's settings are given.
+- The Build and View tooltips name the key of the platform. `latex.bar_build_title` and `latex.bar_view_title` read "(Cmd+Alt+B)" and "(Cmd+Alt+V)" as fixed text although `LatexButtons.svelte` hands them the key it computes; they now read `({0})`, so off macOS they say Ctrl+Alt+B and Ctrl+Alt+V. The base copy has the same fixed text (`grep -n "bar_build_title\|bar_view_title"` on its `config/text/views/academic/latex.yml`: lines 10 and 18).
+- The type of the test's caret: `latex-keys.client.test.ts` hands `caret: () => ({ line: 1, column: 1, selected: 0 })`, the `Caret` of `editor-text.ts:33`.
+- Comment widths: `StatusBar.svelte:30-40`, `settings.ts:50-53`, `monaco-modules.d.ts`, `editor-keys.ts:30` and the head of `comment-rules.test.ts` were rewrapped to end by the hundredth column (`tests/checks/source/comment-width.test.ts`).
+- `LatexButtons.svelte` (outside the path list): ruling 5 left Build with no key in a `.bib` file, so its tooltip and head comment had to change.
+
+## The run copy of the base
+
+The base copy holds no `node_modules`, so a run copy was made in the scratchpad, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o65/base-run`: the base copy's `src`, `tests`, `config` and `utils`, the worktree's `package.json`, `vite.config.ts`, `tsconfig.json` and `.svelte-kit`, `node_modules` linked to the worktree's, the two final test files copied in, and `base-run.config.ts`, which merges the linked `node_modules` into `server.fs.allow`. Command: `npx vitest run --config base-run.config.ts tests/ui/controls/editor/kit/comment-rules.test.ts tests/views/sources/source/latex-keys.client.test.ts`, log `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o65/base-run-round1-last.log`: `Tests  15 failed | 23 passed (38)`. The fifteen: the nine comment rows (shellscript, bibtex, diff, julia, latex, common-lisp, make, matlab, ocaml; `expected undefined to be defined`), the Julia row, the app row and the four LaTeX key rows, each quoted above. The refuter's report was read once with `cat` from the main checkout's `.scratch/migration/agents/reviews/O65-refuter.md`, which changes nothing.
 
 ## The cases' first run (unchanged tree, before any change)
 
-Each case was read on the worktree at its base before the first edit; the base lines are quoted from `git show HEAD:<file>`, which prints the same tree.
+Each case was read on the unchanged tree before the first edit. The base lines quoted are those of the base copy `.agents/worktrees/migration-O65-base/`; `sed -n` there prints `{@attach fitOneRow}` at `StatusBar.svelte:193`, `overflow: clip;` at `:371` and `:386`, `.group > :global([data-left-out])` at `:400`, `freedKeys` with `CMD_K, CTRL_K` at `chords.ts:93-95`, `keys.palette` at `rows.ts:292`, and `LATEX_CHORD_SECONDS.item` and `.surround` at `latex-tab.svelte.ts:392-396`.
 
 - C1. Fails. `StatusBar.svelte:193` `{@attach fitOneRow}` hides items that do not fit; `:371` and `:386` `overflow: clip` scroll nothing; `:400` `.group > :global([data-left-out])` is `display: none`. No item is drawn past the width, and nothing scrolls.
 - C2. Fails for the same reason: a left-out item cannot take the focus (`display: none`), and a clipped bar does not scroll a focused item into view.
@@ -22,7 +160,7 @@ Each case was read on the worktree at its base before the first edit; the base l
 - C4. Holds. Unchecking an item in the right-click menu hides it through the ui store's hidden set and the menu keeps listing it (head comment `:25-27` at base).
 - C5. Fails. `registerSettings` (`settings.ts`, 44 lines) gives settings to rite, cmake, fortran-free-form, fortran-fixed-form, jinja and svelte only; `latex` has no comment rule and no bracket pairs, so Cmd+/ does nothing and `{` adds no `}`.
 - C6. Fails for shellscript, make, bibtex, matlab, ocaml, common-lisp, diff and julia (julia has Monaco's brackets but no `comments`, `definitions/julia/julia.js:1-20`).
-- C7. Fails. The table test, written first and run on the unchanged code (command and output under check 2 below): `Tests  9 failed | 23 passed (32)`, failing `shellscript`, `bibtex`, `diff`, `julia`, `latex`, `common-lisp`, `make`, `matlab`, `ocaml`.
+- C7. Fails. The table test run on the base run copy (command and log under "The run copy of the base"): nine rows fail, `shellscript`, `bibtex`, `diff`, `julia`, `latex`, `common-lisp`, `make`, `matlab`, `ocaml`, each `expected undefined to be defined`; the other 23 pass.
 - C8. Holds for the environment completion and the list's Enter (`latex-editing.ts:179-198`, `latex-suggest.ts:48` read: they do not depend on language settings). The `@(` suggestion leaves a stray `)` once `(` auto-closes; at base no `(` auto-closed in latex, so the stray bracket appears only with bracket settings that lack LaTeX Workshop's `["@(", ""]` pair.
 - C9. Fails. `LATEX_CHORD_SECONDS` held item and surround only; Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M were bound to nothing in a LaTeX tab.
 - C10. Holds. `latex-tab.svelte.ts:377` (promote) and `:402` (`chordKey(first, character)`) bind them.
@@ -49,75 +187,55 @@ Each case was read on the worktree at its base before the first edit; the base l
 - C31. Holds. `chordActions` listed the Cmd+K chord actions while a source tab is on screen.
 
 No case was found that the brief's own rules get wrong, so the build went on without a stop.
+## Verification
 
-## DONE / NOT DONE
-
-| Item | State | Check that proves it |
-|---|---|---|
-| 1 status bar scrolls | DONE | read; look at landing |
-| 2 nine languages' settings | DONE | C7 run, check 2 |
-| 3 table test (G121) | DONE | check 2 |
-| 4 Monaco key table, fixes | DONE | table below; look at landing |
-| 5 LaTeX chords vs LaTeX Workshop | DONE | read; look at landing |
-| 6 Cmd+K in the editor | DONE | check 7; look at landing |
-
-1. `npm run diagrams && npm run test:quick`, run twice in full (the second after the last code change). The second run's lines:
+1. The verify list, `npm run diagrams && npm run test:quick`, in the worktree. This round it was started four times: the first run went to its end and failed (`FAILED  svelte-check`, `"tests/views/sources/source/latex-keys.client.test.ts" 79:26 "Property 'selected' is missing in type '{ line: number; column: number; }' but required in type 'Caret'."`); the second and third were stopped before their end because a change followed; the fourth ran after the last change. Its lines (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o65/verify-round1d.log`):
 
 ```
-test:quick: 34 changed file(s), from git since HEAD
-test:quick: 10 test file(s)
+test:quick: 43 changed file(s), from git since HEAD
+test:quick: 22 test file(s)
         tests/ui/controls/editor/kit/comment-rules.test.ts: changed
+        tests/views/sources/source/latex-keys.client.test.ts: changed
         tests/checks/diagrams/palette.test.ts: named for a changed file
         tests/data/sources/config/settings.test.ts: named for a changed file
         tests/routes/sessions/latex.test.ts: named for a changed file
         tests/server/desktop/menu-template.test.ts: imports at depth 1
+        tests/shell/keys/clone-rows.test.ts: imports at depth 1
         tests/shell/keys/palette-page.test.ts: imports at depth 1
+        tests/shell/window/menu-answer.test.ts: imports at depth 1
         tests/state/system/apps/app-keys.test.ts: imports at depth 1
+        tests/checks/imports/order.test.ts: imports at depth 2
+        tests/shell/keys/theme-rows.test.ts: imports at depth 2
+        tests/state/client/terminal/terminal-close.test.ts: imports at depth 2
         tests/state/sessions/served-roots.client.test.ts: imports at depth 2
+        tests/state/system/apps/shell.test.ts: imports at depth 2
+        tests/state/workbench/debug-record.test.ts: imports at depth 2
+        tests/state/workbench/layout/saved/layout-workspaces.test.ts: imports at depth 2
+        tests/state/workbench/options-pages.test.ts: imports at depth 2
         tests/ui/controls/editor/reach-text.test.ts: imports at depth 2
+        tests/views/shared/forms/entry-add.test.ts: imports at depth 2
         tests/views/sources/bar-actions.test.ts: imports at depth 2
-ok      prettier (6.6 s): All matched files use Prettier code style!
-ok      ASCII gate (9.1 s)
-ok      svelte-kit sync (11.1 s)
-ok      vitest (49.2 s): Duration  33.06s (transform 47.11s, setup 0ms, import 57.72s, tests 1.66s, environment 339ms)
-ok      vitest checks (52.5 s): Duration  36.30s (transform 1.52s, setup 0ms, import 4.60s, tests 31.23s, environment 0ms)
-ok      eslint (52.9 s)
-ok      svelte-check (74.5 s): 1792703305661 COMPLETED 536 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-test:quick: 86.0 s; every command passed
+        tests/views/sources/source/save-key.client.test.ts: imports at depth 2
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      ASCII gate (1.4 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (22.9 s)
+ok      vitest (51.5 s): Duration  37.89s (transform 59.22s, setup 0ms, import 117.68s, tests 7.65s, environment 1.05s)
+ok      svelte-check (54.8 s): 1792708389710 COMPLETED 536 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest slow (56.5 s): Duration  42.84s (transform 13.92s, setup 0ms, import 36.77s, tests 5.88s, environment 0ms)
+ok      vitest checks (68.1 s): Duration  54.60s (transform 7.34s, setup 0ms, import 23.96s, tests 75.55s, environment 0ms)
+test:quick: 70.6 s; every command passed
 test:quick: not covered: tests that reach no changed file within the import depth,
             the build, the lint of unchanged files
 ```
 
-The first full run also ended `test:quick: 84.7 s; every command passed`. The full list ran twice.
+2. The tree checks on the final tree, `npx vitest run tests/checks/source/history.test.ts tests/checks/source/keys.test.ts tests/checks/tree/boundaries.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/size.test.ts --testTimeout 300000`: `Tests  1 failed | 38 passed (39)`. History (no package id, date or session phrase in a comment), the text keys, the layer boundaries and the file sizes pass. The one failure is the comment width check on `tests/data/snapshot/reference-hub.ts:4` and `tests/data/snapshot/references.test.ts:544`, files this step does not change (`cmp` with the base copy: equal). The same check on the base run copy fails on the same two lines (`npx vitest run --config base-run.config.ts tests/checks/source/comment-width.test.ts`). With the default 5000 ms timeout the machine's load made the history, keys and boundaries checks time out once; with the longer timeout they pass.
 
-2. The table test alone. On the unchanged tree (an export of HEAD by `git archive HEAD`, with the final test file copied in and `node_modules` linked), `npx vitest run tests/ui/controls/editor/kit/comment-rules.test.ts`:
+3. The two new test files, final tree: `npx vitest run tests/ui/controls/editor/kit/comment-rules.test.ts` printed `Tests  34 passed (34)`; `npx vitest run tests/views/sources/source/latex-keys.client.test.ts` printed `Tests  4 passed (4)`. Base runs quoted under each ruling.
 
-```
- FAIL  |unit| tests/ui/controls/editor/kit/comment-rules.test.ts > the comment rule of every language the editor registers > 'shellscript' has a comment rule
- FAIL  |unit| ... > 'bibtex' has a comment rule
- FAIL  |unit| ... > 'diff' has a comment rule
- FAIL  |unit| ... > 'julia' has a comment rule
- FAIL  |unit| ... > 'latex' has a comment rule
- FAIL  |unit| ... > 'common-lisp' has a comment rule
- FAIL  |unit| ... > 'make' has a comment rule
- FAIL  |unit| ... > 'matlab' has a comment rule
- FAIL  |unit| ... > 'ocaml' has a comment rule
-AssertionError: expected undefined to be defined
-      Tests  9 failed | 23 passed (32)
-```
+4. Names that must be gone: `grep -rn "RemovedChord\|removedChords\|LATEX_CHORD_SECONDS\|keys\.palette\|palette: true\|run from the palette\|ABOVE_MONACO\|onLanguageEncountered('julia'" src tests config docs README.md --exclude=local.yml` printed nothing, exit 1; `grep -rn "leftOut\b\|fitOneRow\|DROP_ORDER\|one-row\.ts\|'./one-row'\|data-left-out" src docs tests` printed nothing, exit 1; `grep -rn "setTimeout" src/lib/ui/controls/editor/kit/rite/settings.ts` printed nothing, exit 1.
 
-After the change, in the worktree:
-
-```
- Test Files  1 passed (1)
-      Tests  32 passed (32)
-```
-
-3. `grep -rn "leftOut\b\|fitOneRow\|DROP_ORDER\|one-row\.ts\|'./one-row'\|data-left-out" src docs tests` printed nothing, exit 1.
-
-4. `wc -l` of every changed file (list under "Files"): components `StatusBar.svelte` 450 and `diff/DiffEditor.svelte` 513, at or under 520; every source file at or under 880 (`load.ts` 694 the largest). `config/catalogs/latex.yml` is 1464 lines, a data catalog whose line 1 comment alone changed.
-
-5. `sh utils/unused-exports.sh` compared with `.agents/worktrees/migration-O65-base/unused-exports.txt`:
+5. `sh utils/unused-exports.sh` against `.agents/worktrees/migration-O65-base/unused-exports.txt`:
 
 ```
 1c1
@@ -128,55 +246,24 @@ After the change, in the worktree:
 > src/lib/ui/controls/editor/chords.ts: editorChords
 ```
 
-`editorChords` is used by `utils/diagrams/palette.mjs:106` (`.editorChords(true)`, a member read on the module that `ssrLoadModule` returns), which knip does not follow from the production entry points; `chordActions` in the same file uses it too. It stays exported for the palette page's writer. At base the same function, `removedChords`, was not listed because `monaco-keys.ts:14` imported it (`git show HEAD:src/lib/ui/controls/editor/keys/monaco-keys.ts`); `monaco-keys.ts` no longer reads the chords, since the Keys view now lists them from Monaco's registry like every other key, so the line is new.
+`editorChords` is read by `utils/diagrams/palette.mjs:106` (`.editorChords(true)` on the module `ssrLoadModule` returns), which knip does not follow, and by `chordActions` in the same file. None of this round's exports (`LATEX_SCOPES`, `inLatexScope`, `LatexFileKind`, `LatexScope`, `OCULUS_RANK`, `Registry`) is listed.
 
-6. History words in the comment lines and test titles added or changed (`git diff -U0` of `src utils tests config docs/HELP.md` plus the two new files, comment lines only, grep of the words of spec.md:44):
+6. `wc -l`: every source file at or under 880 (`kit/load.ts` 708 the largest, `state/workbench/palette.ts` 835 unchanged in length); components `StatusBar.svelte` 451, `diff/DiffEditor.svelte` 513, `LatexButtons.svelte` 65. `shell/keys/Palette.svelte` is 540 lines in the base copy and in the worktree (its comment was rewritten line for line); the size check passes.
 
-```
-25:+            // In the editor Cmd+K is the first key of Monaco's chords, which Monaco takes before
-77:+// first column), brackets, auto-closing and surrounding pairs, the characters before which a pair
-136:+// ui/controls/editor/kit/rite/settings.ts waits for before it gives Julia's settings again. Each
-```
+7. ASCII: the verify run's ASCII gate passed; `LC_ALL=C grep -n "[^[:print:][:space:]]"` over the files this round changed printed nothing.
 
-Each "before" names an order of events, not an earlier state: the key handler order in `workbench-keys.svelte.ts`, Monaco's `autoCloseBefore` in `configuration.ts`, and the order of two calls in `src/monaco-modules.d.ts`. None is history.
+8. Files that differ from the base copy, `diff -rq` of `.agents/worktrees/migration-O65-base/` against the worktree over `src`, `tests`, `config` and `utils` (with `--exclude=local.yml`): the files of the table under "Files with line counts", `src/lib/shell/status/one-row.ts` only in the base copy, and the new `kit/rite/latex-settings.ts`, `tests/ui/controls/editor/kit/` and `tests/views/sources/source/latex-keys.client.test.ts` only in the worktree. The base copy holds no `docs`; `docs/HELP.md`, `docs/palette.md` and `docs/diagrams/*` are the documents and generated files named in the table.
 
-7. `npm run docs:palette` rewrote `docs/palette.md` (`git diff --stat`: 6 lines changed against HEAD), then `npx vitest run tests/checks/diagrams/palette.test.ts --testTimeout 60000`:
+## The step's items
 
-```
- Test Files  1 passed (1)
-      Tests  1 passed (1)
-```
-
-The timeout flag was needed only when the machine was loaded; the same test passed inside `test:quick` with its default timeout.
-
-8. Names. `grep -rn "RemovedChord\|removedChords\|LATEX_CHORD_SECONDS\|keys\.palette\|palette: true\|run from the palette" src tests config docs README.md --exclude=local.yml` printed nothing, exit 1. The new names (`editorChords`, `EditorChord`, `latexChordSeconds`, `takesChordSecond`, `freedKeys`, `LATEX_WORKSHOP_LATEX`, `LATEX_WORKSHOP_BIBTEX`, `cmd_select_line`, `cmd_tab_focus`) are found only in `chords.ts`, `load.ts`, `monaco-keys.ts`, `settings.ts`, `latex-settings.ts`, `latex-tables.ts`, `editor-keys.ts`, `rows.ts`, `latex-tab.svelte.ts`, `config/text/views/academic/latex.yml` and `utils/diagrams/palette.mjs`, every one a definition or a caller.
-
-The sentences "What is on the tree" names:
-
-| Sentence | State |
-|---|---|
-| `docs/HELP.md:122` status bar | rewritten |
-| `StatusBar.svelte` head comment `:28-36` | rewritten |
-| `StatusBar.svelte` CSS `:356-358`, `:378-381` | rewritten |
-| `status-items.ts` `DROP_ORDER` doc | removed with the constant |
-| `status-items.ts` head comment `:1-29` | still true |
-| `docs/HELP.md:94` Cmd+K | rewritten |
-| `docs/HELP.md:128` | rewritten |
-| `docs/HELP.md:173` Cmd+K row | rewritten |
-| `docs/palette.md:3` and "Editor commands" | rewritten by `npm run docs:palette` from `config/text/palette-page.yml` |
-| `chords.ts:1-15` head comment | rewritten |
-| `monaco-keys.ts:1-6` head comment | rewritten |
-| `palette.mjs:13` | rewritten |
-| `chordActions` doc | rewritten |
-| `menu-template.ts:10-12` | still true |
-| `Editor.svelte:320`, `diff/DiffEditor.svelte:402` comments | Editor.svelte still true; DiffEditor.svelte rewritten |
-| `kit/load.ts:346-348` comment | rewritten |
-| `gutter/gutter.ts` comment on the freed keys | rewritten |
-| `oculus-keys.ts:81` (audit answers `palette` for Cmd+K) | still true, outside the editor the palette takes Cmd+K |
-| `grid-keys.ts:27` | still true |
-| `editor-keys.ts` head and doc comments | rewritten |
-| `latex-tables.ts` head comment | rewritten |
-| `config/catalogs/latex.yml:1` | rewritten |
+| Item | State | Check that proves it |
+|---|---|---|
+| 1 status bar scrolls | DONE | read; look at landing |
+| 2 nine languages' settings | DONE | comment-rules rows, Verification 3 |
+| 3 table test (G121) | DONE | Verification 3 |
+| 4 Monaco key table, fixes | DONE | table below; look at landing |
+| 5 LaTeX chords and keys vs LaTeX Workshop | DONE | latex-keys rows; look at landing |
+| 6 Cmd+K in the editor | DONE | Item 6 below; look at landing |
 
 ## Item 4: every default key Monaco 0.57 binds, against what oculus takes
 
@@ -519,81 +606,92 @@ Every row of the three files that does not reach its command where VS Code's (wi
 - One press still reached the palette: Ctrl+K on macOS in a read-only editor, where `deleteAllRight`'s precondition `writable` is false, Monaco does not dispatch it and it bubbles to `togglesPalette`. Fixed in `workbench-keys.svelte.ts:146-149`: the handler returns for a target inside `.monaco-editor`. The menu's Quick Open is Cmd+K, not Ctrl+K, so it does not take that press.
 - The audit of an app's keybindings keeps answering `palette` for Cmd+K (`oculus-keys.ts:81`, decision 10), unchanged.
 
+
 ## Files with line counts
 
 | File | Lines | Note |
 |---|---|---|
-| `src/lib/shell/status/StatusBar.svelte` | 450 | item 1 |
+| `src/lib/shell/status/StatusBar.svelte` | 451 | item 1 |
 | `src/lib/shell/status/one-row.ts` | deleted | item 1 |
 | `src/lib/shell/status/status-items.ts` | 164 | item 1 |
-| `src/lib/ui/controls/editor/kit/rite/settings.ts` | 358 | item 2 |
+| `src/lib/ui/controls/editor/kit/rite/settings.ts` | 363 | item 2; ruling 1 |
 | `src/lib/ui/controls/editor/kit/rite/latex-settings.ts` | 179 | item 2, new |
 | `src/lib/ui/controls/editor/kit/languages/configuration.ts` | 197 | item 2 |
-| `src/monaco-modules.d.ts` | 293 | outside the list: the type of Monaco's Julia module that `settings.ts` imports |
-| `tests/ui/controls/editor/kit/comment-rules.test.ts` | 119 | item 3, new |
-| `src/lib/data/helpers/keys/oculus/editor-keys.ts` | 111 | item 5 |
-| `src/lib/views/sources/source/latex/latex-tab.svelte.ts` | 483 | item 5 |
-| `src/lib/ui/controls/editor/kit/latex/latex-editing.ts` | 265 | item 4 rows Cmd+L and Ctrl+Shift+M in `.tex`: the two commands the new chords run |
-| `src/lib/data/sources/config/catalog/latex-tables.ts` | 172 | outside the list: item 5's leaving out of a configured chord on `l`, `w` or `m` |
-| `config/catalogs/latex.yml` | 1464 | outside the list: its line 1 comment, made false by item 5 |
-| `config/text/views/academic/latex.yml` | 219 | item 5 |
-| `src/lib/views/system/help/keys/rows.ts` | 322 | items 5 and 6 |
+| `src/lib/ui/controls/editor/kit/languages/register.ts` | 67 | outside the list: an app's settings rank above oculus's (ruling 1's rank) |
+| `src/monaco-modules.d.ts` | 334 | outside the list: the types of the configuration service, its registry and Monaco's Julia module |
+| `tests/ui/controls/editor/kit/comment-rules.test.ts` | 213 | item 3, new; rulings 1 and 2 |
+| `tests/views/sources/source/latex-keys.client.test.ts` | 195 | ruling 5, new |
+| `src/lib/data/helpers/keys/oculus/editor-keys.ts` | 150 | item 5; ruling 5 |
+| `src/lib/views/sources/source/latex/latex-tab.svelte.ts` | 505 | item 5; ruling 5 |
+| `src/lib/views/sources/source/latex/LatexButtons.svelte` | 65 | outside the list: Build's tooltip in a `.bib` file (ruling 5) |
+| `src/lib/ui/controls/editor/kit/latex/latex-editing.ts` | 265 | item 5: the two commands the new chords run |
+| `src/lib/data/sources/config/catalog/latex-tables.ts` | 172 | outside the list: a configured chord on `l`, `w` or `m` left out |
+| `config/catalogs/latex.yml` | 1464 | outside the list: its line 1 comment |
+| `config/text/views/academic/latex.yml` | 223 | items 5; ruling 5; the tooltips' `{0}` |
+| `src/lib/views/system/help/keys/rows.ts` | 346 | items 5 and 6; ruling 5 |
 | `src/lib/ui/controls/editor/chords.ts` | 154 | item 6 |
 | `src/lib/ui/controls/editor/keys/monaco-keys.ts` | 76 | item 6 |
-| `src/lib/ui/controls/editor/kit/load.ts` | 694 | item 6 |
+| `src/lib/ui/controls/editor/kit/load.ts` | 708 | item 6; ruling 1 |
 | `src/lib/ui/controls/editor/diff/DiffEditor.svelte` | 513 | item 6, comment |
-| `src/lib/ui/controls/editor/gutter/gutter.ts` | 434 | item 6 row Cmd+K: its comment on the freed keys |
+| `src/lib/ui/controls/editor/gutter/gutter.ts` | 434 | item 6, comment |
+| `src/lib/ui/controls/editor/types.ts` | 162 | ruling 3's grep, comment |
 | `src/lib/shell/keys/workbench-keys.svelte.ts` | 603 | item 6, Ctrl+K in a read-only editor |
+| `src/lib/shell/keys/Palette.svelte` | 540 | ruling 3, comment |
+| `src/lib/state/workbench/palette.ts` | 835 | ruling 3, comments |
+| `src/lib/state/workbench/navigation/editor-status.svelte.ts` | 313 | ruling 3, comments |
 | `src/lib/data/helpers/keys/oculus/palette-keys.ts` | 57 | item 6, doc comment |
-| `src/lib/shell/keys/palette-page.ts` | 195 | outside the list: two doc comments on the chords, made false by item 6 |
+| `src/lib/shell/keys/palette-page.ts` | 195 | outside the list: two doc comments on the chords |
 | `config/text/views/system/help.yml` | 61 | item 6 |
 | `config/text/palette-page.yml` | 38 | item 6 |
 | `utils/diagrams/palette.mjs` | 152 | item 6 |
-| `docs/HELP.md` | 550 | lines 94, 122, 128, 165-174 |
+| `docs/HELP.md` | 550 | lines 94, 122, 128, 161-170 |
 | `docs/palette.md` | 201 | written by `npm run docs:palette` |
-| `docs/diagrams/layers.*`, `layer-data.*`, `layer-shell.*` | generated | written by `npm run diagrams` |
+| `docs/diagrams/*` | generated | written by `npm run diagrams` |
 
 ## Judgment calls
 
-- J1 (for the orchestrator). Pin Editor and Unpin Editor show `Cmd+K Shift+Enter` in the palette (`state/workbench/palette.ts:331-357`), the chord VS Code binds them to. No key in oculus runs it: in the editor Cmd+K now starts Monaco's chords and Shift+Enter is no chord of Monaco's, and outside the editor Cmd+K opens the palette. At base the press opened the palette instead, so it never ran either. The palette page's text says the items stand in for that chord (`config/text/palette-page.yml` `editor_intro`). Options: (a) bind Cmd+K Shift+Enter in every editor to pin or unpin the tab, as VS Code does, a new user-visible key; (b) keep the hint as the name of VS Code's chord; (c) drop the hint. Recommendation: (a), since the step's line asks for the editor's keys to work as VS Code's do; (c) is the lazy option. Not built, since a new key is a user-visible shape the brief does not name.
-- J2 (for the orchestrator). The one-press LaTeX keys Cmd+Alt+B, C, V, J and M are bound in `.bib`, `.sty` and `.cls` files too (`latex-tab.svelte.ts:297-327`), where LaTeX Workshop binds build, clean and view in class and package files, synctex and math preview only in LaTeX files, and in `.bib` none of them (its Cmd+Alt+C `when` reads `^build$` where `^bibtex$` is meant, so in VS Code Cmd+Alt+C in a `.bib` file toggles the find widget's case). None of the three files of item 4's table is affected. Left as it is: the brief scopes the chords and promote and demote, not the one-press keys.
-- The configured text chords leave out `m` as well as `l` and `w` (`editor-keys.ts:83-88`, `takesChordSecond`): off macOS Ctrl+L Ctrl+M is tab focus mode, and one catalog serves every platform.
-- Promote and demote take Cmd+Alt+[ and ] in a `.tex` file alone (LaTeX Workshop's scope); in `.bib`, `.sty` and `.cls` the keys fold and unfold. The commands stay in the palette there.
-- Item and Surround (Cmd+L Cmd+Enter, Cmd+L Cmd+W) are keyed in a `.tex` file alone, as LaTeX Workshop binds them; in `.bib` the text and math chords stay keyed. In `.sty` and `.cls` no chord is keyed and every command stays in the palette without a key.
+- J1 (for the orchestrator; the refuter ties it to open item 259). Pin Editor and Unpin Editor show `Cmd+K Shift+Enter` in the palette (`state/workbench/palette.ts:332`, `PIN_CHORD`), the chord VS Code binds them to. No key in oculus runs it: in the editor Cmd+K starts Monaco's chords and Shift+Enter is no chord of Monaco's, and outside the editor Cmd+K opens the palette. At base the press opened the palette, so it never ran either. The palette page says the items stand in for that chord (`config/text/palette-page.yml` `editor_intro`, `docs/palette.md:142`). Options: (a) bind Cmd+K Shift+Enter in every editor to pin or unpin the tab, as VS Code does, a new user-visible key; (b) keep the hint as the name of VS Code's chord; (c) drop the hint. Recommendation: (a), since the step's line asks for the editor's keys to work as VS Code's do; (c) is the lazy option. Not built, since a new key is a user-visible shape the brief does not name.
+- The configured text chords leave out `m` as well as `l` and `w` (`editor-keys.ts`, `takesChordSecond`), on every platform: off macOS Ctrl+L Ctrl+M is tab focus mode, and one catalog serves every platform.
+- In a `.bib` tab the palette lists Promote, Demote, Item, Surround, Select Line and Toggle Tab Focus with no key; LaTeX Workshop lists them in its command palette for any file, and binds their keys in LaTeX files alone.
 - Surround runs with no selection too (it inserts `\command{}`); LaTeX Workshop's binding needs a selection.
-- Julia: Monaco loads its own Julia settings lazily, when a Julia model first appears, and those win over settings given earlier for the fields they hold (brackets, pairs). `registerSettings` gives VS Code's Julia settings again after Monaco's module has loaded (`settings.ts`, `onLanguageEncountered` then `setTimeout(0)`), so VS Code's pairs hold. The comment rule alone would survive without it.
 - Ctrl+K in a read-only editor on macOS is left to the browser (no `preventDefault`), so it does nothing.
 - Every Monaco editor on the page takes Cmd+K as its chord key, the merge editor's two sides and the diff editor's included, since the keybinding rules are Monaco's and global to the page.
 - `tabCompletion` stays off and column selection mode is never switched on, as in VS Code's defaults, so their rows are never met.
-- The LaTeX one-press keys Cmd+Alt+B, C and J are presses Chrome on macOS may keep (bookmark manager, inspect element, JavaScript console); not verified, the look decides. They are not Monaco's defaults and are not in item 4's table.
+- The LaTeX one-press keys Cmd+Alt+B, C and J are presses Chrome on macOS may keep (bookmark manager, inspect element, JavaScript console); not verified, the look decides. In a `.bib` file Cmd+Alt+B and C, and in a `.sty` or `.cls` file Cmd+Alt+J and M, now reach the editor and then the browser, so whatever Chrome binds to them runs there; not verified.
+- The tooltips write the key as the palette writes keys (`chords.ts` `pressHint`): "Alt+Cmd+B" on macOS where the fixed text said "Cmd+Alt+B", and "Ctrl+Alt+B" off macOS.
 
 ## Before and after, for the look
 
 - Status bar, wide window (TEST, any page). Before and after: left group at the left edge, right group at the right edge, the bell last at the right edge.
 - Status bar, narrow window (TEST, a source tab of a LaTeX file so the LaTeX and language server items show, narrow the window until the items do not fit). Before: items from the middle disappear. After: every item drawn; the bar opens at its left end with the right group following the left group; a trackpad swipe and a wheel turn over the bar scroll it to the bell; a swipe past either end does not navigate back; no scrollbar, the bar stays 22 px.
-- Status bar, Tab through the items (narrow window): each focused item scrolls into view, the right group walked from its right end.
-- Status bar, scrolled, an item arrives or leaves (start a LaTeX build, start a debug session, an app's item): the scroll stays where it is, clamped.
-- Status bar, scrolled, open the branch picker with the item half out of view: the menu anchors to the item where it is drawn.
-- Status bar, debugging and with a wallpaper, scrolled: the orange and the translucent ground fill the whole visible bar.
-- `.tex` file in a LaTeX tab (TEST, `tests/fixtures/hubs/demo/projects/active/streaming-anomaly/manuscript/main.tex`). Before: Cmd+/ does nothing; `{` adds no `}`. After: Cmd+/ puts `% ` at the line's start and removes it again; `{` after a word adds `}`; a selected word and `(` surrounds it; `\begin{`, `\left(`, `\bigl[`, `\(`, `\[` and `\{` add no closing bracket; a backtick adds `'`; Enter after `\begin{itemize}` indents the next line, and typing `\end{` outdents (not for `document`); double-click on `word` in `\textbf{word}` selects `word`; double-click on `a_b` selects `a` alone (LaTeX Workshop's pattern does not count `_`); taking the `@(` suggestion leaves no stray `)`; `\begin{` still offers the tab's environment completion and Enter in a list still adds `\item`.
-- `.tex` keys. After: Cmd+L Cmd+L selects the caret's line, again adds the next line; Cmd+L Ctrl+Shift+M toggles tab focus mode (then Tab moves the focus out of the editor); Cmd+L Cmd+B wraps in `\textbf`, Cmd+L Cmd+W surrounds, Cmd+Alt+[ promotes, all as before the change.
-- `.sty` or `.cls` file: Cmd+L selects the line; Cmd+L Cmd+B does nothing of LaTeX's; Cmd+Alt+[ folds.
-- `.bib` file in a LaTeX tab: Cmd+L Cmd+B wraps; Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M do nothing; Cmd+/ comments with `% `; Cmd+Alt+[ folds.
-- `.yml` file: Cmd+L selects the line; Cmd+/ comments with `# ` (unchanged).
-- `.slurm`, `Makefile`, `.m`, `.ml`, `.lisp`, `.diff`, `.jl`: Cmd+/ comments with `#`, `#` at the line's start with no indent, `%`, `(* *)`, `;`, `#`, `#`; brackets auto-close. `.m` with lines selected and Shift+Alt+A: `%{` and `%}` each on their own line. `.jl` before: `'` added a closing `'` and a backtick did not; after: `'` adds nothing (the transpose `A'` types as written), a backtick adds a closing backtick.
+- Status bar, Tab through the items (narrow window). Before: a left-out item cannot take the focus. After: each focused item scrolls into view, the right group walked from its right end.
+- Status bar, scrolled, an item arrives or leaves (start a LaTeX build, start a debug session, an app's item). Before: the fit re-ran and hid other items. After: the scroll stays where it is, clamped.
+- Status bar, scrolled, open the branch picker with the item half out of view. After: the menu anchors to the item where it is drawn.
+- Status bar, debugging and with a wallpaper, scrolled. After: the orange and the translucent ground fill the whole visible bar.
+- `.tex` file in a LaTeX tab (TEST, `tests/fixtures/hubs/demo/projects/active/streaming-anomaly/manuscript/main.tex`). Before: Cmd+/ does nothing; `{` adds no `}`. After: Cmd+/ puts `% ` at the line's start and removes it again; `{` after a word adds `}`; a selected word and `(` surrounds it; `\begin{`, `\left(`, `\bigl[`, `\(`, `\[` and `\{` add no closing bracket; a backtick adds `'`; Enter after `\begin{itemize}` indents the next line, and typing `\end{` outdents (not for `document`); double-click on `word` in `\textbf{word}` selects `word`; double-click on `a_b` selects `a` alone; taking the `@(` suggestion leaves no stray `)`; `\begin{` still offers the tab's environment completion and Enter in a list still adds `\item`.
+- `.tex` keys. Before: Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M ran nothing. After: Cmd+L Cmd+L selects the caret's line, again adds the next line; Cmd+L Ctrl+Shift+M toggles tab focus mode (then Tab moves the focus out of the editor). Unchanged: Cmd+L Cmd+B wraps in `\textbf`, Cmd+L Cmd+W surrounds, Cmd+L Cmd+Enter inserts `\item`, Cmd+Alt+[ promotes, Cmd+Alt+B, C, V, J and M build, clean, view, show the line in the PDF and open Math Preview.
+- `.bib` file in a LaTeX tab. Before: Cmd+Alt+B built and Cmd+Alt+C cleaned; Cmd+Alt+[ and ] promoted and demoted; Cmd+L Cmd+Enter inserted `\item` and Cmd+L Cmd+W surrounded; Cmd+/ did nothing; the Build tooltip read "Build the LaTeX project (Cmd+Alt+B)". After: Cmd+Alt+B runs nothing of the tab's; Cmd+Alt+C, with the find widget open, toggles case-sensitive find, as in VS Code with LaTeX Workshop; Cmd+Alt+[ and ] fold and unfold; Cmd+L Cmd+Enter, Cmd+L Cmd+W, Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M run nothing; Cmd+L Cmd+B still wraps and Ctrl+Shift+M Cmd+B still wraps in `\mathbf`; Cmd+/ comments with `% `; the Build tooltip reads "Build the LaTeX project"; Build and Clean are still in the palette and the bar.
+- `.sty` or `.cls` file in a LaTeX tab. Before: every key of the tab was bound: Cmd+Alt+J showed the line in the PDF, Cmd+Alt+M opened Math Preview, Cmd+Alt+[ promoted, Cmd+L and Ctrl+Shift+M started the text and math chords. After: Cmd+Alt+B, C and V build, clean and view (unchanged); Cmd+Alt+J and Cmd+Alt+M run nothing of the tab's; Cmd+Alt+[ and ] fold and unfold; Cmd+L selects the line; Ctrl+Shift+M toggles tab focus mode; Cmd+L Cmd+B wraps nothing; every one of those commands is still in the palette, with no key.
+- `.yml` file. Cmd+L selects the line; Cmd+/ comments with `# ` (unchanged).
+- `.slurm`, `Makefile`, `.m`, `.ml`, `.lisp`, `.diff`, `.jl`. Before: Cmd+/ did nothing in each but `.jl`'s brackets. After: Cmd+/ comments with `#`, `#` at the line's start with no indent, `%`, `(* *)`, `;`, `#`, `#`; brackets auto-close. `.slurm`: `"`, `'` and the backtick auto-close outside a string, as in VS Code. `.m` with lines selected and Shift+Alt+A: `%{` and `%}` each on their own line. `.jl` before: `'` added a closing `'` and a backtick did not; after: `'` adds nothing (the transpose `A'` types as written), a backtick adds a closing backtick, whenever Monaco's own Julia settings arrive.
+- A configured text chord on `m`. Before: on macOS Cmd+L Cmd+M ran the configured chord. After: a text chord configured on `m` is left out on every platform, as on `l` and `w`, since Cmd+L Cmd+M collides off macOS with tab focus mode.
+- An app that adds a language oculus gives settings for (Shell, Make, Common Lisp, the Fortran forms). Before: the app's settings won, given later at the same rank. After: the app's settings still win, now by a higher rank.
 - Cmd+K in the editor (`.yml` and `.tex`). Before: Cmd+K opened the palette. After: Cmd+K Cmd+C comments, Cmd+K Cmd+U uncomments, Cmd+K Cmd+0 folds all, Cmd+K Cmd+J unfolds all, Cmd+K then Q does nothing; no palette opens.
 - Ctrl+K on macOS. Before: opened the palette everywhere. After: in the editor deletes to the line's end; in a read-only editor does nothing; with the focus in a view opens the palette.
 - Cmd+K outside the editor (a Files row, the terminal, a form field): opens the palette, a second Cmd+K closes it (unchanged). In the editor Cmd+Shift+P and F1 open command mode, Cmd+P files (unchanged).
-- Keyboard Shortcuts view (Help page, Keyboard Shortcuts tab). Before: the Cmd+K chords read "run from the palette". After: Cmd+K Cmd+C under Add Line Comment as an editor key, Ctrl+K under Delete All Right on macOS, no row reads "run from the palette", the Cmd+K row reads "open the palette, or close it when open; in the editor, the first key of the editor's chords"; the LaTeX rows list Cmd+L Cmd+L "Select the current line" and Cmd+L Ctrl+Shift+M "Toggle whether Tab moves the focus".
-- The palette with a source tab on screen: lists the Cmd+K chord actions under Monaco's labels with the chord beside each, and Delete All Right with Ctrl+K on macOS (unchanged); `docs/palette.md`'s intro and "Editor commands" text say the chord runs the action in the editor.
+- Keyboard Shortcuts view (Help page, Keyboard Shortcuts tab). Before: the Cmd+K chords read "run from the palette", and the LaTeX rows named no files. After: Cmd+K Cmd+C under Add Line Comment as an editor key, Ctrl+K under Delete All Right on macOS, no row reads "run from the palette", the Cmd+K row reads "opens the palette, or closes it when it is open; in the editor it starts the editor's chords instead" (`config/text/palette-page.yml:23`, `key_open`); the LaTeX rows end with their files ("..., in a .tex tab", "..., in a .tex or .bib tab", "..., in a .tex, .sty or .cls tab") and list Cmd+L Cmd+L "Select the current line" and Cmd+L Ctrl+Shift+M "Toggle whether Tab moves the focus".
+- `docs/HELP.md` keys table. Before: the LaTeX rows named no files. After: each names its files, as the Keys view.
+- The Build and View tooltips off macOS. Before: "(Cmd+Alt+B)" and "(Cmd+Alt+V)". After: "(Ctrl+Alt+B)" and "(Ctrl+Alt+V)"; on macOS "(Alt+Cmd+B)" and "(Alt+Cmd+V)".
+- The palette with a source tab on screen: lists the Cmd+K chord actions under Monaco's labels with the chord beside each, and Delete All Right with Ctrl+K on macOS (unchanged). The palette page (`docs/palette.md`, the Help page's palette text) says the chord runs the action in the editor, and has a new sentence, "Pin Editor and Unpin Editor stand in the palette for the chord VS Code binds them to, shown beside them." (`config/text/palette-page.yml` `editor_intro`, `docs/palette.md:142`), which open item 259 may change (J1).
 
 ## What the brief got wrong
 
-- `features/json/jsonMode.js:137-140` does not export a `conf`: JSON's language configuration is set inside `setupMode`. The test reads it by running `setupMode` against stand-ins of the Monaco API (`vi.mock` of the worker manager and `Range`) and taking the configuration it sets.
-- "Monaco merges a language's configurations field by field, so a rule set at start survives Monaco's later `conf`" holds for a field Monaco's `conf` lacks (Julia's `comments`); for a field it holds (Julia's brackets and pairs), Monaco's later registration wins (`languageConfigurationRegistry.js:181-206`, the later entry at equal priority is read first). Fixed by giving VS Code's Julia settings again after Monaco's.
+- `features/json/jsonMode.js:137-140` does not export a `conf`: JSON's language configuration is set inside `setupMode`. The test reads it by running `setupMode` against stand-ins of the Monaco API and taking the configuration it sets.
+- "Monaco merges a language's configurations field by field, so a rule set at start survives Monaco's later `conf`" holds for a field Monaco's `conf` lacks (Julia's `comments`); for a field it holds (Julia's brackets and pairs), the later entry at equal rank wins (`languageConfigurationRegistry.js:181-206`). Settled by giving oculus's settings a rank above Monaco's.
 - F7 and Shift+F7 are not only the diff editor's: in a source tab they run `wordHighlight.next` and `wordHighlight.prev` (`wordHighlighter.js`).
 - Item 5 names `l`, `w` and Enter as the configured chord keys that collide; Enter cannot be a configured key (the reader takes one character of `[A-Za-z0-9-]`), and `m` collides off macOS, where Ctrl+L Ctrl+M is tab focus mode.
-- "Cmd+Alt+[ and ] stay promote and demote": LaTeX Workshop binds them in LaTeX files alone, not in `.bib`, `.sty` or `.cls`; scoped to `.tex` with the chords.
+- "Cmd+Alt+[ and ] stay promote and demote": LaTeX Workshop binds them in LaTeX files alone, not in `.bib`, `.sty` or `.cls`.
+- "The LaTeX tab's keys that take an editor key (Cmd+L, Cmd+Alt+[ and ])": Cmd+Alt+C takes one too, Monaco's `toggleFindCaseSensitive` (`findModel.js:28-31`, `kbExpr: EditorContextKeys.focus`). In a `.tex` file LaTeX Workshop binds Clean to it as well, so it stays Clean there; in a `.bib` file it now reaches Monaco (ruling 5).
 
 ## Doc text
 
@@ -602,3 +700,9 @@ For `agents/guarded.md`:
 - G121. Guarantee: Every language the editor registers has a comment rule, so Cmd+/ and Shift+Alt+A comment in a file of any of them: the settings oculus gives Monaco, or Monaco's own settings of the id, hold a `comments` field.
   Code: `src/lib/ui/controls/editor/kit/rite/settings.ts` (`registerSettings`), `src/lib/ui/controls/editor/kit/rite/latex-settings.ts`, `src/lib/ui/controls/editor/kit/languages/configuration.ts` (`languageConfiguration`).
   Test: `tests/ui/controls/editor/kit/comment-rules.test.ts`, describe 'the comment rule of every language the editor registers', '$id has a comment rule', every row (32).
+- Proposed, under the next free number. Guarantee: A LaTeX tab binds each of its keys in the files LaTeX Workshop binds it in, and lists a command whose key the file does not take with no key: every key in a `.tex` file; the text and math chords alone in a `.bib` file; Build, Clean and View alone in a `.sty` or `.cls` file.
+  Code: `src/lib/data/helpers/keys/oculus/editor-keys.ts` (`LATEX_SCOPES`, `inLatexScope`), `src/lib/views/sources/source/latex/latex-tab.svelte.ts` (`actions`).
+  Test: `tests/views/sources/source/latex-keys.client.test.ts`, describe 'the keys of a LaTeX tab, by the kind of file it shows', every row (4).
+- Proposed, under the next free number. Guarantee: Julia keeps VS Code's brackets and auto-closing pairs whenever Monaco gives its own Julia settings, and an app's settings of a language win over oculus's for the fields they hold.
+  Code: `src/lib/ui/controls/editor/kit/rite/settings.ts` (`OCULUS_RANK`, `registerSettings`), `src/lib/ui/controls/editor/kit/languages/register.ts` (`applyAppLanguages`), `src/lib/ui/controls/editor/kit/load.ts` (`languageSettings`).
+  Test: `tests/ui/controls/editor/kit/comment-rules.test.ts`, describes "Julia's settings" and "an app's settings of a language" (one row each).

@@ -2,7 +2,8 @@
 // document: the class string on the body, the derived colour tokens on the root element, and beside
 // them the three custom properties the wallpaper's translucent surfaces are painted through. It
 // also names the classes the sheets hold a theme block for (`themeClasses`), which the Settings
-// view offers as the words of a theme's `class`.
+// view offers as the words of a theme's `class`, and hands the server the derivation of the tokens
+// (`derivedTokens`), which it writes into the page's first HTML for the theme the page starts on.
 //
 // The stylesheets (tokens.css, themes.css, the rice palettes of rice/ and the generated vscode.css)
 // reach this module as text through Vite's `?raw` import, which is the same bytes the page is
@@ -10,6 +11,7 @@
 // a colour in TypeScript. The caller may pass its own tokens sheet and its own theme sheets, which
 // is how the test runs it over the files read from disk.
 
+import { CRT_CLASS, bodyClass, type BodyLooks } from '$lib/data/helpers/editor/start-theme';
 import { deriveTokens } from '$lib/themes/derive';
 import { parseBlocks, resolveTheme } from '$lib/themes/parse';
 import tokensCss from '$lib/themes/tokens.css?raw';
@@ -34,27 +36,13 @@ export type Themeable = {
 /** The sheets that hold theme blocks, themes.css, rice/ and vscode.css, as one text. */
 export const THEME_SHEETS = [themesCss, ...Object.values(riceSheets), vscodeCss].join('\n');
 
-/** The body class the CRT overlay is switched on by; themes.css draws it on top of any theme. */
-export const CRT_CLASS = 'crt';
-
 /**
- * The body class a rice theme draws its buttons, chips and tags without brackets under: the
- * option `rice.brackets` off. The rules that draw the brackets select `body.rice` without it.
+ * The sheets an app's theme's tokens are derived over: the theme sheets with the block its
+ * conversion makes after them, as the page's draw puts it in the document.
  */
-const RICE_PLAIN_CLASS = 'rice-plain';
-
-/**
- * The body class a rice theme draws its interface in the default sans font under: the option
- * `rice.monospace` off. The rules that set the monospace font select `body.rice` without it.
- */
-const RICE_SANS_CLASS = 'rice-sans';
-
-/**
- * The looks the options set beside a theme's own classes: the CRT overlay (`crt.on`), and the two
- * rice toggles (`rice.brackets`, `rice.monospace`), whose classes are put on only when the option
- * is off, so a config that sets neither draws the rice look whole.
- */
-export type BodyLooks = { crt: boolean; brackets: boolean; monospace: boolean };
+export function withThemeBlock(block: string): string {
+    return `${THEME_SHEETS}\n${block}`;
+}
 
 /**
  * The body class the wallpaper is switched on by. Every rule that makes a surface translucent hangs
@@ -112,11 +100,27 @@ export function applyWallpaper(
 }
 
 /**
+ * The tokens derived for the body class string `className` over the tokens sheet and the theme
+ * sheets: what `applyTheme` sets on the root element, and what the server writes on the root
+ * element of the page's first HTML for the theme the page starts on (hooks.server.ts), so a frame
+ * that paints the page before its script draws has the start theme's derived tokens.
+ */
+export function derivedTokens(
+    className: string,
+    tokens: string = tokensCss,
+    themes: string = THEME_SHEETS
+): Record<string, string> {
+    return deriveTokens(resolveTheme(parseBlocks(`${tokens}\n${themes}`), className));
+}
+
+/**
  * Put a theme on the document: `classes` is the theme's own body class string, the `class` of its
- * config/defaults/appearance.yml entry, the CRT class joins it when the overlay is on, and the
- * classes of the rice toggles join it when a toggle is off. The tokens the components paint text
- * with are derived from the theme the two sheets resolve to and set on the root element, since a
- * stylesheet cannot compute them.
+ * config/defaults/appearance.yml entry, and the body takes it joined with the CRT class when the
+ * overlay is on and the classes of the rice toggles when a toggle is off (`bodyClass` of
+ * data/helpers/editor/start-theme.ts, by which the server writes the same string into the page's
+ * first HTML, so the page's first draw keeps the class the page was sent with). The tokens the
+ * components paint text with are derived from the theme the two sheets resolve to and set on the
+ * root element, since a stylesheet cannot compute them (`derivedTokens`).
  */
 export function applyTheme(
     document: Themeable,
@@ -125,20 +129,10 @@ export function applyTheme(
     tokens: string = tokensCss,
     themes: string = THEME_SHEETS
 ): Record<string, string> {
-    const className = [
-        classes,
-        looks.crt ? CRT_CLASS : '',
-        looks.brackets ? '' : RICE_PLAIN_CLASS,
-        looks.monospace ? '' : RICE_SANS_CLASS
-    ]
-        .join(' ')
-        .split(/\s+/)
-        .filter((name) => name.length > 0)
-        .join(' ');
+    const className = bodyClass(classes, looks);
     document.body.className = className;
 
-    const blocks = parseBlocks(`${tokens}\n${themes}`);
-    const derived = deriveTokens(resolveTheme(blocks, className));
+    const derived = derivedTokens(className, tokens, themes);
     for (const [name, value] of Object.entries(derived)) {
         document.documentElement.style.setProperty(name, value);
     }

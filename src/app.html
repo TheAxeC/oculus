@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="%oculus.root-style%">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="text-scale" content="scale" />
         <title>%oculus.title%</title>
-        %sveltekit.head%
+        %sveltekit.head% %oculus.theme-style%
     </head>
-    <body data-sveltekit-preload-data="hover">
+    <body class="%oculus.body-class%" data-sveltekit-preload-data="hover">
         <div style="display: contents">%sveltekit.body%</div>
     </body>
 </html>
