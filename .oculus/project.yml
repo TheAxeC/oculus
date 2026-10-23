@@ -7,4 +7,4 @@ eli5: 'Oculus is the research workbench that reads a research hub (its projects,
 next: 'Close the migration plan once oculus runs from its own repository, then take the next open item of .scratch/ROADMAP.md; before the repository is made public, take the ledger out of its history.'
 links: []
 short: oculus
-focus: holding
+focus: backburner
