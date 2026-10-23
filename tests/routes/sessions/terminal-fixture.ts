@@ -335,7 +335,9 @@ export function latexRouteOptions(
         run,
         configFor: () => BASE_CHAT_CONFIG,
         projectFor: (id) =>
-            id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null,
+            id === 'hub:alpha'
+                ? { title: 'Alpha Study', folder: LATEX_PROJECT, root: 'hub' }
+                : null,
         programFound: () => true,
         ...extra
     };

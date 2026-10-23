@@ -1,10 +1,11 @@
 // Layer 1, data tests. A manifest whose `tier` or `type` is missing or outside its words: the
 // project is still in the snapshot, a finding on the key says what is wrong, and a project with no
 // usable tier is on no board. A hub planted in a scratch directory is built through
-// buildPortfolioWithSchemas, and the findings on the manifest's file are read from the snapshot.
+// buildOneHub, and the findings on the manifest's file are read from the snapshot.
 
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
@@ -43,7 +44,7 @@ describe('a manifest with a tier or a type outside its words', () => {
         const hub = plantScratch('oculus-tier-type-', {
             'projects/ideas/x/project.yml': `title: X\n${row.manifest}`
         });
-        const { snapshot } = buildPortfolioWithSchemas(hub, CONFIG);
+        const { snapshot } = buildOneHub(hub, CONFIG);
         const file = `${hub}/projects/ideas/x/project.yml`;
         const on = snapshot.findings.filter((one) => one.file === file && one.key === row.key);
         expect(on).toHaveLength(1);

@@ -2,10 +2,22 @@
 // its id, whose main files sit in its `manuscript/` folder, or any folder of a served root, by the
 // root's key and the path under it. The two forms are the two ways api/latex and the latex action
 // of api/terminal take a folder, and `targetKey` is the key the page holds a folder's state under,
-// so a project and a folder whose names happen to match can never share one.
+// so a project and a folder whose names happen to match can never share one. A terminal's task mark
+// keeps a project by its hub and its key, which `markedTarget` reads back as the project's id.
+
+import { hubId } from '../../../data/helpers/hub-names.ts';
+import type { LatexJobTarget } from '../../../data/model/index.ts';
 
 /** A project by its id, or a folder of a served root by its root key and its path under it. */
 export type LatexTarget = { id: string } | { root: string; path: string };
+
+/**
+ * The target a terminal's task mark names, which keeps a project as its hub and its key: the
+ * project by its internal id, a folder as it is.
+ */
+export function markedTarget(target: LatexJobTarget): LatexTarget {
+    return 'key' in target ? { id: hubId(target.hub, target.key) } : target;
+}
 
 /** The part of a query key that names the target, for the query client and the wait lists. */
 export function targetKey(target: LatexTarget): string[] {

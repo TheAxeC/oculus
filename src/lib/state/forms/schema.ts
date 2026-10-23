@@ -25,7 +25,7 @@ import {
 } from '../../data/model/index.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
-import { rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { vocabKeys, vocabSource } from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
@@ -60,10 +60,11 @@ export type FormField = {
 };
 
 /**
- * One choice of a select or a multi-select: the value written, the words shown, and the name of
- * the glyph drawn before them when the choice has a kind that says one.
+ * One choice of a select or a multi-select: the value written, the words shown, the name of the
+ * glyph drawn before them when the choice has a kind that says one, and for a record of a hub other
+ * than the record's own the name of that hub, which the control draws as its hub chip.
  */
-export type Choice = { id: Id; label: string; glyph?: string };
+export type Choice = { id: Id; label: string; glyph?: string; hub?: string };
 
 /** The field a write never touches, which the form therefore shows and does not edit. */
 export const NOT_WRITTEN = ['id'];
@@ -195,50 +196,70 @@ export function resourceGlyph(kind: string): string | undefined {
 }
 
 /**
- * The entities of one kind that the hub `root` holds, as choices, by id. A record's field names a
- * record of its own hub, so a form never offers another hub's.
+ * The entities of one kind a record of the hub `root` may name, as choices, each by the key its own
+ * hub's file gives it, which is what the field writes: the records of the hub `root` first, then
+ * the record of another hub whose key the hub `root` does not hold, with that hub's name. A key the
+ * field writes resolves in the record's own hub first, then in the others, so a key the hub `root`
+ * holds is offered once, as its own record's, and a key two or more other hubs hold, which would
+ * resolve to none, is not offered.
  */
-function entityChoices(
+export function recordChoices(
     entities: Record<Id, Record<string, unknown> & { root?: string }> | undefined,
     keys: string[],
-    root: string,
-    primary: string | null
+    root: string
 ): Choice[] {
     if (entities === undefined) return [];
-    return Object.keys(entities)
-        .filter((id) => rootOf(entities[id], primary) === root)
-        .sort()
-        .map((id) => {
-            const entity = entities[id];
-            const label = keys.map((key) => filled(entity[key])).find((one) => one !== undefined);
-            return { id, label: label ?? id };
-        });
+    const own: Choice[] = [];
+    const others = new Map<string, Choice[]>();
+    for (const id of Object.keys(entities).sort()) {
+        const entity = entities[id];
+        const key = keyOf(id);
+        const label = keys.map((name) => filled(entity[name])).find((one) => one !== undefined);
+        const hub = rootOf(entity);
+        if (hub === root) own.push({ id: key, label: label ?? key });
+        else others.set(key, [...(others.get(key) ?? []), { id: key, label: label ?? key, hub }]);
+    }
+    const held = new Set(own.map((one) => one.id));
+    const elsewhere = [...others.entries()]
+        .filter(([key, holders]) => !held.has(key) && holders.length === 1)
+        .map(([, holders]) => holders[0]);
+    return [...own, ...elsewhere];
+}
+
+/**
+ * Choices as a plain pick draws them: a choice of another hub's record under its hub's name, the
+ * group a pick draws its hub chip as.
+ */
+export function selectChoices(
+    choices: readonly Choice[]
+): { id: string; label: string; group?: string }[] {
+    return choices.map((one) =>
+        one.hub === undefined
+            ? { id: one.id, label: one.label }
+            : { id: one.id, label: one.label, group: one.hub }
+    );
 }
 
 /** The resources as choices, each with the glyph of its kind when the kind says one. */
-function resourceChoices(
-    resources: Record<Id, Resource> | undefined,
-    root: string,
-    primary: string | null
-): Choice[] {
-    return entityChoices(resources, ['name'], root, primary).map((choice) => {
-        const glyph = resourceGlyph(byKey(resources ?? {}, choice.id)?.kind ?? '');
+function resourceChoices(resources: Record<Id, Resource> | undefined, root: string): Choice[] {
+    return recordChoices(resources, ['name'], root).map((choice) => {
+        const id = hubId(choice.hub ?? root, choice.id);
+        const glyph = resourceGlyph(byKey(resources ?? {}, id)?.kind ?? '');
         return glyph === undefined ? choice : { ...choice, glyph };
     });
 }
 
 /**
- * What a field of choices may be set to, for a record of the hub named `root`, `primary` being the
- * name of the open workspace's primary hub. A `from` that names nothing, and a snapshot that has
- * not arrived, both give no choices, which the widget shows as a list with nothing in it rather
- * than as an error: the page is a moment ahead of its data at first load.
+ * What a field of choices may be set to, for a record of the hub named `root`. A `from` that names
+ * nothing, and a snapshot that has not arrived, both give no choices, which the widget shows as a
+ * list with nothing in it rather than as an error: the page is a moment ahead of its data at first
+ * load.
  */
 export function choicesFor(
     field: FormField,
     snapshot: Snapshot | null,
     config: Record<string, unknown>,
-    root: string,
-    primary: string | null
+    root: string
 ): Choice[] {
     const own = (field.options ?? []).map((one) => {
         const id = optionKey(one);
@@ -246,10 +267,7 @@ export function choicesFor(
     });
     if (field.from === undefined) return own;
     const sources = Array.isArray(field.from) ? field.from : [field.from];
-    return [
-        ...own,
-        ...sources.flatMap((from) => sourceChoices(from, snapshot, config, root, primary))
-    ];
+    return [...own, ...sources.flatMap((from) => sourceChoices(from, snapshot, config, root))];
 }
 
 /** The choices a `from:` source offers: a registry's entities, the projects or a vocab list. */
@@ -257,21 +275,18 @@ function sourceChoices(
     from: string,
     snapshot: Snapshot | null,
     config: Record<string, unknown>,
-    root: string,
-    primary: string | null
+    root: string
 ): Choice[] {
     const entities = snapshot?.entities;
-    if (from === 'venues') return entityChoices(entities?.venues, ['short', 'name'], root, primary);
-    if (from === 'datasets') return entityChoices(entities?.datasets, ['name'], root, primary);
-    if (from === 'pillars') return entityChoices(entities?.pillars, ['title'], root, primary);
-    if (from === 'domains') return entityChoices(entities?.domains, ['title'], root, primary);
-    if (from === 'funding') return entityChoices(entities?.funding, ['title'], root, primary);
-    if (from === 'projects')
-        return entityChoices(entities?.projects, ['short', 'title'], root, primary);
-    if (from === 'people') return entityChoices(entities?.people, ['name'], root, primary);
-    if (from === 'organisations')
-        return entityChoices(entities?.organisations, ['name'], root, primary);
-    if (from === 'resources') return resourceChoices(entities?.resources, root, primary);
+    if (from === 'venues') return recordChoices(entities?.venues, ['short', 'name'], root);
+    if (from === 'datasets') return recordChoices(entities?.datasets, ['name'], root);
+    if (from === 'pillars') return recordChoices(entities?.pillars, ['title'], root);
+    if (from === 'domains') return recordChoices(entities?.domains, ['title'], root);
+    if (from === 'funding') return recordChoices(entities?.funding, ['title'], root);
+    if (from === 'projects') return recordChoices(entities?.projects, ['short', 'title'], root);
+    if (from === 'people') return recordChoices(entities?.people, ['name'], root);
+    if (from === 'organisations') return recordChoices(entities?.organisations, ['name'], root);
+    if (from === 'resources') return resourceChoices(entities?.resources, root);
     return from.startsWith(VOCAB_PREFIX)
         ? vocabChoices(config, from.slice(VOCAB_PREFIX.length))
         : [];
@@ -299,13 +314,19 @@ function openSubtasks(project: Project): string {
 /**
  * What the form opens with: the project's current value under each schema field name. The names are
  * the manifest's and the values are the model's, so this is the one place the two vocabularies
- * meet.
+ * meet. A field that names records holds the keys the manifest gives them, which is what the form
+ * shows and writes: the merge resolves each to a record's id, and the key is that id with the
+ * record's hub taken off. A name of `waiting-on` is a key where it names a person or a project
+ * (`waitedOn`, whether an id is one's), and the words the manifest holds otherwise.
  */
-export function fieldValues(project: Project): Record<string, unknown> {
+export function fieldValues(
+    project: Project,
+    waitedOn: (id: Id) => boolean
+): Record<string, unknown> {
     const code = project.codeAvailability ?? {};
     const remote = project.repository;
     return {
-        id: project.id,
+        id: bareId(project),
         tier: project.tier,
         type: project.type,
         short: project.short,
@@ -318,24 +339,24 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'status.line': project.statusLine,
         focus: project.focus,
         priority: project.priority,
-        'waiting-on': project.waitingOn,
+        'waiting-on': project.waitingOn.map((one) => (waitedOn(one) ? keyOf(one) : one)),
         snooze: project.snooze,
         subtasks: openSubtasks(project),
         followup: followupText(project),
         pin: project.pin === true,
-        venue_id: project.venueId,
+        venue_id: project.venueId === undefined ? undefined : keyOf(project.venueId),
         year: project.year,
         eli5: project.eli5,
         next: project.next,
         latest: project.latest,
         results: project.results,
         ideas: project.ideas,
-        domain: project.domainIds[0],
-        pillar: project.pillarIds,
-        funding: project.fundingIds,
-        collaborators: project.collaborators,
-        related: project.relatedIds,
-        datasets: project.datasetIds,
+        domain: project.domainIds.map(keyOf)[0],
+        pillar: project.pillarIds.map(keyOf),
+        funding: project.fundingIds.map(keyOf),
+        collaborators: project.collaborators.map(keyOf),
+        related: project.relatedIds.map(keyOf),
+        datasets: project.datasetIds.map(keyOf),
         deadline: project.deadline,
         'code_availability.status': code.status,
         'code_availability.date': code.date,
@@ -348,7 +369,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'repository.homepage': remote?.homepage,
         'repository.topics': remote?.topics,
         'repository.date': remote?.date,
-        compute: project.resourceIds,
+        compute: project.resourceIds.map(keyOf),
         'reproduced.date': project.reproduced?.date,
         'reproduced.note': project.reproduced?.note,
         outcome: project.outcome,
@@ -420,12 +441,15 @@ export function projectKey(id: string): string {
  */
 export function projectDraftTarget(
     projectOf: (id: string) => Project | null,
-    settled: (key: string, values: Record<string, unknown>) => Record<string, unknown>
+    settled: (key: string, values: Record<string, unknown>) => Record<string, unknown>,
+    waitedOn: (id: Id) => boolean
 ): DraftTarget {
     return {
         values: (name) => {
             const project = projectOf(name);
-            return project === null ? null : settled(projectKey(name), fieldValues(project));
+            return project === null
+                ? null
+                : settled(projectKey(name), fieldValues(project, waitedOn));
         },
         differs: (_name, _field, edit, value) => editDiffers(edit, value),
         writable: (_name, field) => writableField(field)

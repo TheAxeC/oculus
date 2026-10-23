@@ -63,7 +63,7 @@
     const client = useState();
     const {
         folders,
-        fs: { listing, primary },
+        fs: { listing },
         layout: { showFolderInFiles, showInFiles },
         source: { unsavedFile },
         writes: { writeEntry }
@@ -156,7 +156,7 @@
     let addingFollowup = $state(false);
 
     /** The root of the hub the entry is of, which every path of its fields is under. */
-    const root = $derived(rootOf(entry, primary()));
+    const root = $derived(rootOf(entry));
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>

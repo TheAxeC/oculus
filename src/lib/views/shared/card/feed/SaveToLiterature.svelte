@@ -16,11 +16,13 @@
         LITERATURE,
         type PaperIds
     } from '$lib/state/feeds/literature/saved';
+    import { keyOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { refusalWords } from '../../forms/answer-words';
 
     const {
+        fs: { primary },
         selectors: { collectionsOfKey },
         writes: { saveLiterature }
     } = useState();
@@ -39,18 +41,9 @@
     let said = $state('');
 
     /** The collection a save writes to: the primary hub's, else the first hub's that holds it. */
-    const home = $derived(literatureHome(collectionsOfKey(LITERATURE)));
+    const home = $derived(literatureHome(collectionsOfKey(LITERATURE), primary()));
     const entries = $derived((home?.entries ?? []).map((entry) => entry.fields));
     const saved = $derived(inLiterature(ids, entries));
-
-    /**
-     * The citation key the save gave the paper: its portfolio id, without the hub's name that the
-     * id of an entry of a hub other than the primary starts with.
-     */
-    function citationKey(id: string): string {
-        const prefix = home === undefined ? '' : `${home.root}:`;
-        return prefix !== '' && id.startsWith(prefix) ? id.slice(prefix.length) : id;
-    }
 
     async function save(): Promise<void> {
         if (saving) return;
@@ -58,7 +51,8 @@
         try {
             const answer = await saveLiterature(source, paper, home?.root);
             const refused = refusalWords(answer);
-            said = refused === '' ? t('literature.saved', citationKey(answer.id ?? '')) : refused;
+            // The answer's id is the paper's id in the portfolio; its citation key is the key.
+            said = refused === '' ? t('literature.saved', keyOf(answer.id ?? '')) : refused;
         } finally {
             saving = false;
         }

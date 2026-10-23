@@ -11,8 +11,9 @@
 // Settings view's choice field reads it (editors/fields.ts `poolOf`), and split by the rule its
 // list draws by (`choiceGroups`).
 //
-// The choice `self` draws each person of the primary hub by name, by key when the name is empty,
-// and as name and key when its words would read like another item's.
+// The choice `self` offers the people of the primary hub by the key their file gives them, and no
+// person of another hub; it draws each by name, by key when the name is empty, and as name and key
+// when its words would read like another item's.
 //
 // It does not cover the choice as the view draws it, which the look does.
 
@@ -385,17 +386,31 @@ describe('the groups of the code theme choice', () => {
 });
 
 describe('the people of the choice self', () => {
-    /** The words the choice `self` draws each person by, over people given as key and name. */
-    function drawnPeople(people: Record<string, string>): string[] {
-        const held = Object.fromEntries(
-            Object.entries(people).map(([id, name]): [string, Person] => [
-                id,
-                { id, name, affiliations: [], links: [], projectIds: [], jointWorkIds: [] }
-            ])
-        );
+    /**
+     * The words the choice `self` draws each person by, over people of the primary hub `lab` given
+     * as key and name, and the people of the hub `other` given the same way.
+     */
+    function drawnPeople(
+        people: Record<string, string>,
+        others: Record<string, string> = {}
+    ): string[] {
+        const of = (root: string, given: Record<string, string>): [string, Person][] =>
+            Object.entries(given).map(([key, name]): [string, Person] => [
+                `${root}:${key}`,
+                {
+                    id: `${root}:${key}`,
+                    root,
+                    name,
+                    affiliations: [],
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
+                }
+            ]);
+        const held = Object.fromEntries([...of('lab', people), ...of('other', others)]);
         const lists = listsOf({
             config,
-            portfolio: { domains: {}, resources: {}, people: held, projects: [] },
+            portfolio: { primary: 'lab', domains: {}, resources: {}, people: held, projects: [] },
             views: [],
             tiers: null,
             themeClasses: [],
@@ -421,5 +436,9 @@ describe('the people of the choice self', () => {
         }
     ])('draws $people as $drawn, so no two items read alike', (row) => {
         expect(drawnPeople(row.people)).toEqual(row.drawn);
+    });
+
+    it('offers the people of the primary hub by key, and no person of another hub', () => {
+        expect(drawnPeople({ ada: 'Ada' }, { bob: 'Bob', ada: 'Ada' })).toEqual(['Ada']);
     });
 });

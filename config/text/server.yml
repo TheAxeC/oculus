@@ -288,7 +288,6 @@ text:
             value_one_line: the value does not fit on one line
             value_shape: the value has a shape no field is written in
         entries:
-            hub_key: 'an id that begins with "{0}:" would name an entry of the hub {0}, so use another'
             key_empty: 'an entry needs a non-empty {0}'
             key_taken: 'an entry with that {0} is already in the file'
             name_taken: 'another entry is already called {0}'
@@ -527,6 +526,7 @@ text:
             no_collection_in_hub: 'the hub {0} lists no collection {1}'
             no_entry: 'no entry {0} in {1}'
             no_host: 'no host named {0}'
+            no_hub_part: '{0} names no hub: a write names a record by its hub and its key'
             no_idea_file: The LinkedIn idea file is not on this hub.
             no_leads_feed: The leads feed is not on this hub.
             no_literature_file: "Literature has no file on this hub: its collections list names none, and the engine's path for it holds none."

@@ -16,13 +16,16 @@ export const LITERATURE = 'literature';
 
 /**
  * The Literature collection Save to Literature on a card writes to and looks in, of the collections
- * the hubs hold (the primary's first and without a root): the primary hub's, else the first hub's.
+ * the hubs hold, each carrying its hub's name in `root`: the hub `primary`'s, else the first hub's.
  * A hub holds the collection its list names, and the one its list leaves to the engine's path when
  * the file is there. The save names that hub's root, so the server writes the paper where the card
  * looks for it.
  */
-export function literatureHome<T extends { root?: string }>(all: readonly T[]): T | undefined {
-    return all.find((one) => one.root === undefined) ?? all.at(0);
+export function literatureHome<T extends { root?: string }>(
+    all: readonly T[],
+    primary: string | null
+): T | undefined {
+    return all.find((one) => primary !== null && one.root === primary) ?? all.at(0);
 }
 
 /** What a paper is compared by: its DOI when it has one, and its title. */

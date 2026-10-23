@@ -1,5 +1,6 @@
-// Layer 1, data. The rename of a hub key: the edit that changes every place that names the key and
-// the key's own definition, or the reason it cannot be made.
+// Layer 1, data. The rename of a hub key: the edit that changes the key's own definition and every
+// place, in any hub of the workspace, whose reference resolves to it (lookup.ts), and no place that
+// resolves to another hub's record of the same key, or the reason it cannot be made.
 //
 // The edit is a text edit for each scalar and no other byte: the new key is written by
 // `renderScalar` in the quoting the scalar already had, so a quoted scalar keeps its quotes, a
@@ -7,17 +8,25 @@
 // a flow list is not touched. Every file's edited text is read again, and the rename is refused
 // unless each edited place reads back as the new key and nothing else in the file moved.
 //
-// A rename is refused, with nothing edited, when it could break what the key means: a project id
-// is its folder's name, a vocabulary word is read by oculus's own code, a key defined twice or in
-// two sources cannot be told apart from its twin, a new key that already exists would merge two
-// entries, a file that does not parse, cannot be read or is too large to write cannot be edited
-// safely. `refuseRename` decides what depends on the key and the files alone, before a new key is
-// asked for; `planRename` makes those checks again, since a file can change between the two
-// requests, and decides the rest, which depends on the new key.
+// A rename is refused, with nothing edited, when it could break what the key means: a project id is
+// its folder's name, a vocabulary word is read by oculus's own code, a key defined twice or in two
+// sources cannot be told apart from its twin, a new key that already exists in the renamed key's
+// hub, or in any hub when a renamed reference stands in another hub, would merge two entries or
+// change what that reference resolves to, a file that does not parse, cannot be read or is too
+// large to write cannot be edited safely. `refuseRename` decides what depends on the key and the
+// files alone, before a new key is asked for; `planRename` makes those checks again, since a file
+// can change between the two requests, and decides the rest, which depends on the new key.
 
 import { renderScalar } from '../../helpers/files/yaml/collection-text.ts';
 import { applyTextEdits, withoutMark, type TextEdit } from '../../prose/text-edits.ts';
-import { definitionsOf, referencesTo, type Graph, type Hit } from './lookup.ts';
+import {
+    definitionsOf,
+    keysRootOf,
+    referencesTo,
+    resolvedTargets,
+    type Graph,
+    type Hit
+} from './lookup.ts';
 import type { FileScan, Mention } from './model.ts';
 import { scanText } from './scan.ts';
 import { VOCAB_SOURCE } from './specs.ts';
@@ -44,14 +53,18 @@ export type RenamePlan = { ok: true; files: FileEdit[] } | { ok: false; refusal:
 /** A file's text for the rename: the text, that it is over the write limit, or null if unread. */
 export type FileText = { text: string } | { large: true } | null;
 
-/** The sources of the definitions outside a hit's targets that a reference to them also names. */
+/**
+ * The other sources a reference to a hit's targets also names the key in: each source of the
+ * reference's field besides the targets' whose key the reference would resolve to from its hub.
+ */
 function sharedSources(graph: Graph, hit: Hit): string[] {
-    const own = new Set(hit.targets.map((one) => one.definition));
+    const own = new Set(hit.targets.flatMap((one) => one.definition.sources));
     const found: string[] = [];
     for (const reference of referencesTo(graph, hit)) {
-        for (const other of definitionsOf(graph, hit.key, reference.reference.sources)) {
-            if (own.has(other.definition)) continue;
-            found.push(other.definition.sources[0]);
+        const root = keysRootOf(reference.scan);
+        for (const source of reference.reference.sources) {
+            if (own.has(source)) continue;
+            if (resolvedTargets(graph, root, hit.key, [source]).length > 0) found.push(source);
         }
     }
     return found;
@@ -103,13 +116,22 @@ export function refuseRename(
     return null;
 }
 
-/** The source of an existing definition of the new key that the rename would collide with. */
+/**
+ * The source of an existing definition of the new key that the rename would collide with: one in
+ * the hub of the renamed definition, and, when a renamed reference stands in another hub, one in
+ * any hub, since that reference could then resolve to it.
+ */
 function collision(graph: Graph, hit: Hit, key: string): string | null {
     const own = new Set(hit.targets.flatMap((one) => one.definition.sources));
+    const home = new Set(hit.targets.map((one) => keysRootOf(one.scan)));
+    let across = false;
     for (const reference of referencesTo(graph, hit)) {
         for (const source of reference.reference.sources) own.add(source);
+        if (!home.has(keysRootOf(reference.scan))) across = true;
     }
-    const found = definitionsOf(graph, key, [...own]);
+    const found = definitionsOf(graph, key, [...own]).filter(
+        (one) => across || one.scan.engine === true || home.has(keysRootOf(one.scan))
+    );
     if (found.length === 0) return null;
     return found[0].definition.sources.find((source) => own.has(source)) ?? null;
 }

@@ -7,13 +7,15 @@
 // the id a write names it by. The three kinds are written by different endpoints (`entry`,
 // `feed-field` one field at a time, `career`), which entry-save.ts picks by `kind`.
 //
-// A page is found again from its name: `<collection>:<key>` for an entry of a collection or a feed
-// (the key a feed entry has is the identity the feed views give it, state/shared/page/idents.ts),
-// and `career` for the career file. That is what lets the draft of a tab that is not on screen be
-// judged against the snapshot now.
+// A page is found again from its name: `<hub>:<collection>:<key>` for an entry of a collection or
+// a feed, the hub and the key being the entry's (the key a feed entry has is the identity the feed
+// views give it, state/shared/page/idents.ts), and `career` for the career file. That is what lets
+// the draft of a tab that is not on screen be judged against the snapshot now. A tab on a page
+// names the entry by its hub and its key, two fields of its state (`entryPageState`), and never by
+// its internal id.
 
 import { scalar } from '../../data/helpers/guards.ts';
-import { collectionsOf } from '../../data/helpers/hub-names.ts';
+import { addressOfId, collectionsOf, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import type {
     Career,
     Collection,
@@ -25,7 +27,7 @@ import type {
     Snapshot
 } from '../../data/model/index.ts';
 import { entryIdOf, entryTitleOf } from '../../data/model/index.ts';
-import { feedIdents, feedRoot } from '../shared/page/idents.ts';
+import { feedEntryId, feedIdents, feedRoot } from '../shared/page/idents.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { fixedFields, formFieldsOf, identityField } from './record-fields.ts';
 import { fieldDiffers, hasWords } from './record-values.ts';
@@ -47,13 +49,13 @@ export type PageEntry = {
     kind: 'collection' | 'feed' | 'career';
     /** The collection key, the feed kind, or `career`. */
     collection: string;
-    /** The key the page is opened with: an entry's id, a feed entry's identity. */
+    /** The entry the page is for: an entry's internal id, a feed entry's identity. */
     key: string;
-    /** What the page is for: `<collection>:<key>`, and `career` for the career file. */
+    /** What the page is for: `<hub>:<collection>:<key>`, and `career` for the career file. */
     name: string;
-    /** The id a write names the entry by; a feed entry's title. */
+    /** The id a write names the entry by: its internal id; the empty text for the career file. */
     writeId: string;
-    /** The key of the hub the entry is of; the empty text for the primary's. */
+    /** The name of the hub the entry is of; the empty text for the career file. */
     root: string;
     title: string;
     schema: SchemaField[];
@@ -65,60 +67,60 @@ export type PageEntry = {
     peers: Record<string, unknown>[];
 };
 
-/** The name of the page of the entry `key` of `collection`. */
-function pageName(collection: string, key: string): string {
-    return `${collection}:${key}`;
+/** The name of the page of the entry of the internal id `id` of `collection`. */
+function pageName(collection: string, id: string): string {
+    const { hub, key } = addressOfId(id);
+    return hubId(hub, `${collection}:${key}`);
 }
 
 /**
- * The state an entry's page is opened with. Its `id` is what makes one entry one tab: the same
- * entry asked for again activates its tab, another entry of the collection gets its own, and the
- * same key in another collection is another entry.
+ * The state an entry's page is opened with, for the entry of the internal id `id`: its collection,
+ * its hub and its key. The three are what make one entry one tab (`stateId` of
+ * state/workbench/layout/instance.ts): the same entry asked for again activates its tab, another
+ * entry of the collection gets its own, and the same key in another collection or another hub is
+ * another entry.
  */
 export function entryPageState(
     collection: string,
-    key: string,
+    id: string,
     label: string
-): { id: string; collection: string; key: string; label: string } {
-    return { id: pageName(collection, key), collection, key, label };
+): { collection: string; hub: string; key: string; label: string } {
+    return { collection, ...addressOfId(id), label };
 }
 
 /**
- * The state a collection or feed view is given to reveal one entry: the key, and the disclosure
- * the entry may sit behind opened, since a card that is not mounted cannot be scrolled to.
+ * The state a collection or feed view is given to reveal the entry of the internal id `id`: the
+ * entry by its hub and its key, and the disclosure the entry may sit behind opened, since a card
+ * that is not mounted cannot be scrolled to.
  */
-export function revealState(collection: string, key: string): Record<string, unknown> {
-    if (collection === 'leads') return { reveal: key, expiredOpen: true };
-    if (collection === 'radar') return { reveal: key, dismissedOpen: true };
-    return { reveal: key };
+export function revealState(collection: string, id: string): Record<string, unknown> {
+    const reveal = addressOfId(id);
+    if (collection === 'leads') return { reveal, expiredOpen: true };
+    if (collection === 'radar') return { reveal, dismissedOpen: true };
+    return { reveal };
 }
 
 /** The collection whose entries are people, whose page is the Person view. */
 export const PEOPLE = 'people';
 
 /**
- * The view that is the page of an entry and the state it is opened with: the Person view for a
- * person, the `entry` view for every other entry of a collection or a feed.
+ * The view that is the page of the entry of the internal id `id` and the state it is opened with:
+ * the Person view for a person, the `entry` view for every other entry of a collection or a feed.
+ * Either state names the entry by its hub and its key.
  */
 export function pageView(
     collection: string,
-    key: string,
+    id: string,
     label: string
 ): { view: string; state: Record<string, string> } {
     return collection === PEOPLE
-        ? { view: 'person', state: { key, label } }
-        : { view: 'entry', state: entryPageState(collection, key, label) };
+        ? { view: 'person', state: { ...addressOfId(id), label } }
+        : { view: 'entry', state: entryPageState(collection, id, label) };
 }
 
 /** The key a page of an entry of a collection is held under in the settled writes. */
 function entryKey(collection: string, id: string): string {
     return `page:${collection}:${id}`;
-}
-
-/** The part of an entry's id that names its hub: the id without the key its own file gives. */
-function hubPrefix(entry: Entry, ident: string): string {
-    const own = entryIdOf(entry.fields, ident);
-    return own === '' || !entry.id.endsWith(own) ? '' : entry.id.slice(0, -own.length);
 }
 
 /**
@@ -134,8 +136,7 @@ function collectionPage(
     values: Record<string, unknown>
 ): PageEntry {
     const ident = identityField(schema);
-    const id =
-        values === entry.fields ? entry.id : hubPrefix(entry, ident) + entryIdOf(values, ident);
+    const id = values === entry.fields ? entry.id : hubId(rootOf(entry), entryIdOf(values, ident));
     const title = values === entry.fields ? entry.title : entryTitleOf(values, ident);
     return {
         kind: 'collection',
@@ -143,8 +144,8 @@ function collectionPage(
         key: id,
         name: pageName(key, id),
         writeId: id,
-        root: entry.root ?? '',
-        title: title === '' ? id : title,
+        root: rootOf(entry),
+        title: title === '' ? keyOf(id) : title,
         schema,
         values,
         fixed: fixedFields(key, schema),
@@ -152,17 +153,22 @@ function collectionPage(
     };
 }
 
-/** The page of a feed entry, `ident` being the identity the feed views give it. */
+/**
+ * The page of a feed entry, `ident` being the identity the feed views give it, over the schema of
+ * the file of the entry's hub: the schema the merged feed holds for that hub, or, in a feed not
+ * merged across hubs, the one file's.
+ */
 function feedPage(
     kind: FeedKind,
-    feed: Pick<FeedData, 'entries' | 'schema'>,
+    feed: Pick<FeedData, 'entries' | 'schema'> & { hubSchemas?: Record<string, SchemaField[]> },
     ident: string,
     settled: SettledStore
 ): PageEntry | null {
     const identOf = feedIdents(kind, feed.entries);
     const found = feed.entries.find((one) => identOf(one) === ident);
     const entry = found ?? (settled.pending(entryKey(kind, ident)) ? {} : undefined);
-    const schema = feed.schema;
+    const root = found === undefined ? addressOfId(ident).hub : feedRoot(found);
+    const schema = feed.hubSchemas === undefined ? feed.schema : feed.hubSchemas[root];
     if (entry === undefined || schema === undefined) return null;
     const values = settled.overlay(entryKey(kind, ident), entry);
     const title = scalar(values.title);
@@ -171,9 +177,9 @@ function feedPage(
         collection: kind,
         key: ident,
         name: pageName(kind, ident),
-        writeId: scalar(entry.title),
-        root: feedRoot(entry),
-        title: title === '' ? ident : title,
+        writeId: feedEntryId(entry),
+        root,
+        title: title === '' ? keyOf(ident) : title,
         schema,
         values,
         fixed: [identityField(schema)],
@@ -226,14 +232,8 @@ export type Settle = {
     entry: (collection: string, id: string, saved: Record<string, unknown>, seq: number) => void;
     /** An entry added to a collection file. */
     added: (collection: string, id: string, saved: Record<string, unknown>, seq: number) => void;
-    /** Fields set on an entry of a feed, found by its title in the feed of the hub `root` names. */
-    feed: (
-        kind: FeedKind,
-        title: string,
-        root: string,
-        saved: Record<string, unknown>,
-        seq: number
-    ) => void;
+    /** Fields set on an entry of a feed, found by its internal id. */
+    feed: (kind: FeedKind, id: string, saved: Record<string, unknown>, seq: number) => void;
     /** Sections set on the career file. */
     career: (saved: Record<string, unknown>, seq: number) => void;
 };
@@ -282,13 +282,11 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
             return collectionPage(collection, schema, entry, held.entries, values);
         }
         if (!settled.pending(entryKey(collection, key))) return null;
-        const home =
-            collectionsOf(snapshot.entities.collections, collection).find(
-                (one) => one.schema !== undefined && one.root === undefined
-            ) ??
-            collectionsOf(snapshot.entities.collections, collection).find(
-                (one) => one.schema !== undefined
-            );
+        // An entry a write added is of the hub its id names, whose file the write went to.
+        const { hub } = addressOfId(key);
+        const home = collectionsOf(snapshot.entities.collections, collection).find(
+            (one) => one.schema !== undefined && rootOf(one) === hub
+        );
         if (home?.schema === undefined) return null;
         const values = settled.overlay(entryKey(collection, key), {});
         const added: Entry = {
@@ -297,7 +295,7 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
             fields: values,
             file: home.file,
             index: home.entries.length,
-            ...(home.root === undefined ? {} : { root: home.root })
+            root: hub
         };
         return collectionPage(collection, home.schema, added, home.entries, values);
     }
@@ -306,8 +304,9 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         if (name === CAREER) {
             return careerPage(sources.snapshot()?.entities.career ?? null, settled);
         }
-        const at = name.indexOf(':');
-        return at < 1 ? null : pageOf(name.slice(0, at), name.slice(at + 1));
+        const { hub, key: rest } = addressOfId(name);
+        const at = rest.indexOf(':');
+        return at < 1 ? null : pageOf(rest.slice(0, at), hubId(hub, rest.slice(at + 1)));
     }
 
     const settle: Settle = {
@@ -317,9 +316,10 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
             const found = snapshot === null ? null : find(snapshot, collection, [id]);
             if (found === null) return;
             const ident = identityField(found.held.schema);
-            const now =
-                hubPrefix(found.entry, ident) +
-                entryIdOf({ ...found.entry.fields, ...saved }, ident);
+            const now = hubId(
+                rootOf(found.entry),
+                entryIdOf({ ...found.entry.fields, ...saved }, ident)
+            );
             settled.record(
                 entryKey(collection, found.entry.id),
                 saved,
@@ -331,11 +331,9 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         added(collection, id, saved, seq) {
             settled.record(entryKey(collection, id), saved, null, seq, { created: true });
         },
-        feed(kind, title, root, saved, seq) {
+        feed(kind, id, saved, seq) {
             const entries = sources.feeds()?.[kind].entries ?? [];
-            const entry = entries.find(
-                (one) => scalar(one.title) === title && feedRoot(one) === root
-            );
+            const entry = entries.find((one) => feedEntryId(one) === id);
             if (entry === undefined) return;
             settled.record(entryKey(kind, feedIdents(kind, entries)(entry)), saved, entry, seq);
         },

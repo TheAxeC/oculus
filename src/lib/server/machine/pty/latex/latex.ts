@@ -45,7 +45,7 @@ import type {
     TerminalJob
 } from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
-import { rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
+import { addressOfId, hubId, rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { onPath } from '../../../core/program.ts';
 import { words } from '../../../core/words.ts';
@@ -149,7 +149,7 @@ function keeps(one: Terminal, dir: string, step: LatexStep, main: string, name: 
  * What the last build of one main file of a folder came to, from the terminals list: its kept
  * build terminal is running, ended with status 0, or ended otherwise (a build that was stopped
  * ends with a status other than 0). `label` is what the terminal's name calls the folder, which
- * for a project is its id and for a folder of a root its path, or the root's key for the root
+ * for a project is its key and for a folder of a root its path, or the root's key for the root
  * itself. Every page reads the answer from the state of the folder, so a page that did not start
  * the build knows how it ended.
  */
@@ -192,16 +192,16 @@ function latexFolder(
     if (project === null) return refusal('no-project');
     const open = options.openFor();
     // A project lies under the served root of its hub's name.
-    const key = hubOf(project, open.primary);
+    const key = hubOf(project);
     const hub = open.roots.find((one) => one.key === key)?.dir;
     if (hub === undefined) return refusal('no-project');
     // A project of a repository is built from the repository, which also bounds what it reads.
     const bound = project.workspaceFolder?.dir ?? hub;
     return {
         dir: join(projectDirectory(hub, project), MANUSCRIPT),
-        label: named.data.id,
+        label: addressOfId(named.data.id).key,
         bound: realPath(bound) ?? bound,
-        target: { id: named.data.id }
+        target: addressOfId(named.data.id)
     };
 }
 
@@ -352,7 +352,8 @@ export function latexAgain(terminal: Terminal, options: TerminalOptions): Respon
     if ('root' in target && !options.openFor().roots.some((one) => one.key === target.root)) {
         return refusal('latex-unserved', [target.root]);
     }
-    const folder = latexFolder(target, options);
+    const asked = 'key' in target ? { id: hubId(target.hub, target.key) } : target;
+    const folder = latexFolder(asked, options);
     if (folder instanceof Response) return folder;
     if (!isMainOf(folder.dir, kept.main)) return refusal('not-a-main');
     const planned = stepsOf(kept.step, folder, kept.main, options, { recipe: kept.recipe });

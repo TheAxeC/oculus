@@ -210,7 +210,7 @@ The first field of the schema is the one a write finds the entry by. An empty va
 A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, and oculus merges it into the one portfolio.
 
 - Its `config.yml` paths are read from its own folder. Its `career_file`, `publications_file`, `linkedin_dir` and `portfolio_deck` are not read.
-- Its records have the id `<hub name>:<id>`, and a reference never crosses hubs.
+- Every record of every hub, the primary's included, has the id `<hub name>:<key>`. The files hold keys: a reference names the record of its key in its own hub, and else the record of the one other hub that holds the key; a key two other hubs hold and its own hub does not names no record, and the Audit reports it.
 - A change to a record goes to its own hub's file. A new project goes to the primary hub, and so does a new entry, unless more than one hub lists its collection, when Add asks which hub's file takes it. Save to Literature writes to the Literature file of the primary hub when the primary holds one, named in its `collections:` or at the engine's path, and else to the first hub that holds one.
 - A collection's view is shown when any hub of the workspace lists its key.
 

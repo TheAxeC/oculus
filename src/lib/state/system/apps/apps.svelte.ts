@@ -71,6 +71,7 @@ import { createStoreCache, type StoreAnswer } from './frame/store-cache.ts';
 import { panelDisposed } from './shell/show/panels.ts';
 import { createFrameShell, type FrameItem } from './shell/frames.svelte.ts';
 import { createRequests, type CommandResult, type RequestsStore } from './shell/requests.svelte.ts';
+import { recordState } from '../../shared/page/records.ts';
 
 export type { AppHostRow, AppRow };
 /** The view id of an app, by its root and its name, which the Apps view keys its rows by. */
@@ -626,7 +627,7 @@ export function createApps(deps: AppsDeps): AppsStore {
             openProject: (key) => {
                 const project = deps.projectOf(key);
                 if (project === null) return;
-                deps.layout.openView('project', { id: key, label: project.title });
+                deps.layout.openView('project', recordState(key, project.title));
             },
             check: (root, path, page) => checkOpen(openQuery(options.id, root, path, page)),
             openFile: (root, path, page) => {

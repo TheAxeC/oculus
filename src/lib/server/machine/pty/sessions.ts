@@ -254,7 +254,7 @@ const jobShape = z.object({
             recipe: z.string().optional().catch(undefined),
             target: z
                 .union([
-                    z.object({ id: z.string() }),
+                    z.object({ hub: z.string(), key: z.string() }),
                     z.object({ root: z.string(), path: z.string() })
                 ])
                 .optional()

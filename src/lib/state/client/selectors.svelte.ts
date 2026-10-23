@@ -27,7 +27,7 @@ import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey, focusSetting } from '../../data/helpers/guards.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
-import { collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
+import { collectionsOf, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
@@ -49,7 +49,7 @@ import {
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
-import { choicesFor, formFields, formSections } from '../forms/schema.ts';
+import { choicesFor, formFields, formSections, recordChoices } from '../forms/schema.ts';
 import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
 import { followedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
@@ -182,6 +182,8 @@ export type SelectorsStore = {
     collectionsOfKey: (key: string) => Collection[];
     boardItemOf: (id: Id) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
+    /** Whether the id is a person's or a project's, which a `waiting-on` name may be. */
+    waitedOn: (id: Id) => boolean;
     projects: () => Project[];
     venues: () => Venue[];
     datasets: () => Dataset[];
@@ -318,11 +320,11 @@ export function createSelectors(
 
     /**
      * The domains registry as a form's choices, for the one field of the new-idea form that has
-     * any.
+     * any: the new project is written to the primary hub, so its domains come first, by key.
      */
     function domainChoices(): Choice[] {
-        const domains = entities.portfolio()?.entities.domains ?? {};
-        return Object.values(domains).map((one) => ({ id: one.id, label: one.title }));
+        const domains = entities.portfolio()?.entities.domains;
+        return recordChoices(domains, ['title'], workspace().primary ?? '');
     }
 
     /**
@@ -374,15 +376,17 @@ export function createSelectors(
     }
 
     /**
-     * One collection of the snapshot, by the key its file is read under, or null when the snapshot
-     * does not carry it: before the first message, and for a collection key that names a registry,
-     * which normalise leaves out. The collection view is registered once per key and reads its own
-     * by the id of the view it was mounted as, so this is the whole of its join.
+     * The primary hub's collection of the key its file is read under, or null when the snapshot
+     * does not carry it: before the first message, in a workspace with no primary, and for a
+     * collection key that names a registry, which normalise leaves out. The collection view is
+     * registered once per key and reads its own by the id of the view it was mounted as, so this is
+     * the whole of its join.
      */
     function collectionOf(key: string): Collection | null {
         const snapshot = entities.portfolio();
-        if (snapshot === null) return null;
-        return byKey(snapshot.entities.collections, key) ?? null;
+        const primary = workspace().primary;
+        if (snapshot === null || primary === null) return null;
+        return byKey(snapshot.entities.collections, hubId(primary, key)) ?? null;
     }
 
     /**
@@ -425,6 +429,14 @@ export function createSelectors(
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
         return byKey(snapshot.entities.projects, id) ?? null;
+    }
+
+    function waitedOn(id: Id): boolean {
+        const held = entities.portfolio()?.entities;
+        return (
+            held !== undefined &&
+            (Object.hasOwn(held.people, id) || Object.hasOwn(held.projects, id))
+        );
     }
 
     /**
@@ -470,7 +482,7 @@ export function createSelectors(
         hub?: string
     ): Choice[] {
         const root = hub ?? project?.root ?? workspace().primary ?? '';
-        const all = choicesFor(field, entities.portfolio(), configMap(), root, workspace().primary);
+        const all = choicesFor(field, entities.portfolio(), configMap(), root);
         // The Focus lane of a project offers only what the board may move it to, so `holding` is
         // not offered to a project of a tier the backlog does not draw.
         if (project === null || field.field !== 'focus') return all;
@@ -575,7 +587,6 @@ export function createSelectors(
     function pinnableAreas(own: string): PinChoice[] {
         const known = knownAreas(own);
         const held = new Set(known.map((area) => area.key));
-        const { primary } = workspace();
         const groups = new Map<string, { first: boolean; rows: PinChoice[] }>();
         const folders = new Map<string, string>();
         for (const project of Object.values(entities.portfolio()?.entities.projects ?? {})) {
@@ -585,7 +596,7 @@ export function createSelectors(
             const short = project.workspaceFolder?.root ?? project.folder;
             folders.set(key, project.folder !== '' ? project.folder : key);
             const label = project.title !== '' ? project.title : short === '' ? key : short;
-            const group = project.workspaceFolder?.root ?? rootOf(project, primary);
+            const group = project.workspaceFolder?.root ?? rootOf(project);
             const rows = groups.get(group) ?? { first: false, rows: [] };
             rows.first ||= own !== '' && hubOfProject(project) === own;
             rows.rows.push({ key, label, group });
@@ -708,6 +719,7 @@ export function createSelectors(
         collectionsOfKey,
         boardItemOf,
         projectOf,
+        waitedOn,
         projects,
         venues,
         datasets,

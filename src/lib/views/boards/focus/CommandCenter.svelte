@@ -24,7 +24,7 @@
     } from '$lib/state/boards/ticker';
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
-    import { instanceMap } from '$lib/state/workbench/layout';
+    import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
@@ -198,7 +198,7 @@
         const id = openView(view);
         setInstanceState(id, {
             ...instanceMap(instanceState(id)),
-            reveal: item,
+            reveal: recordField(item),
             ...(expiredOpen ? { expiredOpen: true } : {}),
             search: ''
         });

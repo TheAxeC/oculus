@@ -31,7 +31,7 @@ import {
     type FolderLayout,
     type FolderRef
 } from '../../index.ts';
-import { instanceText } from '../../instance.ts';
+import { recordField, stateRecord } from '../../../../shared/page/records.ts';
 import type { LayoutStore } from '../../../layout.svelte.ts';
 import type { FsRoot } from '../../../../sources/explorer/view/place.ts';
 import { withLimit } from '../../../../sources/explorer/view/limit.ts';
@@ -71,7 +71,7 @@ const PROJECT_VIEW = 'project';
 
 /** The id of the project a page was opened for, or the empty text. */
 function projectIdOf(item: FolderItem | undefined): string {
-    return item?.view === PROJECT_VIEW ? instanceText(item.state, 'id') : '';
+    return item?.view === PROJECT_VIEW ? stateRecord(item.state) : '';
 }
 
 /** Whether a project has a deposit: a `code/` folder, or a `repo` or `url` its manifest names. */
@@ -99,7 +99,7 @@ function startOf(view: string, folder: FolderRef, project: string): Start {
         case 'latex':
             return { layout: { root: folder.root, path: folder.path } };
         case 'deposit':
-            return { layout: { id: project } };
+            return { layout: recordField(project) };
         default:
             return {};
     }

@@ -527,7 +527,11 @@ configurations:
 
 ### Hubs and projects
 
-- A folder of the workspace with `.oculus/config.yml` is a hub. Every hub is read and merged into one portfolio. A record of another hub than the primary has the id `<hub>:<id>` and a hub chip.
+- A folder of the workspace with `.oculus/config.yml` is a hub. Every hub is read and merged into one portfolio. Every record, the primary's included, has the id `<hub>:<key>`, and a record of a hub other than the primary shows that hub's chip.
+- A reference to a key names the record of that key in its own hub, and else the record of the one other hub that holds the key. A key that two other hubs hold and its own hub does not names no record, and the Audit reports it.
+- A field that chooses records (a venue, a pillar, the people of a project) lists the records of the hub of the record it edits first, then those of the other hubs, each with its hub's chip.
+- Renaming a key rewrites every reference that names the renamed record, in every hub, and leaves a reference that names another hub's record of the same key.
+- The Audit checks each hub against its own records, and a finding of a hub other than the primary shows that hub's chip.
 - Make Folder a Hub..., in the Files view's menu of a folder, opens a dialog of two groups. Hub files: `config.yml`, always written; `local.yml` with the `.oculus/.gitignore` that keeps it out of git, written readable by you alone; `schedules.yml`. Collections: a box per collection of the templates. Every box starts ticked, and each row says what the file or collection holds, with its path under that line. Make writes the folder's `.oculus/config.yml`, whose `collections:` names the ticked keys at their default paths under `.oculus/data/`, the ticked hub files, and each ticked collection's data file, each from its template in `docs/templates.md` with every key commented out. It writes over no file: when one of them is there, it says which and writes nothing. It is offered on a folder that is no hub, lies in no hub and is no project (it holds no `project.yml` and no `.oculus/project.yml`).
 - Make Folder a Project writes the folder's `.oculus/project.yml` from its template. It is offered on a folder that is no hub and no project.
 - Make Folder a Git Repository runs `git init` in the folder, with no dialog. It is offered on a folder or root with no `.git` of its own that lies inside no `.git` folder; a folder inside another repository becomes a repository of its own inside it.

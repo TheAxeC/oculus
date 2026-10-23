@@ -30,7 +30,7 @@ import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 import type { ClientState } from '$lib/state/client/context';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
-import { fileUnder } from '$lib/state/shared/page/hubs';
+import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** What the command center and the tasks section are each given by the board that draws them. */
@@ -100,7 +100,7 @@ function collectionFile(
     const parts = client.selectors.collectionsOfKey(key);
     const held = parts.find((one) => one.entries.some((entry) => entry.id === id));
     const primary = client.fs.primary();
-    if (held?.root === undefined) {
+    if (held === undefined || rootOf(held) === primary) {
         return viewSourceFile('collection', client.selectors.configMap(), primary, key);
     }
     return fileUnder(held.file, client.fs.roots(), primary);

@@ -51,7 +51,8 @@
     // account, each cloned into a folder the reader picks (rows/CloneRows.svelte). `:theme`,
     // `:file-icons`, `:tab` and `:goto` list what their argument picks from, `:theme` and
     // `:file-icons` drawing the choice under the selection until the list is left
-    // (rows/ArgumentRows.svelte); Enter with no row says why in the palette.
+    // (rows/ArgumentRows.svelte); Enter with no row says why in the palette. The lists of these
+    // commands are made together over the query (lists/mode-lists.svelte.ts).
     //
     // The file mode asks the search route for the names of every file under the served roots when
     // it opens (file-names.svelte.ts) and a worker matches them (file-match.worker.ts); the rows
@@ -72,25 +73,13 @@
     import LintConfigRows from '$lib/shell/keys/rows/approve/LintConfigRows.svelte';
     import CloneRows from '$lib/shell/keys/rows/CloneRows.svelte';
     import ArgumentRows from '$lib/shell/keys/rows/ArgumentRows.svelte';
-    import { createCloneList } from '$lib/shell/keys/lists/clone-list.svelte';
-    import {
-        argumentChoices,
-        createArgumentList
-    } from '$lib/shell/keys/lists/argument-list.svelte';
-    import { createLanguageList } from '$lib/shell/keys/lists/language-list.svelte';
-    import { createLintConfigList } from '$lib/shell/keys/lists/lint-config.svelte';
-    import { createWorkspaceList } from '$lib/shell/keys/lists/workspace-list.svelte';
+    import { argumentChoices } from '$lib/shell/keys/lists/argument-list.svelte';
+    import { createModeLists } from '$lib/shell/keys/lists/mode-lists.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import { createFileNames } from '$lib/shell/keys/lists/file-names.svelte';
     import { createFileList } from '$lib/shell/keys/lists/file-list.svelte';
-    import {
-        choiceModeOf,
-        choiceRows,
-        commandRows,
-        listedRows,
-        type PaletteStart
-    } from '$lib/shell/keys/palette-modes';
+    import { commandRows, listedRows, type PaletteStart } from '$lib/shell/keys/palette-modes';
     import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
     import { dockedEdges } from '$lib/shell/window/colon-effects';
     import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
@@ -191,7 +180,7 @@
     const index = $derived(
         open && mode === 'search'
             ? [
-                  ...buildIndex(current.snapshot, current.feeds, knownViews),
+                  ...buildIndex(current.snapshot, current.feeds, knownViews, current.primary),
                   ...editorItems(acting),
                   ...pinItems(pinnable, t),
                   ...viewItems(tab?.id ?? null, offered),
@@ -214,29 +203,10 @@
 
     /** The line a go-to-line query names, or null for another query. */
     const line = $derived(lineQuery(query));
-    const languageList = createLanguageList({
-        parsed: () => parsed,
-        source: () => source,
-        apps: () => appTools.languages.names()
-    });
-    const languageMode = $derived(languageList.active);
     /** The root and language a server serves the tab on screen by, when one does. */
     const served = $derived(source?.status.served ?? null);
-    /** The interpreter or compile database list the query is, and its rows. */
-    const choiceMode = $derived(choiceModeOf(parsed, served?.language ?? ''));
-    const choiceView = $derived(served === null ? null : lsp.choices(served.root, served.language));
-    const choiceList = $derived(
-        choiceMode === null ? [] : choiceRows(choiceMode, choiceView, parsed?.argument ?? '')
-    );
     /** Whether the query is the workspace's symbol list (a `#`). */
     const symbolMode = $derived(mode === 'symbols');
-    const workspaceList = createWorkspaceList({ parsed: () => parsed, saved: workspaces, roots });
-    const lintConfig = createLintConfigList({
-        parsed: () => parsed,
-        linters: () => source?.status.linters,
-        config: lint.config
-    });
-    const cloneList = createCloneList({ parsed: () => parsed, repos: clone.githubRepos });
     const listedCommands = $derived(
         commands(
             current.config,
@@ -248,23 +218,24 @@
             dockedEdges(floats())
         )
     );
-    const argumentList = createArgumentList({
+    /** The colon commands whose rows are drawn by a partial of their own. */
+    const lists = createModeLists({
         parsed: () => parsed,
-        choices: () =>
+        source: () => source,
+        apps: () => appTools.languages.names(),
+        saved: workspaces,
+        roots,
+        linters: () => source?.status.linters,
+        lintConfig: lint.config,
+        repos: clone.githubRepos,
+        served: () => served,
+        choices: (root, language) => lsp.choices(root, language),
+        arguments: () =>
             argumentChoices(client, knownViews, tab, current.snapshot?.entities.projects),
         hint: (name) => listedCommands.find((one) => one.name === name)?.hint ?? ''
     });
-    /** Whether the query is a mode whose rows are drawn by a partial of its own. */
-    const listsRows = $derived(
-        languageMode ||
-            workspaceList.active ||
-            choiceMode !== null ||
-            lintConfig.active ||
-            cloneList.active ||
-            argumentList.active
-    );
     const commandList = $derived(
-        parsed === null || line !== null || listsRows
+        parsed === null || line !== null || lists.active
             ? []
             : commandRows(listedCommands, knownViews, parsed)
     );
@@ -292,14 +263,16 @@
             files: fileMode ? fileFound.map((one) => fileValue(one.entry)) : null,
             line,
             hasCaret: caret !== null,
-            languageMode,
-            languageEntries: languageList.entries,
-            languages: languageList.languages,
-            workspace: workspaceList,
-            choiceMode,
+            languageMode: lists.language.active,
+            languageEntries: lists.language.entries,
+            languages: lists.language.languages,
+            workspace: lists.workspace,
+            choiceMode: lists.choiceMode,
             commandList,
-            choiceList,
-            modeList: [lintConfig, cloneList, argumentList].find((one) => one.active)?.rows ?? null
+            choiceList: lists.choiceRows,
+            modeList:
+                [lists.lintConfig, lists.clone, lists.argument].find((one) => one.active)?.rows ??
+                null
         })
     );
     const count = $derived(listed.count);
@@ -323,9 +296,9 @@
 
     // The second list is left with the language mode, and its first row is the selected one.
     $effect(() => {
-        const second = languageList.associating !== null;
+        const second = lists.language.associating !== null;
         untrack(() => {
-            if (!languageMode) languageList.leave();
+            if (!lists.language.active) lists.language.leave();
             else if (second) chosen = values.at(0) ?? chosen;
         });
     });
@@ -334,14 +307,14 @@
     function typed(next: string): void {
         query = next;
         said = '';
-        const first = argumentList.start ?? values.at(0);
+        const first = lists.argument.start ?? values.at(0);
         if (first !== undefined) chosen = first;
     }
 
     /** Enter on an argument list with no row says why, in the words a typed argument is refused. */
     function refused(event: KeyboardEvent): boolean {
-        if (event.key !== 'Enter' || argumentList.refusal === '') return false;
-        said = argumentList.refusal;
+        if (event.key !== 'Enter' || lists.argument.refusal === '') return false;
+        said = lists.argument.refusal;
         return true;
     }
 
@@ -417,42 +390,42 @@
                                                             : (source?.instance ?? null)}
                                                         {onclose}
                                                     />
-                                                {:else if languageMode}
+                                                {:else if lists.language.active}
                                                     <LanguageRows
                                                         {source}
-                                                        list={languageList}
+                                                        list={lists.language}
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}
                                                     />
-                                                {:else if workspaceList.active}
+                                                {:else if lists.workspace.active}
                                                     <WorkspaceRows
-                                                        choices={workspaceList.choices}
-                                                        folders={workspaceList.folders}
+                                                        choices={lists.workspace.choices}
+                                                        folders={lists.workspace.folders}
                                                         name={parsed.argument}
                                                         command={parsed.name}
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}
                                                     />
-                                                {:else if choiceMode !== null && served !== null}
+                                                {:else if lists.choiceMode !== null && served !== null}
                                                     <ChoiceRows
-                                                        mode={choiceMode}
+                                                        mode={lists.choiceMode}
                                                         {served}
-                                                        rows={choiceList}
-                                                        loading={choiceView === null}
+                                                        rows={lists.choiceRows}
+                                                        loading={lists.choiceView === null}
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}
                                                     />
-                                                {:else if lintConfig.active}
+                                                {:else if lists.lintConfig.active}
                                                     <LintConfigRows
-                                                        list={lintConfig}
+                                                        list={lists.lintConfig}
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}
                                                     />
-                                                {:else if cloneList.active}
-                                                    <CloneRows list={cloneList} {onclose} />
-                                                {:else if argumentList.active}
+                                                {:else if lists.clone.active}
+                                                    <CloneRows list={lists.clone} {onclose} />
+                                                {:else if lists.argument.active}
                                                     <ArgumentRows
-                                                        list={argumentList}
+                                                        list={lists.argument}
                                                         selected={chosen}
                                                         {onclose}
                                                     />
@@ -470,7 +443,7 @@
                                                 {#if said !== ''}
                                                     <p class="empty" data-palette-said>{said}</p>
                                                 {/if}
-                                                {#if count === 0 && line === null && !listsRows && !symbolMode && !fileMode}
+                                                {#if count === 0 && line === null && !lists.active && !symbolMode && !fileMode}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')

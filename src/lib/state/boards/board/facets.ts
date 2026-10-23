@@ -2,12 +2,12 @@
 // vocabulary changes independently of item construction and board state.
 //
 // A value that names a record of a hub (a domain, a pillar, a funding scheme, a dataset, a
-// resource) is that record's id inside its hub, with the merged portfolio's hub prefix off: on a
-// workspace of two hubs one value of both is one row of the filter menu, its count the sum of both
-// hubs' projects, and one filter picks the projects of both. The words are the ones a project
-// card draws for the record, which items.ts gives the id inside the project's own hub.
+// resource) is that record's key, its internal id with the hub's name off: on a workspace of two
+// hubs one key of both is one row of the filter menu, its count the sum of both hubs' projects,
+// and one filter picks the projects of both. The words are the ones a project card draws for the
+// record, which items.ts gives by the key.
 
-import { rootOf, splitHubId } from '../../../data/helpers/hub-names.ts';
+import { keyOf } from '../../../data/helpers/hub-names.ts';
 import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
 import {
     CODE_VALUES,
@@ -20,20 +20,15 @@ import {
     type Facet
 } from './presets.ts';
 
-/** A record id of the project's hub with the hub's prefix off, as items.ts's `own` reads it. */
-function bare(item: BoardItem, id: string): string {
-    return splitHubId(id, [rootOf(item.project, null)], null).id;
-}
-
 export function facetValues(item: BoardItem, facet: string): string[] {
-    const ids = (tags: { id: string }[]): string[] => tags.map((tag) => bare(item, tag.id));
+    const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
     switch (facet) {
         case 'category':
             return item.bucket === '' ? [] : [item.bucket];
         case 'year':
             return [item.year === '' ? NONE : item.year];
         case 'domain':
-            return item.domain === null ? [] : [bare(item, item.domain.id)];
+            return item.domain === null ? [] : [keyOf(item.domain.id)];
         case 'pillar':
             return ids(item.pillars);
         case 'funding':
@@ -62,7 +57,7 @@ function recordResources(items: BoardItem[]): Recorded {
     const recorded: Recorded = new Map();
     for (const item of items) {
         for (const one of item.compute) {
-            const id = bare(item, one.id);
+            const id = keyOf(one.id);
             if (!recorded.has(id)) recorded.set(id, { label: one.label, order: one.order });
         }
     }

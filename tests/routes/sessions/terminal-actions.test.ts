@@ -183,7 +183,7 @@ describe('POST /api/terminal, the latex action', () => {
 
     /** The body of a latex action over the synthetic project's main file. */
     function latexBody(step: string): Record<string, unknown> {
-        return { action: 'latex', id: 'alpha', main: 'main.tex', step, cols: 88, rows: 25 };
+        return { action: 'latex', id: 'hub:alpha', main: 'main.tex', step, cols: 88, rows: 25 };
     }
 
     it('builds one main file with latexmk in the manuscript folder', async () => {
@@ -213,7 +213,12 @@ describe('POST /api/terminal, the latex action', () => {
             repo: folder,
             name,
             source: 'latex',
-            latex: { step: 'build', main: 'main.tex', recipe: 'latexmk', target: { id: 'alpha' } }
+            latex: {
+                step: 'build',
+                main: 'main.tex',
+                recipe: 'latexmk',
+                target: { hub: 'hub', key: 'alpha' }
+            }
         });
         expect(label).toEqual(['set-option', '-t', session, '@oculus_name', name]);
         expect(driver.calls.filter((args) => args[0] === 'set-option')).toEqual([]);
@@ -500,7 +505,9 @@ describe('POST /api/terminal, the chat action', () => {
             engine: task.chatEngine,
             run: driver.run,
             projectFor: (id) =>
-                id === 'alpha' ? { title: 'Alpha Study', folder: 'projects/active/alpha' } : null,
+                id === 'hub:alpha'
+                    ? { title: 'Alpha Study', folder: 'projects/active/alpha', root: 'hub' }
+                    : null,
             configFor: () => CHAT_CONFIG
         };
     }
@@ -518,7 +525,7 @@ describe('POST /api/terminal, the chat action', () => {
             return run === undefined ? '' : run(args, options);
         };
         const response = await handleTerminal(
-            request({ action: 'chat', id: 'alpha', cols: 101, rows: 31 }),
+            request({ action: 'chat', id: 'hub:alpha', cols: 101, rows: 31 }),
             TOKEN,
             routed
         );
@@ -574,7 +581,7 @@ describe('POST /api/terminal, the chat action', () => {
 
         const owned = tmux();
         const named = await handleTerminal(
-            request({ action: 'chat', id: 'alpha', cols: 101, rows: 31 }),
+            request({ action: 'chat', id: 'hub:alpha', cols: 101, rows: 31 }),
             TOKEN,
             { ...chatOptions(owned), ownerFor: () => 'John Smith' }
         );

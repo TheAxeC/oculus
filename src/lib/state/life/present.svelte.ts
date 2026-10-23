@@ -282,7 +282,7 @@ export function createPresent(
                     ? []
                     : [
                           {
-                              ref: { root: placeOf(project, primary()).root, path: project.deck },
+                              ref: { root: placeOf(project).root, path: project.deck },
                               id: project.id,
                               title:
                                   (project.short ?? '') === ''

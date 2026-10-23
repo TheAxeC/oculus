@@ -7,6 +7,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import type { Project } from '../../../src/lib/data/model/index.ts';
 import { auditFindings } from '../../../src/lib/server/content/audit/scan.ts';
 import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
+import { holdersOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { it, plantFile, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -31,7 +32,8 @@ function hubWith(projects: Project[]): string {
 /** The project of a tier, with an open marker, a long `eli5` and the type of a published paper. */
 function projectOf(tier: 'projects' | 'personal'): Project {
     return fixtureProject({
-        id: tier,
+        id: `hub:${tier}`,
+        root: 'hub',
         tier,
         type: 'published',
         title: `Title of ${tier}`,
@@ -45,7 +47,9 @@ describe('the research rules of the audit', () => {
     const projects = [projectOf('projects'), projectOf('personal')];
     const hub = hubWith(projects);
     const rules = { ...auditRules(config), publicationsFile: 'publications.yml' };
-    const found = auditFindings({ hub, projects, collections: [], rules, catalog });
+    const held = holdersOf(projects);
+    const own = { hub, root: 'hub', primary: true, held };
+    const found = auditFindings({ ...own, projects, collections: [], rules, catalog });
     const kinds = (scope: string): string[] =>
         found
             .filter((one) => one.scope === scope)
@@ -73,7 +77,8 @@ describe('the Deposit rules of the audit', () => {
         const folder = scratchDir('oculus-audit-folder-');
         plantFile(folder, 'code/main.py', 'print(1)\n');
         const project = fixtureProject({
-            id: 'inside',
+            id: 'hub:inside',
+            root: 'hub',
             tier: 'projects',
             type: 'active',
             title: 'Inside',
@@ -86,6 +91,9 @@ describe('the Deposit rules of the audit', () => {
         const rules = { ...auditRules(config), publicationsFile: 'publications.yml' };
         const found = auditFindings({
             hub,
+            root: 'hub',
+            primary: true,
+            held: holdersOf([project]),
             projects: [project],
             collections: [],
             rules,

@@ -7,11 +7,13 @@
 // The answers come from the reference index of the latest snapshot build, laid over with the text
 // of every document the page has open, matched to the index's files by real path, so a key typed
 // into a tab is a link before it is saved and a file open under two root keys is one file. A key
-// is matched among the keys of the hub the file names keys of: its own hub, and for the open
-// workspace file the primary hub, wherever the file lies. A request at a position that is no hub
+// resolves as the portfolio resolves it: in the hub the file names keys of (its own hub, and for
+// the open workspace file the primary hub, wherever the file lies) first, then in the one other hub
+// that holds it, so a key of another hub is a link to that hub's definition and a rename reaches
+// every hub's places that resolve to the renamed definition. A request at a position that is no hub
 // key, or in a file the index does not hold, is not answered here and goes on to the server. The
-// one exception is the references of a file the index does not hold, which are none: the server
-// has no references to give, and the page asks for them in every YAML file.
+// one exception is the references of a file the index does not hold, which are none: the server has
+// no references to give, and the page asks for them in every YAML file.
 //
 // Every location is named by the address the page holds the file open under, else by the root key
 // and path the index knows it by, so no path of the machine reaches the page. A rename is a
@@ -34,7 +36,6 @@ import { diskPath } from '../../../../../data/helpers/hub-names.ts';
 import {
     graphOf,
     hitAt,
-    keysRootOf,
     overlay,
     referencesTo,
     scanOf,
@@ -90,7 +91,7 @@ function locate(
     const index = overlay(view.references, view.roots, texts);
     const scan = scanOf(index, view.roots, document.real);
     if (scan === undefined) return undefined;
-    const graph = graphOf(index, keysRootOf(scan));
+    const graph = graphOf(index);
     const at = isRecord(params.position) ? params.position : {};
     const line = count(at.line);
     const character = count(at.character);

@@ -5,14 +5,14 @@
 import type { ClientState } from '$lib/state/client/context';
 import { entryById, identityFaults, type IdentityFault } from '$lib/state/boards/collection';
 import type { PageEntry } from '$lib/state/forms/page-entry';
-import { fileUnder } from '$lib/state/shared/page/hubs';
-import { asText } from '$lib/state/forms/schema';
-import { feedRoot } from '$lib/state/shared/page/idents';
+import { fileUnder, keyOf } from '$lib/state/shared/page/hubs';
+import { feedEntryId } from '$lib/state/shared/page/idents';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
 
 /**
  * The file the page's entry is in: the career file, the feed file of the entry's hub, or the file
- * of the collection in the hub the entry is of. Null while the configuration names none.
+ * of the collection in the hub the entry is of, the primary hub's named by the configuration. Null
+ * while the configuration names none.
  */
 export function pageFile(client: ClientState, page: PageEntry): ViewSource | null {
     const { configMap, collectionsOfKey } = client.selectors;
@@ -20,13 +20,13 @@ export function pageFile(client: ClientState, page: PageEntry): ViewSource | nul
     if (page.kind === 'career') return viewSourceFile('career', configMap(), primary);
     if (page.kind === 'feed') {
         const kind = page.collection === 'leads' ? 'leads' : 'radar';
-        if (page.root === '') return viewSourceFile(kind, configMap(), primary);
+        if (page.root === primary) return viewSourceFile(kind, configMap(), primary);
         const hubFiles = client.feeds.feed(kind)?.hubFiles ?? {};
         return Object.hasOwn(hubFiles, page.root)
             ? { root: page.root, path: hubFiles[page.root] }
             : null;
     }
-    if (page.root === '')
+    if (page.root === primary)
         return viewSourceFile('collection', configMap(), primary, page.collection);
     const held = collectionsOfKey(page.collection).find((one) => entryById(one, page.key) !== null);
     return held === undefined ? null : fileUnder(held.file, client.fs.roots(), primary);
@@ -41,12 +41,12 @@ export function pageFault(client: ClientState, page: PageEntry): IdentityFault |
     if (page.kind === 'feed') {
         const same = (
             client.feeds.feed(page.collection === 'leads' ? 'leads' : 'radar')?.entries ?? []
-        ).filter((one) => asText(one.title) === page.writeId && feedRoot(one) === page.root);
+        ).filter((one) => feedEntryId(one) === page.writeId);
         return same.length > 1
             ? {
                   kind: 'shared',
                   field: page.schema.at(0)?.field ?? 'title',
-                  value: page.writeId,
+                  value: keyOf(page.writeId),
                   own: true
               }
             : undefined;

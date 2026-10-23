@@ -18,12 +18,17 @@
 // with the sentence of `app.folders_loading`, since the tab cannot be told from the write's file;
 // the undo of a recorded change, which names its file by absolute path, is refused the same way.
 //
+// In a workspace with no primary, a write that adds a record and names no hub is checked against
+// the file of the hub the server writes: the first hub's, and for Save to Literature the first hub
+// that holds the Literature collection.
+//
 // What this does NOT cover: the disabled controls a view draws for the same file, and the source
 // store's own answer to which tab holds unsaved text (tests/state/sessions/source/source.test.ts).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { fileNamed } from '../../../src/lib/data/helpers/hub-names.ts';
+import type { FeedsPayload } from '../../../src/lib/data/model/index.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
 import { NO_LOOKUPS } from '../../../src/lib/state/sessions/source/write-files.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
@@ -65,7 +70,7 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         const told: string[] = [];
         writes.onUnwritten((reason) => told.push(reason));
 
-        const held = await writes.writeEntry('tasks', 'A task', { status: 'done' });
+        const held = await writes.writeEntry('tasks', 'hub:A task', { status: 'done' });
         const refusal = t('app.file_unsaved', 'tasks.yml');
         expect(posted).toEqual([]);
         expect(held.ok).toBe(false);
@@ -73,7 +78,7 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         expect(told).toEqual([refusal]);
 
         const fromApp = await writes.sendFromApp(
-            { kind: 'entry', collection: 'tasks', id: 'A task', fields: { status: 'done' } },
+            { kind: 'entry', collection: 'tasks', id: 'hub:A task', fields: { status: 'done' } },
             'hub:apps/notes',
             'entry'
         );
@@ -82,7 +87,7 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         expect(fromApp.error).toBe(refusal);
         expect(told).toEqual([refusal]);
 
-        const free = await writes.writeEntry('events', 'An event', { status: 'done' });
+        const free = await writes.writeEntry('events', 'hub:An event', { status: 'done' });
         expect(posted.map((body) => body.collection)).toEqual(['events']);
         expect(free.ok).toBe(true);
     });
@@ -103,7 +108,7 @@ describe('the writes of the entry pages over a file a source tab holds unsaved t
         [
             'a Delete of a task',
             '.oculus/data/academic/tasks.yml',
-            (w: Writes) => w.deleteEntry('tasks', 'A task')
+            (w: Writes) => w.deleteEntry('tasks', 'hub:A task')
         ]
     ])('refuses %s and posts nothing', async (_name, path, send) => {
         const posted: unknown[] = [];
@@ -169,7 +174,7 @@ describe('a write to an entry of a hub other than the primary', () => {
             {
                 ...NO_LOOKUPS,
                 primary: () => 'hub',
-                collectionFile: (id) => (id === 'lab:tasks' ? lab : null)
+                collectionFile: (hub, name) => (hub === 'lab' && name === 'tasks' ? lab : null)
             }
         );
         const refusal = t('app.file_unsaved', 'tasks.yml');
@@ -180,9 +185,9 @@ describe('a write to an entry of a hub other than the primary', () => {
         expect(posted).toEqual([]);
         expect(held.map((one) => one.error)).toEqual([refusal, refusal]);
 
-        const first = await writes.writeEntry('tasks', 'Review the draft', { status: 'done' });
+        const first = await writes.writeEntry('tasks', 'hub:Review the draft', { status: 'done' });
         expect(first.ok).toBe(true);
-        expect(posted.map((body) => body.id)).toEqual(['Review the draft']);
+        expect(posted.map((body) => body.id)).toEqual(['hub:Review the draft']);
     });
 
     it("checks a Literature save that names a hub against that hub's Literature file", async () => {
@@ -204,7 +209,7 @@ describe('a write to an entry of a hub other than the primary', () => {
             {
                 ...NO_LOOKUPS,
                 primary: () => 'hub',
-                collectionFile: (id) => (id === 'lab:literature' ? lab : null)
+                collectionFile: (hub, name) => (hub === 'lab' && name === 'literature' ? lab : null)
             }
         );
         const paper = { doi: '10.1000/one' };
@@ -329,12 +334,12 @@ describe('a write while the roots are not read and a source tab holds unsaved te
         );
 
         roots = [];
-        const loading = await writes.writeEntry('tasks', 'A task', { status: 'done' });
+        const loading = await writes.writeEntry('tasks', 'hub:A task', { status: 'done' });
         expect(posted).toEqual([]);
         expect(loading.error).toBe(t('app.folders_loading', 'tasks.yml'));
 
         roots = [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }];
-        const read = await writes.writeEntry('tasks', 'A task', { status: 'done' });
+        const read = await writes.writeEntry('tasks', 'hub:A task', { status: 'done' });
         expect(read.ok).toBe(true);
         expect(posted).toHaveLength(1);
     });
@@ -376,5 +381,69 @@ describe('a write while the roots are not read and a source tab holds unsaved te
         const held = await writes.undoWrite('2026-01-01T00:00:00Z');
         expect(held.error).toBe(t('app.file_unsaved', 'tasks.yml'));
         expect(posted).toEqual([]);
+    });
+});
+
+describe('a write that adds a record and names no hub, in a workspace with no primary', () => {
+    /** The feeds as the page receives them: each feed's file in the hubs `one` and `two`. */
+    const feeds = () =>
+        ({
+            leads: { hubFiles: { one: 'leads.md', two: 'leads.md' } },
+            radar: { hubFiles: { one: 'radar.yml', two: 'radar.yml' } }
+        }) as unknown as FeedsPayload;
+    it.each([
+        [
+            'an Add Lead',
+            { root: 'one', path: 'leads.md' },
+            (w: Writes) => w.addLead({ title: 'L' })
+        ],
+        [
+            'an Add to Lit Watch',
+            { root: 'one', path: 'radar.yml' },
+            (w: Writes) => w.addRadarEntry({ title: 'P' })
+        ],
+        [
+            'an Add to Tasks',
+            { root: 'one', path: '.oculus/data/academic/tasks.yml' },
+            (w: Writes) => w.newEntry('tasks', { do: 'it' })
+        ],
+        [
+            'a host status',
+            { root: 'one', path: '.oculus/data/academic/career.yml' },
+            (w: Writes) => w.writeHost('Naesens', 'candidate')
+        ],
+        [
+            'a Save to Literature, whose hub is the first that holds the collection',
+            { root: 'two', path: 'literature.yml' },
+            (w: Writes) => w.saveLiterature('hand', { title: 'P' })
+        ]
+    ])('refuses %s over the file of the hub the server writes', async (_name, file, send) => {
+        const posted: unknown[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)));
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: [], refused: [] })
+            });
+        });
+        const writes = createWrites(
+            () => CONFIG,
+            (held) => held.root === file.root && held.path === file.path,
+            {
+                ...NO_LOOKUPS,
+                hubs: () => ['one', 'two'],
+                feeds,
+                collectionFile: (hub, name) =>
+                    name === 'tasks' && hub === 'one'
+                        ? { root: hub, path: '.oculus/data/academic/tasks.yml' }
+                        : name === 'literature' && hub === 'two'
+                          ? { root: hub, path: 'literature.yml' }
+                          : null
+            }
+        );
+        const answer = await send(writes);
+        expect(posted).toEqual([]);
+        expect(answer.error).toBe(t('app.file_unsaved', file.path.split('/').at(-1) ?? ''));
     });
 });

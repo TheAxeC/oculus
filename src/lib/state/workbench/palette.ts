@@ -20,7 +20,7 @@
 
 import { z } from 'zod';
 import { deepestHolding } from '../../data/helpers/files/paths.ts';
-import { bareId, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import type { FeedEntry, FeedKind, ProjectCommand, Snapshot } from '../../data/model/index.ts';
 import {
     LSP_CHOICES,
@@ -46,7 +46,14 @@ import { appThemeLabels } from '../shared/words/appearance.ts';
 import { t } from '../shared/words/text.ts';
 import type { GithubListing, GithubRepo } from '../../data/model/index.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
-import { instanceText, pageLeaves, panes, type Host, type Layout } from './layout/index.ts';
+import {
+    instanceText,
+    pageLeaves,
+    panes,
+    recordState,
+    type Host,
+    type Layout
+} from './layout/index.ts';
 import type { DockEdge } from './layout/model.ts';
 import { MARKDOWN_PREVIEW_VIEW } from '../sources/explorer/file-type.ts';
 import {
@@ -101,9 +108,9 @@ export type PaletteItem = {
     disabled?: boolean;
 };
 
-/** The hint of a record: the name of its hub when that is not the primary, else none. */
-function hubHint(root: string): { hint?: string } {
-    return root === '' ? {} : { hint: root };
+/** The hint of a record: the name of its hub when that is not the primary `primary`, else none. */
+function hubHint(root: string, primary: string | null): { hint?: string } {
+    return root === '' || root === primary ? {} : { hint: root };
 }
 
 export type PaletteCommand = {
@@ -145,11 +152,15 @@ export type PaletteCommand = {
 
 export type ParsedCommand = { name: string; argument: string };
 
-/** Build the complete searchable index from the values currently held by the client stores. */
+/**
+ * Build the complete searchable index from the values currently held by the client stores; a
+ * record of a hub other than the primary `primary` is hinted with its hub's name.
+ */
 export function buildIndex(
     snapshot: Snapshot | null,
     feeds: PaletteFeeds,
-    views: PaletteView[]
+    views: PaletteView[],
+    primary: string | null = null
 ): PaletteItem[] {
     const found: PaletteItem[] = views.map((view) => ({
         id: `view:${view.id}`,
@@ -183,13 +194,13 @@ export function buildIndex(
                 title: project.title,
                 text: nestedStrings(fields).join(' '),
                 view: 'project',
-                state: { id: project.id, label: project.short ?? project.title },
-                ...hubHint(rootOf(project, null))
+                state: recordState(project.id, project.short ?? project.title),
+                ...hubHint(rootOf(project), primary)
             });
         }
         for (const collection of Object.values(snapshot.entities.collections)) {
             for (const entry of collection.entries) {
-                const label = entry.title || entry.id;
+                const label = entry.title || bareId(entry);
                 const page = pageView(bareId(collection), entry.id, label);
                 found.push({
                     id: `collection:${collection.id}:${entry.id}`,
@@ -199,7 +210,7 @@ export function buildIndex(
                     text: nestedStrings(entry.fields).join(' '),
                     view: page.view,
                     state: page.state,
-                    ...hubHint(rootOf(collection, null))
+                    ...hubHint(rootOf(collection), primary)
                 });
             }
         }
@@ -210,7 +221,7 @@ export function buildIndex(
         for (const entry of entries) {
             const id = identOf(entry);
             const named = readAs(feedNameShape, entry);
-            const label = named?.title ?? named?.subject ?? id;
+            const label = named?.title ?? named?.subject ?? keyOf(id);
             const paged = PAGE_FEEDS.includes(kind) ? pageView(kind, id, label) : null;
             found.push({
                 id: `feed:${kind}:${id}`,
@@ -220,7 +231,7 @@ export function buildIndex(
                 text: nestedStrings(entry).join(' '),
                 view: paged === null ? kind : paged.view,
                 state: paged === null ? revealState(kind, id) : paged.state,
-                ...hubHint(feedRoot(entry))
+                ...hubHint(feedRoot(entry), primary)
             });
         }
     }

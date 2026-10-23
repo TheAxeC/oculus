@@ -110,7 +110,7 @@
                     <Tag label={word(row)} tone={tone(row)} />
                     <span class="label">{row.label}</span>
                     <span class="provider">{provider(row)}</span>
-                    <RootChip record={{ root: row.hub }} />
+                    <RootChip hub={row.hub} />
                     {#if row.lastOk}
                         <span class="when">{t('accounts.last_ok', clock(row.lastOk))}</span>
                     {/if}

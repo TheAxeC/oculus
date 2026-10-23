@@ -24,9 +24,10 @@
     // the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
     // payload arriving; a write happens when a button is pressed and never otherwise.
     //
-    // A changed file of the plan and a file that differs from `origin/main` each open their diff in
-    // the diff editor (DepositFile.svelte, DepositCompare.svelte), over the two texts the deposit
-    // route serves; Fetch updates `origin/main` in the mirror.
+    // The sync plan, its files, changes and findings, is DepositPlan.svelte. A changed file of the
+    // plan and a file that differs from `origin/main` each open their diff in the diff editor
+    // (DepositFile.svelte, DepositCompare.svelte), over the two texts the deposit route serves;
+    // Fetch updates `origin/main` in the mirror.
     //
     // The commit message is suggested by POST /api/git with the mirror as its root, which is why
     // server/git/git-write.ts's allowedRoots names the mirrors folder beside the workspaces and the
@@ -39,7 +40,7 @@
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import DepositCompare from './DepositCompare.svelte';
-    import DepositFile from './DepositFile.svelte';
+    import DepositPlan from './DepositPlan.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -48,9 +49,9 @@
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { Finding, MirrorState, Plan } from '$lib/state/system/deposit.svelte';
+    import type { MirrorState, Plan } from '$lib/state/system/deposit.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { instanceText } from '$lib/state/workbench/layout';
+    import { stateRecord } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -68,16 +69,12 @@
     type Branch = { name: string; upstream: string; current: boolean };
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(instanceText(instance.state, 'id'));
+    const id = $derived(stateRecord(instance.state));
     const held = $derived(mirror(id));
     // Named `now` rather than `state`: a variable called `state` in a component is read as the
     // store prefix of `$state`, which svelte-check refuses.
     const now = $derived(held.state);
     const plan = $derived(now?.plan ?? null);
-    /** Changes with the plan, which makes its file rows again with their diffs shut. */
-    const planStamp = $derived(
-        `${now?.branch ?? ''}|${plan?.changes.map((one) => one.letters + one.path).join('\0') ?? ''}`
-    );
 
     /** The message in the box. It survives a suggestion and is what a commit sends. */
     let message = $state('');
@@ -107,12 +104,6 @@
         if (made === null) return t('deposit.why_no_plan');
         if (made.findings.length > 0) return t('deposit.why_findings');
         return '';
-    }
-
-    function findingWords(one: Finding): string {
-        if (one.kind === 'secret') return t('deposit.finding_secret', one.path);
-        if (one.kind === 'large') return t('deposit.finding_large', one.mb, one.path);
-        return t('deposit.finding_readme');
     }
 
     /**
@@ -259,45 +250,6 @@
     {/if}
 {/snippet}
 
-{#snippet made(one: Plan)}
-    <div class="grp">
-        <div class="grp-h">
-            <span>{t('deposit.files', one.files.length)}</span>
-        </div>
-        {#each one.files as file (file)}
-            <div class="fl"><span class="pa">{file}</span></div>
-        {/each}
-    </div>
-    <div class="grp">
-        <div class="grp-h">
-            <span>{t('deposit.changes', one.changes.length)}</span>
-        </div>
-        {#if one.changes.length === 0}
-            <Empty message={t('deposit.changes_none')} />
-        {:else}
-            {#key planStamp}
-                {#each one.changes as change (change.path)}
-                    <DepositFile
-                        {id}
-                        against="plan"
-                        path={change.path}
-                        letters={change.letters}
-                        model={`${instance.id}:plan:${change.path}`}
-                    />
-                {/each}
-            {/key}
-        {/if}
-    </div>
-    {#if one.findings.length > 0}
-        <div class="grp">
-            <div class="grp-h"><span>{t('deposit.findings')}</span></div>
-            {#each one.findings as finding (finding.kind + finding.path)}
-                <p class="warn">{findingWords(finding)}</p>
-            {/each}
-        </div>
-    {/if}
-{/snippet}
-
 {#snippet branchBox(one: MirrorState)}
     <div class="line">
         <span class="lb">{t('deposit.branch')}</span>
@@ -402,8 +354,7 @@
                 {#if plan === null}
                     <Empty message={t('deposit.plan_none')} />
                 {:else}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render made(plan)}
+                    <DepositPlan {id} {plan} branch={now.branch} model={instance.id} />
                 {/if}
                 <DepositCompare
                     {id}
@@ -455,35 +406,6 @@
         font-size: var(--fs-sm);
     }
 
-    .grp {
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        padding: 6px 8px;
-    }
-
-    .grp-h {
-        color: var(--muted-txt);
-        font-size: var(--fs-xs);
-        margin-bottom: 4px;
-    }
-
-    /* A file of the plan is one line of the tree's row height, its words the main words of a
-       row. */
-    .fl {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-        font-size: var(--fs-md);
-    }
-
-    .pa {
-        font-family: var(--font-mono);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
     .busy {
         display: flex;
         align-items: center;
@@ -492,12 +414,6 @@
 
     .none {
         color: var(--muted-txt);
-        font-size: var(--fs-md);
-        margin: 0;
-    }
-
-    .warn {
-        color: var(--c-amber-txt);
         font-size: var(--fs-md);
         margin: 0;
     }

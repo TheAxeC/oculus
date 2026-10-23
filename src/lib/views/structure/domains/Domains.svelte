@@ -23,7 +23,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
         domainsWithMembers,
         registryLines,
@@ -48,7 +48,7 @@
     const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
     const shown = $derived(domainsWithMembers(domains, projects(), configMap()));
     function write(next: Partial<DomainsState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 </script>
 

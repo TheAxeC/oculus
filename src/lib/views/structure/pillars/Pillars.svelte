@@ -28,7 +28,7 @@
     import LineCard from '$lib/views/structure/pillars/LineCard.svelte';
     import OrphansCard from '$lib/views/structure/pillars/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
         archival,
         registryLines,
@@ -69,7 +69,7 @@
     const tiers = $derived(venueTiers(configMap().venue_tiers));
 
     function write(next: Partial<PillarsState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 </script>
 

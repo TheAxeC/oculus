@@ -1,6 +1,6 @@
 // Layer 1, data tests. The rules a hub file's `schema:` block states, each checked by the
 // validation the snapshot build runs: a hub planted in a scratch directory with a venues registry
-// and a datasets registry that carry schemas, built through buildPortfolioWithSchemas, and the
+// and a datasets registry that carry schemas, built through buildOneHub, and the
 // findings of the planted files asserted by file, line and sentence. One table, one row per rule:
 // a reference to a key that does not exist, a key that stands twice in the referenced file, a
 // value outside its options, written as words or as `{ key, label }` rows, an option row that is
@@ -9,7 +9,8 @@
 // sentence is looked up in the shipped catalog.
 
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -177,7 +178,7 @@ describe('the rules of a hub schema', () => {
             },
             ['projects/active']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((finding) =>
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((finding) =>
             finding.file.endsWith(`/${row.file}`)
         );
         expect(found.map((one) => [one.key, one.line, one.message])).toEqual([
@@ -218,7 +219,7 @@ describe('the rules of a hub schema', () => {
             { '.oculus/data/research/venues.yml': venues([]), [row.file]: row.text },
             ['projects/active']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((one) =>
             one.file.endsWith(`/${row.file}`)
         );
         expect(found.map((one) => [one.key, one.message])).toEqual([
@@ -236,7 +237,7 @@ describe('the rules of a hub schema', () => {
             { '.oculus/data/research/venues.yml': text },
             ['projects/active']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+        const found = buildOneHub(hub, CONFIG).snapshot.findings;
         expect(found.filter((one) => one.file.endsWith('/venues.yml'))).toEqual([]);
     });
 
@@ -249,7 +250,7 @@ describe('the rules of a hub schema', () => {
             },
             ['projects/active']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+        const found = buildOneHub(hub, CONFIG).snapshot.findings;
         expect(found.filter((one) => one.file.endsWith('/data.yml'))).toEqual([]);
         const own = found.filter((one) => one.file.endsWith('/venues.yml'));
         expect(own.length).toBeGreaterThan(0);

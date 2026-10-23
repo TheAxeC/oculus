@@ -384,15 +384,15 @@ Payloads are plain JSON. `X?` may be absent. A `Finding` is `{ file, key, messag
 | `feeds` | `leads`, `radar`, `scout`, `linkedin` summaries |
 | `career` | the career file, or `null` |
 
-An Entry is `{ id, title, fields, file, index, root? }`. `relations` holds `[id, id]` lists: `projectVenue`, `projectFunding`, `projectDataset`, `projectPillar`, `projectDomain`, `projectRelated`, `fundingPillar`, `projectPerson`, `jointWorkPerson`, `personOrganisation`, `fundingOrganisation`.
+An Entry is `{ id, title, fields, file, index, root }`. `relations` holds `[id, id]` lists: `projectVenue`, `projectFunding`, `projectDataset`, `projectPillar`, `projectDomain`, `projectRelated`, `fundingPillar`, `projectPerson`, `jointWorkPerson`, `personOrganisation`, `fundingOrganisation`.
 
-A record of a hub other than the primary carries `root` (the hub's name) and has the id `<hub>:<id>`. An app writes the primary hub's records only.
+Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, the primary hub's records included. A key a file names resolves in the record's own hub first, then in the one other hub that holds it; a key two other hubs hold resolves to none and is a finding. A record's `...Ids` fields, `venueId`, `collaborators` and `relations` hold the ids its keys resolved to, and `waitingOn` holds the id of each name that resolved and the name as written for one that did not; an Entry's `fields` hold the keys its file holds. An app writes the primary hub's records only, naming each by its id, so with no primary hub an app writes no record and makes none.
 
 | Channel | Payload |
 |---------|---------|
-| `feeds` | `radar`, `leads`, `linkedin`, each `{ ok, kind, file, meta, entries, cadenceDays?, schema?, missing?, error?, hubFiles? }` |
+| `feeds` | `radar`, `leads`, `linkedin`, each `{ ok, kind, file, meta, entries, cadenceDays?, schema?, missing?, error?, hubFiles?, hubSchemas? }` |
 | `hpc` | `status` (`starting`, `ok`, `unreachable`, `error`, `unconfigured`), `hint?`, `jobs`, `running`, `pending`, `total`, `recent`, `sinfo`, `quota`, `updated`, `lastOk?`, `host`, `pollMin`, `retryMin?` |
-| `audit` | `{ findings: [{ scope, where, root?, file, kind, message, signature }], muted }` |
+| `audit` | `{ findings: [{ hub, scope, where, root, file, kind, message, signature }], muted }`; `hub` is the hub the finding is of, `scope` its place in that hub |
 | `config` | `{ config, hubs: { primary, lists }, text, icons, host: { name, address }, findings }`; `lists` holds each hub's `{ domains, venue_themes, data_themes }`, built from its domains registry and the `themes` options of its venues and data registries |
 | `git` | per repository folder: `branch`, `ahead`, `behind`, `upstream?`, `detached`, `present`, `repository`, `inWorkspace`, `top`, `staged`, `unstaged`, `untracked`, `conflicted`, `sequence`, `mergeMessage`, `remotes`, `stashes`, `tags`, `log`, `branches`, `worktrees`, `error` |
 | `files` | `{ root, folders?, bookmarks?, workspaces? }` |
@@ -417,14 +417,16 @@ A record of a hub other than the primary carries `root` (the hub's name) and has
 | `new-entry` | `{ kind, collection, fields, root? }`; `root` names the hub, which for an app is the primary hub alone | no |
 | `reorder` | `{ kind, collection, order }` | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |
-| `feed-field` | `{ kind, feed, id, field, value, root? }`; `feed` `radar`, `leads` or `linkedin` | no |
-| `feed-delete` | `{ kind, feed, id, root? }`; `feed` `radar` or `leads` | yes |
+| `feed-field` | `{ kind, feed, id, field, value }`; `feed` `radar`, `leads` or `linkedin` | no |
+| `feed-delete` | `{ kind, feed, id }`; `feed` `radar` or `leads` | yes |
 | `lead-add` | `{ kind, fields }`; `fields.title` required | no |
 | `radar-add` | `{ kind, fields }`; `fields.title` required | no |
 | `linkedin-idea` | `{ kind, title, category? }` | yes, no undo |
-| `linkedin-post` | `{ kind, file, root? }` | yes, no undo |
+| `linkedin-post` | `{ kind, id }`; `id` the idea's id | yes, no undo |
 | `new-idea` | `{ kind, fields }`; `fields.id`, and `fields.tier` and `fields.folder` optional | yes, no undo |
 
+- An `id`, a `target.id` and each id of `order` is the record's id, `<hub>:<key>`, a feed entry's included: its key is the title of a lead or a Lit Watch paper and the file's name of a LinkedIn idea. An id with no hub part is refused with 400, and an id whose hub part no workspace folder carries with 404. For an app the hub of a write that makes a record is the primary hub alone, so with no primary hub such a write (`new-entry`, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) is refused with 409; a `host` write goes to the career file of the primary hub, else of the first hub, as the page's does.
+- A write that makes or renames a record answers with the record's id, `<hub>:<key>`, in `id`.
 - Every write is in the change log with the app's id, and History undoes it, except the three marked.
 - Every other kind is closed to apps (`write_closed` in a manifest): nothing that runs processes, writes arbitrary files, reaches a remote or acts on an account.
 
@@ -738,15 +740,17 @@ Reasons:
 | Reason | Cause |
 |--------|-------|
 | `kind` | the body's kind is not the kind named, or the kind is closed |
-| `no project with the id <id>` | no such project |
-| `no entry <id> in <collection>` | no such entry |
+| `<key> names no hub: a write names a record by its hub and its key` | an id with no hub part |
+| `The workspace has no hub named <hub>` | an id whose hub part no workspace folder carries |
+| `The workspace has no primary hub, so there is nowhere to keep this; ...` | an app's write that makes a record, in a workspace with no primary hub |
+| `no project with the id <key>` | no such project |
+| `no entry <key> in <collection>` | no such entry |
 | `no collection <name>` | no such collection |
 | `unknown feed <name>` | not `radar`, `leads` or `linkedin` |
 | `no host named <name>` | no such career host |
 | `the <feed> feed does not allow that field` | a field the feed's schema does not list |
 | `the <feed> feed does not allow deletion` | `linkedin` |
 | `two entries share the <field> <value>, so a write cannot address one of them` | a shared key |
-| `an id that begins with "<hub>:" would name an entry of the hub <hub>, so use another` | a key that looks like another hub's |
 | `a new entry needs a <field>` | no key |
 | `an entry with that <field> is already in the file` | a taken key |
 | `id`, `kind`, `params` | a bad id, kind or value shape |

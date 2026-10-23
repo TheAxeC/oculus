@@ -13,7 +13,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Feeds, FeedFiles, FeedItem, Finding, Lead, RawFeeds } from '../../model/index.ts';
+import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../../model/index.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
 // makes. The lead's status is the one value it does not read for itself, since the rule that closes
@@ -156,38 +156,4 @@ export function readFeeds(
         linkedin: linkedin(join(hub, files.linkedin), catalog, findings)
     };
     return { feeds, findings };
-}
-
-/** The `title` of each entry of a feed file that has one; none for a file that does not read. */
-function titlesIn(file: string, catalog: TextCatalog): FeedItem[] {
-    const data = readYamlMap(file, catalog, [], () => null);
-    const entries = data === null ? [] : readOr(entriesShape, data.entries, []);
-    return entries
-        .map((entry) => ({ file, id: str(entry.title) }))
-        .filter((item) => item.id !== '');
-}
-
-/** The `.md` files of the LinkedIn folder, which a write names a post by. */
-function postsIn(dir: string): FeedItem[] {
-    try {
-        return readdirSync(dir)
-            .filter((name) => name.endsWith('.md'))
-            .sort()
-            .map((name) => ({ file: join(dir, name), id: name }));
-    } catch {
-        return [];
-    }
-}
-
-/**
- * The entries of the three feeds of a hub: the leads and Lit Watch by `title`, the LinkedIn posts
- * by file name, each with the file it stands in. The files were read, and their findings reported,
- * by readFeeds, so nothing here reports.
- */
-export function feedItems(hub: string, files: FeedFiles, catalog: TextCatalog): FeedItem[] {
-    return [
-        ...titlesIn(join(hub, files.leads), catalog),
-        ...titlesIn(join(hub, files.radar), catalog),
-        ...postsIn(join(hub, files.linkedin))
-    ];
 }

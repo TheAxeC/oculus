@@ -321,7 +321,7 @@ export function createServerContext(
         const dirs: Record<string, string> = Object.fromEntries(
             now.hubs.map((one) => [one.name, one.dir])
         );
-        return projectFolders(dirs, message.payload as Snapshot, now.primary);
+        return projectFolders(dirs, message.payload as Snapshot);
     };
     // The stores are every account's folders, so a session of a second Claude account is read from
     // that account's registry and transcripts as the first one's are.
@@ -443,7 +443,7 @@ export function createServerContext(
     // the cluster asks Live HPC for a poll, which a request reaches only once `polled` is built.
     const recover = make.watchRecover(hub, {
         home: homedir(),
-        places: () => recoverPlaces(hub, open().primary),
+        places: () => recoverPlaces(hub),
         hubs: () => open().hubs.map((one) => one.name),
         pollCluster: () => void polled.hpc.refresh(),
         readCluster: () => void polled.hpc.recover()
@@ -453,7 +453,12 @@ export function createServerContext(
         hub,
         local,
         {
-            hpc: hpcSettingsOf(slurm, local.hpcHost, latestResources(hub), hostWords),
+            hpc: hpcSettingsOf(
+                slurm,
+                local.hpcHost,
+                latestResources(hub, open().primary),
+                hostWords
+            ),
             recover: recover.section,
             calendar: calendarConfig,
             mail: mailConfig,
@@ -480,7 +485,7 @@ export function createServerContext(
         hub,
         {
             hpcHost: () => local.hpcHost,
-            resources: () => latestResources(hub),
+            resources: () => latestResources(hub, open().primary),
             hostWords,
             slurm,
             calendar: calendarConfig,

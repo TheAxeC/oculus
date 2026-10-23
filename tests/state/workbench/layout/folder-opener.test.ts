@@ -24,7 +24,7 @@ const FOLDER: FolderRef = { root: 'hub', path: 'projects/alpha' };
 
 /** A project with the fields a deposit reads; the rest of the record is left out. */
 function projectWith(fields: Partial<Project>): Project {
-    return { id: 'alpha', title: 'Alpha', ...fields } as Project;
+    return { id: 'hub:alpha', root: 'hub', title: 'Alpha', ...fields } as Project;
 }
 
 /** The pages made so far, and what Reset layout asked to remake, in place of the layout store. */
@@ -66,8 +66,9 @@ function viewsOf(made: FolderLayout[]): string[] {
     return last === undefined ? [] : tabsOf(last.workbench.root).map((tab) => tab.view);
 }
 
-function projectItem(id: string): FolderItem {
-    return { view: 'project', state: { id } };
+/** The project tab a page is opened for: the project `alpha` of the hub `hub`, by hub and key. */
+function projectItem(): FolderItem {
+    return { view: 'project', state: { hub: 'hub', key: 'alpha' } };
 }
 
 const WITH_DEPOSIT: [string, Partial<Project>][] = [
@@ -83,36 +84,36 @@ const WITHOUT_DEPOSIT: [string, Partial<Project>][] = [
 
 describe('the Deposit tab of a workbench page', () => {
     it.each(WITH_DEPOSIT)('follows Repositories for a project with %s', (_name, fields) => {
-        const { folders, made } = harness({ alpha: projectWith(fields) });
-        folders.open(FOLDER, { item: projectItem('alpha') });
+        const { folders, made } = harness({ 'hub:alpha': projectWith(fields) });
+        folders.open(FOLDER, { item: projectItem() });
         const views = viewsOf(made);
         expect(views.indexOf('deposit')).toBe(views.indexOf('repositories') + 1);
         const tab = tabsOf(made[0].workbench.root).find((one) => one.view === 'deposit');
-        expect(tab?.state).toEqual({ id: 'alpha' });
+        expect(tab?.state).toEqual({ hub: 'hub', key: 'alpha' });
     });
 
     it.each(WITHOUT_DEPOSIT)('is absent for a project with %s', (_name, fields) => {
-        const { folders, made } = harness({ alpha: projectWith(fields) });
-        folders.open(FOLDER, { item: projectItem('alpha') });
+        const { folders, made } = harness({ 'hub:alpha': projectWith(fields) });
+        folders.open(FOLDER, { item: projectItem() });
         expect(viewsOf(made)).not.toContain('deposit');
         expect(viewsOf(made)).toContain('repositories');
     });
 
     it('is absent for a folder opened for no project', () => {
-        const { folders, made } = harness({ alpha: projectWith({ codeFolder: true }) });
+        const { folders, made } = harness({ 'hub:alpha': projectWith({ codeFolder: true }) });
         folders.open(FOLDER);
         expect(viewsOf(made)).not.toContain('deposit');
     });
 
     it('is absent for a project the portfolio does not hold', () => {
         const { folders, made } = harness({});
-        folders.open(FOLDER, { item: projectItem('alpha') });
+        folders.open(FOLDER, { item: projectItem() });
         expect(viewsOf(made)).not.toContain('deposit');
     });
 
     it('comes back when Reset layout remakes the page of a project that has a deposit', () => {
-        const { folders, made } = harness({ alpha: projectWith({ codeFolder: true }) });
-        folders.open(FOLDER, { item: projectItem('alpha') });
+        const { folders, made } = harness({ 'hub:alpha': projectWith({ codeFolder: true }) });
+        folders.open(FOLDER, { item: projectItem() });
         expect(folders.reset('page')).toBe(true);
         expect(made).toHaveLength(2);
         expect(viewsOf(made)).toContain('deposit');

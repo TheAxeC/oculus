@@ -54,7 +54,7 @@
     } from '$lib/state/feeds/inbox';
     import type { HeadWords } from '$lib/state/life/accounts';
     import { t } from '$lib/state/shared/words/text';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -98,7 +98,7 @@
     }
 
     function write(next: Partial<InboxState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
     /** Open or close one thread's draft editor, which is this view instance's own state. */

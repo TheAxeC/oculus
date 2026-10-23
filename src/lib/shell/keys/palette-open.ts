@@ -77,7 +77,7 @@ export function openPaletteItem(
 
     const reveal = item.state?.reveal;
     const into = float ?? undefined;
-    if (typeof reveal !== 'string' || reveal === '') {
+    if (reveal === undefined || reveal === '') {
         return layout.openView(item.view, item.state, into);
     }
     const id = layout.openView(item.view, undefined, into);

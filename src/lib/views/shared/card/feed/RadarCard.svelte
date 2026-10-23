@@ -35,10 +35,11 @@
     import { radarPaper } from '$lib/state/feeds/literature/saved';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { entryPageState } from '$lib/state/forms/page-entry';
-    import { feedRoot } from '$lib/state/shared/page/idents';
+    import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const client = useState();
     const {
@@ -104,8 +105,9 @@
     );
 
     async function mark(value: boolean | null): Promise<void> {
-        if (identity === '') return;
-        const answer = await writeFeedField('radar', identity, 'dismissed', value, feedRoot(entry));
+        const record = feedEntryId(entry);
+        if (record === '') return;
+        const answer = await writeFeedField('radar', record, 'dismissed', value);
         onsaid(
             answer.ok
                 ? t('editor.saved', answer.changed.join(', '))
@@ -210,8 +212,7 @@
                         title={project.title}
                         glyph="goto"
                         cut
-                        onclick={() =>
-                            openView('project', { id: project.id, label: project.title })}
+                        onclick={() => openView('project', recordState(project.id, project.title))}
                     />
                 </span>
             {/each}

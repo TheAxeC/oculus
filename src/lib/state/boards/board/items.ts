@@ -2,7 +2,7 @@
 // independently of filters, facets and statistics.
 
 import { byKey } from '../../../data/helpers/guards.ts';
-import { rootOf, splitHubId } from '../../../data/helpers/hub-names.ts';
+import { keyOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, typeTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
@@ -59,7 +59,11 @@ function softwareTags(project: Project, snapshot: Snapshot, software: string[]):
 function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
     return project.relatedIds.map((id: Id): RelatedTag => {
         const held = byKey(snapshot.entities.projects, id);
-        return { id, label: held === undefined ? id : tagLabel(held), held: held !== undefined };
+        return {
+            id,
+            label: held === undefined ? keyOf(id) : tagLabel(held),
+            held: held !== undefined
+        };
     });
 }
 
@@ -102,8 +106,8 @@ function itemOf(
     const venue =
         project.venueId === undefined ? undefined : byKey(entities.venues, project.venueId);
     const tag = (id: Id, label: string): BoardTag => ({ id, label });
-    // A tag named by its id shows the id inside the project's own hub, without that hub's key.
-    const own = (id: Id): string => splitHubId(id, [rootOf(project, null)], null).id;
+    // A tag named by its id shows the record's key, never its internal id.
+    const own = (id: Id): string => keyOf(id);
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,

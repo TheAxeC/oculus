@@ -141,11 +141,11 @@ test.afterAll(() => {
 
 describe('the plan', () => {
     it('finds a secret and refuses the commit while it stands', async () => {
-        expect((await adopt('alpha', TEXT, options())).ok).toBe(true);
+        expect((await adopt('hub:alpha', TEXT, options())).ok).toBe(true);
         write(codeOf('alpha'), '.env', 'TOKEN=shhh\n');
-        const planned = await sync('alpha', TEXT, options());
+        const planned = await sync('hub:alpha', TEXT, options());
         expect(planned.plan?.findings).toEqual([{ kind: 'secret', path: '.env', mb: 0 }]);
-        const written = await commit('alpha', 'Add the first files', TEXT, options());
+        const written = await commit('hub:alpha', 'Add the first files', TEXT, options());
         expect(written.ok).toBe(false);
         expect(written.error).toContain('The scan found something');
         rmSync(join(codeOf('alpha'), '.env'));
@@ -153,14 +153,14 @@ describe('the plan', () => {
 
     it('is made again after a commit, so it lists what is still changed', async () => {
         const plans = new Map<string, Plan>();
-        const before = await sync('alpha', TEXT, { ...options(), plans });
+        const before = await sync('hub:alpha', TEXT, { ...options(), plans });
         expect(before.plan?.changes.length).toBeGreaterThan(0);
-        const written = await commit('alpha', 'Add the first files', TEXT, {
+        const written = await commit('hub:alpha', 'Add the first files', TEXT, {
             ...options(),
             plans
         });
         expect(written.ok).toBe(true);
-        expect({ answered: written.plan?.changes, kept: plans.get('alpha')?.changes }).toEqual({
+        expect({ answered: written.plan?.changes, kept: plans.get('hub:alpha')?.changes }).toEqual({
             answered: [],
             kept: []
         });

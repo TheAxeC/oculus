@@ -16,6 +16,7 @@ import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
 import { ideaStub } from '../../../data/prose/linkedin-idea.ts';
+import { FEED_IDENTITY } from '../../../data/snapshot/hubs/feeds.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
@@ -56,9 +57,9 @@ export type FeedRead = FeedData & { kind: FeedKind; file: string };
 type FeedRule = { identity: string; fields: string[]; schema: boolean; deletable: boolean };
 
 export const FEED_RULES: Record<FeedKind, FeedRule> = {
-    radar: { identity: 'title', fields: ['dismissed'], schema: true, deletable: true },
-    leads: { identity: 'title', fields: ['status'], schema: true, deletable: true },
-    linkedin: { identity: 'file', fields: [], schema: false, deletable: false }
+    radar: { identity: FEED_IDENTITY.radar, fields: ['dismissed'], schema: true, deletable: true },
+    leads: { identity: FEED_IDENTITY.leads, fields: ['status'], schema: true, deletable: true },
+    linkedin: { identity: FEED_IDENTITY.linkedin, fields: [], schema: false, deletable: false }
 };
 
 /** The fields of a feed an entry may be written at: the rule's own and its file's schema's. */
@@ -339,7 +340,8 @@ export function markLinkedinPosted(
 
 /**
  * Append one position lead in the order of the feed file's own schema. A lead given no status gets
- * the word of `statuses` carrying `default_lead`, and none when no word carries it.
+ * the word of `statuses` carrying `default_lead`, and none when no word carries it. The outcome's
+ * `id` is the new lead's title, which its hub's file names it by.
  */
 export function addLead(
     hub: string,
@@ -419,7 +421,12 @@ export function addLead(
                       undo: 'create'
                   }
               ];
-    return { ...out, refused: [...refused, ...out.refused], records };
+    return {
+        ...out,
+        refused: [...refused, ...out.refused],
+        records,
+        ...(out.changed.length === 0 ? {} : { id: title })
+    };
 }
 
 /** The fields of a Lit Watch entry in the order the file writes them. */
@@ -466,7 +473,8 @@ function radarField(raw: unknown): string {
  * kept only when it is the file as it was with this one entry added.
  *
  * `buckets` are the keys of the bucket vocabulary a bucket must be one of. The record carries the
- * text the append added, which the undo takes out again byte for byte.
+ * text the append added, which the undo takes out again byte for byte. The outcome's `id` is the
+ * new paper's title, which its hub's file names it by.
  */
 export function addRadarEntry(
     hub: string,
@@ -564,6 +572,7 @@ export function addRadarEntry(
     const replaced = replacedText(source, edit.text);
     return {
         ...out,
+        ...(out.changed.length === 0 ? {} : { id: title }),
         records: [
             {
                 file: full,

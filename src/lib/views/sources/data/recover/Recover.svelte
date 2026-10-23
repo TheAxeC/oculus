@@ -58,7 +58,7 @@
 
     const TARGETS: RecoverTarget[] = ['mac', 'cluster'];
 
-    const key = $derived(instanceText(instance.state, 'id'));
+    const key = $derived(instanceText(instance.state, 'key'));
     const hub = $derived(instanceText(instance.state, 'hub'));
     const target = $derived(
         instanceChoice(instanceState(instance.id), 'target', TARGETS) as RecoverTarget

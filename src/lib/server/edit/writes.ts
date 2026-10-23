@@ -4,9 +4,9 @@
 // routes/api/write/+server.ts is the route module and holds nothing but its POST, since a route
 // module may export only its verbs; everything the write does is here and in writes/. The order is
 // the order of the refusals: the request must come from this application's own page and carry the
-// process token, the body must be a write this route knows, and the id must name a project or an
-// entry the reader found. Only then does yaml-edit touch the bytes, and only then, and only when
-// something actually changed, is the file written.
+// process token, the body must be a write this route knows, and the id must name, by its hub and
+// its key, a project or an entry the reader found. Only then does yaml-edit touch the bytes, and
+// only then, and only when something actually changed, is the file written.
 //
 // What the schema does to a field differs by what is written. A manifest field must be one
 // manifest-schema.yml names, and one it does not name is refused. A collection entry's text,
@@ -34,6 +34,7 @@ import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';
 import { appsSettings, changesKeep, type LocalConfig } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
+import { keyOf } from '../../data/helpers/hub-names.ts';
 import type { HubSettings } from '../../data/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges } from '../core/changes.ts';
@@ -55,12 +56,14 @@ import { perOculus } from '../files/workspace/paths.ts';
 import { words } from '../core/words.ts';
 import {
     homeOf,
-    hubKeysOf,
+    noHub,
     routed,
     routedEntry,
+    routeRefusal,
     routedOrder,
     routedRoot,
-    routedTarget
+    routedTarget,
+    withHubId
 } from './writes/hubs.ts';
 import { primaryConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
@@ -202,8 +205,10 @@ export type WriteOutcome = {
      */
     records?: ChangeRecord[];
     /**
-     * The id the file gives the entry this write made or edited, read after the write, so the page
-     * is told where the entry now is when the write renamed it. Only an entry write carries it.
+     * The id of the record this write made or edited, read after the write, so the page is told
+     * where the record now is when the write renamed it. A writer gives the key inside its hub, and
+     * the route answers with the record's internal id, `<hub>:<key>` (`withHubId` of
+     * writes/hubs.ts); a deck write gives the slide or the folder to show next.
      */
     id?: string;
 };
@@ -417,6 +422,8 @@ export async function handleWrite(
 
     const write = manifestWrite(body);
     if (write !== null) {
+        const off = routeRefusal(into, [write.id]);
+        if (off !== null) return off;
         const at = routed(into, write.id, app);
         const outcome =
             at === null || !reaches(at.into, at.id, app)
@@ -428,10 +435,10 @@ export async function handleWrite(
                       write.fields,
                       'form',
                       undefined,
-                      at.hubKey
+                      at.into.primary
                   );
         if (!outcome.found) {
-            const error = words(into.config.text, 'server.write_route.no_project', write.id);
+            const error = words(into.config.text, 'server.write_route.no_project', keyOf(write.id));
             return json({ error }, { status: 404 });
         }
         return answer(outcome, 'manifest', into, undefined, app ?? undefined);
@@ -439,6 +446,8 @@ export async function handleWrite(
 
     const entry = entryWrite(body);
     if (entry !== null) {
+        const off = routeRefusal(into, [entry.id]);
+        if (off !== null) return off;
         const at = routedEntry(into, entry.collection, entry.id, app);
         const outcome =
             at === null
@@ -450,22 +459,25 @@ export async function handleWrite(
                       at.id,
                       entry.fields,
                       at.into.bookmarks,
-                      at.hubKey
+                      at.into.primary
                   );
         if (!outcome.found) {
             const error = words(
                 into.config.text,
                 'server.write_route.no_entry',
-                entry.id,
+                keyOf(entry.id),
                 entry.collection
             );
             return json({ error }, { status: 404 });
         }
-        return answer(outcome, 'entry', into, undefined, app ?? undefined);
+        const made = at === null ? outcome : withHubId(outcome, at.into);
+        return answer(made, 'entry', into, undefined, app ?? undefined);
     }
 
     const subtask = subtaskWrite(body);
     if (subtask !== null) {
+        const off = routeRefusal(into, [subtask.target.id]);
+        if (off !== null) return off;
         const at = routedTarget(into, subtask.target, app);
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
@@ -486,6 +498,8 @@ export async function handleWrite(
 
     const added = subtaskAdd(body);
     if (added !== null) {
+        const off = routeRefusal(into, [added.target.id]);
+        if (off !== null) return off;
         const at = routedTarget(into, added.target, app);
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
@@ -499,6 +513,8 @@ export async function handleWrite(
 
     const followup = followupWrite(body);
     if (followup !== null) {
+        const off = routeRefusal(into, [followup.target.id]);
+        if (off !== null) return off;
         const at = routedTarget(into, followup.target, app);
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
@@ -519,6 +535,8 @@ export async function handleWrite(
 
     const note = followupAdd(body);
     if (note !== null) {
+        const off = routeRefusal(into, [note.target.id]);
+        if (off !== null) return off;
         const at = routedTarget(into, note.target, app);
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
@@ -532,8 +550,9 @@ export async function handleWrite(
 
     const host = hostWrite(body);
     if (host !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
+        // A career-file write is no record, so an app's follows the page's rule for its hub.
+        const home = homeOf(into, null);
+        if (home === null) return noHub(into, null);
         const outcome = writeHost(home.hub, host.name, host.status, into.career, into.config.text);
         if (!outcome.found) {
             const error = words(into.config.text, 'server.write_route.no_host', host.name);
@@ -544,8 +563,8 @@ export async function handleWrite(
 
     const career = careerWrite(body);
     if (career !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
+        const home = homeOf(into, null);
+        if (home === null) return noHub(into, null);
         const outcome = writeCareer(home.hub, career.fields, into.career, into.config.text);
         if (!outcome.found)
             return json(
@@ -557,12 +576,13 @@ export async function handleWrite(
 
     const fresh = newEntry(body);
     if (fresh !== null) {
-        const home = fresh.root === undefined ? homeOf(into) : routedRoot(into, fresh.root, app);
+        const home =
+            fresh.root === undefined ? homeOf(into, app) : routedRoot(into, fresh.root, app);
         if (home === null && fresh.root !== undefined) {
             const error = words(into.config.text, 'server.workspace.no_hub_named', fresh.root);
             return json({ error }, { status: 404 });
         }
-        if (home === null) return noHub(into);
+        if (home === null) return noHub(into, app);
         if (
             fresh.root !== undefined &&
             !home.config.collections.some((one) => one.key === fresh.collection)
@@ -580,8 +600,7 @@ export async function handleWrite(
             home.config,
             fresh.collection,
             fresh.fields,
-            home.bookmarks,
-            hubKeysOf(into)
+            home.bookmarks
         );
         if (!outcome.found) {
             const error = words(
@@ -591,11 +610,13 @@ export async function handleWrite(
             );
             return json({ error }, { status: 404 });
         }
-        return answer(outcome, 'new-entry', into, undefined, app ?? undefined);
+        return answer(withHubId(outcome, home), 'new-entry', into, undefined, app ?? undefined);
     }
 
     const order = reorderWrite(body);
     if (order !== null) {
+        const off = routeRefusal(into, order.order);
+        if (off !== null) return off;
         const at = routedOrder(into, order.collection, order.order, app);
         const outcome =
             at === null
@@ -620,6 +641,8 @@ export async function handleWrite(
 
     const removal = deleteEntryWrite(body);
     if (removal !== null) {
+        const off = routeRefusal(into, [removal.id]);
+        if (off !== null) return off;
         const at = routedEntry(into, removal.collection, removal.id, app);
         const outcome =
             at === null
@@ -629,7 +652,7 @@ export async function handleWrite(
             const error = words(
                 into.config.text,
                 'server.write_route.no_entry',
-                removal.id,
+                keyOf(removal.id),
                 removal.collection
             );
             return json({ error }, { status: 404 });
@@ -666,10 +689,10 @@ export async function handleWrite(
 
     const idea = newIdea(body);
     if (idea !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
+        const home = homeOf(into, app);
+        if (home === null) return noHub(into, app);
         return answer(
-            createIdea(home.hub, home.config, idea.fields),
+            withHubId(createIdea(home.hub, home.config, idea.fields), home),
             'new-idea',
             into,
             undefined,
@@ -755,16 +778,11 @@ async function answer(
     });
 }
 
-/** The refusal of a write that needs a hub when the workspace lists none. */
-function noHub(into: WriteTarget): Response {
-    return json({ error: words(into.config.text, 'server.workspace.no_hub') }, { status: 409 });
-}
-
 /** The 404 a subtask write gives: the manifest or the entry its target names is not in the hub. */
 function notFound(text: Record<string, string>, target: SubtaskTarget): string {
     return target.collection === undefined
-        ? words(text, 'server.write_route.no_project', target.id)
-        : words(text, 'server.write_route.no_entry', target.id, target.collection);
+        ? words(text, 'server.write_route.no_project', keyOf(target.id))
+        : words(text, 'server.write_route.no_entry', keyOf(target.id), target.collection);
 }
 
 /** The word an app's store write is refused with when its folder cannot be written. */

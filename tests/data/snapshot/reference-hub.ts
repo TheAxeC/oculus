@@ -5,7 +5,8 @@
 // a second workspace folder `lab`.
 // The texts are synthetic; none of them is a file of the hub.
 
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     graphOf,
@@ -295,7 +296,7 @@ export function plantHub(
     const held = inHub
         ? { root: HUB_FOLDER, path: CONFIG_IN_HUB }
         : { root: CONFIG_FOLDER, path: '' };
-    const index = buildPortfolioWithSchemas(
+    const index = buildOneHub(
         hub,
         config,
         0,
@@ -338,7 +339,7 @@ export function plantHub(
                 return { real: join(folderOf(home), rest), text };
             });
             const laid = overlay(index, roots, texts);
-            const graph = graphOf(laid, HUB_FOLDER);
+            const graph = graphOf(laid);
             const scan = scanOf(laid, roots, join(folderOf(root), path));
             if (scan === undefined) throw new Error(`the index holds no ${root}:${path}`);
             return { hit: hitAt(graph, scan, at), graph };

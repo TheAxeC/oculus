@@ -41,7 +41,7 @@
         venuesByCategory,
         type VenuesState
     } from '$lib/state/sources/registries/venues';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
         applyThemeFacets,
         themeFacets,
@@ -74,7 +74,7 @@
     const todayMonth = new Date().getMonth() + 1;
 
     function write(next: Partial<VenuesState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
     function toggleTheme(theme: string): void {

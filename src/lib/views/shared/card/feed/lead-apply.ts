@@ -10,10 +10,9 @@
 import type { ClientState } from '$lib/state/client/context';
 import { appliedWord, type LeadEntry } from '$lib/state/feeds/leads';
 import { APPLICATIONS, LEADS_FEED, applicationFromLead } from '$lib/state/feeds/lead-application';
-import { asText } from '$lib/state/forms/schema';
 import { sourceFileState } from '$lib/state/sessions/source/place';
 import { viewSourceFile } from '$lib/state/sessions/view-source';
-import { feedRoot } from '$lib/state/shared/page/idents';
+import { feedEntryId } from '$lib/state/shared/page/idents';
 import { answerWords } from '../../forms/answer-words';
 import { placeInFile } from '../../forms/entry-file';
 
@@ -42,15 +41,9 @@ export async function applyFromLead(
         (one) => client.layout.openBeside('source', sourceFileState(client, one), undefined, beside)
     );
     if (!placed.placed) return placed.sentence;
-    const lead = asText(entry.title);
+    const lead = feedEntryId(entry);
     const applied = appliedWord(client.selectors.configMap());
     if (lead === '' || applied === '') return '';
-    const answer = await client.writes.writeFeedField(
-        LEADS_FEED,
-        lead,
-        'status',
-        applied,
-        feedRoot(entry)
-    );
+    const answer = await client.writes.writeFeedField(LEADS_FEED, lead, 'status', applied);
     return answer.ok ? '' : answerWords(answer);
 }

@@ -52,10 +52,10 @@
     import { PEOPLE } from '$lib/state/forms/page-entry';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
     import { optionalText } from '$lib/data/shapes/shapes';
-    import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { recordState, stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import { fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -74,7 +74,7 @@
     let { instance }: ViewProps = $props();
 
     /** The person this instance was opened for, from the state the tag handed openView. */
-    const key = $derived(instanceText(instance.state, 'key'));
+    const key = $derived(stateRecord(instance.state));
     const join = $derived(personJoin(portfolio(), key));
     /** The person's registry entry as the editor sees it. */
     const page = $derived(key === '' ? null : pageOf(PEOPLE, key));
@@ -92,13 +92,13 @@
     /** The folder as a path of the hub, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
     /** The key of the hub the person is of. */
-    const hub = $derived(rootOf(join.person ?? {}, primary()));
+    const hub = $derived(rootOf(join.person ?? {}));
     /**
      * The people file the person is read from: the configuration's for the primary hub, and for a
      * person of another hub that hub's own file, under the root the hub is served under.
      */
     const source = $derived(
-        join.person?.file !== undefined && join.person.root !== undefined
+        join.person?.file !== undefined && hub !== primary()
             ? fileUnder(join.person.file, roots(), primary())
             : viewSourceFile('people', configMap(), primary())
     );
@@ -141,7 +141,7 @@
      * The words on the tab and in the header: the person's name as the page holds it, a saved name
      * included before the snapshot shows it, their key until it is known.
      */
-    const title = $derived(page?.title ?? (join.person === null ? key : join.person.name));
+    const title = $derived(page?.title ?? (join.person === null ? keyOf(key) : join.person.name));
 
     /**
      * Whether this person is the user, the one the workspace setting `self` names: the flag of the
@@ -156,13 +156,13 @@
      */
     function markSelf(): void {
         const person = join.person;
-        if (person === null || person.root !== undefined || isSelf) return;
-        setSelf(person.id);
+        if (person === null || hub !== primary() || isSelf) return;
+        setSelf(keyOf(person.id));
     }
 
     /** Open one project of this person as its own tab, the tab a board card opens. */
     function openProject(id: string, label: string): void {
-        openView('project', { id, label });
+        openView('project', recordState(id, label));
     }
 
     /** Open the joint-work collection, where the entries drawn here are edited. */
@@ -200,10 +200,13 @@
     {/snippet}
 
     {#if join.person === null}
-        <Empty message={key === '' ? t('person.nobody') : t('person.unknown', key)} glyph="warn" />
+        <Empty
+            message={key === '' ? t('person.nobody') : t('person.unknown', keyOf(key))}
+            glyph="warn"
+        />
     {:else}
         <div class="person" data-person={join.person.id}>
-            {#if join.person.root !== undefined}
+            {#if hub !== primary()}
                 <p class="self">
                     <RootChip record={join.person} />
                 </p>
@@ -216,7 +219,7 @@
                         active={isSelf}
                         title={isSelf
                             ? t('person.self_held_tip', title)
-                            : t('person.self_tip', title, join.person.id)}
+                            : t('person.self_tip', title, keyOf(join.person.id))}
                         onclick={markSelf}
                     />
                 </p>

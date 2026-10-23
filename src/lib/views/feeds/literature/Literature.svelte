@@ -64,10 +64,12 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { recordChoices, selectChoices } from '$lib/state/forms/schema';
 
     const {
         entities: { config, portfolio },
         feeds: { feed },
+        fs: { primary },
         ui: { instanceState, setInstanceState },
         writes: { writeToken }
     } = useState();
@@ -84,10 +86,18 @@
             label: bucket.label
         }))
     );
+    /**
+     * The projects a paper added to the radar may name, by key: the radar is the primary hub's, so
+     * its projects come first, then another hub's under that hub's name, each group by title.
+     */
     const projects = $derived(
-        Object.values(portfolio()?.entities.projects ?? {})
-            .map((project) => ({ id: project.id, label: project.title }))
-            .sort((left, right) => left.label.localeCompare(right.label))
+        selectChoices(
+            recordChoices(portfolio()?.entities.projects, ['title'], primary() ?? '').sort(
+                (left, right) =>
+                    Number(left.hub !== undefined) - Number(right.hub !== undefined) ||
+                    left.label.localeCompare(right.label)
+            )
+        )
     );
     const timeoutS = $derived(timeoutSeconds(config()?.config ?? {}));
 

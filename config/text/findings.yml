@@ -35,7 +35,7 @@ text:
             state_unreadable: the open-workspace state file does not read; the workspace is unsaved and holds no folder
             page_state_unreadable: '{0}; the page state it keeps reads as nothing, and oculus writes nothing over the file while it does not read'
         hubs:
-            id_prefix: 'the id {0} begins with {1}:, the name of a hub folder, so it cannot be told from a record of that hub'
+            ambiguous: '{0} is {1}, which the hubs {2} each hold and its own hub does not, so it names no record'
         docs:
             missing: document does not exist
         rail:

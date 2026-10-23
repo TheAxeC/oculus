@@ -44,6 +44,7 @@ function project(id: string, statusLine: string): Project {
         fundingIds: [],
         datasetIds: [],
         relatedIds: [],
+        resourceIds: [],
         results: [],
         ideas: [],
         collaborators: [],
@@ -67,7 +68,8 @@ function build(storeOf: ClientState): FormDraftStore {
     return createFormDraft(storeOf.ui, {
         project: projectDraftTarget(
             (id) => projects[id] ?? null,
-            (_key, values) => values
+            (_key, values) => values,
+            () => false
         ),
         page: pageTarget()
     });
@@ -152,6 +154,16 @@ describe('a reload', () => {
         });
         expect(again.draftDirty('ed-1')).toBe(true);
     });
+
+    it('keeps the thing the edits were typed for as its hub and its name, and reads them back', () => {
+        drafts.editDraft('ed-1', 'project', 'lab:alpha', 'authors', ['Faes']);
+        expect(client.ui.instanceState('ed-1')).toEqual({
+            draft: { kind: 'project', hub: 'lab', name: 'alpha', edits: { authors: ['Faes'] } }
+        });
+        expect(build(client).draftEdits('ed-1', 'project', 'lab:alpha')).toEqual({
+            authors: ['Faes']
+        });
+    });
 });
 
 describe('the wiring', () => {
@@ -176,15 +188,17 @@ describe('a save the snapshot has not caught up with', () => {
     let settledDrafts: FormDraftStore;
 
     function snapshot(): Snapshot {
-        const entries = Object.entries(held).map(([id, fields], index) => ({
-            id,
+        const entries = Object.entries(held).map(([key, fields], index) => ({
+            id: `hub:${key}`,
+            root: 'hub',
             title: typeof fields.title === 'string' ? fields.title : '',
             fields,
             file: '/hub/pillars.yml',
             index
         }));
         const pillars: Collection = {
-            id: 'pillars',
+            id: 'hub:pillars',
+            root: 'hub',
             title: 'Pillars',
             file: '/hub/pillars.yml',
             schema: SCHEMA,
@@ -195,7 +209,9 @@ describe('a save the snapshot has not caught up with', () => {
             sections: { milestone: 'Veni' },
             schema: [{ field: 'milestone', type: 'text' }]
         };
-        return { entities: { collections: { pillars }, career } } as unknown as Snapshot;
+        return {
+            entities: { collections: { 'hub:pillars': pillars }, career }
+        } as unknown as Snapshot;
     }
 
     beforeEach(() => {
@@ -212,86 +228,86 @@ describe('a save the snapshot has not caught up with', () => {
     }
 
     it('shows the saved title and clean fields at once, and the tab title with them', () => {
-        settledDrafts.editDraft('ed-1', 'page', 'pillars:alpha', 'title', 'New title');
-        saved('alpha', { title: 'New title' });
+        settledDrafts.editDraft('ed-1', 'page', 'hub:pillars:alpha', 'title', 'New title');
+        saved('hub:alpha', { title: 'New title' });
         settledDrafts.settleDraft('ed-1', { title: 'New title' }, []);
 
-        const page = settledPages.pageOf('pillars', 'alpha');
+        const page = settledPages.pageOf('pillars', 'hub:alpha');
         expect(page?.values.title).toBe('New title');
         expect(page?.title).toBe('New title');
-        expect(settledDrafts.draftEdits('ed-1', 'page', 'pillars:alpha')).toEqual({});
+        expect(settledDrafts.draftEdits('ed-1', 'page', 'hub:pillars:alpha')).toEqual({});
         expect(settledDrafts.draftDirty('ed-1')).toBe(false);
     });
 
     it('shows a saved person role and a saved career section at once', () => {
-        saved('alpha', { role: 'adviser' });
+        saved('hub:alpha', { role: 'adviser' });
         settledPages.settle.career({ milestone: 'Vidi' }, settledPages.settle.begin());
 
-        expect(settledPages.pageOf('pillars', 'alpha')?.values.role).toBe('adviser');
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.values.role).toBe('adviser');
         expect(settledPages.pageNamed('career')?.values.milestone).toBe('Vidi');
     });
 
     it('shows the value the snapshot has once another writer changed the field', () => {
-        saved('alpha', { title: 'New title' });
+        saved('hub:alpha', { title: 'New title' });
         held = { alpha: { key: 'alpha', title: 'Written elsewhere', role: 'lead' } };
         version = 2;
 
-        expect(settledPages.pageOf('pillars', 'alpha')?.values.title).toBe('Written elsewhere');
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.values.title).toBe('Written elsewhere');
     });
 
     it('keeps the saved value while the snapshot still shows the old one, and drops it for good after two builds', () => {
-        saved('alpha', { title: 'New title' });
+        saved('hub:alpha', { title: 'New title' });
         version = 2;
-        expect(settledPages.pageOf('pillars', 'alpha')?.values.title).toBe('New title');
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.values.title).toBe('New title');
         version = 3;
-        expect(settledPages.pageOf('pillars', 'alpha')?.values.title).toBe('Old title');
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.values.title).toBe('Old title');
     });
 
     it('holds the values of the newest of two saves, whichever answer comes last', () => {
         const first = settledPages.settle.begin();
         const second = settledPages.settle.begin();
-        saved('alpha', { title: 'Second' }, second);
-        saved('alpha', { title: 'First' }, first);
+        saved('hub:alpha', { title: 'Second' }, second);
+        saved('hub:alpha', { title: 'First' }, first);
 
-        expect(settledPages.pageOf('pillars', 'alpha')?.values.title).toBe('Second');
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.values.title).toBe('Second');
     });
 
     it('moves the page and its tab to the key a save gave the entry', () => {
-        saved('alpha', { key: 'beta' });
+        saved('hub:alpha', { key: 'beta' });
 
-        expect(settledPages.pageOf('pillars', 'alpha')?.key).toBe('beta');
-        expect(settledPages.pageOf('pillars', 'beta')).toMatchObject({
-            key: 'beta',
+        expect(settledPages.pageOf('pillars', 'hub:alpha')?.key).toBe('hub:beta');
+        expect(settledPages.pageOf('pillars', 'hub:beta')).toMatchObject({
+            key: 'hub:beta',
             title: 'Old title'
         });
     });
 
     it('keeps an edit the save did not take under the key the save gave the entry', () => {
-        settledDrafts.editDraft('ed-1', 'page', 'pillars:alpha', 'key', 'beta');
-        settledDrafts.editDraft('ed-1', 'page', 'pillars:alpha', 'role', 'adviser');
-        saved('alpha', { key: 'beta' });
+        settledDrafts.editDraft('ed-1', 'page', 'hub:pillars:alpha', 'key', 'beta');
+        settledDrafts.editDraft('ed-1', 'page', 'hub:pillars:alpha', 'role', 'adviser');
+        saved('hub:alpha', { key: 'beta' });
         settledDrafts.settleDraft('ed-1', { key: 'beta', role: 'adviser' }, ['role']);
 
-        expect(settledDrafts.draftEdits('ed-1', 'page', 'pillars:beta')).toEqual({
+        expect(settledDrafts.draftEdits('ed-1', 'page', 'hub:pillars:beta')).toEqual({
             role: 'adviser'
         });
     });
 
     it('shows an entry a write added from its first frame, and gives way to the snapshot', () => {
-        expect(settledPages.pageOf('pillars', 'gamma')).toBeNull();
+        expect(settledPages.pageOf('pillars', 'hub:gamma')).toBeNull();
         settledPages.settle.added(
             'pillars',
-            'gamma',
+            'hub:gamma',
             { key: 'gamma', title: 'Fresh' },
             settledPages.settle.begin()
         );
 
-        expect(settledPages.pageOf('pillars', 'gamma')).toMatchObject({
-            key: 'gamma',
+        expect(settledPages.pageOf('pillars', 'hub:gamma')).toMatchObject({
+            key: 'hub:gamma',
             title: 'Fresh'
         });
         held = { ...held, gamma: { key: 'gamma', title: 'Fresh', role: '' } };
         version = 2;
-        expect(settledPages.pageOf('pillars', 'gamma')?.values.role).toBe('');
+        expect(settledPages.pageOf('pillars', 'hub:gamma')?.values.role).toBe('');
     });
 });

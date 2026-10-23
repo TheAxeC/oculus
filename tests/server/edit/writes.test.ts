@@ -506,7 +506,6 @@ const ADD_ROWS = [
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'review-x' },
-        hubKeys: [] as string[],
         id: 'review-x',
         changed: ['entries'],
         refused: [],
@@ -518,7 +517,6 @@ const ADD_ROWS = [
         file: KEYED.replace('  - key: held\n    title: Held\n', '  # a comment\n  # another\n'),
         collection: 'tasks',
         fields: { key: 'review-x' },
-        hubKeys: [] as string[],
         changed: ['entries'],
         refused: [],
         after: KEYED.replace(
@@ -532,7 +530,6 @@ const ADD_ROWS = [
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'held' },
-        hubKeys: [] as string[],
         changed: [],
         refused: [{ field: 'key', reason: ['server.entries.key_taken', 'key'] }],
         after: KEYED
@@ -543,21 +540,20 @@ const ADD_ROWS = [
         file: KEYED,
         collection: 'tasks',
         fields: { key: '  ' },
-        hubKeys: [] as string[],
         changed: [],
         refused: [{ field: 'key', reason: ['server.entries.new_ident_missing', 'key'] }],
         after: KEYED
     },
     {
-        name: 'refuses a key that begins with the key of a hub and a colon',
+        name: 'writes a key that begins with the name of a hub and a colon as any other key',
         path: '.oculus/data/academic/tasks.yml',
         file: KEYED,
         collection: 'tasks',
         fields: { key: 'second:thing' },
-        hubKeys: ['second'],
-        changed: [],
-        refused: [{ field: 'key', reason: ['server.entries.hub_key', 'second'] }],
-        after: KEYED
+        id: 'second:thing',
+        changed: ['entries'],
+        refused: [],
+        after: `${KEYED}\n  - key: second:thing\n`
     },
     {
         name: 'refuses a venue with an empty id',
@@ -565,7 +561,6 @@ const ADD_ROWS = [
         file: VENUES,
         collection: 'venues',
         fields: { name: 'New V', id: '' },
-        hubKeys: [] as string[],
         changed: [],
         refused: [{ field: 'id', reason: ['server.entries.new_key_empty', 'id'] }],
         after: VENUES
@@ -576,7 +571,6 @@ const ADD_ROWS = [
         file: VENUES,
         collection: 'venues',
         fields: { name: 'New V', id: 'newv' },
-        hubKeys: [] as string[],
         changed: ['venues'],
         refused: [],
         after: `${VENUES}\n  - name: New V\n    id: newv\n`
@@ -587,14 +581,7 @@ describe('adding an entry', () => {
     it.each(ADD_ROWS)('$name', (row) => {
         const root = wider();
         const file = plant(root, row.path, row.file);
-        const out = createEntry(
-            root,
-            configFor(),
-            row.collection,
-            row.fields,
-            undefined,
-            row.hubKeys
-        );
+        const out = createEntry(root, configFor(), row.collection, row.fields, undefined);
         if ('id' in row) expect(out).toMatchObject({ found: true, id: row.id });
         expect(out.changed).toEqual(row.changed);
         expect(out.refused).toEqual(

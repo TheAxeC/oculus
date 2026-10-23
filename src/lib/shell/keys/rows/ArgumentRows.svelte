@@ -27,6 +27,7 @@
     import type { ArgumentRow } from '$lib/shell/keys/palette-modes';
     import { NO_PREVIEW } from '$lib/state/workbench/ui.svelte';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/workbench/layout';
 
     const client = useState();
     const {
@@ -95,7 +96,7 @@
             const shown =
                 list.command === 'tab'
                     ? openView(row.argument, undefined, into)
-                    : openView('project', { id: row.argument, label: row.hint }, into);
+                    : openView('project', recordState(row.argument, row.hint), into);
             onclose();
             if (shown !== '') void landOn(shown);
         }

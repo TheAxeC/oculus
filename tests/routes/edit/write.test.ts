@@ -81,12 +81,12 @@ describe('the write endpoint', () => {
         const { into, dir, file } = planted;
         const projects = [
             {
-                id: 'alpha',
+                id: 'hub:alpha',
                 file: join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml')
             },
-            { id: 'idea', file: hubSide.files.idea },
-            { id: 'r', file: hubSide.files.r },
-            { id: REPOSITORY_ID, file }
+            { id: 'hub:idea', file: hubSide.files.idea },
+            { id: 'hub:r', file: hubSide.files.r },
+            { id: `hub:${REPOSITORY_ID}`, file }
         ];
         const edits = [
             {
@@ -140,7 +140,7 @@ describe('the write endpoint', () => {
             expect(readFileSync(one.file, 'utf8'), one.id).toBe(before);
         }
 
-        const body = { kind: 'manifest', id: REPOSITORY_ID, fields: { next: 'x' } };
+        const body = { kind: 'manifest', id: `hub:${REPOSITORY_ID}`, fields: { next: 'x' } };
         const apps = routeSetup({ machine: notesFiles(`${APP_MANIFEST}writes: [manifest]\n`) });
         const held = { ...into, apps: { held: apps.held, data: join(dir, 'data'), maxKb: 256 } };
         const headers = { [APP_HEADER]: 'app:notes', [KIND_HEADER]: 'manifest' };

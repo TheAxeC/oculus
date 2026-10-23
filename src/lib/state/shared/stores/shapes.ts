@@ -329,19 +329,20 @@ export type WritesStore = {
     /** Add one position lead to the leads feed of the primary hub. */
     addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     reorderEntries: (collection: string, order: string[]) => Promise<WriteAnswer>;
+    /** Set one field of a feed entry, named by its internal id. */
     writeFeedField: (
         feed: string,
         id: string,
         field: string,
-        value: string | number | boolean | null,
-        root?: string
+        value: string | number | boolean | null
     ) => Promise<WriteAnswer>;
-    deleteFeedEntry: (feed: string, id: string, root?: string) => Promise<WriteAnswer>;
+    /** Delete one feed entry, named by its internal id. */
+    deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
     addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /**
      * Save one paper to the Literature collection of the hub `root` names, else of the primary when
      * it names the collection, else of the first hub that does; the answer's `id` is the paper's id
-     * in the portfolio, the key the server made under the hub's name for another hub.
+     * in the portfolio, the key the server made under the name of the hub it was saved in.
      */
     saveLiterature: (
         source: 'search' | 'lit-watch' | 'hand',
@@ -349,7 +350,8 @@ export type WritesStore = {
         root?: string
     ) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    markPosted: (file: string, root?: string) => Promise<WriteAnswer>;
+    /** Promote one LinkedIn idea, named by its internal id, to the next numbered post. */
+    markPosted: (id: string) => Promise<WriteAnswer>;
     writeDeckSlides: (
         deck: { root: string; path: string },
         groups: { group: string; base: string[]; slides: string[] }[],

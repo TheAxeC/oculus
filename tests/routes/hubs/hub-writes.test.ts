@@ -1,11 +1,11 @@
 // Layer 2, route tests. Which hub a write goes to when two hubs are built (G8, G9): a write that
-// names a record of the hub `lab` (`lab:<id>`) changes that hub's file and no byte of the primary
-// hub, the change log names the file of `lab` by its absolute path, and the undo from History puts
-// that file back.
+// names a record of the hub `lab` by its hub and its key (`lab:<key>`) changes that hub's file and
+// no byte of the primary hub, the change log names the file of `lab` by its absolute path, and the
+// undo from History puts that file back.
 //
-// Both hubs are made by `target()` under the system temporary directory, so every id of `lab` is
-// also an id of the first hub, which is the case the prefix exists for. Each case compares every
-// file of both hubs before and after the write and after the undo.
+// Both hubs are made by `target()` under the system temporary directory, so every key of `lab` is
+// also a key of the first hub and only the hub part of an id tells the two records apart. Each case
+// compares every file of both hubs before and after the write and after the undo.
 // @module-tag slow: each case builds two hubs and takes 300 ms or more, so npm test leaves it out.
 
 import {
@@ -21,7 +21,11 @@ import { isAbsolute, join, relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
-import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
+import {
+    handleWrite,
+    type PrimaryTarget,
+    type WriteTarget
+} from '../../../src/lib/server/edit/writes.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
@@ -191,8 +195,7 @@ const ROWS: {
         body: {
             kind: 'feed-field',
             feed: 'radar',
-            id: 'Paper',
-            root: 'lab',
+            id: 'lab:Paper',
             field: 'dismissed',
             value: true
         },
@@ -203,8 +206,7 @@ const ROWS: {
         body: {
             kind: 'feed-field',
             feed: 'leads',
-            id: 'Lead',
-            root: 'lab',
+            id: 'lab:Lead',
             field: 'status',
             value: 'applied'
         },
@@ -215,8 +217,7 @@ const ROWS: {
         body: {
             kind: 'feed-field',
             feed: 'leads',
-            id: 'Lead',
-            root: 'lab',
+            id: 'lab:Lead',
             field: 'fit',
             value: 'a close fit'
         },
@@ -224,17 +225,17 @@ const ROWS: {
     },
     {
         name: 'a Lit Watch deletion',
-        body: { kind: 'feed-delete', feed: 'radar', id: 'Paper', root: 'lab' },
+        body: { kind: 'feed-delete', feed: 'radar', id: 'lab:Paper' },
         files: ['.oculus/data/literature/radar.yml']
     },
     {
         name: 'a lead deletion',
-        body: { kind: 'feed-delete', feed: 'leads', id: 'Lead', root: 'lab' },
+        body: { kind: 'feed-delete', feed: 'leads', id: 'lab:Lead' },
         files: ['.oculus/data/academic/leads.yml']
     },
     {
         name: 'a LinkedIn idea posted',
-        body: { kind: 'linkedin-post', file: 'xx-route-idea.md', root: 'lab' },
+        body: { kind: 'linkedin-post', id: 'lab:xx-route-idea.md' },
         files: [
             'theaxec.github.io/_linkedin/xx-route-idea.md',
             'theaxec.github.io/_linkedin/01-route-idea.md'
@@ -402,7 +403,7 @@ describe('a write to a record of the second hub', () => {
         expect(changesOf(narrowed)).toEqual([]);
     });
 
-    it('refuses a record of a hub that is not named, with the route sentence, and writes nothing', async () => {
+    it('refuses a record of a hub no workspace folder carries, with the sentence naming the hub, and writes nothing', async () => {
         const { into, first, lab } = twoHubs();
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
@@ -412,7 +413,7 @@ describe('a write to a record of the second hub', () => {
         );
         expect(response.status).toBe(404);
         expect(await response.json()).toEqual({
-            error: words(into.config.text, 'server.write_route.no_project', 'nolab:alpha')
+            error: words(into.config.text, 'server.workspace.no_hub_named', 'nolab')
         });
         expect(differing(before.first, filesOf(first))).toEqual([]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
@@ -480,7 +481,7 @@ describe('a write to a record of the second hub', () => {
             request({
                 kind: 'feed-field',
                 feed: 'leads',
-                id: title,
+                id: `hub:${title}`,
                 field: 'status',
                 value: 'applied'
             }),
@@ -499,7 +500,7 @@ describe('a write to a record of the second hub', () => {
         const { into, first, lab } = twoHubs();
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
-            request({ kind: 'linkedin-post', file: 'xx-nowhere.md', root: 'lab' }),
+            request({ kind: 'linkedin-post', id: 'lab:xx-nowhere.md' }),
             TOKEN,
             into
         );
@@ -508,14 +509,14 @@ describe('a write to a record of the second hub', () => {
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
 
-    it('sends a LinkedIn idea that names no root to the primary hub, which lab also holds', async () => {
+    it('sends a LinkedIn idea of the primary hub, which lab also holds, to the primary hub', async () => {
         const { into, first, lab } = twoHubs();
         const idea = join('theaxec.github.io', '_linkedin', 'xx-route-idea.md');
         expect(existsSync(join(first, idea))).toBe(true);
         expect(existsSync(join(lab, idea))).toBe(true);
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
-            request({ kind: 'linkedin-post', file: 'xx-route-idea.md' }),
+            request({ kind: 'linkedin-post', id: 'hub:xx-route-idea.md' }),
             TOKEN,
             into
         );
@@ -529,6 +530,95 @@ describe('a write to a record of the second hub', () => {
         expect(
             isAbsolute(change.file) && change.file.startsWith(join(first, 'theaxec.github.io'))
         ).toBe(true);
+    });
+
+    it.each([
+        [
+            'a lead field',
+            { kind: 'feed-field', feed: 'leads', id: 'Lead', field: 'status', value: 'applied' },
+            'Lead'
+        ],
+        [
+            'a lead field that carries a root beside a bare id',
+            {
+                kind: 'feed-field',
+                feed: 'leads',
+                id: 'Lead',
+                root: 'lab',
+                field: 'status',
+                value: 'applied'
+            },
+            'Lead'
+        ],
+        ['a lead deletion', { kind: 'feed-delete', feed: 'leads', id: 'Lead' }, 'Lead'],
+        [
+            'a LinkedIn idea posted',
+            { kind: 'linkedin-post', id: 'xx-route-idea.md' },
+            'xx-route-idea.md'
+        ]
+    ])(
+        'refuses %s whose id names no hub with 400 and the route sentence, and writes nothing',
+        async (_name, body, key) => {
+            const { into, first, lab } = twoHubs();
+            const before = { first: filesOf(first), lab: filesOf(lab) };
+            const response = await handleWrite(request(body), TOKEN, into);
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: words(into.config.text, 'server.write_route.no_hub_part', key)
+            });
+            expect(differing(before.first, filesOf(first))).toEqual([]);
+            expect(differing(before.lab, filesOf(lab))).toEqual([]);
+            expect(changesOf(into)).toEqual([]);
+        }
+    );
+});
+
+describe('a write that makes a record', () => {
+    it.each([
+        ['a lead', { kind: 'lead-add', fields: { title: 'A new lead' } }, 'hub:A new lead'],
+        [
+            'an entry of the primary',
+            { kind: 'new-entry', collection: 'tasks', fields: { title: 'A third task' } },
+            'hub:A third task'
+        ],
+        [
+            'an entry of the hub its root names',
+            {
+                kind: 'new-entry',
+                collection: 'tasks',
+                fields: { title: 'A third task' },
+                root: 'lab'
+            },
+            'lab:A third task'
+        ],
+        ['a LinkedIn idea', { kind: 'linkedin-idea', title: 'A new idea' }, 'hub:xx-a-new-idea.md']
+    ])('answers %s with its internal id, the hub it wrote and its key', async (_name, body, id) => {
+        const { into } = twoHubs();
+        const response = await handleWrite(request(body), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as { id?: string }).id).toBe(id);
+    });
+
+    it('answers a lead made in a workspace with no primary with the id of the first hub, which it wrote', async () => {
+        const { into, first, lab } = twoHubs();
+        const open: WriteTarget = {
+            ...into,
+            hub: null,
+            primary: null,
+            hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])]
+        };
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'lead-add', fields: { title: 'A new lead' } }),
+            TOKEN,
+            open
+        );
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as { id?: string }).id).toBe('one:A new lead');
+        expect(differing(before.first, filesOf(first))).toEqual([
+            '.oculus/data/academic/leads.yml'
+        ]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
 });
 
@@ -546,8 +636,8 @@ describe('a write from an app', () => {
             apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
         };
         const ids = {
-            entry: ['Review the draft', 'lab:Review the draft'],
-            manifest: ['alpha', 'lab:alpha']
+            entry: ['hub:Review the draft', 'lab:Review the draft'],
+            manifest: ['hub:alpha', 'lab:alpha']
         };
         const [own, other] = ids[kind as 'entry' | 'manifest'];
         const before = { first: filesOf(first), lab: filesOf(lab) };
@@ -561,6 +651,59 @@ describe('a write from an app', () => {
         const allowed = await handleWrite(request({ ...body, id: own }, headers), TOKEN, fromApp);
         expect(allowed.status).toBe(200);
         expect(differing(before.first, filesOf(first))).not.toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+    });
+
+    it('makes no record for an app in a workspace with no primary, and writes nothing', async () => {
+        const { into, first, lab } = twoHubs();
+        const apps = routeSetup({ machine: notesFiles(`${MANIFEST}writes: [lead-add]\n`) });
+        const fromApp: WriteTarget = {
+            ...into,
+            hub: null,
+            primary: null,
+            hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])],
+            apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
+        };
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request(
+                { kind: 'lead-add', fields: { title: 'A new lead' } },
+                { ...APP, [KIND_HEADER]: 'lead-add' }
+            ),
+            TOKEN,
+            fromApp
+        );
+        expect(response.status).toBe(409);
+        expect(await response.json()).toEqual({
+            error: words(into.config.text, 'server.workspace.no_primary')
+        });
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+    });
+
+    it("writes an app's host status to the first hub's career file in a workspace with no primary", async () => {
+        const { into, first, lab } = twoHubs();
+        const apps = routeSetup({ machine: notesFiles(`${MANIFEST}writes: [host]\n`) });
+        const fromApp: WriteTarget = {
+            ...into,
+            hub: null,
+            primary: null,
+            hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])],
+            apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
+        };
+        const before = { lab: filesOf(lab) };
+        const response = await handleWrite(
+            request(
+                { kind: 'host', name: 'Naesens', status: 'candidate' },
+                { ...APP, [KIND_HEADER]: 'host' }
+            ),
+            TOKEN,
+            fromApp
+        );
+        expect(response.status).toBe(200);
+        expect(readFileSync(join(first, '.oculus/data/academic/career.yml'), 'utf8')).toContain(
+            'status: "candidate"'
+        );
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
 });

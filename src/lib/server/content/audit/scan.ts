@@ -18,10 +18,10 @@
 //
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
-// path, the projects and collections of the snapshot, the rules read out of the configuration, and
-// the text catalog the messages are written in. A hub other than the primary is scanned with its
-// key as `root`, which prefixes its findings' scope and leaves the publication list to the primary
-// hub.
+// path, the hub's projects and collections of the merged snapshot, the rules read out of the
+// configuration, and the text catalog the messages are written in. Each hub is scanned with its
+// name as `root`, which marks its findings and, for a hub other than the primary, prefixes the
+// scope its signatures read; the publication list is the primary hub's alone.
 
 import type { AuditFinding, AuditKind } from '../../../data/model/index.ts';
 import { markers, gaps, conformance, guardrails, readability, collections } from './projects.ts';
@@ -36,14 +36,14 @@ const KINDS: AuditKind[] = ['todo', 'data', 'conform', 'manifest', 'readability'
  * section order and, inside a section, by the project or collection they are about.
  */
 export function auditFindings(input: AuditInput): AuditFinding[] {
-    const { found, add } = collector(input.catalog, input.root);
+    const { found, add } = collector(input.catalog, input.root, input.primary);
     markers(input, add);
     gaps(input, add);
     conformance(input, add);
     guardrails(input, add);
     readability(input, add);
     collections(input, add);
-    if (input.root === undefined) publications(input, add);
+    if (input.primary) publications(input, add);
     return found.sort(
         (left, right) =>
             KINDS.indexOf(left.kind) - KINDS.indexOf(right.kind) ||

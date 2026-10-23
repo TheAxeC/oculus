@@ -39,7 +39,7 @@
         themeLabeller,
         toggledThemes
     } from '$lib/state/shared/words/themes';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -62,7 +62,7 @@
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
     function write(next: Partial<DataState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
     function toggleTheme(theme: string): void {

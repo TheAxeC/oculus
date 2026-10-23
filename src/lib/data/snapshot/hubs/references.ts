@@ -1,23 +1,29 @@
-// Layer 1, data. The values of a collection entry that name a record of the hub, found by the
-// file's own `schema:`. A field whose `from:` names a registry or the projects holds the key of
-// such a record, one key or a list of them, and so does a field of a `records` field at any depth.
-// The merge of several hubs (hubs/merge.ts) puts the hub's key in front of those values, and a
-// write to a hub other than the primary (server/edit/writes/entries.ts) takes it off again, so both
-// walk the schema the same way and neither names a field of any collection.
+// Layer 1, data. The values of a collection entry that name a record, found by the file's own
+// `schema:`. A field whose `from:` names a registry or the projects holds the key of such a record,
+// one key or a list of them, and so does a field of a `records` field at any depth. The merge of
+// the hubs of a workspace (hubs/merge.ts) walks an entry here to resolve each such key in the
+// entry's own hub, then in the others, and a write (server/edit/writes/entries.ts and manifest.ts)
+// walks the fields it is given to take the hub's name off a value that names a record by its id, so
+// both walk the schema the same way and neither names a field of any collection.
 
 import type { FromPicked, SchemaField } from '../../model/index.ts';
 import { isMap } from '../../helpers/guards.ts';
 import { REGISTRIES } from '../schema/lists.ts';
 
-/** The `from:` sources whose keys are records of the hub: the eight registries and the projects. */
+/** The `from:` sources whose keys are records: the eight registries and the projects. */
 const RECORD_SOURCES: readonly string[] = [...REGISTRIES, 'projects'];
 
 /**
- * What a walk does with one text value: the value, the record sources its field names and whether
- * the schema holds it to their keys. A `select` and an item of a `tags` list are held to them; a
- * `text` field is only completed from them, so its value may be any words.
+ * What a walk does with one text value: the value, the record sources its field names, whether the
+ * schema holds it to their keys, and the name of the field. A `select` and an item of a `tags` list
+ * are held to them; a `text` field is only completed from them, so its value may be any words.
  */
-export type Reach = (value: string, sources: readonly string[], held: boolean) => string;
+export type Reach = (
+    value: string,
+    sources: readonly string[],
+    held: boolean,
+    field: string
+) => string;
 
 /** The record sources of a field's `from:`, for a record holding the values `record`. */
 function sourcesOf(field: SchemaField, record: Record<string, unknown>): string[] {
@@ -31,11 +37,15 @@ function sourcesOf(field: SchemaField, record: Record<string, unknown>): string[
 
 /** One value of a field, or each string of a list value, passed through `reach`. */
 function reached(value: unknown, sources: string[], field: SchemaField, reach: Reach): unknown {
-    if (typeof value === 'string') return reach(value, sources, field.type === 'select');
+    if (typeof value === 'string') {
+        return reach(value, sources, field.type === 'select', field.field);
+    }
     if (!Array.isArray(value)) return value;
     const held = field.type === 'select' || field.type === 'tags';
     const items: unknown[] = value;
-    return items.map((one) => (typeof one === 'string' ? reach(one, sources, held) : one));
+    return items.map((one) =>
+        typeof one === 'string' ? reach(one, sources, held, field.field) : one
+    );
 }
 
 /** The record of a `records` field, each of its fields passed through the walk. */

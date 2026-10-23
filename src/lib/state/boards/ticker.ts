@@ -11,7 +11,7 @@ import {
 } from '../../data/model/index.ts';
 import { z } from 'zod';
 import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
-import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { entryFollowups } from './collection.ts';
 import { hasWord } from '../../data/shapes/vocab-keys.ts';
@@ -286,7 +286,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             category: position,
             line: item(position, GLYPHS[position], lead.title, days, {
                 ...rootMark(lead),
-                target: { kind: 'lead', id: hubId(rootOf(lead, null), lead.title, null) }
+                target: { kind: 'lead', id: hubId(rootOf(lead), lead.title) }
             })
         });
     }
@@ -501,14 +501,14 @@ export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: 
     for (const project of projects) {
         const id = project.venueId;
         if (id === undefined || id === '') continue;
-        const name = byKey(venues, id)?.name ?? id;
+        const name = byKey(venues, id)?.name ?? keyOf(id);
         const held = counts.get(name);
         counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
     return [...counts.values()]
         .map(({ id, count }) => ({
             id,
-            label: venueLabel(venues[id]) === '' ? id : venueLabel(venues[id]),
+            label: venueLabel(venues[id]) === '' ? keyOf(id) : venueLabel(venues[id]),
             count
         }))
         .filter((one) => one.count >= warn)

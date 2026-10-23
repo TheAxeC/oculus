@@ -14,6 +14,7 @@
     } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const {
         layout: { openView },
@@ -85,10 +86,10 @@
                                         label={member.label}
                                         title={member.label}
                                         onclick={() =>
-                                            openView('project', {
-                                                id: member.id,
-                                                label: member.label
-                                            })}
+                                            openView(
+                                                'project',
+                                                recordState(member.id, member.label)
+                                            )}
                                     />
                                 </span>
                             {/each}

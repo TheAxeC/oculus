@@ -8,7 +8,14 @@
 import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
-import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
+import { keyOf } from '../../../data/helpers/hub-names.ts';
+import {
+    anyNumberShape,
+    fieldItemsShape,
+    readAs,
+    recordItemsShape,
+    wordShape
+} from '../../../data/shapes/shapes.ts';
 import { hasWord, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
 import { typeTone } from '../../shared/words/tones.ts';
@@ -179,7 +186,7 @@ export function buildGraph(
         nodes.push({
             id: `line::${id}`,
             entityId: id,
-            label: line?.title ?? id,
+            label: line === undefined || line.title === '' ? keyOf(id) : line.title,
             kind: 'line',
             degree: 0,
             radius: 11
@@ -190,7 +197,7 @@ export function buildGraph(
         nodes.push({
             id: `collaborator::${id}`,
             entityId: id,
-            label: byKey(names, id) ?? id,
+            label: byKey(names, id) ?? keyOf(id),
             kind: 'collaborator',
             degree: 0,
             radius: 11
@@ -379,7 +386,7 @@ export function lineFilters(
     ];
     return listed.map((id) => ({
         id,
-        title: present.find((node) => node.entityId === id)?.label ?? id,
+        title: present.find((node) => node.entityId === id)?.label ?? keyOf(id),
         count: counted[id] ?? 0,
         shown: lines.length === 0 || lines.includes(id)
     }));
@@ -425,7 +432,7 @@ export type MapState = GraphFilter & {
     linkMode: boolean;
     /** The project types drawn. Empty is every type, which is what an unfiltered map holds. */
     types: string[];
-    /** The pillars drawn, by their registry key. Empty is every pillar. */
+    /** The pillars drawn, by their ids in the portfolio. Empty is every pillar. */
     lines: string[];
     /** Whether a project with no membership edge to a line still drawn is dropped. */
     connected: boolean;
@@ -445,7 +452,7 @@ const mapStateShape = z.object({
     enabled: fieldItemsShape,
     linkMode: z.boolean().catch(false),
     types: fieldItemsShape,
-    lines: fieldItemsShape,
+    lines: recordItemsShape,
     connected: z.boolean().catch(false),
     start: startShape.optional().catch(undefined)
 });

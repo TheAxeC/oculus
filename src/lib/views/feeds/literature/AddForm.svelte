@@ -22,7 +22,7 @@
     type Props = {
         hit: MergedHit;
         buckets: { id: string; label: string }[];
-        projects: { id: string; label: string }[];
+        projects: { id: string; label: string; group?: string }[];
         onclose: () => void;
         onsaid: (words: string) => void;
     };

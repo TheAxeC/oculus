@@ -132,22 +132,22 @@ describe('addTask', () => {
         ...over
     });
 
-    it('writes the task to the tasks collection and gives back its id and title', async () => {
-        const calls: [string, Record<string, unknown>][] = [];
+    it('writes the task to the tasks collection of its hub and gives back its id and title', async () => {
+        const calls: [string, Record<string, unknown>, string][] = [];
         const added = await addTask(
             'Review it',
-            [tasks([])],
+            [tasks([], 'research')],
             null,
             ENGINE,
-            (collection, fields) => {
-                calls.push([collection, fields]);
-                return Promise.resolve(answered({ id: 'review-it' }));
+            (collection, fields, root) => {
+                calls.push([collection, fields, root]);
+                return Promise.resolve(answered({ id: 'research:review-it' }));
             }
         );
         expect(calls).toEqual([
-            ['tasks', { key: 'review-it', title: 'Review it', status: 'todo' }]
+            ['tasks', { key: 'review-it', title: 'Review it', status: 'todo' }, 'research']
         ]);
-        expect(added).toEqual({ id: 'review-it', label: 'Review it', said: '' });
+        expect(added).toEqual({ id: 'research:review-it', label: 'Review it', said: '' });
     });
 
     it.each([

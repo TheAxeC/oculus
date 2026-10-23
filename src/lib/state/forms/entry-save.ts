@@ -72,13 +72,7 @@ export async function savePage(
             merged.refused.push({ field, reason: t('entry_form.feed_scalar', field) });
             continue;
         }
-        const answer = await writes.writeFeedField(
-            page.collection,
-            page.writeId,
-            field,
-            one,
-            page.root
-        );
+        const answer = await writes.writeFeedField(page.collection, page.writeId, field, one);
         merged.changed.push(...answer.changed);
         merged.refused.push(...answer.refused);
         if (!answer.ok) {
@@ -91,14 +85,14 @@ export async function savePage(
 }
 
 /**
- * Delete the entry a page shows: `delete-entry` for a collection entry, `feed-delete` in the hub
- * that holds a feed entry. The career file is not deletable.
+ * Delete the entry a page shows by its internal id: `delete-entry` for a collection entry,
+ * `feed-delete` for a feed entry. The career file is not deletable.
  */
 export async function deletePage(
     page: PageEntry,
     writes: Pick<WritesStore, 'deleteEntry' | 'deleteFeedEntry'>
 ): Promise<WriteAnswer> {
     return page.kind === 'feed'
-        ? writes.deleteFeedEntry(page.collection, page.writeId, page.root)
+        ? writes.deleteFeedEntry(page.collection, page.writeId)
         : writes.deleteEntry(page.collection, page.writeId);
 }

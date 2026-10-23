@@ -186,7 +186,7 @@ export function request(body: unknown, headers: Record<string, string> = {}): Re
     });
 }
 
-export const GOOD = { kind: 'manifest', id: 'alpha', fields: { 'status.line': 'a new line' } };
+export const GOOD = { kind: 'manifest', id: 'hub:alpha', fields: { 'status.line': 'a new line' } };
 
 /** An absolute area to pin a session to. It is never opened: the overrides file only names it. */
 export const AREA = '/hub/projects/manuscripts/alpha';
@@ -264,10 +264,11 @@ export const DECK_ORDER = ['intro.md', 'slides:pillars', 'slides:more'];
 /** The hub folder of the portfolio deck the deck target holds. */
 const DECK_FOLDER = 'deck';
 
-/** One project that holds a deck of one slide, at the tier it is found by. */
+/** One project of the hub `hub` that holds a deck of one slide, at the tier it is found by. */
 function deckProject(id: string, tier: Tier): Project {
     return fixtureProject({
-        id,
+        id: `hub:${id}`,
+        root: 'hub',
         tier,
         type: tier === 'projects' ? 'active' : 'published',
         title: id,
@@ -298,7 +299,7 @@ export function deckTarget(): PrimaryTarget {
         const folder = join(dir, project.folder, 'present');
         mkdirSync(folder, { recursive: true });
         writeFileSync(join(folder, 'present.yml'), 'order: [main.md]\n');
-        writeFileSync(join(folder, 'main.md'), `# ${project.id}\n`);
+        writeFileSync(join(folder, 'main.md'), `# ${project.title}\n`);
     }
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     const changes = join(dir, 'changes.jsonl');

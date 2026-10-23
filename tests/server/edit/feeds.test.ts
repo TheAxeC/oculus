@@ -147,6 +147,7 @@ describe('feed writes', () => {
             found: true,
             changed: ['entries'],
             refused: [],
+            id: 'New role',
             records: [
                 {
                     file: join(into.hub, FILES.leads),

@@ -8,6 +8,7 @@ import {
     mapShape,
     optionalTextShape,
     readAs,
+    recordItemsShape,
     stringItemsShape
 } from '../../../data/shapes/shapes.ts';
 import { facetValues } from './facets.ts';
@@ -77,8 +78,8 @@ const boardStateShape = z.object({
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
     hiddenTypes: fieldItemsShape,
-    expanded: fieldItemsShape,
-    more: fieldItemsShape,
+    expanded: recordItemsShape,
+    more: recordItemsShape,
     filters: mapShape.optional().catch(undefined)
 });
 

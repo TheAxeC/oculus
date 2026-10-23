@@ -19,11 +19,8 @@ import { globSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect } from 'vitest';
-import {
-    buildPortfolioWithSchemas,
-    hubDomainsOf,
-    portfolioConfigFrom
-} from '../../../src/lib/data/index.ts';
+import { hubDomainsOf, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -190,7 +187,7 @@ function builder(readOf: () => HubRead): () => Built {
     return () => {
         if (built !== null) return built;
         const read = readOf();
-        const snapshot = buildPortfolioWithSchemas(read.hub, read.config).snapshot;
+        const snapshot = buildOneHub(read.hub, read.config).snapshot;
         built = { read, snapshot, projects: Object.values(snapshot.entities.projects) };
         return built;
     };
@@ -277,7 +274,7 @@ describe.skipIf(!REAL.asked)(realHubName('the real hub', REAL), () => {
 
     it('reads every project of the personal folder with no finding, each with the tier personal', () => {
         const read = readOf();
-        const snapshot = buildPortfolioWithSchemas(read.hub, read.config).snapshot;
+        const snapshot = buildOneHub(read.hub, read.config).snapshot;
         const folders = countedPersonal(read.hub);
         expect(folders.length).toBeGreaterThanOrEqual(3);
         const projects = Object.values(snapshot.entities.projects);

@@ -57,7 +57,8 @@
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames } from '$lib/state/boards/board';
     import { folderOf } from '$lib/state/client/selectors.svelte';
-    import { cardCursor, instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, instanceChoice } from '$lib/state/workbench/layout/instance';
+    import { recordField, stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -71,7 +72,7 @@
     let { instance }: ViewProps = $props();
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(instanceText(instance.state, 'id'));
+    const id = $derived(stateRecord(instance.state));
     const cursor = $derived(cardCursor(instance.state));
     const item = $derived(id === '' ? null : boardItemOf(id));
     const folder = $derived(item === null ? '' : folderOf(item.project));
@@ -92,7 +93,7 @@
     const now = Date.now();
 
     function choose(name: string): void {
-        setInstanceState(instance.id, { id, doc: name });
+        setInstanceState(instance.id, { ...recordField(id), doc: name });
     }
 
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));

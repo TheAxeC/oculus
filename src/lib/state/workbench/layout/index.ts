@@ -145,3 +145,4 @@ export {
     withCardCursor
 } from './instance.ts';
 export type { AppOpens } from './instance.ts';
+export { recordField, recordState, stateRecord } from '../../shared/page/records.ts';

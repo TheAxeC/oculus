@@ -23,6 +23,7 @@ import type { Raise } from './spec.ts';
 
 /** What the reader knows of the project a deck belongs to. */
 export type DeckProject = {
+    /** The project's key, as its hub's files name it, which a finding about it shows. */
     id: string;
     /** The project's manifest, which a finding about it names. */
     file: string;

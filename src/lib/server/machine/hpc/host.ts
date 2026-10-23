@@ -7,6 +7,7 @@
 // resolver is pure, so the poller, the config push, the portfolio rebuild and the route all give
 // one answer for one input.
 
+import { bareId, holdersOf, resolvedId } from '../../../data/helpers/hub-names.ts';
 import type { Id, Resource, Snapshot } from '../../../data/model/index.ts';
 import { slurmSettings, textCatalog, type SlurmSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
@@ -80,10 +81,24 @@ export function hpcSettingsOf(
     };
 }
 
-/** The resources of the latest portfolio snapshot the hub holds, or null while there is none. */
-export function latestResources(hub: Hub): Record<Id, Resource> | null {
+/**
+ * The resources of the latest portfolio snapshot the hub holds, by the key `slurm.resource` names
+ * them by, or null while there is none. The setting is the primary hub's, so a key resolves in the
+ * primary first, then in the one other hub that holds it (`resolvedId`); a key two other hubs hold
+ * names none.
+ */
+export function latestResources(hub: Hub, primary: string | null): Record<Id, Resource> | null {
     const message = hub.latest('portfolio');
-    return message === undefined ? null : (message.payload as Snapshot).entities.resources;
+    if (message === undefined) return null;
+    const resources = (message.payload as Snapshot).entities.resources;
+    const holders = holdersOf(Object.values(resources));
+    const out: Record<Id, Resource> = {};
+    for (const one of Object.values(resources)) {
+        const key = bareId(one);
+        const id = resolvedId(holders, primary ?? '', key);
+        if (id !== null && Object.hasOwn(resources, id)) out[key] = resources[id];
+    }
+    return out;
 }
 
 /**
@@ -94,13 +109,14 @@ export function latestResources(hub: Hub): Record<Id, Resource> | null {
 export function hpcRouteHost(input: {
     hpcHost: string | undefined;
     hub: Hub;
+    primary: string | null;
     config: () => Record<string, unknown>;
 }): { host: string; missing?: string; unconfigured?: true } {
     if (input.hpcHost !== undefined) return { host: input.hpcHost };
     const config = input.config();
     return hpcHostOf({
         resource: slurmSettings(config).resource,
-        resources: latestResources(input.hub),
+        resources: latestResources(input.hub, input.primary),
         words: hostWordsOf(config)
     });
 }

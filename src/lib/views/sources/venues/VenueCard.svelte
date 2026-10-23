@@ -112,7 +112,7 @@
                 title: t('venues.show_in_files_tip', path),
                 glyph: 'show_in_files',
                 onclick: () => {
-                    showInFiles(path, rootOf(venue, client.fs.primary()));
+                    showInFiles(path, rootOf(venue));
                 }
             });
         }
@@ -171,7 +171,7 @@
                 ? {
                       label: t('venues.site'),
                       glyph: 'launch',
-                      href: hrefOf(venue.link, rootOf(venue, client.fs.primary())),
+                      href: hrefOf(venue.link, rootOf(venue)),
                       external: true
                   }
                 : null,
@@ -179,7 +179,7 @@
                 ? {
                       label: t('venues.call'),
                       glyph: 'paper',
-                      href: hrefOf(venue.call, rootOf(venue, client.fs.primary())),
+                      href: hrefOf(venue.call, rootOf(venue)),
                       external: true
                   }
                 : null,

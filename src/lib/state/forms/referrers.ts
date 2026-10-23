@@ -5,12 +5,13 @@
 // delete names them, so both read this one answer.
 //
 // Pure over the snapshot and the merged configuration it is given. Every join goes through the ids
-// of the merged portfolio, which carry the key of a hub other than the primary, so a record of one
-// hub is never named by a reference of another. A collection whose entries nothing refers to (a
-// statement, an event) has no referrers.
+// of the merged portfolio, each the record's hub and its key, so a reference names the record it
+// resolved to in its own hub or in the one other hub that holds its key, and a record of one hub is
+// never taken for the record of the same key in another. A collection whose entries nothing refers
+// to (a statement, an event) has no referrers.
 
 import { byKey, isMap } from '../../data/helpers/guards.ts';
-import { joinedEntries } from '../../data/helpers/hub-names.ts';
+import { bareId, joinedEntries } from '../../data/helpers/hub-names.ts';
 import type { Project, Snapshot } from '../../data/model/index.ts';
 
 /** The collection key of the joint work, whose entries each name one person. */
@@ -43,7 +44,9 @@ export type Referrer = {
 
 /** The words a project is named by: its short name, else its title. */
 function projectLabel(project: Project): string {
-    return project.short === undefined || project.short === '' ? project.title : project.short;
+    const label =
+        project.short === undefined || project.short === '' ? project.title : project.short;
+    return label === '' ? bareId(project) : label;
 }
 
 /** The projects of the snapshot that satisfy a test, as referrers. */
@@ -69,7 +72,7 @@ function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
         .map((entry): Referrer => ({
             kind: 'entry',
             id: entry.id,
-            label: entry.title === '' ? entry.id : entry.title,
+            label: entry.title === '' ? bareId(entry) : entry.title,
             collection: JOINT_WORK
         }));
     const projects = projectsWhere(
@@ -86,14 +89,14 @@ function organisationReferrers(snapshot: Snapshot, id: string): Referrer[] {
         .map((person): Referrer => ({
             kind: 'person',
             id: person.id,
-            label: person.name === '' ? person.id : person.name
+            label: person.name === '' ? bareId(person) : person.name
         }));
     const schemes = Object.values(snapshot.entities.funding)
         .filter((scheme) => scheme.funder === id)
         .map((scheme): Referrer => ({
             kind: 'funding',
             id: scheme.id,
-            label: scheme.title === '' ? scheme.id : scheme.title
+            label: scheme.title === '' ? bareId(scheme) : scheme.title
         }));
     return [...people, ...schemes];
 }

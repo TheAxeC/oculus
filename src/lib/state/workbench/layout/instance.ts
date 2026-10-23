@@ -1,6 +1,10 @@
 // Layer 2, client state. Instance identities and tree lookups, independent of tree mutations and
 // storage. It sits in the layout folder beside the tree its lookups walk, which every layout module
 // reads it for, and the client folder above reads it from here.
+//
+// A field of a tab's saved state that names a record holds the record's hub and its key, two
+// fields (state/shared/page/records.ts): a card cursor, a `reveal` or a list of records is written
+// here by `recordField` and read back through `recordShape` of data/shapes/shapes.ts.
 
 import { z } from 'zod';
 import type { Instance, Layout, Pane, ViewId } from './index.ts';
@@ -8,21 +12,26 @@ import { isMap, item } from '../../../data/helpers/guards.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
 import { EDITOR_VIEW } from '../../../data/helpers/files/apps/views.ts';
 import { sourceTabState } from '../../sessions/source/draft.ts';
+import { recordField } from '../../shared/page/records.ts';
 import {
     anyNumberShape,
     filledTextShape,
     mapShape,
     readAs,
     readOr,
+    recordShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
 
 /** The field of a view's saved state that holds its keyboard-selected card. */
-const cursorShape = z.object({ cursor: filledTextShape });
+const cursorShape = z.object({ cursor: recordShape });
 
 /** The fields of a view's saved state that tell which record the instance shows. */
 const identityShape = z.object({
     id: filledTextShape,
+    collection: filledTextShape,
+    hub: z.string().optional().catch(undefined),
+    key: filledTextShape,
     session: filledTextShape,
     agent: filledTextShape,
     root: filledTextShape,
@@ -96,6 +105,23 @@ export function instanceNumber(state: unknown, key: string): number {
     return readOr(anyNumberShape, readAs(mapShape, state)?.[key], 0);
 }
 
+/**
+ * A view's state as its file holds it: `reveal`, the record a pick asked the tab to show, and each
+ * field of `lists` that lists records (the cards drawn open or whole, the pillars a map draws),
+ * each record written by `recordField`. The state a view's reader parsed holds them as internal
+ * ids, and a view writes the state back through this.
+ */
+export function storedState(state: object, lists: readonly string[] = []): Record<string, unknown> {
+    const out: Record<string, unknown> = { ...state };
+    if (typeof out.reveal === 'string' && out.reveal !== '') out.reveal = recordField(out.reveal);
+    for (const name of lists) {
+        const held = out[name];
+        if (!Array.isArray(held)) continue;
+        out[name] = held.filter((one) => typeof one === 'string').map(recordField);
+    }
+    return out;
+}
+
 /** The card id held by an instance, or null when keyboard navigation has selected none. */
 export function cardCursor(state: unknown): string | null {
     return readAs(cursorShape, state)?.cursor ?? null;
@@ -103,7 +129,7 @@ export function cardCursor(state: unknown): string | null {
 
 /** Preserve a view's own state while setting or removing its held card cursor. */
 export function withCardCursor(state: unknown, cursor: string | null): unknown {
-    if (cursor !== null) return { ...(isMap(state) ? state : {}), cursor };
+    if (cursor !== null) return { ...(isMap(state) ? state : {}), cursor: recordField(cursor) };
     if (!isMap(state) || !Object.hasOwn(state, 'cursor')) return state;
     const held = { ...state };
     delete held.cursor;
@@ -236,15 +262,19 @@ export function activePath(layout: Layout, id: string | null): number[] {
 }
 
 /**
- * The identity an instance state carries, or null for a state that carries none. A project uses
- * `id`; a session or terminal pin uses `session`, and a subagent's transcript its session and
- * `agent`; a local file uses its root and path. Each makes two records two instances of one
- * registered view, while opening the same record again activates its existing instance.
+ * The identity an instance state carries, or null for a state that carries none. A view of its own
+ * kind uses `id`; a record uses its hub and its key, and an entry of a collection or a feed its
+ * `collection` as well; a session or terminal pin uses `session`, and a subagent's transcript its
+ * session and `agent`; a local file uses its root and path. Each makes two records two instances
+ * of one registered view, while opening the same record again activates its existing instance.
  */
 export function stateId(state: unknown): string | null {
     const held = readAs(identityShape, state);
     if (held === null) return null;
     if (held.id !== undefined) return held.id;
+    if (held.key !== undefined && held.hub !== undefined) {
+        return JSON.stringify([held.collection ?? '', held.hub, held.key]);
+    }
     if (held.session !== undefined) {
         return held.agent === undefined ? held.session : JSON.stringify([held.session, held.agent]);
     }

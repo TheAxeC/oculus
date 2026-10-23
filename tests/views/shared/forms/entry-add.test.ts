@@ -2,7 +2,8 @@
 // Literature view's Add ask the hub when more than one hub names the collection, the primary first
 // and chosen, and write to the one hub that names it, primary or not, without asking. The client
 // is a stub whose writes record the call; the Literature Add is given an address no source is
-// asked about, so no request leaves the test.
+// asked about, so no request leaves the test. The Add of a lead and of a Lit Watch paper opens the
+// page of the record the server answers it made, whichever hub that is.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
@@ -11,7 +12,9 @@ import type { ClientState } from '../../../../src/lib/state/client/context.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import {
     collectionAsk,
+    leadAsk,
     literatureAsk,
+    paperAsk,
     type Ask
 } from '../../../../src/lib/views/shared/forms/entry/entry-add.ts';
 
@@ -24,14 +27,14 @@ const PRIMARY = 'main';
 type Sent = { what: string; fields: unknown; root: string | undefined };
 
 /**
- * A client whose portfolio holds the collection in the hubs named, the primary's without a root,
+ * A client whose portfolio holds the collection in the hubs named, each carrying its hub's name,
  * and whose writes record what they were asked and answer an entry written.
  */
 function clientOf(hubs: string[], sent: Sent[]): ClientState {
     const client = {
         fs: { primary: () => PRIMARY },
         selectors: {
-            collectionsOfKey: () => hubs.map((name) => (name === PRIMARY ? {} : { root: name }))
+            collectionsOfKey: () => hubs.map((name) => ({ root: name }))
         },
         writes: {
             writeToken: () => 'token',
@@ -123,5 +126,55 @@ describe('the hub an Add writes to', () => {
         expect(sent).toEqual([
             { what: 'hand', fields: { url: 'https://example.org/notes' }, root: 'lab' }
         ]);
+    });
+});
+
+/**
+ * A client whose lead and Lit Watch writes answer `answer` and whose layout records each view it
+ * is asked to open, with the primary hub `main`.
+ */
+function openingClient(answer: Record<string, unknown>, opened: unknown[]): ClientState {
+    const client = {
+        fs: { primary: () => PRIMARY },
+        entities: { config: () => null },
+        writes: {
+            addLead: () => Promise.resolve(answer),
+            addRadarEntry: () => Promise.resolve(answer)
+        },
+        layout: {
+            openView: (view: string, state: unknown) => {
+                opened.push([view, state]);
+                return Promise.resolve();
+            }
+        }
+    };
+    return client as unknown as ClientState;
+}
+
+describe('the page an Add opens', () => {
+    it.each([
+        ['a lead', 'leads', (client: ClientState) => leadAsk(client).submit(['A lead'])],
+        [
+            'a Lit Watch paper',
+            'radar',
+            (client: ClientState) => paperAsk(client).submit(['A lead', 'https://example.org', ''])
+        ]
+    ])(
+        'opens %s under the id the server answers, not under the primary',
+        async (_name, collection, add) => {
+            const opened: unknown[] = [];
+            expect(
+                await add(openingClient({ ok: true, id: 'lab:A lead', refused: [] }, opened))
+            ).toBe('');
+            expect(opened).toEqual([
+                ['entry', { collection, hub: 'lab', key: 'A lead', label: 'A lead' }]
+            ]);
+        }
+    );
+
+    it('opens no page for a lead the server answers with no id', async () => {
+        const opened: unknown[] = [];
+        await leadAsk(openingClient({ ok: true, refused: [] }, opened)).submit(['A lead']);
+        expect(opened).toEqual([]);
     });
 });

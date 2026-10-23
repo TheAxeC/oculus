@@ -363,8 +363,11 @@ export type TerminalJob = {
     matchers?: string[];
 };
 
-/** The folder a LaTeX request named: a project by its id, or a folder of a served root. */
-export type LatexJobTarget = { id: string } | { root: string; path: string };
+/**
+ * The folder a LaTeX request named, as a terminal's task mark keeps it: a project by its hub and
+ * its key, or a folder of a served root.
+ */
+export type LatexJobTarget = { hub: string; key: string } | { root: string; path: string };
 
 /**
  * What a build or a clean of one main file asks the reader to approve before it starts: the

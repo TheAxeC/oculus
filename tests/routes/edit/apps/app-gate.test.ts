@@ -232,7 +232,7 @@ const ROWS: Row[] = [
                 const body = { kind: 'manifest', id, fields: { snooze: '2026-12-01' } };
                 return (await handleWrite(request(body, headers), TOKEN, planted.into)).status;
             };
-            const status = { hub: await send('idea'), root: await send('r') };
+            const status = { hub: await send('hub:idea'), root: await send('hub:r') };
             const held = (id: 'idea' | 'r'): string => readFileSync(planted.files[id], 'utf8');
             return {
                 ...status,

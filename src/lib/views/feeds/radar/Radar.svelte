@@ -45,7 +45,7 @@
     } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -86,7 +86,7 @@
     let asking = $state<Ask | null>(null);
 
     function write(next: Partial<RadarState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 </script>
 

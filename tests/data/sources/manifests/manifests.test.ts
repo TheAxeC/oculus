@@ -1,5 +1,5 @@
 // Layer 1, data tests. The scan and the workspace folders read into projects (readHubManifests
-// through buildPortfolioWithSchemas) against a synthetic hub in a temporary directory. Nothing
+// through buildHubs and buildOneHub) against a synthetic hub in a temporary directory. Nothing
 // outside it is read or written. A project is any folder holding a project.yml at its top or a
 // .oculus/project.yml, whichever scan folder or workspace folder it lies in, and the manifest's own
 // `tier` and `type` say where it is shown.
@@ -7,18 +7,14 @@
 import { symlinkSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
-import {
-    buildPortfolioWithSchemas,
-    hubVocabOf,
-    joinHubs,
-    portfolioConfigFrom,
-    readOtherHub
-} from '../../../../src/lib/data/index.ts';
+import { hubVocabOf, portfolioConfigFrom, readOtherHub } from '../../../../src/lib/data/index.ts';
+import { buildHubs } from '../../../../src/lib/server/root/watch/build.ts';
+import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
 import { readCollections } from '../../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../../src/lib/data/snapshot/schema/check.ts';
-import type { Snapshot } from '../../../../src/lib/data/model/index.ts';
+import type { PortfolioConfig, Snapshot } from '../../../../src/lib/data/model/index.ts';
 import type { OpenWorkspace } from '../../../../src/lib/server/files/workspace/open.ts';
 import { primaryConfig } from '../../../../src/lib/server/files/roots.ts';
 import { it, plantFile, plantScratch } from '../../../fixtures/scratch.ts';
@@ -29,6 +25,26 @@ const MERGED = loadConfig(engineDir()).config;
 /** The folders of a workspace the primary reads as projects, each other hub with its settings. */
 function repositoriesOf(open: OpenWorkspace): ReturnType<typeof primaryConfig>['repositories'] {
     return primaryConfig(MERGED, open, (hub) => loadConfig(engineDir(), { hub })).repositories;
+}
+
+/**
+ * The portfolio the watcher builds over the primary `hub` of the workspace `open`, read with
+ * `config`, and the second hub `lab` when there is one.
+ */
+function built(
+    hub: string,
+    config: PortfolioConfig,
+    open: OpenWorkspace,
+    lab: string | null
+): Snapshot {
+    const portfolio = { ...config, repositories: repositoriesOf(open) };
+    const others =
+        lab === null
+            ? []
+            : [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
+    const order = open.folders.map((one) => one.name);
+    const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
+    return buildHubs({ primary, others, config, order }, 0, createChecker(), null).snapshot;
 }
 
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */
@@ -49,7 +65,7 @@ const NESTED_FILE = '.oculus/project.yml';
 const TOP_FILE = 'project.yml';
 
 /** The ids of the hub's own projects, which no row removes unless it sets its own scan. */
-const HUB_IDS = ['beta', 'loewner', 'tensor-spark'];
+const HUB_IDS = ['hub:beta', 'hub:loewner', 'hub:tensor-spark'];
 
 /** Where a row's folders are. */
 type Places = {
@@ -94,7 +110,8 @@ const entry = (at: Places): FolderSpec[] => [{ name: 'alpha', dir: at.repo }];
 const idsOf = (read: Read): string[] => Object.keys(read.snapshot.entities.projects).sort();
 
 /** The ids the hub holds besides these, sorted. */
-const withHub = (...ids: string[]): string[] => [...HUB_IDS, ...ids].sort();
+const withHub = (...ids: string[]): string[] =>
+    [...HUB_IDS, ...ids.map((id) => `hub:${id}`)].sort();
 
 /** The messages of the findings on `key` of a file that ends with `file`. */
 function findingsOn(read: Read, key: string, file = ''): string[] {
@@ -128,16 +145,16 @@ const ROWS: Row[] = [
         check: (read) => {
             const { projects } = read.snapshot.entities;
             expect(idsOf(read)).toEqual(withHub('a', 'b', 'c'));
-            expect(projects.a).toMatchObject({
+            expect(projects['hub:a']).toMatchObject({
                 tier: 'projects',
                 type: 'idea',
                 category: 'x',
                 folder: 'projects/x/a',
                 file: join(read.at.hub, 'projects/x/a/project.yml')
             });
-            expect(projects.b).toMatchObject({ tier: 'archive', type: 'published' });
-            expect(projects.b.category).toBeUndefined();
-            expect(projects.c).toMatchObject({
+            expect(projects['hub:b']).toMatchObject({ tier: 'archive', type: 'published' });
+            expect(projects['hub:b'].category).toBeUndefined();
+            expect(projects['hub:c']).toMatchObject({
                 tier: 'personal',
                 type: 'active',
                 chips: ['running']
@@ -150,7 +167,7 @@ const ROWS: Row[] = [
         hub: plain(['projects/ideas/d/e/project.yml', 'tier: projects\ntype: idea\n']),
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub('e'));
-            expect(read.snapshot.entities.projects.e.category).toBe('d');
+            expect(read.snapshot.entities.projects['hub:e'].category).toBe('d');
         }
     },
     {
@@ -187,7 +204,7 @@ const ROWS: Row[] = [
             const first = join(read.at.hub, 'projects/ideas/z/project.yml');
             const second = join(read.at.hub, 'projects/archive/old/z/project.yml');
             expect(idsOf(read)).toEqual(withHub('z'));
-            expect(read.snapshot.entities.projects.z.title).toBe('First');
+            expect(read.snapshot.entities.projects['hub:z'].title).toBe('First');
             expect(findingsOn(read, 'id')).toEqual([said('id_twice', 'z', first, second)]);
             expect(findingsOn(read, 'id', second)).toHaveLength(1);
         }
@@ -200,8 +217,8 @@ const ROWS: Row[] = [
             ['projects/x/sub/project.yml', 'tier: projects\ntype: active\n']
         ),
         check: (read) => {
-            expect(idsOf(read)).toEqual(['x']);
-            expect(read.snapshot.entities.projects.x.category).toBeUndefined();
+            expect(idsOf(read)).toEqual(['hub:x']);
+            expect(read.snapshot.entities.projects['hub:x'].category).toBeUndefined();
         }
     },
     {
@@ -216,7 +233,7 @@ const ROWS: Row[] = [
         name: 'a manifest with the tier personal inside the ideas folder as a personal project',
         hub: plain(['projects/ideas/p/project.yml', 'tier: personal\ntype: idea\ntitle: P\n']),
         check: (read) => {
-            expect(read.snapshot.entities.projects.p).toMatchObject({
+            expect(read.snapshot.entities.projects['hub:p']).toMatchObject({
                 tier: 'personal',
                 type: 'idea'
             });
@@ -227,9 +244,9 @@ const ROWS: Row[] = [
         entries: entry,
         manifest: PERSONAL,
         check: (read) => {
-            const alpha = read.snapshot.entities.projects.alpha;
+            const alpha = read.snapshot.entities.projects['hub:alpha'];
             expect(alpha).toMatchObject({
-                id: 'alpha',
+                id: 'hub:alpha',
                 tier: 'personal',
                 type: 'active',
                 chips: ['building'],
@@ -237,10 +254,10 @@ const ROWS: Row[] = [
                 folder: read.at.repo,
                 workspaceFolder: { root: 'alpha', dir: read.at.repo },
                 deck: 'present',
-                venueId: 'jmlr',
-                collaborators: ['rivera']
+                venueId: 'hub:jmlr',
+                collaborators: ['hub:rivera']
             });
-            expect(alpha.root).toBeUndefined();
+            expect(alpha.root).toBe('hub');
             expect(alpha.file).toBe(join(read.at.repo, NESTED_FILE));
             expect(idsOf(read)).toEqual(withHub('alpha'));
             expect(read.snapshot.entities).not.toHaveProperty('personal');
@@ -251,7 +268,7 @@ const ROWS: Row[] = [
         entries: entry,
         manifest: 'title: Alpha\ntier: coauthor\ntype: in-prep\n',
         check: (read) => {
-            expect(read.snapshot.entities.projects.alpha).toMatchObject({
+            expect(read.snapshot.entities.projects['hub:alpha']).toMatchObject({
                 tier: 'coauthor',
                 type: 'in-prep',
                 workspaceFolder: { root: 'alpha', dir: read.at.repo }
@@ -267,10 +284,10 @@ const ROWS: Row[] = [
         ),
         check: (read) => {
             const { projects } = read.snapshot.entities;
-            expect(Object.keys(projects).sort()).toEqual(['a', 'b']);
-            expect(projects.a.file).toBe(join(read.at.hub, 'side-projects/a', TOP_FILE));
-            expect(projects.b.file).toBe(join(read.at.hub, 'side-projects/b', NESTED_FILE));
-            expect(projects.b.folder).toBe('side-projects/b');
+            expect(Object.keys(projects).sort()).toEqual(['hub:a', 'hub:b']);
+            expect(projects['hub:a'].file).toBe(join(read.at.hub, 'side-projects/a', TOP_FILE));
+            expect(projects['hub:b'].file).toBe(join(read.at.hub, 'side-projects/b', NESTED_FILE));
+            expect(projects['hub:b'].folder).toBe('side-projects/b');
             expect(
                 read.snapshot.findings.filter((one) => one.file.includes('side-projects'))
             ).toEqual([]);
@@ -282,9 +299,9 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         placement: 'top',
         check: (read) => {
-            const alpha = read.snapshot.entities.projects.alpha;
+            const alpha = read.snapshot.entities.projects['hub:alpha'];
             expect(alpha).toMatchObject({
-                id: 'alpha',
+                id: 'hub:alpha',
                 tier: 'personal',
                 workspaceFolder: { root: 'alpha', dir: read.at.repo }
             });
@@ -298,7 +315,7 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         placement: 'both',
         check: (read) => {
-            const alpha = read.snapshot.entities.projects.alpha;
+            const alpha = read.snapshot.entities.projects['hub:alpha'];
             const top = join(read.at.repo, TOP_FILE);
             const nested = join(read.at.repo, NESTED_FILE);
             expect(alpha.title).toBe('Alpha');
@@ -339,8 +356,8 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         second: true,
         check: (read) => {
-            const labs = HUB_IDS.map((id) => `lab:${id}`);
-            expect(idsOf(read)).toEqual([...HUB_IDS, 'alpha', ...labs].sort());
+            const labs = HUB_IDS.map((id) => id.replace('hub:', 'lab:'));
+            expect(idsOf(read)).toEqual([...HUB_IDS, 'hub:alpha', ...labs].sort());
         }
     },
     {
@@ -364,7 +381,7 @@ const ROWS: Row[] = [
             'tier: projects\ntype: idea\ntitle: Hub alpha\n'
         ]),
         check: (read) => {
-            const alpha = read.snapshot.entities.projects.alpha;
+            const alpha = read.snapshot.entities.projects['hub:alpha'];
             expect(alpha.workspaceFolder).toBeUndefined();
             expect(alpha.folder).toBe('projects/ideas/alpha');
             expect(findingsOn(read, 'id', join(read.at.repo, NESTED_FILE))).toEqual([
@@ -382,7 +399,7 @@ const ROWS: Row[] = [
         entries: entry,
         manifest: 'id: other\ntitle: Alpha\ntier: personal\ntype: active\n',
         check: (read) => {
-            expect(read.snapshot.entities.projects.alpha).toBeDefined();
+            expect(read.snapshot.entities.projects['hub:alpha']).toBeDefined();
             expect(findingsOn(read, 'id', join(read.at.repo, NESTED_FILE))).toEqual([
                 said('id_not_folder', '"other"', 'alpha')
             ]);
@@ -399,9 +416,9 @@ const ROWS: Row[] = [
         check: (read) => {
             expect(findingsOn(read, 'related')).toEqual([]);
             expect(findingsOn(read, 'waiting-on')).toEqual([]);
-            expect(read.snapshot.entities.projects.loewner).toMatchObject({
-                relatedIds: ['alpha'],
-                waitingOn: ['alpha']
+            expect(read.snapshot.entities.projects['hub:loewner']).toMatchObject({
+                relatedIds: ['hub:alpha'],
+                waitingOn: ['hub:alpha']
             });
         }
     },
@@ -416,7 +433,7 @@ const ROWS: Row[] = [
             ['side-projects/r/project.yml', 'title: R\ntier: personal\ntype: active\n']
         ),
         check: (read) => {
-            const { p, q, r } = read.snapshot.entities.projects;
+            const { 'hub:p': p, 'hub:q': q, 'hub:r': r } = read.snapshot.entities.projects;
             expect(p.codeFolder).toBe(true);
             expect(q.codeFolder).toBeUndefined();
             expect(r.codeFolder).toBeUndefined();
@@ -433,8 +450,8 @@ const ROWS: Row[] = [
         ]),
         setup: (at) => origin(at.repo, 'git@github.com:TheAxeC/p.git'),
         check: (read) => {
-            expect(idsOf(read)).toEqual(['p']);
-            expect(read.snapshot.entities.projects.p.folder).toBe('side-projects/p');
+            expect(idsOf(read)).toEqual(['hub:p']);
+            expect(read.snapshot.entities.projects['hub:p'].folder).toBe('side-projects/p');
             expect(read.snapshot.findings.filter((one) => one.file.includes('alpha'))).toEqual([]);
             expect(read.snapshot.findings.filter((one) => one.key === 'id')).toEqual([]);
         }
@@ -450,7 +467,7 @@ const ROWS: Row[] = [
         ]),
         setup: (at) => origin(at.repo, 'https://github.com/theaxec/other'),
         check: (read) => {
-            expect(idsOf(read)).toEqual(['alpha', 'p']);
+            expect(idsOf(read)).toEqual(['hub:alpha', 'hub:p']);
         }
     },
     {
@@ -468,7 +485,7 @@ const ROWS: Row[] = [
             ]
         ),
         check: (read) => {
-            expect(idsOf(read)).toEqual(['p']);
+            expect(idsOf(read)).toEqual(['hub:p']);
             expect(read.snapshot.findings.filter((one) => one.file.includes('/c/'))).toEqual([]);
         }
     },
@@ -488,7 +505,7 @@ const ROWS: Row[] = [
             ['side-projects/b/.git/config', '[remote "origin"]\n\turl = https://example.org/o/r\n']
         ),
         check: (read) => {
-            expect(idsOf(read)).toEqual(['a']);
+            expect(idsOf(read)).toEqual(['hub:a']);
         }
     },
     {
@@ -516,8 +533,8 @@ const ROWS: Row[] = [
             plantFile(at.hub, 'side-projects/early/.git', `gitdir: ${named}\n`);
         },
         check: (read) => {
-            expect(idsOf(read)).toEqual(['late']);
-            expect(read.snapshot.entities.projects.late.file).toBe(
+            expect(idsOf(read)).toEqual(['hub:late']);
+            expect(read.snapshot.entities.projects['hub:late'].file).toBe(
                 join(read.at.hub, 'side-projects/late/project.yml')
             );
         }
@@ -530,7 +547,7 @@ const ROWS: Row[] = [
             'title: Q\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/q\n'
         ]),
         check: (read) => {
-            expect(read.snapshot.entities.projects.q.repository).toEqual({
+            expect(read.snapshot.entities.projects['hub:q'].repository).toEqual({
                 url: 'https://example.org/q',
                 clones: []
             });
@@ -581,19 +598,7 @@ function read(row: Row): Read {
         ...(row.entries?.(at) ?? [])
     ];
     const open = workspaceWith(folders, 'hub').open();
-    const base = buildPortfolioWithSchemas(
-        at.hub,
-        config,
-        0,
-        repositoriesOf(open),
-        undefined,
-        null,
-        'hub'
-    );
-    if (lab === null) return { snapshot: base.snapshot, at };
-    const others = [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
-    const built = joinHubs(base, { hub: at.hub, name: 'hub', config }, others, 0, createChecker());
-    return { snapshot: built.snapshot, at };
+    return { snapshot: built(at.hub, config, open, lab), at };
 }
 
 describe("the scan and the manifest's own tier and type", () => {
@@ -621,18 +626,7 @@ function joinedWith(
         ],
         'hub'
     ).open();
-    const base = buildPortfolioWithSchemas(
-        hub,
-        config,
-        0,
-        repositoriesOf(open),
-        undefined,
-        null,
-        'hub'
-    );
-    const others = [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
-    const built = joinHubs(base, { hub, name: 'hub', config }, others, 0, createChecker());
-    return { snapshot: built.snapshot, lab };
+    return { snapshot: built(hub, config, open, lab), lab };
 }
 
 describe('a hub reports only the files its own configuration names', () => {
@@ -689,7 +683,7 @@ describe('a hub reports only the files its own configuration names', () => {
         expect(portfolio.feeds.radar).toBe('elsewhere/radar.yml');
         expect(portfolio.feeds.leads).toBe('gone/leads.yml');
         expect(portfolio.unnamed?.feeds).toEqual([]);
-        const built = buildPortfolioWithSchemas(hub, portfolio);
+        const built = buildOneHub(hub, portfolio);
         expect(Object.keys(built.snapshot.entities.collections)).toEqual([]);
         expect(built.snapshot.entities.feeds.radar).toEqual({ lastRun: 'the last pass' });
         const missing = built.snapshot.findings.filter(
@@ -718,7 +712,7 @@ describe('a hub reports only the files its own configuration names', () => {
             });
             const { config, from } = loadConfig(engineDir(), { hub });
             const portfolio = portfolioConfigFrom(config, from);
-            const built = buildPortfolioWithSchemas(hub, portfolio);
+            const built = buildOneHub(hub, portfolio);
             const literature = built.snapshot.entities.collections.literature as
                 { file: string; entries: { fields: Record<string, unknown> }[] } | undefined;
             expect({

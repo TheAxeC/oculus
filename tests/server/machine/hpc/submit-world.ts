@@ -55,17 +55,18 @@ export function world(
         roots: () => [{ key: 'hub', dir: hub, hub: true }],
         projects: () => [
             fixtureProject({
-                id: 'p',
+                id: 'hub:p',
+                root: 'hub',
                 folder: 'projects/p',
                 file: join(hub, 'projects', 'p', 'project.yml')
             }),
             fixtureProject({
-                id: 'q',
+                id: 'hub:q',
+                root: 'hub',
                 folder: 'projects/q',
                 file: join(hub, 'projects', 'q', 'project.yml')
             })
         ],
-        primary: 'hub',
         catalog: () => ({}),
         where: () => ({ host: 'utwente' }),
         kept,

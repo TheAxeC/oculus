@@ -1,25 +1,28 @@
-// Layer 2, server. Which hub a write goes to. A record of a hub other than the primary has the id
-// `<hub name>:<id>` in the portfolio (data/snapshot/hubs/merge.ts), and with no primary every
-// record has one. The writers look a record up by the id its own hub's file gives it, so a write
-// that names a record is first given the hub of that record, with that hub's settings and the id
-// inside it. A bare id names the primary's record and finds none when the workspace has no primary;
-// a prefix no hub of the workspace carries is left as it is and finds no record, which is the
-// answer for any other unknown id.
+// Layer 2, server. Which hub a write goes to. Every record of the portfolio has the internal id
+// `<hub>:<key>` (data/snapshot/hubs/merge.ts and hubs/feeds.ts), the primary hub's included, and a
+// write names its record by that id. The writers look a record up by the key its own hub's file
+// gives it, so a write that names a record is first given the hub of that record, with that hub's
+// settings and the key inside it. An id with no hub part, a bare key, is refused as a request that
+// lacks the hub; an id whose hub part no workspace folder carries is refused as naming no hub. A
+// write from an app reaches the primary hub's records alone, so with no primary an app writes no
+// record and makes none. A write that makes or renames a record answers with the record's id.
 //
-// The target a writer is handed for another hub is the request's own target with that hub's folder,
+// The target a writer is handed for a hub is the request's own target with that hub's folder,
 // settings and projects in place of the primary's, so the writers know one hub and never see the
 // others. The change log and the answer stay with the request's own target, which is why a file of
 // another hub is recorded by its absolute path and the undo of it finds the hub by the folder that
 // holds the file.
 
 import { isAbsolute, resolve } from 'node:path';
-import { ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
+import { json } from '@sveltejs/kit';
+import { addressOfId, hubId, ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
+import { words } from '../../core/words.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import { engineLiteraturePath, literatureFile } from '../feeds/literature.ts';
 import { LITERATURE_KEY } from '../../../data/sources/collections.ts';
-import type { PrimaryTarget, WriteTarget } from '../writes.ts';
+import type { PrimaryTarget, WriteOutcome, WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 
 /** The target a writer is given for the hub `one`: that hub's folder, settings and records. */
@@ -28,102 +31,114 @@ function within(into: WriteTarget, one: HubTarget): PrimaryTarget {
         ...into,
         hub: one.hub,
         config: one.config,
-        projects: () => ofHub(into.projects(), one.key, into.primary),
+        projects: () => ofHub(into.projects(), one.key),
         primary: one.key,
         hubs: []
     };
 }
 
 /** The keys of every hub of the workspace, the primary's among them. */
-export function hubKeysOf(into: WriteTarget): string[] {
+function hubKeysOf(into: WriteTarget): string[] {
     const keys = (into.hubs ?? []).map((one) => one.key);
     return into.primary === null || keys.includes(into.primary) ? keys : [into.primary, ...keys];
 }
 
-/** The request's target as a target over the primary hub, or null while the workspace has none. */
+/**
+ * The request's target as a target over the primary hub, its projects those of the primary under
+ * their keys, or null while the workspace has none.
+ */
 export function primaryOf(into: WriteTarget): PrimaryTarget | null {
     if (into.hub === null || into.primary === null) return null;
-    return { ...into, hub: into.hub, primary: into.primary };
+    const { primary } = into;
+    return {
+        ...into,
+        hub: into.hub,
+        primary,
+        projects: () => ofHub(into.projects(), primary)
+    };
 }
 
 /**
- * A write's target, the id inside the hub it names, and the key of that hub when it is not the
- * first.
+ * The refusal of a write whose record ids reach no hub, or null when each id has a hub part that a
+ * hub of the workspace carries. An id with no hub part is a bad request (400): the write needs the
+ * record's hub. A hub part no workspace folder carries names no hub (404). Neither sentence shows a
+ * joined id: the first names the key, the second the hub.
  */
-export type Routed = { into: PrimaryTarget; id: string; hubKey?: string };
-
-/**
- * The hub an id names and the id inside it: no hub for the primary's own id, and null when the id
- * is of another hub and the write comes from an app, which reaches the primary's records alone, or
- * when the id is bare and the workspace has no primary.
- */
-function hubNamed(
-    into: WriteTarget,
-    id: string,
-    app: HeldApp | null
-): { one: HubTarget | null; id: string } | null {
-    const hubs = into.hubs ?? [];
-    const named = splitHubId(
-        id,
-        hubs.map((one) => one.key),
-        into.primary
-    );
-    if (into.primary !== null && named.root === into.primary) return { one: null, id };
-    if (app !== null) return null;
-    const one = hubs.find((held) => held.key === named.root);
-    return one === undefined ? null : { one, id: named.id };
-}
-
-/**
- * The target for a write that names the record `id`, and the id inside that record's hub. An id
- * with no hub's prefix is the primary's own. Null when the record is of another hub and the write
- * comes from an app, and when the id names no hub: it finds no such record.
- */
-export function routed(into: WriteTarget, id: string, app: HeldApp | null): Routed | null {
-    const named = hubNamed(into, id, app);
-    if (named === null) return null;
-    if (named.one === null) {
-        const own = primaryOf(into);
-        return own === null ? null : { into: own, id };
+export function routeRefusal(into: WriteTarget, ids: readonly string[]): Response | null {
+    const keys = hubKeysOf(into);
+    for (const id of ids) {
+        const { hub, key } = addressOfId(id);
+        if (hub === '') {
+            const error = words(into.config.text, 'server.write_route.no_hub_part', key);
+            return json({ error }, { status: 400 });
+        }
+        if (!keys.includes(hub)) {
+            const error = words(into.config.text, 'server.workspace.no_hub_named', hub);
+            return json({ error }, { status: 404 });
+        }
     }
-    return { into: within(into, named.one), id: named.id, hubKey: named.one.key };
+    return null;
 }
 
 /**
- * A write's target, the collection inside the hub it names and the id inside that collection, and
- * the key of the hub when it is not the first.
+ * A writer's outcome with the id it gives, the key inside the hub of `into`, made the record's
+ * internal id, which the answer carries so the page opens and settles the record of that hub.
  */
-export type RoutedEntry = Routed & { collection: string; hubKey?: string };
+export function withHubId(outcome: WriteOutcome, into: PrimaryTarget): WriteOutcome {
+    return outcome.id === undefined ? outcome : { ...outcome, id: hubId(into.primary, outcome.id) };
+}
+
+/** A write's target and the key inside the hub it names. */
+export type Routed = { into: PrimaryTarget; id: string };
 
 /**
- * The hub an entry write names and its ids inside the hub. The hub is the one the collection is
- * prefixed with (`<hub name>:<collection>`), else the one the entry's id is prefixed with, since a
- * view names the collection by its key and the entry by the id the portfolio gives it. A prefixed
- * collection holding an entry named without the prefix is no entry, so the answer is null, as it is
- * for an app and for an id naming two hubs.
+ * The target of the hub named `root`: the primary's for its own name, another hub's for its name,
+ * and null for a name no hub of the workspace carries and for a hub other than the primary when the
+ * write comes from an app.
  */
-function hubOfEntry(
-    into: WriteTarget,
-    collection: string,
-    ids: string[],
-    app: HeldApp | null
-): { one: HubTarget | null; collection: string; ids: string[] } | null {
-    const keys = (into.hubs ?? []).map((one) => one.key);
-    const named = splitHubId(collection, keys, into.primary);
-    const entries = ids.map((id) => splitHubId(id, keys, into.primary));
-    const root =
-        named.root !== (into.primary ?? '') ? named.root : (entries.at(0)?.root ?? named.root);
-    if (entries.some((entry) => entry.root !== root)) return null;
-    if (into.primary !== null && root === into.primary) return { one: null, collection, ids };
+function hubTarget(into: WriteTarget, root: string, app: HeldApp | null): PrimaryTarget | null {
+    if (root !== '' && root === into.primary) return primaryOf(into);
     if (app !== null) return null;
     const one = (into.hubs ?? []).find((held) => held.key === root);
-    if (one === undefined) return null;
-    return { one, collection: named.id, ids: entries.map((entry) => entry.id) };
+    return one === undefined ? null : within(into, one);
 }
 
 /**
- * The target for a write that names an entry of a collection, or null when the entry is of another
- * hub than the collection and when the write comes from an app and the hub is not the first.
+ * The target for a write that names the record `id`, and the key inside that record's hub. Null
+ * when the id names no hub of the workspace, and when the record is of a hub other than the primary
+ * and the write comes from an app: it finds no such record.
+ */
+export function routed(into: WriteTarget, id: string, app: HeldApp | null): Routed | null {
+    const named = splitHubId(id, hubKeysOf(into));
+    const at = hubTarget(into, named.root, app);
+    return at === null ? null : { into: at, id: named.id };
+}
+
+/** A write's target, the collection's key and the key inside it of the entry it names. */
+export type RoutedEntry = Routed & { collection: string };
+
+/**
+ * The hub an entry write names and the keys of its entries inside that hub. A view names the
+ * collection by its key and each entry by its id in the portfolio, whose hub is the hub of the
+ * write; entries of two hubs name no one file, so the answer is null, as it is for an id that
+ * names no hub.
+ */
+function hubOfEntries(
+    into: WriteTarget,
+    ids: readonly string[],
+    app: HeldApp | null
+): { into: PrimaryTarget; ids: string[] } | null {
+    const keys = hubKeysOf(into);
+    const entries = ids.map((id) => splitHubId(id, keys));
+    const root = entries.at(0)?.root ?? '';
+    if (entries.some((entry) => entry.root !== root)) return null;
+    const at = hubTarget(into, root, app);
+    return at === null ? null : { into: at, ids: entries.map((entry) => entry.id) };
+}
+
+/**
+ * The target for a write that names an entry of the collection `collection` by its id, or null
+ * when the id names no hub and when the write comes from an app and the hub is not the primary.
  */
 export function routedEntry(
     into: WriteTarget,
@@ -131,54 +146,62 @@ export function routedEntry(
     id: string,
     app: HeldApp | null
 ): RoutedEntry | null {
-    const held = hubOfEntry(into, collection, [id], app);
+    const held = hubOfEntries(into, [id], app);
     if (held === null) return null;
-    if (held.one === null) {
-        const own = primaryOf(into);
-        return own === null ? null : { into: own, collection, id };
-    }
-    return {
-        into: within(into, held.one),
-        collection: held.collection,
-        id: held.ids[0],
-        hubKey: held.one.key
-    };
+    return { into: held.into, collection, id: held.ids[0] };
 }
 
 /**
- * The target for a write that names the hub itself by its name: the primary for no name or for its
- * own, another hub for its name, and null for a name no hub of the workspace carries, for an app,
- * which reaches the primary alone, and for no name when the workspace has no primary.
+ * The target for a write that makes a record in the hub it names by its name (a new entry, a paper
+ * saved to Literature): the primary for its own name, another hub for its name, and null for a
+ * name no hub of the workspace carries and, for an app, which reaches the primary alone, for any
+ * other hub.
  */
 export function routedRoot(
     into: WriteTarget,
-    root: string | undefined,
+    root: string,
     app: HeldApp | null
 ): PrimaryTarget | null {
-    if (root === undefined || root === into.primary) return primaryOf(into);
-    const one = (into.hubs ?? []).find((held) => held.key === root);
-    return one === undefined || app !== null ? null : within(into, one);
+    return hubTarget(into, root, app);
 }
 
 /**
  * The target for a write that names no record and needs a hub (a new project, a new entry, a feed
- * entry, a host status): the primary's, else the first hub of the workspace, and null when the
- * workspace lists no hub.
+ * entry, a host status): the primary's, else, for the page, the first hub of the workspace, and
+ * null when the workspace lists no hub, or for an app when it has no primary.
  */
-export function homeOf(into: WriteTarget): PrimaryTarget | null {
+export function homeOf(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
     const own = primaryOf(into);
-    if (own !== null) return own;
+    if (own !== null || app !== null) return own;
     const first = (into.hubs ?? []).at(0);
     return first === undefined ? null : within(into, first);
 }
 
 /**
- * The target for a write to a collection that names no hub: the primary's when it holds the
- * collection, else the first hub's that does, else `homeOf`'s. A hub holds a collection its
- * `collections:` names, and the Literature collection its list leaves to the engine's path when it
- * holds the file there (`literatureFile`, the file Save to Literature writes).
+ * The refusal of a write that needs a hub when `homeOf` gives none: the workspace lists no hub, or
+ * an app writes to a workspace with no primary.
  */
-export function homeNaming(into: WriteTarget, collection: string): PrimaryTarget | null {
+export function noHub(into: WriteTarget, app: HeldApp | null): Response {
+    const error =
+        app === null
+            ? words(into.config.text, 'server.workspace.no_hub')
+            : words(into.config.text, 'server.workspace.no_primary');
+    return json({ error }, { status: 409 });
+}
+
+/**
+ * The target for a write to a collection that names no hub: the primary's when it holds the
+ * collection, else the first hub's that does, else `homeOf`'s; for an app, the primary's alone. A
+ * hub holds a collection its `collections:` names, and the Literature collection its list leaves to
+ * the engine's path when it holds the file there (`literatureFile`, the file Save to Literature
+ * writes).
+ */
+export function homeNaming(
+    into: WriteTarget,
+    collection: string,
+    app: HeldApp | null
+): PrimaryTarget | null {
+    if (app !== null) return primaryOf(into);
     const literature = collection === LITERATURE_KEY;
     const enginePath = literature ? engineLiteraturePath(into.engineConfig()) : undefined;
     const holds = (hub: string, config: WriteTarget['config']): boolean =>
@@ -189,10 +212,10 @@ export function homeNaming(into: WriteTarget, collection: string): PrimaryTarget
     const one = (into.hubs ?? []).find(
         (held) => held.key !== into.primary && holds(held.hub, held.config)
     );
-    return one === undefined ? homeOf(into) : within(into, one);
+    return one === undefined ? homeOf(into, null) : within(into, one);
 }
 
-/** A subtask write's target, and the record it names by the ids inside the hub. */
+/** A subtask write's target, and the record it names by the keys inside the hub. */
 export type RoutedTarget = { into: PrimaryTarget; target: SubtaskTarget };
 
 /** The target for a subtask write on a manifest by its id or on an entry of a collection. */
@@ -210,7 +233,7 @@ export function routedTarget(
     return { into: named.into, target: { id: named.id, collection: named.collection } };
 }
 
-/** A reorder's target, the collection inside the hub it names and the order by the ids inside. */
+/** A reorder's target, the collection's key and the order by the keys inside the hub. */
 export type RoutedOrder = { into: PrimaryTarget; collection: string; order: string[] };
 
 /** The target for a reorder of a collection, every id of the order of the one hub it names. */
@@ -220,13 +243,8 @@ export function routedOrder(
     order: string[],
     app: HeldApp | null
 ): RoutedOrder | null {
-    const held = hubOfEntry(into, collection, order, app);
-    if (held === null) return null;
-    if (held.one === null) {
-        const own = primaryOf(into);
-        return own === null ? null : { into: own, collection, order };
-    }
-    return { into: within(into, held.one), collection: held.collection, order: held.ids };
+    const held = hubOfEntries(into, order, app);
+    return held === null ? null : { into: held.into, collection, order: held.ids };
 }
 
 /**

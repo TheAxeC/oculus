@@ -5,6 +5,7 @@
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../../data/accounts/chat.ts';
+import { keyOf } from '../../../../data/helpers/hub-names.ts';
 import type { HubSettings } from '../../../../data/index.ts';
 import { textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
 import type { Project } from '../../../../data/model/index.ts';
@@ -97,9 +98,8 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const terminalId = newId('claude');
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
-    // A project of a hub other than the primary lies under its own hub's folder, and a project of a
-    // workspace folder in that folder's own folder. The folder is the workspace's, so no hub's
-    // settings are read for it.
+    // A project lies under its own hub's folder, and a project of a workspace folder in that
+    // folder's own folder. The folder is the workspace's, so no hub's settings are read for it.
     const home = portfolio
         ? open.primaryDir
         : (open.hubs.find((one) => one.name === project.root)?.dir ?? open.primaryDir);
@@ -108,7 +108,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
 
     const focus =
         typeof id === 'string' && project !== null
-            ? words(catalog, 'server.chat.chat_focus_note', id, project.title, cwd)
+            ? words(catalog, 'server.chat.chat_focus_note', keyOf(id), project.title, cwd)
             : '';
     const note = words(catalog, 'server.chat.chat_index_note', index);
     const owner = options.ownerFor?.() ?? words(catalog, 'server.chat.chat_owner_fallback');

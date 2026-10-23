@@ -190,6 +190,7 @@
                 snapshot === null
                     ? null
                     : {
+                          primary: primary(),
                           domains: snapshot.entities.domains,
                           resources: snapshot.entities.resources,
                           people: snapshot.entities.people,

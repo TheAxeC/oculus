@@ -15,9 +15,9 @@
 
 <script lang="ts">
     // Layer 3, view. One entry as its own tab: an entry of a collection file, or a lead or a Lit
-    // Watch paper of a feed. The entry it is for is the `collection` and `key` of its instance
-    // state (state/forms/page-entry.ts's entryPageState), whose `id` joins the two so that one
-    // entry is one tab and one key in two collections is two.
+    // Watch paper of a feed. The entry it is for is the `collection`, `hub` and `key` of its
+    // instance state (state/forms/page-entry.ts's entryPageState), the three together making one
+    // entry one tab, and the same key in two collections or two hubs two.
     //
     // An entry of a collection shows its card, opened out, then the editor built from the file's
     // own `schema:` (views/shared/forms/entry/edit/EntryEditor.svelte), then what refers to the
@@ -70,8 +70,9 @@
     import { asText } from '$lib/state/forms/schema';
     import { REFERRED, referrersOf } from '$lib/state/forms/referrers';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
-    import { rootOf } from '$lib/state/shared/page/hubs';
+    import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { stateRecord } from '$lib/state/shared/page/records';
     import { lookup, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
@@ -82,7 +83,7 @@
         entities: { config, portfolio },
         feeds: { feed },
         folders,
-        fs: { listing, primary },
+        fs: { listing },
         layout: { openView, restateInstance },
         pages: { pageOf },
         selectors: { collectionsOfKey, configMap, projects },
@@ -93,9 +94,12 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The collection (or feed) and the key of the entry this instance was opened for. */
+    /**
+     * The collection (or feed) and the internal id of the entry this instance was opened for, the
+     * id read from the hub and the key of the instance's state.
+     */
     const collectionKey = $derived(instanceText(instance.state, 'collection'));
-    const key = $derived(instanceText(instance.state, 'key'));
+    const key = $derived(stateRecord(instance.state));
     /**
      * The entry as the editor sees it, or null while no file holds it and no write of this page
      * added it. The page carries the values the server took over the snapshot's.
@@ -131,7 +135,7 @@
     );
     const schema = $derived(collection?.schema);
     /** The hub the entry is of, null while no collection entry is shown. */
-    const hub = $derived(entry === null ? null : rootOf(entry, primary()));
+    const hub = $derived(entry === null ? null : rootOf(entry));
     const file = $derived(page === null ? null : pageFile(client, page));
     const fault = $derived(page === null ? undefined : pageFault(client, page));
     const faults = $derived(identityFaults(collection?.entries ?? [], schema));
@@ -263,7 +267,10 @@
         {#if collectionKey === '' || key === ''}
             <Empty message={t('entry.none')} glyph={t('entry.none_glyph')} />
         {:else if page === null}
-            <Empty message={t('entry.unknown', collectionKey, key)} glyph={t('entry.none_glyph')} />
+            <Empty
+                message={t('entry.unknown', collectionKey, keyOf(key))}
+                glyph={t('entry.none_glyph')}
+            />
         {:else}
             {#if said !== ''}
                 <Surface>

@@ -14,6 +14,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
+    import { selectChoices } from '$lib/state/forms/schema';
 
     const {
         selectors: { domainChoices, newProjectFolder },
@@ -36,7 +37,7 @@
     let short = $state('');
     let domain = $state('');
     let eli5 = $state(untrack(() => seed?.eli5 ?? ''));
-    const choices = $derived(domainChoices());
+    const choices = $derived(selectChoices(domainChoices()));
     let box: HTMLDivElement | undefined = $state();
 
     function keyed(event: KeyboardEvent): void {

@@ -5,6 +5,7 @@
 // argument, as the colon command takes. What a command changes is this page's alone.
 
 import type { CommandResult } from './requests.svelte.ts';
+import { recordState } from '../../../shared/page/records.ts';
 
 /** What the commands change on the page. */
 export type PageCommandDeps = {
@@ -27,7 +28,7 @@ export type PageStores = {
     ui: { setTheme: (name: string) => void; crt: () => boolean; setCrt: (on: boolean) => void };
     themeNamed: (text: string) => string | null;
     views: () => { id: string }[];
-    openView: (view: string, state?: Record<string, string>) => unknown;
+    openView: (view: string, state?: object) => unknown;
     projectOf: (id: string) => { title: string; short?: string } | null;
 };
 
@@ -44,7 +45,7 @@ export function pageCommandDeps(stores: PageStores): PageCommandDeps {
             const project = stores.projectOf(id);
             return project === null ? null : (project.short ?? project.title);
         },
-        openProject: (id, label) => void stores.openView('project', { id, label })
+        openProject: (id, label) => void stores.openView('project', recordState(id, label))
     };
 }
 

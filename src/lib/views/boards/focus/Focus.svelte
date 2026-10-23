@@ -40,6 +40,8 @@
     import QuickAdd from './QuickAdd.svelte';
     import Tasks from './Tasks.svelte';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { recordState } from '$lib/state/shared/page/records';
+    import { keyOf } from '$lib/state/shared/page/hubs';
     import {
         foldOpen,
         foldToggled,
@@ -151,7 +153,7 @@
     /** Open one project as its own tab, the same tab a click on a board card opens. */
     function openProject(id: Id): void {
         const project = snapshot?.entities.projects[id];
-        openView('project', { id, label: project === undefined ? id : labelOf(project) });
+        openView('project', recordState(id, project === undefined ? keyOf(id) : labelOf(project)));
     }
 
     /** The tab's folded sections, which its instance state keeps. */

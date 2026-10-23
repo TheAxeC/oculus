@@ -4,7 +4,8 @@
 // in a scratch directory.
 
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { boardItemFor } from '../../../../src/lib/state/boards/board/items.ts';
 import { presetFor } from '../../../../src/lib/state/boards/board/presets.ts';
@@ -24,7 +25,7 @@ describe('the related tags of a board item', () => {
             [`${row.folder}/mine/project.yml`]: `title: Mine\ntier: ${row.tier}\ntype: idea\nrelated: [other]\n`,
             'projects/ideas/other/project.yml': 'title: Other\ntier: projects\ntype: idea\n'
         });
-        const { snapshot } = buildPortfolioWithSchemas(hub, {
+        const { snapshot } = buildOneHub(hub, {
             ...CONFIG,
             scan: [{ dir: 'projects/ideas' }, { dir: 'side-projects', optional: true }]
         });

@@ -175,9 +175,6 @@ export type Feeds = {
     linkedin: { lastPost: string | null } | null;
 };
 
-/** One entry of a feed: the id a write names it by and the file it stands in. */
-export type FeedItem = { file: string; id: string };
-
 /** The generated YAML and Markdown feeds delivered together on the feeds channel. */
 export type FeedKind = 'radar' | 'leads' | 'linkedin';
 export type FeedEntry = Record<string, unknown>;

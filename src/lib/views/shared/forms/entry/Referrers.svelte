@@ -12,6 +12,7 @@
     import type { Referrer } from '$lib/state/forms/referrers';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const {
         layout: { openView }
@@ -21,8 +22,8 @@
 
     /** Open a referrer as the tab its kind has; a setting is a name and opens nothing. */
     function open(one: Referrer): void {
-        if (one.kind === 'project') openView('project', { id: one.id, label: one.label });
-        else if (one.kind === 'person') openView('person', { key: one.id, label: one.label });
+        if (one.kind === 'project') openView('project', recordState(one.id, one.label));
+        else if (one.kind === 'person') openView('person', recordState(one.id, one.label));
         else if (one.kind === 'funding') openPage('funding', one);
         else if (one.collection !== undefined) openPage(one.collection, one);
     }

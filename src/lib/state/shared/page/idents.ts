@@ -1,10 +1,10 @@
 // Layer 2, client state. The identity of a feed entry over the whole feed: the id a feed view's
-// cursor holds, the one the palette opens an entry by, the one an entry's page is opened with, and
-// the lead view's own ids. What makes an entry unique is a fact about the feed, and the feed views,
+// cursor holds, the one the palette opens an entry by and the one an entry's page is opened with,
+// which is the entry's internal id the feeds payload gives it (data/snapshot/hubs/feeds.ts), made
+// unique over the feed. What makes an entry unique is a fact about the feed, and the feed views,
 // the palette and the form drafts all ask it, so it sits with the page addresses every layer of
 // state shares.
 
-import { hubId } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
 import { filledTextShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 
@@ -16,26 +16,28 @@ export function nestedStrings(value: unknown): string[] {
     return Object.values(value).flatMap(nestedStrings);
 }
 
-/** The name of the hub a feed entry is of: its `root`, and the empty string for the primary's. */
+/** The name of the hub a feed entry is of: its `root`, and the empty text for an entry of none. */
 export function feedRoot(entry: object): string {
     return readAs(filledTextShape, readAs(mapShape, entry)?.root) ?? '';
 }
 
 /**
- * The id a feed view's cursor holds for an entry: the entry's own name, with the key of its hub and
- * a colon in front of it when the entry is of a hub other than the primary, so two hubs' entries of
- * one name are two cursors. A write names the entry by its own name and its hub in `root`.
+ * The internal id of a feed entry, `<hub>:<key>`, which a write names it by, and the empty text for
+ * an entry the payload gave none, which no write can find.
  */
-export function feedCursorId(entry: object, name: string): string {
-    return hubId(feedRoot(entry), name, null);
+export function feedEntryId(entry: object): string {
+    return readAs(filledTextShape, readAs(mapShape, entry)?.id) ?? '';
 }
 
-/** The identity one entry carries on its own, before the feed is asked whether it is unique. */
+/**
+ * The identity one entry carries on its own, before the feed is asked whether it is unique: its
+ * internal id, else the first text of its own fields, else the feed's kind.
+ */
 function feedIdentity(kind: FeedKind, entry: object): string {
-    const key = kind === 'linkedin' ? 'file' : 'title';
-    const named = readAs(filledTextShape, readAs(mapShape, entry)?.[key]);
-    if (named !== undefined && named !== null) return feedCursorId(entry, named);
-    return nestedStrings(entry)[0] ?? kind;
+    const id = feedEntryId(entry);
+    if (id !== '') return id;
+    const { root: _hub, ...own } = readAs(mapShape, entry) ?? {};
+    return nestedStrings(own)[0] ?? kind;
 }
 
 /** What a caller asks for the identity of one entry of the list it was built over. */

@@ -34,7 +34,7 @@
 
     let { entry, id, cursor, folder, posted = false, onsaid }: Props = $props();
 
-    const hub = $derived(rootOf(entry, client.fs.primary()));
+    const hub = $derived(rootOf(entry));
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
     const path = $derived(linkedinSourcePath(folder, entry.file));
 
@@ -43,7 +43,7 @@
     }
 
     async function promote(): Promise<void> {
-        const answer = await markPosted(entry.file, hub);
+        const answer = await markPosted(entry.id);
         say(answer);
     }
 

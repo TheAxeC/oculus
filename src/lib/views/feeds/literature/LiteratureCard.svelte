@@ -40,7 +40,7 @@
         inRadar: boolean;
         /** The radar's buckets and the portfolio's projects as the form's choices. */
         buckets: { id: string; label: string }[];
-        projects: { id: string; label: string }[];
+        projects: { id: string; label: string; group?: string }[];
         /** Whether the radar file is missing on this hub, so there is nothing to add to. */
         radarMissing: boolean;
         onsaid: (words: string) => void;

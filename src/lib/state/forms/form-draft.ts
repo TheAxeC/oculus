@@ -6,7 +6,10 @@
 // The draft sits under the `draft` key of the instance's record, beside whatever else the view
 // keeps there (the document an entry page shows, the folds a Focus board holds). It names the kind
 // of form and the thing the edits were typed for, so a draft is never read by the form of another
-// project or another entry.
+// project or another entry. The record is written to the state folder's files, so the thing is
+// held there as two fields, the name of its hub (`hub`) and its name inside that hub (`name`: a
+// project's key, an entry page's collection and key); the form names it by the two joined, the
+// internal id the portfolio gives it (`addressOfId`, `hubId`).
 //
 // What an edit is compared against is the thing's value in the snapshot now, through the rule of
 // its kind (a `DraftTarget`), the same rule the form marks a changed field by: whether the tab
@@ -14,6 +17,7 @@
 
 import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
+import { addressOfId, hubId } from '../../data/helpers/hub-names.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import type { InstanceStates } from '../shared/stores/shapes.ts';
 
@@ -36,12 +40,20 @@ export type DraftTarget = {
 /** The key of an instance's record that holds the draft. */
 const DRAFT_KEY = 'draft';
 
-/** A saved draft: a kind and a name that are not empty, and the edits as a map. */
+/**
+ * A saved draft: a kind and a name that are not empty, the hub of the thing, and the edits as a
+ * map; the name it is read as is the hub and the name joined.
+ */
 const draftShape = z
-    .object({ kind: z.string().min(1), name: z.string().min(1), edits: mapShape })
+    .object({
+        kind: z.string().min(1),
+        hub: z.string(),
+        name: z.string().min(1),
+        edits: mapShape
+    })
     .transform((held) => ({
         kind: held.kind,
-        name: held.name,
+        name: hubId(held.hub, held.name),
         edits: { ...held.edits }
     })) satisfies z.ZodType<FormDraft>;
 
@@ -88,7 +100,9 @@ export function createFormDraft(
     ): void {
         const rest = others(instance);
         if (Object.keys(edits).length > 0) {
-            ui.setInstanceState(instance, { ...rest, [DRAFT_KEY]: { ...held, edits } });
+            const { hub, key } = addressOfId(held.name);
+            const stored = { kind: held.kind, hub, name: key, edits };
+            ui.setInstanceState(instance, { ...rest, [DRAFT_KEY]: stored });
         } else if (Object.keys(rest).length > 0) ui.setInstanceState(instance, rest);
         else ui.clearInstanceState(instance);
     }

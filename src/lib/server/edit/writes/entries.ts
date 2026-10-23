@@ -266,10 +266,10 @@ export function sharedRefusal(
 }
 
 /**
- * The fields with the hub's key and colon taken off every value that names a record of the hub (a
- * `from:` of the file's schema), since the portfolio gives those values the key
- * (data/snapshot/hubs/merge.ts) and the file of the hub holds the ids it gave them. A value without
- * the prefix is kept as it is.
+ * The fields with the hub's name and a colon taken off every value that names a record (a `from:`
+ * of the file's schema), since the portfolio names a record by its hub and its key
+ * (data/snapshot/hubs/merge.ts) and the file of the hub holds the key. A value without the prefix,
+ * the key a form sends, is kept as it is.
  */
 function hubOwnValues(
     schema: unknown,
@@ -283,9 +283,9 @@ function hubOwnValues(
 }
 
 /**
- * Set fields of one collection entry, found by the id the reader gave it. `hubKey` is the key of
- * the hub the file belongs to when it is not the primary hub: the values of the fields that name
- * records come with that key in front, and are written without it.
+ * Set fields of one collection entry, found by the key the hub's file gives it. `hubKey` is the
+ * name of the hub the file belongs to: a value of a field that names a record may come with that
+ * name in front, and is written without it.
  */
 export function writeEntry(
     hub: string,
@@ -517,26 +517,13 @@ export function putBackEntry(
     };
 }
 
-/**
- * The key of the hub a new entry's id begins with, followed by a colon, or undefined. The
- * portfolio reads such an id as an entry of that hub (server/edit/writes/hubs.ts), so a write
- * addressed by it would go to the other hub's file and find no entry there.
- */
-function hubPrefix(id: string, hubKeys: readonly string[]): string | undefined {
-    return hubKeys.find((key) => key !== '' && id.startsWith(`${key}:`));
-}
-
-/**
- * Add one entry to a collection, rendered from the file's own schema. `hubKeys` are the keys of
- * the workspace's hubs: an id that begins with one and a colon is refused.
- */
+/** Add one entry to a collection, rendered from the file's own schema. */
 export function createEntry(
     hub: string,
     config: PortfolioConfig,
     collection: string,
     fields: Record<string, unknown>,
-    own?: string,
-    hubKeys: readonly string[] = []
+    own?: string
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
@@ -599,18 +586,6 @@ export function createEntry(
             refused: [
                 ...typed,
                 { field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }
-            ]
-        };
-    }
-
-    const prefixed = hubPrefix(value, hubKeys) ?? hubPrefix(registryValue, hubKeys);
-    if (prefixed !== undefined) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                ...typed,
-                { field: ident, reason: words(config.text, 'server.entries.hub_key', prefixed) }
             ]
         };
     }

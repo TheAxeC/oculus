@@ -8,12 +8,12 @@
 // it: a card asks for its own folder when it is opened, and a board of fifty projects reads
 // nothing.
 //
-// The folder walked is the reader's, never the request's: the id names a manifest hubManifests
-// already found under the scan directories of the hub the id names (`<hub name>:<id>` for a hub
-// other than the primary) or in a folder of the workspace that holds a project, and the folder is
-// joined to that hub (or is the project folder) and checked against it again before anything is
-// read. A request naming anything else is a 404. The answer's `folder` is relative to the root that
-// holds the project: its own hub, or empty for a workspace folder.
+// The folder walked is the reader's, never the request's: the id, `<hub>:<key>`, names a manifest
+// hubManifests already found under the scan directories of the hub the id names or in a folder of
+// the workspace that holds a project, and the folder is joined to that hub (or is the project
+// folder) and checked against it again before anything is read. A request naming anything else is a
+// 404. The answer's `folder` is relative to the root that holds the project: its own hub, or empty
+// for a workspace folder.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -38,7 +38,7 @@ export type FilesTarget = {
     /** The primary hub's name and folder, or null when the workspace has none. */
     primary: { key: string; dir: string } | null;
     config: PortfolioConfig;
-    /** The hubs other than the primary, whose projects are named `<hub name>:<id>`. */
+    /** The hubs other than the primary. */
     hubs?: HubTarget[];
     /** The merged config over config/defaults/*.yml, read for `file_index` and nothing else. */
     settings: Record<string, unknown>;
@@ -210,14 +210,14 @@ function listIn(
 export function listFiles(into: FilesTarget, id: string): Response {
     if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
     const hubs = into.hubs ?? [];
-    const named = splitHubId(
-        id,
-        hubs.map((one) => one.key),
-        into.primary?.key ?? null
-    );
+    const primary = into.primary === null ? [] : [into.primary.key];
+    const named = splitHubId(id, [...primary, ...hubs.map((one) => one.key)]);
     const other = hubs.find((one) => one.key === named.root);
-    const owner =
-        other ?? (into.primary === null ? null : { hub: into.primary.dir, config: into.config });
+    const own =
+        into.primary !== null && named.root === into.primary.key
+            ? { hub: into.primary.dir, config: into.config }
+            : null;
+    const owner = other ?? own;
     if (owner === null)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
     const manifest = hubManifests(owner.hub, owner.config).find((one) => one.id === named.id);

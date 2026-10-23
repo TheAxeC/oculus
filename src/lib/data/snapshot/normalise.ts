@@ -4,11 +4,13 @@
 // order and every relation table is sorted by its pair.
 //
 // Two rules decide what reaches the wire. An entity carries the fields data/model/ declares for it
-// and no others, so the snapshot is the typed model rather than the YAML. An id that names nothing
-// is left out of both the entity that held it and the relation table, and validate has already
-// named it in a finding, so a view never joins against something that is not there.
+// and no others, so the snapshot is the typed model rather than the YAML. An id that no hub of the
+// workspace holds is left out of both the entity that held it and the relation table, and the
+// schema check has already named it in a finding, so a view never joins against something that is
+// not there; an id another hub holds is kept for the merge of the hubs to resolve.
 //
-// The career section is read in normalise-parts/career.ts and handed on from here.
+// The career section is read in normalise-parts/career.ts, the relation tables are built in
+// normalise-parts/links.ts, and both are handed on from here.
 
 import { z } from 'zod';
 import { compact } from './compact.ts';
@@ -16,6 +18,7 @@ import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
 import { docFlags } from './normalise-parts/folder.ts';
 import { retrievalOf } from './normalise-parts/retrieval.ts';
+import { linked } from './normalise-parts/links.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -39,7 +42,6 @@ import type {
     RawManifest,
     RawPortfolio,
     RawRegistryEntry,
-    Relations,
     RepositoryBlock,
     Resource,
     SchemaField,
@@ -160,29 +162,6 @@ export function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
         out[item.id] = item;
     }
     return out;
-}
-
-/** Unique pairs, sorted by the first id then the second. */
-export function pairs(found: [Id, Id][]): [Id, Id][] {
-    const seen = new Set<string>();
-    const out: [Id, Id][] = [];
-    for (const pair of found) {
-        const token = `${pair[0]}\0${pair[1]}`;
-        if (seen.has(token)) continue;
-        seen.add(token);
-        out.push(pair);
-    }
-    return out.sort((a, b) => (a[0] !== b[0] ? (a[0] < b[0] ? -1 : 1) : a[1] < b[1] ? -1 : 1));
-}
-
-/** The second id of every pair whose first is `from`, in the table's own order. */
-function targets(table: [Id, Id][], from: Id): Id[] {
-    return table.filter((pair) => pair[0] === from).map((pair) => pair[1]);
-}
-
-/** The first id of every pair whose second is `to`, in the table's own order. */
-function sources(table: [Id, Id][], to: Id): Id[] {
-    return table.filter((pair) => pair[1] === to).map((pair) => pair[0]);
 }
 
 /** An object with every undefined value dropped, or undefined when nothing was left. */
@@ -565,15 +544,17 @@ function collection(raw: RawCollection): Collection {
 
 /**
  * Every entry of the joint-work collection that names a person, as the pair the relation is built
- * from. An entry with no `person:` field, or one whose value is not a string, is no pair here and
- * is a finding of validate's; it is not repaired.
+ * from, with the file the entry stands in. An entry with no `person:` field, or one whose value is
+ * not a string, is no pair here and is a finding of validate's; it is not repaired.
  */
-function jointWorkRows(collections: Collection[]): { id: Id; person: Id }[] {
+export function jointWorkRows(collections: Collection[]): { id: Id; person: Id; file: string }[] {
     const held = collections.find((one) => one.id === JOINT_WORK);
-    const rows: { id: Id; person: Id }[] = [];
+    const rows: { id: Id; person: Id; file: string }[] = [];
     for (const one of held?.entries ?? []) {
         const key = str(one.fields[PERSON_FIELD]);
-        if (key !== undefined && key.length > 0) rows.push({ id: one.id, person: key });
+        if (key !== undefined && key.length > 0) {
+            rows.push({ id: one.id, person: key, file: one.file });
+        }
     }
     return rows;
 }
@@ -592,108 +573,20 @@ function feeds(raw: Feeds): Feeds {
     };
 }
 
-/** What the four person and organisation tables are built from, beside the projects themselves. */
-type Sides = {
-    people: Person[];
-    schemes: Funding[];
-    /** The entries of the joint-work collection, each with the person key its record names. */
-    jointWork: { id: Id; person: Id }[];
-};
-
-/**
- * The relation tables. A pair is written only when both ends are entities of the snapshot, so a
- * dangling id (which validate has reported) reaches no table and no entity's id list.
- *
- * `fundingPillar` is the one table with no field behind it: pillars.yml carries no funding key,
- * its `funding:` is prose, so a scheme and a pillar are related here when at least one
- * project names them both.
- */
-function relations(
-    projects: Project[],
-    entities: Record<string, Set<Id>>,
-    sides: Sides
-): Relations {
-    const venueTable: [Id, Id][] = [];
-    const fundingTable: [Id, Id][] = [];
-    const datasetTable: [Id, Id][] = [];
-    const pillarTable: [Id, Id][] = [];
-    const domainTable: [Id, Id][] = [];
-    const relatedTable: [Id, Id][] = [];
-    const fundingPillar: [Id, Id][] = [];
-    const projectPerson: [Id, Id][] = [];
-    const jointWorkPerson: [Id, Id][] = [];
-    const personOrganisation: [Id, Id][] = [];
-    const fundingOrganisation: [Id, Id][] = [];
-
-    for (const item of projects) {
-        for (const id of item.collaborators) {
-            if (entities.people.has(id)) projectPerson.push([item.id, id]);
-        }
-        if (item.venueId !== undefined && entities.venues.has(item.venueId)) {
-            venueTable.push([item.id, item.venueId]);
-        }
-        for (const id of item.fundingIds) {
-            if (entities.funding.has(id)) fundingTable.push([item.id, id]);
-        }
-        for (const id of item.datasetIds) {
-            if (entities.datasets.has(id)) datasetTable.push([item.id, id]);
-        }
-        for (const id of item.pillarIds) {
-            if (entities.pillars.has(id)) pillarTable.push([item.id, id]);
-        }
-        for (const id of item.domainIds) {
-            if (entities.domains.has(id)) domainTable.push([item.id, id]);
-        }
-        for (const id of item.relatedIds) {
-            if (entities.projects.has(id)) relatedTable.push([item.id, id]);
-        }
-        for (const fund of item.fundingIds) {
-            if (!entities.funding.has(fund)) continue;
-            for (const line of item.pillarIds) {
-                if (entities.pillars.has(line)) fundingPillar.push([fund, line]);
-            }
-        }
-    }
-
-    for (const entry of sides.jointWork) {
-        if (entities.people.has(entry.person)) jointWorkPerson.push([entry.id, entry.person]);
-    }
-    for (const one of sides.people) {
-        for (const key of one.affiliations) {
-            if (entities.organisations.has(key)) personOrganisation.push([one.id, key]);
-        }
-    }
-    for (const scheme of sides.schemes) {
-        if (scheme.funder !== undefined && entities.organisations.has(scheme.funder)) {
-            fundingOrganisation.push([scheme.id, scheme.funder]);
-        }
-    }
-
-    return {
-        projectVenue: pairs(venueTable),
-        projectFunding: pairs(fundingTable),
-        projectDataset: pairs(datasetTable),
-        projectPillar: pairs(pillarTable),
-        projectDomain: pairs(domainTable),
-        projectRelated: pairs(relatedTable),
-        fundingPillar: pairs(fundingPillar),
-        projectPerson: pairs(projectPerson),
-        jointWorkPerson: pairs(jointWorkPerson),
-        personOrganisation: pairs(personOrganisation),
-        fundingOrganisation: pairs(fundingOrganisation)
-    };
-}
-
 /**
  * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
  * watcher on every rebuild; `findings` is what validate returned, carried as it stands; `merged`
  * is the hub's merged config, whose words the career's host rows take their unset status from.
+ * `others` holds the keys the other hubs of the workspace hold, by source: a reference to one of
+ * them is kept beside the references to the hub's own records, so the merge of the hubs
+ * (hubs/merge.ts) resolves it, and a reference no hub holds is left out.
  */
 export function normalise(
     raw: RawPortfolio,
     findings: Finding[],
     merged: Record<string, unknown>,
-    version = 0
+    version = 0,
+    others: Readonly<Record<string, readonly string[]>> = {}
 ): Snapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
@@ -714,54 +607,25 @@ export function normalise(
     const resources = keptResources(raw.registries.resources.entries).map(resource);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));
 
+    const keys = (source: string, own: { id: Id }[]): Set<Id> =>
+        new Set([...own.map((item) => item.id), ...(others[source] ?? [])]);
     const known: Record<string, Set<Id>> = {
-        projects: new Set(projects.map((item) => item.id)),
-        venues: new Set(venues.map((item) => item.id)),
-        datasets: new Set(datasets.map((item) => item.id)),
-        pillars: new Set(pillars.map((item) => item.id)),
-        domains: new Set(domains.map((item) => item.id)),
-        funding: new Set(schemes.map((item) => item.id)),
-        people: new Set(people.map((item) => item.id)),
-        organisations: new Set(organisations.map((item) => item.id)),
-        resources: new Set(resources.map((item) => item.id))
+        projects: keys('projects', projects),
+        venues: keys('venues', venues),
+        datasets: keys('datasets', datasets),
+        pillars: keys('pillars', pillars),
+        domains: keys('domains', domains),
+        funding: keys('funding', schemes),
+        people: keys('people', people),
+        organisations: keys('organisations', organisations),
+        resources: keys('resources', resources)
     };
 
-    const tables = relations(projects, known, {
-        people,
-        schemes,
-        jointWork: jointWorkRows(collections)
-    });
-
-    for (const item of projects) {
-        item.relatedIds = targets(tables.projectRelated, item.id);
-        item.fundingIds = targets(tables.projectFunding, item.id);
-        item.datasetIds = targets(tables.projectDataset, item.id);
-        item.pillarIds = targets(tables.projectPillar, item.id);
-        item.domainIds = targets(tables.projectDomain, item.id);
-        item.collaborators = targets(tables.projectPerson, item.id);
-        item.resourceIds = [...new Set(item.resourceIds)].filter((id) => known.resources.has(id));
-        if (item.venueId !== undefined && !known.venues.has(item.venueId)) delete item.venueId;
-    }
-    for (const item of datasets) item.projectIds = sources(tables.projectDataset, item.id);
-    for (const item of domains) item.projectIds = sources(tables.projectDomain, item.id);
-    for (const item of pillars) {
-        item.projectIds = sources(tables.projectPillar, item.id);
-        item.fundingIds = sources(tables.fundingPillar, item.id);
-    }
-    for (const item of schemes) {
-        item.projectIds = sources(tables.projectFunding, item.id);
-        item.pillarIds = targets(tables.fundingPillar, item.id);
-        if (item.funder !== undefined && !known.organisations.has(item.funder)) delete item.funder;
-    }
-    for (const item of people) {
-        item.projectIds = sources(tables.projectPerson, item.id);
-        item.jointWorkIds = sources(tables.jointWorkPerson, item.id);
-        item.affiliations = item.affiliations.filter((key) => known.organisations.has(key));
-    }
-    for (const item of organisations) {
-        item.personIds = sources(tables.personOrganisation, item.id);
-        item.fundingIds = sources(tables.fundingOrganisation, item.id);
-    }
+    const tables = linked(
+        { projects, datasets, pillars, domains, schemes, people, organisations },
+        known,
+        jointWorkRows(collections)
+    );
 
     return {
         version,

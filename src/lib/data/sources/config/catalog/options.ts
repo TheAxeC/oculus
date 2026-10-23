@@ -30,6 +30,7 @@
 // both may import.
 
 import { byKey, isMap, str, strings } from '../../../helpers/guards.ts';
+import { keyOf } from '../../../helpers/hub-names.ts';
 import {
     CONTROLS,
     FORMS,
@@ -486,7 +487,21 @@ const FROM_CONFIG: readonly Source[] = [
     'bundle_ids'
 ];
 
-/** The ids of the resources of one kind in an entity map, which the page and the server list. */
+/**
+ * The records of the hub named `hub` in an entity map of the merged portfolio, by the key their own
+ * hub's file gives them, which is how a setting names a record: a setting names a record of the
+ * primary hub. None while the workspace has no primary.
+ */
+export function hubRecords<T>(records: Record<string, T>, hub: string | null): Record<string, T> {
+    const own: Record<string, T> = {};
+    for (const one of Object.values(records)) {
+        if (hub === null || !isMap(one) || one.root !== hub || typeof one.id !== 'string') continue;
+        own[keyOf(one.id)] = one;
+    }
+    return own;
+}
+
+/** The keys of the resources of one kind in an entity map, which the page and the server list. */
 export function resourcesOfKind(resources: Record<string, unknown>, kind: string): string[] {
     return Object.entries(resources).flatMap(([id, one]) =>
         isMap(one) && one.kind === kind ? [id] : []

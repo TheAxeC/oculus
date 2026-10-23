@@ -80,8 +80,8 @@ export type HostWrite = { kind: 'host'; name: string; status: string };
 export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
 /**
- * One new entry of one collection, in the hub `root` names (the primary, else the first, when it
- * is absent), and one new idea folder.
+ * One new entry of one collection, in the hub `root` names (when it is absent, the primary, else
+ * for the page the first hub), and one new idea folder.
  */
 export type NewEntryWrite = {
     kind: 'new-entry';
@@ -98,20 +98,19 @@ export type ReorderWrite = { kind: 'reorder'; collection: string; order: string[
 export type DeleteEntryWrite = { kind: 'delete-entry'; collection: string; id: string };
 
 /**
- * One allowed scalar field of one generated feed entry. The entry is named by its own identity and
- * by the key of the hub whose feed holds it in `root`, and an absent `root` is the primary hub.
+ * One allowed scalar field of one generated feed entry, named by its internal id: its hub and the
+ * field its file names it by (data/snapshot/hubs/feeds.ts).
  */
 export type FeedFieldWrite = {
     kind: 'feed-field';
     feed: string;
     id: string;
-    root?: string;
     field: string;
     value: string | number | boolean | null;
 };
 
-/** One generated feed entry removed by its feed-specific identity, in the hub `root` names. */
-export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string; root?: string };
+/** One generated feed entry removed, named by its internal id. */
+export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
@@ -124,8 +123,8 @@ const LITERATURE_SAVE_SOURCES = ['search', 'lit-watch', 'hand'] as const;
 
 /**
  * One paper saved to the Literature collection of the hub `root` names, else of the primary when
- * its `collections:` names `literature`, else of the first hub that does: the fields it carries,
- * and where it came from. The server makes its key and its `added` date.
+ * its `collections:` names `literature`, else, for the page, of the first hub that does: the fields
+ * it carries, and where it came from. The server makes its key and its `added` date.
  */
 export type LiteratureSaveWrite = {
     kind: 'literature-save';
@@ -178,12 +177,11 @@ export type DeckEditWrite =
     | { kind: 'deck-edit'; act: 'outline'; root: string; file: string };
 
 /**
- * One LinkedIn idea stub and one idea promoted to a numbered post. The post names the hub whose
- * LinkedIn folder holds the idea in `root`, the name of its workspace folder, and an absent `root`
- * is the primary hub.
+ * One LinkedIn idea stub and one idea promoted to a numbered post. The post names the idea by its
+ * internal id: the hub whose LinkedIn folder holds it and its file's name.
  */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
-export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string; root?: string };
+export type LinkedinPostWrite = { kind: 'linkedin-post'; id: string };
 
 /** One audit finding parked, or brought back, by the signature the scan gave it. */
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
@@ -356,7 +354,6 @@ const feedFieldShape = z.object({
     kind: z.literal('feed-field'),
     feed: wordShape,
     id: wordShape,
-    root: z.string().optional(),
     field: wordShape,
     value: feedValueShape
 }) satisfies z.ZodType<FeedFieldWrite>;
@@ -364,8 +361,7 @@ const feedFieldShape = z.object({
 const feedDeleteShape = z.object({
     kind: z.literal('feed-delete'),
     feed: wordShape,
-    id: wordShape,
-    root: z.string().optional()
+    id: wordShape
 }) satisfies z.ZodType<FeedDeleteWrite>;
 
 const leadAddShape = z.object({
@@ -394,8 +390,7 @@ const linkedinIdeaShape = z.object({
 
 const linkedinPostShape = z.object({
     kind: z.literal('linkedin-post'),
-    file: z.string(),
-    root: z.string().optional()
+    id: wordShape
 }) satisfies z.ZodType<LinkedinPostWrite>;
 
 const deckSlidesShape = z

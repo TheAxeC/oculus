@@ -2,9 +2,10 @@
 // each registry (`SHAPES` of sources/registries.ts), the resources `keptResources` keeps, the
 // project folders' ids, and the keyed lists of config/catalogs/vocab.yml as `vocab.<key>`, or as
 // `vocab.<key>.<field>` for the keys of a map whose row carries the field as `true`, a field no
-// row carries as `true` naming no list. A funding entry with no `key` adds nothing. A key that
-// stands twice in one registry file is reported with the file and the key, since a reference to
-// it could mean either entry.
+// row carries as `true` naming no list. A funding entry with no `key` adds nothing. A source of a
+// hub's own files offers the keys the other hubs of the workspace hold beside its own
+// (`joinedLists`), since a reference resolves in any hub. A key that stands twice in one registry
+// file is reported with the file and the key, since a reference to it could mean either entry.
 
 import { basename, join } from 'node:path';
 import { LineCounter, isSeq, parseDocument } from 'yaml';
@@ -91,6 +92,22 @@ export function unreadSources(
         }
     }
     return unread;
+}
+
+/**
+ * The keys each source offers in a hub of a workspace: the hub's own, then the keys the other hubs
+ * hold, each once. A reference resolves in its own hub, then in the others, so a key of any hub of
+ * the workspace is one a value may name.
+ */
+export function joinedLists(
+    own: Record<string, string[]>,
+    others: Readonly<Record<string, readonly string[]>>
+): Record<string, string[]> {
+    const lists: Record<string, string[]> = { ...own };
+    for (const [source, keys] of Object.entries(others)) {
+        lists[source] = [...new Set([...(own[source] ?? []), ...keys])];
+    }
+    return lists;
 }
 
 /** The lists a conversion reads: the hub's own and the vocabulary's, by source name. */

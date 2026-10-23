@@ -18,6 +18,7 @@
 import { z } from 'zod';
 import type { HubVocabs } from '../../../data/model/index.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
+import { splitHubId } from '../../../data/helpers/hub-names.ts';
 import { mapOfShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { configGeneration } from './generation.svelte.ts';
 
@@ -82,17 +83,13 @@ function legendRows(value: unknown): Legend[] {
     });
 }
 
-/** The hub name a domain of the primary hub is filed under, since its records carry no hub name. */
-const PRIMARY = '';
-
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), the `color` of the
  * words of `statuses` and `types`, the chips of `statuses` (its words carrying `chip: true`), and
- * from `hubs` the research
- * `domains` of every hub of the workspace, read from each hub's domains registry, each under its
- * hub's name and the primary's under the empty name; a domain with no colour wears the neutral
- * tone. A key the config does not hold installs as empty, so every lookup answers with its
- * unknown case rather than throwing: a half-read config still renders a page.
+ * from `hubs` the research `domains` of every hub of the workspace, read from each hub's domains
+ * registry, each under its hub's name; a domain with no colour wears the neutral tone. A key the
+ * config does not hold installs as empty, so every lookup answers with its unknown case rather
+ * than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
     palette = stringMap(config.palette, hexShape);
@@ -101,10 +98,9 @@ export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void
     domainColor = {};
     domainText = {};
     for (const [name, vocab] of Object.entries(hubs.lists)) {
-        if (name === PRIMARY || name === '__proto__') continue;
-        const filed = name === hubs.primary ? PRIMARY : name;
-        domainColor[filed] = stringMap(vocab.domains, colorShape);
-        domainText[filed] = stringMap(vocab.domains, labelShape);
+        if (name === '' || name === '__proto__') continue;
+        domainColor[name] = stringMap(vocab.domains, colorShape);
+        domainText[name] = stringMap(vocab.domains, labelShape);
     }
     dataAccess = stringMap(config.data_access, hexShape);
     legend = Object.fromEntries(
@@ -166,39 +162,36 @@ export function typeTone(type: unknown): string {
 }
 
 /**
- * The entry of `maps` a domain names: the domain's key in the `domains` of the hub it is written
- * in. The portfolio gives a domain of a hub other than the primary that hub's name and a colon
- * (data/snapshot/hubs/merge.ts), and a domain with no hub name is the primary's. A hub the maps do
- * not hold, and a key its hub does not list, have no entry.
+ * A domain's key and the entry of `maps` it names: the domain's id is its hub and its key
+ * (data/snapshot/hubs/merge.ts), and the entry is the key's in the `domains` of that hub. A hub the
+ * maps do not hold, and a key its hub does not list, have no entry.
  */
 function domainEntry(
     maps: Record<string, Record<string, string | undefined> | undefined>,
     domain: unknown
-): string | undefined {
-    const written = scalar(domain);
-    const colon = written.indexOf(':');
-    const hub = colon < 1 ? PRIMARY : written.slice(0, colon);
-    const key = (colon < 1 ? written : written.slice(colon + 1)).toLowerCase();
-    const own = byKey(maps, hub);
-    return own === undefined ? undefined : byKey(own, key);
+): { key: string; entry: string | undefined } {
+    const { root, id } = splitHubId(scalar(domain), Object.keys(maps));
+    const own = byKey(maps, root);
+    return { key: id, entry: own === undefined ? undefined : byKey(own, id.toLowerCase()) };
 }
 
 /** The tone of a research domain, through `domains`. */
 export function domainTone(domain: unknown): string {
     configGeneration();
-    const hex = domainEntry(domainColor, domain);
+    const hex = domainEntry(domainColor, domain).entry;
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /**
  * A research domain's words, the `label` of its `domains` entry ("Cardiology | ECG"), which is the
- * `title` of its entry in the hub's domains registry, and the domain's own key for one the registry
+ * `title` of its entry in the hub's domains registry, and the domain's key for one the registry
  * does not list. This is the label a project card carries; a UI theme's name in the theme list is
  * themeLabel() of state/shared/words/appearance.ts, which is another thing.
  */
 export function domainLabel(domain: unknown): string {
     configGeneration();
-    return domainEntry(domainText, domain) ?? scalar(domain);
+    const named = domainEntry(domainText, domain);
+    return named.entry ?? named.key;
 }
 
 /** The glyph name a status chip carries, and nothing for a chip the legend does not list. */

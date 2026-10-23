@@ -271,7 +271,7 @@ function depositFor(
     };
 }
 
-/** Every project id the hubs hold; a hub other than the primary prefixes its own with its name. */
+/** Every project id the hubs hold, each `<hub>:<key>`. */
 export function projectIds(options: DepositOptions = {}): string[] {
     const { into } = settings(options);
     const held = [
@@ -281,7 +281,7 @@ export function projectIds(options: DepositOptions = {}): string[] {
         ...(into.hubs ?? [])
     ];
     return held.flatMap(({ key, hub, config }) =>
-        hubManifests(hub, config).map((one) => hubId(key, one.id, into.primary))
+        hubManifests(hub, config).map((one) => hubId(key, one.id))
     );
 }
 

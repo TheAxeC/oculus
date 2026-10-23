@@ -4,7 +4,13 @@
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { anyWord } from '../../../data/shapes/vocab-keys.ts';
-import { inHubOf, joinedEntries } from '../../../data/helpers/hub-names.ts';
+import {
+    holdersOf,
+    joinedEntries,
+    keyOf,
+    resolvedId,
+    rootOf
+} from '../../../data/helpers/hub-names.ts';
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
 import {
@@ -88,7 +94,7 @@ export function stats(
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
         if (id === undefined) continue;
-        const name = byKey(venues, id)?.name ?? id;
+        const name = byKey(venues, id)?.name ?? keyOf(id);
         const held = counts.get(name);
         counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
@@ -148,18 +154,22 @@ const ACTIVITY = ['events', 'education', 'applications'];
 
 /**
  * The events, education and applications entries whose `related:` names one project, which is where
- * the work was disseminated. An events entry the reader only attended is not one: its `role` says
- * `attend`, and attending somebody else's conference is not this project appearing anywhere.
+ * the work was disseminated: a key of `related:` names the project its entry's hub resolves it to,
+ * its own hub's first, then the one other hub's that holds it. An events entry the reader only
+ * attended is not one: its `role` says `attend`, and attending somebody else's conference is not
+ * this project appearing anywhere.
  */
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
     const found: Dissemination[] = [];
+    const held = holdersOf(Object.values(snapshot.entities.projects));
+    const names = (entry: { root?: string }, key: string): boolean =>
+        resolvedId(held, rootOf(entry), key) === id;
     for (const collection of ACTIVITY) {
         const entries = joinedEntries(snapshot.entities.collections, collection);
         for (const entry of entries) {
             const role = str(entry.fields.role);
             if (collection === 'events' && role === 'attend') continue;
-            if (!strings(entry.fields.related).some((one) => inHubOf(entry, one, null) === id))
-                continue;
+            if (!strings(entry.fields.related).some((one) => names(entry, one))) continue;
             found.push({ collection, id: entry.id, title: entry.title });
         }
     }

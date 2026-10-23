@@ -8,14 +8,13 @@
 //
 // A request names one of four things, and one that names several is answered for the first of
 // `manual`, `engine`, `path` and `project`, in that order. `project` with `name` is one of that
-// project's own documents, its id `<hub name>:<id>` for a project of a hub other than the primary;
-// the documents of a project read from a repository (a project folder holding its own manifest) are
-// read from the repository; `path` is a path relative to a hub, which is what the `docs:` list of
-// config/defaults/layout.yml lists in the view catalogue, and `hub` beside it names the hub it is
-// relative to (the primary when it is missing, and nothing with no primary); `engine` is a Markdown
-// file of oculus's own folder, named by a path relative to that folder, wherever the folder sits;
-// `manual` is the engine's own docs/HELP.md and takes no path. Everything else is a 404 naming what
-// was wrong.
+// project's own documents, the project named by its id `<hub>:<key>`; the documents of a project
+// read from a repository (a project folder holding its own manifest) are read from the repository;
+// `path` is a path relative to a hub, which is what the `docs:` list of config/defaults/layout.yml
+// lists in the view catalogue, and `hub` beside it names the hub it is relative to (the primary
+// when it is missing, and nothing with no primary); `engine` is a Markdown file of oculus's own
+// folder, named by a path relative to that folder, wherever the folder sits; `manual` is the
+// engine's own docs/HELP.md and takes no path. Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -96,7 +95,7 @@ export type DocTarget = {
     /** The primary's settings, else the engine's defaults. */
     config: PortfolioConfig;
     project?: (id: string) => Project | null;
-    /** The hubs other than the primary, whose projects are named `<hub name>:<id>`. */
+    /** The hubs other than the primary. */
     hubs?: HubTarget[];
 };
 
@@ -115,24 +114,19 @@ type Scope = {
  * workspace.
  */
 function within(into: DocTarget, root: string): Scope | null {
+    const project = (id: string): Project | null => into.project?.(hubId(root, id)) ?? null;
     if (into.primary !== null && root === into.primary.key) {
         return {
             key: root,
             hub: into.primary.dir,
             engine: into.engine,
             config: into.config,
-            project: into.project
+            project
         };
     }
     const one = (into.hubs ?? []).find((held) => held.key === root);
     if (one === undefined) return null;
-    return {
-        key: root,
-        hub: one.hub,
-        engine: into.engine,
-        config: one.config,
-        project: (id) => into.project?.(hubId(root, id, into.primary?.key ?? null)) ?? null
-    };
+    return { key: root, hub: one.hub, engine: into.engine, config: one.config, project };
 }
 
 /** The hubs of the workspace as a name and a folder each, the primary first. */
@@ -567,8 +561,7 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
     }
     const named = splitHubId(
         id,
-        (into.hubs ?? []).map((one) => one.key),
-        into.primary?.key ?? null
+        hubsOf(into).map((one) => one.key)
     );
     const owner = within(into, named.root);
     const repository = owner?.project?.(named.id)?.workspaceFolder;

@@ -1654,15 +1654,15 @@
 <path fill="none" stroke="currentColor" d="M291.89,-31C362.93,-31 433.97,-31 505.02,-31 505.02,-89.67 505.02,-148.33 505.02,-207 535.59,-207 566.17,-207 596.74,-207"/>
 <polygon fill="currentColor" stroke="currentColor" points="596.62,-209.1 602.62,-207 596.62,-204.9 596.62,-209.1"/>
 </g>
-<!-- ? src/lib/state/system/apps/apps.svelte.ts:597 -->
+<!-- ? src/lib/state/system/apps/apps.svelte.ts:598 -->
 <g id="node58" class="node">
-<title>? src/lib/state/system/apps/apps.svelte.ts:597</title>
+<title>? src/lib/state/system/apps/apps.svelte.ts:598</title>
 <polygon fill="none" stroke="currentColor" points="521.58,-80 521.58,-102 844.96,-102 844.96,-80 521.58,-80"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="526.58" y="-87" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/apps/apps.svelte.ts:597 entities.message(channel)</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="526.58" y="-87" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/apps/apps.svelte.ts:598 entities.message(channel)</text>
 </g>
-<!-- ? src/lib/state/system/apps/apps.svelte.ts:597&#45;&gt;state/system/apps/apps -->
+<!-- ? src/lib/state/system/apps/apps.svelte.ts:598&#45;&gt;state/system/apps/apps -->
 <g id="edge5" class="edge">
-<title>? src/lib/state/system/apps/apps.svelte.ts:597&#45;&gt;state/system/apps/apps</title>
+<title>? src/lib/state/system/apps/apps.svelte.ts:598&#45;&gt;state/system/apps/apps</title>
 <path fill="none" stroke="currentColor" d="M844.96,-91C1098.48,-91 1352,-91 1605.52,-91 1605.52,-139.67 1605.52,-188.33 1605.52,-237 1623.2,-237 1640.87,-237 1658.55,-237"/>
 <polygon fill="currentColor" stroke="currentColor" points="1658.19,-239.1 1664.19,-237 1658.19,-234.9 1658.19,-239.1"/>
 </g>

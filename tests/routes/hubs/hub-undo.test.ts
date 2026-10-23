@@ -8,13 +8,14 @@
 // @module-tag slow: its case builds two hubs and times out under the load of a full npm test, so
 // npm test leaves it out.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
-import { it, test } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import {
     GOOD,
+    MANIFEST,
     TOKEN,
     changesOf,
     manifestOf,
@@ -52,5 +53,41 @@ describe('an undo after the primary hub changed', () => {
 
         expect(manifestOf(research)).toBe(before);
         expect(readFileSync(labFile, 'utf8')).toBe(written);
+    });
+});
+
+describe('a write and its undo in each of two hubs holding one key', () => {
+    it("changes only the manifest of the record's own hub, and the undo puts it back (C7)", async () => {
+        const into = target();
+        const dir = scratchDir('oculus-lab-');
+        mkdirSync(join(dir, 'projects', 'manuscripts', 'alpha'), { recursive: true });
+        const labFile = join(dir, 'projects', 'manuscripts', 'alpha', 'project.yml');
+        writeFileSync(labFile, MANIFEST);
+        const both: PrimaryTarget = {
+            ...into,
+            hubs: [{ key: 'lab', hub: dir, config: into.config }]
+        };
+        const write = (id: string) =>
+            handleWrite(
+                request({ kind: 'manifest', id, fields: { 'status.line': `line of ${id}` } }),
+                TOKEN,
+                both
+            );
+        const primaryBefore = manifestOf(both);
+        const labBefore = readFileSync(labFile, 'utf8');
+        for (const [id, own, file, before, other, otherBefore] of [
+            ['hub:alpha', 'hub', '', primaryBefore, labFile, labBefore],
+            ['lab:alpha', 'lab', labFile, labBefore, '', primaryBefore]
+        ]) {
+            const read = (path: string): string =>
+                path === '' ? manifestOf(both) : readFileSync(path, 'utf8');
+            expect((await write(id)).status, own).toBe(200);
+            expect(read(file)).toBe(before.replace('the line', `line of ${id}`));
+            expect(read(other)).toBe(otherBefore);
+            const [change] = changesOf(both);
+            expect((await undone(both, change)).status, own).toBe(200);
+            expect(read(file)).toBe(before);
+            expect(read(other)).toBe(otherBefore);
+        }
     });
 });

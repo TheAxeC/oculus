@@ -2,8 +2,8 @@
 // places in the hub's files that name a key and the places that define one, found by the schemas
 // the files are checked by and by nothing else. A hub planted in a scratch directory, with an
 // engine folder holding `defaults/behavior.yml` and `catalogs/vocab.yml`, is built through
-// buildPortfolioWithSchemas, and the index is asked what stands at a position: the key, the
-// definitions it names and every place that names the same ones.
+// buildOneHub, and the index is asked what stands at a position: the key, the definitions it names
+// and every place that names the same ones.
 //
 // One table, one row per kind of reference and of definition. A row names a file and a position
 // (a line and a character, counted from zero, of the first letter of the key inside any quotes) and

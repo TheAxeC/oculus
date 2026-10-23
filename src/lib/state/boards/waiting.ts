@@ -4,23 +4,24 @@
 
 import type { Id, Project } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { keyOf } from '../../data/helpers/hub-names.ts';
 
 /**
- * A key of the people registry is drawn as that person's name, another project's id as that
- * project's short name, else its title, and a value that resolves against neither as written, which
+ * A person's id is drawn as that person's name, another project's id as that project's short name,
+ * else its title, else its key, and a value that resolves against neither as its key, which
  * validate reports as a finding. The names are handed in rather than read from the snapshot here,
  * since state/boards/person.ts is the one rule that builds them.
  */
 export function waitingLabel(
-    key: Id,
+    id: Id,
     people: Record<Id, string>,
     projects: Record<Id, Project>
 ): string {
-    const person = byKey(people, key);
+    const person = byKey(people, id);
     if (person !== undefined) return person;
-    const project = byKey(projects, key);
-    if (project === undefined) return key;
+    const project = byKey(projects, id);
+    if (project === undefined) return keyOf(id);
     const short = project.short ?? '';
     const label = short === '' ? project.title : short;
-    return label === '' ? key : label;
+    return label === '' ? keyOf(id) : label;
 }

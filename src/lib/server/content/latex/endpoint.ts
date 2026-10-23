@@ -22,7 +22,7 @@ import { statSync } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import type { BuildOutcome, Project } from '../../../data/model/index.ts';
-import { rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
+import { keyOf, rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
 import {
     MANUSCRIPT,
     isLatexFile,
@@ -60,8 +60,6 @@ import { readCount } from './tools.ts';
  * What a LaTeX read needs: the hub, the portfolio an id is checked against, and the served roots.
  */
 export type LatexTarget = {
-    /** The primary hub's name, or null when the workspace has none. */
-    primary: string | null;
     project: (id: string) => Pick<Project, 'folder' | 'root' | 'workspaceFolder'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
@@ -201,7 +199,7 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     const project = into.project(id);
     if (project === null) return refuse(404, 'no-project');
     // The hub a project lies in is the served root of its own name.
-    const key = hubOf(project, into.primary);
+    const key = hubOf(project);
     const hub = into.roots().find((one) => one.key === key)?.dir;
     if (hub === undefined) return refuse(404, 'no-project');
     // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
@@ -217,7 +215,7 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     const under = project.workspaceFolder === undefined ? project.folder : '';
     return {
         dir: join(folder, MANUSCRIPT),
-        label: id,
+        label: keyOf(id),
         bound: realPath(home.dir) ?? home.dir,
         named: realPath(folder) ?? folder,
         prefixes: { pdf: MANUSCRIPT, files: '' },

@@ -24,9 +24,6 @@ import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import {
-    buildFolderProjects,
-    buildPortfolioWithSchemas,
-    joinHubs,
     hubVocabOf,
     hubVocabs,
     readOtherHub,
@@ -34,8 +31,8 @@ import {
     type HubSettings
 } from '../../../data/index.ts';
 import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
-import type { HubSnapshot } from '../../../data/snapshot/hubs/merge.ts';
-import { withOwnSchemas } from './own-schemas.ts';
+import { holdersOf, rootOf } from '../../../data/helpers/hub-names.ts';
+import { buildHubs, withOwnSchemas } from './build.ts';
 import { createChecker } from '../../../data/snapshot/schema/check.ts';
 import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
 import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
@@ -736,25 +733,24 @@ export function watchPortfolio(
             }
             open(engineConfig, true);
             const version = hub.nextVersion('portfolio');
-            const base =
-                primaryDir === null
-                    ? buildFolderProjects(portfolio, version, held)
-                    : buildPortfolioWithSchemas(
-                          primaryDir,
-                          portfolio,
-                          version,
-                          roots,
-                          checker,
-                          held,
-                          workspace.primary ?? undefined,
-                          settingsFileOf(workspace)
-                      );
-            const built = joinHubs(
-                base,
-                { hub: primaryDir, name: workspace.primary, config: portfolio },
-                others,
+            const built = buildHubs(
+                {
+                    primary:
+                        primaryDir === null || workspace.primary === null
+                            ? null
+                            : {
+                                  key: workspace.primary,
+                                  dir: primaryDir,
+                                  portfolio,
+                                  workspace: settingsFileOf(workspace)
+                              },
+                    others,
+                    config: portfolio,
+                    order: workspace.folders.map((one) => one.name)
+                },
                 version,
-                checker
+                checker,
+                held
             );
             const snapshot = built.snapshot;
             placeClones(snapshot, options.repositories?.() ?? [], textCatalog(config));
@@ -763,29 +759,40 @@ export function watchPortfolio(
             if (isClosed()) return;
             // The audit reads the disk, so it runs here, once per rebuild, and never per request.
             // It is published inside its own guard: a scan that throws leaves the previous audit
-            // standing and must not take the portfolio down with it.
+            // standing and must not take the portfolio down with it. Each hub is scanned over its
+            // own records of the merged snapshot, whose references are resolved across the hubs.
             try {
+                const { entities } = snapshot;
+                const domains = Object.values(entities.domains);
+                const holders = holdersOf(Object.values(entities.projects));
                 const scan = (
-                    part: HubSnapshot,
+                    key: string,
                     dir: string,
-                    settings: Record<string, unknown>,
-                    root?: string
+                    settings: Record<string, unknown>
                 ): AuditFinding[] =>
                     auditFindings({
                         hub: dir,
-                        ...(root === undefined ? {} : { root }),
-                        projects: Object.values(part.snapshot.entities.projects),
-                        collections: Object.values(part.snapshot.entities.collections),
-                        rules: auditRules(settings, Object.values(part.snapshot.entities.domains)),
+                        root: key,
+                        primary: key === workspace.primary,
+                        projects: Object.values(entities.projects).filter(
+                            (one) => rootOf(one) === key
+                        ),
+                        collections: Object.values(entities.collections).filter(
+                            (one) => rootOf(one) === key
+                        ),
+                        held: holders,
+                        rules: auditRules(settings, domains),
                         catalog: textCatalog(settings)
                     });
                 const audit: AuditPayload = {
-                    findings: built.parts.flatMap((part) => {
-                        const other = others.find((one) => one.key === part.key);
-                        if (other !== undefined) {
-                            return scan(part, other.dir, other.portfolio.merged, part.key);
+                    findings: workspace.hubs.flatMap((one) => {
+                        if (one.name === workspace.primary && primaryDir !== null) {
+                            return scan(one.name, primaryDir, config);
                         }
-                        return primaryDir === null ? [] : scan(part, primaryDir, config);
+                        const other = others.find((read) => read.key === one.name);
+                        return other === undefined
+                            ? []
+                            : scan(other.key, other.dir, other.portfolio.merged);
                     }),
                     muted: mutedSignatures(config)
                 };
@@ -795,14 +802,25 @@ export function watchPortfolio(
             }
             if (isClosed()) return;
             if (withFeeds) {
+                const first = buildFeeds(primaryDir, portfolio);
                 hub.publish(
                     'feeds',
                     mergedFeeds(
-                        buildFeeds(primaryDir, portfolio),
-                        others.map((one) => ({
-                            key: one.key,
-                            feeds: buildFeeds(one.dir, one.portfolio)
-                        }))
+                        first,
+                        workspace.hubs.flatMap((one) => {
+                            if (one.name === workspace.primary) {
+                                return primaryDir === null ? [] : [{ key: one.name, feeds: first }];
+                            }
+                            const other = others.find((read) => read.key === one.name);
+                            return other === undefined
+                                ? []
+                                : [
+                                      {
+                                          key: other.key,
+                                          feeds: buildFeeds(other.dir, other.portfolio)
+                                      }
+                                  ];
+                        })
                     )
                 );
             }

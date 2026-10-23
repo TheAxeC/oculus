@@ -63,7 +63,12 @@ function settled(
 
 /** What the target holds that the lists of a choice, a multi or a suggestion are built from. */
 function sourcesOf(into: WriteTarget): SourceInputs {
-    return { hub: into.hub, projects: into.projects, entities: into.entities };
+    return {
+        hub: into.hub,
+        primary: into.primary,
+        projects: into.projects,
+        entities: into.entities
+    };
 }
 
 /** The answer to a body that is a write of a configuration file, or null for any other body. */

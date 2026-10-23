@@ -57,6 +57,7 @@
         type PointNode
     } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
+    import { storedState } from '$lib/state/workbench/layout/instance';
 
     const {
         entities: { portfolio },
@@ -75,7 +76,7 @@
 
     /** Keep the view's own toggles with the instance, so a tab reopened is the tab as it was. */
     function write(next: Partial<MapState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }, ['lines']));
     }
     const snapshot = $derived(portfolio());
     const statuses = $derived(archiveStatuses(snapshot, configMap()));

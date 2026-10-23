@@ -20,6 +20,7 @@ export const POST: RequestHandler = ({ request, locals }) =>
             hpcRouteHost({
                 hpcHost: locals.server.local.hpcHost,
                 hub: locals.server.hub,
+                primary: locals.server.workspace.open().primary,
                 config: () => locals.config().config
             }),
         token: locals.server.token,
@@ -27,7 +28,6 @@ export const POST: RequestHandler = ({ request, locals }) =>
         log: (host, id) => log(host, id, locals.server.hpcLogPaths),
         roots: () => locals.server.workspace.open().roots,
         projects: () => projects(locals.server.hub),
-        primary: locals.server.workspace.open().primary,
         catalog: () => textCatalog(locals.config().config),
         kept: keptFiles,
         copy,

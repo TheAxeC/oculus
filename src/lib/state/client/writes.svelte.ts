@@ -24,6 +24,7 @@
 
 import { tick } from 'svelte';
 import { fields } from '../../data/helpers/guards.ts';
+import { keyOf } from '../../data/helpers/hub-names.ts';
 import { readJson } from '../../data/shapes/shapes.ts';
 import { answerShape, refusalsShape, writeTimeout } from './shapes/write-answer.ts';
 import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps/apps.ts';
@@ -398,8 +399,10 @@ export function createWrites(
     }
 
     /**
-     * Add one entry to a collection of the hub `root` names, else the primary (else the first). The
-     * answer's `id` is the new entry's id in the portfolio, which its page is opened with.
+     * Add one entry to a collection of the hub `root` names, else of the hub the server picks (the
+     * primary, else the first). The answer's `id` is the new entry's id in the portfolio, the hub
+     * the server wrote and the key it gave the entry, which its page is opened with and the entry
+     * is shown by until the snapshot holds it.
      */
     async function newEntry(
         collection: string,
@@ -407,33 +410,29 @@ export function createWrites(
         root?: string
     ): Promise<WriteAnswer> {
         const seq = settle.begin();
-        const own = root === undefined || root === look.primary();
         const answer = await send(
-            own
+            root === undefined
                 ? { kind: 'new-entry', collection, fields }
                 : { kind: 'new-entry', collection, fields, root }
         );
-        if (!answer.ok || answer.id === undefined) return answer;
-        const id = own ? answer.id : `${root}:${answer.id}`;
-        settle.added(collection, id, fields, seq);
-        return { ...answer, id };
+        if (answer.ok && answer.id !== undefined) settle.added(collection, answer.id, fields, seq);
+        return answer;
     }
 
-    /** Remove one entry from a collection, in the hub the id names (the primary's when bare). */
+    /** Remove one entry from a collection, in the hub the entry's id names. */
     async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
         return send({ kind: 'delete-entry', collection, id });
     }
 
-    /** The title a feed entry is named by, the empty text when it has none. */
-    function titleOf(fields: Record<string, unknown>): string {
-        return typeof fields.title === 'string' ? fields.title : '';
-    }
-
-    /** Add one position lead to the leads feed of the primary hub, else the first. */
+    /**
+     * Add one position lead to the leads feed of the primary hub, else the first. The answer's `id`
+     * is the new lead's internal id, the hub the server wrote and its title, which the lead is
+     * shown by until the feed holds it.
+     */
     async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const seq = settle.begin();
         const answer = await send({ kind: 'lead-add', fields });
-        if (answer.ok) settle.added('leads', titleOf(fields), fields, seq);
+        if (answer.ok && answer.id !== undefined) settle.added('leads', answer.id, fields, seq);
         return answer;
     }
 
@@ -447,49 +446,41 @@ export function createWrites(
     }
 
     /**
-     * Set or clear one field allowed by a generated feed, in the feed of the hub `root` names; the
-     * primary hub's feed when it is absent.
+     * Set or clear one field allowed by a generated feed, on the entry its internal id `id` names
+     * (`feedEntryId` of state/shared/page/idents.ts), in the feed of that id's hub.
      */
     async function writeFeedField(
         feed: string,
         id: string,
         field: string,
-        value: string | number | boolean | null,
-        root = ''
+        value: string | number | boolean | null
     ): Promise<WriteAnswer> {
         const seq = settle.begin();
-        const answer = await send(
-            root === ''
-                ? { kind: 'feed-field', feed, id, field, value }
-                : { kind: 'feed-field', feed, id, root, field, value }
-        );
-        if (isPageFeed(feed))
-            settle.feed(feed, id, root, takenFrom({ [field]: value }, answer), seq);
+        const answer = await send({ kind: 'feed-field', feed, id, field, value });
+        if (isPageFeed(feed)) settle.feed(feed, id, takenFrom({ [field]: value }, answer), seq);
         return answer;
     }
 
-    /** Delete one entry from a generated feed that permits deletion, in the hub `root` names. */
-    async function deleteFeedEntry(feed: string, id: string, root = ''): Promise<WriteAnswer> {
-        return send(
-            root === ''
-                ? { kind: 'feed-delete', feed, id }
-                : { kind: 'feed-delete', feed, id, root }
-        );
+    /** Delete one entry, named by its internal id, from a generated feed that permits deletion. */
+    async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
+        return send({ kind: 'feed-delete', feed, id });
     }
 
-    /** Add one paper to the Lit Watch radar. */
+    /**
+     * Add one paper to the Lit Watch radar of the primary hub, else the first. The answer's `id` is
+     * the new paper's internal id, which it is shown by until the feed holds it.
+     */
     async function addRadarEntry(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const seq = settle.begin();
         const answer = await send({ kind: 'radar-add', fields });
-        if (answer.ok) settle.added('radar', titleOf(fields), fields, seq);
+        if (answer.ok && answer.id !== undefined) settle.added('radar', answer.id, fields, seq);
         return answer;
     }
 
     /**
      * Save one paper to the Literature collection of the hub `root` names, else of the primary when
      * it names the collection, else of the first hub that does. The answer's `id` is the paper's
-     * id in the portfolio: the key it was given, under the hub's name for a hub other than the
-     * primary.
+     * id in the portfolio: the hub the server wrote and the key it gave the paper.
      */
     async function saveLiterature(
         source: 'search' | 'lit-watch' | 'hand',
@@ -497,19 +488,21 @@ export function createWrites(
         root?: string
     ): Promise<WriteAnswer> {
         const seq = settle.begin();
-        const own = root === undefined || root === look.primary();
         const answer = await send(
-            own
+            root === undefined
                 ? { kind: 'literature-save', source, paper }
                 : { kind: 'literature-save', source, paper, root }
         );
-        if (!answer.ok || answer.id === undefined) return answer;
-        const id = own ? answer.id : `${root}:${answer.id}`;
-        settle.added('literature', id, { ...paper, key: answer.id }, seq);
-        return { ...answer, id };
+        if (answer.ok && answer.id !== undefined) {
+            settle.added('literature', answer.id, { ...paper, key: keyOf(answer.id) }, seq);
+        }
+        return answer;
     }
 
-    /** Add one LinkedIn idea stub through the configured folder. */
+    /**
+     * Add one LinkedIn idea stub through the configured folder of the primary hub, else the first.
+     * The answer's `id` is the idea's internal id: the hub the server wrote and the file's name.
+     */
     async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
         return send({
             kind: 'linkedin-idea',
@@ -519,13 +512,11 @@ export function createWrites(
     }
 
     /**
-     * Rename one LinkedIn idea and its same-basename sidecars as the next numbered post, in the
-     * folder of the hub the idea is of.
+     * Rename one LinkedIn idea, named by its internal id, and its same-basename sidecars as the
+     * next numbered post, in the folder of the hub the idea is of.
      */
-    async function markPosted(file: string, root = ''): Promise<WriteAnswer> {
-        return send(
-            root === '' ? { kind: 'linkedin-post', file } : { kind: 'linkedin-post', file, root }
-        );
+    async function markPosted(id: string): Promise<WriteAnswer> {
+        return send({ kind: 'linkedin-post', id });
     }
 
     /**

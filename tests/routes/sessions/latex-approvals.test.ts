@@ -86,7 +86,7 @@ describe('POST /api/terminal, the approvals of a latex step', () => {
 
     /** The body of a latex action over the synthetic project's main file. */
     function latexBody(step: string): Record<string, unknown> {
-        return { action: 'latex', id: 'alpha', main: 'main.tex', step, cols: 88, rows: 25 };
+        return { action: 'latex', id: 'hub:alpha', main: 'main.tex', step, cols: 88, rows: 25 };
     }
 
     // The latexmkrc files and weave tools a build or clean waits on: the server answers what is to
@@ -174,7 +174,7 @@ describe('POST /api/terminal, the approvals of a latex step', () => {
         const response = await handleTerminal(
             request({
                 action: 'approve-latex',
-                id: 'alpha',
+                id: 'hub:alpha',
                 main: 'main.tex',
                 step,
                 texts,

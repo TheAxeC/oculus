@@ -52,10 +52,10 @@
         type LinkedinEntry,
         type LinkedinState
     } from '$lib/state/feeds/linkedin';
-    import { rootOf } from '$lib/state/shared/page/hubs';
+    import { addressOfId, rootOf } from '$lib/state/shared/page/hubs';
     import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/shared/page/idents';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -84,16 +84,15 @@
     const picked = $derived(pickIdea(split.ideas, today));
     let said = $state('');
 
-    /** The folder of the hub a post is of: the feed's own for the primary hub, else the hub's. */
+    /** The folder of the hub a post is of: the folder of that hub's feed. */
     function folderOf(entry: LinkedinEntry): string {
-        if (entry.root === undefined) return data?.file ?? '';
-        const root = rootOf(entry, client.fs.primary());
+        const root = rootOf(entry);
         const held = data?.hubFiles ?? {};
         return Object.hasOwn(held, root) ? held[root] : '';
     }
 
     function write(next: Partial<LinkedinState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
     /** The question Add asks, held while the prompt is open. */
@@ -119,7 +118,10 @@
         };
     }
 
-    /** Write the idea file, then open it at its body (the line the server's stub starts it on). */
+    /**
+     * Write the idea file, then open it at its body (the line the server's stub starts it on), in
+     * the folder of the hub the answer's id names, which is the hub the server wrote.
+     */
     async function add(title: string, category: string): Promise<void> {
         const answer = await addLinkedinIdea({ title, category });
         if (!answer.ok || answer.refused.length > 0) {
@@ -127,11 +129,13 @@
             return;
         }
         said = '';
-        const root = client.fs.primary();
-        if (data === null || answer.id === undefined || root === null) return;
+        if (answer.id === undefined) return;
+        const { hub, key } = addressOfId(answer.id);
+        const folders = data?.hubFiles ?? {};
+        if (hub === '' || !Object.hasOwn(folders, hub)) return;
         openSourceFile(client, {
-            root,
-            path: linkedinSourcePath(data.file, answer.id),
+            root: hub,
+            path: linkedinSourcePath(folders[hub], key),
             line: IDEA_BODY_LINE
         });
     }

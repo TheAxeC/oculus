@@ -60,7 +60,7 @@
     import { entryPageState } from '$lib/state/forms/page-entry';
     import { LEADS_FEED } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -117,7 +117,7 @@
     let said = $state('');
 
     function write(next: Partial<LeadsState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
     /** The Add box while it is open: it asks the new lead's title and opens the lead's page. */

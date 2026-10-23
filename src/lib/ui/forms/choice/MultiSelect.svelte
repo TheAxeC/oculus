@@ -8,9 +8,11 @@
     // not hold.
     //
     // A choice with a `glyph` draws it before its words, on its button and on its chip, so a field
-    // whose choices have a kind (the resources of a project) shows the kind on both. The choice at
-    // the cursor is drawn active only while the filter box has focus, since the cursor is the
-    // keyboard's and a box nobody is typing in has no choice to take with Enter.
+    // whose choices have a kind (the resources of a project) shows the kind on both. A choice with
+    // a `hub`, a record of a hub other than the record's own, draws that hub's name as a chip after
+    // its words, on its button and on its chip, so two hubs' records of one name are told apart.
+    // The choice at the cursor is drawn active only while the filter box has focus, since the
+    // cursor is the keyboard's and a box nobody is typing in has no choice to take with Enter.
     //
     // The filter box carries the text boxes' editing menu (TextBoxMenu.svelte).
     //
@@ -21,10 +23,11 @@
     import Glyph from '../../display/Glyph.svelte';
     import '../../theme/field.css';
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
+    import Chip from '../../controls/Chip.svelte';
     import Tag from '../../controls/Tag.svelte';
     import ToolButton from '../../controls/ToolButton.svelte';
 
-    type Choice = { id: string; label: string; glyph?: string };
+    type Choice = { id: string; label: string; glyph?: string; hub?: string };
 
     type Props = {
         values: string[];
@@ -108,6 +111,11 @@
         return choices.find((choice) => choice.id === id)?.glyph;
     }
 
+    /** The hub of a chosen value's choice, or undefined when it names none or is of the own hub. */
+    function hubOf(id: string): string | undefined {
+        return choices.find((choice) => choice.id === id)?.hub;
+    }
+
     function keys(event: KeyboardEvent): void {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
@@ -146,7 +154,8 @@
         <div class="chosen">
             {#each values as value (value)}
                 {@const kind = glyphOf(value)}
-                {#if kind === undefined}
+                {@const hub = hubOf(value)}
+                {#if kind === undefined && hub === undefined}
                     <ToolButton
                         label={wordsOf(value)}
                         glyph={removeGlyph}
@@ -160,8 +169,13 @@
                         title={remove}
                         onclick={() => drop(value)}
                     >
-                        <Glyph name={kind} />
+                        {#if kind !== undefined}
+                            <Glyph name={kind} />
+                        {/if}
                         {wordsOf(value)}
+                        {#if hub !== undefined}
+                            <Chip label={hub} />
+                        {/if}
                     </ToolButton>
                 {/if}
             {/each}
@@ -183,13 +197,28 @@
     </TextBoxMenu>
     <div class="choices">
         {#each shown as choice, index (choice.id)}
-            <ToolButton
-                label={choice.label}
-                glyph={choice.glyph}
-                active={focused && index === at}
-                onclick={() => add(choice.id)}
-                title={choice.id}
-            />
+            {#if choice.hub === undefined}
+                <ToolButton
+                    label={choice.label}
+                    glyph={choice.glyph}
+                    active={focused && index === at}
+                    onclick={() => add(choice.id)}
+                    title={choice.id}
+                />
+            {:else}
+                <ToolButton
+                    label={choice.label}
+                    active={focused && index === at}
+                    onclick={() => add(choice.id)}
+                    title={choice.id}
+                >
+                    {#if choice.glyph !== undefined}
+                        <Glyph name={choice.glyph} />
+                    {/if}
+                    {choice.label}
+                    <Chip label={choice.hub} />
+                </ToolButton>
+            {/if}
         {/each}
         {#if past > 0}
             <ToolButton label={more(past)} onclick={() => (whole = true)} />

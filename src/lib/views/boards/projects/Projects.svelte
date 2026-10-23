@@ -74,7 +74,7 @@
         type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -132,7 +132,7 @@
     ];
 
     function write(next: Partial<BoardState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }, ['expanded', 'more']));
     }
 
     function setMode(mode: BoardMode): void {

@@ -4,6 +4,8 @@
 import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
 import { byKey, slugOf } from '../../data/helpers/guards.ts';
+import { holdersOf, resolvedId } from '../../data/helpers/hub-names.ts';
+import { feedRoot } from '../shared/page/idents.ts';
 import {
     readAs,
     rowsShape,
@@ -109,11 +111,17 @@ export function ideaSeed(entry: RadarEntry): { id: string; eli5: string } {
     return { id, eli5: word(entry, 'idea_spark') || word(entry, 'why') };
 }
 
-/** Existing project records named by project and maps_to, in that order without duplicates. */
+/**
+ * Existing project records named by project and maps_to, in that order without duplicates. Each
+ * names a project by its key, which resolves in the entry's own hub first, then in the others
+ * (`resolvedId`).
+ */
 export function crossLinksOf(entry: RadarEntry, projects: Record<string, Project>): Project[] {
-    const ids = [word(entry, 'project'), word(entry, 'maps_to')].filter(Boolean);
+    const keys = [word(entry, 'project'), word(entry, 'maps_to')].filter(Boolean);
+    const held = holdersOf(Object.values(projects));
+    const ids = keys.map((key) => resolvedId(held, feedRoot(entry), key));
     return [...new Set(ids)].flatMap((id) => {
-        const found = byKey(projects, id);
+        const found = id === null ? undefined : byKey(projects, id);
         return found === undefined ? [] : [found];
     });
 }

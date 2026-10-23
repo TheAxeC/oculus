@@ -120,10 +120,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // the server checks when the name arrives. The model's own concern modules (`data/model-*`) are
 // reached through the facade only, which is why they are not listed here.
 //
-// `data/helpers/hub-names` holds how a record names its hub: the primary's records keep their bare
-// ids and carry no root, and a record of every other hub carries the hub's folder name as root and
-// as the front of its id. The file server, the file browser's place vocabulary, the schema set, the
-// write routes and the page's lookups each read it, so the rule is written once.
+// `data/helpers/hub-names` holds how a record names its hub: every record, the primary's included,
+// carries its hub's folder name as root and has the internal id `<hub>:<key>`. The file server, the
+// file browser's place vocabulary, the schema set, the write routes and the page's lookups each
+// read it, so the rule is written once.
 // `data/helpers/files/private-folders` holds the folders no YAML language server is given a file
 // of, the `secrets` folder of every hub and `~/.oculus`, which the relay refuses by and the page
 // refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads the keys of a vocabulary key

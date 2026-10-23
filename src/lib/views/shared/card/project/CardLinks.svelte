@@ -18,6 +18,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const client = useState();
     const {
@@ -107,9 +108,9 @@
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
         if (kind.key === SOFTWARE || kind.key === RELATED)
-            return () => openView('project', { id: tag.id, label: tag.label });
+            return () => openView('project', recordState(tag.id, tag.label));
         if (kind.key === COLLABORATORS)
-            return () => openView('person', { key: tag.id, label: tag.label });
+            return () => openView('person', recordState(tag.id, tag.label));
         if (linkView(kind.key) === '') return null;
         return () => goto(client, linkView(kind.key), tag.label);
     }

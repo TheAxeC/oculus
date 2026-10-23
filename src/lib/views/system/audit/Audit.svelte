@@ -29,8 +29,9 @@
     //
     // Each section is a list of rows drawn as the Findings view draws its rows: one line of the
     // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row
-    // under the pointer. A row is the scope in the row's main words, the message, the place in the
-    // mono face and the mute control at the row's end. Every row carries `data-card`, its card id
+    // under the pointer. A row is the scope in the row's main words, the chip of the hub the
+    // finding is of when that is a hub but the primary, the message, the place in the mono face and
+    // the mute control at the row's end. Every row carries `data-card`, its card id
     // (state/system/audit.ts), which the shell's arrow keys step through; the row the instance's
     // card cursor names is marked `data-cursor` and drawn with the accent outline, and the view has
     // no selection of its own. A finding that names a file draws its place as a control that opens
@@ -47,6 +48,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import RootChip from '../../shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { auditSearch, cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { rootOf } from '$lib/state/shared/page/hubs';
@@ -136,6 +138,7 @@
         {#if finding.scope !== ''}
             <span class="scope">{finding.scope}</span>
         {/if}
+        <RootChip record={{ root: finding.hub }} />
         {#if finding.message !== ''}
             <span class="message">
                 <CodeText text={finding.message} />
@@ -150,7 +153,7 @@
                     title={t('audit.open_place_tip', finding.file)}
                     onclick={() =>
                         openSourceFile(client, {
-                            root: rootOf(finding, client.fs.primary()),
+                            root: rootOf(finding),
                             path: finding.file
                         })}
                 />

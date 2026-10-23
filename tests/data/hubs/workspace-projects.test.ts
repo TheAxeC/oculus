@@ -4,12 +4,13 @@
 // manifest is one project, read once and matched by its real path, and the folder stays a folder of
 // the workspace. The hub, the folders and the state that opens the workspace are planted under the
 // system temporary directory, and the workspace is read as the server's portfolio build reads it
-// (`primaryConfig`, `buildPortfolioWithSchemas`, `joinHubs`).
+// (`primaryConfig`, `buildHubs`).
 
 import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, joinHubs, readOtherHub } from '../../../src/lib/data/index.ts';
+import { readOtherHub } from '../../../src/lib/data/index.ts';
+import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -48,20 +49,18 @@ function read(hub: string, folders: FolderSpec[], others: FolderSpec[] = []): Re
     const open = workspaceWith([{ name: 'hub', dir: hub }, ...others, ...folders], 'hub').open();
     const { config, from } = settings(hub);
     const portfolio = primaryConfig(config, open, settings, from);
-    const base = buildPortfolioWithSchemas(
-        hub,
-        portfolio,
-        0,
-        portfolio.repositories,
-        undefined,
-        null,
-        'hub'
-    );
     const read = others.map((one) =>
         readOtherHub({ key: one.name, dir: one.dir }, settings(one.dir))
     );
-    const first = { hub, name: 'hub', config: portfolio };
-    return { snapshot: joinHubs(base, first, read, 0, createChecker()).snapshot, open };
+    const order = ['hub', ...[...others, ...folders].map((one) => one.name)];
+    const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
+    const built = buildHubs(
+        { primary, others: read, config: portfolio, order },
+        0,
+        createChecker(),
+        null
+    );
+    return { snapshot: built.snapshot, open };
 }
 
 /** The ids of the projects a read holds, sorted. */
@@ -94,15 +93,15 @@ describe('a folder of the workspace that holds a project manifest', () => {
         const dir = join(hub, 'tools', 'oculus');
         const got = read(hub, [{ name: 'oculus', dir }]);
 
-        expect(idsOf(got)).toEqual(['oculus', 'site', 'spark']);
-        expect(got.snapshot.entities.projects.oculus).toMatchObject({
+        expect(idsOf(got)).toEqual(['hub:oculus', 'hub:site', 'hub:spark']);
+        expect(got.snapshot.entities.projects['hub:oculus']).toMatchObject({
             title: 'Oculus',
             tier: 'personal',
             file: join(dir, '.oculus', 'project.yml'),
             workspaceFolder: { root: 'oculus', dir }
         });
         const board = boardItems(got.snapshot, presetFor('personal', settings(hub).config));
-        expect(board.map((one) => one.id).sort()).toEqual(['oculus', 'site']);
+        expect(board.map((one) => one.id).sort()).toEqual(['hub:oculus', 'hub:site']);
         expect(findingsIn(got, dir)).toEqual([]);
     });
 
@@ -118,9 +117,9 @@ describe('a folder of the workspace that holds a project manifest', () => {
             symlinkSync(dir, link);
             const got = read(hub, [{ name: 'website', dir: linked ? link : dir }]);
 
-            expect(idsOf(got)).toEqual(['site', 'spark']);
-            expect(got.snapshot.entities.projects.site.workspaceFolder).toBeUndefined();
-            expect(got.snapshot.entities.projects.site.folder).toBe('side-projects/site');
+            expect(idsOf(got)).toEqual(['hub:site', 'hub:spark']);
+            expect(got.snapshot.entities.projects['hub:site'].workspaceFolder).toBeUndefined();
+            expect(got.snapshot.entities.projects['hub:site'].folder).toBe('side-projects/site');
             expect(got.open.roots.map((one) => one.key)).toEqual(['hub', 'website']);
             expect(findingsIn(got, dir)).toEqual([]);
         }
@@ -136,8 +135,8 @@ describe('a folder of the workspace that holds a project manifest', () => {
         const hub = plantHub(join(holder, 'hub'), HUB_SETTINGS);
         const got = read(hub, [{ name: 'holder', dir: holder }]);
 
-        expect(idsOf(got)).toEqual(['holder', 'site', 'spark']);
-        expect(got.snapshot.entities.projects.holder).toMatchObject({
+        expect(idsOf(got)).toEqual(['hub:holder', 'hub:site', 'hub:spark']);
+        expect(got.snapshot.entities.projects['hub:holder']).toMatchObject({
             file: join(holder, 'project.yml'),
             workspaceFolder: { root: 'holder', dir: holder }
         });
@@ -156,7 +155,7 @@ describe('a folder of the workspace that holds a project manifest', () => {
         const dir = join(lab, 'side-projects', 'kit');
         const got = read(hub, [{ name: 'kit-folder', dir }], [{ name: 'lab', dir: lab }]);
 
-        expect(idsOf(got)).toEqual(['lab:kit', 'site', 'spark']);
+        expect(idsOf(got)).toEqual(['hub:site', 'hub:spark', 'lab:kit']);
         expect(got.snapshot.entities.projects['lab:kit'].workspaceFolder).toBeUndefined();
         expect(findingsIn(got, dir)).toEqual([]);
     });

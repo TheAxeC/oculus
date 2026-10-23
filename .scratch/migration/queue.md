@@ -1,13 +1,12 @@
-In flight (2 of 6 slots in use):
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown). State: built; reviewed (`agents/reviews/O54-refuter.md`); repair round 1 reported (`agents/reviews/O54-report.md`); reviewed over round 1 (item 3 and item 11 violated, both fixed at landing); /land next (base 18fa0365).
+In flight (1 of 6 slots in use):
 - O65 (the status bar scrolls sideways; the nine languages' settings with the table test; every default Monaco key read against oculus's key tables and pressed at the look; the LaTeX keys as LaTeX Workshop binds them; in the editor Cmd+K is VS Code's chord key and Ctrl+K on macOS Delete All Right; rulings 250 and 258 (b)). State: built (report `agents/reviews/O65-report.md`); reviewed (`agents/reviews/O65-refuter.md`); repair round 1 reported; reviewed over round 1 (no item violated; small fixes at landing); /land next, after O54's; open item 259 (Pin Editor's chord) waits for Axel (base 3a35d993).
 
 Queued, in order (7 steps):
-- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: O54's landing (ruling 252's rename reaches most of O54's paths, not simple to merge); brief and brief check done, every finding closed; then /spec again on main after O54, its premises read again, and the launch.
-- O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). Waits: O54's landing (both rewrite `merge.ts` and `normalise.ts`, not simple to merge).
-- O56 (new project, entry and Save to Literature ask which hub). Waits: O54's landing.
+- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). Waits: /spec again on main now that O54 has landed, its premises read again, then the launch; brief and brief check done, every finding closed.
+- O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). Waits: /spec on main now that O54 has landed.
+- O56 (new project, entry and Save to Literature ask which hub). Waits: /spec on main now that O54 has landed.
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
-- O60 (each part of `config/` overridden where ruling 214 puts it). Waits: after O55, with O63.
+- O60 (each part of `config/` overridden where ruling 214 puts it; with no primary, each hub's records take their own hub's settings file, folded in at O54's landing). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O39 (oculus in its own repository): part E landed 2026-10-23; left: the first paint under the dev server (a reload's first frame is white for every theme, found at part E's look, booked under O39 in `plan.md`), then the desktop look C8 after `npm run app:package`, then the tick.
 
@@ -15,6 +14,7 @@ Owed looks:
 - none (O64's taken 2026-10-22; the parts that write or fetch the calendar are under "Cannot be taken on this hub" in `agents/reviews/owed-looks.md`).
 
 Landed, newest first:
+- O54 (own hub first; every internal id `<hub>:<key>`, never shown; saved tabs changed once to hub and key), 2026-10-23.
 - O39 part E (the page's first HTML carries the theme it starts on), 2026-10-23.
 - O64 (motion where work is in progress), 2026-10-22.
 - O51 (a per-pane Hide Tab Row), 2026-10-22.

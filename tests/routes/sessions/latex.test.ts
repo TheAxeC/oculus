@@ -43,10 +43,9 @@ function newBin(): string {
 }
 
 const TARGET: LatexTarget = {
-    primary: 'hub',
     project: (id) => {
-        if (id === 'alpha') return { folder: FOLDER };
-        return id === 'gamma' ? { folder: OUTLINED } : null;
+        if (id === 'hub:alpha') return { folder: FOLDER, root: 'hub' };
+        return id === 'hub:gamma' ? { folder: OUTLINED, root: 'hub' } : null;
     },
     roots: () => [
         { key: 'hub', dir: HUB, hub: true },

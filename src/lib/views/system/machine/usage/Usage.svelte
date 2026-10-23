@@ -182,7 +182,7 @@
                     >
                         {#snippet meta()}
                             <Tag label={account.tool} />
-                            <RootChip record={{ root: account.hub }} />
+                            <RootChip hub={account.hub} />
                             {#if account.email}
                                 <Tag label={account.email} />
                             {/if}

@@ -52,7 +52,7 @@
         writableField,
         type FormField
     } from '$lib/state/forms/schema';
-    import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -60,7 +60,7 @@
     const client = useState();
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
-        selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
+        selectors: { fieldChoices, manifestFields, manifestSections, projectOf, waitedOn },
         settled,
         writes: { writeManifest }
     } = client;
@@ -71,10 +71,10 @@
     const DRAFT_KIND = 'project';
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(instanceText(instance.state, 'id'));
+    const id = $derived(stateRecord(instance.state));
     const project = $derived(id === '' ? null : projectOf(id));
     /** The project's values with the saved ones over them until the snapshot has them. */
-    const stored = $derived(project === null ? {} : fieldValues(project));
+    const stored = $derived(project === null ? {} : fieldValues(project, waitedOn));
     const values = $derived(settled.overlay(projectKey(id), stored));
     const tabTitle = $derived(
         typeof values.title === 'string' ? values.title : (project?.title ?? '')

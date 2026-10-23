@@ -3,9 +3,12 @@
 //
 // A candidate is a reference only when a definition of the same key stands in one of the sources
 // its field takes keys from; a value that names no key (a draft word, an id nobody defined) is not
-// one and answers nothing. The match is made when a question is asked, over the files as they are
-// then, so the text of an open tab replaces the text the build read (`overlay`) without the build
-// being redone.
+// one and answers nothing. A reference resolves as the portfolio resolves it
+// (data/snapshot/hubs/merge.ts): source by source, in its own hub first (the hub whose keys its
+// file names, oculus's own configuration counting as every hub's), then in the one other hub that
+// defines the key, and a key two other hubs define names neither. The match is made when a
+// question is asked, over the files as they are then, so the text of an open tab replaces the text
+// the build read (`overlay`) without the build being redone.
 //
 // Two names of one disk file are told apart by the folders of the served roots (hub-names.ts), so
 // a tab that holds a file under another root, or under another checkout's engine root, replaces
@@ -91,14 +94,11 @@ export function keysRootOf(scan: FileScan): string {
 }
 
 /**
- * The index with every reference matched by key, over the files that name keys of one root (its
- * own files and a file that says it names that root's keys, `of`) and oculus's own configuration,
- * so a key of one hub is never matched with a definition of another.
+ * The index with every reference and definition held by key, over the files of every hub of the
+ * workspace and oculus's own configuration; which definitions a reference names is decided by
+ * `resolvedTargets`.
  */
-export function graphOf(whole: ReferenceIndex, root: string): Graph {
-    const index: ReferenceIndex = {
-        files: whole.files.filter((scan) => keysRootOf(scan) === root || scan.engine === true)
-    };
+export function graphOf(index: ReferenceIndex): Graph {
     const definitions = new Map<string, DefinitionAt[]>();
     const references = new Map<string, ReferenceAt[]>();
     for (const scan of index.files) {
@@ -127,6 +127,32 @@ export function definitionsOf(
     );
 }
 
+/** Whether a definition is of the hub `own`: it stands in that hub's files or in oculus's own. */
+function ofHub(one: DefinitionAt, own: string): boolean {
+    return one.scan.engine === true || keysRootOf(one.scan) === own;
+}
+
+/**
+ * The definitions a reference to `key` in a file naming the keys of the hub `own` resolves to:
+ * source by source in the field's order, the definitions of its own hub, else those of the one
+ * other hub that defines the key; a source two other hubs define the key in names none, and the
+ * next source is asked.
+ */
+export function resolvedTargets(
+    graph: Graph,
+    own: string,
+    key: string,
+    sources: readonly string[]
+): DefinitionAt[] {
+    for (const source of sources) {
+        const all = definitionsOf(graph, key, [source]);
+        const mine = all.filter((one) => ofHub(one, own));
+        if (mine.length > 0) return mine;
+        if (new Set(all.map((one) => keysRootOf(one.scan))).size === 1) return all;
+    }
+    return [];
+}
+
 /** Whether a position is on a scalar: its text or one of its quotes. */
 function onScalar(at: Mention, place: Place): boolean {
     const quote = at.style === 'plain' ? 0 : 1;
@@ -140,7 +166,9 @@ function onScalar(at: Mention, place: Place): boolean {
 export function hitAt(graph: Graph, scan: FileScan, place: Place): Hit | null {
     const definition = scan.definitions.find((one) => onScalar(one, place));
     if (definition !== undefined) {
-        const targets = definitionsOf(graph, definition.value, definition.sources);
+        const targets = definitionsOf(graph, definition.value, definition.sources).filter((one) =>
+            ofHub(one, keysRootOf(scan))
+        );
         return {
             scan,
             kind: 'definition',
@@ -152,7 +180,7 @@ export function hitAt(graph: Graph, scan: FileScan, place: Place): Hit | null {
     }
     const reference = scan.references.find((one) => onScalar(one, place));
     if (reference === undefined) return null;
-    const targets = definitionsOf(graph, reference.value, reference.sources);
+    const targets = resolvedTargets(graph, keysRootOf(scan), reference.value, reference.sources);
     if (targets.length === 0) return null;
     return {
         scan,
@@ -164,12 +192,15 @@ export function hitAt(graph: Graph, scan: FileScan, place: Place): Hit | null {
     };
 }
 
-/** Every place that names the same definitions as a hit, the hit's own place among them. */
+/**
+ * Every place that resolves to the same definitions as a hit, in any hub, the hit's own place
+ * among them.
+ */
 export function referencesTo(graph: Graph, hit: Hit): ReferenceAt[] {
     const wanted = new Set(hit.targets.map((one) => one.definition));
     return (graph.references.get(hit.key) ?? []).filter((one) =>
-        definitionsOf(graph, hit.key, one.reference.sources).some((target) =>
-            wanted.has(target.definition)
+        resolvedTargets(graph, keysRootOf(one.scan), hit.key, one.reference.sources).some(
+            (target) => wanted.has(target.definition)
         )
     );
 }

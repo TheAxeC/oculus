@@ -1,11 +1,12 @@
 // Layer 1, data tests. The manifests' `compute:` list, read the way the server reads a hub: a hub
-// planted in a scratch directory, built through buildPortfolioWithSchemas, and the project's
+// planted in a scratch directory, built through buildOneHub, and the project's
 // resource ids and the findings asserted. Every sentence is looked up in the shipped catalog, so a
 // finding whose catalog key is missing fails the test that expects it.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -56,10 +57,8 @@ function build(registry: string | null, computes: Record<string, string>): Snaps
         files[join('projects/active', id, 'project.yml')] =
             `id: ${id}\ntier: projects\ntype: active\ntitle: ${id}\n${compute}`;
     }
-    return buildPortfolioWithSchemas(
-        plantScratch('oculus-resources-hub-', files, ['projects/active']),
-        CONFIG
-    ).snapshot;
+    return buildOneHub(plantScratch('oculus-resources-hub-', files, ['projects/active']), CONFIG)
+        .snapshot;
 }
 
 /** The findings about the resources registry and the manifests, not the other files' absence. */

@@ -33,7 +33,7 @@
     } from '$lib/state/feeds/leads';
     import { posting } from './posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
-    import { feedRoot } from '$lib/state/shared/page/idents';
+    import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -79,6 +79,8 @@
     const text = (field: string): string => textOrNumber(entry[field]);
     const title = $derived(text('title'));
     const identity = $derived(leadId(entry));
+    /** The lead's internal id, which its writes name it by. */
+    const record = $derived(feedEntryId(entry));
     const institution = $derived(text('inst'));
     const country = $derived(text('country'));
     const type = $derived(text('typ'));
@@ -106,8 +108,8 @@
 
     /** Write the lead's status; a word no flag of the config gives, the empty text, writes none. */
     async function mark(next: string): Promise<void> {
-        if (title === '' || next === '') return;
-        say(await writeFeedField('leads', title, 'status', next, feedRoot(entry)));
+        if (record === '' || next === '') return;
+        say(await writeFeedField('leads', record, 'status', next));
     }
 
     /** Open Applications with an entry filled from this lead, and mark the lead applied. */
@@ -117,8 +119,8 @@
 
     async function remove(): Promise<void> {
         sure = false;
-        if (title === '') return;
-        say(await deleteFeedEntry('leads', title, feedRoot(entry)));
+        if (record === '') return;
+        say(await deleteFeedEntry('leads', record));
     }
 </script>
 

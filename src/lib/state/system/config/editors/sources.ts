@@ -4,8 +4,9 @@
 // config and the apps, and the file browser's listings of hub folders. The lists the merged
 // configuration alone holds are read through `configItems` of the options catalog's module, which
 // the server's write checks read as well, so the page and the server cannot disagree on them. The
-// people are those of the primary hub, the records with no `root`, each drawn by its name, since
-// the workspace setting `self` names a person of the primary hub by key.
+// domains, the clusters and the people are the keys of the primary hub's records (`hubRecords`),
+// each person drawn by their name, since a setting such as `self` names a record of the primary hub
+// by the key its file gives it.
 //
 // A list that is not there yet answers `loading` (no snapshot, no usage payload, a listing in
 // flight) and one that could not be read answers `failed` with the reason, so a control says
@@ -18,6 +19,7 @@ import { registered } from '../../../../data/prose/languages.ts';
 import { codeThemeInfo, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
 import {
     configItems,
+    hubRecords,
     hueNames,
     resourcesOfKind,
     slideTagClasses,
@@ -45,6 +47,8 @@ export type ListInputs = {
     config: Record<string, unknown>;
     /** The snapshot's entities the lists read, or null before the first snapshot. */
     portfolio: {
+        /** The name of the primary hub, whose records a setting names; null for none. */
+        primary: string | null;
         domains: Record<string, unknown>;
         resources: Record<string, unknown>;
         people: Record<string, Person>;
@@ -108,16 +112,17 @@ function groupsOf(items: { id: string; group: string }[]): ReadonlyMap<string, s
 }
 
 /**
- * The people of the primary hub, the ones with no `root`, each with the words its item is drawn
- * under: the person's name, or the key for an empty name. An item whose label equals another
+ * The people `own` of the primary hub, by key, each with the words its item is drawn under: the
+ * person's name, or the key for an empty name. An item whose label equals another
  * item's label is followed by its key, and this is repeated until no new item is keyed, since a
  * keyed label can equal another item's words; labels then differ unless two keys themselves read
  * as words followed by a key.
  */
 function ownPeople(people: Record<string, Person>): { id: string; label: string }[] {
-    const own = Object.entries(people).flatMap(([id, one]) =>
-        one.root === undefined ? [{ id, words: one.name === '' ? id : one.name }] : []
-    );
+    const own = Object.entries(people).map(([id, one]) => ({
+        id,
+        words: one.name === '' ? id : one.name
+    }));
     const keyed = new Set<string>();
     const labelOf = (one: { id: string; words: string }): string =>
         keyed.has(one.id) ? t('person.named_key', one.words, one.id) : one.words;
@@ -138,7 +143,8 @@ export function listsOf(inputs: ListInputs): Lists {
     const { config, portfolio } = inputs;
     const code = codeThemes(config, inputs.codeThemeClasses);
     const ui = themes(inputs.offers);
-    const people = portfolio === null ? [] : ownPeople(portfolio.people);
+    const primary = portfolio?.primary ?? null;
+    const people = portfolio === null ? [] : ownPeople(hubRecords(portfolio.people, primary));
     const none: ReadonlyMap<string, string> = new Map();
     const labels: Partial<Record<Source, ReadonlyMap<string, string>>> = {
         file_icon_themes: new Map(
@@ -170,11 +176,11 @@ export function listsOf(inputs: ListInputs): Lists {
             case 'domains':
                 return portfolio === null
                     ? { state: 'loading' }
-                    : READY(Object.keys(portfolio.domains));
+                    : READY(Object.keys(hubRecords(portfolio.domains, primary)));
             case 'clusters':
                 return portfolio === null
                     ? { state: 'loading' }
-                    : READY(resourcesOfKind(portfolio.resources, 'cluster'));
+                    : READY(resourcesOfKind(hubRecords(portfolio.resources, primary), 'cluster'));
             case 'people':
                 return portfolio === null
                     ? { state: 'loading' }

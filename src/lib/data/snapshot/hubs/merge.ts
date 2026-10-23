@@ -1,199 +1,207 @@
-// Layer 1, data. The portfolio of several hubs as one snapshot. Every hub is built on its own by
-// buildPortfolioWithSchemas, with its own settings, and the builds are joined here: a record of a
-// hub other than the primary gets the hub's name and a colon in front of its id, and in front of
-// every id its fields and the relation tables hold, so no two ids collide and no reference can name
-// a record of another hub. The ids are prefixed once each hub is built, which is what makes a
-// reference resolve inside its hub only: a value the hub cannot resolve is the finding it would be
-// were the hub the only one. A record of another hub then says which hub it came from in `root`; a
-// record of the primary carries none and keeps its bare id. The first build is the primary's, or
-// with no primary the build of the workspace's project folders, whose records carry no `root`
-// either.
+// Layer 1, data. The portfolio of the hubs of a workspace as one snapshot. Every hub is built on
+// its own by `builtHub` of data/index.ts, with its own settings, and the builds are joined here,
+// which is the one place a record gets its id: every record of every hub, the primary's included,
+// has the internal id `<hub>:<key>`, the key being what its own hub's files name it by, and carries
+// the hub's name in `root`. A project of a workspace folder that is no hub, in a workspace with no
+// primary, is a part of its own whose hub is the folder's name.
 //
-// With no hub beyond the first the snapshot is returned as the build made it, so a portfolio of one
-// hub is exactly that build's snapshot. The career, the website and the portfolio deck are the
-// primary's alone: another hub's career is dropped here, and the feeds summary is the hubs' leads
-// together with the latest run dates.
+// A reference names a key, and resolves in its own hub first, then in the other hubs: one other
+// hub holding the key gives that hub's record, and two or more other hubs holding it, with the own
+// hub holding none, give one finding naming the key and each hub that holds it, in the workspace's
+// folder order, and resolve to none (`resolveKey` of helpers/hub-names.ts). A key two hubs hold is
+// no finding by itself. Every relation table is built from the resolved references. The fields of
+// a collection entry keep the keys its file holds, since the page resolves them by the same rule,
+// and are walked here for that finding only. The joined id is internal: no file, form, finding,
+// label or address writes or shows it.
+//
+// The career, the website and the portfolio deck are the primary's alone: a hub other than the
+// primary is built with none, and the feeds summary is the hubs' leads together with the latest
+// run dates.
 
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { hubId, resolveKey, type Holders } from '../../helpers/hub-names.ts';
 import type {
     Collection,
     Entities,
-    Entry,
     Feeds,
-    FeedItem,
     Finding,
+    Funding,
     Id,
+    Person,
+    Project,
     RegistryName,
-    Relations,
     Snapshot
 } from '../../model/index.ts';
-import { byId, pairs } from '../normalise.ts';
+import { byId, jointWorkRows } from '../normalise.ts';
+import { linked } from '../normalise-parts/links.ts';
 import { sortFindings } from '../validate.ts';
-import { throughSchema, type Reach } from './references.ts';
+import { throughSchema } from './references.ts';
 
-/** One hub's own build, and the name of the workspace folder it was built from. */
-export type HubSnapshot = { key: string; snapshot: Snapshot };
+/**
+ * One hub's own build, in the workspace's folder order: the hub's name, its snapshot, whose records
+ * have the keys its files give them, and the absolute path of each of its registry files (the empty
+ * text for a part with none).
+ */
+export type HubPart = { key: string; snapshot: Snapshot; files: Record<RegistryName, string> };
 
-/** A hub other than the primary: its build, and the absolute path of its people file. */
-type OtherHub = HubSnapshot & { peopleFile: string };
+/** The kinds of record a reference may name, each a table of the entities by the same name. */
+const SOURCES = [
+    'projects',
+    'venues',
+    'datasets',
+    'pillars',
+    'domains',
+    'funding',
+    'people',
+    'organisations',
+    'resources'
+] as const;
 
-/** The registry entities of the primary hub, each kind with the file its records are read from. */
-export type FirstHub = {
-    snapshot: Snapshot;
-    /**
-     * The absolute path of each registry file, which names a primary-hub id that begins like a hub.
-     */
-    registryFiles: Record<RegistryName, string>;
-    /** The entries of the primary hub's feeds, each with the id a write names it by. */
-    feedItems: FeedItem[];
-};
+type Source = (typeof SOURCES)[number];
 
-/** The id with the hub's key in front of it. */
-function prefixer(key: string): (id: Id) => Id {
-    return (id) => `${key}:${id}`;
+/** Where a reference stands: the file, the key the finding is about, and the field. */
+type Where = { file: string; key: string; field: string };
+
+/** The answer for a reference read in one hub: the id it names, or null for none. */
+type Resolve = (sources: readonly string[], value: string, where: Where) => Id | null;
+
+/** The hubs that hold each key of each kind of record, in the parts' order. */
+function holdersBy(parts: readonly HubPart[]): Record<Source, Holders> {
+    const out = {} as Record<Source, Map<string, string[]>>;
+    for (const source of SOURCES) {
+        const held = new Map<string, string[]>();
+        for (const part of parts) {
+            for (const key of Object.keys(part.snapshot.entities[source])) {
+                held.set(key, [...(held.get(key) ?? []), part.key]);
+            }
+        }
+        out[source] = held;
+    }
+    return out;
 }
 
-/** The records of one kind, each passed through `fix`, under the ids `fix` gave them. */
-function rekeyed<T extends { id: Id }>(table: Record<Id, T>, fix: (one: T) => T): Record<Id, T> {
-    return byId(Object.values(table).map(fix));
-}
-
-/** Whether the hub's entities of a `from:` source hold a record under the id. */
-function holds(entities: Entities, source: string, id: Id): boolean {
-    const tables: Record<string, Record<Id, unknown>> = {
-        projects: entities.projects,
-        venues: entities.venues,
-        datasets: entities.datasets,
-        pillars: entities.pillars,
-        domains: entities.domains,
-        funding: entities.funding,
-        people: entities.people,
-        organisations: entities.organisations,
-        resources: entities.resources
-    };
-    return Object.hasOwn(tables, source) && Object.hasOwn(tables[source], id);
+/** Whether a source name is one of the kinds of record. */
+function isSource(name: string): name is Source {
+    return SOURCES.some((one) => one === name);
 }
 
 /**
- * A collection of a hub, its id and the id of each entry prefixed, and in each entry the value of
- * every field that names a record of the hub (a `from:` of the file's schema): a value the schema
- * holds to the source's keys is prefixed whatever it says, so one the hub cannot resolve stays the
- * hub's finding and never reads as a record of another hub, and a value of a free text field is
- * prefixed when the hub holds a record of that id and kept as the words it is otherwise.
+ * The resolver of the hub `own`: each source in turn, the first whose key resolves giving the id.
+ * A value no source resolves while one of them is held by two or more other hubs adds the finding
+ * to `found`, once for each file, key, field and value.
  */
-function collectionOf(
-    put: (id: Id) => Id,
-    key: string,
-    one: Collection,
-    entities: Entities
-): Collection {
-    const reach: Reach = (value, sources, held) =>
-        value !== '' && (held || sources.some((source) => holds(entities, source, value)))
-            ? put(value)
-            : value;
-    const entries = one.entries.map((entry: Entry) => ({
-        ...entry,
-        id: put(entry.id),
-        fields:
-            one.schema === undefined
-                ? entry.fields
-                : throughSchema(one.schema, entry.fields, reach),
-        root: key
-    }));
-    return { ...one, id: put(one.id), entries, root: key };
-}
-
-/** A relation table with both ends of each pair prefixed. */
-function tableOf(put: (id: Id) => Id, table: [Id, Id][]): [Id, Id][] {
-    return table.map(([from, to]) => [put(from), put(to)]);
-}
-
-/** The entities of a hub other than the primary, every id prefixed and every record marked. */
-function entitiesOf(key: string, entities: Entities, peopleFile: string): Entities {
-    const put = prefixer(key);
-    const own = { root: key };
-    return {
-        projects: rekeyed(entities.projects, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            relatedIds: one.relatedIds.map(put),
-            waitingOn: one.waitingOn.map(put),
-            fundingIds: one.fundingIds.map(put),
-            datasetIds: one.datasetIds.map(put),
-            pillarIds: one.pillarIds.map(put),
-            domainIds: one.domainIds.map(put),
-            collaborators: one.collaborators.map(put),
-            resourceIds: one.resourceIds.map(put),
-            ...(one.venueId === undefined ? {} : { venueId: put(one.venueId) })
-        })),
-        venues: rekeyed(entities.venues, (one) => ({ ...one, ...own, id: put(one.id) })),
-        datasets: rekeyed(entities.datasets, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            projectIds: one.projectIds.map(put)
-        })),
-        pillars: rekeyed(entities.pillars, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            fundingIds: one.fundingIds.map(put),
-            projectIds: one.projectIds.map(put)
-        })),
-        domains: rekeyed(entities.domains, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            projectIds: one.projectIds.map(put)
-        })),
-        funding: rekeyed(entities.funding, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            projectIds: one.projectIds.map(put),
-            pillarIds: one.pillarIds.map(put),
-            ...(one.funder === undefined ? {} : { funder: put(one.funder) })
-        })),
-        people: rekeyed(entities.people, (one) => ({
-            ...one,
-            ...own,
-            file: peopleFile,
-            id: put(one.id),
-            affiliations: one.affiliations.map(put),
-            projectIds: one.projectIds.map(put),
-            jointWorkIds: one.jointWorkIds.map(put)
-        })),
-        organisations: rekeyed(entities.organisations, (one) => ({
-            ...one,
-            ...own,
-            id: put(one.id),
-            personIds: one.personIds.map(put),
-            fundingIds: one.fundingIds.map(put)
-        })),
-        resources: rekeyed(entities.resources, (one) => ({ ...one, ...own, id: put(one.id) })),
-        collections: rekeyed(entities.collections, (one) => collectionOf(put, key, one, entities)),
-        feeds: entities.feeds,
-        career: null
+function resolverOf(
+    holders: Record<Source, Holders>,
+    own: string,
+    found: Map<string, Finding>,
+    text: TextCatalog
+): Resolve {
+    return (sources, value, where) => {
+        let hubs: readonly string[] | null = null;
+        for (const source of sources) {
+            if (!isSource(source)) continue;
+            const named = resolveKey(holders[source], own, value);
+            if (named === null) continue;
+            if ('id' in named) return named.id;
+            hubs ??= named.hubs;
+        }
+        if (hubs === null) return null;
+        const token = [where.file, where.key, where.field, value].join('\0');
+        found.set(token, {
+            file: where.file,
+            key: where.key,
+            message: findingText(
+                text,
+                'findings.hubs.ambiguous',
+                where.field,
+                value,
+                hubs.join(', ')
+            )
+        });
+        return null;
     };
 }
 
-/** The relation tables of a hub other than the primary, every pair prefixed. */
-function relationsOf(key: string, tables: Relations): Relations {
-    const put = prefixer(key);
-    return {
-        projectVenue: tableOf(put, tables.projectVenue),
-        projectFunding: tableOf(put, tables.projectFunding),
-        projectDataset: tableOf(put, tables.projectDataset),
-        projectPillar: tableOf(put, tables.projectPillar),
-        projectDomain: tableOf(put, tables.projectDomain),
-        projectRelated: tableOf(put, tables.projectRelated),
-        fundingPillar: tableOf(put, tables.fundingPillar),
-        projectPerson: tableOf(put, tables.projectPerson),
-        jointWorkPerson: tableOf(put, tables.jointWorkPerson),
-        personOrganisation: tableOf(put, tables.personOrganisation),
-        fundingOrganisation: tableOf(put, tables.fundingOrganisation)
+/**
+ * The ids the keys of a list resolve to, in the list's order; a key that resolves to none drops.
+ */
+function idsOf(keys: readonly string[], resolve: (key: string) => Id | null): Id[] {
+    return keys.map(resolve).filter((id): id is Id => id !== null);
+}
+
+/** A project of the hub `own`, its id given and every reference resolved. */
+function projectOf(one: Project, own: string, resolve: Resolve): Project {
+    const at = (source: Source, field: string) => (key: string) =>
+        resolve([source], key, { file: one.file, key: field, field });
+    const venueId = one.venueId === undefined ? null : at('venues', 'venue_id')(one.venueId);
+    const waiting = { file: one.file, key: 'waiting-on', field: 'waiting-on' };
+    const out: Project = {
+        ...one,
+        root: own,
+        id: hubId(own, one.id),
+        relatedIds: idsOf(one.relatedIds, at('projects', 'related')),
+        fundingIds: idsOf(one.fundingIds, at('funding', 'funding')),
+        datasetIds: idsOf(one.datasetIds, at('datasets', 'datasets')),
+        pillarIds: idsOf(one.pillarIds, at('pillars', 'pillar')),
+        domainIds: idsOf(one.domainIds, at('domains', 'domain')),
+        collaborators: idsOf(one.collaborators, at('people', 'collaborators')),
+        resourceIds: idsOf(one.resourceIds, at('resources', 'compute')),
+        // A name of `waiting-on` is a person's key, a project's or the words of someone the hub
+        // keeps no record of, which stay as they are.
+        waitingOn: one.waitingOn.map((key) => resolve(['people', 'projects'], key, waiting) ?? key)
     };
+    if (venueId === null) delete out.venueId;
+    else out.venueId = venueId;
+    return out;
+}
+
+/** A funding scheme of the hub `own`, its id given and its funder resolved. */
+function schemeOf(one: Funding, own: string, file: string, resolve: Resolve): Funding {
+    const funder =
+        one.funder === undefined
+            ? null
+            : resolve(['organisations'], one.funder, { file, key: one.id, field: 'funder' });
+    const out: Funding = { ...one, root: own, id: hubId(own, one.id) };
+    if (funder === null) delete out.funder;
+    else out.funder = funder;
+    return out;
+}
+
+/**
+ * A person of the hub `own`, its id given, its organisations resolved and its people file named.
+ */
+function personOf(one: Person, own: string, file: string, resolve: Resolve): Person {
+    const where = { file, key: one.id, field: 'affiliations' };
+    return {
+        ...one,
+        root: own,
+        id: hubId(own, one.id),
+        file,
+        affiliations: idsOf(one.affiliations, (key) => resolve(['organisations'], key, where))
+    };
+}
+
+/**
+ * A collection of the hub `own`, its id and the id of each entry given. The fields keep the keys
+ * the file holds; each value that names a record is resolved for the finding a key two other hubs
+ * hold gives.
+ */
+function collectionOf(one: Collection, own: string, resolve: Resolve): Collection {
+    const entries = one.entries.map((entry) => {
+        if (one.schema !== undefined) {
+            throughSchema(one.schema, entry.fields, (value, sources, _held, field) => {
+                resolve(sources, value, { file: one.file, key: entry.id, field });
+                return value;
+            });
+        }
+        return { ...entry, id: hubId(own, entry.id), root: own };
+    });
+    return { ...one, id: hubId(own, one.id), entries, root: own };
+}
+
+/** A registry record of the hub `own` with its id given. */
+function rooted<T extends { id: Id }>(one: T, own: string): T {
+    return { ...one, root: own, id: hubId(own, one.id) };
 }
 
 /** The later of two ISO dates, where either may be missing. */
@@ -203,141 +211,151 @@ function later(one: string | null, other: string | null): string | null {
     return one >= other ? one : other;
 }
 
-/**
- * The feeds summary of two hubs: their live leads together and the latest run dates of each feed.
- */
-function feedsOf(first: Feeds, key: string, other: Feeds): Feeds {
-    const leads =
-        first.leads === null && other.leads === null
-            ? null
-            : [
-                  ...(first.leads ?? []),
-                  ...(other.leads ?? []).map((lead) => ({ ...lead, root: key }))
-              ];
+/** The latest of one run date over the hubs' feeds, null when no hub has that feed. */
+function latest<T>(held: (T | null)[], date: (one: T) => string | null): string | null | undefined {
+    const there = held.filter((one): one is T => one !== null);
+    return there.length === 0 ? undefined : there.map(date).reduce(later, null);
+}
+
+/** The feeds summary of the hubs: every hub's live leads marked with its hub, the latest runs. */
+function feedsOf(parts: readonly HubPart[]): Feeds {
+    const all = parts.map((part) => part.snapshot.entities.feeds);
+    const leads = parts.flatMap((part) =>
+        (part.snapshot.entities.feeds.leads ?? []).map((lead) => ({ ...lead, root: part.key }))
+    );
+    const radar = latest(
+        all.map((one) => one.radar),
+        (one) => one.lastRun
+    );
+    const scout = latest(
+        all.map((one) => one.scout),
+        (one) => one.lastRun
+    );
+    const linkedin = latest(
+        all.map((one) => one.linkedin),
+        (one) => one.lastPost
+    );
     return {
-        leads,
-        radar:
-            first.radar === null && other.radar === null
-                ? null
-                : { lastRun: later(first.radar?.lastRun ?? null, other.radar?.lastRun ?? null) },
-        scout:
-            first.scout === null && other.scout === null
-                ? null
-                : { lastRun: later(first.scout?.lastRun ?? null, other.scout?.lastRun ?? null) },
-        linkedin:
-            first.linkedin === null && other.linkedin === null
-                ? null
-                : {
-                      lastPost: later(
-                          first.linkedin?.lastPost ?? null,
-                          other.linkedin?.lastPost ?? null
-                      )
-                  }
+        leads: all.every((one) => one.leads === null) ? null : leads,
+        radar: radar === undefined ? null : { lastRun: radar },
+        scout: scout === undefined ? null : { lastRun: scout },
+        linkedin: linkedin === undefined ? null : { lastPost: linkedin }
     };
 }
 
-/** The tables of the two builds as one table each, sorted and without a pair twice. */
-function joined(first: Relations, others: Relations[]): Relations {
-    const out = { ...first };
-    for (const name of Object.keys(first) as (keyof Relations)[]) {
-        out[name] = pairs([...first[name], ...others.flatMap((one) => one[name])]);
-    }
-    return out;
+/** The records of one kind of every part, each passed through `fix`, under the ids it gave them. */
+function joined<T extends { id: Id }>(
+    parts: readonly HubPart[],
+    table: (entities: Entities) => Record<Id, T>,
+    fix: (one: T, part: HubPart) => T
+): Record<Id, T> {
+    return byId(
+        parts.flatMap((part) =>
+            Object.values(table(part.snapshot.entities)).map((one) => fix(one, part))
+        )
+    );
 }
 
 /**
- * A finding for every id of the primary hub that begins with the key of a hub root and a colon: the
- * merged portfolio could not tell such a record, or a lead, a Lit Watch entry or a LinkedIn post,
- * from one of that hub. A record is named by the file it is read from.
+ * The portfolio of the hubs of a workspace, the parts in the workspace's folder order, as one
+ * snapshot of the version `version`. `text` is the primary hub's catalog, which words the findings
+ * of the merge. The career is the one part's that has one, the primary's.
  */
-function ambiguousIds(first: FirstHub, keys: readonly string[], text: TextCatalog): Finding[] {
-    const found: Finding[] = [];
-    const note = (id: Id, file: string): void => {
-        const key = keys.find((one) => id.startsWith(`${one}:`));
-        if (key === undefined) return;
-        found.push({
-            file,
-            key: id,
-            message: findingText(text, 'findings.hubs.id_prefix', id, key)
-        });
-    };
-    const { entities } = first.snapshot;
-    for (const one of Object.values(entities.projects)) note(one.id, one.file);
-    for (const one of Object.values(entities.collections)) {
-        note(one.id, one.file);
-        for (const entry of one.entries) note(entry.id, one.file);
-    }
-    const registries: [RegistryName, Record<Id, unknown>][] = [
-        ['venues', entities.venues],
-        ['datasets', entities.datasets],
-        ['pillars', entities.pillars],
-        ['domains', entities.domains],
-        ['funding', entities.funding],
-        ['people', entities.people],
-        ['organisations', entities.organisations],
-        ['resources', entities.resources]
-    ];
-    for (const [name, table] of registries) {
-        for (const id of Object.keys(table)) note(id, first.registryFiles[name]);
-    }
-    for (const item of first.feedItems) note(item.id, item.file);
-    return found;
-}
-
-/**
- * The portfolio of the primary hub and of every hub built beside it, as one snapshot of the first
- * hub's version. `text` is the primary hub's catalog, which words the findings of the merge. With
- * no other hub the primary hub's snapshot is returned as it is.
- */
-export function mergeHubs(
-    first: FirstHub,
-    others: readonly OtherHub[],
-    text: TextCatalog
-): Snapshot {
-    if (others.length === 0) return first.snapshot;
-    const base = first.snapshot;
-    const prefixed = others.map((one) => ({
-        key: one.key,
-        entities: entitiesOf(one.key, one.snapshot.entities, one.peopleFile),
-        relations: relationsOf(one.key, one.snapshot.relations),
-        findings: one.snapshot.findings
-    }));
-    const kinds = [
-        'projects',
-        'venues',
-        'datasets',
-        'pillars',
-        'domains',
-        'funding',
-        'people',
-        'organisations',
-        'resources',
-        'collections'
-    ] as const;
-    const entities = { ...base.entities };
-    // The tables are copied so the merge adds to its own and the primary's build stays as built.
-    for (const kind of kinds) entities[kind] = { ...base.entities[kind] } as never;
-    for (const one of prefixed) {
-        for (const kind of kinds) {
-            Object.assign(entities[kind], one.entities[kind]);
-        }
-        entities.feeds = feedsOf(entities.feeds, one.key, one.entities.feeds);
-    }
-    for (const kind of kinds) {
-        entities[kind] = byId(Object.values(entities[kind]) as { id: Id }[]) as never;
-    }
-    const keys = others.map((one) => one.key);
-    return {
-        version: base.version,
-        entities,
-        relations: joined(
-            base.relations,
-            prefixed.map((one) => one.relations)
+export function mergeHubs(parts: readonly HubPart[], text: TextCatalog, version: number): Snapshot {
+    const holders = holdersBy(parts);
+    const found = new Map<string, Finding>();
+    const resolvers = parts.map((part) => resolverOf(holders, part.key, found, text));
+    const of = (part: HubPart): Resolve => resolvers[parts.indexOf(part)];
+    const projects = joined(
+        parts,
+        (all) => all.projects,
+        (one, part) => projectOf(one, part.key, of(part))
+    );
+    const funding = joined(
+        parts,
+        (all) => all.funding,
+        (one, part) => schemeOf(one, part.key, part.files.funding, of(part))
+    );
+    const people = joined(
+        parts,
+        (all) => all.people,
+        (one, part) => personOf(one, part.key, part.files.people, of(part))
+    );
+    const collections = joined(
+        parts,
+        (all) => all.collections,
+        (one, part) => collectionOf(one, part.key, of(part))
+    );
+    const entities: Entities = {
+        projects,
+        venues: joined(
+            parts,
+            (all) => all.venues,
+            (one, part) => rooted(one, part.key)
         ),
+        datasets: joined(
+            parts,
+            (all) => all.datasets,
+            (one, part) => rooted(one, part.key)
+        ),
+        pillars: joined(
+            parts,
+            (all) => all.pillars,
+            (one, part) => rooted(one, part.key)
+        ),
+        domains: joined(
+            parts,
+            (all) => all.domains,
+            (one, part) => rooted(one, part.key)
+        ),
+        funding,
+        people,
+        organisations: joined(
+            parts,
+            (all) => all.organisations,
+            (one, part) => rooted(one, part.key)
+        ),
+        resources: joined(
+            parts,
+            (all) => all.resources,
+            (one, part) => rooted(one, part.key)
+        ),
+        collections,
+        feeds: feedsOf(parts),
+        career:
+            parts.map((part) => part.snapshot.entities.career).find((one) => one !== null) ?? null
+    };
+    const jointWork = parts.flatMap((part) => {
+        const held = Object.values(part.snapshot.entities.collections);
+        return jointWorkRows(held).flatMap((row) => {
+            const where = { file: row.file, key: row.id, field: 'person' };
+            const person = of(part)(['people'], row.person, where);
+            return person === null ? [] : [{ id: hubId(part.key, row.id), person }];
+        });
+    });
+    const known = Object.fromEntries(
+        SOURCES.map((source) => [source, new Set(Object.keys(entities[source]))])
+    );
+    const relations = linked(
+        {
+            projects: Object.values(projects),
+            datasets: Object.values(entities.datasets),
+            pillars: Object.values(entities.pillars),
+            domains: Object.values(entities.domains),
+            schemes: Object.values(funding),
+            people: Object.values(people),
+            organisations: Object.values(entities.organisations)
+        },
+        known,
+        jointWork
+    );
+    return {
+        version,
+        entities,
+        relations,
         findings: sortFindings([
-            ...base.findings,
-            ...ambiguousIds(first, keys, text),
-            ...prefixed.flatMap((one) => one.findings)
+            ...parts.flatMap((part) => part.snapshot.findings),
+            ...found.values()
         ])
     };
 }

@@ -5,10 +5,10 @@
 // them.
 //
 // The findings are the schema's side of the integrity gate: a key no schema declares, a value
-// outside its options, a reference to a key that is not on disk, a field outside its `when`, a
-// required field that is missing, a key that stands twice in a referenced file, and a `schema:`
-// block that does not read. The documents checked are the project manifests and the hub's data
-// files. The other schemas serve the editor alone: the readers of their files report their own
+// outside its options, a reference to a key no hub of the workspace holds, a field outside its
+// `when`, a required field that is missing, a key that stands twice in a referenced file, and a
+// `schema:` block that does not read. The documents checked are the project manifests and the hub's
+// data files. The other schemas serve the editor alone: the readers of their files report their own
 // findings. The texts of the manifests and hub data files the run read come back with it, so the
 // reference index (snapshot/references/) scans them without reading a file again.
 //
@@ -31,7 +31,7 @@ import { MANIFEST, ROOT_FOLDER } from '../../helpers/hub-names.ts';
 import { checkDocument, isWords, type Checker, type SchemaDoc } from './check.ts';
 import { fileSchema, writtenFields, type FileKind } from './hub.ts';
 import { schemaText, type JsonSchema } from './json.ts';
-import { duplicateKeys, hubLists, listsOf, vocabLists } from './lists.ts';
+import { duplicateKeys, hubLists, joinedLists, listsOf, vocabLists } from './lists.ts';
 import { manifestSchema } from './manifest.ts';
 import { fieldsOf, readOptions, type OptionProblem } from './field.ts';
 import { problemText, type Context, type SchemaProblem } from './record.ts';
@@ -211,21 +211,28 @@ function fieldFindings(
 /**
  * Generate the schemas of one build and check the hub against them. `checker` holds the validators
  * compiled so far, so a build whose schemas did not change compiles nothing. `unread` names the
- * sources whose file did not read, whose keys are not known.
+ * sources whose file did not read, whose keys are not known. `others` holds the keys the other hubs
+ * of the workspace hold, by source, which a field that names a record takes beside the hub's own,
+ * so the editor marks no value the merge of the hubs resolves.
  */
 export function runSchemas(
     hub: string,
     config: PortfolioConfig,
     raw: RawPortfolio,
     checker: Checker,
-    unread: ReadonlySet<string>
+    unread: ReadonlySet<string>,
+    others: Readonly<Record<string, readonly string[]>> = {}
 ): SchemaRun {
     const texts: Record<string, string> = {};
     const rules: SchemaRule[] = [];
     const findings: Finding[] = [];
     const docs: SchemaDoc[] = [];
     const read: ReadTexts = { hub: [], manifests: [] };
-    const lists = listsOf(hubLists(raw), vocabLists(config.merged, VOCAB_FILE_KEYS), unread);
+    const lists = listsOf(
+        joinedLists(hubLists(raw), others),
+        vocabLists(config.merged, VOCAB_FILE_KEYS),
+        unread
+    );
     const context = (at: string): Context => ({ lists, problems: [], at });
     const add = (name: string, schema: JsonSchema, rule: Omit<SchemaRule, 'name'>): void => {
         texts[name] = schemaText(schema);

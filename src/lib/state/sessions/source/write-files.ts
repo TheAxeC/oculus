@@ -6,15 +6,25 @@
 // A write that creates its file (a new idea, a LinkedIn idea, a picture on the Memories wall, a
 // deck made in a folder) names none, since no tab can hold unsaved text of a file not yet written,
 // and neither does a write whose file the page cannot name from what the write carries: the session
-// overrides, the open workspace's folders and the git, open and deposit endpoints. A file of the
-// primary hub is named under the primary's folder name, so a workspace with no primary names no hub
-// file. A Settings write lands where the server places it (server/edit/writes/config/
-// config-place.ts): a key of the hub list in the primary hub's settings file, any other option, the
-// rail and the audit's mute list in the open workspace file, which is named under the workspace
-// folder of its hub, so the unsaved workspace and a workspace file outside every folder name none.
+// overrides, the open workspace's folders and the git, open and deposit endpoints. A write that
+// names a record changes the file of the hub the record's id names, as the server routes it
+// (server/edit/writes/hubs.ts), the primary's as any other, and an id that names no hub names no
+// file. A write that adds a record and names no hub changes the file of the hub the server gives
+// it: the primary's, else the first hub's in the folders' order, and for Save to Literature the
+// first of those that holds the Literature collection. A Settings write lands where the server
+// places it (server/edit/writes/config/config-place.ts): a key of the hub list in the primary hub's
+// settings file, any other option, the rail and the audit's mute list in the open workspace file,
+// which is named under the workspace folder of its hub, so the unsaved workspace and a workspace
+// file outside every folder name none.
 
 import { fields } from '../../../data/helpers/guards.ts';
-import { HUB_FILE, MANIFEST, ROOT_FOLDER, hubFileOf } from '../../../data/helpers/hub-names.ts';
+import {
+    HUB_FILE,
+    MANIFEST,
+    ROOT_FOLDER,
+    addressOfId,
+    hubFileOf
+} from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
@@ -25,6 +35,8 @@ import { t } from '../../shared/words/text.ts';
 export type FileLookups = {
     /** The folder name of the open workspace's primary hub, or null when it names none. */
     primary: () => string | null;
+    /** The folder names of the open workspace's hubs, in the folders' order, the primary's too. */
+    hubs: () => string[];
     /** The open workspace file under the workspace folder that holds it, or null. */
     workspaceFile: () => ViewSource | null;
     /**
@@ -32,8 +44,11 @@ export type FileLookups = {
      * workspace folder); null when none has it.
      */
     projectManifest: (id: string) => ViewSource | null;
-    /** The file of a collection of a hub other than the primary, by its id; null for any other. */
-    collectionFile: (id: string) => ViewSource | null;
+    /**
+     * The file of the collection `name` of the hub named `hub`, under the root that holds it; null
+     * when that hub holds no such collection.
+     */
+    collectionFile: (hub: string, name: string) => ViewSource | null;
     /** The file of each feed, per kind, as the page last received them. */
     feeds: () => FeedsPayload | null;
     /** The file a recorded change wrote, under the root that holds it, by its moment. */
@@ -50,12 +65,9 @@ export type FileLookups = {
  * `project.yml` or `.oculus/project.yml` in its folder, whether the folder lies in a hub or is a
  * workspace folder. Null for no project and for a project with no folder.
  */
-export function manifestOfProject(
-    project: Project | undefined,
-    primary: string | null
-): ViewSource | null {
+export function manifestOfProject(project: Project | undefined): ViewSource | null {
     if (project === undefined || project.folder === '') return null;
-    const { root, path } = placeOf(project, primary);
+    const { root, path } = placeOf(project);
     const name = project.file.endsWith(`/${ROOT_FOLDER}/${MANIFEST}`)
         ? `${ROOT_FOLDER}/${MANIFEST}`
         : MANIFEST;
@@ -68,6 +80,7 @@ export function manifestOfProject(
  */
 export const NO_LOOKUPS: Readonly<FileLookups> = Object.freeze({
     primary: () => null,
+    hubs: () => [],
     workspaceFile: () => null,
     projectManifest: () => null,
     collectionFile: () => null,
@@ -96,46 +109,18 @@ function settingsFile(file: string, key: string, look: FileLookups): ViewSource 
     return hubFileOf(key) === file ? inHub(HUB_FILE, look) : look.workspaceFile();
 }
 
-/** The file a feed's entries live in, by the feed's name. */
-function feedFile(
-    feed: string,
-    config: Record<string, unknown>,
-    look: FileLookups
-): ViewSource | null {
-    if (feed === 'leads' || feed === 'radar') return viewSourceFile(feed, config, look.primary());
-    return null;
-}
-
 /**
- * The file of the feed `kind` in the hub the write's `root` names: the primary's, whose file the
- * configuration gives, when it is absent.
+ * The file of the feed `kind` in the hub named `root`, the hub part of the entry's internal id;
+ * none for a write that names no hub, which the server refuses.
  */
-function feedFileOf(
-    kind: FeedKind,
-    root: string,
-    feeds: FeedsPayload | null,
-    config: Record<string, unknown>,
-    look: FileLookups
-): ViewSource | null {
-    if (root === '') return kind === 'linkedin' ? null : feedFile(kind, config, look);
+function feedFileOf(kind: FeedKind, root: string, feeds: FeedsPayload | null): ViewSource | null {
     const hubFiles = feeds?.[kind].hubFiles ?? {};
     return Object.hasOwn(hubFiles, root) ? inRoot(root, hubFiles[root]) : null;
 }
 
-/**
- * The file of the collection `name` of the hub an entry's id names, as the server routes the write
- * (server/edit/writes/hubs.ts): a view names the collection by its bare key and the entry by its id
- * in the portfolio, `<hub name>:<id>` for an entry of a hub other than the primary. Null when the
- * id names no such hub's collection, which leaves the write the primary's.
- */
-function entryHubFile(name: string, id: string, look: FileLookups): ViewSource | null {
-    const colon = id.indexOf(':');
-    return colon <= 0 ? null : look.collectionFile(`${id.slice(0, colon)}:${name}`);
-}
-
-/** A file under a root, or null for an empty path. */
+/** A file under a root, or null for an empty root or path. */
 function inRoot(root: string, path: string): ViewSource | null {
-    return path === '' ? null : { root, path };
+    return root === '' || path === '' ? null : { root, path };
 }
 
 /**
@@ -149,62 +134,75 @@ export function writtenFile(
 ): ViewSource | null {
     const body = fields(request);
     const merged = config ?? {};
-    const collection = (name: unknown, id: unknown = ''): ViewSource | null =>
-        look.collectionFile(text(name)) ??
-        entryHubFile(text(name), text(id), look) ??
-        viewSourceFile('collection', merged, look.primary(), text(name));
+    // The file of the collection `name` of the hub `hub`: the file the hub's collection was read
+    // from, or for the primary's, before it holds one, the file the configuration names.
+    const collection = (hub: string, name: unknown): ViewSource | null =>
+        hub === ''
+            ? null
+            : (look.collectionFile(hub, text(name)) ??
+              (hub === look.primary()
+                  ? viewSourceFile('collection', merged, hub, text(name))
+                  : null));
+    // The file of the collection `name` that holds the entry of the id `id` in the portfolio.
+    const holding = (name: unknown, id: unknown): ViewSource | null =>
+        collection(addressOfId(text(id)).hub, name);
+    // The hub a write that adds a record names, else the primary's, else the first hub's.
+    const home = (root: unknown): string =>
+        text(root) || (look.primary() ?? look.hubs().at(0) ?? '');
+    // The hub a write to the collection `name` that names no hub goes to: the primary's when it
+    // holds the collection, else the first other hub's that does, else `home`'s.
+    const naming = (name: string): string => {
+        const primary = look.primary();
+        if (primary !== null && look.collectionFile(primary, name) !== null) return primary;
+        const holds = (hub: string) => hub !== primary && look.collectionFile(hub, name) !== null;
+        return look.hubs().find(holds) ?? home('');
+    };
+    // The file of the feed `kind` a write that adds to it changes: the primary's, as its
+    // configuration names it, else the first hub's.
+    const added = (kind: 'leads' | 'radar'): ViewSource | null => {
+        const primary = look.primary();
+        if (primary !== null) return viewSourceFile(kind, merged, primary);
+        return feedFileOf(kind, look.hubs().at(0) ?? '', look.feeds());
+    };
     switch (body.kind) {
         case 'manifest':
             return look.projectManifest(text(body.id));
         case 'entry':
         case 'delete-entry':
-            return collection(body.collection, body.id);
-        case 'new-entry': {
-            const root = text(body.root);
-            return root === '' || root === look.primary()
-                ? collection(body.collection)
-                : look.collectionFile(`${root}:${text(body.collection)}`);
-        }
-        case 'literature-save': {
-            const root = text(body.root);
-            return root === '' || root === look.primary()
-                ? collection('literature')
-                : look.collectionFile(`${root}:literature`);
-        }
+            return holding(body.collection, body.id);
+        case 'new-entry':
+            return collection(home(body.root), body.collection);
+        case 'literature-save':
+            return collection(text(body.root) || naming('literature'), 'literature');
         case 'reorder':
-            return collection(body.collection, Array.isArray(body.order) ? body.order[0] : '');
+            return holding(body.collection, Array.isArray(body.order) ? body.order[0] : '');
         case 'subtask':
         case 'subtask-add':
         case 'followup':
         case 'followup-add': {
             const target = fields(body.target);
-            if (text(target.collection) !== '') return collection(target.collection, target.id);
+            if (text(target.collection) !== '') return holding(target.collection, target.id);
             return look.projectManifest(text(target.id));
         }
         case 'host':
         case 'career':
-            return inHub(text(merged.career_file), look);
+            return inRoot(home(''), text(merged.career_file));
         case 'feed-field':
         case 'feed-delete': {
             const feed = text(body.feed);
             if (feed !== 'leads' && feed !== 'radar') return null;
-            return feedFileOf(feed, text(body.root), look.feeds(), merged, look);
+            return feedFileOf(feed, addressOfId(text(body.id)).hub, look.feeds());
         }
         case 'lead-add':
-            return viewSourceFile('leads', merged, look.primary());
+            return added('leads');
         case 'radar-add':
-            return viewSourceFile('radar', merged, look.primary());
+            return added('radar');
         case 'linkedin-post': {
-            const root = text(body.root);
-            const hubFiles = look.feeds()?.linkedin.hubFiles ?? {};
-            const folder =
-                root === ''
-                    ? viewSourceFile('linkedin', merged, look.primary())
-                    : inRoot(root, Object.hasOwn(hubFiles, root) ? hubFiles[root] : '');
-            const file = text(body.file);
-            return folder === null || file === ''
+            const { hub, key } = addressOfId(text(body.id));
+            const folder = feedFileOf('linkedin', hub, look.feeds());
+            return folder === null || key === ''
                 ? null
-                : { root: folder.root, path: `${folder.path}/${file}` };
+                : { root: folder.root, path: `${folder.path}/${key}` };
         }
         case 'deck-slides':
             return { root: text(body.root), path: text(body.path) };

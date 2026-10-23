@@ -66,7 +66,7 @@ export type BandItem = {
      * none, which is what the education file writes instead. The view shortens it to a sentence.
      */
     note?: string;
-    /** The workspace folder of the hub the entry is in, for an entry of a hub but the primary. */
+    /** The name of the entry's hub, which the card's chip shows for a hub but the primary. */
     root?: string;
 };
 

@@ -5,9 +5,10 @@ export type Id = string;
 
 /**
  * A record that says which hub it was read from: the name of the workspace folder that holds the
- * hub, for a record of a hub other than the primary, and nothing for a record of the primary.
- * Absent is read as the primary's name (`rootOf` of data/helpers/hub-names.ts). An audit finding
- * uses it for the Files root its file is relative to (`AuditFinding`).
+ * hub. Every record of the merged portfolio carries it, the primary hub's included; a record read
+ * from one hub before the merge carries none (`rootOf` of data/helpers/hub-names.ts reads that as
+ * the empty name). An audit finding uses it for the Files root its file is relative to
+ * (`AuditFinding`).
  */
 export type Rooted = { root?: string };
 
@@ -790,9 +791,10 @@ export type Person = Rooted & {
     /** True on the person the workspace setting `self` names; absent on every other. */
     self?: boolean;
     /**
-     * Absolute path of the people file of a person of a hub other than the primary, which the
-     * Person view opens under that hub's root. A person of the primary hub has none: the
-     * configuration's `collections:` entry keyed `people` names its file.
+     * Absolute path of the people file of the hub the person was read from, set by the merge of the
+     * hubs. The Person view opens it under that hub's root for a person of a hub other than the
+     * primary, and the file the configuration's `collections:` entry keyed `people` names for a
+     * person of the primary.
      */
     file?: string;
     /**

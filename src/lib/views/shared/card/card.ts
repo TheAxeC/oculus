@@ -5,7 +5,13 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import { pausesCountdown } from '$lib/state/boards/focus';
 import type { ClientState } from '$lib/state/client/context';
-import { isInstanceOf, tabsOf, type Instance, type Layout } from '$lib/state/workbench/layout';
+import {
+    isInstanceOf,
+    recordState,
+    tabsOf,
+    type Instance,
+    type Layout
+} from '$lib/state/workbench/layout';
 import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
@@ -122,8 +128,8 @@ export function openDocument(
  * project's title, with the project view in its documents pane.
  */
 export function openWorkbench(client: ClientState, item: BoardItem, tab: string): void {
-    const first = { view: 'project', state: { id: item.id, label: tab } };
-    const { root, path } = placeOf(item.project, client.fs.primary());
+    const first = { view: 'project', state: recordState(item.id, tab) };
+    const { root, path } = placeOf(item.project);
     client.folders.open({ root, path }, { label: item.project.title, item: first });
 }
 

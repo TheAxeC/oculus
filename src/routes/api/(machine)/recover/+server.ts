@@ -14,6 +14,7 @@ import {
     type RecoverTarget
 } from '$lib/server/machine/runs/recover/routes';
 import { sevenZipFolder } from '$lib/server/machine/runs/recover/unpack';
+import { hubId } from '$lib/data/helpers/hub-names';
 import { dataset } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
@@ -28,7 +29,7 @@ const target = (locals: App.Locals): RecoverTarget => {
                 ? names
                 : [open.primary, ...names.filter((name) => name !== open.primary)];
         },
-        dataset: (hub, key) => dataset(server.hub, hub === open.primary ? key : `${hub}:${key}`),
+        dataset: (hub, key) => dataset(server.hub, hubId(hub, key)),
         downloads: () => server.local.downloads,
         fetch,
         local: server.recover.local,
@@ -36,6 +37,7 @@ const target = (locals: App.Locals): RecoverTarget => {
             const where = hpcRouteHost({
                 hpcHost: server.local.hpcHost,
                 hub: server.hub,
+                primary: open.primary,
                 config: () => locals.config().config
             });
             if (where.host === '') return { missing: where.missing ?? '' };

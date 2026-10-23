@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
 import { focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
 import { wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import type { Holders } from '../../../data/helpers/hub-names.ts';
 import type { AuditFinding, Collection, Domain, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
 
@@ -19,8 +20,8 @@ export type AuditRules = {
     /** Whole days a document may be ahead of its own manifest before the manifest is behind. */
     staleLagDays: number;
     /**
-     * The domains a project is expected to name a dataset in: the entries of the hub's domains
-     * registry marked `expects_datasets: true`.
+     * The domains a project is expected to name a dataset in, by the ids of the merged portfolio:
+     * the entries of the hubs' domains registries marked `expects_datasets: true`.
      */
     dataDomains: Set<string>;
     /**
@@ -162,7 +163,7 @@ const publicationsFileShape = z.string();
 
 /**
  * The rules the scan runs under, read out of the merged configuration, and the domains of the
- * hub's registry, whose `expectsDatasets` say where a dataset is expected.
+ * portfolio, whose `expectsDatasets` say where a dataset is expected.
  */
 export function auditRules(
     config: Record<string, unknown>,
@@ -238,16 +239,19 @@ export function signatureOf(
 }
 
 /**
- * What the scan is run over: the hub on disk, the snapshot's entities, the rules and the words.
- * `root` is the key of a hub other than the primary: its findings carry that key and name their
- * place under it, and the website's publication list, which belongs to the primary hub, is not run
- * over it.
+ * What the scan is run over: the hub on disk, its name `root` and whether it is the workspace's
+ * primary, its records of the merged snapshot, whose references are resolved across the hubs, the
+ * hubs that hold each project key (`held`), which an entry's `related` key resolves against, the
+ * rules and the words. The website's publication list belongs to the primary hub and is run over
+ * it alone.
  */
 export type AuditInput = {
     hub: string;
-    root?: string;
+    root: string;
+    primary: boolean;
     projects: Project[];
     collections: Collection[];
+    held: Holders;
     rules: AuditRules;
     catalog: Record<string, string>;
 };
@@ -261,16 +265,19 @@ export function sentence(key: string, ...args: (string | number)[]): Sentence {
 }
 
 /** What a rule hands the collector: where the finding is and which catalog sentence says it. */
-export type Raised = Omit<AuditFinding, 'signature' | 'message'> & Sentence;
+export type Raised = Omit<AuditFinding, 'signature' | 'message' | 'hub'> & Sentence;
 
 /**
- * A collector, so a rule adds a finding without knowing how one is keyed or worded. Given the key
- * of a hub other than the primary it puts the key in front of each finding's scope, which is what
- * the signature reads, and marks the finding with it.
+ * A collector, so a rule adds a finding without knowing how one is keyed or worded. Every finding
+ * is marked with the hub `root` it is of, and its file is under that hub's root unless the rule
+ * named a repository's. The scope it carries is the rule's own, with no hub in it; the signature
+ * reads the scope of a hub other than the `primary` with the hub's name and a colon in front, so a
+ * finding of the same place in two hubs has two signatures and a stored mute keeps its hash.
  */
 export function collector(
     catalog: Record<string, string>,
-    root?: string
+    root: string,
+    primary: boolean
 ): {
     found: AuditFinding[];
     add: (f: Raised) => void;
@@ -279,13 +286,13 @@ export function collector(
     return {
         found,
         add({ key, args, ...finding }) {
-            const scope = root === undefined ? finding.scope : `${root}:${finding.scope}`;
+            const signed = primary ? finding.scope : `${root}:${finding.scope}`;
             found.push({
                 ...finding,
-                scope,
-                ...(root === undefined ? {} : { root }),
+                hub: root,
+                root: finding.root ?? root,
                 message: findingText(catalog, key, ...args),
-                signature: signatureOf(scope, finding.where, finding.kind, key, args)
+                signature: signatureOf(signed, finding.where, finding.kind, key, args)
             });
         }
     };

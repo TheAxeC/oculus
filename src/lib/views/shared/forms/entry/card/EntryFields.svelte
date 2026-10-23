@@ -6,7 +6,8 @@
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`, and which projects cross-link is crossLinks() over
     // the collection key. A field the schema draws its choices from the people registry for is the
-    // one exception in kind rather than in name: it holds a person's key, so the card draws the
+    // one exception in kind rather than in name: it holds a person's key, which names the person of
+    // the entry's own hub, else of the one other hub that holds the key, so the card draws the
     // control that opens that person by their name. A Literature entry's `venue` that names a venue
     // record is the other: it opens that venue.
     //
@@ -46,6 +47,8 @@
     import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { holdersOf, resolvedId, rootOf } from '$lib/state/shared/page/hubs';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const client = useState();
     const {
@@ -88,7 +91,13 @@
     }: Props = $props();
 
     const cardMath = createCardMath();
-    const groups = $derived(crossLinks(entry, collection, projects, configMap()));
+    const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
+    const groups = $derived(crossLinks(entry, collection, projects, people, configMap()));
+
+    /** The id of the person a person field's key names, or the key itself when it names none. */
+    function personId(key: string): string {
+        return resolvedId(holdersOf(people), rootOf(entry), key) ?? key;
+    }
 
     /** The page of the venue record a Literature entry's venue names, by name ignoring case. */
     const venuePage = $derived.by(() => {
@@ -99,7 +108,8 @@
 
     /** One person as their own tab, the tab a collaborator tag on a project card opens. */
     function openPerson(key: string): void {
-        openView('person', { key, label: personName(portfolio(), key) });
+        const id = personId(key);
+        openView('person', recordState(id, personName(portfolio(), id)));
     }
 </script>
 
@@ -158,7 +168,7 @@
         <div class="row">
             <span class="label">{drawn.label}</span>
             <Chip
-                label={personName(portfolio(), drawn.values[0])}
+                label={personName(portfolio(), personId(drawn.values[0]))}
                 glyph={t('collection.person_glyph')}
                 title={t('collection.open_person')}
                 onclick={() => openPerson(drawn.values[0])}

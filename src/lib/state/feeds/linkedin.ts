@@ -7,13 +7,15 @@ import { readAs, searchRevealShape, textOrNumberShape } from '../../data/shapes/
 export { localDate } from '../../data/helpers/dates.ts';
 
 export type LinkedinEntry = {
+    /** The post's internal id, its hub and its file's name, which a write names it by. */
+    id: string;
     file: string;
     title: string;
     date: string;
     category: string;
     body: string;
     idea: boolean;
-    /** The key of the hub the post is of, present only for a hub other than the primary. */
+    /** The name of the hub the post is of; absent for a post the feed gave no hub. */
     root?: string;
 };
 
@@ -105,6 +107,7 @@ export function splitPosts(entries: (Record<string, unknown> | null)[]): SplitLi
             if (!idea && !/^\d+-/.test(file)) return null;
             const root = text(entry, 'root');
             return {
+                id: text(entry, 'id'),
                 file,
                 title: text(entry, 'title') || file,
                 date: text(entry, 'date'),

@@ -24,7 +24,7 @@
     import { daysTone } from '$lib/state/boards/ticker';
     import { namedTone, toneOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
-    import { instanceMap } from '$lib/state/workbench/layout';
+    import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -77,7 +77,7 @@
         const instance = openView(item.entry);
         setInstanceState(instance, {
             ...instanceMap(instanceState(instance)),
-            reveal: item.id,
+            reveal: recordField(item.id),
             search: ''
         });
     }

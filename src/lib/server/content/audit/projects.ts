@@ -11,6 +11,7 @@ import { stringify } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
+import { bareId, resolvedId } from '../../../data/helpers/hub-names.ts';
 import { folderOnDisk } from '../../../data/places/folder-on-disk.ts';
 import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
@@ -164,7 +165,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
         const intro = collection.intro ?? '';
         if (intro !== '' && markerCount(intro) > 0) {
             add({
-                scope: collection.id,
+                scope: bareId(collection),
                 where: relative(input.hub, collection.file),
                 kind: 'todo',
                 file: fileOf(input.hub, collection.file),
@@ -175,7 +176,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
             const blob = stringify(entry.fields);
             if (markerCount(blob) === 0) continue;
             add({
-                scope: collection.id,
+                scope: bareId(collection),
                 where: labelOf(entry.title, entry.index),
                 kind: 'todo',
                 file: fileOf(input.hub, collection.file),
@@ -492,12 +493,11 @@ const entryFieldsShape = z.object({
  */
 export function collections(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
-    const ids = new Set(input.projects.map((one) => one.id));
     for (const collection of input.collections) {
         const where = relative(input.hub, collection.file);
         if (!existsSync(collection.file)) {
             add({
-                scope: collection.id,
+                scope: bareId(collection),
                 where,
                 kind: 'data',
                 file: NO_FILE,
@@ -512,7 +512,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             const label = labelOf(entry.title, entry.index);
             if (entry.title === '') {
                 add({
-                    scope: collection.id,
+                    scope: bareId(collection),
                     where: `entry #${entry.index + 1}`,
                     kind: 'data',
                     file: fileOf(input.hub, collection.file),
@@ -523,7 +523,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             const status = fields.status;
             if (status === '' && tracked) {
                 add({
-                    scope: collection.id,
+                    scope: bareId(collection),
                     where: label,
                     kind: 'data',
                     file: fileOf(input.hub, collection.file),
@@ -531,7 +531,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                 });
             } else if (rules.waitingStatus.has(status.toLowerCase()) && fields.date === '') {
                 add({
-                    scope: collection.id,
+                    scope: bareId(collection),
                     where: label,
                     kind: 'data',
                     file: fileOf(input.hub, collection.file),
@@ -539,9 +539,9 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                 });
             }
             for (const related of fields.related) {
-                if (ids.has(related)) continue;
+                if (resolvedId(input.held, input.root, related) !== null) continue;
                 add({
-                    scope: collection.id,
+                    scope: bareId(collection),
                     where: label,
                     kind: 'data',
                     file: fileOf(input.hub, collection.file),
@@ -556,7 +556,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             const inHub = below(path, input.hub);
             if (isHubPath(link) && inHub && !existsSync(path)) {
                 add({
-                    scope: collection.id,
+                    scope: bareId(collection),
                     where: label,
                     kind: 'data',
                     file: fileOf(input.hub, collection.file),

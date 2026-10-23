@@ -47,7 +47,12 @@ import { filesNamed, folderNamed } from '../../shared/answers/files-named.ts';
 import { failedAnswer } from '../../shared/answers/answers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../shared/stores/shapes.ts';
 import type { FsStore } from '../../sources/fs.svelte.ts';
-import { emptyTarget, targetKey, type LatexTarget } from '../terminal/latex-target.ts';
+import {
+    emptyTarget,
+    markedTarget,
+    targetKey,
+    type LatexTarget
+} from '../terminal/latex-target.ts';
 import { servesRoot } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
 import type { TerminalAnswer } from '../terminal/pty/pty-io.ts';
@@ -639,7 +644,8 @@ export function createLatex(
     function holdAgain(terminal: string, approval: LatexApproval, restart: boolean): void {
         const kept = terminals.terminalById(terminal)?.job?.latex;
         if (kept?.target === undefined) return;
-        builds.holdRerun(kept.target, approval, { terminal, restart }, kept.recipe ?? '');
+        const target = markedTarget(kept.target);
+        builds.holdRerun(target, approval, { terminal, restart }, kept.recipe ?? '');
     }
 
     function latexDiagnostics(): LatexDiagnostic[] {

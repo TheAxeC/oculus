@@ -65,7 +65,7 @@ const FIELD_ROWS = [
     ...(['idea', 'r'] as const).flatMap((id) => [
         {
             name: `${id}: a snooze set`,
-            body: { kind: 'manifest', id, fields: { snooze: '2026-12-01' } },
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { snooze: '2026-12-01' } },
             field: 'snooze',
             now: '2026-12-01',
             was: '2026-11-01',
@@ -74,7 +74,7 @@ const FIELD_ROWS = [
         },
         {
             name: `${id}: a snooze woken`,
-            body: { kind: 'manifest', id, fields: { snooze: '' } },
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { snooze: '' } },
             field: 'snooze',
             now: null,
             was: '2026-11-01',
@@ -92,7 +92,7 @@ const LINE_ROWS = [
         name: 'a collection entry: a tick',
         body: {
             kind: 'subtask',
-            target: { collection: 'tasks', id: 'Review the draft' },
+            target: { collection: 'tasks', id: 'hub:Review the draft' },
             key: '0',
             action: 'done'
         },
@@ -101,12 +101,16 @@ const LINE_ROWS = [
     ...(['idea', 'r'] as const).flatMap((id) => [
         {
             name: `${id}: a tick`,
-            body: { kind: 'subtask', target: { id }, key: '0', action: 'done' },
+            body: { kind: 'subtask', target: { id: `hub:${id}` }, key: '0', action: 'done' },
             read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         },
         {
             name: `${id}: an added line`,
-            body: { kind: 'subtask-add', target: { id }, fields: { do: 'write it up' } },
+            body: {
+                kind: 'subtask-add',
+                target: { id: `hub:${id}` },
+                fields: { do: 'write it up' }
+            },
             read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         }
     ])
@@ -144,9 +148,9 @@ const QUOTED_LEADS = [
     ''
 ].join('\n');
 
-const DELETE_TASK = { kind: 'delete-entry', collection: 'tasks', id: 'First task' };
+const DELETE_TASK = { kind: 'delete-entry', collection: 'tasks', id: 'hub:First task' };
 const ADD_TASK = { kind: 'new-entry', collection: 'tasks', fields: { title: 'A third task' } };
-const DELETE_LEAD = { kind: 'feed-delete', feed: 'leads', id: 'First lead' };
+const DELETE_LEAD = { kind: 'feed-delete', feed: 'leads', id: 'hub:First lead' };
 
 /** The titles of a file's entries, in order, and the value of `field` of the one titled `title`. */
 function entriesOf(text: string, title: string, field: string): [unknown[], unknown] {
@@ -260,32 +264,36 @@ describe('taking a change back', () => {
         {
             name: `${id}: a snooze set`,
             id,
-            body: { kind: 'manifest', id, fields: { snooze: '2026-12-01' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { snooze: '2026-12-01' } }
         },
         {
             name: `${id}: a snooze woken`,
             id,
-            body: { kind: 'manifest', id, fields: { snooze: '' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { snooze: '' } }
         },
         {
             name: `${id}: a tier written`,
             id,
-            body: { kind: 'manifest', id, fields: { tier: 'coauthor' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { tier: 'coauthor' } }
         },
         {
             name: `${id}: a type written`,
             id,
-            body: { kind: 'manifest', id, fields: { type: 'paused-stage' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { type: 'paused-stage' } }
         },
         {
             name: `${id}: a tick`,
             id,
-            body: { kind: 'subtask', target: { id }, key: '0', action: 'done' }
+            body: { kind: 'subtask', target: { id: `hub:${id}` }, key: '0', action: 'done' }
         },
         {
             name: `${id}: an added line`,
             id,
-            body: { kind: 'subtask-add', target: { id }, fields: { do: 'write it up' } }
+            body: {
+                kind: 'subtask-add',
+                target: { id: `hub:${id}` },
+                fields: { do: 'write it up' }
+            }
         }
     ]);
 
@@ -310,11 +318,16 @@ describe('taking a change back', () => {
     const FOLDER_ROWS = [
         {
             name: 'a snooze set',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
+            body: { kind: 'manifest', id: `hub:${REPOSITORY_ID}`, fields: { snooze: '2026-12-01' } }
         },
         {
             name: 'a tick',
-            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
+            body: {
+                kind: 'subtask',
+                target: { id: `hub:${REPOSITORY_ID}` },
+                key: '0',
+                action: 'done'
+            }
         }
     ];
 
@@ -345,30 +358,51 @@ describe('taking a change back', () => {
     const INSIDE_ROWS = [
         {
             name: 'a field of the manifest editor',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { 'status.line': 'a new line' } }
+            body: {
+                kind: 'manifest',
+                id: `hub:${REPOSITORY_ID}`,
+                fields: { 'status.line': 'a new line' }
+            }
         },
         {
             name: 'a snooze set',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
+            body: { kind: 'manifest', id: `hub:${REPOSITORY_ID}`, fields: { snooze: '2026-12-01' } }
         },
         {
             name: 'a follow-up done',
-            body: { kind: 'followup', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
+            body: {
+                kind: 'followup',
+                target: { id: `hub:${REPOSITORY_ID}` },
+                key: '0',
+                action: 'done'
+            }
         },
-        { name: 'Pin', body: { kind: 'manifest', id: REPOSITORY_ID, fields: { pin: true } } },
+        {
+            name: 'Pin',
+            body: { kind: 'manifest', id: `hub:${REPOSITORY_ID}`, fields: { pin: true } }
+        },
         {
             name: 'a tick',
-            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
+            body: {
+                kind: 'subtask',
+                target: { id: `hub:${REPOSITORY_ID}` },
+                key: '0',
+                action: 'done'
+            }
         },
         {
             name: 'an added line',
-            body: { kind: 'subtask-add', target: { id: REPOSITORY_ID }, fields: { do: 'test it' } }
+            body: {
+                kind: 'subtask-add',
+                target: { id: `hub:${REPOSITORY_ID}` },
+                fields: { do: 'test it' }
+            }
         },
         {
             name: 'an added follow-up',
             body: {
                 kind: 'followup-add',
-                target: { id: REPOSITORY_ID },
+                target: { id: `hub:${REPOSITORY_ID}` },
                 fields: { do: 'call Ann' }
             }
         }
@@ -412,7 +446,7 @@ describe('taking a change back', () => {
         const removed = await made(into, {
             kind: 'delete-entry',
             collection: 'tasks',
-            id: 'Another task'
+            id: 'hub:Another task'
         });
         expect(removed.undo).toBe('delete');
         expect(
@@ -476,7 +510,7 @@ describe('taking a change back', () => {
         const removed = await made(into, {
             kind: 'delete-entry',
             collection: 'tasks',
-            id: 'With subtasks'
+            id: 'hub:With subtasks'
         });
         expect(entries().map((one) => one.title)).toEqual(['Another task']);
         expect((await undone(into, removed)).status).toBe(200);
@@ -493,7 +527,7 @@ describe('taking a change back', () => {
         const entry = await made(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Review the draft',
+            id: 'hub:Review the draft',
             fields: { status: 'done' }
         });
         expect(tasksOf(into)).toContain('status: done');
@@ -505,7 +539,7 @@ describe('taking a change back', () => {
         const feed = await made(into, {
             kind: 'feed-field',
             feed: 'radar',
-            id: 'Paper',
+            id: 'hub:Paper',
             field: 'dismissed',
             value: true
         });
@@ -521,7 +555,7 @@ describe('taking a change back', () => {
         const rename = await made(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Review the draft',
+            id: 'hub:Review the draft',
             fields: { title: 'Renamed draft' }
         });
         const renamed = tasksOf(into);
@@ -536,7 +570,7 @@ describe('taking a change back', () => {
         await made(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Another task',
+            id: 'hub:Another task',
             fields: { title: 'Second task', status: 'done' }
         });
         const [status, title] = changesOf(into);
@@ -550,7 +584,7 @@ describe('taking a change back', () => {
         await made(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Another task',
+            id: 'hub:Another task',
             fields: { title: 'Second task', status: 'done' }
         });
         const [later, renaming] = changesOf(into);
@@ -563,7 +597,7 @@ describe('taking a change back', () => {
         const refused = await made(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Another task',
+            id: 'hub:Another task',
             fields: { title: null, status: 'done' }
         });
         expect(refused.field).toBe('status');
@@ -577,7 +611,7 @@ describe('taking a change back', () => {
         const change = await made(into, {
             kind: 'reorder',
             collection: 'tasks',
-            order: ['Another task', 'Review the draft']
+            order: ['hub:Another task', 'hub:Review the draft']
         });
         expect(change.undo).toBe('reorder');
         expect(tasksOf(into)).not.toBe(before);
@@ -688,7 +722,7 @@ describe('taking a change back', () => {
 
         const added = await made(into, {
             kind: 'subtask-add',
-            target: { collection: 'tasks', id: 'Review the draft' },
+            target: { collection: 'tasks', id: 'hub:Review the draft' },
             fields: { do: 'write it up' }
         });
         expect(added.undo).toBe('create');
@@ -713,7 +747,11 @@ describe('taking a change back', () => {
 
         // Deleting the one lead leaves the `entries:` key with nothing under it, which is the
         // file an undo has to write the entry back into.
-        const gone = await made(into, { kind: 'feed-delete', feed: 'leads', id: 'Lead' });
+        const gone = await made(into, {
+            kind: 'feed-delete',
+            feed: 'leads',
+            id: 'hub:Lead'
+        });
         expect(gone.before).toEqual({ title: 'Lead', status: 'open' });
         expect(leads()).not.toContain('- title: "Lead"');
         expect(
@@ -728,7 +766,11 @@ describe('taking a change back', () => {
         const into = target();
         const radar = (): string =>
             readFileSync(join(into.hub, '.oculus', 'data', 'literature', 'radar.yml'), 'utf8');
-        const gone = await made(into, { kind: 'feed-delete', feed: 'radar', id: 'Paper' });
+        const gone = await made(into, {
+            kind: 'feed-delete',
+            feed: 'radar',
+            id: 'hub:Paper'
+        });
         expect(radar()).not.toContain('Paper');
         expect(
             (await handleWrite(request({ kind: 'undo', at: gone.at }), TOKEN, into)).status

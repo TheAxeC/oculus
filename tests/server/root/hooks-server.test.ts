@@ -11,6 +11,8 @@
 // Vitest empties a stylesheet a module reads as text, so the sheets the hook converts an app's
 // theme over and derives the tokens over, tokens.css, themes.css and vscode.css, are handed the
 // text the browser reads. The rice palettes stay empty, and no case here starts on a rice theme.
+// The module registry is reset before this file's modules load, so a run whose test files share
+// their modules loads the hook and the theme module over these sheets too.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +57,10 @@ vi.mock('$lib/themes/vscode.css?raw', async () => {
     return {
         default: read(new URL('../../../src/lib/themes/vscode.css', import.meta.url), 'utf8')
     };
+});
+
+vi.hoisted(() => {
+    vi.resetModules();
 });
 
 afterEach(() => {

@@ -44,6 +44,8 @@ export type PaletteSource = {
     snapshot: Snapshot | null;
     feeds: PaletteFeeds;
     config: Record<string, unknown>;
+    /** The name of the workspace's primary hub, null for none. */
+    primary: string | null;
     /**
      * The day the triage skill last wrote its notes, which the update tray shows beside its task.
      */
@@ -97,6 +99,7 @@ export function createPaletteSource(
                 linkedin: feeds.feed('linkedin')
             },
             config: entities.config()?.config ?? {},
+            primary: entities.config()?.hubs.primary ?? null,
             notesRun: entities.inbox()?.notesRun ?? null
         };
     }

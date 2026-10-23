@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
+import { hubId } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     mapShape,
@@ -21,7 +22,7 @@ import {
     openWord
 } from '../../data/accounts/leads.ts';
 import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
-import { feedCursorId, uniqueIdents } from '../shared/page/idents.ts';
+import { feedRoot, uniqueIdents } from '../shared/page/idents.ts';
 
 export type LeadEntry = Record<string, unknown>;
 export type LeadsState = {
@@ -77,7 +78,11 @@ function word(entry: LeadEntry, field: string): string {
     return readAs(textOrNumberShape, entry[field]) ?? '';
 }
 
-/** A lead's stable id: its posting URL, or its title and institution, reduced to a slug. */
+/**
+ * A lead card's stable id in the lead view: its posting URL, or its title and institution, reduced
+ * to a slug, under the name of the lead's hub (`hubId`), so two hubs' leads of one posting are two
+ * cards. It names the card, not the record: a write names the lead by its internal id.
+ */
 export function leadId(entry: LeadEntry): string {
     const url = word(entry, 'url');
     const source = url.startsWith('http') ? url : `${word(entry, 'title')}-${word(entry, 'inst')}`;
@@ -86,7 +91,7 @@ export function leadId(entry: LeadEntry): string {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/-{2,}/g, '-')
         .replace(/^-|-$/g, '');
-    return slug === '' ? slug : feedCursorId(entry, slug);
+    return slug === '' ? slug : hubId(feedRoot(entry), slug);
 }
 
 /**

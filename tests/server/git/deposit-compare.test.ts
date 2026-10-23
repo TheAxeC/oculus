@@ -128,31 +128,31 @@ test.afterAll(() => {
 
 describe('the diff of a changed file of the sync plan', () => {
     it('carries the mirror HEAD text and the synced text, and refuses a path the plan does not list', async () => {
-        expect((await adopt('alpha', TEXT, options())).ok).toBe(true);
+        expect((await adopt('hub:alpha', TEXT, options())).ok).toBe(true);
         write(codeOf(), 'a.py', 'print(2)\n');
-        const planned = await sync('alpha', TEXT, options());
+        const planned = await sync('hub:alpha', TEXT, options());
         // The first sync also writes the mirror's own .gitignore.
         expect(planned.plan?.changes.map((one) => one.path).sort()).toEqual(['.gitignore', 'a.py']);
-        const texts = await fileTexts('alpha', 'plan', 'a.py', TEXT, options());
+        const texts = await fileTexts('hub:alpha', 'plan', 'a.py', TEXT, options());
         expect(texts.texts).toEqual({ original: 'print(1)\n', modified: 'print(2)\n' });
-        const unlisted = await fileTexts('alpha', 'plan', 'README.md', TEXT, options());
+        const unlisted = await fileTexts('hub:alpha', 'plan', 'README.md', TEXT, options());
         expect(unlisted.ok).toBe(false);
         const outside = await fileTexts(
-            'alpha',
+            'hub:alpha',
             'plan',
             '../../../hub/projects/alpha/project.yml',
             TEXT,
             options()
         );
         expect(outside.ok).toBe(false);
-        const unknown = await fileTexts('alpha', 'elsewhere', 'a.py', TEXT, options());
+        const unknown = await fileTexts('hub:alpha', 'elsewhere', 'a.py', TEXT, options());
         expect(unknown.ok).toBe(false);
     });
 });
 
 describe('the comparison with origin/main', () => {
     it('counts a commit of the remote as behind after Fetch and leaves the checkout and branch alone', async () => {
-        const mirror = mirrorOf('alpha', options());
+        const mirror = mirrorOf('hub:alpha', options());
         write(other, 'b.py', 'print("b")\n');
         gitIn(other, 'add', '-A');
         gitIn(other, 'commit', '-m', 'Second');
@@ -163,10 +163,10 @@ describe('the comparison with origin/main', () => {
             branch: gitIn(mirror, 'rev-parse', '--abbrev-ref', 'HEAD'),
             status: gitIn(mirror, 'status', '--porcelain=v1')
         };
-        expect((await state('alpha', options()))?.main).toMatchObject({ behind: 0, ahead: 0 });
-        const fetched = await fetchMirror('alpha', TEXT, options());
+        expect((await state('hub:alpha', options()))?.main).toMatchObject({ behind: 0, ahead: 0 });
+        const fetched = await fetchMirror('hub:alpha', TEXT, options());
         expect(fetched.ok).toBe(true);
-        expect((await state('alpha', options()))?.main).toEqual({
+        expect((await state('hub:alpha', options()))?.main).toEqual({
             known: true,
             ahead: 0,
             behind: 1,
@@ -180,31 +180,31 @@ describe('the comparison with origin/main', () => {
     });
 
     it('counts a local commit as ahead beside the remote one, lists each differing file and gives both texts of each', async () => {
-        const committed = await commit('alpha', 'Change a.py', TEXT, options());
+        const committed = await commit('hub:alpha', 'Change a.py', TEXT, options());
         expect(committed.ok).toBe(true);
-        expect((await state('alpha', options()))?.ahead).toBe(1);
-        expect((await state('alpha', options()))?.upstream).toBe('origin/main');
-        expect((await state('alpha', options()))?.main).toEqual({
+        expect((await state('hub:alpha', options()))?.ahead).toBe(1);
+        expect((await state('hub:alpha', options()))?.upstream).toBe('origin/main');
+        expect((await state('hub:alpha', options()))?.main).toEqual({
             known: true,
             ahead: 1,
             behind: 1,
             differ: ['.gitignore', 'a.py', 'b.py']
         });
-        expect((await fileTexts('alpha', 'main', 'a.py', TEXT, options())).texts).toEqual({
+        expect((await fileTexts('hub:alpha', 'main', 'a.py', TEXT, options())).texts).toEqual({
             original: 'print(1)\n',
             modified: 'print(2)\n'
         });
-        expect((await fileTexts('alpha', 'main', 'b.py', TEXT, options())).texts).toEqual({
+        expect((await fileTexts('hub:alpha', 'main', 'b.py', TEXT, options())).texts).toEqual({
             original: 'print("b")\n',
             modified: ''
         });
-        expect((await fileTexts('alpha', 'main', 'README.md', TEXT, options())).ok).toBe(false);
+        expect((await fileTexts('hub:alpha', 'main', 'README.md', TEXT, options())).ok).toBe(false);
     });
 
     it('says nothing is known for a mirror that has not been made', async () => {
-        expect((await state('beta', options()))?.ahead).toBe(0);
-        expect((await state('beta', options()))?.upstream).toBe('');
-        expect((await state('beta', options()))?.main).toEqual({
+        expect((await state('hub:beta', options()))?.ahead).toBe(0);
+        expect((await state('hub:beta', options()))?.upstream).toBe('');
+        expect((await state('hub:beta', options()))?.main).toEqual({
             known: false,
             ahead: 0,
             behind: 0,
@@ -213,8 +213,8 @@ describe('the comparison with origin/main', () => {
     });
 
     it('refuses to fetch a mirror with no remote', async () => {
-        expect((await adopt('beta', TEXT, options())).ok).toBe(true);
-        const fetched = await fetchMirror('beta', TEXT, options());
+        expect((await adopt('hub:beta', TEXT, options())).ok).toBe(true);
+        const fetched = await fetchMirror('hub:beta', TEXT, options());
         expect(fetched.ok).toBe(false);
         expect(fetched.error).toBe(TEXT['server.deposit.no_remote']);
     });
@@ -222,14 +222,19 @@ describe('the comparison with origin/main', () => {
 
 describe('the projects that have a deposit', () => {
     it('names a project of a scan folder in either placement and a workspace folder project in either', () => {
-        expect(projectIds(options()).sort()).toEqual(['alpha', 'beta', 'nested', 'top']);
+        expect(projectIds(options()).sort()).toEqual([
+            'hub:alpha',
+            'hub:beta',
+            'hub:nested',
+            'hub:top'
+        ]);
     });
 
     it('syncs the code folder of the project folder, never the one under .oculus', async () => {
         for (const [id, file] of [
-            ['top', 'top.py'],
-            ['nested', 'nested.py'],
-            ['beta', 'README.md']
+            ['hub:top', 'top.py'],
+            ['hub:nested', 'nested.py'],
+            ['hub:beta', 'README.md']
         ] as const) {
             expect((await adopt(id, TEXT, options())).ok).toBe(true);
             const planned = await sync(id, TEXT, options());
@@ -237,7 +242,7 @@ describe('the projects that have a deposit', () => {
             expect(planned.plan?.files).not.toContain('wrong.py');
             expect(planned.ok).toBe(true);
         }
-        expect(readFileSync(join(mirrorOf('nested', options()), 'nested.py'), 'utf8')).toBe(
+        expect(readFileSync(join(mirrorOf('hub:nested', options()), 'nested.py'), 'utf8')).toBe(
             'print("nested")\n'
         );
     });
@@ -245,18 +250,18 @@ describe('the projects that have a deposit', () => {
 
 describe('the changes of the sync plan', () => {
     it("lists each change of the mirror with git's letters, and refuses a switch while there is one", async () => {
-        expect((await commit('top', 'Add top', TEXT, options())).ok).toBe(true);
+        expect((await commit('hub:top', 'Add top', TEXT, options())).ok).toBe(true);
         write(join(folderTop, 'code'), 'top.py', 'print("changed")\n');
         write(join(folderTop, 'code'), 'new.py', 'print("new")\n');
-        const planned = await sync('top', TEXT, options());
+        const planned = await sync('hub:top', TEXT, options());
         expect(planned.plan?.changes).toEqual([
             { letters: 'A ', path: 'new.py' },
             { letters: 'M ', path: 'top.py' }
         ]);
-        const refused = await switchBranch('top', 'other', TEXT, options());
+        const refused = await switchBranch('hub:top', 'other', TEXT, options());
         expect(refused.error).toBe(TEXT['server.deposit.mirror_dirty']);
-        expect(gitIn(mirrorOf('top', options()), 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(
-            'main'
-        );
+        expect(
+            gitIn(mirrorOf('hub:top', options()), 'rev-parse', '--abbrev-ref', 'HEAD').trim()
+        ).toBe('main');
     });
 });

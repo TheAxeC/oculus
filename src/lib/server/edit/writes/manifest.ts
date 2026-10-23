@@ -118,10 +118,10 @@ function sourced(entries: [string, unknown][]): SchemaField[] {
 }
 
 /**
- * The fields with the hub's key and colon taken off every value that names a record of the hub (a
- * `from:` of the manifest schema naming a registry or the projects), since the portfolio gives
- * those values the key (data/snapshot/hubs/merge.ts) and the hub's own manifest holds the ids it
- * gave them. A value without the prefix is kept as it is.
+ * The fields with the hub's name and a colon taken off every value that names a record (a `from:`
+ * of the manifest schema naming a registry or the projects), since the portfolio names a record by
+ * its hub and its key (data/snapshot/hubs/merge.ts) and the hub's own manifest holds the key. A
+ * value without the prefix, the key a form sends, is kept as it is.
  */
 function hubOwnFields(
     schema: unknown,
@@ -370,8 +370,8 @@ function putBack(
  * way. Every check of the write is made first, so a record that fails one is refused as any
  * other.
  *
- * `hubKey` is the key of the hub the manifest belongs to when it is not the primary hub: the values
- * of the fields that name records come with that key in front, and are written without it.
+ * `hubKey` is the name of the hub the manifest belongs to: a value of a field that names a record
+ * may come with that name in front, and is written without it.
  */
 export function writeManifest(
     hub: string,
@@ -594,7 +594,7 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
  * carrying `main` under that tier's `new_project_dir`. A bad id, an id a project already holds, a
  * tier with no words, a hub that names no folder for the tier, an empty folder, a folder outside
  * every scan folder, a folder inside a project and a folder that is already there are all refused,
- * so nothing existing is ever written over.
+ * so nothing existing is ever written over. The outcome's `id` is the new project's id.
  */
 export function createIdea(
     hub: string,
@@ -705,6 +705,7 @@ export function createIdea(
         found: true,
         changed: [`${parent}/${id}/${MANIFEST}`, `${parent}/${id}/README.md`],
         refused: [],
+        id,
         // A scaffolded folder has no inverse writer, so the record says what was made and offers no
         // way back: deleting a project folder is the researcher's own act, not a control of a list.
         records: [

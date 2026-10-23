@@ -15,8 +15,6 @@ export type SessionsOptions = ScanOptions & {
      * relative to; with a `snapshot`, the projects' folders are taken from them.
      */
     hubs?: Readonly<Record<string, string>>;
-    /** The name of the primary hub, whose records the snapshot holds without a root. */
-    primary?: string | null;
     /** The portfolio, from which every project's folder and title is taken. */
     snapshot?: Snapshot;
     /** Project folders given directly, when there is no snapshot to read them from. */
@@ -40,18 +38,15 @@ export type { SessionsPayload };
 /**
  * Every project's absolute folder with its title, which is what the area scoring is given. A
  * project's folder is relative to its own hub unless it is a workspace folder's, so `hubs` names
- * the folder of each hub by its name, the empty name standing for a record of no hub; a project of
- * a hub not named there has no folder to give. `primary` is the name of the hub whose records carry
- * no root.
+ * the folder of each hub by its name; a project of a hub not named there has no folder to give.
  */
 export function projectFolders(
     hubs: Readonly<Record<string, string>>,
-    snapshot: Snapshot,
-    primary: string | null
+    snapshot: Snapshot
 ): ProjectFolder[] {
     const folders: ProjectFolder[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
-        const name = rootOf(project, primary);
+        const name = rootOf(project);
         const hub = Object.hasOwn(hubs, name) ? hubs[name] : undefined;
         if (hub === undefined || typeof project.folder !== 'string' || !project.folder) continue;
         folders.push([folderOnDisk(hub, project), project.title]);
@@ -65,7 +60,7 @@ export function sessions(options: SessionsOptions = {}): SessionsPayload {
     const folders =
         options.projectFolders ??
         (options.snapshot !== undefined && options.hubs !== undefined
-            ? projectFolders(options.hubs, options.snapshot, options.primary ?? null)
+            ? projectFolders(options.hubs, options.snapshot)
             : []);
     const workspaces = group(
         records,

@@ -223,7 +223,7 @@ describe('POST /api/terminal, a start in a mode the catalog marks confirm: true'
 describe('POST /api/terminal, a start with a task', () => {
     let hub = '';
     let approvals = '';
-    const REF = { id: 'Submission', collection: 'tasks' };
+    const REF = { id: 'hub:Submission', collection: 'tasks' };
 
     /** The tasks file with one entry whose note is `note`. */
     function plant(note: string): void {

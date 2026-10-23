@@ -16,6 +16,7 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { recordState } from '$lib/state/shared/page/records';
 
     const {
         layout: { openView }
@@ -56,10 +57,10 @@
                                     small
                                     label={labelOf(project)}
                                     onclick={() =>
-                                        openView('project', {
-                                            id: project.id,
-                                            label: labelOf(project)
-                                        })}
+                                        openView(
+                                            'project',
+                                            recordState(project.id, labelOf(project))
+                                        )}
                                 />
                             {/each}
                         </div>

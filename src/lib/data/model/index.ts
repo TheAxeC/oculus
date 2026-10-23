@@ -33,10 +33,11 @@ import type {
     FeedData,
     FeedKind,
     Feeds,
-    RawFeeds
+    RawFeeds,
+    SchemaField
 } from './model-collections.ts';
 
-export type { FeedData, FeedEntry, FeedItem, FeedKind } from './model-collections.ts';
+export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {
@@ -389,17 +390,18 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
 /**
- * One thing a hub is missing. `scope` is the project folder (the key of its root for a project read
- * from a repository), the collection key or the website, `where` the file, field or entry it is
- * about, `file` the path of the file it is about relative to the folder its `root` names (the empty
- * text when there is none, which the signature does not read), and `signature` the twelve hex
- * characters the mute list `audit_ignore:` holds. A finding of a hub other than the primary
- * has its root key in front of its `scope`, so its signature differs from a primary-hub finding of
- * the same place. `root` is the Files root `file` is relative to: a hub's as for any record, and
- * the repository's key for a finding that names a file of a project read from a repository; such a
- * finding with no file carries no `root`.
+ * One thing a hub is missing. `hub` is the name of the hub it is of, which the Audit view draws as
+ * the chip beside the scope. `scope` is the project folder (the key of its root for a project read
+ * from a repository), the collection key or the website, with no hub in it, `where` the file, field
+ * or entry it is about, `file` the path of the file it is about relative to the folder its `root`
+ * names (the empty text when there is none, which the signature does not read), and `signature`
+ * the twelve hex characters the mute list `audit_ignore:` holds, read with the hub's name in front
+ * of the scope for a hub other than the primary, so the same place in two hubs has two signatures.
+ * `root` is the Files root `file` is relative to: the hub's, and the repository's key for a finding
+ * that names a file of a project read from a repository.
  */
 export type AuditFinding = Rooted & {
+    hub: string;
     scope: string;
     where: string;
     /** The path of an existing file below the folder the `root` names, else the empty text. */
@@ -461,10 +463,16 @@ export type FeedsPayload = Record<
         kind: FeedKind;
         file: string;
         /**
-         * The file of this feed in each hub other than the primary, relative to that hub, by the
-         * hub's root key. Absent while the portfolio is one hub.
+         * The file of this feed in each hub of the workspace, relative to that hub, by the hub's
+         * name. Absent before the hubs are merged.
          */
         hubFiles?: Record<string, string>;
+        /**
+         * The schema of this feed's file in each hub of the workspace that carries one, by the
+         * hub's name: the fields a page of one of its entries edits. Absent before the hubs are
+         * merged.
+         */
+        hubSchemas?: Record<string, SchemaField[]>;
         missing?: boolean;
         error?: string;
     }

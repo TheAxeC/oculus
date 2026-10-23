@@ -94,7 +94,8 @@
     } from '$lib/state/boards/collection';
     import { LITERATURE } from '$lib/state/feeds/literature/saved';
     import { pageView } from '$lib/state/forms/page-entry';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
+    import { recordState } from '$lib/state/shared/page/records';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
@@ -136,7 +137,7 @@
             collection: one,
             schema: one.schema,
             file:
-                one.root === undefined
+                rootOf(one) === primary()
                     ? viewSourceFile('collection', configMap(), primary(), key)
                     : fileUnder(one.file, roots(), primary()),
             faults: identityFaults(one.entries, one.schema)
@@ -181,7 +182,7 @@
     let dragged = $state('');
 
     function write(next: Partial<CollectionState>): void {
-        setInstanceState(instance.id, { ...held, ...next });
+        setInstanceState(instance.id, storedState({ ...held, ...next }, ['more']));
     }
 
     /** The Add box while it is open: it asks the new entry's name and opens the entry's page. */
@@ -389,7 +390,7 @@
             <Empty message={t('collection.empty')} />
         {:else}
             <div class="cards" role="list">
-                {#each shown as { entry, part } (`${rootOf(entry, primary())}:${entry.index}`)}
+                {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
                     <Reveal
                         id={entry.id}
                         wanted={held.reveal}
@@ -435,10 +436,13 @@
                                         small
                                         label={project.short ?? project.title}
                                         onclick={() =>
-                                            openView('project', {
-                                                id: project.id,
-                                                label: project.short ?? project.title
-                                            })}
+                                            openView(
+                                                'project',
+                                                recordState(
+                                                    project.id,
+                                                    project.short ?? project.title
+                                                )
+                                            )}
                                     />
                                 {/each}
                             </div>

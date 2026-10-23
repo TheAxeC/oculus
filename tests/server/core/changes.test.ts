@@ -157,20 +157,20 @@ const MANIFEST_ROWS = [
 const SUBTASK_ROWS = [
     {
         name: 'a collection entry',
-        host: { collection: 'tasks', id: 'Review the draft' },
+        host: { collection: 'tasks', id: 'hub:Review the draft' },
         key: 'Review the draft',
         file: (_: Files, hub: string): string =>
             join(hub, '.oculus', 'data', 'academic', 'tasks.yml')
     },
     {
         name: 'a personal project of the hub',
-        host: { id: 'idea' },
+        host: { id: 'hub:idea' },
         key: 'idea',
         file: (_: Files, hub: string): string => join(hub, 'side-projects', 'idea', 'project.yml')
     },
     {
         name: 'a project of a served root',
-        host: { id: 'r' },
+        host: { id: 'hub:r' },
         key: 'r',
         file: (files: Files): string => files.r
     }
@@ -183,7 +183,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             const { into, files } = personalTarget(target());
             const rows = await written(
                 into,
-                { kind: 'manifest', id: row.id, fields: row.fields },
+                { kind: 'manifest', id: `hub:${row.id}`, fields: row.fields },
                 row.name
             );
             expect(rows, row.name).toHaveLength(1);
@@ -205,7 +205,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         await written(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Review the draft',
+            id: 'hub:Review the draft',
             fields: { status: 'done' }
         });
         await written(into, {
@@ -216,12 +216,12 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         await written(into, {
             kind: 'reorder',
             collection: 'tasks',
-            order: ['Another task', 'Review the draft', 'A third task']
+            order: ['hub:Another task', 'hub:Review the draft', 'hub:A third task']
         });
         const rows = await written(into, {
             kind: 'delete-entry',
             collection: 'tasks',
-            id: 'A third task'
+            id: 'hub:A third task'
         });
         expect(rows.map((row) => [row.kind, row.field, row.undo])).toEqual([
             ['delete-entry', 'entries', 'delete'],
@@ -249,7 +249,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const renamed = await written(into, {
             kind: 'entry',
             collection: 'tasks',
-            id: 'Another task',
+            id: 'hub:Another task',
             fields: { status: 'done', title: 'A renamed task' }
         });
         expect
@@ -386,7 +386,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const feed = await written(into, {
             kind: 'feed-field',
             feed: 'radar',
-            id: 'Paper',
+            id: 'hub:Paper',
             field: 'dismissed',
             value: true
         });

@@ -45,6 +45,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
+    import { recordField, recordState } from '$lib/state/shared/page/records';
 
     const client = useState();
 
@@ -125,7 +126,7 @@
               )
     );
     /** Where the project's folder is: the Files root that holds it and its path in that root. */
-    const place = $derived(placeOf(item.project, client.fs.primary()));
+    const place = $derived(placeOf(item.project));
     const hub = $derived(place.root);
     /** The project's folder when the `git` channel carries it as a repository, else ''. */
     const repo = $derived.by((): string => {
@@ -244,7 +245,7 @@
             label: t('project.card.edit_manifest'),
             glyph: t('project.card.edit_glyph'),
             onclick: () => {
-                openBeside('editor', { id: item.id });
+                openBeside('editor', recordField(item.id));
             }
         });
         if (deposit) {
@@ -253,7 +254,7 @@
                 label: t('project.card.deposit'),
                 glyph: t('project.card.deposit_glyph'),
                 onclick: () => {
-                    openBeside('deposit', { id: item.id });
+                    openBeside('deposit', recordField(item.id));
                 }
             });
         }
@@ -294,7 +295,7 @@
     }
     /** Open the project. */
     function openTitle(): void {
-        openView('project', { id: item.id, label: tab });
+        openView('project', recordState(item.id, tab));
     }
     /** Copy the project's generated context to the clipboard and expose failures. */
     async function copyContext(): Promise<void> {

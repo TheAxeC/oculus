@@ -16,6 +16,7 @@
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
+import { hubId } from '../helpers/hub-names.ts';
 import { DEBUG_CONSOLE_KINDS, type Followup, type Subtask, type TaskRef } from '../model/index.ts';
 
 /**
@@ -71,14 +72,26 @@ export function textOrNumber(value: unknown): string {
 }
 
 /**
+ * A field of a saved state that names a record, which the file holds as the record's hub and its
+ * key, two fields, and which is read back as the record's internal id (`hubId`); undefined for any
+ * other value. `recordField` of state/shared/page/records.ts writes it.
+ */
+export const recordShape = z
+    .object({ hub: z.string(), key: z.string().min(1) })
+    .transform((held) => hubId(held.hub, held.key))
+    .optional()
+    .catch(undefined);
+
+/**
  * The two fields most tabs keep in their saved state: `search`, the empty text unless it is a
- * string, and `reveal`, absent unless it is a non-empty string. A reader extends it with its own
- * fields. `reveal` is present with `undefined` in the parsed copy when the input is wrong, so a
- * reader that leaves the key out sets it from the parsed data only when it is defined.
+ * string, and `reveal`, the record a palette pick asked the tab to show, absent unless it names
+ * one (`recordShape`). A reader extends it with its own fields. `reveal` is present with
+ * `undefined` in the parsed copy when the input is wrong, so a reader that leaves the key out sets
+ * it from the parsed data only when it is defined.
  */
 export const searchRevealShape = z.object({
     search: z.string().catch(''),
-    reveal: filledTextShape
+    reveal: recordShape
 });
 
 /**
@@ -234,6 +247,18 @@ export const keyedRowsShape = z.union([
 
 /** An object field that holds strings: its string items, and none when absent or not a list. */
 export const fieldItemsShape = stringItemsShape.catch([]);
+
+/**
+ * A list of a saved state whose items name records, each its hub and its key (`recordShape`), read
+ * back as the records' internal ids; an item that names none is left out, and a value that is no
+ * list reads as the empty list.
+ */
+export const recordItemsShape = z
+    .array(z.unknown())
+    .transform((items) =>
+        items.map((one) => recordShape.parse(one)).filter((one) => one !== undefined)
+    )
+    .catch([]);
 
 /** The string items of a list when the field is present, and absent when it is not. */
 export const optionalItemsShape = stringItemsShape.optional();

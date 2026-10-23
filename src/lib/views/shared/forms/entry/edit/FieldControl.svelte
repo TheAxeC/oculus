@@ -29,7 +29,13 @@
         type RecordsEdit,
         type Row
     } from '$lib/state/forms/record-values';
-    import { asList, asText, type Choice, type FormField } from '$lib/state/forms/schema';
+    import {
+        asList,
+        asText,
+        selectChoices,
+        type Choice,
+        type FormField
+    } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -129,7 +135,7 @@
         value={asText(value)}
         label={field.label}
         empty={t('editor.empty_choice')}
-        choices={choices(field)}
+        choices={selectChoices(choices(field))}
         onchange={(held: string) => onchange(held)}
     />
 {:else if field.type === 'chips' || field.type === 'tags'}

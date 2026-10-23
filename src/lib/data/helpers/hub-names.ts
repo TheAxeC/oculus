@@ -3,96 +3,95 @@
 // name, the five tier words and the folder of a repository that holds oculus's own files, how a
 // record of the merged portfolio names the hub it was read from, how each registry file names its
 // entry list and its id field, and which folders the project scan walks: the scan reader
-// (data/sources/manifests.ts), the `new_project_dir` check (data/index.ts) and the new project form
-// (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
+// (data/sources/manifests.ts), the `new_project_dir` check (data/sources/config/settings/scan.ts)
+// and the new project form (state/boards/board/new-project.ts) share those, so they agree on what
+// is scanned.
 //
-// A workspace lists folders, and the ones that hold `.oculus/config.yml` are hubs. The primary is
-// the hub named by the workspace file's `primary` key: its records carry no `root` and keep their
-// bare ids, and a record of every other hub carries the hub's folder name in `root` and in front of
-// its id. With no primary every hub's records are prefixed. Each function below that tells a
-// record's hub or id apart takes the primary's name, or null when the workspace names none.
+// A workspace lists folders, and the ones that hold `.oculus/config.yml` are hubs. Every record of
+// the merged portfolio, the primary hub's included, carries the name of its hub in `root` and has
+// the internal id `<hub>:<key>`, the key being what its own hub's file names it by; a project of a
+// workspace folder that is no hub, in a workspace with no primary, has the folder's name for its
+// hub. A reference names a key, and resolves in its own hub first, then in the other hubs: one
+// other hub holding the key gives that hub's record, and two or more give none, which the merge
+// reports. The joined id is internal: a file, a form, a finding, a label and an address name a
+// record by its hub and its key apart, and a page shows the key with the hub chip.
 
 import { isMap } from './guards.ts';
 import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
 
-/**
- * The name of the hub a record was read from: the `root` it carries, else the primary, else the
- * empty name for a record of no hub (a project folder of a workspace with no primary).
- */
-export function rootOf(record: Rooted, primary: string | null): string {
-    return record.root ?? primary ?? '';
+/** The name of the hub a record was read from: the `root` it carries, the empty name for none. */
+export function rootOf(record: Rooted): string {
+    return record.root ?? '';
 }
 
 /**
- * The id a record of the hub named `root` has in the merged portfolio: a record of the primary
- * keeps its id, and one of another hub has the hub's name and a colon in front of it.
+ * The internal id of the record `key` of the hub named `root`: the hub's name, a colon and the key.
+ * A record of no hub keeps its key.
  */
-export function hubId(root: string, id: string, primary: string | null): string {
-    return root === primary || root === '' ? id : `${root}:${id}`;
+export function hubId(root: string, key: string): string {
+    return root === '' ? key : `${root}:${key}`;
 }
 
 /**
- * The id a value naming a record has in the merged portfolio, read inside the hub of the record
- * `holder` that holds it: a value of a hub other than the primary gets that hub's name in front
- * unless it carries it already (the merge prefixed a field whose `from:` names the record's
- * source), so a reference in a field the schema gives no `from:` never resolves to another hub's
- * record.
+ * The hub an internal id belongs to and the key inside that hub, given the names of the hubs:
+ * `lab:alpha` under the names `lab` is `{ root: 'lab', id: 'alpha' }`. The longest name the id
+ * begins with, then a colon, is the hub, so a key that itself holds a colon stays whole; an id that
+ * begins with no name is of no hub, the empty name.
  */
-export function inHubOf(holder: Rooted, value: string, primary: string | null): string {
-    const root = rootOf(holder, primary);
-    return root === primary || root === '' || value.startsWith(`${root}:`)
-        ? value
-        : hubId(root, value, primary);
+export function splitHubId(id: string, keys: readonly string[]): { root: string; id: string } {
+    let root = '';
+    for (const key of keys) {
+        if (key.length > root.length && id.startsWith(`${key}:`)) root = key;
+    }
+    return root === '' ? { root, id } : { root, id: id.slice(root.length + 1) };
 }
 
 /**
- * The hub an id of the merged portfolio belongs to and the id inside that hub, given the names of
- * the hubs other than the primary: `lab:alpha` under the names `lab` is
- * `{ root: 'lab', id: 'alpha' }` and any other id is the primary's own, whose name is `primary`
- * (the empty name with none).
+ * The hub and the key of an internal id, read from the id alone. A hub's name is the name of a
+ * workspace folder, which holds no colon (`validName` of server/files/workspace/folders.ts), so the
+ * first colon ends it and the key is the rest, colons included; an id with no colon is a key of no
+ * hub. `hubId` of the two gives the id back, whatever text it was.
  */
-export function splitHubId(
-    id: string,
-    keys: readonly string[],
-    primary: string | null
-): { root: string; id: string } {
-    const key = keys.find((one) => id.startsWith(`${one}:`));
-    return key === undefined
-        ? { root: primary ?? '', id }
-        : { root: key, id: id.slice(key.length + 1) };
+export function addressOfId(id: string): RecordAddress {
+    const colon = id.indexOf(':');
+    return colon < 0 ? { hub: '', key: id } : { hub: id.slice(0, colon), key: id.slice(colon + 1) };
 }
 
-/** The id a record has inside its own hub's files: its merged id with the hub's prefix off. */
+/** The key of an internal id, read from the id alone (`addressOfId`). */
+export function keyOf(id: string): string {
+    return addressOfId(id).key;
+}
+
+/** The key a record has inside its own hub's files: its internal id with the hub's name off. */
 export function bareId(record: Rooted & { id: string }): string {
     const { root } = record;
-    return root === undefined ? record.id : splitHubId(record.id, [root], null).id;
+    return root === undefined ? record.id : splitHubId(record.id, [root]).id;
+}
+
+/** Where a record is: the name of its hub and its key, the two fields a file names it by. */
+export type RecordAddress = { hub: string; key: string };
+
+/** The hub and the key of a record. */
+export function addressOf(record: Rooted & { id: string }): RecordAddress {
+    return { hub: rootOf(record), key: bareId(record) };
 }
 
 /**
  * The records of the hub named `key`, each with the id its own hub's files give it: the records of
- * the merged portfolio of that hub, the hub's prefix taken off their ids.
+ * the merged portfolio of that hub, the hub's name taken off their ids.
  */
-export function ofHub<T extends { id: string; root?: string }>(
-    records: T[],
-    key: string,
-    primary: string | null
-): T[] {
+export function ofHub<T extends { id: string; root?: string }>(records: T[], key: string): T[] {
     return records
-        .filter((record) => rootOf(record, primary) === key)
+        .filter((record) => rootOf(record) === key)
         .map((record) => ({ ...record, id: bareId(record) }));
 }
 
 /**
- * The collections of the key `key` across the hubs: the primary's, then each other hub's
- * (`<hub name>:<key>` in the merged portfolio) in the order of the workspace's folders. A portfolio
- * of one hub answers its own collection alone, and none when it holds no such file.
+ * The collections of the key `key` across the hubs, in the order the portfolio holds them, which
+ * is the order of the workspace's folders; none when no hub holds such a file.
  */
 export function collectionsOf(collections: Record<Id, Collection>, key: string): Collection[] {
-    const first = Object.hasOwn(collections, key) ? [collections[key]] : [];
-    const others = Object.values(collections).filter(
-        (one) => one.root !== undefined && bareId(one) === key
-    );
-    return [...first, ...others];
+    return Object.values(collections).filter((one) => bareId(one) === key);
 }
 
 /** The entries of the collection `key` across the hubs, and none when no hub holds one. */
@@ -101,6 +100,43 @@ export function joinedEntries(
     key: string
 ): Collection['entries'] {
     return collectionsOf(collections, key).flatMap((one) => one.entries);
+}
+
+/** The hubs that hold each key of one kind of record, each key's hubs in the workspace's order. */
+export type Holders = ReadonlyMap<string, readonly string[]>;
+
+/** The holders of the keys of one kind of record of the merged portfolio. */
+export function holdersOf(records: Iterable<Rooted & { id: string }>): Holders {
+    const held = new Map<string, string[]>();
+    for (const record of records) {
+        const key = bareId(record);
+        const hubs = held.get(key) ?? [];
+        if (!hubs.includes(rootOf(record))) hubs.push(rootOf(record));
+        held.set(key, hubs);
+    }
+    return held;
+}
+
+/**
+ * What a reference to `key` read in the hub `own` names: the record of its own hub when that hub
+ * holds the key, else the record of the one other hub that holds it. Two or more other hubs holding
+ * it name none, and the answer lists them, in the workspace's order; a key no hub holds is null.
+ */
+export function resolveKey(
+    holders: Holders,
+    own: string,
+    key: string
+): { id: string } | { hubs: readonly string[] } | null {
+    const hubs = holders.get(key) ?? [];
+    if (hubs.includes(own)) return { id: hubId(own, key) };
+    if (hubs.length === 1) return { id: hubId(hubs[0], key) };
+    return hubs.length === 0 ? null : { hubs };
+}
+
+/** The internal id a reference to `key` read in the hub `own` names, or null for none. */
+export function resolvedId(holders: Holders, own: string, key: string): string | null {
+    const found = resolveKey(holders, own, key);
+    return found !== null && 'id' in found ? found.id : null;
 }
 
 /** A file named by the root it is served under and its path inside that root. */

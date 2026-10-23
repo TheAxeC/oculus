@@ -58,7 +58,7 @@ import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
 import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs } from '../sources/fs.svelte.ts';
-import { fileNamed } from '../../data/helpers/hub-names.ts';
+import { fileNamed, hubId } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
 import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
@@ -182,16 +182,19 @@ export function createClientState(
         (file) => source.unsavedFile(file.root, file.path),
         {
             primary: () => fs.primary(),
+            hubs: () =>
+                fs
+                    .roots()
+                    .filter((one) => one.hub === true)
+                    .map((one) => one.key),
             workspaceFile: () => {
                 const place = workspaceFilePlace(fs.workspaces());
                 return place?.root == null ? null : { root: place.root, path: place.path };
             },
-            projectManifest: (id) =>
-                manifestOfProject(entities.portfolio()?.entities.projects[id], fs.primary()),
-            collectionFile: (id) => {
-                const held = entities.portfolio()?.entities.collections[id];
-                if (held?.root === undefined) return null;
-                return fileNamed(held.file, fs.roots(), fs.primary());
+            projectManifest: (id) => manifestOfProject(entities.portfolio()?.entities.projects[id]),
+            collectionFile: (hub, name) => {
+                const held = entities.portfolio()?.entities.collections[hubId(hub, name)];
+                return held === undefined ? null : fileNamed(held.file, fs.roots(), fs.primary());
             },
             feeds: () => entities.feeds(),
             changeFile: (at) => {
@@ -509,7 +512,7 @@ export function createClientState(
         after: createCloneAfter(fs, notices)
     });
     const formDraft = createFormDraft(ui, {
-        project: projectDraftTarget(selectors.projectOf, settled.overlay),
+        project: projectDraftTarget(selectors.projectOf, settled.overlay, selectors.waitedOn),
         page: pageDraftTarget(pages)
     });
     ui.registerUnsaved(formDraft.draftDirty);

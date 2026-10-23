@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { anyWord, hasWord, wordNumber } from '../../data/shapes/vocab-keys.ts';
-import { hubId, inHubOf, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, holdersOf, hubId, resolvedId, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -25,6 +25,7 @@ import {
     keyedRowsShape,
     listOrOneShape,
     readAs,
+    recordItemsShape,
     searchRevealShape
 } from '../../data/shapes/shapes.ts';
 import {
@@ -32,6 +33,7 @@ import {
     optionLabel,
     type Entry,
     type Followup,
+    type Person,
     type Project,
     type SchemaField,
     type Subtask
@@ -133,7 +135,7 @@ const boundsShape = z.object({ from: z.string().catch(''), to: z.string().catch(
 const collectionStateShape = searchRevealShape.extend({
     statuses: fieldItemsShape,
     hidden: fieldItemsShape,
-    more: fieldItemsShape,
+    more: recordItemsShape,
     picked: z.record(z.string(), fieldItemsShape).catch({}),
     range: z.record(z.string(), boundsShape).catch({})
 });
@@ -383,11 +385,8 @@ export function pageFolder(
 }
 
 /** The state an entry's page is opened with (state/forms/page-entry.ts). */
-export function pageState(
-    collection: string,
-    entry: Entry
-): { id: string; collection: string; key: string; label: string } {
-    return entryPageState(collection, entry.id, entry.title === '' ? entry.id : entry.title);
+export function pageState(collection: string, entry: Entry): ReturnType<typeof entryPageState> {
+    return entryPageState(collection, entry.id, entry.title === '' ? bareId(entry) : entry.title);
 }
 
 /** The entry's status, when it has one as a word. */
@@ -571,8 +570,8 @@ const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
  */
 export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
     const held = readAs(identityShape, entry.fields[identityField(schema)]);
-    if (held !== null) return held === '' ? '' : hubId(rootOf(entry, null), held, null);
-    return entry.title === '' ? entry.id : hubId(rootOf(entry, null), entry.title, null);
+    if (held !== null) return held === '' ? '' : hubId(rootOf(entry), held);
+    return entry.title === '' ? entry.id : hubId(rootOf(entry), entry.title);
 }
 
 /**
@@ -600,7 +599,7 @@ export function identityFaults(
     const field = identityField(schema);
     const values = entries.map((entry) => {
         const own = readAs(identityShape, entry.fields[field]);
-        return own === null || own === '' ? '' : hubId(rootOf(entry, null), own, null);
+        return own === null || own === '' ? '' : hubId(rootOf(entry), own);
     });
     const held = (value: string): boolean =>
         value !== '' && values.indexOf(value) !== values.lastIndexOf(value);
@@ -739,12 +738,16 @@ function typeOf(project: Project): string {
  * Which projects those are is the collection's own question and has three answers: funding is the
  * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and
  * every other collection has no project-side inverse, so it is the entry's own `related:` list of
- * ids. A related id no project of the snapshot holds is left out rather than drawn as a dead link.
+ * keys. A key of the entry's file names the record its hub resolves it to, the entry's own hub
+ * first, then the one other hub that holds it (`resolvedId`); `people` are the people of the
+ * snapshot, which a joint work's person is resolved among. A related key no project of the snapshot
+ * resolves is left out rather than drawn as a dead link.
  */
 export function crossLinks(
     entry: Entry,
     collectionKey: string,
     projects: Project[],
+    people: readonly Person[],
     config: Record<string, unknown>
 ): CrossGroup[] {
     let named: Project[];
@@ -752,11 +755,16 @@ export function crossLinks(
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
     } else if (collectionKey === JOINT_WORK) {
         const own = readAs(stringShape, entry.fields.person);
-        const person = own === null ? entry.id : inHubOf(entry, own, null);
-        named = projects.filter((project) => project.collaborators.includes(person));
+        const key = own ?? bareId(entry);
+        const person = resolvedId(holdersOf(people), rootOf(entry), key);
+        named = projects.filter(
+            (project) => person !== null && project.collaborators.includes(person)
+        );
     } else {
+        const held = holdersOf(projects);
         named = wordsOf(entry.fields.related)
-            .map((id) => projects.find((project) => project.id === inHubOf(entry, id, null)))
+            .map((key) => resolvedId(held, rootOf(entry), key))
+            .map((id) => projects.find((project) => project.id === id))
             .filter((project): project is Project => project !== undefined);
     }
     return groupProjects(named, config);

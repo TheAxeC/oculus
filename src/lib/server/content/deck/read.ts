@@ -18,7 +18,7 @@ import { createReader } from '../../../data/sources/deck/read.ts';
 import { hubDomainsOf } from '../../../data/index.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
-import { ofHub } from '../../../data/helpers/hub-names.ts';
+import { bareId, ofHub } from '../../../data/helpers/hub-names.ts';
 import { resolveRootPath, type Root } from '../../files/files.ts';
 import type { HubTarget } from '../../files/roots.ts';
 
@@ -39,7 +39,7 @@ export type DeckSource = {
 /** What the reader needs of a project of the snapshot. */
 function deckProject(project: Project): DeckProject {
     const one: DeckProject = {
-        id: project.id,
+        id: bareId(project),
         file: project.file,
         folder: project.folder,
         tier: project.tier,
@@ -90,7 +90,7 @@ export function readDeck(
             : { key: owner.key, dir: owner.hub };
     const reader = createReader({
         hub,
-        projects: ofHub(source.projects, hub.key, source.primary?.key ?? null).map(deckProject),
+        projects: ofHub(source.projects, hub.key).map(deckProject),
         domains: Object.keys(hubDomainsOf(hub.dir, config)),
         tagTones: config.tagTones,
         catalog: config.text,

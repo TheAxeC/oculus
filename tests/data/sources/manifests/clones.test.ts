@@ -8,7 +8,8 @@
 import { realpathSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import type { Snapshot } from '../../../../src/lib/data/model/index.ts';
@@ -137,7 +138,7 @@ describe('the clones of a project', () => {
             'projects/ideas/y/project.yml': 'title: Y\ntier: projects\ntype: idea\n'
         });
         plantHub(hub);
-        const { snapshot } = buildPortfolioWithSchemas(hub, portfolioConfigFrom(MERGED), 0, []);
+        const { snapshot } = buildOneHub(hub, portfolioConfigFrom(MERGED), 0, []);
         placeClones(snapshot, dirs, textCatalog(MERGED));
         return snapshot;
     }

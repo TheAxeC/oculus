@@ -25,9 +25,9 @@ import { TerminalRefused } from '../../pty/refusal.ts';
 import { taskSeed } from './task-seed.ts';
 
 /**
- * What the task steps read of the request's server: the open workspace (its primary hub, and the
- * other hubs whose tasks are named `<hub name>:<id>`), the merged config and the settings of each
- * other hub as the server keeps them parsed.
+ * What the task steps read of the request's server: the open workspace (its primary hub and the
+ * other hubs), the merged config and the settings of each other hub as the server keeps them
+ * parsed.
  */
 export type SeedSource = {
     open: OpenWorkspace;
@@ -38,33 +38,23 @@ export type SeedSource = {
 /** The seed, folder and terminal name of a task, as the page is shown them. */
 export type SeedFacts = { seed: string; cwd: string; name: string };
 
-/** The facts a reference names, or the refusal word thrown as a TerminalRefused. */
+/**
+ * The facts a reference names, or the refusal word thrown as a TerminalRefused. The reference names
+ * its record by the id `<hub>:<key>` and its collection by the collection's key, so the hub is the
+ * one the id names; an id that names no hub of the workspace names no task.
+ */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
     const hubs = hubTargets(source.open, source.settings);
-    const named = splitHubId(
-        ref.collection ?? ref.id,
-        hubs.map((one) => one.key),
-        source.open.primary
-    );
+    const primary = source.open.primary === null ? [] : [source.open.primary];
+    const named = splitHubId(ref.id, [...primary, ...hubs.map((one) => one.key)]);
     const owner = hubs.find((one) => one.key === named.root);
-    const home = owner?.hub ?? source.open.primaryDir;
-    // A bare id belongs to the primary, so a workspace with no primary has no such task.
-    if (home === null) throw new TerminalRefused('no-primary');
+    const own = named.root !== '' && named.root === source.open.primary;
+    const home = owner?.hub ?? (own ? source.open.primaryDir : null);
+    if (home === null) throw new TerminalRefused('task-unknown');
     const config = owner?.config ?? primaryConfig(source.merged, source.open, source.settings);
-    const bare: TaskRef = owner === undefined ? ref : withoutHub(ref, owner.key);
-    const answer = taskSeed(bare, home, config, textCatalog(source.merged));
+    const answer = taskSeed({ ...ref, id: named.id }, home, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);
     return { seed: answer.seed, cwd: answer.cwd, name: answer.name };
-}
-
-/** The reference with the hub's prefix off the ids of its collection and its task. */
-function withoutHub(ref: TaskRef, key: string): TaskRef {
-    const bare = (id: string): string => splitHubId(id, [key], null).id;
-    return {
-        ...ref,
-        id: bare(ref.id),
-        ...(ref.collection === undefined ? {} : { collection: bare(ref.collection) })
-    };
 }
 
 /** The text a seed is approved by: the agent, the folder's real path and the seed. */

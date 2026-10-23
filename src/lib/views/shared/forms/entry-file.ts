@@ -26,6 +26,7 @@ import {
 import type { ViewSource } from '$lib/state/sessions/view-source';
 import { t } from '$lib/state/shared/words/text';
 import { openSourceFile } from '../links/source-file';
+import { bareId } from '$lib/state/shared/page/hubs';
 
 /** The file's tab opened without a place, kept, and its draft read; '' when none was opened. */
 async function openedDraft(
@@ -105,7 +106,7 @@ function entryTarget(
     schema: SchemaField[] | undefined,
     fault: IdentityFault | undefined
 ): EntryAt {
-    const label = entry.title === '' ? entry.id : entry.title;
+    const label = entry.title === '' ? bareId(entry) : entry.title;
     return fault?.own === true
         ? { index: entry.index, label }
         : { field: identityField(schema), value: identityValue(entry, schema), label };

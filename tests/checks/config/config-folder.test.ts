@@ -29,7 +29,8 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { iconFindings } from '../../../src/lib/data/sources/config/catalogs.ts';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
@@ -39,7 +40,7 @@ import {
     hubConfigText
 } from '../../../src/lib/data/sources/documents/templates.ts';
 import { ensureBookmarksFile } from '../../../src/lib/server/files/fs/bookmarks.ts';
-import { withOwnSchemas } from '../../../src/lib/server/root/watch/own-schemas.ts';
+import { withOwnSchemas } from '../../../src/lib/server/root/watch/build.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
@@ -623,15 +624,7 @@ describe("oculus's own config directory", () => {
             { root: 'config', path: '' },
             { root: 'oculus', path: 'config' }
         ];
-        const { schemas } = buildPortfolioWithSchemas(
-            DEMO_HUB,
-            portfolio,
-            1,
-            [],
-            checker,
-            { dir, held },
-            'hub'
-        );
+        const { schemas } = buildOneHub(DEMO_HUB, portfolio, 1, [], checker, { dir, held }, 'hub');
         const unmatched: string[] = [];
         const problems: string[] = [];
         for (const rel of tracked(dir)) {
@@ -658,7 +651,7 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const portfolio = portfolioConfigFrom(config);
         const dir = join(engineDir(), 'config');
-        const { schemas } = buildPortfolioWithSchemas(
+        const { schemas } = buildOneHub(
             DEMO_HUB,
             portfolio,
             1,
@@ -702,7 +695,7 @@ describe("oculus's own config directory", () => {
         const checker = createChecker();
         // The set the server serves: the build's, with the schemas of the files its readers own.
         const schemas = withOwnSchemas(
-            buildPortfolioWithSchemas(hub, portfolio, 1, [], checker, null, 'hub').schemas
+            buildOneHub(hub, portfolio, 1, [], checker, null, 'hub').schemas
         );
         const held = join(hub, '.oculus', 'workspaces');
         const rels = [

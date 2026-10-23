@@ -1,8 +1,9 @@
 // Layer 3, view helper of views/shared/forms/entry/AddAsk.svelte. What each Add asks and does: a
 // collection's Add asks the entry's identity value (a venue: its name and its id); a lead's asks
 // its title; a Lit Watch paper's asks its title, its address and its bucket; Literature's asks a
-// DOI or an address. Each writes the entry and opens its page, where the editor fills the rest; a
-// refusal comes back as the server's sentence for the box to show above what was typed.
+// DOI or an address. Each writes the entry and opens its page, which names the entry by its hub
+// and its key and where the editor fills the rest; a refusal comes back as the server's sentence
+// for the box to show above what was typed.
 //
 // A collection's Add and Literature's Add write to a hub whose `collections:` names the
 // collection: when more than one hub names it, the box asks which, the primary first and chosen;
@@ -17,6 +18,7 @@ import type { PromptField } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
 import type { SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
+import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
 import { askFields } from '$lib/state/forms/new-entry';
 import { radarBuckets } from '$lib/state/feeds/radar';
 import { lookUp, lookupOf, sourceName, sourcesAsked } from '$lib/state/feeds/literature/lookup';
@@ -35,9 +37,9 @@ export type Ask = {
     submit: (values: string[]) => Promise<string | Ask>;
 };
 
-/** Open the page of the entry just added. */
-function openPage(client: ClientState, collection: string, key: string): void {
-    const page = pageView(collection, key, key);
+/** Open the page of the entry just added, by its id in the portfolio; its tab shows its key. */
+function openPage(client: ClientState, collection: string, id: string): void {
+    const page = pageView(collection, id, keyOf(id));
     void client.layout.openView(page.view, page.state);
 }
 
@@ -49,7 +51,7 @@ function hubChoices(client: ClientState, collection: string): { id: string; labe
     const primary = client.fs.primary() ?? '';
     const names = client.selectors
         .collectionsOfKey(collection)
-        .map((one) => one.root ?? primary)
+        .map((one) => rootOf(one))
         .filter((name) => name !== '');
     const unique = [...new Set(names)].sort((left, right) =>
         left === primary ? -1 : right === primary ? 1 : 0
@@ -120,9 +122,7 @@ export function leadAsk(client: ClientState): Ask {
         submit: async ([title]) => {
             const answer = await client.writes.addLead({ title: title.trim() });
             const sentence = refusalWords(answer);
-            if (sentence === '') {
-                openPage(client, 'leads', title.trim());
-            }
+            if (sentence === '' && answer.id !== undefined) openPage(client, 'leads', answer.id);
             return sentence;
         }
     };
@@ -152,9 +152,7 @@ export function paperAsk(client: ClientState): Ask {
                 bucket
             });
             const sentence = refusalWords(answer);
-            if (sentence === '') {
-                openPage(client, 'radar', title.trim());
-            }
+            if (sentence === '' && answer.id !== undefined) openPage(client, 'radar', answer.id);
             return sentence;
         }
     };

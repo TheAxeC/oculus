@@ -61,9 +61,11 @@ function writes(calls: Call[], answer: (field: string) => WriteAnswer): Stub {
             calls.push(['entry', collection, id, fields]);
             return Promise.resolve(ok(Object.keys(fields)));
         },
-        writeFeedField: (feed, id, field, value, root) => {
-            calls.push(['feed-field', feed, id, field, value, root]);
-            return Promise.resolve(answer(field));
+        // A feed write records every argument it is given, so a call that names a hub beside the
+        // entry's id is seen.
+        writeFeedField: (...args: unknown[]) => {
+            calls.push(['feed-field', ...args]);
+            return Promise.resolve(answer(String(args[2])));
         },
         writeCareer: (fields) => {
             calls.push(['career', fields]);
@@ -73,9 +75,9 @@ function writes(calls: Call[], answer: (field: string) => WriteAnswer): Stub {
             calls.push(['delete-entry', collection, id]);
             return Promise.resolve(ok([id]));
         },
-        deleteFeedEntry: (feed, id, root) => {
-            calls.push(['feed-delete', feed, id, root]);
-            return Promise.resolve(ok([id]));
+        deleteFeedEntry: (...args: unknown[]) => {
+            calls.push(['feed-delete', ...args]);
+            return Promise.resolve(ok([String(args[1])]));
         }
     };
 }
@@ -130,9 +132,13 @@ describe('savePage', () => {
         expect(calls).toEqual([['career', { milestone: 'Veni' }]]);
     });
 
-    it('posts a feed entry one field at a time in its hub and refuses a field that is no single value', async () => {
+    it('posts a feed entry one field at a time by its internal id and refuses a field that is no single value', async () => {
         const calls: Call[] = [];
-        const feed = page('feed', { collection: 'leads', writeId: 'Postdoc A', root: 'second' });
+        const feed = page('feed', {
+            collection: 'leads',
+            writeId: 'second:Postdoc A',
+            root: 'second'
+        });
         const answer = await savePage(
             feed,
             { fit: 'good', country: 'NL', odd: { a: 1 } },
@@ -143,8 +149,8 @@ describe('savePage', () => {
             )
         );
         expect(calls).toEqual([
-            ['feed-field', 'leads', 'Postdoc A', 'fit', 'good', 'second'],
-            ['feed-field', 'leads', 'Postdoc A', 'country', 'NL', 'second']
+            ['feed-field', 'leads', 'second:Postdoc A', 'fit', 'good'],
+            ['feed-field', 'leads', 'second:Postdoc A', 'country', 'NL']
         ]);
         expect(answer.changed).toEqual(['fit']);
         expect(answer.refused.map((one) => one.field)).toEqual(['country', 'odd']);
@@ -153,7 +159,7 @@ describe('savePage', () => {
     });
 
     it('is not ok when a write of a feed field is refused as a whole', async () => {
-        const feed = page('feed', { collection: 'leads', writeId: 'Postdoc A' });
+        const feed = page('feed', { collection: 'leads', writeId: 'hub:Postdoc A' });
         const answer = await savePage(
             feed,
             { fit: 'good' },
@@ -164,7 +170,7 @@ describe('savePage', () => {
 
     it('answers with the fields written before a write refused as a whole and sends no later one', async () => {
         const calls: Call[] = [];
-        const feed = page('feed', { collection: 'leads', writeId: 'Postdoc A' });
+        const feed = page('feed', { collection: 'leads', writeId: 'hub:Postdoc A' });
         const answer = await savePage(
             feed,
             { fit: 'good', country: 'NL', region: 'EU' },
@@ -194,13 +200,17 @@ describe('deletePage', () => {
         expect(calls).toEqual([['delete-entry', 'venues', 'jbhi']]);
     });
 
-    it('deletes a feed entry with feed-delete in the hub that holds it', async () => {
+    it('deletes a feed entry with feed-delete by its internal id', async () => {
         const calls: Call[] = [];
-        const feed = page('feed', { collection: 'radar', writeId: 'A paper', root: 'second' });
+        const feed = page('feed', {
+            collection: 'radar',
+            writeId: 'second:A paper',
+            root: 'second'
+        });
         await deletePage(
             feed,
             writes(calls, () => ok([]))
         );
-        expect(calls).toEqual([['feed-delete', 'radar', 'A paper', 'second']]);
+        expect(calls).toEqual([['feed-delete', 'radar', 'second:A paper']]);
     });
 });

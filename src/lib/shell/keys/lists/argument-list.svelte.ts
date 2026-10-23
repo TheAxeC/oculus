@@ -14,7 +14,7 @@ import {
 } from '$lib/state/workbench/palette';
 import type { ClientState } from '$lib/state/client/context';
 import { fileIconThemes, themes } from '$lib/state/shared/words/appearance';
-import { instanceText } from '$lib/state/workbench/layout';
+import { stateRecord } from '$lib/state/workbench/layout';
 import { argumentRows, startRow, type ArgumentChoices, type ArgumentRow } from '../palette-modes';
 
 /** What the list is made over: the query, the choices, and the hint of each command. */
@@ -104,7 +104,7 @@ export function argumentChoices(
         views,
         view: tab?.view ?? null,
         projects: projects.map((one) => ({ id: one.id, title: one.short ?? one.title })),
-        project: tab?.view === 'project' ? instanceText(tab.state, 'id') : null
+        project: tab?.view === 'project' ? stateRecord(tab.state) : null
     };
 }
 

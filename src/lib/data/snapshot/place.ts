@@ -8,20 +8,17 @@ import { rootOf } from '../helpers/hub-names.ts';
 
 /**
  * Where a project's folder is: the Files root that holds it, its path in that root and its absolute
- * path. A project of a hub folder is in the workspace folder named for its hub (the primary's name
- * for a record without a prefix) at its folder, and its folder is the manifest's; a project of a
- * repository is in the folder of that name at the top, at the folder `repository` names.
+ * path. A project of a hub folder is in the workspace folder named for its hub at its folder, and
+ * its folder is the manifest's; a project of a repository is in the folder of that name at the top,
+ * at the folder `repository` names.
  */
-export function placeOf(
-    project: Project,
-    primary: string | null
-): { root: string; path: string; dir: string } {
+export function placeOf(project: Project): { root: string; path: string; dir: string } {
     if (project.workspaceFolder !== undefined) {
         return { root: project.workspaceFolder.root, path: '', dir: project.workspaceFolder.dir };
     }
     const cut = project.file.lastIndexOf('/');
     return {
-        root: rootOf(project, primary),
+        root: rootOf(project),
         path: project.folder,
         dir: cut < 0 ? '' : project.file.slice(0, cut)
     };

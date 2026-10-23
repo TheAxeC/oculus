@@ -15,7 +15,6 @@ const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
         log: vi.fn(() => Promise.resolve({ status: 'ok', log: 'x', path: '/x' })),
         roots: () => [],
         projects: () => [],
-        primary: 'hub',
         catalog: () => ({}),
         kept: vi.fn(() => Promise.resolve({ ok: false as const, error: 'unused' })),
         copy: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),

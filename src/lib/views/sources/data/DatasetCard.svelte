@@ -34,11 +34,11 @@
     import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
 
     const client = useState();
     const {
-        layout: { openView, openBeside },
-        fs: { primary }
+        layout: { openView, openBeside }
     } = client;
 
     type Props = RecordCardProps & { dataset: Dataset };
@@ -78,18 +78,18 @@
     /** The dataset's page, opened from its heading. */
     function openPage(): void {
         if (entry === null) return;
-        const page = pageView('data', entry.id, dataset.name === '' ? dataset.id : dataset.name);
+        const page = pageView(
+            'data',
+            entry.id,
+            dataset.name === '' ? keyOf(dataset.id) : dataset.name
+        );
         openView(page.view, page.state);
     }
 
     /** The dataset's Recover view beside this one, for the hub the dataset is read from. */
     function recover(): void {
         const key = recoverKey(dataset);
-        openBeside('recover', {
-            id: key,
-            hub: dataset.root ?? primary() ?? '',
-            label: t('data.recover_tab', key)
-        });
+        openBeside('recover', { hub: rootOf(dataset), key, label: t('data.recover_tab', key) });
     }
 </script>
 

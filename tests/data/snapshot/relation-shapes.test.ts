@@ -1,10 +1,11 @@
 // Layer 1, data tests. The relation fields of a manifest that the generated schemas accept in a
 // form the board does not read: a bare `key:` on a field that holds a list or one id, and
 // `waiting-on` written as one text. A hub planted in a scratch directory and built through
-// buildPortfolioWithSchemas gives one finding for each, with the catalog's sentence.
+// buildOneHub gives one finding for each, with the catalog's sentence.
 
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -67,7 +68,7 @@ describe('the relation fields of a manifest', () => {
             },
             ['.oculus/data/people']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((one) =>
             one.file.endsWith('/alpha/project.yml')
         );
         expect(found.map((one) => [one.key, one.message])).toEqual([
@@ -84,7 +85,7 @@ describe('the relation fields of a manifest', () => {
             },
             ['.oculus/data/people']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings.filter((one) =>
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((one) =>
             one.file.endsWith('/alpha/project.yml')
         );
         expect(found).toEqual([]);
@@ -103,7 +104,7 @@ describe('the relation fields of a manifest', () => {
             },
             ['.oculus/data/people']
         );
-        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+        const found = buildOneHub(hub, CONFIG).snapshot.findings;
         const of = (name: string) =>
             found.filter((one) => one.file.endsWith(`/${name}/project.yml`));
         expect(of('alpha').map((one) => [one.key, one.message])).toEqual([

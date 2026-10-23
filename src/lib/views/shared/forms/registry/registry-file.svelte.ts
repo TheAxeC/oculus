@@ -6,7 +6,7 @@
 // its card edits that file with that file's schema and identities; Add writes the primary's.
 
 import type { ClientState } from '$lib/state/client/context';
-import { fileUnder } from '$lib/state/shared/page/hubs';
+import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
 import {
     entryById,
     identityFaults,
@@ -59,7 +59,7 @@ export function registryFile(client: ClientState, kind: RegistryKind, key: strin
         collectionsOfKey(key).map((one) => ({
             collection: one,
             file:
-                one.root === undefined
+                rootOf(one) === client.fs.primary()
                     ? source
                     : fileUnder(one.file, client.fs.roots(), client.fs.primary()),
             faults: identityFaults(one.entries, one.schema)

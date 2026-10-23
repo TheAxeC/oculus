@@ -13,7 +13,6 @@ const target = (locals: App.Locals): LatexTarget => {
     const server = locals.server;
     const config = locals.config().config;
     return {
-        primary: server.workspace.open().primary,
         project: (id) => project(server.hub, id),
         roots: () => server.workspace.open().roots,
         formatting: () => latexFormatting(config),

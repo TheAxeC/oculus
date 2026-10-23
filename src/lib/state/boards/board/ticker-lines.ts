@@ -83,18 +83,17 @@ export type TickerItem = {
      * counts in months rather than days. It is set only on such a line, and `days` is then null.
      */
     months?: number;
-    /**
-     * The name of the hub the line's record is of, present only for a hub other than the primary.
-     */
+    /** The name of the hub the line's record is of, absent for a record of no hub. */
     root?: string;
     snoozed: boolean;
 };
 
 /**
- * The mark of a line of a record of a hub other than the primary, and nothing for the primary's.
+ * The mark of a line of a record: the name of its hub, which the line's chip draws when the hub is
+ * not the one in view (views/shared/card/RootChip.svelte), and nothing for a record of no hub.
  */
 export function rootMark(record: Rooted): Partial<TickerItem> {
-    const root = rootOf(record, null);
+    const root = rootOf(record);
     return root === '' ? {} : { root };
 }
 
