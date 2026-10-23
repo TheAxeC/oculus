@@ -1,47 +1,47 @@
 In flight (4 of 6 slots in use):
-- O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). State: building (builder ac3718e2ed885f054, base 282f3c2a).
-- O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). State: building (builder ac515994c74d874b8, base 74020bf0).
-- O56 (new project, entry and Save to Literature ask which hub). State: building (builder a449c7dbd8ad9a6ed, base 892189d7).
-- O39 part F (the first HTML paints the start theme's ground under the dev server too, the white first frame booked at part E's look). State: brief written (`agents/briefs/O39-partF.md`), its brief check running.
+- O61 (one home for each vocabulary word). State: building, paused on Axel's word.
+- O53 (a project's people by person keys). State: building, paused on Axel's word.
+- O56 (a new record asks which hub takes it). State: building, paused on Axel's word.
+- O39 part F (the first frame paints the theme's ground). State: prepared, worktree installed; its builder waits for Axel's go.
 
 Queued, in order (4 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
-- O60 (each part of `config/` overridden where ruling 214 puts it; with no primary, each hub's records take their own hub's settings file, folded in at O54's landing). Waits: after O55, with O63.
+- O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O39 (oculus in its own repository): part F in flight; then the desktop look C8 after `npm run app:package`, then the tick.
+- O39 (oculus in its own repository). Waits: after part F, the desktop look C8, then the tick.
 
 Owed looks:
-- none (O64's taken 2026-10-22; the parts that write or fetch the calendar are under "Cannot be taken on this hub" in `agents/reviews/owed-looks.md`).
+- none.
 
 Landed, newest first:
-- O65 (the status bar scrolls sideways; the editor's keys as VS Code's; Cmd+K Shift+Enter pins), 2026-10-23.
-- O54 (own hub first; every internal id `<hub>:<key>`, never shown; saved tabs changed once to hub and key), 2026-10-23.
-- O39 part E (the page's first HTML carries the theme it starts on), 2026-10-23.
-- O64 (motion where work is in progress), 2026-10-22.
-- O51 (a per-pane Hide Tab Row), 2026-10-22.
-- O57 (the portfolio chat's index over every hub), 2026-10-22.
-- O49 (an Open View submenu in the tab strip's menus), 2026-10-22.
-- O50 (who the user is: the workspace setting `self`), 2026-10-22.
-- O52 (the Focus board's section headings in one shape), 2026-10-22.
+- O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.
+- O54 (own hub first, internal ids `<hub>:<key>`), 2026-10-23, 08567e63.
+- O39 part E (the first HTML carries the start theme), 2026-10-23, a7d82144.
+- O64 (motion where work is in progress), 2026-10-22, 91f9040b.
+- O51 (a per-pane Hide Tab Row), 2026-10-22, 6360c0c1.
+- O57 (the portfolio chat's index over every hub), 2026-10-22, f69c8051.
+- O49 (an Open View submenu in the tab strip's menus), 2026-10-22, a76ea914.
+- O50 (who the user is: the workspace setting `self`), 2026-10-22, 10b4167e.
+- O52 (the Focus board's section headings in one shape), 2026-10-22, 8ce4d85a.
 - O62 (`archive_order` removed, orphan test over catalog keys), 2026-10-22, b1686091.
 - O58 (`config/catalogs/meta.yml` removed), 2026-10-22, f17c205c.
 - O59 (status flag `terminal` renamed `closes_deadline`), 2026-10-22, 6bb17666.
-- O48 (editor and terminal transparency settings), 2026-10-21.
-- O39 part D (README rewritten, HELP.md moved, DESIGN.md deleted), 2026-10-21.
-- O47 (the line edits of the cards and the Focus follow-ups), 2026-10-21.
-- O39 part A (the new repository's own files, theme lists, first-paint theme), 2026-10-21.
-- O46 (editor key descriptions, settings out of browser storage), 2026-10-20.
-- O44 (every text over a wallpaper on a surface, one toolbar layout, Focus rows at one size), 2026-10-20, 4dafd984f.
+- O48 (editor and terminal transparency settings), 2026-10-21, 10ab8de1.
+- O39 part D (README rewritten, HELP.md moved, DESIGN.md deleted), 2026-10-21, 605466ac.
+- O47 (the line edits of the cards and the Focus follow-ups), 2026-10-21, c18c0f4a.
+- O39 part A (the new repository's own files and the theme lists), 2026-10-21, 7065bd78.
+- O46 (editor key descriptions, settings out of browser storage), 2026-10-20, 678bd721.
+- O44 (text over a wallpaper on a surface, one toolbar layout), 2026-10-20, 4dafd984f.
 - O45 (Recover places one folder of an archive, the key `folder`), 2026-10-20, 323841f59.
-- O38 (cockpit retired, hub tools cleaned, Recover built into oculus, the hub data files moved into `.oculus/data`), 2026-10-20, 5a6cb4a70.
-- O42 (the app menu, the repository details header, the settings file in the folder list, the rice theme's empty state, the citation key of "et al."), 2026-10-18, 00bdbdd4a.
+- O38 (cockpit retired, Recover built into oculus), 2026-10-20, 5a6cb4a70.
+- O42 (the app menu and four small fixes), 2026-10-18, 00bdbdd4a.
 - O40 (O37's open look defects), 2026-10-18, 2eab73263.
 - O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
 - O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.
 - O33 (phase A, oculus ready for its own repository), 2026-10-16, bda7b0346.
 - Q72 (the architecture re-read), 2026-10-15, 69252f5d9.
-- The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.
-- The rail inline (open item 114), 2026-10-15, inline on main.
+- The Pillars page back on the rail (open item 115), 2026-10-15, 816f818c.
+- The rail foot trimmed (open item 114), 2026-10-15, 75465a0b.
 - D77 (Sessions view and title bar), 2026-10-15, 9e250b73d.
 - D73 (the Literature view), 2026-10-14, 8af4c1dae.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
