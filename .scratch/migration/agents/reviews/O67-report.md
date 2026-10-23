@@ -382,3 +382,232 @@ demo findings (0):
 ```
 
 The scratchpad logs for the orchestrator are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/`: `first-run.txt`, `after-run.txt`, `rows-before.txt`, `rows-after.txt`, `rows-before-2.txt`, `rows-after-2.txt`, `o67-quick.txt`, `o67-quick2.txt` and `o67-unused.txt`.
+## Repair round 1
+
+NOT done: item 6 (S-4). The round brief asks for a module-level `WeakMap` in `focus.ts` and no caller changes. The repository's boundary check forbids that, so this needs a ruling. `tests/checks/tree/boundaries.test.ts:666` "holds no process-wide state under src" failed on it with `"lib/state/boards/focus.ts holds module-level state in readLanes"`. The rule's comment (`boundaries.test.ts:422-427`) says module-level collections under src are not allowed, "with the catalogs named in FROZEN as the whole exception". `lanes` in `focus.ts` therefore stays the plain parse it is on the base, `return readAs(lanesShape, config.focus_lanes) ?? [];`, and `grep -n "readLanes\|WeakMap" src/lib/state/boards/focus.ts` prints nothing. Every other item of the round is done.
+
+This file now holds the report. The first build's text above is kept as it was handed back, so its first line and its "Report file in the ledger" row, which say the file was not written, describe the first build only.
+
+Open item for the orchestrator (item 6, a clash between the round brief and the boundary rule). The options:
+- A. `ProjectCard.svelte` takes the parsed lanes as a prop. `Projects.svelte` already parses them once per board (`:119`, `const focusLanes = $derived(lanes(config));`) and passes them on. `Project.svelte:124`, the other caller, passes `lanes(config)` once. Pro: each board parses once and no module state is held. Con: the round brief says "No caller changes", so it needs a ruling. Recommended.
+- B. Add `lib/state/boards/focus.ts:readLanes` to FROZEN. Pro: a two-line change. Con: it widens the rule's whole-exception list for a memo that is not a catalog, which makes the check fit the code. This is the lazy option.
+- C. A per-client memo through `state/client/context.ts`. Pro: no prop. Con: more machinery than A, for the same result.
+
+I ran one git command outside the round's list: `git check-ignore -v tests/fixtures/hubs/demo/projects/archive/failed/failed-quantization/project.yml`. It is read-only, exited 1 and printed nothing, but the round allowed only `git status`, `git diff` and `git show`.
+
+### Item 1 (P-1): the step's tests on the base code
+
+A fresh scratch copy `$S/o67-red` was made:
+- it is an rsync of `migration-O67-base` without `.scratch`, `node_modules` and `.svelte-kit`, with `node_modules` linked to the worktree's;
+- every test file and test fixture the step adds or changes was copied in from the worktree, the 13 demo manifests and the move of `archive/nogo` to `archive/failed` included;
+- `diff -rq` showed `tests/` identical to the worktree's and `src/` identical to the base;
+- `svelte-kit sync` was run.
+
+The 50 files of the first build's row list were run with `npx vitest run <the 50 files>`: the 28 changed `*.test.ts` files and the test files that import the three changed fixtures (`reference-hub.ts`, `write-fixture.ts`, `writes-fixture.ts`). The result was "Test Files  11 failed | 39 passed (50) / Tests  49 failed | 604 passed | 9 skipped (662)", with no timeout. Every file loaded. The scratch copy was then deleted, and `ls -d $S/o67-red` gives "No such file or directory".
+
+The 49 failing rows, each with its failing line, by what they show the base lacks:
+- **`venue_id` and `pillar` become `venue` and `pillars`** (the base reads only the old keys):
+  - references.test, 5 rows: 'a manifest select, venue, plain and d...', 'a manifest list, pillars', 'an anchored key used through an alias...' and 'an open text laid over its file, a ke...' fail at `:447` ("a hit stands at the position: expected null not to be null"); 'a key defined twice in its source, tw...' fails at `:459` ("expected [] to deeply equal [ ...(2) ]").
+  - rename.test, 15 rows:
+    - the edits 'a plain and a double-quoted reference...' and 'a trailing comment on the line...' fail at `:387` ("expected null not to be null");
+    - 'a single-quoted reference...' and 'an anchored key used through an alias...' fail at `:391` ("expected { ...(1) } to deeply equal { ...(3) }" and "{ ...(2) }");
+    - the four "writes a new key 123 / null / x: y / #x" rows fail at `:408` ("expected undefined to be 'id: alpha\nstage: in-prep\n...'");
+    - the refusals 'an open tab whose unsaved text...', 'a file larger than the write limit', 'a file that cannot be read', 'a file whose text is no longer the te...', 'a new key of white space only', 'a new key that already stands...' and 'an empty new key' fail at `:432` ("expected null not to be null");
+    - 'a new key with a comma...' fails at `:440` ("expected null to deeply equal { code: 'readback', key: 'a, b', ...(1) }").
+  - hub-keys.test, 8 rows:
+    - 'gives the key and its range when nothing refuses it' fails at `:102` ("expected undefined to match object { result: { placeholder: 'jbhi' } }");
+    - the refusals over a non-YAML text, an oversized file, an unreadable file and a file open in another window fail at `:137`, `:149` (twice) and `:161` ("expected null to be '...venues.yml is ...'");
+    - 'makes the checks of prepareRename again at rename' fails at `:184`;
+    - 'gives a refusal for an empty key...' and 'gives a refusal for a key that exists...' fail at `:194` ("expected undefined to match object { result: {} }").
+  - hub-portfolio.test, 4 rows:
+    - 'resolves a reference of the second hub in the primary hub...' fails at `:180` ("expected [] to deeply equal [ [ 'lab:graph-bandits', ...(1) ] ]");
+    - C1 fails at `:353` ("expected undefined to be 'hub:nature'");
+    - C2/C4 fails at `:374` ("expected undefined to be 'hub:science'");
+    - C5 fails at `:422` ("expected [] to have a length of 1 but got +0").
+  - hub-routing.test C8 'renames the primary's venue...' fails at `:188` ("expected false to be true").
+  - relation-shapes.test:
+    - 'gives one finding for 'a bare pillars'' fails at `:75`;
+    - 'gives none for a bare venue, funding or compute' fails at `:92` ("expected [ { ...(4) } ] to deeply equal []"), because the base flags a bare `venue` as undeclared.
+  - writes.test 'writes the changed field and nothing else' fails at `:182`, in two sub-rows ("idea: a field outside the manifest schema: expected { found: true, ...(3) } to deeply equal { found: true, changed: [], ...(2) }"), because on the base `venue_id` is a declared field and is written.
+  - normalise.test 'fills a project from the manifest keys of the same meaning' fails at `:251` (the `venue`, `pillars` and stage-lane mapping).
+- **`focus:` leaves the manifest and a new idea:**
+  - writes.test, 'scaffolds an idea folder...' on the Projects board, on the Personal board and for 'a write that names no tier and no fol...' fail at `:707`;
+  - 'writes as the stage of a new idea...', 'the stage scoping' and 'no stage' fail at `:733`;
+  - each is "expected 'id: new-idea\ntier: ...' to be ...", because the base writes `focus: holding`.
+- **The stage words and the demo hub:**
+  - integrity.test 'the demo hub > validates with no findings' fails with 22 findings ("expected [ { ...(4) }, ... ...(19) ] to deeply equal []"), because the base vocabulary lacks `in-prep` for a venue-less project, `released`, `failed`, `results-in`, `numbers-to-run`, `venue` and `pillars`, which the moved demo manifests use;
+  - manifests.test 'reads 'a repository whose manifest says pers...'' and 'reads 'a workspace folder holding both files...'' fail at `:609` ("expected [ { ...(4) } ] to deeply equal []" and the matchObject form): the base gives a finding on `venue:`.
+- **`holding_color` leaves vocab.yml:** config-folder.test 'holds exactly the expected top-level keys, and no more' fails at `:364` ("expected [ Array(99) ] to deeply equal [ Array(98) ]"), and 'reads each file on its own and finds its own keys there...' fails at `:795` ("expected [ 'chips', 'data_access', ...(16) ] to deeply equal [ ...(15) ]").
+
+The changed rows that pass on the base keep this behaviour:
+- **A stage word rewritten in a planted manifest, where the stage is not under test:** `active` becomes `exploring` and `idea` becomes `nascent`. These are hub-folders, workspace-findings, workspace-projects, cluster-folder, resources, schema-rules, tier-stage, clones, scan, audit.test, project-files, changes, deposit-compare, deposit, served-roots and items.test, and the passing rows of manifests.test, relation-shapes, hub-portfolio, references.test and normalise.test. Each keeps what it asserts: the folder scan, the workspace findings, the cluster path, the compute resources, the schema rules, the tier read, the clones, the audit, the project files, the change log, the deposit, the served roots, and the related links.
+- **lsp-transport.test:** `venue_id: media` becomes `venue: media`. The row tests the transport of a document's text, and the key is not read.
+- **The test files with no change of their own that read a changed fixture:** app-document, app-gate, app-setting, audit-mute, config-key (routes and server), config-value (routes and server), deck-slides, rail, roots, undo, write, file-undo, hub-undo, hub-writes, ops-replace, app-store, deck-acts, writes-collection, clone-after and options-pages. They keep their behaviour over `write-fixture.ts`'s MANIFEST and deckProject (stage `exploring`), over `writes-fixture.ts` (`pillars: [tensor]`) and over the demo hub. None of them asserts the stage word or the key name.
+- **config-folder.test `stages: [exploring]`:** the row tests that `stages` must be a map, whatever its word.
+
+### Item 2 (S-1): the attention-row comments
+
+The comments now:
+- `src/lib/state/boards/focus-lanes.ts:1-4`: "Layer 2, client state. Collection cards and the two attention rows of projects for Focus: the manifests behind their docs and the projects no lane shows, work in flight or ideas of the Projects and Personal boards. All values are derived from the supplied snapshot and config; the view resolves configured colours through toneOf."
+- `focus-lanes.ts`, the doc comment of the attention row: "The attention row of the projects no lane shows, with the four project links it draws and the remainder count, the shape of the manifest-lag line."
+- `src/lib/views/boards/focus/CommandCenterView.svelte:77-78`: "... the row of manifests behind their docs or the row of the projects no lane shows."
+
+They match `unplaced` at `focus.ts:352-361`, which takes a project of a tier carrying `backlog` (Projects and Personal, `vocab.yml:213-214`), whose stage carries `live` or `idea`, and which `laneOf` puts on no lane.
+
+The first build's report listed "active projects on no lane" under English-word hits. That was wrong: both comments described the old rule, and they are rewritten.
+
+Every comment that names `unplaced`, the Needs attention row or the attention row was re-read (`grep -rn "unplaced\|Needs attention\|attention row" src config --exclude=local.yml`). One more was false and is rewritten:
+- `src/lib/views/boards/focus/lanes/LaneCard.svelte:49`. It said "The move menu's choices: every lane, then every priority." and now says "The move menu's choices: every lane the card may move to, then every priority.", since the menu lists only the lanes `movable` allows.
+- This file is outside the brief's named list. It falls under "any other file under src/".
+
+### Item 3 (S-2): the `blocked` flag text
+
+The readers, found with `grep -rn "'blocked'" src`:
+- `focus.ts:114` `isBlocked`, read by `waiting()` (`:396`, the Focus board's awaiting box) and by `Lanes.svelte:108` (the lane card's wait line);
+- `stats.ts:62` `waitingLine` (the board card's wait line);
+- `stats.ts:89` (the statistics strip's blocked number);
+- `collection.ts:815` (the cross-link group's flag);
+- `Focus.svelte:143`, a row key, which reads no chip.
+
+The two texts now say the same. `config/catalogs/vocab.yml:92`: "`blocked`: a chip the Focus board's awaiting box counts as blocked and a board's statistics strip counts in its blocked number, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written (`anyWord`)." `src/lib/data/shapes/catalog-files/vocab.ts:142` has the same sentence without the leading key and the trailing `(anyWord)`.
+
+### Item 4 (S-2): the comments of the changed behaviour, and the greps behind the new helpers
+
+The head comments, doc comments and catalog paragraphs that describe the changed behaviour:
+
+| Place | State |
+|---|---|
+| `focus-lanes.ts:1-4` | rewritten (this round) |
+| `focus-lanes.ts`, the attention-row doc | rewritten (this round) |
+| `focus-lanes.ts:42-44` | still true |
+| `CommandCenterView.svelte:77-78` | rewritten (this round) |
+| `LaneCard.svelte:49` | rewritten (this round) |
+| `vocab.yml:92`, `vocab.ts:142` (`blocked`) | rewritten (this round) |
+| `focus.ts:1-2`, `:34-41`, `:46`, `:107-108`, `:145` | still true |
+| `focus.ts:218-316` (laneOf, titleOrder, backlogTier, holds, movable, moveOnto) | still true |
+| `focus.ts:348-350`, `:378-382` (unplaced, waiting) | still true |
+| `focus.ts`, `lanes` doc | still true (the base's text) |
+| `ticker.ts:131-132` | rewritten (first build) |
+| `ticker.ts:596` | still true |
+| `feeds.ts:1`, `:66` | still true |
+| `presets.ts:170-171`, `stats.ts:36`, `collection.ts:774-777` | still true |
+| `Lanes.svelte:2-10`, `:112-115`, `:151-154`, `:185-189`, `:197` | still true |
+| `Focus.svelte:18` | rewritten (first build) |
+| `Focus.svelte:112-113` | still true |
+| `derive.ts:84-86` | rewritten (first build) |
+| `ProjectCard.svelte:120`, `Projects.svelte:118` | still true (first-build lines) |
+| `LaneHead.svelte:4` | still true for the project lanes; not checked for the backlog snippet |
+| `lines.ts:101` (archival) | rewritten (first build) |
+| `vocab.yml` paragraphs at `:50`, `:51`, `:52`, `:54`, `:61` | still true |
+| `vocab.yml:173`, `:200`, `:208` | rewritten (first build) |
+| `layout.yml:225` (the cell list with focus) | still true |
+| `manifest-schema.yml:13-15` | rewritten (first build) |
+
+The greps for the new helpers and schemas were not run before the helpers were written in the first build. They were run in this round, with `grep -rn` over `src`:
+- `laneOf`: `grep -rn "laneFor\|laneOf\|stages\.includes(" src` found only unrelated stage filters (`publications.ts:114`, `graph.ts:372`, `validate.ts:295,317`), no lane lookup.
+- `moveOnto`: `grep -rn "'status.chips'" src` found only `audit/projects.ts:384`, `forms/schema.ts:334` and options entries, no move writer.
+- `holds`: `grep -rn "'tiers', 'backlog'" src` found only `focus.ts:238`, which is `backlogTier` itself.
+- `titleOrder`: `grep -rn "a\.title < b\.title\|\.title\.localeCompare\|byTitle\|titleOrder\|sortByTitle" src` found inline comparisons in `focus-lanes.ts:48,106,147` (inside the private `bandOrder`), `manager.ts:376`, `present.svelte.ts:294` and `items.ts:174`. None is an exported helper. The base `focus.ts` had the same expression at `:197` and `:255`, which `titleOrder` replaces.
+- `laneRow` / `laneRows`: `grep -rn "focus_lanes\|refine(" src/lib/data/shapes` and `grep -rn "superRefine\|duplicate\|seen\.has" src/lib/data/shapes` found only the new code. There is no shared both-or-neither or duplicate check to reuse.
+
+### Item 5 (S-3)
+
+The first build ran `git grep` for its item-8 greps. This round used `grep -rn`. The diff did not change for this item.
+
+### Item 6 (S-4)
+
+Not done; see the open item at the top of this section.
+
+### Item 7 (B-1): before and after, the refuter's (a) to (e)
+
+- (a) **The board card's lane tag** (Projects board, `ProjectCard.svelte:379-381`). State: the demo hub.
+  - Before: the tag showed the raw `focus:` value: `push` on graph-bandits and graph-transfer, `revise` on streaming-anomaly, `scope` on online-clustering, `holding` on tensor-sketch, `review` on robust-embeddings and `blocked` on sparse-attention. A card with no `focus:` had no tag.
+  - After: the tag shows the label of the lane `laneOf` gives: "Push", "Push", "Revise", "Scope", "Backlog", "Review" and "Blocked". A card on no lane, such as a released, published or failed project, has no tag. A hub manifest with no `focus:` and an in-flight stage now gets a tag where it had none.
+- (b) **The List's Focus cell** (Projects and Personal boards in the List layout, `Projects.svelte:239`). State: the demo hub.
+  - Before: `item.project.focus ?? ''`, for example "push", or "holding" for tensor-sketch.
+  - After: `laneOf(...)?.label ?? ''`, for example "Push", or "Backlog" for tensor-sketch, and empty for a project on no lane.
+- (c) **The statistics strip's blocked number** (any board's strip, `Stats.svelte:38`, "{0} blocked"). State: a project with the chip `blocked` and a `focus:` other than `blocked`, or the reverse.
+  - Before: `stats.ts:92` counted `item.project.focus === 'blocked'`, so the first project counted 0 and the second 1.
+  - After: `stats.ts:89` counts a chip with the flag `blocked` (`anyWord`), so the first counts 1 and the second 0, and its `focus:` key is a finding. On the demo hub, sparse-attention carries both `focus: blocked` (base) and the chip `blocked`, so by those two lines of code its strip counts 1 before and after; the strip itself was not drawn.
+- (d) **The stage and chip words on cards and the Map.** State: a project at each word. Base `vocab.yml` compared with the worktree's:
+  - `finished` {label finished, glyph `done`, #16a34a} becomes `released` {released, `done`, #0d9488 teal}.
+  - `nogo` {"no-go (failed gate)", `overdue`, #b45309}, `disproved` {disproved, `cross_box`, #dc2626}, `dropped` {dropped, `trash`, #9ca3af}, `abandoned` {abandoned, `cross`, #6b7280} and `paused` {paused, `black`, #9ca3af} become:
+    - `failed` {"failed (no-go or disproved)", `cross_box`, #dc2626};
+    - `stopped` {"stopped (dropped or abandoned)", `trash`, #9ca3af}.
+  - Gone with no replacement word:
+    - `idea` (#7c5cff, no glyph) and `active` (#ea580c, no glyph);
+    - `running` (`live`, #16a34a);
+    - `accepted` ("accepted (camera-ready pending)", `green_square`, #2563eb), and its glyph `green_square` with it;
+    - `archived` (#16a34a, no glyph).
+  - Chips:
+    - "positive result (pre-writeup)" (`white`) becomes "results in, not written up" (`white`);
+    - "numbers pending" (`blue`) becomes "numbers still to run" (`blue`);
+    - the new chip "parked (not being worked)" uses `black`.
+  - Chips carry no colour, before or after.
+- (e) **The Pillars view's Archival band** (`archival` in `lines.ts:103`, grouped by the `dead` numbers of `stages`). State: archived projects at each dead-end stage.
+  - Before: five groups, in the order nogo, dropped, disproved, abandoned, paused (`dead: 1` to `5`), and the blurb "Dead-ends and paused work (no-go / dropped / disproved / abandoned / paused), kept for provenance and excluded from pillar membership."
+  - After: two groups, failed then stopped (`dead: 1`, `2`), and the blurb "Dead-ends (failed / stopped), kept for provenance and excluded from pillar membership." (`config/text/views/structure/pillars.yml:5`).
+
+### Item 8: ignored paths and the undo of a two-field move
+
+`git status --short --ignored`, the lines other than ` M`:
+```
+ D tests/fixtures/hubs/demo/projects/archive/nogo/failed-quantization/project.yml
+?? .scratch/migration/agents/briefs/O67-round1.md
+?? tests/fixtures/hubs/demo/projects/archive/failed/
+!! .svelte-kit/
+!! node_modules/
+```
+No file the step adds sits under an ignored path. The one added file, `archive/failed/failed-quantization/project.yml`, shows as untracked (`??`), not ignored (`!!`). `O67-round1.md` is the orchestrator's brief.
+
+The undo case ran on a planted copy of the demo hub under `$S/o67-undo/hub-*`, never the worktree's fixtures. It set tensor-sketch's chips to `[parked, admin-prep]`, wrote the move onto Run through `handleWrite` (`kind: 'manifest'`, `id: 'hub:<id>'`), read the records with `readChanges`, and posted `kind: 'undo'` for each record. The program, `undo-case.ts`, in its essentials:
+```ts
+const fields = focus.moveOnto(project, focus.lanes(merged).find((l) => l.key === 'run'), focus.lanes(merged), merged);
+const moved = await post({ kind: 'manifest', id: `hub:${project.id}`, fields });
+const records = readChanges(log);
+for (const record of records) {
+    const back = await post({ kind: 'undo', at: record.at });
+}
+console.log(`file byte for byte as before the move: ${readFileSync(file, 'utf8') === original}`);
+```
+Its output, verbatim:
+```
+before: stage: nascent |   chips: [parked, admin-prep] lane=Backburner
+move {"stage":"exploring","status.chips":["admin-prep"]}: status=200 {"ok":true,"changed":["stage","status.chips"],"refused":[]}
+after the move: stage: exploring |   chips: [admin-prep] lane=Run
+change records (newest first): [["status.chips",["parked","admin-prep"],["admin-prep"]],["stage","nascent","exploring"]]
+undo status.chips: status=200 -> stage: exploring |   chips: [parked, admin-prep] lane=Backburner
+undo stage: status=200 -> stage: nascent |   chips: [parked, admin-prep] lane=Backburner
+file byte for byte as before the move: true
+```
+One move makes two records. Each Undo takes back one of them, and after the two the file is byte for byte as before the move. The program, its `runes.ts` and the planted hubs were deleted (`ls -d $S/o67-undo` gives "No such file or directory").
+
+### The verify list, run twice
+
+- First full run of `npm run test:quick`: every command `ok` except `FAILED  vitest checks (158.6 s)`. The failure was `tests/checks/tree/boundaries.test.ts:667` "holds no process-wide state under src", with `+   "lib/state/boards/focus.ts holds module-level state in readLanes"`, from item 6's `WeakMap`. The summary line was "test:quick: 210.6 s; failed: vitest checks".
+- `lanes` went back to the base's plain parse (item 6 handed back, as above). Then `npx vitest run tests/checks/tree/boundaries.test.ts` alone gave "Test Files  1 passed (1) / Tests  11 passed (11)".
+- Second full run, every line `ok`:
+```
+ok      prettier (0.5 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.0 s)
+ok      eslint (8.8 s)
+ok      svelte-check (13.0 s): 1792772831282 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (84.8 s): Duration  77.14s (transform 65.45s, setup 0ms, import 150.78s, tests 133.68s, environment 10.33s)
+ok      vitest checks (97.6 s): Duration  89.86s (transform 50.34s, setup 0ms, import 149.67s, tests 169.40s, environment 4ms)
+ok      vitest slow (129.6 s): Duration  122.09s (transform 10.57s, setup 0ms, import 81.89s, tests 399.97s, environment 11ms)
+test:quick: 131.7 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+```
+
+The ASCII scan (`perl -ne 'print if /[^\x00-\x7f]/'`) over the round's changed files (`focus.ts`, `focus-lanes.ts`, `CommandCenterView.svelte`, `LaneCard.svelte`, `vocab.yml`, `vocab.ts`) printed nothing.
+
+### Files the round changed
+
+- `src/lib/state/boards/focus-lanes.ts` (two comments);
+- `src/lib/views/boards/focus/CommandCenterView.svelte` (one comment);
+- `src/lib/views/boards/focus/lanes/LaneCard.svelte` (one comment, outside the named list);
+- `config/catalogs/vocab.yml:92` and `src/lib/data/shapes/catalog-files/vocab.ts:142` (the `blocked` text).
+
+`src/lib/state/boards/focus.ts`'s `lanes` is as on the base. `git diff --stat` now gives "95 files changed, 2190 insertions(+), 2091 deletions(-)".
