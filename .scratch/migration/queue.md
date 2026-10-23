@@ -8,7 +8,7 @@ Queued, in order (4 steps):
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
 
 Owed looks:
-- O67 on TEST on 8790, the rest of the live look: the Projects board's lane tags and statistics strip, the List's Focus column, the Archive board, the Pillars Archival band and the Map. The Focus board and the Findings view are taken.
+- none.
 
 Landed, newest first:
 - O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
