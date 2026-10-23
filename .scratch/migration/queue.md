@@ -1,8 +1,9 @@
 In flight (0 of 6 slots in use):
 - none.
 
-Queued, in order (5 steps):
-- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274 and 275). Waits: open item 281 (focus merged into stage), then Axel's go.
+Queued, in order (6 steps):
+- O67 (the stage decides the Focus lane; stage, chip and key words settled, rulings 271 to 273 and 278 to 282). Waits: Axel's go.
+- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275 and 277). Waits: after O67, then Axel's go.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
