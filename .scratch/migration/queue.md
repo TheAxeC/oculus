@@ -12,7 +12,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O56 (a new record asks which hub takes it), 2026-10-23, (this commit).
+- O56 (a new record asks which hub takes it), 2026-10-23, a06c1bf6.
 - O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.
 - O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.
 - O54 (own hub first, internal ids `<hub>:<key>`), 2026-10-23, 08567e63.
