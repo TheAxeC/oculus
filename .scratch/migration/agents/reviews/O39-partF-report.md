@@ -36,7 +36,7 @@ No case of the brief's rules turned out wrong.
 
 | Item | State | Proof |
 |---|---|---|
-| 1. Ground element in the head of every page, before `%sveltekit.head%`, with the scrollbar rule, `--bg` over tokens.css and `THEME_SHEETS` (and the block for an app theme) | DONE | `src/app.html:8` `%oculus.ground-style% %sveltekit.head% %oculus.theme-style%`; `src/hooks.server.ts` `pageTheme`, `groundElement`, `GROUND_BAR`; the 7 ground rows and the 4 page-kind rows pass (final run below) |
+| 1. Ground element in the head of every page, before `%sveltekit.head%`, with the scrollbar rule, `--bg` over tokens.css and `THEME_SHEETS` (and the block for an app theme) | DONE | `src/app.html:8` `%oculus.ground-style% %sveltekit.head% %oculus.theme-style%`; `src/hooks.server.ts` `pageTheme`, `groundElement` with the text of `src/lib/ui/theme/scrollbar.css`; the 7 ground rows and the 4 page-kind rows pass (final run below) |
 | 2. Hex colour only; none for a start not computed or a withheld block | DONE | `themeGround` returns null unless `isHexColour`; `pageTheme` reads the ground only when `sheet === null \|\| sent`; the two C6 rows and the C7 row pass |
 | 3. First `applyTheme` removes the element by id through `Themeable`; a second call changes nothing | DONE | `src/lib/ui/theme/theme.ts` `Themeable.getElementById`, `GROUND_STYLE_ID`, `document.getElementById(GROUND_STYLE_ID)?.remove()`; G118 row passes |
 | 4. One reading of the ground shared with `windowColours` | DONE | `src/lib/themes/parse.ts` `themeGround`, called by `windowColours` and by `pageTheme`; window-guard and attached-themes pass |
@@ -55,7 +55,7 @@ test:quick also printed `test:quick: 13 changed file(s), from git since HEAD`, `
 
 Runs: the verify list once (`npm run diagrams && npm run test:quick`), `npm run format` once. No whole-suite command. Git: read-only `git status --short`, `git diff --numstat`, `git diff -U0` and `git diff` of `docs/diagrams`, as the dispatch message allows (spec.md's builder rule bans them; the file list itself comes from `diff -rq` against the base copy); no git command that changes state. Other runs: the four G11/G118 files three times (base, after the change, final), the first run of the two changed test files once, boundaries once.
 
-## Files
+## Files (first round; the table after repair round 1 is in that section)
 
 From `diff -rq` against the base copy over `src`, `tests`, `config`, `utils`, plus `docs/diagrams` (not in the base copy; changed by `npm run diagrams`). Lines are `wc -l` after the last change, with lines added and removed.
 
@@ -100,7 +100,7 @@ From `diff -rq` against the base copy over `src`, `tests`, `config`, `utils`, pl
 - Other comments that name the first HTML (`grep -rn "first HTML" src tests config docs README.md`): `src/desktop/windows/start-colours.ts:6`, `src/lib/server/machine/apps/routes/theme.ts:4,16,73`, `src/lib/data/helpers/editor/start-theme.ts:9,17`, `src/lib/views/system/findings/Findings.svelte:118`, `src/lib/themes/derive.ts:288`, `src/lib/themes/tokens.css:19`, `src/routes/find/+page.svelte:62`, `src/routes/+page.server.ts:39`, `src/routes/+page.ts:17`, `src/lib/themes/vscode-map.ts:5`: still true (none lists the head's elements as a whole).
 - `docs/HELP.md:514` ("the page draws it from its first paint"): still true, unchanged (`grep -rn "first paint\|first frame" docs README.md` prints only that line).
 
-## Verify 6: history words
+## Verify 6: history words (first round; repair round 1 has its own)
 
 `git diff -U0 -- src tests | grep -E "^\+" | grep -E "//|\*|/\*|it\(|it\.each|describe\(|row:" | grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O39|Z468|2026|part F|part E"` printed nine lines, and the same grep over the added lines of `+layout.svelte` and `app.html` two more. Each hit:
 - `* bar before the layout's stylesheet has loaded.`, `* sets them, so a frame that paints the mounted page before its draw has run`, `* (`GROUND_BAR`), ... so the frames before any`, `* stylesheet has loaded, which under the dev server come before the page's script runs`, `// `%oculus.ground-style%`, ... so it comes before any script and`, `// fills a window of the desktop app with before its page paints`, `* in the page's first HTML (hooks.server.ts), before any stylesheet has loaded.`, `Before the page's first draw the window's`, `the root element and this rule in its ground element (hooks.server.ts), so the frames before`: order of events while a page loads, no earlier state of the code.
@@ -108,7 +108,7 @@ From `diff -rq` against the base copy over `src`, `tests`, `config`, `utils`, pl
 - `// and vscode.css, are handed the text the browser reads. The module registry is reset before this`: the existing sentence rewrapped, about the order of module loads.
 No hit names a package, a date or an earlier state.
 
-## Verify 7: names
+## Verify 7: names (first round; the grep after repair round 1 is in that section)
 
 `grep -rn --exclude=local.yml "oculus-ground\|GROUND_STYLE_ID\|ground-style\|themeGround\|GROUND_BAR\|groundElement" src tests config docs README.md`:
 - `src/app.html:8`, the placeholder.
@@ -122,8 +122,8 @@ Grep before writing a helper (spec.md:87): `grep -rn "scrollbar-color" src` prin
 
 ## Judgment calls the brief left open (each reversible)
 
-1. Names: the placeholder `%oculus.ground-style%`; the id `GROUND_STYLE_ID = 'oculus-ground'` in `theme.ts` beside `applyTheme`; the shared reader `themeGround(blocks, classes): string | null` in `parse.ts`; `GROUND_BAR` and `groundElement(colour)` in `hooks.server.ts`.
-2. The element's text is `html { background: <hex> } * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track) }`. The scrollbar rule is written twice, in `+layout.svelte` (a Svelte `<style>`, which cannot import a TypeScript constant) and in `GROUND_BAR`; each comment names the other. A change to one not carried to the other changes only the frames before the first draw.
+1. Names: the placeholder `%oculus.ground-style%`; the id `GROUND_STYLE_ID = 'oculus-ground'` in `theme.ts` beside `applyTheme`; the shared reader `themeGround(blocks, classes): string | null` in `parse.ts`; `groundElement(colour)` in `hooks.server.ts`; the sheet `src/lib/ui/theme/scrollbar.css` (repair round 1, ruling 1).
+2. The element's text is `html { background: <hex> }`, a line break, then the whole text of `scrollbar.css`, which holds the scrollbar rule once; the layout imports the same sheet.
 3. `pageTheme` parses the sheets a second time for the ground (`derivedTokens` parses them inside); the cost per page HTML is not measured. `windowColours` now resolves the blocks twice in the host; not measured either.
 4. `applyTheme` asks for the element on every call; only the first finds it. No flag or state records the first draw.
 5. The withheld-block and the non-hex rows reach their branches by a spy on `vscodeMap.themeSheet` that edits the converted block (a `--bg: var(--panel);`, or a trailing `/* </style> */`), since no shipped input reaches either branch.
@@ -133,7 +133,7 @@ Grep before writing a helper (spec.md:87): `grep -rn "scrollbar-color" src` prin
 
 ## Before and after, for the look
 
-- Workbench `/` under the dev server (`npm run dev` on a scratch port), config `theme: dark`, reload: before, the first frames are white; after, every frame from the reload to the drawn page is `#0b1120`. View source (not the Elements panel): `<title>...</title>` followed by `<style id="oculus-ground">html { background: #0b1120 } * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track) }</style>` before Kit's head links and scripts.
+- Workbench `/` under the dev server (`npm run dev` on a scratch port), config `theme: dark`, reload: before, the first frames are white; after, every frame from the reload to the drawn page is `#0b1120`. View source (not the Elements panel): `<title>...</title>` followed by `<style id="oculus-ground">html { background: #0b1120 }` on one line, then the whole text of `src/lib/ui/theme/scrollbar.css` (its head comment and the `* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track); }` rule), then `</style>`, before Kit's head links and scripts.
 - Same, a view that scrolls (a long file in the editor or a long list): before, the first frames draw the browser's light bar; after, the theme's thin dark bar from the first frame (C1b).
 - `theme` set to Ember (approved app theme): every frame is the `--bg` of Ember's converted block.
 - Desktop window default (`vscode-dark-modern`) and `theme: kanagawalotus`: `#181818` and `#e5ddb0` from the first frame.
@@ -142,12 +142,17 @@ Grep before writing a helper (spec.md:87): `grep -rn "scrollbar-color" src` prin
 - Float window, `/find`, `/present/show`, `/present/print` under the dev server: each reload shows its start theme's ground in every frame.
 - Built server (`vite build` then the preview or the app): `theme: dark` and Ember paint their ground in every frame after a reload, as before the step.
 - Desktop app window: filled before its page paints with the same colours as before (`windowColours` unchanged in result).
+- A page SvelteKit renders with its default error component (an unmatched path such as `/no-such-page`, or a failed load), under the dev server, `theme: dark`: before, white first frames; after, the start ground from the first frame, and the ground element is kept for the page's life, since that page makes no draw.
+- Every scrolling box after the page has drawn (the editor, a long list, a pane): the same thin bar in the theme's two tokens as before the step; the rail's list and the tab strip still show no bar. The rule now comes from `src/lib/ui/theme/scrollbar.css`, which the layout imports, in place of the layout's own `:global(*)` rule.
 
 ## Anything in the brief wrong or impossible
 
-Nothing. Two notes: no input reaches the withheld-block or the non-hex branch today (judgment call 5 says how the rows reach them); and the page an unmatched path serves through `app.html` gets the ground element and never draws, so the element stays there, in the same colour as its body, on a page that never changes theme (brief check section 2).
+Nothing. Notes:
+- The two rows "sends no ground for an app's theme $row" and the C7 assertion `expect(grounds(sent.html)).toEqual([])` passed on the unchanged tree, as expected for a behaviour the change keeps (the unchanged tree sends no ground for any input), so they have no failing run.
+- No input reaches the withheld-block or the non-hex branch today (judgment call 5 says how the rows reach them).
+- The page an unmatched path serves through `app.html` gets the ground element and never draws, so the element stays there, in the same colour as its body, on a page that never changes theme (brief check section 2).
 
-Limitations and sharp edges: the scrollbar rule's two copies (call 2); the second parse per page HTML, not measured (call 3); under the dev server a start theme whose ground is withheld (an app block holding `<`, unreachable today) still has white first frames, as item 2 asks.
+Limitations and sharp edges: the ground element carries the whole text of `scrollbar.css`, its head comment included, into every page's first HTML (1028 bytes, `wc -c src/lib/ui/theme/scrollbar.css`); the text goes in as it is, so a left angle bracket in that sheet would end the element early, which its head comment says, and every ground row, which compares the element's whole text with the sheet's, would fail on it; the second parse per page HTML, not measured (call 3); under the dev server a start theme whose ground is withheld (an app block holding `<`, unreachable today) still has white first frames, as item 2 asks.
 
 ## Doc text (for the orchestrator to apply at landing)
 
@@ -157,8 +162,134 @@ G118, Code: `src/lib/ui/theme/theme.ts` (`applyTheme`, `derivedTokens`, `withThe
 
 G118, Test, add: `tests/server/desktop/app-theme-start.test.ts`, describe 'the ground a page is sent with', "is taken away by the page's first draw, and a later draw finds none and takes nothing".
 
-G118, the sentence on the first HTML, proposed: "The page's first HTML is sent with that theme: its ground, the theme's `--bg` as a hex colour on the root element with the layout's scrollbar rule, in a style element of its own ahead of every script and stylesheet, which the page's first draw takes away, and no ground for an app's theme whose block is not sent; the body class its first draw sets, the CRT class on the workbench alone, the tokens its draw derives for that class on the root element, and for an app's theme the block of its file in the style element the first draw replaces; a request of the desktop app's window carries the word `oculus-desktop` in its user agent and starts on `app_theme`, a browser's starts on the first row."
+G118, the sentence on the first HTML, proposed: "The page's first HTML is sent with that theme: its ground, the theme's `--bg` as a hex colour on the root element with the page's scrollbar sheet (`src/lib/ui/theme/scrollbar.css`), in a style element of its own ahead of every script and stylesheet, which the page's first draw takes away, and no ground for an app's theme whose block is not sent; the body class its first draw sets, the CRT class on the workbench alone, the tokens its draw derives for that class on the root element, and for an app's theme the block of its file in the style element the first draw replaces; a request of the desktop app's window carries the word `oculus-desktop` in its user agent and starts on `app_theme`, a browser's starts on the first row."
 
 ## Tests proposed, not added
 
 None.
+
+# Repair round 1
+
+Everything in `agents/briefs/O39-partF-round1.md` is done.
+
+Under rulings 262 (a) and 263 (a), which the coordinator gave during this round, I read git only with `git status`, `git diff` and `git show`. No case-run program was written: every case of this round is checked by a test row or by reading.
+
+## Rulings
+
+| Ruling | State | Check |
+|---|---|---|
+| 1. The scrollbar rule held once in `src/lib/ui/theme/scrollbar.css` | DONE | `grep -rn "scrollbar-color" src` (below) shows the rule once outside the three components' `!important` rules; the four G11/G118 files pass, 74 |
+| 2. The head comment of `parse.ts` | DONE | diff below; read against `start-colours.ts:95-115`, `hooks.server.ts`, `theme.ts:147` |
+| 3. The report's two sections | DONE | "Anything in the brief wrong or impossible" and "Before and after, for the look" above, edited in place |
+| 4. The withheld-block guard | DONE (no change, as ruled) | `hooks.server.ts:116` `sheet === null \|\| sent` unchanged; row "sends no ground for an app's theme 'whose block holds a closing tag, the block withheld (C6)'" passes |
+| 5. The verify list once after the last change | DONE | lines below; ran once in this round |
+
+### Ruling 1
+
+- The new file `src/lib/ui/theme/scrollbar.css` (14 lines) holds a head comment (Layer 3; what it draws; the box that keeps no bar outranks it; its two readers, the layout's import and the server's ground element; the first draw takes the element away; it holds no left angle bracket, because the server writes its text as it is) and the rule `* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) var(--scroll-track); }`.
+- `src/routes/+layout.svelte`: `import '$lib/ui/theme/scrollbar.css';` after `import '$lib/themes/slide.css';`. The `:global(*)` rule and its comment are removed, and their text is now the sheet's head comment. The script's head comment names the sheet among what the root carries ("the thin bar every scrolling box draws (ui/theme/scrollbar.css)").
+- `src/hooks.server.ts`: `import scrollbarCss from '$lib/ui/theme/scrollbar.css?raw';` and `GROUND_BAR` is gone. `groundElement` returns `` `<style id="${GROUND_STYLE_ID}">html { background: ${colour} }\n${scrollbarCss}</style>` ``. Its doc comment, the doc comment of `pageTheme` and the comment above `handle` name the sheet in place of the layout's rule.
+- `src/lib/ui/theme/theme.ts`: the doc comment of `GROUND_STYLE_ID` names "the rule of the page's scrollbar sheet (ui/theme/scrollbar.css)".
+- `tests/server/root/hooks-server.test.ts`:
+  - `sheetText` reads a path under `src/lib/`, and the existing twelve mocks name `themes/...`.
+  - A thirteenth mock, `vi.mock('$lib/ui/theme/scrollbar.css?raw', () => sheetText('ui/theme/scrollbar.css'))`, is added.
+  - `ground(colour)` now returns `` `html { background: ${colour} }\n${SCROLLBAR}` ``, where `SCROLLBAR` is `readFileSync` of `src/lib/ui/theme/scrollbar.css`. Before, it built the text from a string literal of its own (`const bar = 'scrollbar-width: thin; ...'`).
+  - The head comment names the scrollbar sheet among the sheets handed their text.
+  - No assertion changed. Only the expected text changed, and only by what the sheet's text is.
+- `grep -rn "scrollbar-color" src` after the change prints `src/lib/ui/forms/choice/GlyphList.svelte:70`, `src/lib/ui/forms/choice/SuggestInput.svelte:185`, `src/lib/ui/forms/choice/select/HueSelect.svelte:102` (each the component's own `!important` rule) and `src/lib/ui/theme/scrollbar.css:13`; `grep -rn "scrollbar-color" src/routes src/hooks.server.ts` prints nothing (exit 1).
+- `npm run diagrams` changed `docs/diagrams/layers.dot` and `layers.svg`: `"routes to ui"` 12 to 13 (the layout's new import) and `"src to ui"` 1 to 2 (the hook's import of the sheet), beside the earlier `"src to themes"` 3 to 4 (`git diff -- docs/diagrams/layers.dot`).
+
+### Ruling 2
+
+The head comment of `src/lib/themes/parse.ts`, lines 7-15 now (from `git diff -- src/lib/themes/parse.ts`):
+
+```
+// into the readable foregrounds. themeGround reads from it the theme's ground, its `--bg` as a hex
+// colour. The server sends that ground in the page's first HTML in a style element of its own,
+// ahead of the head Kit fills (hooks.server.ts), and the page's first `applyTheme` takes that
+// element away (ui/theme/theme.ts). windowColours returns the two colours a window of the desktop
+// app takes before its page paints: the ground, which the host (desktop/windows/start-colours.ts)
+// fills the window with, beside the window buttons' symbol colour. The page sends the same `--bg`
+// token of the theme it drew once it has drawn one (shell/window/strip-colours.ts). Nothing here
+// touches the document or the filesystem: the caller passes the stylesheet text, so this runs in
+// the browser, in a test, on the server and in the desktop host alike.
+```
+
+Every other sentence reads true by reading: `parseBlocks`, `resolveTheme` and `deriveTokens` are unchanged, and `windowColours` is a pure function over the blocks. The first sentence says "the theme stylesheets", since the reader is handed tokens.css, themes.css, the rice sheets and vscode.css.
+
+### Ruling 3
+
+- "Anything in the brief wrong or impossible" now says the two rows "sends no ground for an app's theme $row" and the C7 assertion passed on the unchanged tree, as expected for a behaviour the change keeps, so they have no failing run.
+- "Before and after, for the look" has a line for a page rendered with SvelteKit's default error component (an unmatched path, a failed load): before, white first frames under the dev server; after, the start ground from the first frame, with the element kept for the page's life. By reading: an unmatched path is rendered through `app.html` by `respond_with_error` (brief check section 2). With `ssr = false`, a failed load runs in the browser over the same shell, and no draw follows, so no `applyTheme` takes the element away.
+- The same section has a line for the scrollbar after the first draw, now drawn from the imported sheet.
+- The first round's references to `GROUND_BAR` and "two copies" in the DONE table, the judgment calls, the limitations and the Doc text sentence for G118 are brought to the end state. The first round's Files, Verify 6 and Verify 7 sections are marked as the first round's; their end state is below.
+
+### Ruling 4
+
+No code change. `git diff -- src/hooks.server.ts` shows the guard as before this round: `const ground = sheet === null || sent ? themeGround(parseBlocks(...), start.classes) : null;`.
+
+## Test rows changed this round and their runs
+
+The only change is the expected text of `ground(colour)`, which every ground row uses: the 7 rows 'sends the ground of $row ...', the 4 rows 'sends $row the start the workbench gets (C6)', and through `grounds()` the C7 and the two no-ground rows. Run after the change: `npx vitest run tests/server/root/hooks-server.test.ts tests/server/desktop/app-theme-start.test.ts tests/server/desktop/window-guard.test.ts tests/server/desktop/attached-themes.test.ts --reporter=verbose` printed `Test Files  4 passed (4)` and `Tests  74 passed (74)`, every ground row passing. No row was added, so there is no new failing run on the unchanged tree.
+
+## Verify lines (after the last change)
+
+`npm run format` once, then `npm run diagrams && npm run test:quick -- src/app.html src/hooks.server.ts src/lib/shell/window/appearance.svelte.ts src/lib/themes/parse.ts src/lib/ui/theme/app-theme.ts src/lib/ui/theme/scrollbar.css src/lib/ui/theme/theme.ts src/routes/+layout.svelte tests/server/desktop/app-theme-start.test.ts tests/server/root/hooks-server.test.ts docs/diagrams/layers.dot docs/diagrams/layers.svg`, once in this round (twice over the step):
+
+```
+test:quick: 12 changed file(s), from the given paths
+test:quick: 5 test file(s)
+        tests/server/desktop/app-theme-start.test.ts: changed
+        tests/server/root/hooks-server.test.ts: changed
+        tests/server/root/process/config-cache.test.ts: imports at depth 1
+        tests/checks/look/contrast.test.ts: imports at depth 2
+        tests/server/desktop/window-guard.test.ts: imports at depth 2
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.3 s)
+ok      vitest checks (19.7 s): Duration  5.57s (transform 1.01s, setup 0ms, import 3.91s, tests 1.50s, environment 0ms)
+ok      vitest slow (26.7 s): Duration  12.56s (transform 6.34s, setup 0ms, import 23.03s, tests 7.44s, environment 1ms)
+ok      vitest (29.1 s): Duration  15.07s (transform 35.28s, setup 0ms, import 44.93s, tests 1.50s, environment 1ms)
+ok      eslint (49.1 s)
+ok      svelte-check (49.7 s): 1792749765085 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 52.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+```
+
+Other checks after the last change:
+- `npx vitest run tests/checks/tree/boundaries.test.ts`: `Test Files  1 passed (1)`, `Tests  11 passed (11)`.
+- `sh utils/folder-check.sh`: printed nothing, exit 0 (`src/lib/ui/theme` holds 5 items).
+- `sh utils/unused-exports.sh` against the base list: `diff` printed nothing, exit 0.
+- The ASCII perl gate over `src tests config` printed nothing, exit 0.
+- History words: the grep over this round's edited comment blocks and `scrollbar.css` hits only "before" (frames before the sheets have loaded, before its page paints, before any script, before this file's modules load). Each one is the order of events at run time, not an earlier state of the code. `grep -n "<" src/lib/ui/theme/scrollbar.css` prints nothing (exit 1).
+- Names: `grep -rn --exclude=local.yml "oculus-ground\|GROUND_STYLE_ID\|ground-style\|themeGround\|GROUND_BAR\|groundElement\|scrollbar\.css\|scrollbarCss\|SCROLLBAR\b" src tests config docs README.md` hits:
+  - `src/hooks.server.ts:9,13,14,62,64,67,69,86,87,117,125,154,156,208`
+  - `src/app.html:8`
+  - `src/lib/ui/theme/theme.ts:5,41,45,135,147`
+  - `src/lib/themes/parse.ts:7,117,123,128`
+  - `src/routes/+layout.svelte:4,16`
+  - `tests/server/desktop/app-theme-start.test.ts:54,81`
+  - `tests/server/root/hooks-server.test.ts:40,67,276,280,281,290,477`
+  - No hit is `GROUND_BAR`, and none is in `config`, `docs` or `README.md` outside `docs/diagrams`.
+
+## Files after this round
+
+From `git diff --numstat -- src tests docs` and `git status --short`, with `wc -l`:
+
+| File | Lines | +/- against main | In the write list |
+|---|---|---|---|
+| `src/app.html` | 13 | +1 -1 | yes |
+| `src/hooks.server.ts` | 222 | +54 -23 | yes |
+| `src/lib/ui/theme/theme.ts` | 176 | +20 -6 | yes |
+| `src/lib/ui/theme/scrollbar.css` | 14 | new | yes (round 1) |
+| `src/lib/themes/parse.ts` | 132 | +22 -8 | yes |
+| `src/routes/+layout.svelte` | 44 | +8 -14 | yes (whole, round 1) |
+| `src/lib/ui/theme/app-theme.ts` | 224 | +15 -13 | yes |
+| `src/lib/shell/window/appearance.svelte.ts` | 185 | +5 -4 | yes (round 1 names it) |
+| `tests/server/root/hooks-server.test.ts` | 574 | +182 -46 | yes |
+| `tests/server/desktop/app-theme-start.test.ts` | 490 | +36 -4 | yes |
+| `docs/diagrams/layers.dot` | 101 | +3 -3 | yes |
+| `docs/diagrams/layers.svg` | 556 | +3 -3 | yes |
+
+Runs this round: the four G11/G118 files twice; the first of those runs failed 3 rows with `ENOENT ... src/lib/tokens.css` from the `converted` helper's path, which is fixed (`tests/server/root/hooks-server.test.ts:299` reads `src/lib/themes/${name}`). Also boundaries once and the verify list once. No whole-suite command.

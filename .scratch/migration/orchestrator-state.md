@@ -82,8 +82,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O39-partF
   brief_check: agents/reviews/O39-partF-brief-check.md (af556f98c3e4cc9ab, claude-opus-5-5, 228914 tokens, 59 tool uses, 10 min 42 s)
   report: agents/reviews/O39-partF-report.md
-  builder_usage: 267220 tokens, 109 tool uses, 24 min 8 s
-  reviewer_report: agents/reviews/O39-partF-refuter.md (add6b720b0361987f, claude-opus-5-5, 243598 tokens, 57 tool uses, 24 min 10 s)
+  builder_usage: 267220 tokens, 109 tool uses, 24 min 8 s; round 1: 328461 tokens, 55 tool uses, 9 min 54 s
+  reviewer_report: agents/reviews/O39-partF-refuter.md (add6b720b0361987f, claude-opus-5-5, 243598 tokens, 57 tool uses, 24 min 10 s); over round 1: running: a59a8e2d9a8cb5ab5, claude-opus-5-5
   round: 1
   landing: not-started
   shared_paths: with O53, O56 and O61: none of their briefs names a file part F writes; docs/diagrams/ regenerated at each landing (npm run diagrams)
