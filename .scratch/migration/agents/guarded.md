@@ -174,6 +174,12 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G121. Every language the editor registers has a comment rule, so Cmd+/ and Shift+Alt+A comment in a file of any of them: the settings oculus gives Monaco, or Monaco's own settings of the id, hold a `comments` field.
   Code: `src/lib/ui/controls/editor/kit/rite/settings.ts` (`registerSettings`), `src/lib/ui/controls/editor/kit/rite/latex-settings.ts`, `src/lib/ui/controls/editor/kit/languages/configuration.ts` (`languageConfiguration`).
   Test: `tests/ui/controls/editor/kit/comment-rules.test.ts`, describe 'the comment rule of every language the editor registers', '$id has a comment rule', every row (32).
+- G122. A LaTeX tab binds each of its keys in the files LaTeX Workshop binds it in, and lists a command whose key the file does not take with no key: every key in a `.tex` file; the text and math chords alone in a `.bib` file; Build, Clean and View alone in a `.sty` or `.cls` file.
+  Code: `src/lib/data/helpers/keys/oculus/editor-keys.ts` (`LATEX_SCOPES`, `inLatexScope`), `src/lib/views/sources/source/latex/latex-tab.svelte.ts` (`actions`).
+  Test: `tests/views/sources/source/latex-keys.client.test.ts`, describe 'the keys of a LaTeX tab, by the kind of file it shows', '$kind takes the keys LaTeX Workshop binds there', every row (4).
+- G123. Julia keeps VS Code's brackets and auto-closing pairs whenever Monaco gives its own Julia settings, and an app's settings of a language win over oculus's for the fields they hold.
+  Code: `src/lib/ui/controls/editor/kit/rite/settings.ts` (`OCULUS_RANK`, `registerSettings`), `src/lib/ui/controls/editor/kit/languages/register.ts` (`applyAppLanguages`), `src/lib/ui/controls/editor/kit/load.ts` (`languageSettings`).
+  Test: `tests/ui/controls/editor/kit/comment-rules.test.ts`, describe "Julia's settings", "keep VS Code's brackets and auto-closing pairs when Monaco gives its own after them"; describe "an app's settings of a language", 'win over the settings oculus gives the language'.
 
 ## It starts, and configuration is checked
 
