@@ -1,7 +1,7 @@
 In flight (4 of 6 slots in use):
-- O61 (one home for each vocabulary word). State: building.
-- O53 (a project's people by person keys). State: building.
-- O56 (a new record asks which hub takes it). State: building.
+- O61 (one home for each vocabulary word). State: review.
+- O53 (a project's people by person keys). State: review.
+- O56 (a new record asks which hub takes it). State: review.
 - O39 part F (the first frame paints the theme's ground). State: building.
 
 Queued, in order (4 steps):
