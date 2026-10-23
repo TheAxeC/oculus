@@ -2,8 +2,7 @@ title: 'Oculus'
 stage: building
 tier: personal
 status:
-  chips: [parked]
-    chips: []
+    chips: [parked]
 eli5: 'Oculus is the research workbench that reads a research hub (its projects, manuscripts, grants, data and code) and shows it in one VS Code-like app. It runs on your own machine and keeps the hub private.'
 next: 'Close the migration plan once oculus runs from its own repository, then take the next open item of .scratch/ROADMAP.md; before the repository is made public, take the ledger out of its history.'
 links: []
