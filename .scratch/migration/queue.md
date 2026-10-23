@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O67 (the stage decides the Focus lane; stage, chip and key words settled). Brief written and checked; builder launching.
+- O67 (the stage decides the Focus lane; stage, chip and key words settled). Building.
 
 Queued, in order (5 steps):
 - O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275 and 277). Waits: after O67, then Axel's go.
