@@ -1,17 +1,17 @@
 In flight (1 of 6 slots in use):
-- O67 (the stage decides the Focus lane; stage, chip and key words settled). Building.
+- O67 (the stage decides the Focus lane; stage, chip and key words settled). Under review.
 
-Queued, in order (5 steps):
+Queued, in order (4 steps):
 - O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275 and 277). Waits: after O67, then Axel's go.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
-- O39 (oculus in its own repository). Waits: the desktop look C8 after `npm run app:package`, then the tick.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O39 (oculus in its own repository), 2026-10-23, closed by the desktop look C8.
 - O53 (a project's people by person keys), 2026-10-23, 952bd2f2; the hub's people rewrite committed in the hub (c34433e40).
 - O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; the hub's data rewrite committed in the hub (02e22205a), the workspace repositories' manifests in their own repositories.
 - O56 (a new record asks which hub takes it), 2026-10-23, a06c1bf6.
