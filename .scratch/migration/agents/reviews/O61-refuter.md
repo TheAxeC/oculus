@@ -117,3 +117,146 @@ B4. The Projects board gains the `paused` group and the demo Projects tab count 
 - C13 and C14 on screen: the orchestrator's look on the TEST page at landing.
 
 Reviewer usage: a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s.
+
+## Repair round 1, refuted
+
+```
+cd .agents/worktrees/migration-O61 (every command below runs here)
+git status --short | grep -v .scratch | sed 's/^...//' | xargs npm run test:quick --   (run 1)
+test:quick: 134 changed file(s), from the given paths
+test:quick: 294 test file(s)
+ok      ASCII gate (0.8 s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.2 s)
+ok      svelte-check (8.4 s): ... COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (63.6 s)
+ok      vitest checks (146.5 s)
+FAILED  vitest (183.9 s)   Error: Test timed out in 5000ms.  Test Files 1 failed | 220 passed | 63 skipped (284); Tests 1 failed | 2476 passed | 665 skipped (3142)
+ok      vitest slow (210.7 s)
+test:quick: 213.0 s; failed: vitest
+same command (run 2, to name the failing file; vitest passed this time)
+FAILED  vitest slow (328.6 s)
+ FAIL  |unit| tests/server/machine/pty/sessions.test.ts > a private tmux server > starts, lists, feeds, resizes, captures and stops a terminal
+Error: timed out waiting for the typed line to come back as output
+ Test Files  1 failed | 77 passed (78);  Tests  1 failed | 664 passed | 194 skipped (859)
+test:quick: 330.4 s; failed: vitest slow
+(npm run format and npm run diagrams not run: both write)
+ASCII gate of spec.md (perl form) over the 133 changed paths that exist: prints nothing, exit 0; LC_ALL=C grep -c '[^ -~]' O61-report.md: 0
+wc -l over every changed file: over the limit only docs/diagrams/writes.dot 1151, writes.svg 3895, docs/templates.md 1330 (documents, over at base); ls src/lib/data/model: 10; ls tests/data/snapshot: 9
+diff <(sh utils/unused-exports.sh) ../migration-O61-base/unused-exports.txt: only typeCounts -> stageCounts (graph.ts) and TypeCount -> StageCount (board/index.ts)
+grep 6: only non-vocabulary lines (vocab.yml:71,:76 labels; "not applied" sentences of findings.yml, port.ts, workspace-layer.ts, text-edits.ts, hub-names.ts:357, data-map.md:80, decorations.svelte.ts; under_review_at/unset; Electron and git canceled; form-draft.test.ts; schema-rules.test.ts inputs)
+grep 7: only typeWords of repositories.ts, schema/check.ts, literature/words.ts, Head.svelte, LiteratureCard.svelte (other things); grep -rnE "\btypes:" config/catalogs/vocab.yml: exit 1
+ruling 1 grep, grep -rn --exclude=local.yml -i "contradict\|terminal_live\|live_chips\|tier and type" src docs config tests: only config/catalogs/latex.yml:647 and tests/state/system/apps/store-cache.test.ts:3,105,252 (unrelated)
+ruling 2 sweep, added comment lines over 100 columns in git diff 282f3c2a -U0 -- src tests, plus tier-stage.test.ts whole: none (the config/ hits are one-line YAML comments, the convention; base vocab.yml holds 40 such lines)
+ruling 3: grep "[^a-zA-Z]statusWords" src tests docs: only navigation/status.ts:422 and routes/+page.svelte:28,204; projectStatusWords at tones.ts:251, LaneCard.svelte:33,81, Projects.svelte:83,224
+ruling 4: grep -rn stageLabel src tests docs config --exclude=local.yml: exit 1
+round history grep over the round's added lines (snapshot diff, and the base diff of config/options/sources.yml and Audit.svelte): no hit
+npx vitest run schema-rules.test.ts writes.test.ts tier-stage.test.ts config-folder.test.ts: Test Files 4 passed (4); Tests 113 passed | 2 skipped (115)
+round delta: diff -u of the 132 files.txt paths: 21 changed (docs/diagrams/writes.dot, .svg, model/index.ts, vocab.ts, deck/groups.ts, deck/kinds.ts, audit/projects.ts, audit/rules.ts, presets.ts, stats.ts, focus-lanes.ts, tones.ts, rail-badges.ts, present Grid, Legend, Project.svelte, LaneCard, Projects.svelte, CardStatus, ProjectCard, config-folder.test.ts); outside files.txt: config/options/sources.yml, src/lib/views/system/audit/Audit.svelte, .scratch/migration/agents/spec.md (see Declined)
+```
+
+The two vitest failures are in test files the step does not change (`tests/server/machine/pty/sessions.test.ts`, and run 1's unnamed 5000 ms timeout, which did not recur in run 2), so they are not counted.
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. 21 rows in ruling 219's order with label, icon, colour, group flags, the flags of ruling 243 and the moved flags (`config/catalogs/vocab.yml:65-85`). Each colour follows item 1's rule: `submitted` keeps its type row's `#0ea5e9`, and `submit-ready` takes `#ea580c`.
+- 2: holds (`vocab.yml:90-99`, `manifest-schema.yml:37`).
+- 3: holds (`vocab.yml:101-117`).
+- 4: holds. `hub-names.ts:384-385` adds `chips` and `lead_statuses`, and `data/sources/documents/feeds.ts` runs `leadStatusFindings` over `lead_statuses`.
+- 5: holds. Grep 6 shows only non-vocabulary lines, and `layout.yml:322` matches `[in-prep, submitted]`.
+- 6: holds. A board card now draws the stage chip with its label and glyph (`ProjectCard.svelte:348-354`), filled in the stage colour that item 1 gives. The statement of that fill change is Finding R1.
+- 7: holds. S1 is closed: `audit/projects.ts:1-6`, `Audit.svelte:19-24`, `model/index.ts:354-357` and `config/options/sources.yml:15` are now true, ruling 1's grep finds only unrelated lines, and grep 7 is clean.
+- 8: holds (`validate.ts:287` `checkStageChips`, `:308` `withoutStageChips`, called at `data/index.ts:441`; grep 7).
+- 9: holds.
+- 10: holds (schema-rules rows green).
+- 11: holds (`git diff 282f3c2a -- config/defaults/layout.yml`: in-flight words, idea words, `paused` group, `software` out of `outputs`).
+- 12: holds. The demo fixtures read as the eight rewrite cases below.
+- 13: holds. `docs/diagrams/` was not regenerated by me (see Declined).
+- 14: holds. The rows are green, and their first run on the unchanged tree is quoted in the report; I did not rerun it.
+
+Cases of the brief's "Cases":
+
+- robust-embeddings: met (`stage: submitted`, `chips: []`).
+- graph-transfer: met (`stage: submit-ready`, `chips: []`).
+- tensor-sketch: met (`stage: exploring`, `chips: []`).
+- demo-toolkit: met (`stage: finished`, `chips: []`).
+- bench-suite and tensorkit: met (`stage: finished`, no `status:`).
+- sparse-attention: met (`stage: active`, `chips: [blocked]`).
+- spectral-clustering-collab: met (`stage: published`, `form: journal`, `[coauthor]`).
+- early-benchmark: met (`stage: published`, `form: conference`, `[lead]`).
+- C1: met, from the probe run under ruling 262 and by reading `vocab.yml:76` and `focus.ts:89,114`.
+- C2: met (`stats.ts:91`, `vocab.yml:74` `#ea580c`).
+- C3: met, by reading.
+- C4: met, by the schema-rules row 'a stage word or a form as a chip...' and grep 7.
+- C5: met, by reading the group flags and the probe's demo count of 5 before and 7 after.
+- C6: met (`vocab.yml:230-241`, probe).
+- C7: met, by reading and the probe.
+- C8: met (schema-rules rows).
+- C9: met (`default_application` on `not-applied`).
+- C10: met, by the writes.test.ts row, `vocab.yml:67` `nascent` with `new_idea`, and the probe.
+- C11: met (`fund_stages`, `layout.yml:322`).
+- C12: met (`layout.yml` groups, probe).
+- C13: not verifiable here. The option sources read correctly, and the look on TEST at landing settles it.
+- C14: met by reading (`ProjectCard.svelte:348-354`, `CardStatus.svelte`), with the look at landing. Finding R2 bears on how the glyph's colour is described.
+- C15: not verifiable. No fixture holds two stage chips; the landing rewrite of ruling 247 applies it.
+- C16: met (`HUB_LIST`, probe).
+- C17: met (`lines.ts:116`, probe).
+- C18: met (`rules.ts:186`, probe).
+- C19: met (schema-rules empty-list rows).
+- C20: met, by reading and the probe.
+- C21: met (writes.test.ts 'no stage' row).
+- C22: met (`deck/groups.ts`, `deck/read.ts:400`, `parts/Grid.svelte:42` through `chipLabel`).
+
+### Findings
+
+The four round claims re-checked by rerun or by reading:
+
+- S1, ruling 1: closed. The builder's reading of the tree is right.
+  - The stage-word-as-chip rule exists only in the manifest check: `checkStageChips` (`validate.ts:287`) is called at `validate.ts:481`. Its texts `chip_is_stage` and `chip_is_form` are referenced only from `validate.ts` and `findings.yml:282-283`; no file under `src/lib/server/content/audit/` names them.
+  - `audit/scan.ts:6-10` says the audit does not repeat what `data/snapshot/validate.ts` reports, and `audit.findings_note` says the same for "an unknown chip".
+  - So a head comment listing that finding among the audit's checks would be false. The new comments name it as the manifest check's finding, drawn in the Findings view. That keeps ruling 1's purpose (a reader of the audit learns where the finding lives) without the false sentence.
+  - The two remaining rules named in the comments match `guardrails` (`projects.ts:371-414`).
+- S2, ruling 2: closed by my sweep.
+- S3 and S4, rulings 3 and 4: closed by their greps.
+- P2, ruling 7: closed. Every file outside the write list is named with why, and the `layout.yml` and `hub-names.ts` hunks sit inside their listed ranges.
+
+No closure removes a check. No fix reaches beyond its finding: the `Grid`, `Legend` and `Project.svelte` edits are the callers of the removed `stageLabel`, and `options/sources.yml` and `model/index.ts` are hits of ruling 1's grep.
+
+- R1 (behaviour), `ProjectCard.svelte:348-354` with `board/items.ts:115` `tone: stageTone(project.stage ?? '')`, and `views/shared/graph/node-tone.ts` `stageTone(node.stage ?? '')`.
+  - What is wrong: the card's fill changes colour for every project whose stage comes from a chip, or whose type left the vocabulary. The report states this only as two rows of ruling 5's table (round section "5. B1"). It never names it as a behaviour change, gives no list per stage word, and its first section ends "Nothing in the brief was found wrong or impossible".
+  - The answer to the two questions:
+    - The fill is what items 6 and 1 ask for: the card is filled with "the stage's label and colour of item 1", and item 1 gives `submitted` its type row's `#0ea5e9` (base `types: submitted: { color: "#0ea5e9" }`).
+    - Decision 1's clause "in the colour its projects carry today" does not hold for these projects, and no colour rule could make it hold. At base a card's fill came from the type (`typeTone(project.type)`), so a `type: active` project with the chip `submitted` was orange and a `type: submitted` project was sky. After the rewrite both are `stage: submitted`, and one stage has one colour.
+    - Ruling 264 (a), "a stage word has one colour, the card's fill and its status mark alike", accepts the fill following the stage colour. Its list of changed hues names marks only.
+  - Concrete changes on the demo hub:
+    - robust-embeddings: filled "active" `#ea580c` becomes filled "submitted / under review" `#0ea5e9`.
+    - tensor-sketch and online-clustering: filled "idea" `#7c5cff` becomes filled "exploring" `#f59e0b`.
+    - bench-suite, tensorkit and demo-toolkit: filled "software" `#0d9488` becomes filled "finished" `#16a34a`.
+    - The same tones apply to their Map nodes (`node-tone.ts`).
+    - On the hub, every `type: active` project with an in-flight stage chip other than submit-ready changes from orange: in-prep `#a16207`, building `#d4a017`, running `#16a34a`, revision `#b45309`, accepted `#2563eb`, de-risking `#16a34a`, exploring `#f59e0b`.
+  - Failure scenario: at the look on TEST the orchestrator reads the card fills against a report that names two rows and says nothing in the brief was wrong. Most cards on the Projects board change colour with no line saying so, and Axel's ruling 264 is booked as covering marks only.
+  - Verdict: none (item 6 holds). This is for the landing report: state the fill changes per stage word, and say that decision 1's clause cannot hold for projects whose stage came from a chip.
+- R2 (behaviour), the round's "5. B1" table, after cell "filled chip 'submitted / under review' with the `brown` glyph in the tone of `#0ea5e9`".
+  - What is wrong: on a filled chip the text, and with it the glyph, is drawn in `var(--on-tone)` (`Chip.svelte` `.chip.filled { background: var(--tone); color: var(--on-tone) }`). By reading, `Glyph.svelte` sets no colour of its own, so the mark takes the chip's text colour. The base outline "submitted" chip drew the mark in `#b45309`'s text tone. After the change the board card shows the glyph's shape over a sky fill in the on-tone colour, not a brown mark. Lane cards and the Projects list still colour the mark through `statusMarkTone`.
+  - Failure scenario: the look reads ruling 5's "a submitted project its brown mark" and the report's cell, and judges a white-on-sky mark as a regression or as the asked-for result with no basis.
+  - Verdict: none (C14 met by reading). This is a report precision fix for landing.
+- R3 (standards), `src/lib/views/shared/card/project/CardStatus.svelte:2`, "// Layer 3, shared view. The status marks of a project card: the project's form, then its".
+  - What is wrong: the head comment rewritten in the round ends 93 columns into a sentence, and the next word "chips," fits within 100. `agents/spec.md`, What every package obeys: "rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short".
+  - Failure scenario: a reader of the file meets a ragged paragraph, and a later sweep for short lines flags a comment the step wrote.
+  - Verdict: none. A small fix at landing.
+
+### Declined to judge
+
+- `.scratch/migration/agents/spec.md` is modified in the worktree (`git status --short`: ` M`). Its content equals the main checkout's `spec.md` (`diff -q`: same), which holds rulings 262 and 263. The builder's report does not name it. The untracked `O61-round1.md` and `O61-report.md` copies equal main's too. Who wrote `spec.md` there is not settled by the three git commands allowed to me. A builder may not edit `.scratch/`, so the landing should leave `.scratch/` out of the cherry-pick or confirm it equals main.
+- Ruling 264 (a) lists the mark hues of submitted, in-prep, published, exploring, submit-ready, nogo, disproved, abandoned and dropped. The report's table also, correctly, shows `finished` changing from `#0ea5e9` to `#16a34a` (base `statuses: finished` `#0ea5e9`). Whether 264 covers `finished` is for Axel to confirm; the "one colour" wording suggests it does.
+- I did not rerun the probe source quoted under ruling 262: rerunning it means writing the file, which this review may not do.
+- I did not rerun the first run of the item-14 rows on the unchanged tree, for the same reason.
+- `docs/diagrams/` was not checked against a fresh `npm run diagrams`, since that command writes. The round's change to `writes.dot` and `writes.svg` is only the line numbers of `vocab.ts` moving by 2, which matches the rewrap of `chipWord`'s doc comment.
+- I did not count how many times the builder ran the verify list; the report says once, and no command can confirm it.
+- C13 and C14 on screen are for the look on the TEST page at landing.
+- `config/text/views/system/audit.yml:13` `empty` still says "no status chip out of place". This is not false: the manifest section still holds the author-chip rule. Whether to reword it is outside the round's rulings.
+- I wrote one file, a list of changed paths, in my session scratchpad outside the repository; nothing in the repository or the ledger was written.
+
+Reviewer usage: a0a3962a17cebf0fb, claude-opus-5-5, 252149 tokens, 69 tool uses, 21 min 59 s.

@@ -1,9 +1,11 @@
 // Layer 3, primitive, and one of the three that are not components. Putting a theme on the
 // document: the class string on the body, the derived colour tokens on the root element, and beside
-// them the three custom properties the wallpaper's translucent surfaces are painted through. It
-// also names the classes the sheets hold a theme block for (`themeClasses`), which the Settings
-// view offers as the words of a theme's `class`, and hands the server the derivation of the tokens
-// (`derivedTokens`), which it writes into the page's first HTML for the theme the page starts on.
+// them the three custom properties the wallpaper's translucent surfaces are painted through; the
+// first theme put on the document takes away the ground element the page's first HTML was sent
+// with (`GROUND_STYLE_ID`). It also names the classes the sheets hold a theme block for
+// (`themeClasses`), which the Settings view offers as the words of a theme's `class`, and hands the
+// server the derivation of the tokens (`derivedTokens`), which it writes into the page's first HTML
+// for the theme the page starts on.
 //
 // The stylesheets (tokens.css, themes.css, the rice palettes of rice/ and the generated vscode.css)
 // reach this module as text through Vite's `?raw` import, which is the same bytes the page is
@@ -31,7 +33,16 @@ const riceSheets: Record<string, string> = import.meta.glob('/src/lib/themes/ric
 export type Themeable = {
     body: { className: string };
     documentElement: { style: { setProperty: (name: string, value: string) => void } };
+    getElementById: (id: string) => { remove: () => void } | null;
 };
+
+/**
+ * The id of the style element that paints the start theme's ground, and the rule of the page's
+ * scrollbar sheet (ui/theme/scrollbar.css), in the page's first HTML (hooks.server.ts), before any
+ * stylesheet has loaded. The page's first `applyTheme` takes it away, so from then on the ground
+ * is the layout's rule over the loaded sheets and a theme put on later paints the whole window.
+ */
+export const GROUND_STYLE_ID = 'oculus-ground';
 
 /** The sheets that hold theme blocks, themes.css, rice/ and vscode.css, as one text. */
 export const THEME_SHEETS = [themesCss, ...Object.values(riceSheets), vscodeCss].join('\n');
@@ -119,8 +130,10 @@ export function derivedTokens(
  * overlay is on and the classes of the rice toggles when a toggle is off (`bodyClass` of
  * data/helpers/editor/start-theme.ts, by which the server writes the same string into the page's
  * first HTML, so the page's first draw keeps the class the page was sent with). The tokens the
- * components paint text with are derived from the theme the two sheets resolve to and set on the
- * root element, since a stylesheet cannot compute them (`derivedTokens`).
+ * components paint text with are derived from the theme the sheets resolve to and set on the root
+ * element, since a stylesheet cannot compute them (`derivedTokens`). The ground element the page's
+ * first HTML carries (`GROUND_STYLE_ID`) is taken away, which only the page's first draw finds, so
+ * no colour of the start theme stays on the root element's background once the theme changes.
  */
 export function applyTheme(
     document: Themeable,
@@ -131,6 +144,7 @@ export function applyTheme(
 ): Record<string, string> {
     const className = bodyClass(classes, looks);
     document.body.className = className;
+    document.getElementById(GROUND_STYLE_ID)?.remove();
 
     const derived = derivedTokens(className, tokens, themes);
     for (const [name, value] of Object.entries(derived)) {

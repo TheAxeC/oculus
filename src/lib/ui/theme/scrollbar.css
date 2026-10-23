@@ -1,0 +1,15 @@
+/* Layer 3, stylesheet of the page's scrollbars. Every scrolling box draws a thin bar in the theme's
+   two scrollbar tokens, which ui/theme/theme.ts derives for every theme, so no box draws the
+   browser's light bar on a dark theme. A box that keeps no bar at all, the rail's list, the tab
+   strip and the status bar, says so in its own component, whose class outranks this. It has two
+   readers: the page's layout (routes/+layout.svelte) imports it beside the theme sheets, and the
+   server (hooks.server.ts) writes its text into the ground element of the page's first HTML, whose
+   root element carries the start theme's two tokens, so the frames before the layout's sheets have
+   loaded draw the same bar. A page's first draw of its theme takes that element away, and from then
+   on the layout's import draws the bar; the error page, which draws no theme, keeps it, the same
+   colours as its body. The server writes this text into the element as it is, so it holds no
+   closing style tag, which would end the element early. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}

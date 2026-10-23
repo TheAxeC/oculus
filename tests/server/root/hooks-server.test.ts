@@ -1,18 +1,20 @@
 // Layer 2, server tests. The configuration is read once a request that asks for it, and a page is
 // sent with the theme it starts on: the body's class string, the CRT class on the workbench alone,
-// the tokens the page derives for that class on the root element, and, for an app's colour theme
-// whose file resolves, the block the page's conversion makes of that file, in the style element
-// the page's first draw replaces. A request of the desktop app's window carries the host's mark in
-// its user agent and starts on `app_theme`.
+// the tokens the page derives for that class on the root element, for an app's colour theme whose
+// file resolves the block the page's conversion makes of that file, in the style element the
+// page's first draw replaces, and the theme's ground, its `--bg` as a hex colour with the page's
+// scrollbar sheet, in a style element of its own ahead of the head Kit fills, which the page's
+// first draw takes away. A request of the desktop app's window carries the host's mark in its user
+// agent and starts on `app_theme`.
 //
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 //
 // Vitest empties a stylesheet a module reads as text, so the sheets the hook converts an app's
-// theme over and derives the tokens over, tokens.css, themes.css and vscode.css, are handed the
-// text the browser reads. The rice palettes stay empty, and no case here starts on a rice theme.
-// The module registry is reset before this file's modules load, so a run whose test files share
-// their modules loads the hook and the theme module over these sheets too.
+// theme over and derives the tokens and the ground over, tokens.css, themes.css, the rice palettes
+// and vscode.css, and the scrollbar sheet the ground element carries, are handed the text the
+// browser reads. The module registry is reset before this file's modules load, so a run whose test
+// files share their modules loads the hook and the theme module over these sheets too.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -24,11 +26,7 @@ import type { Finding } from '../../../src/lib/data/model/index.ts';
 import * as config from '../../../src/lib/data/sources/config.ts';
 import { noApps, type AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { carryingHandler, type OculusRequest } from '../../../src/lib/server/root/context.ts';
-import {
-    APP_THEME_STYLE_ID,
-    themeSheet,
-    type ResolvedTheme
-} from '../../../src/lib/themes/vscode-map.ts';
+import * as vscodeMap from '../../../src/lib/themes/vscode-map.ts';
 import { it } from '../../fixtures/scratch.ts';
 import {
     approvedHeld,
@@ -37,27 +35,36 @@ import {
     plant,
     type Fixture
 } from '../../routes/apps/apps-fixture.ts';
-import { applyTheme, THEME_SHEETS, withThemeBlock } from '../../../src/lib/ui/theme/theme.ts';
+import {
+    applyTheme,
+    GROUND_STYLE_ID,
+    THEME_SHEETS,
+    withThemeBlock
+} from '../../../src/lib/ui/theme/theme.ts';
 import { contextFixture } from './context-fixture.ts';
 
-vi.mock('$lib/themes/tokens.css?raw', async () => {
-    const { readFileSync: read } = await import('node:fs');
-    return {
-        default: read(new URL('../../../src/lib/themes/tokens.css', import.meta.url), 'utf8')
-    };
-});
-vi.mock('$lib/themes/themes.css?raw', async () => {
-    const { readFileSync: read } = await import('node:fs');
-    return {
-        default: read(new URL('../../../src/lib/themes/themes.css', import.meta.url), 'utf8')
-    };
-});
-vi.mock('$lib/themes/vscode.css?raw', async () => {
-    const { readFileSync: read } = await import('node:fs');
-    return {
-        default: read(new URL('../../../src/lib/themes/vscode.css', import.meta.url), 'utf8')
-    };
-});
+const { sheetText } = vi.hoisted(() => ({
+    /** A sheet under src/lib/ as a module that reads it as text, holding the text on disk. */
+    sheetText: async (name: string) => {
+        const { readFileSync: read } = await import('node:fs');
+        const path = new URL(`../../../src/lib/${name}`, import.meta.url);
+        return { default: read(path, 'utf8') };
+    }
+}));
+
+vi.mock('$lib/themes/tokens.css?raw', () => sheetText('themes/tokens.css'));
+vi.mock('$lib/themes/themes.css?raw', () => sheetText('themes/themes.css'));
+vi.mock('$lib/themes/vscode.css?raw', () => sheetText('themes/vscode.css'));
+vi.mock('$lib/themes/rice/catppuccin.css?raw', () => sheetText('themes/rice/catppuccin.css'));
+vi.mock('$lib/themes/rice/everforest.css?raw', () => sheetText('themes/rice/everforest.css'));
+vi.mock('$lib/themes/rice/flexoki.css?raw', () => sheetText('themes/rice/flexoki.css'));
+vi.mock('$lib/themes/rice/gruvbox.css?raw', () => sheetText('themes/rice/gruvbox.css'));
+vi.mock('$lib/themes/rice/kanagawa.css?raw', () => sheetText('themes/rice/kanagawa.css'));
+vi.mock('$lib/themes/rice/phosphor.css?raw', () => sheetText('themes/rice/phosphor.css'));
+vi.mock('$lib/themes/rice/rosepine.css?raw', () => sheetText('themes/rice/rosepine.css'));
+vi.mock('$lib/themes/rice/singles.css?raw', () => sheetText('themes/rice/singles.css'));
+vi.mock('$lib/themes/rice/tokyo.css?raw', () => sheetText('themes/rice/tokyo.css'));
+vi.mock('$lib/ui/theme/scrollbar.css?raw', () => sheetText('ui/theme/scrollbar.css'));
 
 vi.hoisted(() => {
     vi.resetModules();
@@ -244,7 +251,8 @@ function pageTokens(classes: string, block: string): Record<string, string> {
                     set[name] = value;
                 }
             }
-        }
+        },
+        getElementById: () => null
     };
     const looks = { crt: false, brackets: true, monospace: true };
     const themes = block === '' ? THEME_SHEETS : withThemeBlock(block);
@@ -252,11 +260,38 @@ function pageTokens(classes: string, block: string): Record<string, string> {
     return set;
 }
 
-/** The texts of the style elements whose id is the shared one. */
-function themeStyles(html: string): string[] {
-    const pattern = new RegExp(`<style id="${APP_THEME_STYLE_ID}">([\\s\\S]*?)</style>`, 'g');
+/** The texts of the style elements whose id is `id`, in the order the page holds them. */
+function stylesOf(html: string, id: string): string[] {
+    const pattern = new RegExp(`<style id="${id}">([\\s\\S]*?)</style>`, 'g');
     return [...html.matchAll(pattern)].map((match) => match[1]);
 }
+
+/** The texts of the style elements whose id is the shared one. */
+function themeStyles(html: string): string[] {
+    return stylesOf(html, vscodeMap.APP_THEME_STYLE_ID);
+}
+
+/** The texts of the ground elements. */
+function grounds(html: string): string[] {
+    return stylesOf(html, GROUND_STYLE_ID);
+}
+
+/** The page's scrollbar sheet as the layout imports it, read from disk. */
+const SCROLLBAR = readFileSync(
+    new URL('../../../src/lib/ui/theme/scrollbar.css', import.meta.url),
+    'utf8'
+);
+
+/**
+ * The text of the ground element for the ground `colour`: the colour on the root element, then the
+ * page's scrollbar sheet, drawn in the two tokens the root element carries.
+ */
+function ground(colour: string): string {
+    return `html { background: ${colour} }\n${SCROLLBAR}`;
+}
+
+/** The ground of Ember: the `--bg` of its block, its side bar's background. */
+const EMBER_GROUND = EMBER_FILE.colors['sideBar.background'];
 
 /** The block the page's conversion makes of a theme file. */
 function converted(file: { colors: Record<string, string>; tokenColors: unknown[] }): string {
@@ -264,7 +299,8 @@ function converted(file: { colors: Record<string, string>; tokenColors: unknown[
         readFileSync(new URL(`../../../src/lib/themes/${name}`, import.meta.url), 'utf8');
     const tokens = sheet('tokens.css');
     const themes = sheet('themes.css');
-    return themeSheet(file as ResolvedTheme, 'vs-dark', { tokens, themes }, 'app-theme').css;
+    const theme = file as vscodeMap.ResolvedTheme;
+    return vscodeMap.themeSheet(theme, 'vs-dark', { tokens, themes }, 'app-theme').css;
 }
 
 describe('a page sent with the theme it starts on', () => {
@@ -301,7 +337,7 @@ describe('a page sent with the theme it starts on', () => {
             const styles = themeStyles(sent.html);
             expect(styles).toEqual([converted(EMBER_FILE)]);
             expect(styles[0]).toContain('--bg: #7a1020;');
-            expect(sent.html.indexOf(`<style id="${APP_THEME_STYLE_ID}">`)).toBeLessThan(
+            expect(sent.html.indexOf(`<style id="${vscodeMap.APP_THEME_STYLE_ID}">`)).toBeLessThan(
                 sent.html.indexOf('</head>')
             );
         }
@@ -322,32 +358,42 @@ describe('a page sent with the theme it starts on', () => {
         { tags: ['slow'] },
         async ({ path, route, workbench }) => {
             const crt = { crt: { on: true } };
-            const starts: [PageCase, string, string, boolean][] = [
-                [{}, '', '', false],
-                [{ agent: MARKED }, 'vscode-dark-modern', 'vscode-dark-modern', false],
-                [{ options: { theme: 'dark' } }, 'dark', 'dark', false],
-                [{ options: { theme: ember }, held: () => held }, 'app-theme', 'app-theme', true],
+            const starts: [PageCase, string, string, boolean, string][] = [
+                [{}, '', '', false, '#f1f5f9'],
+                [{ agent: MARKED }, 'vscode-dark-modern', 'vscode-dark-modern', false, '#181818'],
+                [{ options: { theme: 'dark' } }, 'dark', 'dark', false, '#0b1120'],
+                [
+                    { options: { theme: ember }, held: () => held },
+                    'app-theme',
+                    'app-theme',
+                    true,
+                    EMBER_GROUND
+                ],
                 [
                     { options: { theme: '', app_theme: ember }, held: () => held, agent: MARKED },
                     'app-theme',
                     'app-theme',
-                    true
+                    true,
+                    EMBER_GROUND
                 ],
-                [{ options: { ...crt, theme: 'dark' } }, 'dark crt', 'dark', false],
+                [{ options: { ...crt, theme: 'dark' } }, 'dark crt', 'dark', false, '#0b1120'],
                 [
                     { options: { ...crt, theme: ember }, held: () => held },
                     'app-theme crt',
                     'app-theme',
-                    true
+                    true,
+                    EMBER_GROUND
                 ]
             ];
-            for (const [one, atRoot, elsewhere, style] of starts) {
+            for (const [one, atRoot, elsewhere, style, colour] of starts) {
                 const root = await sendPage(one);
                 const page = await sendPage({ ...one, path, route });
                 expect(bodyClass(root.html)).toBe(atRoot);
                 expect(bodyClass(page.html)).toBe(workbench ? atRoot : elsewhere);
                 expect(themeStyles(page.html)).toHaveLength(style ? 1 : 0);
                 expect(themeStyles(page.html)).toEqual(themeStyles(root.html));
+                expect(grounds(page.html)).toEqual([ground(colour)]);
+                expect(grounds(page.html)).toEqual(grounds(root.html));
             }
         }
     );
@@ -368,6 +414,95 @@ describe('a page sent with the theme it starts on', () => {
             tracks.push(tokens['--scroll-track']);
         }
         expect(new Set(tracks).size).toBe(starts.length);
+    });
+
+    it.each([
+        { row: 'theme dark (C1)', options: { theme: 'dark' }, classes: 'dark', colour: '#0b1120' },
+        { row: 'the first row in a browser (C3)', classes: '', colour: '#f1f5f9' },
+        {
+            row: 'the shipped config in the desktop window (C3b)',
+            marked: true,
+            classes: 'vscode-dark-modern',
+            colour: '#181818'
+        },
+        {
+            row: 'theme kanagawalotus (C3b)',
+            options: { theme: 'kanagawalotus' },
+            classes: 'rice kanagawalotus',
+            colour: '#e5ddb0'
+        },
+        {
+            row: "an approved app's theme (C2)",
+            options: { theme: 'ember' },
+            approved: true,
+            classes: 'app-theme',
+            colour: EMBER_GROUND
+        },
+        {
+            row: "an app's theme whose app is not approved, in a browser (C6b)",
+            options: { theme: 'ember' },
+            classes: '',
+            colour: '#f1f5f9'
+        },
+        {
+            row: "an app's theme whose app is not approved, in the desktop window (C6b)",
+            options: { theme: 'ember' },
+            marked: true,
+            classes: 'vscode-dark-modern',
+            colour: '#181818'
+        }
+    ] as {
+        row: string;
+        options?: Record<string, string>;
+        marked?: boolean;
+        approved?: boolean;
+        classes: string;
+        colour: string;
+    }[])(
+        'sends the ground of $row in a style element of its own ahead of the head Kit fills',
+        async ({ options = {}, marked, approved, classes, colour }) => {
+            const named = Object.fromEntries(
+                Object.entries(options).map(([key, value]) => [
+                    key,
+                    value === 'ember' ? ember : value
+                ])
+            );
+            const sent = await sendPage({
+                options: named,
+                agent: marked === true ? MARKED : BROWSER,
+                held: approved === true ? () => held : noApps
+            });
+            expect(bodyClass(sent.html)).toBe(classes);
+            expect(grounds(sent.html)).toEqual([ground(colour)]);
+            expect(sent.html.indexOf(`<style id="${GROUND_STYLE_ID}">`)).toBeLessThan(
+                sent.html.indexOf('%sveltekit.head%')
+            );
+        }
+    );
+
+    it.each([
+        {
+            row: "whose block's --bg is no hex colour, the block sent (C6)",
+            edit: (css: string) => css.replace(`--bg: ${EMBER_GROUND};`, '--bg: var(--panel);'),
+            blocks: ['--bg: var(--panel);']
+        },
+        {
+            row: 'whose block holds a closing tag, the block withheld (C6)',
+            edit: (css: string) => `${css}\n/* </style> */`,
+            blocks: []
+        }
+    ])("sends no ground for an app's theme $row", async ({ edit, blocks }) => {
+        const convert = vscodeMap.themeSheet;
+        vi.spyOn(vscodeMap, 'themeSheet').mockImplementation((...args) => {
+            const sheet = convert(...args);
+            return { ...sheet, css: edit(sheet.css) };
+        });
+        const sent = await sendPage({ options: { theme: ember }, held: () => held });
+        expect(bodyClass(sent.html)).toBe('app-theme');
+        const styles = themeStyles(sent.html);
+        expect(styles).toHaveLength(blocks.length);
+        blocks.forEach((text, at) => expect(styles[at]).toContain(text));
+        expect(grounds(sent.html)).toEqual([]);
     });
 
     it('sends the start theme and the title for a theme option naming nothing, in a config the read answers with a finding (C10)', async () => {
@@ -395,6 +530,7 @@ describe('a page sent with the theme it starts on', () => {
         expect(bodyClass(sent.html)).toBe('');
         expect(rootTokens(sent.html)).toEqual({});
         expect(themeStyles(sent.html)).toEqual([]);
+        expect(grounds(sent.html)).toEqual([]);
         expect(sent.html).not.toContain('%oculus.');
     });
 

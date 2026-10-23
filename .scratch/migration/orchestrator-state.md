@@ -36,7 +36,7 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O61-brief-check.md (adc42eb23995ab62d, claude-opus-5-5, 259489 tokens, 97 tool uses, 11 min 56 s)
   report: agents/reviews/O61-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 101296 tokens, 180 tool uses, 19 min 59 s; round 1: 215797 tokens, 66 tool uses, 12 min 41 s
-  reviewer_report: agents/reviews/O61-refuter.md (a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s); over round 1: running: a0a3962a17cebf0fb, claude-opus-5-5
+  reviewer_report: agents/reviews/O61-refuter.md (a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s); over round 1: a0a3962a17cebf0fb, claude-opus-5-5, 252149 tokens, 69 tool uses, 21 min 59 s
   round: 1
   landing: not-started
   shared_paths: with O65: docs/HELP.md (O65 lines 115-124 and 160-169, O61 the lines naming the type, the chips and the statuses, near 509 and 541): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
@@ -52,7 +52,7 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O53-brief-check.md (a778b73d30beb0302, claude-opus-5-5, 254814 tokens, 101 tool uses, 11 min 49 s)
   report: agents/reviews/O53-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 238668 tokens, 87 tool uses, 20 min 1 s; round 1: 321050 tokens, 77 tool uses, 21 min 35 s
-  reviewer_report: agents/reviews/O53-refuter.md (a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s); over round 1: running: abd3f8a34131d6aca, claude-opus-5-5
+  reviewer_report: agents/reviews/O53-refuter.md (a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s); over round 1: abd3f8a34131d6aca, claude-opus-5-5, 233293 tokens, 55 tool uses, 20 min 22 s
   round: 1
   landing: not-started
   shared_paths: with O61: config/schemas/manifest-schema.yml, normalise.ts, validate.ts, src/lib/data/model/, presets.ts, items.ts, collection.ts, graph.ts, forms/schema.ts, new-entry.ts, card.ts, ProjectCard.svelte, Projects.svelte, map Controls.svelte, config/text/, docs/HELP.md, data-map.md, templates.md, apps.md, the demo hub's project.yml files (O53 the lead, authors, collaborators and self lines; O61 the type, stage, status and vocabulary lines): different lines of each file, simple to merge, any adjacent-line conflict resolved by the orchestrator at the later landing; with O56: new-entry.ts (O53 takes taskFields's key loop out into a key maker, O56 changes the collection taskFields and addTask take), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, new-entry.ts merged by hand at the later landing; docs/diagrams/ regenerated at each landing (npm run diagrams)
@@ -68,25 +68,10 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O56-brief-check.md (a837bbfa456b7963d, claude-opus-5-5, 232172 tokens, 78 tool uses, 10 min 51 s)
   report: agents/reviews/O56-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 161697 tokens, 201 tool uses, 21 min 37 s; round 1: 250368 tokens, 110 tool uses, 18 min 25 s
-  reviewer_report: agents/reviews/O56-refuter.md (a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s); over round 1: running: ab082e1a8e90c900f, claude-opus-5-5
+  reviewer_report: agents/reviews/O56-refuter.md (a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s); over round 1: ab082e1a8e90c900f, claude-opus-5-5, 226623 tokens, 57 tool uses, 14 min 21 s
   round: 1
   landing: not-started
   shared_paths: with O53: as O53's entry says; with O61: new-entry.ts (O61 the vocabulary words, O56 the collection taskFields and addTask take), the comment of lead-apply.ts:5 (O61) beside the apply menu (O56), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
-- step: O39 part F
-  executor: agent
-  worker: claude:opus
-  session_id: ad81f9b1c597670ba
-  model: claude-opus-5-5
-  launched: 2026-10-23
-  base: d82cd0c3
-  worktree: .agents/worktrees/migration-O39-partF
-  brief_check: agents/reviews/O39-partF-brief-check.md (af556f98c3e4cc9ab, claude-opus-5-5, 228914 tokens, 59 tool uses, 10 min 42 s)
-  report: agents/reviews/O39-partF-report.md
-  builder_usage: 267220 tokens, 109 tool uses, 24 min 8 s; round 1: 328461 tokens, 55 tool uses, 9 min 54 s
-  reviewer_report: agents/reviews/O39-partF-refuter.md (add6b720b0361987f, claude-opus-5-5, 243598 tokens, 57 tool uses, 24 min 10 s); over round 1: running: a59a8e2d9a8cb5ab5, claude-opus-5-5
-  round: 1
-  landing: not-started
-  shared_paths: with O53, O56 and O61: none of their briefs names a file part F writes; docs/diagrams/ regenerated at each landing (npm run diagrams)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -480,6 +465,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (O39 part F landed). O39 part F is on main (booked under O39 in `plan.md`, report `agents/reviews/O39-partF-landing.md`), checked in the gate worktree (`test:quick` 33.4 s after the fixes, every command passed) and on main (`cmp` of the staged diffs: SAME, 12 files); three fixes at landing in `scrollbar.css`'s head comment and the report, the error page's sentence added; G118 names the ground element. Looked at on a scratch server on 8797 (C1, C1b, C2, C3, C3c, C4, C5, the error page). The reviews over round 1 of O61, O56 and O53 are saved under `## Repair round 1, refuted` with their usage. In flight (3 of 6): O61, O56 and O53, each reviewed over round 1 and waiting to land. Next on O39: the desktop look C8 after `npm run app:package`, then the tick. Open items: none.
 - 2026-10-23 (rulings 262, 263, 264). Axel ruled (a) on all three, booked in plan.md Rulings: case-run programs allowed under `agents/spec.md`'s new rule, O61's and O53's case results used; a builder reads git with `git status`, `git diff` and `git show`; one colour per stage word. The four builders were told. In flight (4 of 6): O61, O53, O56, O39 part F, each in repair round 1. Open items: none.
 - 2026-10-23 (four steps in repair round 1). The four reviews are saved and recorded under `reviewer_report`: `agents/reviews/O61-refuter.md`, `O53-refuter.md`, `O56-refuter.md`, `O39-partF-refuter.md`. Each step's round 1 is sent (`agents/briefs/<step>-round1.md`, copied into its worktree's ledger; snapshot `.agents/worktrees/migration-<step>-round-1` with `files.txt`) and its builder resumed. Open items 263 (spec.md's git ban against the skill's dispatch text) and 264 (O61's status-mark hues) raised. O61 and O53 do not land until 262 is ruled, O61 also until 264. In flight (4 of 6): O61, O53, O56, O39 part F, each in repair round 1. Open items: 264, 263, 262.
 - 2026-10-23 (O61, O53 and O56 reported; their reviews running). The builders of O61, O53 and O56 reported, each report saved under `agents/reviews/` with its `builder_usage`. `/refute` was run for each: reviewers a808f3fdfae84a0f5 (O61), a9541a55695dc8e97 (O53) and a11ec4587720951e0 (O56), each served claude-opus-5-5, each recorded under `reviewer_report` as running. Open item 262 raised: the case-run programs of O61 (a probe test file in a base copy, removed) and O53 (inline `node --input-type=module -` programs) were not built by their briefs; their results are not used and neither step lands until Axel rules. In flight (4 of 6): O61 (review), O53 (review), O56 (review), O39 part F (review; its builder reported, report saved with its usage, reviewer add6b720b0361987f, claude-opus-5-5). Open items: 262.

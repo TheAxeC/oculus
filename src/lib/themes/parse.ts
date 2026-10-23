@@ -1,11 +1,15 @@
-// Reading the two stylesheets as data. A theme is a block of token overrides, so the tokens of a
+// Reading the theme stylesheets as data. A theme is a block of token overrides, so the tokens of a
 // theme are recoverable from the sheet itself and nothing has to restate them in TypeScript.
 //
 // parseBlocks reads `:root` and every `body.<name>` block; resolveTheme merges the blocks a body
 // class string names over `:root`, in the order the sheet declares them, which is the order the
 // browser resolves them in when two blocks set the same token. deriveTokens then turns that map
-// into the readable foregrounds, and windowColours reads from it the two colours a window of the
-// desktop app takes before its page paints, which the host reads; the page sends the same `--bg`
+// into the readable foregrounds. themeGround reads from it the theme's ground, its `--bg` as a hex
+// colour. The server sends that ground in the page's first HTML in a style element of its own,
+// ahead of the head Kit fills (hooks.server.ts), and the page's first `applyTheme` takes that
+// element away (ui/theme/theme.ts). windowColours returns the two colours a window of the desktop
+// app takes before its page paints: the ground, which the host (desktop/windows/start-colours.ts)
+// fills the window with, beside the window buttons' symbol colour. The page sends the same `--bg`
 // token of the theme it drew once it has drawn one (shell/window/strip-colours.ts). Nothing here
 // touches the document or the filesystem: the caller passes the stylesheet text, so this runs in
 // the browser, in a test, on the server and in the desktop host alike.
@@ -106,13 +110,23 @@ export function isHexColour(value: unknown): value is string {
 }
 
 /**
- * The window colours of the theme a body carrying `classes` draws: its `--bg`, and its title bar
- * words `--titlebar-txt`, or its `--ink` for a theme that sets none, each as the sheet writes it.
- * Null when either is not a hex colour, which a window cannot take.
+ * The ground of the theme a body carrying `classes` draws: its `--bg` as the sheet writes it, or
+ * null when that is not a hex colour, which is the one form a window takes and the one form the
+ * server writes into the page's first HTML.
+ */
+export function themeGround(blocks: ThemeBlocks, classes: string): string | null {
+    const ground = resolveTheme(blocks, classes)['--bg'];
+    return isHexColour(ground) ? ground : null;
+}
+
+/**
+ * The window colours of the theme a body carrying `classes` draws: its ground (`themeGround`), and
+ * its title bar words `--titlebar-txt`, or its `--ink` for a theme that sets none, as the sheet
+ * writes it. Null when either is not a hex colour, which a window cannot take.
  */
 export function windowColours(blocks: ThemeBlocks, classes: string): WindowColours | null {
+    const background = themeGround(blocks, classes);
     const tokens = resolveTheme(blocks, classes);
-    const background = tokens['--bg'];
     const symbol = tokens['--titlebar-txt'] ?? tokens['--ink'];
-    return isHexColour(background) && isHexColour(symbol) ? { background, symbol } : null;
+    return background !== null && isHexColour(symbol) ? { background, symbol } : null;
 }

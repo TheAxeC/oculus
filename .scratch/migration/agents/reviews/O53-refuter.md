@@ -160,3 +160,158 @@ Cases of the brief's "Cases" (each judged by a test or by this review's reading,
 - What is drawn for C1, C2, C7, C8 and C10, the Select text box of J5 and the Settings `self` row of J4, because a page is the orchestrator's look at landing.
 
 Reviewer usage: a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s.
+
+## Repair round 1, refuted
+
+```
+# Brief verify 1 (only the covering test files while working): cannot be checked after the fact; see Declined to judge.
+
+# Brief verify 2, `npm run format` and `npm run diagrams` not run (both write); `npm run test:quick` run twice from the worktree root.
+First run, kept by `| tail -45`:
+ FAIL  |unit| tests/state/sessions/terminal/latex-fast-failure.test.ts > posts the failure notice of a build whose terminal ended while its list was read
+AssertionError: expected [ [Function], [Function], ...(11) ] to have a length of 2 but got 13
+ Test Files  1 failed | 211 passed | 60 skipped (272)
+      Tests  1 failed | 2430 passed | 640 skipped (3071)
+ok      vitest slow (227.2 s): Duration  219.25s (...)
+test:quick: 229.8 s; failed: vitest
+npx vitest run tests/state/sessions/terminal/latex-fast-failure.test.ts
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+Second run, summary lines kept:
+test:quick: 80 changed file(s), from git since HEAD
+test:quick: 281 test file(s)
+ok      prettier (1.9 s): All matched files use Prettier code style!
+ok      ASCII gate (1.9 s)
+ok      svelte-kit sync (3.2 s)
+ok      eslint (28.6 s)
+ok      svelte-check (32.0 s): 1792751586033 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (191.0 s): Duration  181.63s (...)
+ok      vitest checks (198.9 s): Duration  189.08s (...)
+ok      vitest slow (260.6 s): Duration  251.02s (...)
+test:quick: 264.0 s; every command passed
+
+# Brief verify 3, ASCII gate (brief's perl form) over the 77 changed paths outside .scratch/ and the report: prints nothing, exit 0
+
+# Brief verify 4, wc -l: no changed file over its limit (component 520, other 880, docs/ left out);
+workbench FieldControl.svelte 449, Cards.svelte 399, workbench Editor.svelte 242, EntryEditor.svelte 242,
+boards/editor/Editor.svelte 321, new-entry.ts 218, Nodes.svelte 129, model/index.ts 872, model-entities.ts 747;
+ls: data/model/machine 5, data/model 10, state/boards/board 10
+
+# Brief verify 5:
+sh utils/unused-exports.sh  (exit 0), diff against migration-O53-base/unused-exports.txt:
+126c126
+< src/lib/state/boards/board/index.ts: FACETS, NONE, authorLine, bucketOf, venueText, facetValues, facetHeading, filtersInForce, valueLabel, emptyBoardState
+---
+> src/lib/state/boards/board/index.ts: FACETS, NONE, bucketOf, venueText, facetValues, facetHeading, filtersInForce, valueLabel, emptyBoardState
+(a name removed, none added)
+
+# Brief verify 6:
+grep -rnE "\bauthors\b" src/lib/data src/lib/state/boards src/lib/state/forms src/lib/views/shared/card src/lib/views/boards config/schemas
+  model-search.ts:179 (literature), model-entities.ts:410 ("co-first authors"), RadarCard.svelte:7,104 (radar paper),
+  FieldFilters.svelte:6 (a list of papers), Projects.svelte:225 (`authors: item.teamLine`, the cell name), manifest-schema.yml:55 ("co-first authors")
+grep -rnE "^(authors:|lead: [^\[])" tests/fixtures/hubs/demo   -> nothing, exit 1
+
+# Brief verify 7:
+grep -rniE "owner" <the brief's paths>: stamps.ts:20,77 (a sessions watch's owner), normalise.ts:90 (a catalog file's owner),
+  references/specs.ts:42-83 (a schema file's owner), config/options/sources.yml:108 (apps_dir); nothing else names a hub's owner
+
+# Brief verify 8: the round changed no test file (diff -q of each files.txt path, snapshot against worktree, differs only in
+  editor.yml, person.yml, board/index.ts, graph.ts, new-entry.ts, boards Editor.svelte, EntryEditor.svelte, workbench FieldControl.svelte;
+  the six paths outside files.txt hold no test). The first refuter's table of assertion edits stands.
+
+# Brief verify 9 over the round's added lines (the 8 snapshot diffs and the base diff of the 6 other paths),
+  spec.md's whole history list plus package ids and dates:
+src/lib/views/system/workbench/editors/FieldControl.svelte: "a control gone before it answers, or a control of a draft"
+src/lib/views/system/workbench/editors/FieldControl.svelte: "discarded before it answers (`discards`), picks nothing."
+  both name a moment inside one write, not an earlier state of the code.
+
+# The round's own checks, rerun:
+grep -rn "add_person_key" src config tests docs --exclude=local.yml        -> nothing, exit 1
+grep -rni "collaborator tag" src docs config --exclude=local.yml           -> nothing, exit 1
+grep -rniE "hub's owner" src config --exclude=local.yml                    -> config/options/sources.yml:108 only
+grep -rniE "collaborator" src docs (less docs/diagrams and `collaborators:` lines): every remaining hit is the `collaborators`
+  field and its readers, the node and edge kind `collaborator` (graph.ts:26-29, explained there as "the people of a project's team"),
+  the Map's saved `collaborators` option, CSS class names, or a sentence naming the lead beside the collaborators; none false.
+person.yml: line 1 is the whole head comment, line 2 `text:`; `nobody:` at line 8 reads "... Press a person of the team on a project card
+  to open a person." (base line 11: "... Press a collaborator tag on a project card to open a person.")
+
+# Case-run programs the report quotes (ruling 262 (a)), rerun as quoted, `S` set to a fresh folder of the session scratchpad,
+  removed after each run; `git status --short | wc -l` in the worktree 80 before and after:
+R5 run (worktree): {"case":"R5","noRevert":{"key":"jane-doe","said":""},"revertWhileOut":{"key":"","said":""},"refusedNoRevert":{"key":"","said":"refused"},"keylessOffered":""}
+C10 run (worktree): {"case":"C10","offersAdd":["lead","collaborators"],"fromPeopleAtAll":["lead:chips","collaborators:chips","waiting-on:tags"],"tags":false}
+After run (worktree, BASE = its demo hub): 22 lines, identical to the report's "After run" output, among them
+  {"case":"C2",...,"line":"Ana Rivera","tags":["Ana Rivera"],...,"mapPeople":["B. Coauthor","C. Senior","Ana Rivera"]}
+  {"case":"C7-C9-C18-add","jane_taken":{"key":"jane-doe-2","said":""},"jane_free":{"key":"jane-doe","said":""},"lab":{"key":"jane-doe","said":""},"writes":[... root "demo", "demo", "lab"]}
+  {"case":"C13-after-delete","lead":[],"line":"Dr. Dana Example",...,"findings":["lead[0]: lead[0] is b-colleague, which is not a key of people"]}
+  {"case":"C14-self-dana-example","selfName":"Dr. Dana Example"}  {"case":"C14-self-empty","selfName":null}
+First run (run from the base copy .agents/worktrees/migration-O53-base, BASE = its demo hub, as the report says to rerun it): 18 lines,
+  identical to the report's "First run" output, e.g. {"case":"C1","line":"","tags":["Ana Rivera"],"findings":["lead: lead must be a text or a number, not a list"]}
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since 74020bf0:
+
+- 1: holds. `manifest-schema.yml:55` (`lead`, chips from people, Connections); `links.ts:75,167-168` (pairs from lead and collaborators, the lead in manifest order); `merge.ts` `lead: idsOf(one.lead, at('people', 'lead'))`; `validate.ts` `{ field: 'lead', list: true }`; `referrers.ts:85-88`; C4 and C20 reproduced by the after run (`lead: Faes` gives "lead must be a list, not a string" and `lead: []`; `formLead ["dana-example"]`); test:quick green.
+- 2: holds. `authors` gone from the schema, model, normalise, presets and form values (verify 6 grep); C6 reproduced ("key authors is not declared by the schema of this file"); the G56 row green.
+- 3: holds. `teamLine` in `presets.ts`, `team.ts` (`teamOf`, `selfIds`, `shownTeam`); round ruling 2 removed the re-export from `board/index.ts`, and verify 5 now shows no added name. C1, C3, C15, C16 reproduced.
+- 4: holds. The readers as the first refuter listed them; round ruling 3 made `EntryFields.svelte:109`, `selectors.svelte.ts:443-446`, `graph.ts:253-256`, `Nodes.svelte:4-10` and `labels.ts:6-7` true, and the collaborator grep above finds no false comment left. C2, C11, C12 reproduced.
+- 5: holds. `personToAdd`, `addPerson` (keyless branch gone, `editor.add_person_key` gone, grep exit 1), `freeKey` shared with `taskFields`; C7, C8, C9, C18 reproduced. Round ruling 5, `unlessReverted` (`new-entry.ts:203-218`) reads `reverts()` when the write is sent and again when it answers, and turns an answer after a Revert into `{ key: '', said: '' }` (R5 reproduced). Each caller, by reading:
+  - Boards editor (`boards/editor/Editor.svelte:133-140,209-215`): `let reverts = 0` is a plain component variable, `revert()` increments it before `revertDraft`, and the closure `() => reverts` reads the variable itself at both calls. `addTo` is evaluated in the template (`:269`), so each wrapper reads the same variable. After a Revert while the write is out, `EntryForm.add` (`EntryForm.svelte:56-66`) records no note (`said` is '') and returns '', and shared `FieldControl.svelte:83-90` picks only on `key !== '' && drawn`. The field stays unpicked.
+  - EntryEditor (`EntryEditor.svelte:104-129`): same counter. `newPerson` is built once at init, `sent` is local to each call, and `page.root` is read inside the lambda at call time. The field stays unpicked by the same path.
+  - Workbench (`workbench/editors/Editor.svelte:117-124,165`): `discards` is `$state(0)` and `discard()` increments it. It goes as a prop into `Cards.svelte` (`:70,87`), down to the nested Cards (`:200`) and to the one `FieldControl` it renders (`:230`). `FieldControl.svelte:112` destructures `discards = 0` from `$props()`. In Svelte 5 a destructured prop is compiled to an accessor of the parent's value, so `() => discards` (`:150`) reads the current count at send and at answer. The pick now also needs `done.key !== ''` (`:153`), so the empty answer picks nothing and leaves `unadded` empty.
+  - Close: the `drawn` flag set false in the `$effect` teardown of both FieldControl files keeps an unmounted field from picking.
+  - The person stays written in every case (no delete path). Settings rows (`settings/Control.svelte:120`, `AppControl.svelte:96`) pass no `discards` and have no draft.
+- 6: holds. `userFor`, `chat_user_fallback`, `selfName`; C14 reproduced (`selfName` "Dr. Dana Example", and null, which takes the fallback "its user" asserted by G120); the `hub's owner` grep prints only `sources.yml:108`.
+- 7: holds. The demo registry and manifests as the item lists (verify 6 second grep exit 1; after run uses them); test:quick green.
+- 8: holds. Docs lines as the first refuter cited; `docs/diagrams/` unchanged in this round (no diagrams path differs between snapshot and worktree); regeneration not run by me.
+- 9: holds. The rows of `relation-shapes.test.ts`, `schema-rules.test.ts` and `referrers.test.ts`, unchanged this round, green in the second test:quick run.
+
+Cases of the brief's "Cases":
+
+- C1: met, after run "Dr. Dana Example, Ana Rivera" (line and tags); drawn at the look.
+- C2: met, after run line "Ana Rivera", tags ["Ana Rivera"], `mapPeople` without Dr. Dana Example.
+- C3: met, after run "B. Coauthor, C. Senior, Ana Rivera".
+- C4: met, test (`relation-shapes.test.ts` `lead: Faes` row) and after run (`lead` [], one finding "lead must be a list, not a string", no line).
+- C5: met, after run (finding "lead[0] is nobody-here, which is not a key of people", no name).
+- C6: met, G56 row and after run (the undeclared-key finding; line from lead and collaborators).
+- C7: met, after run (`personToAdd` "Jane Doe"; write `{ key: jane-doe, name: Jane Doe }` root `demo`) and reading (`withPicked`, the save posts the draft's edits); the drawn choice at the look.
+- C8: met, after run offers: "Jane Doe" -> "Jane Doe", "Ana Rivera" -> "", "riv" -> "riv", "ana rivera" -> "", "???" -> "".
+- C9: met, after run (the lab write has root `lab`).
+- C10: met, C10 run (`offersAdd` lead and collaborators only, `tags` false, `waiting-on` not offered) and after run (`jointWorkPersonOffers` true).
+- C11: met, after run Person page of c-senior holds sparse-attention and tensor-sketch (lead alone).
+- C12: met, after run joint work of b-coauthor holds graph-bandits (lead alone) with graph-transfer and demo-toolkit.
+- C13: met, referrers row and after run (referrer `project:demo:spectral-clustering-collab`; after the delete the reference finding for b-colleague).
+- C14: met, G120 rows, after run `selfName`, the `hub's owner` grep.
+- C15: met, after run "Ana Rivera" once.
+- C16: met, after run line "" and tags [].
+- C17: met, after run "noname".
+- C18: met, after run (no Add for "Ana Rivera"; `jane-doe-2` when `jane-doe` is held).
+- C19: met, after run "Ana Rivera of lab", `leadIds ["lab:rivera-lab"]`.
+- C20: met, after run `formLead ["dana-example"]` for the primary and the lab project, and reading (an unedited field is no edit).
+- C21: met, after run `lead []`, line "".
+
+### Findings
+
+- Standards. `src/lib/views/shared/graph/Nodes.svelte:10`: "// node's label on top. An archived project is dimmed, and drawn at full strength while it" (94 columns, the next word "is" fits at 97). `src/lib/state/forms/new-entry.ts:204`: " * An Add person of a form that a Revert or a Discard can undo: `reverts` counts the form's" (91, "Reverts" fits at 99). `new-entry.ts:206` (95, "left" fits at exactly 100).
+  - These are lines this round wrote. The first round's comments have the same defect, which the first review did not report: `src/lib/data/snapshot/normalise-parts/links.ts:50` " * `projectPerson` pairs are its team, the people its `lead:` names and those its" (81, "`collaborators:`" fits at 98). Six more lines take their next word at exactly 100 columns: `normalise.ts:362`, `Select.svelte:15`, `Select.svelte:16`, `Person.svelte:19`, workbench `FieldControl.svelte:26`, `boards/editor/Editor.svelte:39`.
+  - What is wrong: spec.md "What every package obeys": "A comment edited by the step is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short" (`.prettierrc` `printWidth: 100`).
+  - Failure scenario: a reader meets sentences broken at uneven widths, and the next editor of those paragraphs extends them in the same ragged form.
+  - Small and inside the brief, a rewrap at landing. Verdict: none.
+- Spec. `src/lib/views/system/workbench/editors/Cards.svelte:70,87,200,230` and `src/lib/views/system/workbench/editors/Editor.svelte:117-124,165`, the `discards` prop and counter.
+  - What is wrong: neither path is in the O53 brief's "Paths this step writes" or in the round brief's "Paths this round writes", and ruling 3's grep did not reach them. Ruling 5 needs them, and the round report names them as callers under ruling 5 without saying they are outside the write list. spec.md "Where you work" asks that a path outside the write list that the step needs be named as such in the report.
+  - Failure scenario: the orchestrator's shared-path check against the steps in flight leaves both out. Today no in-flight step changes either file (`cmp` of each against the base copies of O56, O61 and O39 part F), so no merge is affected now.
+  - Verdict: none.
+
+### Declined to judge
+
+- Brief verify 1 (only covering tests while working): it cannot be checked after the fact.
+- `npm run format` and `npm run diagrams`: both write into the tree. Whether `docs/diagrams/` matches the source after this round was not regenerated by me; no diagrams file changed between the snapshot and the worktree.
+- The two 5000 ms timeouts of the builder's list run. The step changes neither file: `git status --short` lists neither `tests/server/edit/app-store.test.ts` nor `tests/state/sources/clone-after.test.ts`. Both are in test:quick's selection, which holds only tests that reach a changed file within its import depth, so the step reaches them only through their imports (`handleWrite`, `loadConfig`, the text catalog). Both passed in my two list runs. Not investigated, as instructed.
+- `tests/state/sessions/terminal/latex-fast-failure.test.ts`, red once in my first list run: the step does not change it, it passed alone and in the second run. Not investigated.
+- The Reset of an editor-drawn Settings row (`settings/Item.svelte:145-148`) clears the draft without counting a Discard, so an Add person answer arriving after a Reset would pick into a new draft. Not judged as a finding, for two reasons. Ruling 5 names Revert and close only. No catalog in `config/options` gives a `Cards` field `from: people`; the only one is `self` (`config/options/sources.yml:124`), drawn as a single row that writes at once.
+- Landing merge, for the orchestrator. O61 rewrites the same head-comment paragraph of `src/lib/views/shared/graph/Nodes.svelte` (lines 4-10: "project stage", "a pillar or a collaborator") that this round rewrote ("a pillar or a person of a project's team"), and O56 changes `src/lib/state/client/selectors.svelte.ts`. The state file's `shared_paths` for O53 names neither file.
+- What is drawn for C1, C2, C7, C8, C10 and the Person tab's empty sentence: the orchestrator's look at landing.
+- The Svelte 5 accessor behaviour of `discards` was judged by reading the component and Svelte 5's rule for destructured props. The compiled output was not printed.
+
+Reviewer usage: abd3f8a34131d6aca, claude-opus-5-5, 233293 tokens, 55 tool uses, 20 min 22 s.

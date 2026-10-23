@@ -145,3 +145,126 @@ Cases of the brief's "Cases":
 - ADRs: `ls docs/adr` gives "No such file or directory" in the worktree; no ADR governs the diff.
 
 Reviewer usage: a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s.
+
+## Repair round 1, refuted
+
+```
+# The round's delta: diff -u of each path of files.txt, snapshot (.agents/worktrees/migration-O56-round-1) against the worktree
+$ for f in <files.txt paths>; do diff -u migration-O56-round-1/$f migration-O56/$f; done
+  changed in the round: config/text/app.yml, config/text/views/feeds/leads.yml, src/lib/shell/keys/rows/CommandRows.svelte,
+  src/lib/state/forms/new-entry.ts, src/lib/views/shared/card/feed/LeadCard.svelte,
+  src/lib/views/shared/card/feed/SaveToLiterature.svelte, src/lib/views/shared/card/feed/lead-apply.ts,
+  tests/state/forms/new-entry.test.ts
+$ git status --short     (in the worktree)
+  the same 40 paths as files.txt, no other path; no new-entry-onbase.test.ts; ToolButton.svelte not listed
+$ git diff 892189d7 --stat | tail -1
+  39 files changed, 1306 insertions(+), 945 deletions(-)
+
+# Brief verify 2 (npm run format and npm run diagrams not run: both write), from the worktree root:
+$ npm run test:quick 2>&1 | tail -25
+  ok      prettier (7.9 s): All matched files use Prettier code style!
+  ok      ASCII gate (8.1 s)
+  ok      svelte-kit sync (58.1 s)
+  ok      eslint (99.8 s)
+  ok      svelte-check (141.0 s): 1792751124752 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest checks (193.3 s): Duration  164.46s (transform 158.60s, setup 0ms, import 367.97s, tests 256.45s, environment 4ms)
+  ok      vitest (209.7 s): Duration  181.62s (transform 335.40s, setup 0ms, import 500.65s, tests 97.50s, environment 94.89s)
+  ok      vitest slow (237.7 s): Duration  209.92s (transform 46.67s, setup 0ms, import 271.37s, tests 541.72s, environment 12ms)
+  test:quick: 297.7 s; every command passed
+
+# Brief verify 3, the ASCII gate of spec.md over the 39 changed and new paths (diagrams included):
+$ ... | xargs env LC_ALL=C perl -ne '...'
+  (nothing printed), ascii exit 0
+
+# Brief verify 4:
+$ wc -l <changed files, diagrams left out>
+  SaveToLiterature.svelte 141, LeadCard.svelte 327, CommandRows.svelte 276, Palette.svelte 519, NewIdeaForm.svelte 182,
+  new-entry.ts 143, lead-apply.ts 70, app.yml 321, leads.yml 38, new-entry.test.ts 237, writes.svelte.ts 868,
+  hub-writes.test.ts 841, writes.ts 804, selectors.svelte.ts 747, bodies.ts 706, shapes.ts 514, hubs.ts (writes) 291
+$ ls <folder> | wc -l
+  src/lib/shell/keys/lists 10, tests/state/shared 1, src/lib/state/shared/page 4
+
+# Brief verify 5:
+$ diff ../migration-O56-base/unused-exports.txt <(sh utils/unused-exports.sh)
+  diff exit 0
+
+# Brief verify 6:
+$ grep -rn "literatureHome\|homeCollection" src tests
+  exit 1
+$ grep -rn "primary()" src/lib/views/shared/card/feed src/lib/views/shared/forms src/lib/shell/keys/rows
+  SaveToLiterature.svelte:52, lead-apply.ts:27,43, NewIdeaForm.svelte:51,65, entry-add.ts:52, entry/edit/page-file.ts:19,
+  registry/registry-file.svelte.ts:56,62,64, CommandRows.svelte:127 (each the order, the primary's folder or file, or no record made)
+
+# Brief verify 7, the changed test file against the snapshot (the round) and the base:
+$ diff ../migration-O56-round-1/tests/state/forms/new-entry.test.ts tests/state/forms/new-entry.test.ts
+  138c138  it('is none for a hub chosen that holds no tasks collection', ...)  ->  ..., said by its name', ...)
+  140c140  t('app.palette.task_add_collection')  ->  t('app.palette.task_hub_collection', 'nowhere')
+  (matches the report's ruling 2 before and after)
+
+# Brief verify 8, history words over the round's added lines:
+$ diff -u <snapshot> <worktree> | grep '^+' | grep -i -E "\bbefore\b|used to|no longer|\bstill\b|..."
+  CommandRows.svelte "A title that makes no task is refused before any hub is asked." (the rewrapped head, run-time order; accepted)
+
+# Commands the round's report quotes, rerun in the same form:
+$ npx vitest run tests/state/forms/new-entry.test.ts      ->  Tests  20 passed (20)
+$ grep -rln "lead-apply" tests                           ->  (nothing), exit 1
+$ grep -rhoE "`[a-z-]+:\$\{" src/lib/shell/keys src/lib/state/workbench | sort | uniq -c
+  app: clone: collection: command: config: database: editor: eslint-config: feed: finding: folder: group: hidden-view:
+  interpreter: language-action: language: oculus-page: page: project: symbol: tab: task-hub: task: view: workspace:
+  (the report's list leaves out oculus-page:, page: and tab:; none equals task-hub:, so its conclusion holds; no decision rests on the list)
+$ git status --short | grep -c diagrams                  ->  10
+  The case-run program on the base copy (sed copy into tests/state/forms/, vitest, rm): not rerun, it writes a file.
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. `hubsTaking` in `src/lib/state/shared/page/hubs.ts`, read by every path; verify 6 grep exit 1; `tests/state/shared/hubs.test.ts` in place of the deleted `literature-home.test.ts`; test:quick green. Unchanged by the round.
+- 2: holds, as the first report gives it (`NewIdeaForm.svelte`, `newIdeaShape` with `root`, `rootedHome`); unchanged by the round; hub-writes rows green in test:quick.
+- 3: holds for what the item's text says: In Literature over every hub's Literature (`SaveToLiterature.svelte:53-60`), the Menu of the hubs (`:101-110`), one hub saves at once (`:111-118`), and the focus is handed to In Literature after a save that landed from the control (`:65-89`, with `Menu.svelte` giving the focus back before `onpick`, `menu-items.ts:155-159`). The way that focus is given carries Findings R1-1 and R1-2, which make C12 partial.
+- 4: holds. `addTask(..., hub?)` (`new-entry.ts:118-143`), the palette's hub list, `task_add_collection` for no hub holding tasks and `task_hub_collection` for a chosen hub holding none (`new-entry.ts:131-137`); G8 rows 20 passed.
+- 5: holds. `lead-apply.ts:26-28,44-50` and the Menu in `LeadCard.svelte:168-189`; a picked hub holding none says `hub_no_applications`, no hub holding one `no_applications`; a second press or pick while one placement is out does nothing (`LeadCard.svelte:128-136`).
+- 6: holds. The head comments of the round's five changed sources state the new behaviour (SaveToLiterature `:10-13`, LeadCard `:11-12`, CommandRows `:22`, `addTask` and `applyFromLead` doc comments); `docs/HELP.md:97,303,305` read again and still true; diagrams 10 files changed as in round 0.
+- 7: holds. The changed row `new-entry.test.ts:138-141` asserts the new sentence for its input; its base failure ("text key not in the text catalog ... task_hub_collection") agrees with a read of the base, which has neither the key nor the `hub` argument.
+
+Cases of the brief's "Cases":
+
+- C1: met, `entry-add.ts:52` reads `hubsTaking`; test:quick green.
+- C2: met by the code and the hub-writes row; the screen is the look's.
+- C3: met, `NewIdeaForm.svelte` draws no Hub field for one hub.
+- C4: met, the chosen hub's domains registry.
+- C5: met, hub-writes row: 404 `no_hub_named`, nothing written.
+- C6: met by the code (`SaveToLiterature.svelte:102-110`, the pick passes the hub to `saveLiterature`); the screen is the look's.
+- C7: met, `:53-60` reads every hub's Literature.
+- C8: met, one hub gives the ToolButton saving to `hubs.at(0)` (`:111-118`).
+- C9: met by the code and the new-entry row "is the hub chosen, the primary not"; the screen is the look's.
+- C9b: met, the rows of `new-entry.test.ts` and `task_add_collection` at `new-entry.test.ts:209`.
+- C10: met by the code (`LeadCard.svelte:168-178`, `lead-apply.ts:44-63`); the screen is the look's.
+- C10b: met by reading, `lead-apply.ts:51-54`.
+- C11: met, `hubsTaking` with no primary keeps the workspace's order (hubs.test.ts).
+- C12: partial, Findings R1-1 and R1-2. Escape on the Save and apply menus writes nothing and gives the focus back to the opener (`menu-items.ts:155-159`); the arrows and Enter are bits-ui's; Escape on the palette's hub list closes the palette with nothing written. After a pick on the apply menu that places the entry, the focus goes to the Applications tab's editor, as after the base's press (`entry-file.ts:45-60`, `openSourceFile` with a range; `place.ts` leaves `focus` unset and `tab-state.ts:27` defaults it to true; `Editor.svelte:200-214` asks the range command with the focus; `commands.ts:93` `made.focus()`). The builder's reading of the base and of the new menu path is right, so the ruling's second half has no case to act on. One correction to the report's account, on which no decision rests: a placement refused with a line (`entry-file.ts:62`) also opens the tab at that line and the editor takes the focus, so "When nothing is placed ... its opener keeps the focus" holds only for no tab opened. What is missing: that In Literature takes the focus after a save from the Save menu or the one-hub button when the browser still reports the removed opener as the active element (R1-1), and that it takes it without opening its tooltip, as the tree's menus give the focus back (R1-2).
+- C12b: met, `NewIdeaForm.svelte` `choose`.
+- C12c: met, no `folder` sent for an empty Folder, `idea_no_folder` said in the form.
+- C12d: met by reading, `CommandRows.svelte:255` passes `asked.open || shifted`.
+- C13: met. `rootedHome` serves the three writes; a chosen hub that has left gives Add Task `task_hub_collection` with its name and the apply control `hub_no_applications`, while another hub holds the collection.
+
+### Findings
+
+- R1-1, spec (the claimed closure of Spec 1 that the read does not reproduce), `src/lib/views/shared/card/feed/SaveToLiterature.svelte:86-87`: "const now = document.activeElement; if (now === null || now === document.body) box?.querySelector('button')?.focus();". What is wrong: the report says "Removing the focused opener leaves the focus on the body, and the effect then gives the focus to In Literature", checked by reading only. The tree's own helper for this question, `focusIsFree` (`src/lib/ui/frame/quiet-focus.ts:24-32`), also counts a control taken off the page as holding nothing, because "A button taken off the page keeps the focus until the browser hands it to the document". `Tabs.svelte:208-215`, `NoticeCentre.svelte:44` and `ActivityRail.svelte:247` use it for exactly this case: the focused control removed by a re-render. The effect runs in the same Svelte flush that removed the opener, leaves that case out, and clears `refocus` before it decides (`:85`). It also hand-writes a check the tree already has, against the rules file's "The principles every package is judged on" (DRY, and "reuse what exists"). Failure scenario: a keyboard reader on a Lit Watch card in a workspace of two hubs picks `lab` with Enter. The save lands and `saved` turns true, so the `{#if}` swaps the opener for In Literature. When the effect runs, `document.activeElement` is still the removed opener, so the condition is false, `refocus` is cleared, and nothing is focused. The browser then hands the focus to the document and the next Tab starts from the top of the page: the defect ruling 1 was sent to close. The fix is `if (focusIsFree())` from `$lib/ui/frame/quiet-focus`, one line inside the brief's paths. Verdict: C12 partial.
+- R1-2, standards and behaviour, `src/lib/views/shared/card/feed/SaveToLiterature.svelte:87`: "box?.querySelector('button')?.focus();". What is wrong: the tree gives a focus that is the page's, and not a move of the reader's, through `focusQuietly`, so that the control's tooltip does not open (`quiet-focus.ts:1-4,13-22`; `Menu.svelte:14`: "Escape and a pick close the list and give the focus back to the button without opening its tooltip"). `Tooltip.svelte:142-147` opens the words on any focus that matches `:focus-visible` and is not marked quiet. A plain `.focus()` given just after a keyboard pick is such a focus. The round's report does not state that the tooltip opens. Failure scenario: Enter on `lab` in the Save menu, or Enter on the one-hub Save. The save lands, In Literature takes the focus, and its tooltip "The Literature collection holds this paper" opens below the button (ToolButton's placement `below`, `ToolButton.svelte:64`). It covers the line "Saved as <key>" that the save has just written under the button (`SaveToLiterature.svelte:120-122`, `.save` a column) until the reader moves the focus. The fix is `focusQuietly` in place of `.focus()`, inside the brief's paths. Verdict: C12 partial.
+- R1-3, behaviour, `src/lib/views/shared/card/feed/SaveToLiterature.svelte:94-100` and `:112-118`: "waiting" in place of "disabled", and "waiting={saving}" in place of "disabled={saving}". What is wrong: ruling 1 asks for the `waiting` look and the round builds it, but the round's report gives no before-and-after row for what a reader sees change. The rules file's "What every package obeys" needs that row for the look ("Visible includes ... focus and tab stops"). The change reaches every card whose paper a hub holds, not only a card just saved. Before, In Literature was a disabled button, skipped by Tab, with no tooltip on keyboard focus. After, it is a Tab stop on every such card in the Literature search view and on Lit Watch. A screen reader announces it as a dimmed button, Enter and Space do nothing (`ToolButton.svelte:101-103`), and keyboard focus opens its tooltip. The one-hub Save during a save keeps its place in the focus order. With `pointer-events: none` (`ToolButton.svelte:212-215`), the hover reaches the tooltip wrapper, so its tooltip can open while the save is out. Its look is otherwise the same (opacity 0.5 under both `.tool:disabled` and `.tool.waiting`). Failure scenario: the orchestrator at the look Tabs through a Literature search list that holds saved papers, meets one stop per saved card that did not exist before, and has no stated before and after to judge it against. Verdict: none.
+- R1-4, behaviour (the `adding` guard), `src/lib/shell/keys/rows/CommandRows.svelte:114-133`: "let adding = false; ... if (adding) return; adding = true; ... ).finally(() => { adding = false; });". What is wrong: the round brief did not ask for this guard. It closes the in-flight case that the rules file's "Every id or key ... every asynchronous path in flight ... and superseded by a later one" asks about, for the hub rows the step adds. It sits in a write-list file and in the function the step rewrote, so it does not reach beyond the finding in substance. A plain `let` is enough, since nothing draws it. But it also changes the title press, which the base had: base `CommandRows.svelte:98-104` has no guard, so a second press of the title while the first write was out sent a second `new-entry` write. The report states only the after ("The press does nothing, so no second new-entry write is sent"). Failure scenario: a reader who presses Enter twice on `:task-add Review` gets one write now and two before. The look has no stated before for whatever the second write said. Verdict: none.
+- R1-5, standards, the builder's stated sharp edge, `SaveToLiterature.svelte:68,72,82-89`. What is wrong: the edge is real. `saved` turns true only when the next snapshot holds the paper: `collectionsOfKey` reads `entities.portfolio()` (`selectors.svelte.ts:400-403`), while `settle.added` records a page (`page-entry.ts:331-333`) and not the collection. So `refocus` stays set from the press until that snapshot, and it stays set for the life of the card when an ok save never matches the card's ids under `samePaper`. The rules file's "Nothing left undone" says a miss inside the brief is never listed as a sharp edge, and its working rules say a named risk is fixed or stated prominently. The report states it in its last paragraph, under a first line saying every ruling is done. Failure scenario: a save answers ok but the snapshot's entry does not match the card. Later the reader clicks an empty part of the page (focus on the body), and an edit makes the card's paper match. The effect then moves the focus to that card's In Literature and scrolls the page to it. The harm is narrow, since the effect acts only from the body. A bound that ends it, such as clearing `refocus` at the first change of `held` after an ok answer that leaves `saved` false, is the builder's or the landing's to choose. Verdict: none.
+- R1-6, standards, the round's report, "Ruling 2", the case-run program: "sed ... tests/state/forms/new-entry.test.ts > tests/state/forms/new-entry-onbase.test.ts ... rm tests/state/forms/new-entry-onbase.test.ts". What is wrong: the rules file's "What every package obeys" allows a case-run program whose needed file "lives in the scratchpad or the base copy and is gone before the report". This one wrote its copy into the worktree's `tests/state/forms/`. It is gone now (`git status --short` lists no such file), and the result it gave agrees with a read of the base. Failure scenario: while the copy existed, a test:quick or a vitest run in that worktree that selects test files by folder could pick up a file that imports the base copy's `src`, and its result would count against the step. Verdict: none.
+
+### Declined to judge
+
+- Whether Chrome reports the body or the removed opener as `document.activeElement` when the Svelte effect runs (R1-1), and whether the programmatic focus matches `:focus-visible` after a keyboard pick (R1-2). A read cannot settle this, and this review runs no browser. The look on TEST with two hubs settles it, but R1-1's and R1-2's fixes are right whichever way it falls.
+- The run of the changed test row on the base copy: rerunning it needs a copy of the test file written into a tree. It was judged by reading the base, which has neither `task_hub_collection` nor the `hub` argument, and that read agrees with the quoted failure.
+- What the base's second `new-entry` write answered after a double press of Add Task's title (R1-4): not traced.
+- `npm run format` and `npm run diagrams`: both write into the tree. Prettier's check is green in this test:quick. That the committed diagrams match the source is settled at landing.
+- On screen, under the configuration block's `look:`: C2, C6, C9 and C10 with two hubs, the focus after a Save pick and after an apply pick, the tooltip of R1-2 and the Tab stops of R1-3.
+- ADRs: `ls docs/adr` gives "No such file or directory" (first report); no ADR governs the diff.
+
+Reviewer usage: ab082e1a8e90c900f, claude-opus-5-5, 226623 tokens, 57 tool uses, 14 min 21 s.

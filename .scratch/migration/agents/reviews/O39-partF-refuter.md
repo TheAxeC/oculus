@@ -148,3 +148,135 @@ none
 - Whether `node_modules/vite`'s style injection always precedes the first `applyTheme` on the find and presenter pages: taken from the brief check's reading (Vite 8.3.0 `updateStyle`) and the layout's import order, and not traced again.
 
 Reviewer usage: add6b720b0361987f, claude-opus-5-5, 243598 tokens, 57 tool uses, 24 min 10 s.
+
+## Repair round 1, refuted
+
+Reviewer over repair round 1 of step O39 part F, on `.agents/worktrees/migration-O39-partF`, base d82cd0c3. The round's delta is each `files.txt` path diffed (`diff -u`) between `.agents/worktrees/migration-O39-partF-round-1/` and the worktree, plus the untracked `src/lib/ui/theme/scrollbar.css` read whole. `git status --short` also shows four `.scratch/` files changed or untracked in the worktree. `cmp` against the main checkout shows each one equal to the ledger's copy (`briefs/O39-partF.md`, `briefs/O39-partF-round1.md`, `reviews/O39-partF-brief-check.md`, `spec.md`), so none of them is the builder's edit. The builder's report was read last.
+
+```
+1. npm run test:quick -- src/app.html src/hooks.server.ts src/lib/shell/window/appearance.svelte.ts src/lib/themes/parse.ts src/lib/ui/theme/app-theme.ts src/lib/ui/theme/theme.ts src/lib/ui/theme/scrollbar.css src/routes/+layout.svelte tests/server/desktop/app-theme-start.test.ts tests/server/root/hooks-server.test.ts docs/diagrams/layers.dot docs/diagrams/layers.svg
+   (npm run diagrams not run: it writes)
+test:quick: 12 changed file(s), from the given paths
+test:quick: 5 test file(s)
+        tests/server/desktop/app-theme-start.test.ts: changed
+        tests/server/root/hooks-server.test.ts: changed
+        tests/server/root/process/config-cache.test.ts: imports at depth 1
+        tests/checks/look/contrast.test.ts: imports at depth 2
+        tests/server/desktop/window-guard.test.ts: imports at depth 2
+ok      prettier (11.6 s): All matched files use Prettier code style!
+ok      ASCII gate (12.3 s)
+ok      svelte-kit sync (76.5 s)
+ok      eslint (117.9 s)
+ok      vitest (150.4 s): Duration  63.84s (transform 112.84s, setup 0ms, import 180.98s, tests 9.97s, environment 2ms)
+ok      vitest slow (150.6 s): Duration  64.59s (transform 45.33s, setup 0ms, import 125.35s, tests 31.88s, environment 1ms)
+ok      vitest checks (163.8 s): Duration  77.80s (transform 5.69s, setup 0ms, import 28.41s, tests 47.24s, environment 0ms)
+ok      svelte-check (189.0 s): 1792750553199 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 265.6 s; every command passed
+   npx prettier --check src/lib/ui/theme/scrollbar.css src/routes/+layout.svelte src/hooks.server.ts: All matched files use Prettier code style!
+
+2. npx vitest run tests/server/root/hooks-server.test.ts tests/server/desktop/app-theme-start.test.ts tests/server/desktop/window-guard.test.ts tests/server/desktop/attached-themes.test.ts --reporter=verbose
+   every ground row passes: 'sends the ground of $row ...' x7 (C1, C3, desktop default, kanagawalotus C3b, C2, C6b x2), 'sends $row the start the workbench gets (C6)' x4, "sends no ground for an app's theme $row" x2, 'sends the HTML with no theme and the title when the theme cannot be computed', app-theme-start "is taken away by the page's first draw, and a later draw finds none and takes nothing"
+ Test Files  4 passed (4)
+      Tests  74 passed (74)
+
+3. npx vitest run tests/checks/tree/boundaries.test.ts
+   run 1: FAIL layer boundaries > holds across src/lib, Error: Test timed out in 5000ms.  Tests  1 failed | 10 passed (11)
+   run 2: Test Files  1 passed (1)  Tests  11 passed (11)
+
+4. wc -l: 13 src/app.html | 222 src/hooks.server.ts | 185 src/lib/shell/window/appearance.svelte.ts | 132 src/lib/themes/parse.ts | 224 src/lib/ui/theme/app-theme.ts | 176 src/lib/ui/theme/theme.ts | 14 src/lib/ui/theme/scrollbar.css | 44 src/routes/+layout.svelte | 490 tests/server/desktop/app-theme-start.test.ts | 574 tests/server/root/hooks-server.test.ts | 101 docs/diagrams/layers.dot | 556 docs/diagrams/layers.svg
+   sh utils/folder-check.sh: printed nothing, exit 0 (src/lib/ui/theme: 5 items)
+
+5. sh utils/unused-exports.sh > <scratchpad>/unused-partF-r1.txt (one file written in the reviewer's session scratchpad, nothing in the repository); diff ../migration-O39-partF-base/unused-exports.txt <that file>: exit 0, no line; "Unused exports (230)", 343 lines
+
+6. git diff -U0 d82cd0c3 -- src tests (added comment lines and test titles) plus src/lib/ui/theme/scrollbar.css, grep -inw for the history words of spec.md "What every package obeys":
+   10 hits. Nine are "before" and name the order of events while a page loads: the groundElement doc, the pageTheme doc (three), the comment above handle, the windowColours sentence of parse.ts, the GROUND_STYLE_ID doc, the hooks-server.test.ts head comment and scrollbar.css:7. The tenth, "still wanted" (drawTheme doc), refers to a load in flight. None names a package, a date or an earlier state of the code.
+
+7. grep -rn --exclude=local.yml "oculus-ground\|GROUND_STYLE_ID\|ground-style\|themeGround\|GROUND_BAR\|groundElement\|scrollbar\.css\|scrollbarCss\|SCROLLBAR\b" src tests config docs README.md (docs/diagrams left out)
+   src/app.html:8; src/hooks.server.ts:9,13,14,62,64,67,69,86,87,117,125,154,156,208; src/lib/ui/theme/theme.ts:5,41,45,135,147; src/lib/themes/parse.ts:7,117,123,128; src/routes/+layout.svelte:4,16; tests/server/desktop/app-theme-start.test.ts:54,81; tests/server/root/hooks-server.test.ts:40,67,276,281,477 (the grep -n of the report adds 280,290, the same declarations). No hit in config, docs or README.md. grep -rn GROUND_BAR src tests docs README.md: exit 1.
+   grep -rni "scrollbar\|scroll bar" docs README.md (diagrams left out): no hit, so no document describes the moved rule.
+
+Commands the round's report quotes, rerun:
+- grep -rn "scrollbar-color" src: GlyphList.svelte:70, HueSelect.svelte:102, SuggestInput.svelte:185 (each `!important`), src/lib/ui/theme/scrollbar.css:13. grep -rn "scrollbar-color" src/routes src/hooks.server.ts: exit 1. Matches the report.
+- grep -c "<" src/lib/ui/theme/scrollbar.css: 0. wc -c: 1028 (lines 1-10, the head comment, 933 bytes; lines 11-14, the rule, 95 bytes).
+- The ASCII perl gate of spec.md over $(find src tests config -type f ! -name local.yml): printed nothing, exit 0. LC_ALL=C grep -n '[^ -~]' over the 12 changed files and the report: exit 1.
+- grep -rn "first paint\|first frame" docs README.md: one hit, docs/HELP.md:514.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since d82cd0c3:
+
+- 1: holds. `src/app.html:8` puts `%oculus.ground-style%` ahead of `%sveltekit.head%`. `pageTheme` reads the ground over `tokensCss` and the same `themes` text `derivedTokens` gets (`src/hooks.server.ts:115-118`). `groundElement` (`:66-70`) writes `html { background: <hex> }` followed by the text of `src/lib/ui/theme/scrollbar.css`, and the layout imports that same sheet (`src/routes/+layout.svelte:16`). The scrollbar rule is now held once in `src`: the `:global(*)` rule and `GROUND_BAR` are gone, and the test builds its expected text from the sheet (`hooks-server.test.ts:280-291`). The `*` selector has specificity zero wherever it sits. The three components that hide their bar (`Tabs.svelte:416`, `StatusBar.svelte:396`, `RailList.svelte:76`) do it with scoped class rules, and the three `!important` rules outrank it anyway. So moving the rule from the layout's component style into an imported sheet changes nothing a box draws. The 7 ground rows and 4 page-kind rows pass (verification 2).
+- 2: holds. `themeGround` returns null for a value that is not hex (`parse.ts:117-120`). No ground is read for a withheld block (`hooks.server.ts:115-118`, unchanged this round as ruling 4 says). The catch sends `ground: ''`. The two C6 rows and the C7 assertion pass.
+- 3: holds. `document.getElementById(GROUND_STYLE_ID)?.remove()` (`theme.ts:147`), through `Themeable.getElementById`. The G118 row passes.
+- 4: holds. `themeGround` is shared by `windowColours` (`parse.ts:128`) and `pageTheme` (`hooks.server.ts:117`). window-guard and attached-themes pass.
+- 5: holds. The head comment of `parse.ts:7-15` now says the ground goes in a style element of its own ahead of the head Kit fills, and that the page's first `applyTheme` takes it away. It also says `windowColours` returns the two colours and the host (`desktop/windows/start-colours.ts`) fills the window. This closes Spec 2 and Standards 3 of the first report. The other comments the item names read true. Two small errors in the sheet's new head comment are listed under Findings 1 and 2; neither is a sentence item 5 names.
+- 6: holds. Every row the item names is present and passes. The report now says that the two no-ground rows and the C7 assertion passed on the unchanged tree because the change keeps that behaviour, which closes Spec 1 of the first report. No row was added this round, and the one expected-text change is the ruling's.
+
+Cases of the brief's "Cases":
+
+- C1: met for the first HTML. The row 'theme dark (C1)' asserts the whole element text and that the element precedes `%sveltekit.head%`. The frames are the look at landing.
+- C2: met for the first HTML (row C2). The first frame is the look.
+- C1b: met for the first HTML. Every ground row compares the element with the colour followed by the sheet's whole text, the scrollbar rule included. The frames on a view that scrolls are the look.
+- C3: met (row C3, `#f1f5f9`).
+- C3b: met (the two C3b rows, `#181818` and `#e5ddb0`).
+- C3c: not verifiable here. Frames under the built server need the look. By reading, the ground element precedes every link Kit writes.
+- C4: met for the removal (the G118 row). The whole window after a theme change is the look.
+- C5: met (the four 'sends $row the start the workbench gets (C6)' rows). The frames are the look.
+- C6: met (the two no-ground rows).
+- C6b: met (the two not-approved rows). A file that does not resolve takes the same branch of `pageTheme`, as the first report reads.
+- C7: met (`grounds(sent.html)` is `[]`, and no `%oculus.` text is left).
+- C8: met (window-guard and attached-themes pass).
+- C9: met (74 of 74 rows in the four files).
+
+### Findings
+
+The point the caller asked about is not a finding. The ground element carries the sheet's whole text, its head comment included: 1028 bytes of sheet (`wc -c`), of which 933 are the comment. The whole element is about 1091 bytes for a seven-character hex colour. That comment is there because two requirements meet:
+- Round ruling 1 says the hook reads the sheet with `?raw`, "as it reads `tokens.css`", and `?raw` returns the file as it is.
+- spec.md "What every package obeys" requires every added module to open with a head comment, and all 25 stylesheets under `src` open with one (`head -2` of each).
+
+Keeping the comment out would take one of two things. One is a comment stripper in the hook, a second reader of CSS text beside `parseBlocks`, against spec.md "The principles" (a parser exists once; KISS). The other is a sheet without a head comment, which breaks the head-comment rule. I looked for a failure scenario on three counts and found none:
+- Cost: about 0.9 KB more in a page's first HTML, served by the local server. No rule of spec.md or the brief bounds that size, and no decision rests on it.
+- Safety: the one text that would break the element is `</style`. `stylesOf` (`hooks-server.test.ts:264-266`) stops at the first `</style>`, and every ground row expects the sheet's whole text, so every ground row would fail on it.
+- Exposure: the comment shows only in View Source. It is not text a reader of the page sees, so the catalog rule of spec.md does not reach it.
+
+The builder's report states the bytes and the comment, both in "Before and after, for the look" and under limitations, so nothing about it is hidden.
+
+The findings of this round:
+
+1. Standards. `src/lib/ui/theme/scrollbar.css:9-10`: "The server writes this text into the element as it is, so it holds no left angle bracket, which would end the element early."
+   - What is wrong: the reason given is false. In HTML a style element's text ends only at `</style` (the appropriate end tag), and a bare `<` is text. The report's limitations repeat the claim: "a left angle bracket in that sheet would end the element early ... and every ground row ... would fail on it". For a bare `<`, the element stays whole and every ground row passes. The rule the comment prescribes (no `<` at all) is a safe superset, so nothing breaks today.
+   - Rule broken: spec.md "What every package obeys", the grep-and-carry rule (a head comment sentence the change makes false is a defect of the change).
+   - Failure scenario: a maintainer writes a media range query such as `@media (width < 40rem)` in the sheet. The comment tells them the element would end there, and they rewrite a valid rule or move it out of the shared sheet. A reader who trusts the comment also learns a wrong fact about where a style element ends.
+   - Fix at landing, one clause: "so it holds no `</style`, which would end the element early", or "so it holds no `<`, which keeps any closing tag out of it".
+   - Verdict: none.
+2. Standards. `src/lib/ui/theme/scrollbar.css:3-4`: "A box that keeps no bar at all, the rail's list and the tab strip, says so in its own component, whose class outranks this."
+   - What is wrong: three boxes keep no bar. The third is the status bar's strip (`src/lib/shell/status/StatusBar.svelte:396`, `scrollbar-width: none`, already at the base). Round ruling 1 asked that the moved comment be "made true", and the moved sentence still names two. The omission was already in the base's layout comment, but the round moved that comment under a ruling asking for it to be true.
+   - Rule: spec.md, the grep-and-carry rule.
+   - Failure scenario: a maintainer changing the page's bar (to `auto`, or adding `scrollbar-gutter`) checks the two named components for the boxes the change does not reach, misses the status bar, and its strip still draws no bar.
+   - Fix at landing, one clause: "the rail's list, the tab strip and the status bar".
+   - Verdict: none.
+3. Standards (the report). `.scratch/migration/agents/reviews/O39-partF-report.md`, "# Repair round 1", "Files after this round": "the first of those runs failed 3 rows with `ENOENT ... src/lib/tokens.css` from the `converted` helper's path, which is fixed (`tests/server/root/hooks-server.test.ts:299` reads `src/lib/themes/${name}`)".
+   - What is wrong: this narrates a wrong turn taken and backed out inside the round. spec.md "The working rules" asks that a report state the end state, with no narration of wrong turns. The snapshot-to-worktree diff has no hunk at the `converted` helper, so the end state there is the snapshot's.
+   - Failure scenario: the orchestrator reads that rows failed and spends a read finding out whether the helper changed this round and whether anything is still red.
+   - Verdict: none.
+
+The closures claimed, checked against the rerun and the read:
+- Spec 1 / Behaviour 1: closed, by the report's two sections, read in full.
+- Spec 2 / Standards 3: closed, by the new `parse.ts:7-15`.
+- Standards 1: closed by a fix, not by removing a check. The rule now has one holder in `src`, and the test compares the element with that holder instead of a copy of its own.
+- Standards 2: unchanged, as ruling 4 says.
+- The fix reaches beyond its finding in nothing outside the round's write list:
+  - `sheetText` now takes a path under `src/lib/`, and the twelve mocks are renamed accordingly, which the thirteenth mock needs.
+  - The layout's head comment names the new import.
+  - The diagram labels "routes to ui" 12 to 13 and "src to ui" 1 to 2 match the layout's new import and the hook's `?raw` import, the same way the base already counts `tokens.css?raw` under "src to themes".
+
+### Declined to judge
+
+- Every frame (C1, C1b, C2, C3c, C4's whole window, C5's frames, and the error page's frames). A read and a rerun cannot show a frame; the look at landing settles them.
+- The boundaries check's first red run was a 5000 ms timeout on 'holds across src/lib' with no assertion failing, and the second run passed 11 of 11. Whether load from other suites causes the timeout is not established. The step changes no file of that check, and its new import edges (route to ui, src to ui) are kinds the base already has.
+- `tests/checks/diagrams/diagrams.test.ts` 'are what the source gives now', run outside the brief's list, timed out at 5000 ms. It is not counted, and `npm run diagrams` was not run because it writes. The diagram change is judged by reading, above.
+- The builder's `git diff --numstat`, `git diff -- <path>` and `git show` reads, which ruling 263 (a) now allows a builder. Their outputs were not rerun in those forms; `git diff d82cd0c3` and the snapshot diffs stood in.
+- The builder's single run of the verify list this round and its `npm run format`: these are counts no decision rests on, and `npm run format` writes, so it was not rerun.
+
+Reviewer usage: a59a8e2d9a8cb5ab5, claude-opus-5-5, 191148 tokens, 41 tool uses, 14 min 36 s.

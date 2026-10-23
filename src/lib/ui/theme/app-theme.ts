@@ -8,12 +8,13 @@
 // A theme is loaded by the name the `theme` option holds it under (data/helpers/files/apps/
 // choices.ts), so a page that holds only that name, the find page and the presenter's pages, loads
 // it the same way the workbench does. The theme a page starts on is in the page's first HTML
-// already: the server writes its body class, the tokens derived for it on the root element and,
-// for an app's theme, the block of its file in that style element (hooks.server.ts), so the first
-// paint is the theme's. The page's first load carries the same file, which the page hands its
-// first draw (`ThemeDraw.file`); the draw converts it here and replaces the text of the element the
-// server sent, in the browser and in the desktop app's window alike. The route serves every theme
-// chosen after it.
+// already: the server writes its ground, its `--bg` on the root element in a style element of its
+// own, its body class, the tokens derived for it on the root element and, for an app's theme, the
+// block of its file in that style element (hooks.server.ts), so the first paint is the theme's.
+// The page's first load carries the same file, which the page hands its first draw
+// (`ThemeDraw.file`); the draw converts it here, replaces the text of the element the server sent
+// and takes the ground element away (`applyTheme`), in the browser and in the desktop app's window
+// alike. The route serves every theme chosen after it.
 
 import {
     APP_THEME_CLASS,
@@ -160,13 +161,14 @@ function paintLoad(
 /**
  * Put a theme on the document. A theme of the configuration is its classes; an app's is converted,
  * its block put in the document and its tokens derived from it. The page's first paint comes from
- * the HTML the server sent, which holds the start theme's class, its derived tokens and, for an
- * app's theme, its block; an app's theme the draw hands the file of (`file`, which the page's first
- * load carries) is drawn from that file at once, the draw replacing the text of the style element
- * the server sent, and any other draw of an app's theme loads its file from the server. Answers
- * false when an app's theme could not be loaded and the page drew `classes` instead, which for an
- * app's theme is the start theme's. `current` says whether the draw is still wanted once the load
- * has returned.
+ * the HTML the server sent, which holds the start theme's ground, its class, its derived tokens
+ * and, for an app's theme, its block; the first draw takes the ground away (`applyTheme`). An app's
+ * theme the draw hands the file of (`file`, which the page's first load carries) is drawn from
+ * that file at once, the draw replacing the text of the style element the server sent, and any
+ * other draw of an app's theme loads its file from the server, the ground staying until it has
+ * drawn. Answers false when an app's theme could not be loaded and the page drew `classes` instead,
+ * which for an app's theme is the start theme's. `current` says whether the draw is still wanted
+ * once the load has returned.
  */
 export async function drawTheme(
     document: Themeable & AppThemeDocument,

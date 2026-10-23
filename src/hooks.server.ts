@@ -6,10 +6,12 @@ import { escapeAttribute } from '$lib/data/prose/markdown/markdown';
 import { sameOrigin } from '$lib/server/core/auth';
 import { requestStart } from '$lib/server/machine/apps/routes/theme';
 import { serverContext } from '$lib/server/root/context';
+import { parseBlocks, themeGround } from '$lib/themes/parse';
 import themesCss from '$lib/themes/themes.css?raw';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import { APP_THEME_STYLE_ID, themeSheet, type ResolvedTheme } from '$lib/themes/vscode-map';
-import { derivedTokens, THEME_SHEETS, withThemeBlock } from '$lib/ui/theme/theme';
+import scrollbarCss from '$lib/ui/theme/scrollbar.css?raw';
+import { derivedTokens, GROUND_STYLE_ID, THEME_SHEETS, withThemeBlock } from '$lib/ui/theme/theme';
 import { json, type Handle, type RequestEvent } from '@sveltejs/kit';
 
 /** The routes the origin guard judges: every API route, and not the page. */
@@ -57,23 +59,41 @@ function routePath(event: RequestEvent): string | null {
 const PLACEHOLDER = /%oculus\.([a-z-]+)%/g;
 
 /**
- * A page's start theme as it is sent: the root element's style attribute value, the body's class
- * attribute value and the style element.
+ * The ground element for the ground `colour`, a hex colour `themeGround` read, and the empty
+ * string for none: the colour as the root element's background, then the text of the page's
+ * scrollbar sheet (ui/theme/scrollbar.css), which the layout imports, so the frames before the
+ * layout's sheets have loaded draw the theme's bar in the two tokens the root element carries.
  */
-type PageTheme = { rootStyle: string; bodyClass: string; style: string };
+function groundElement(colour: string | null): string {
+    if (colour === null) return '';
+    return `<style id="${GROUND_STYLE_ID}">html { background: ${colour} }\n${scrollbarCss}</style>`;
+}
+
+/**
+ * A page's start theme as it is sent: the root element's style attribute value, the body's class
+ * attribute value, the style element of an app's theme and the ground element.
+ */
+type PageTheme = { rootStyle: string; bodyClass: string; style: string; ground: string };
 
 /**
  * The start theme a page is sent with (`requestStart`): the body class string, escaped for the
  * attribute; for an app's theme the style element the page's first draw replaces, holding the
- * block the page's own conversion makes of the same file; and the tokens `applyTheme` derives for
- * that class over those sheets (`derivedTokens`), as the root element's style, where the page's
- * draw sets them, so a frame that paints the mounted page before its draw has run, as one does
- * while the workbench loads the file of an app's theme the first load carries none of, has the
- * start theme's derived tokens. The page draws the CRT overlay only on the workbench, `/` and a
- * float window. A block whose text holds `<` is not sent and the page draws it after: no value of
- * a theme file reaches the block, which holds hex colours and the values of tokens.css and
- * themes.css, so this covers the text of those two sheets, the one source a `<` that closed the
- * element could come from. Should the start not be computed, the page is sent with no theme.
+ * block the page's own conversion makes of the same file; the tokens `applyTheme` derives for that
+ * class over those sheets (`derivedTokens`), as the root element's style, where the page's draw
+ * sets them, so a frame that paints the mounted page before its draw has run, as one does while
+ * the workbench loads the file of an app's theme the first load carries none of, has the start
+ * theme's derived tokens; and the ground element, the theme's `--bg` over the same sheets
+ * (`themeGround`) as the root element's background with the page's scrollbar sheet
+ * (`groundElement`), in a style element of its own (`GROUND_STYLE_ID`), so the frames before any
+ * stylesheet has loaded, which under the dev server come before the page's script runs, are the
+ * theme's ground and bar; the page's first `applyTheme` takes it away. The page draws the CRT
+ * overlay only on the workbench, `/` and a float window. A block whose text holds `<` is not sent
+ * and the page draws it after: no value of a theme file reaches the block, which holds hex colours
+ * and the values of tokens.css and themes.css, so this covers the text of those two sheets, the
+ * one source a `<` that closed the element could come from. The ground is sent only as a hex
+ * colour, and not for an app's theme whose block is not sent, whose ground over the sheets alone
+ * would be the light `:root` one. Should the start not be computed, the page is sent with no
+ * theme and no ground.
  */
 function pageTheme(event: RequestEvent): PageTheme {
     try {
@@ -92,15 +112,20 @@ function pageTheme(event: RequestEvent): PageTheme {
         const sent = sheet !== null && !sheet.css.includes('<');
         const themes = sent ? withThemeBlock(sheet.css) : THEME_SHEETS;
         const tokens = Object.entries(derivedTokens(start.classes, tokensCss, themes));
+        const ground =
+            sheet === null || sent
+                ? themeGround(parseBlocks(`${tokensCss}\n${themes}`), start.classes)
+                : null;
         return {
             rootStyle: escapeAttribute(
                 tokens.map(([name, value]) => `${name}: ${value}`).join('; ')
             ),
             bodyClass: escapeAttribute(start.classes),
-            style: sent ? `<style id="${APP_THEME_STYLE_ID}">${sheet.css}</style>` : ''
+            style: sent ? `<style id="${APP_THEME_STYLE_ID}">${sheet.css}</style>` : '',
+            ground: groundElement(ground)
         };
     } catch {
-        return { rootStyle: '', bodyClass: '', style: '' };
+        return { rootStyle: '', bodyClass: '', style: '', ground: '' };
     }
 }
 
@@ -124,14 +149,19 @@ function refused(event: RequestEvent): boolean {
 // so a value is written as it is and never read as another placeholder or a replacement pattern:
 // the document title `%oculus.title%`, from the catalog like every other string, and the theme the
 // page starts on, so its first paint is that theme's ground in a browser tab and in a window of the
-// desktop app alike. The theme is the body class string `%oculus.body-class%`, the derived tokens
-// on the root element `%oculus.root-style%` and, for an app's colour theme, the style element
-// `%oculus.theme-style%` (`pageTheme`). A placeholder of another name is left as it is. A request
-// of the desktop app's window, whose user agent carries the host's mark, starts on `app_theme`, as
-// its page does; a browser whose user agent carries the mark as a word is sent the same start, and
-// its page, which has no bridge to the host, starts as a browser's does, so where the two starts
-// differ it is drawn again, one change of colour. The page data comes from a request of its own,
-// so a config changed between the two is drawn when the page's script draws, one change of colour.
+// desktop app alike, under the built server, which links the stylesheets in the head, and under
+// the dev server, whose page loads them from its script. The theme is the ground element
+// `%oculus.ground-style%`, ahead of the head Kit fills so it comes before any script and
+// stylesheet, holding the theme's `--bg` as the root element's background and the text of the
+// page's scrollbar sheet (ui/theme/scrollbar.css) until the page's first draw takes it away, the
+// body class string `%oculus.body-class%`, the derived tokens on the root element
+// `%oculus.root-style%` and, for an app's colour theme, the style element `%oculus.theme-style%`
+// (`pageTheme`). A placeholder of another name is left as it is. A request of the desktop app's
+// window, whose user agent carries the host's mark, starts on `app_theme`, as its page does; a
+// browser whose user agent carries the mark as a word is sent the same start, and its page, which
+// has no bridge to the host, starts as a browser's does, so where the two starts differ it is
+// drawn again, one change of colour. The page data comes from a request of its own, so a config
+// changed between the two is drawn when the page's script draws, one change of colour.
 //
 // The configuration is read only by a request that asks for it, through `locals.config`, which the
 // page's title, its theme and its load function read through: the first call of a request reads it
@@ -174,7 +204,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             title: t('app.title'),
             'root-style': theme.rootStyle,
             'body-class': theme.bodyClass,
-            'theme-style': theme.style
+            'theme-style': theme.style,
+            'ground-style': theme.ground
         };
     };
     const response = await resolve(event, {

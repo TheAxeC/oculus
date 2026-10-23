@@ -80,7 +80,7 @@ digraph layers {
     "routes to shell" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="302.79,170.41!"];
     "routes to state" [label="28", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="430.29,43.41!"];
     "routes to themes" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="728.81,189.41!"];
-    "routes to ui" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="430.29,117.41!"];
+    "routes to ui" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="430.29,117.41!"];
     "routes to views" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="302.79,91.41!"];
     "server to data" [label="514", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1600.37,211.41!"];
     "shell to data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="578.02,175.41!"];
@@ -89,8 +89,8 @@ digraph layers {
     "src to data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="175.34,325.41!"];
     "src to routes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="94.34,233.41!"];
     "src to server" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="728.81,304.41!"];
-    "src to themes" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="94.34,283.41!"];
-    "src to ui" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="175.34,84.41!"];
+    "src to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="94.34,283.41!"];
+    "src to ui" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="175.34,84.41!"];
     "state to data" [label="451", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1600.37,55.41!"];
     "ui to data" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1600.37,131.41!"];
     "ui to state" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1006.65,53.41!"];

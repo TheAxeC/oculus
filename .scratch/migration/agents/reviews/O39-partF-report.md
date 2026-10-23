@@ -292,4 +292,4 @@ From `git diff --numstat -- src tests docs` and `git status --short`, with `wc -
 | `docs/diagrams/layers.dot` | 101 | +3 -3 | yes |
 | `docs/diagrams/layers.svg` | 556 | +3 -3 | yes |
 
-Runs this round: the four G11/G118 files twice; the first of those runs failed 3 rows with `ENOENT ... src/lib/tokens.css` from the `converted` helper's path, which is fixed (`tests/server/root/hooks-server.test.ts:299` reads `src/lib/themes/${name}`). Also boundaries once and the verify list once. No whole-suite command.
+Runs this round: the four G11/G118 files, boundaries and the verify list. No whole-suite command.

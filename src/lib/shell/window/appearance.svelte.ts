@@ -10,10 +10,11 @@
 // off macOS, with the drawn theme's background, which the host fills the window with; a page in a
 // browser has no host and sends nothing.
 //
-// The page's first HTML is sent with the theme it starts on, its body class, the tokens derived for
-// it and the block of an app's theme (hooks.server.ts), so the first paint is that theme's, the
-// wallpaper's class and its properties excepted, which come with this module's first draw. The
-// page's first load carries the files of the app themes the `theme` and `app_theme` options name
+// The page's first HTML is sent with the theme it starts on, its ground, its body class, the tokens
+// derived for it and the block of an app's theme (hooks.server.ts), so the first paint is that
+// theme's, the wallpaper's class and its properties excepted, which come with this module's first
+// draw, which also takes the ground element away (`applyTheme` of ui/theme/theme.ts). The page's
+// first load carries the files of the app themes the `theme` and `app_theme` options name
 // (`files`), and the first draw of each such theme is made from its file (`firstDrawFile` of
 // ui/theme/app-theme.ts), so the first draw keeps what the HTML showed. A later draw of the theme
 // loads its file from the server, so a theme whose file changed after the first load is drawn as it

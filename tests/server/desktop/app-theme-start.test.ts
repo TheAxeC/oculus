@@ -7,7 +7,7 @@
 // the page's mapping makes of it (`startColours`). An app that is not approved, an app that is
 // disabled and a theme file that does not resolve give the start of the rows; for the first two
 // the lookup of the saved name answers `closed`, on which `appThemeOf` returns before it opens a
-// file of the app.
+// file of the app. The page's first `applyTheme` takes away the ground element of its first HTML.
 //
 // Vitest empties a stylesheet a module reads as text, so the two sheets the page converts an app's
 // theme over are handed the text the browser reads. The modules under test are loaded after the
@@ -50,19 +50,22 @@ type Modules = {
     drawConfiguredTheme: typeof import('../../../src/lib/ui/theme/app-theme.ts').drawConfiguredTheme;
     drawTheme: typeof import('../../../src/lib/ui/theme/app-theme.ts').drawTheme;
     firstDrawFile: typeof import('../../../src/lib/ui/theme/app-theme.ts').firstDrawFile;
+    applyTheme: typeof import('../../../src/lib/ui/theme/theme.ts').applyTheme;
+    groundId: typeof import('../../../src/lib/ui/theme/theme.ts').GROUND_STYLE_ID;
 };
 
 let loaded: Modules;
 
 beforeAll(async () => {
     vi.resetModules();
-    const [colours, choices, theme, choice, words, page] = await Promise.all([
+    const [colours, choices, theme, choice, words, page, drawn] = await Promise.all([
         import('../../../src/desktop/windows/start-colours.ts'),
         import('../../../src/lib/data/helpers/files/apps/choices.ts'),
         import('../../../src/lib/server/machine/apps/routes/theme.ts'),
         import('../../../src/lib/server/machine/apps/routes/choice.ts'),
         import('../../../src/lib/state/shared/words/appearance.ts'),
-        import('../../../src/lib/ui/theme/app-theme.ts')
+        import('../../../src/lib/ui/theme/app-theme.ts'),
+        import('../../../src/lib/ui/theme/theme.ts')
     ]);
     loaded = {
         startColours: colours.startColours,
@@ -73,7 +76,9 @@ beforeAll(async () => {
         words,
         drawConfiguredTheme: page.drawConfiguredTheme,
         drawTheme: page.drawTheme,
-        firstDrawFile: page.firstDrawFile
+        firstDrawFile: page.firstDrawFile,
+        applyTheme: drawn.applyTheme,
+        groundId: drawn.GROUND_STYLE_ID
     };
 });
 
@@ -454,5 +459,32 @@ describe('the theme a page is sent with', () => {
         if (drawnBy !== undefined) {
             expect(start.classes).toBe(await pageClass(config, marked, drawnBy));
         }
+    });
+});
+
+// The page's first HTML carries the start theme's ground in a style element of its own
+// (hooks.server.ts), and the page's first draw takes it away, so the ground from then on is the
+// layout's rule over the loaded sheets and a later theme paints the whole window.
+describe('the ground a page is sent with', () => {
+    it("is taken away by the page's first draw, and a later draw finds none and takes nothing", () => {
+        const head = [loaded.groundId, 'another-style'];
+        const asked: string[] = [];
+        const document = {
+            body: { className: '' },
+            documentElement: { style: { setProperty: () => undefined } },
+            getElementById: (id: string) => {
+                asked.push(id);
+                return head.includes(id)
+                    ? { remove: () => void head.splice(head.indexOf(id), 1) }
+                    : null;
+            }
+        };
+        const looks = { crt: false, brackets: true, monospace: true };
+        loaded.applyTheme(document, 'dark', looks);
+        expect(head).toEqual(['another-style']);
+        loaded.applyTheme(document, 'dark', looks);
+        expect(head).toEqual(['another-style']);
+        expect(asked).toEqual([loaded.groundId, loaded.groundId]);
+        expect(document.body.className).toBe('dark');
     });
 });
