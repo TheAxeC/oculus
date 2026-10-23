@@ -1,10 +1,11 @@
 In flight (0 of 6 slots in use):
 - none.
 
-Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state). Waits: nothing in the plan (O53 has landed); not started until Axel says go.
+Queued, in order (5 steps):
+- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274 and 275). Waits: open item 281 (focus merged into stage), then Axel's go.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
+- O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
 - O39 (oculus in its own repository). Waits: the desktop look C8 after `npm run app:package`, then the tick.
 
 Owed looks:
