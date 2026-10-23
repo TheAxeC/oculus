@@ -2,7 +2,7 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285 and 287). Waits: Axel's go.
+- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285 and 287). Waits: Axel's ruling on open item 288 (stopped at /spec).
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
