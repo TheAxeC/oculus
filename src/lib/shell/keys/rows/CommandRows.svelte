@@ -10,21 +10,27 @@
     // argument when the row was matched rather than typed by its name; the others change the CRT
     // overlay or the folder shown, open the Help or Keyboard Shortcuts view, add folders to the
     // workspace, reopen the tabs closed last, walk the navigation history back or forward
-    // (shell/titlebar/history-walk.ts), or hide or show the floats docked at an edge, and close
-    // the palette. A tab a command showed takes the keyboard on its head once the page has drawn
-    // it, since the tab chosen is where the reader went. Open Folder and Add Folder to Workspace
-    // close the palette as the folder panel opens, and what is left to say of them (a panel that
-    // did not open, a folder refused or a root already) is a notice; pressed while the panel is
-    // open, they say so in the palette, which stays open. A refusal of Close Workspace or of Add
-    // Task is said in the palette, which stays open. Add Task writes the task and posts a notice
-    // with an Open action; Shift+Enter, or a press with Shift held, opens the task's page as well.
-    // The commands that run at once, and the words of an unavailable one, are
-    // shell/window/colon-effects.ts's, which the app menu's answer runs too.
+    // (shell/titlebar/history-walk.ts), or hide or show the floats docked at an edge, and close the
+    // palette. A tab a command showed takes the keyboard on its head once the page has drawn it,
+    // since the tab chosen is where the reader went. Open Folder and Add Folder to Workspace close
+    // the palette as the folder panel opens, and what is left to say of them (a panel that did not
+    // open, a folder refused or a root already) is a notice; pressed while the panel is open, they
+    // say so in the palette, which stays open. A refusal of Close Workspace or of Add Task is said
+    // in the palette, which stays open. Add Task writes the task to a hub that holds the tasks
+    // collection (`hubsTaking` of state/shared/page/hubs.ts): with more than one, the rows turn
+    // into a second list of those hubs after the title is pressed, under a line naming the title,
+    // the primary first and selected, and the hub pressed takes the task; with one, the task goes
+    // there at once, primary or not. A title that makes no task is refused before any hub is asked.
+    // A press of the title or of a hub while a task is being written does nothing. Add Task posts a
+    // notice with an Open action; Shift+Enter, or a press with Shift held, at the title or at the
+    // hub, opens the task's page as well. The commands that run at once, and the words of an
+    // unavailable one, are shell/window/colon-effects.ts's, which the app menu's answer runs too.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { landOn } from '$lib/shell/keys/palette-open';
-    import { addTask } from '$lib/state/forms/new-entry';
+    import { addTask, taskTitleRefusal } from '$lib/state/forms/new-entry';
+    import type { TaskHubList } from '$lib/shell/keys/lists/task-hub-list.svelte';
     import { pageView } from '$lib/state/forms/page-entry';
     import { commandRowValue, type CommandRow } from '$lib/shell/keys/palette-modes';
     import type {
@@ -62,6 +68,8 @@
     type Props = {
         parsed: ParsedCommand;
         list: CommandRow[];
+        /** The hubs Add Task asks after its title, drawn in place of the commands while asked. */
+        hubs: TaskHubList;
         /** The caret of the source tab on screen and the lines of its file, or null with none. */
         caret: { line: number; column: number; lines: number } | null;
         onclose: () => void;
@@ -71,7 +79,7 @@
         onsaid: (words: string) => void;
     };
 
-    let { parsed, list, caret, onclose, onupdate, ontype, onsaid }: Props = $props();
+    let { parsed, list, hubs, caret, onclose, onupdate, ontype, onsaid }: Props = $props();
 
     /** Whether Shift is held, which the press of Add Task is read against. */
     let shifted = false;
@@ -94,15 +102,35 @@
         else onsaid(result.said);
     }
 
-    /** Add Task: the task written, a notice that opens it, and its page when Shift is held. */
-    async function addTaskTitled(title: string, open: boolean): Promise<void> {
+    /**
+     * Add Task pressed on its title: with more than one hub holding tasks and a title that makes a
+     * task, the hubs are asked; otherwise the task is added, or the title's refusal said.
+     */
+    function addTaskPressed(title: string, open: boolean): void {
+        if (hubs.hubs.length > 1 && taskTitleRefusal(title) === '') hubs.ask(title, open);
+        else void addTaskTitled(title, open);
+    }
+
+    /** Whether a task is being written, during which a press of the title or a hub does nothing. */
+    let adding = false;
+
+    /**
+     * Add Task: the task written to the hub `hub` names, or with none named to the one hub holding
+     * tasks, a notice that opens it, and its page when Shift is held.
+     */
+    async function addTaskTitled(title: string, open: boolean, hub?: string): Promise<void> {
+        if (adding) return;
+        adding = true;
         const added = await addTask(
             title,
             collectionsOfKey('tasks'),
             primary(),
             configMap(),
-            newEntry
-        );
+            newEntry,
+            hub
+        ).finally(() => {
+            adding = false;
+        });
         if (added.said !== '') {
             onsaid(added.said);
             return;
@@ -143,7 +171,7 @@
             return;
         }
         if (command.name === 'task-add') {
-            void addTaskTitled(argument, shifted);
+            addTaskPressed(argument, shifted);
             return;
         }
         if (command.name === 'folder') {
@@ -206,6 +234,20 @@
     />
 {/snippet}
 
+{#if hubs.asked !== null && hubs.active}
+    {@const asked = hubs.asked}
+    <p class="empty" data-task-hub-title>{t('app.palette.task_hub_title', asked.title)}</p>
+    {#each hubs.rows as row (row.value)}
+        <PaletteRow
+            row={{
+                value: row.value,
+                kind: t('app.palette.kind_hub'),
+                label: row.hub,
+                pick: () => void addTaskTitled(asked.title, asked.open || shifted, row.hub)
+            }}
+        />
+    {/each}
+{/if}
 {#each list as row (commandRowValue(row))}
     {#if row.kind === 'view'}
         <PaletteRow

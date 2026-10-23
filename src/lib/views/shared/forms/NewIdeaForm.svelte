@@ -1,10 +1,17 @@
 <script lang="ts">
     // Layer 3, shared view partial. The new-project form used by the four project boards and Lit
-    // Watch. A board gives its tier, and the form then offers a Folder field starting with the
-    // tier's `new_project_dir` entry and sends the tier and the folder with the write; Lit Watch
-    // gives none, and the server creates the project in the tier `projects` under that tier's
-    // `new_project_dir`. Optional seed values let a radar spark pre-fill the same form without
-    // duplicating its write.
+    // Watch. A new project could go to any hub of the workspace (`hubsTaking` of
+    // state/shared/page/hubs.ts): with more than one, the form draws a Hub field, the primary
+    // first and chosen; with one, it draws none. The write names the hub chosen. A board gives its
+    // tier, and the form then offers a Folder field and sends the tier and the folder with the
+    // write; Lit Watch gives none, and the server creates the project in the tier `projects`. The
+    // Folder starts with the tier's `new_project_dir` entry of the primary while the primary is
+    // chosen, and empty for another hub, whose settings the page does not hold; an empty Folder
+    // sends no folder, so the server takes the `new_project_dir` of the tier in the settings of the
+    // hub written to, and a hub that names none for it refuses, said here. A change of hub starts
+    // the Folder again from that hub's value and clears a Domain the hub's registry does not hold:
+    // the Domain choices are the chosen hub's own, so the key written resolves in that hub.
+    // Optional seed values let a radar spark pre-fill the same form without duplicating its write.
     // Escape closes it only while it is on screen: a pane keeps the view of a tab it hides mounted,
     // and a key pressed in another tab is not one this form was asked to answer.
 
@@ -15,8 +22,11 @@
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
     import { selectChoices } from '$lib/state/forms/schema';
+    import { hubsTaking } from '$lib/state/shared/page/hubs';
+    import { answerWords } from './answer-words';
 
     const {
+        fs: { primary, roots },
         selectors: { domainChoices, newProjectFolder },
         writes: { newIdea }
     } = useState();
@@ -31,14 +41,45 @@
     };
 
     let { onclose, onsaid, tier, seed, oncreated }: Props = $props();
-    let folder = $state(untrack(() => (tier === undefined ? '' : newProjectFolder(tier))));
+
+    /** The hubs a new project can be written to: every hub of the workspace, the primary first. */
+    const hubs = $derived(
+        hubsTaking(
+            roots()
+                .filter((one) => one.hub === true)
+                .map((one) => one.key),
+            primary()
+        )
+    );
+    /** The hub picked in the Hub field, the empty text while none is picked. */
+    let picked = $state('');
+    /** The hub the project is written to: the one picked, else the first of the list. */
+    const hub = $derived(picked === '' ? (hubs.at(0) ?? '') : picked);
+
+    /**
+     * The folder the form starts with for the hub `at`: the tier's `new_project_dir` entry of the
+     * primary while the primary is chosen (or no hub is read yet), and empty for another hub.
+     */
+    function startFolder(at: string): string {
+        if (tier === undefined) return '';
+        return at === '' || at === primary() ? newProjectFolder(tier) : '';
+    }
+
+    let folder = $state(untrack(() => startFolder(hub)));
     let id = $state(untrack(() => seed?.id ?? ''));
     let title = $state(untrack(() => seed?.title ?? ''));
     let short = $state('');
     let domain = $state('');
     let eli5 = $state(untrack(() => seed?.eli5 ?? ''));
-    const choices = $derived(selectChoices(domainChoices()));
+    const choices = $derived(selectChoices(domainChoices(hub)));
     let box: HTMLDivElement | undefined = $state();
+
+    /** Choose the hub: the Folder starts again, and a Domain its registry does not hold is cleared. */
+    function choose(next: string): void {
+        picked = next;
+        folder = startFolder(next);
+        if (!domainChoices(next).some((one) => one.id === domain)) domain = '';
+    }
 
     function keyed(event: KeyboardEvent): void {
         if (event.key === 'Escape' && box?.checkVisibility() === true) onclose();
@@ -46,20 +87,22 @@
 
     async function save(): Promise<void> {
         if (id.trim() === '') return;
-        const answer = await newIdea({
-            id: id.trim(),
-            ...(tier === undefined ? {} : { tier, folder: folder.trim() }),
-            ...(title.trim() === '' ? {} : { title: title.trim() }),
-            ...(short.trim() === '' ? {} : { short: short.trim() }),
-            ...(domain === '' ? {} : { domain }),
-            ...(eli5.trim() === '' ? {} : { eli5: eli5.trim() })
-        });
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
+        const named = folder.trim();
+        const answer = await newIdea(
+            {
+                id: id.trim(),
+                ...(tier === undefined ? {} : { tier }),
+                ...(tier === undefined || named === '' ? {} : { folder: named }),
+                ...(title.trim() === '' ? {} : { title: title.trim() }),
+                ...(short.trim() === '' ? {} : { short: short.trim() }),
+                ...(domain === '' ? {} : { domain }),
+                ...(eli5.trim() === '' ? {} : { eli5: eli5.trim() })
+            },
+            hub === '' ? undefined : hub
         );
-        if (answer.ok) {
+        // A refused field answers ok with nothing written: the form stays open and says why.
+        onsaid(answerWords(answer));
+        if (answer.ok && answer.refused.length === 0) {
             await oncreated?.();
             onclose();
         }
@@ -69,6 +112,14 @@
 <svelte:window onkeydown={keyed} />
 
 <div class="form" bind:this={box}>
+    {#if hubs.length > 1}
+        <Select
+            value={hub}
+            label={t('board.new_idea_hub')}
+            choices={hubs.map((one) => ({ id: one, label: one }))}
+            onchange={choose}
+        />
+    {/if}
     {#if tier !== undefined}
         <TextInput
             value={folder}

@@ -75,6 +75,7 @@
     import ArgumentRows from '$lib/shell/keys/rows/ArgumentRows.svelte';
     import { argumentChoices } from '$lib/shell/keys/lists/argument-list.svelte';
     import { createModeLists } from '$lib/shell/keys/lists/mode-lists.svelte';
+    import { taskHubs } from '$lib/shell/keys/lists/task-hub-list.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import { createFileNames } from '$lib/shell/keys/lists/file-names.svelte';
@@ -234,7 +235,8 @@
         choices: (root, language) => lsp.choices(root, language),
         arguments: () =>
             argumentChoices(client, knownViews, tab, current.snapshot?.entities.projects),
-        hint: (name) => listedCommands.find((one) => one.name === name)?.hint ?? ''
+        hint: (name) => listedCommands.find((one) => one.name === name)?.hint ?? '',
+        taskHubs: () => taskHubs(client)
     });
     const commandList = $derived(
         parsed === null || line !== null || lists.active
@@ -272,9 +274,7 @@
             choiceMode: lists.choiceMode,
             commandList,
             choiceList: lists.choiceRows,
-            modeList:
-                [lists.lintConfig, lists.clone, lists.argument].find((one) => one.active)?.rows ??
-                null
+            modeList: lists.modeRows
         })
     );
     const count = $derived(listed.count);
@@ -296,12 +296,15 @@
         return untrack(() => names.ask());
     });
 
-    // The second list is left with the language mode, and its first row is the selected one.
+    // The second list is left with the language mode, and its first row is the selected one, as
+    // the first row of Add Task's hubs is.
     $effect(() => {
         const second = lists.language.associating !== null;
+        const hubs = lists.taskHub.active;
         untrack(() => {
             if (!lists.language.active) lists.language.leave();
             else if (second) chosen = values.at(0) ?? chosen;
+            if (hubs) chosen = values.at(0) ?? chosen;
         });
     });
 
@@ -435,6 +438,7 @@
                                                     <CommandRows
                                                         {parsed}
                                                         list={commandList}
+                                                        hubs={lists.taskHub}
                                                         caret={lineHint}
                                                         {onclose}
                                                         {onupdate}

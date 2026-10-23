@@ -423,7 +423,7 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, 
 | `radar-add` | `{ kind, fields }`; `fields.title` required | no |
 | `linkedin-idea` | `{ kind, title, category? }` | yes, no undo |
 | `linkedin-post` | `{ kind, id }`; `id` the idea's id | yes, no undo |
-| `new-idea` | `{ kind, fields }`; `fields.id`, and `fields.tier` and `fields.folder` optional | yes, no undo |
+| `new-idea` | `{ kind, fields, root? }`; `fields.id`, and `fields.tier`, `fields.folder`, `fields.title`, `fields.short`, `fields.domain` and `fields.eli5` optional; `root` names the hub, which for an app is the primary hub alone | yes, no undo |
 
 - An `id`, a `target.id` and each id of `order` is the record's id, `<hub>:<key>`, a feed entry's included: its key is the title of a lead or a Lit Watch paper and the file's name of a LinkedIn idea. An id with no hub part is refused with 400, and an id whose hub part no workspace folder carries with 404. For an app the hub of a write that makes a record is the primary hub alone, so with no primary hub such a write (`new-entry`, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) is refused with 409; a `host` write goes to the career file of the primary hub, else of the first hub, as the page's does.
 - A write that makes or renames a record answers with the record's id, `<hub>:<key>`, in `id`.

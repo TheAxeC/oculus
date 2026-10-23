@@ -4,20 +4,25 @@
     // opens its page, and on that page (views/boards/entry/Entry.svelte), where it is handed no
     // page opener and its title is words. Feed rules stay in state and server modules.
     //
-    // The `applied` control opens Applications beside the view the card is drawn in, with an entry
-    // filled from the lead, and the lead is set to the status carrying `lead_applied` once that
-    // entry is placed (views/shared/card/feed/lead-apply.ts). The controls that write the lead are
-    // disabled, `blocked` as their title, while the leads file has unsaved text in a source tab.
-    // The `decline` control is a status write like reopen: it sets the lead's status to the word
-    // carrying `lead_declined` in the hub's file, so the change log records it and reopen puts the
-    // word carrying `default_lead` back. It is offered on an open lead alone, so a decline never
-    // writes over an outcome. Each flag is a word's of `statuses` in config/catalogs/vocab.yml.
+    // The `applied` control opens the Applications file of a hub beside the view the card is drawn
+    // in, with an entry filled from the lead, and the lead is set to the status carrying
+    // `lead_applied` once that entry is placed (views/shared/card/feed/lead-apply.ts). With more
+    // than one hub holding Applications, the control is a menu of those hubs, the primary first,
+    // and the hub picked takes the entry; with one, a press opens that hub's file. While the entry
+    // is being placed the control waits, and a second press or pick does nothing. The controls that
+    // write the lead are disabled, `blocked` as their title, while the leads file has unsaved text
+    // in a source tab. The `decline` control is a status write like reopen: it sets the lead's
+    // status to the word carrying `lead_declined` in the hub's file, so the change log records it
+    // and reopen puts the word carrying `default_lead` back. It is offered on an open lead alone,
+    // so a decline never writes over an outcome. Each flag is a word's of `statuses` in
+    // config/catalogs/vocab.yml.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
@@ -39,7 +44,7 @@
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';
-    import { applyFromLead } from './lead-apply';
+    import { applyFromLead, applyHubs } from './lead-apply';
 
     const client = useState();
     const {
@@ -75,6 +80,8 @@
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
     let sure = $state(false);
+    /** Whether an application from this lead is being placed, during which a pick does nothing. */
+    let applying = $state(false);
 
     const text = (field: string): string => textOrNumber(entry[field]);
     const title = $derived(text('title'));
@@ -93,6 +100,8 @@
     const tone = $derived(fitTone(fit, vocab));
     const sub = $derived(`${institution} | ${country}`);
     const note = $derived(`${focus}${fit === '' ? '' : ` - ${fit}`}`);
+    /** The hubs whose Applications file an application from this lead can go to. */
+    const hubs = $derived(applyHubs(client));
     const deadlineTail = $derived(
         expired ? (isClosed(vocab, status) ? status : t('leads.expired')) : ''
     );
@@ -112,9 +121,18 @@
         say(await writeFeedField('leads', record, 'status', next));
     }
 
-    /** Open Applications with an entry filled from this lead, and mark the lead applied. */
-    async function apply(): Promise<void> {
-        onsaid(await applyFromLead(client, entry, beside));
+    /**
+     * Open the Applications file of the hub `hub` with an entry filled from this lead, and mark
+     * the lead applied; a press or pick while one is placed does nothing.
+     */
+    async function apply(hub: string): Promise<void> {
+        if (applying) return;
+        applying = true;
+        try {
+            onsaid(await applyFromLead(client, entry, beside, hub));
+        } finally {
+            applying = false;
+        }
     }
 
     async function remove(): Promise<void> {
@@ -150,13 +168,24 @@
             {/if}
             {#if identity !== ''}
                 <span class="actions">
-                    {#if !isApplied(vocab, status)}
+                    {#if !isApplied(vocab, status) && hubs.length > 1}
+                        <Menu
+                            label={t('leads.action.applied')}
+                            title={why(t('leads.action.applied_hub_tip'))}
+                            small
+                            placement="down"
+                            waiting={blocked !== '' || applying}
+                            items={hubs.map((hub) => ({ id: hub, label: hub }))}
+                            onpick={(hub: string) => void apply(hub)}
+                        />
+                    {:else if !isApplied(vocab, status)}
                         <ToolButton
                             label={t('leads.action.applied')}
                             title={why(t('leads.action.applied_tip'))}
                             small
                             disabled={blocked !== ''}
-                            onclick={apply}
+                            waiting={applying}
+                            onclick={() => apply(hubs.at(0) ?? '')}
                         />
                     {/if}
                     {#if isOpen(vocab, status)}

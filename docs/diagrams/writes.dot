@@ -1,82 +1,84 @@
 digraph writes {
-    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica", fontsize=12, nodesep=0.2, ranksep=0.5, newrank=true, labeljust=l, layout=nop2, splines=true, bb="0.00,0.00,756.24,9591.71"];
+    graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica", fontsize=12, nodesep=0.2, ranksep=0.5, newrank=true, labeljust=l, layout=nop2, splines=true, bb="0.00,0.00,756.24,9560.71"];
     node [shape=box, color="black", fontcolor="black", fontname="Helvetica", fontsize=10, height=0.3, margin="0.12,0.04"];
     edge [color="black", fontcolor="black", fontname="Helvetica", fontsize=8, arrowsize=0.6];
     subgraph "cluster_1. lib/server/core" {
-        bb="301.19,9523.71,392.55,9583.71"; lp="346.87,9572.51";
+        bb="301.19,9492.71,392.55,9552.71"; lp="346.87,9541.51";
         label="lib/server/core"; style=solid;
-        "1. lib/server/core/auth.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">auth.ts</TD></TR></TABLE>>, pos="346.37,9542.71!"];
+        "1. lib/server/core/auth.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">auth.ts</TD></TR></TABLE>>, pos="346.37,9511.71!"];
     }
     subgraph "cluster_1. lib/server/edit" {
-        bb="113.37,9523.71,200.73,9583.71"; lp="157.05,9572.51";
+        bb="113.37,9492.71,200.73,9552.71"; lp="157.05,9541.51";
         label="lib/server/edit"; style=solid;
-        "1. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9542.71!"];
+        "1. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9511.71!"];
     }
     subgraph "cluster_1. routes/api/write" {
-        bb="0.00,9523.71,97.37,9583.71"; lp="48.69,9572.51";
+        bb="0.00,9492.71,97.37,9552.71"; lp="48.69,9541.51";
         label="routes/api/write"; style=solid;
-        "1. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9542.71!"];
+        "1. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9511.71!"];
     }
-    "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [label="tokenedBody", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="250.96,9542.71!"];
-    "1. lib/server/edit/writes.ts" -> "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,9542.71 190.16,9542.71 199.45,9542.71 208.73,9542.71 214.06,9542.71 219.40,9542.71 224.73,9542.71"];
-    "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" -> "1. lib/server/core/auth.ts" [style=dashed, pos="e,325.86,9542.71 277.19,9542.71 282.53,9542.71 287.86,9542.71 293.19,9542.71 301.59,9542.71 309.99,9542.71 318.39,9542.71"];
-    "1. routes/api/write/+server.ts" -> "1. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9542.71 75.77,9542.71 85.64,9542.71 95.50,9542.71 105.37,9542.71 111.87,9542.71 118.38,9542.71 124.88,9542.71"];
+    "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [label="tokenedBody", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="250.96,9511.71!"];
+    "1. lib/server/edit/writes.ts" -> "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,9511.71 190.16,9511.71 199.45,9511.71 208.73,9511.71 214.06,9511.71 219.40,9511.71 224.73,9511.71"];
+    "1. lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" -> "1. lib/server/core/auth.ts" [style=dashed, pos="e,325.86,9511.71 277.19,9511.71 282.53,9511.71 287.86,9511.71 293.19,9511.71 301.59,9511.71 309.99,9511.71 318.39,9511.71"];
+    "1. routes/api/write/+server.ts" -> "1. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9511.71 75.77,9511.71 85.64,9511.71 95.50,9511.71 105.37,9511.71 111.87,9511.71 118.38,9511.71 124.88,9511.71"];
     subgraph "cluster_2. lib/server/core" {
-        bb="216.73,9423.71,426.33,9483.71"; lp="262.41,9472.51";
+        bb="216.73,9392.71,426.33,9452.71"; lp="262.41,9441.51";
         label="lib/server/core"; style=solid;
-        "2. lib/server/core/changes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">changes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="254.91,9442.71!"];
-        "2. lib/server/core/json.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">json.ts</TD></TR></TABLE>>, pos="391.33,9442.71!"];
+        "2. lib/server/core/changes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">changes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="254.91,9411.71!"];
+        "2. lib/server/core/json.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">json.ts</TD></TR></TABLE>>, pos="391.33,9411.71!"];
     }
     subgraph "cluster_2. lib/server/edit" {
-        bb="113.37,9423.71,200.73,9483.71"; lp="157.05,9472.51";
+        bb="113.37,9392.71,200.73,9452.71"; lp="157.05,9441.51";
         label="lib/server/edit"; style=solid;
-        "2. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9442.71!"];
+        "2. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9411.71!"];
     }
     subgraph "cluster_2. routes/api/write" {
-        bb="0.00,9423.71,97.37,9483.71"; lp="48.69,9472.51";
+        bb="0.00,9392.71,97.37,9452.71"; lp="48.69,9441.51";
         label="routes/api/write"; style=solid;
-        "2. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9442.71!"];
+        "2. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9411.71!"];
     }
-    "2. file on disk" [shape=cylinder, margin=0, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">file on disk</TD></TR></TABLE>>, pos="519.69,9409.71!"];
-    "2. lib/server/core/changes.ts to file on disk (calls)" [label="appendFileSync, mkdirSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="391.33,9409.71!"];
-    "2. lib/server/core/changes.ts" -> "2. lib/server/core/changes.ts to file on disk (calls)" [arrowhead=none, pos="285.09,9437.71 292.43,9437.71 299.76,9437.71 307.09,9437.71 307.09,9428.38 307.09,9419.04 307.09,9409.71 312.43,9409.71 317.76,9409.71 323.09,9409.71"];
-    "2. lib/server/core/changes.ts to file on disk (calls)" -> "2. file on disk" [pos="e,491.57,9409.71 459.57,9409.71 464.90,9409.71 470.24,9409.71 475.57,9409.71 478.44,9409.71 481.30,9409.71 484.17,9409.71"];
-    "2. lib/server/core/changes.ts" -> "2. lib/server/core/json.ts" [tooltip="chained, writeTextAtomic", pos="e,364.33,9442.71 285.09,9447.71 290.43,9447.71 295.76,9447.71 301.09,9447.71 301.09,9446.04 301.09,9444.38 301.09,9442.71 319.80,9442.71 338.50,9442.71 357.21,9442.71"];
-    "2. lib/server/edit/writes.ts" -> "2. lib/server/core/changes.ts" [tooltip="changeAt, defaultChangesPath, logChanges", pos="e,224.73,9442.71 180.88,9442.71 190.16,9442.71 199.45,9442.71 208.73,9442.71 211.63,9442.71 214.54,9442.71 217.44,9442.71"];
-    "2. routes/api/write/+server.ts" -> "2. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9442.71 75.77,9442.71 85.64,9442.71 95.50,9442.71 105.37,9442.71 111.87,9442.71 118.38,9442.71 124.88,9442.71"];
+    "2. file on disk" [shape=cylinder, margin=0, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">file on disk</TD></TR></TABLE>>, pos="519.69,9378.71!"];
+    "2. lib/server/core/changes.ts to file on disk (calls)" [label="appendFileSync, mkdirSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="391.33,9378.71!"];
+    "2. lib/server/core/changes.ts" -> "2. lib/server/core/changes.ts to file on disk (calls)" [arrowhead=none, pos="285.09,9406.71 292.43,9406.71 299.76,9406.71 307.09,9406.71 307.09,9397.38 307.09,9388.04 307.09,9378.71 312.43,9378.71 317.76,9378.71 323.09,9378.71"];
+    "2. lib/server/core/changes.ts to file on disk (calls)" -> "2. file on disk" [pos="e,491.57,9378.71 459.57,9378.71 464.90,9378.71 470.24,9378.71 475.57,9378.71 478.44,9378.71 481.30,9378.71 484.17,9378.71"];
+    "2. lib/server/core/changes.ts" -> "2. lib/server/core/json.ts" [tooltip="chained, writeTextAtomic", pos="e,364.33,9411.71 285.09,9416.71 290.43,9416.71 295.76,9416.71 301.09,9416.71 301.09,9415.04 301.09,9413.38 301.09,9411.71 319.80,9411.71 338.50,9411.71 357.21,9411.71"];
+    "2. lib/server/edit/writes.ts" -> "2. lib/server/core/changes.ts" [tooltip="changeAt, defaultChangesPath, logChanges", pos="e,224.73,9411.71 180.88,9411.71 190.16,9411.71 199.45,9411.71 208.73,9411.71 211.63,9411.71 214.54,9411.71 217.44,9411.71"];
+    "2. routes/api/write/+server.ts" -> "2. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9411.71 75.77,9411.71 85.64,9411.71 95.50,9411.71 105.37,9411.71 111.87,9411.71 118.38,9411.71 124.88,9411.71"];
     subgraph "cluster_3. lib/server/edit" {
-        bb="113.37,9269.96,200.73,9329.96"; lp="157.05,9318.76";
+        bb="113.37,9242.96,200.73,9302.96"; lp="157.05,9291.76";
         label="lib/server/edit"; style=solid;
-        "3. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9288.96!"];
+        "3. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,9261.96!"];
     }
     subgraph "cluster_3. lib/server/edit/feeds" {
-        bb="291.41,9267.96,502.30,9363.96"; lp="351.43,9352.76";
+        bb="291.41,9236.96,486.02,9332.96"; lp="351.43,9321.76";
         label="lib/server/edit/feeds"; style=solid;
-        "3. lib/server/edit/feeds/feed-route.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">feed-route.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o2" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="333.48,9288.96!"];
-        "3. lib/server/edit/feeds/feeds.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">feeds.ts</TD></TR></TABLE>>, pos="464.07,9286.96!"];
-        "3. lib/server/edit/feeds/literature.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">literature.ts</TD></TR></TABLE>>, pos="464.07,9322.96!"];
+        "3. lib/server/edit/feeds/feed-route.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">feed-route.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o2" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o3" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="333.48,9261.96!"];
+        "3. lib/server/edit/feeds/feeds.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">feeds.ts</TD></TR></TABLE>>, pos="447.78,9255.96!"];
+        "3. lib/server/edit/feeds/literature.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">literature.ts</TD></TR></TABLE>>, pos="447.78,9291.96!"];
     }
     subgraph "cluster_3. lib/server/edit/writes" {
-        bb="403.55,9199.96,525.58,9259.96"; lp="464.57,9248.76";
+        bb="508.01,9199.96,630.04,9259.96"; lp="569.02,9248.76";
         label="lib/server/edit/writes"; style=solid;
-        "3. lib/server/edit/writes/hubs.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">hubs.ts</TD></TR></TABLE>>, pos="464.07,9218.96!"];
+        "3. lib/server/edit/writes/hubs.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="i1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">hubs.ts</TD></TR></TABLE>>, pos="568.52,9218.96!"];
     }
     subgraph "cluster_3. routes/api/write" {
-        bb="0.00,9269.96,97.37,9329.96"; lp="48.69,9318.76";
+        bb="0.00,9242.96,97.37,9302.96"; lp="48.69,9291.76";
         label="routes/api/write"; style=solid;
-        "3. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9288.96!"];
+        "3. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,9261.96!"];
     }
     "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/feeds/feeds.ts" [tooltip="addLead, addLinkedinIdea, addRadarEntry
 deleteFeedEntry, isFeedKind, markLinkedinPosted
-radarBucketKeys, writeFeedField", pos="e,437.07,9286.96 367.55,9288.96 374.88,9288.96 382.22,9288.96 389.55,9288.96 389.55,9288.29 389.55,9287.63 389.55,9286.96 402.92,9286.96 416.30,9286.96 429.67,9286.96"];
-    "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/feeds/literature.ts" [tooltip="engineLiteraturePath, saveLiterature", pos="e,433.84,9322.96 367.55,9296.96 372.88,9296.96 378.22,9296.96 383.55,9296.96 383.55,9305.63 383.55,9314.29 383.55,9322.96 397.84,9322.96 412.14,9322.96 426.43,9322.96"];
-    "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/writes/hubs.ts" [tooltip="homeNaming, homeOf, noHub
-routeRefusal, routed, routedRoot
-withHubId", pos="e,437.07,9218.96 367.55,9280.96 376.88,9280.96 386.22,9280.96 395.55,9280.96 395.55,9260.29 395.55,9239.63 395.55,9218.96 406.98,9218.96 418.41,9218.96 429.85,9218.96"];
-    "3. lib/server/edit/writes.ts" -> "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,9288.96 190.16,9288.96 199.45,9288.96 208.73,9288.96 214.06,9288.96 219.40,9288.96 224.73,9288.96"];
-    "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" -> "3. lib/server/edit/feeds/feed-route.ts" [style=dashed, pos="e,299.41,9288.96 267.41,9288.96 272.74,9288.96 278.07,9288.96 283.41,9288.96 286.29,9288.96 289.17,9288.96 292.06,9288.96"];
-    "3. routes/api/write/+server.ts" -> "3. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9288.96 75.77,9288.96 85.64,9288.96 95.50,9288.96 105.37,9288.96 111.87,9288.96 118.38,9288.96 124.88,9288.96"];
-    "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" [label="feedRoute", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="246.07,9288.96!"];
+radarBucketKeys, writeFeedField", pos="e,420.78,9255.96 367.55,9265.96 378.88,9265.96 390.22,9265.96 401.55,9265.96 401.55,9262.63 401.55,9259.29 401.55,9255.96 405.47,9255.96 409.38,9255.96 413.30,9255.96"];
+    "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/feeds/literature.ts" [tooltip="engineLiteraturePath, saveLiterature", pos="e,417.55,9291.96 367.55,9273.96 374.88,9273.96 382.22,9273.96 389.55,9273.96 389.55,9279.96 389.55,9285.96 389.55,9291.96 396.44,9291.96 403.34,9291.96 410.23,9291.96"];
+    "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/writes/hubs.ts" [tooltip="homeNaming, noHub, rootedHome
+routeRefusal, routed, withHubId", pos="e,541.52,9223.96 367.55,9257.96 376.88,9257.96 386.22,9257.96 395.55,9257.96 395.55,9248.29 395.55,9238.63 395.55,9228.96 428.37,9228.96 461.19,9228.96 494.01,9228.96 494.01,9227.29 494.01,9225.63 494.01,9223.96 507.39,9223.96 520.77,9223.96 534.14,9223.96"];
+    "3. lib/server/edit/feeds/feed-route.ts" -> "3. lib/server/edit/feeds/feed-route.ts to lib/server/edit/writes/hubs.ts (refuses)" [arrowhead=none, style=dashed, pos="367.55,9249.96 372.88,9249.96 378.22,9249.96 383.55,9249.96 383.55,9235.96 383.55,9221.96 383.55,9207.96 399.26,9207.96 414.96,9207.96 430.67,9207.96"];
+    "3. lib/server/edit/feeds/feed-route.ts to lib/server/edit/writes/hubs.ts (refuses)" -> "3. lib/server/edit/writes/hubs.ts" [style=dashed, pos="e,541.52,9213.96 464.89,9207.96 476.60,9207.96 488.31,9207.96 500.01,9207.96 500.01,9209.96 500.01,9211.96 500.01,9213.96 511.41,9213.96 522.80,9213.96 534.19,9213.96"];
+    "3. lib/server/edit/writes.ts" -> "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,9261.96 190.16,9261.96 199.45,9261.96 208.73,9261.96 214.06,9261.96 219.40,9261.96 224.73,9261.96"];
+    "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" -> "3. lib/server/edit/feeds/feed-route.ts" [style=dashed, pos="e,299.41,9261.96 267.41,9261.96 272.74,9261.96 278.07,9261.96 283.41,9261.96 286.29,9261.96 289.17,9261.96 292.06,9261.96"];
+    "3. routes/api/write/+server.ts" -> "3. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,9261.96 75.77,9261.96 85.64,9261.96 95.50,9261.96 105.37,9261.96 111.87,9261.96 118.38,9261.96 124.88,9261.96"];
+    "3. lib/server/edit/feeds/feed-route.ts to lib/server/edit/writes/hubs.ts (refuses)" [label="homeOf", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="447.78,9207.96!"];
+    "3. lib/server/edit/writes.ts to lib/server/edit/feeds/feed-route.ts (refuses)" [label="feedRoute", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="246.07,9261.96!"];
     subgraph "cluster_4. lib/server/edit" {
         bb="113.37,9099.96,200.73,9159.96"; lp="157.05,9148.76";
         label="lib/server/edit"; style=solid;
@@ -313,36 +315,39 @@ restoreCopy", pos="e,396.27,7555.46 307.70,7528.46 322.72,7528.46 337.74,7528.46
     "10. routes/api/write/+server.ts" -> "10. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,7524.46 75.77,7524.46 85.64,7524.46 95.50,7524.46 105.37,7524.46 111.87,7524.46 118.38,7524.46 124.88,7524.46"];
     "10. lib/server/edit/writes/file-undo.ts to file on disk (calls)" [label="mkdir, rename", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="423.27,7486.46!"];
     subgraph "cluster_11. lib/server/edit" {
-        bb="113.37,7346.71,200.73,7406.71"; lp="157.05,7395.51";
+        bb="113.37,7313.71,200.73,7373.71"; lp="157.05,7362.51";
         label="lib/server/edit"; style=solid;
-        "11. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,7365.71!"];
+        "11. lib/server/edit/writes.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">writes.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="156.55,7332.71!"];
     }
     subgraph "cluster_11. lib/server/edit/feeds" {
-        bb="360.76,7380.71,480.81,7440.71"; lp="420.79,7429.51";
+        bb="438.98,7380.71,559.03,7440.71"; lp="499.00,7429.51";
         label="lib/server/edit/feeds"; style=solid;
-        "11. lib/server/edit/feeds/literature.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">literature.ts</TD></TR></TABLE>>, pos="420.29,7399.71!"];
+        "11. lib/server/edit/feeds/literature.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">literature.ts</TD></TR></TABLE>>, pos="498.50,7399.71!"];
     }
     subgraph "cluster_11. lib/server/edit/writes" {
-        bb="216.73,7346.71,338.76,7406.71"; lp="277.75,7395.51";
+        bb="294.95,7320.71,416.98,7380.71"; lp="355.96,7369.51";
         label="lib/server/edit/writes"; style=solid;
-        "11. lib/server/edit/writes/hubs.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">hubs.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="277.25,7365.71!"];
+        "11. lib/server/edit/writes/hubs.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="i1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">hubs.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="355.46,7339.71!"];
     }
     subgraph "cluster_11. lib/server/files" {
-        bb="376.11,7312.71,465.46,7372.71"; lp="420.79,7361.51";
+        bb="454.33,7312.71,543.68,7372.71"; lp="499.00,7361.51";
         label="lib/server/files"; style=solid;
-        "11. lib/server/files/roots.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">roots.ts</TD></TR></TABLE>>, pos="420.29,7331.71!"];
+        "11. lib/server/files/roots.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">roots.ts</TD></TR></TABLE>>, pos="498.50,7331.71!"];
     }
     subgraph "cluster_11. routes/api/write" {
-        bb="0.00,7346.71,97.37,7406.71"; lp="48.69,7395.51";
+        bb="0.00,7313.71,97.37,7373.71"; lp="48.69,7362.51";
         label="routes/api/write"; style=solid;
-        "11. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,7365.71!"];
+        "11. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,7332.71!"];
     }
-    "11. lib/server/edit/writes.ts" -> "11. lib/server/edit/writes/hubs.ts" [tooltip="homeOf, noHub, routeRefusal
+    "11. lib/server/edit/writes.ts" -> "11. lib/server/edit/writes/hubs.ts" [tooltip="noHub, rootedHome, routeRefusal
 routed, routedEntry, routedOrder
-routedRoot, routedTarget, withHubId", pos="e,255.13,7365.71 180.88,7365.71 190.16,7365.71 199.45,7365.71 208.73,7365.71 221.75,7365.71 234.77,7365.71 247.79,7365.71"];
-    "11. lib/server/edit/writes/hubs.ts" -> "11. lib/server/edit/feeds/literature.ts" [tooltip="engineLiteraturePath, literatureFile", pos="e,390.06,7399.71 299.37,7370.71 315.17,7370.71 330.96,7370.71 346.76,7370.71 346.76,7380.38 346.76,7390.04 346.76,7399.71 358.73,7399.71 370.70,7399.71 382.67,7399.71"];
-    "11. lib/server/edit/writes/hubs.ts" -> "11. lib/server/files/roots.ts" [tooltip="hubManifests", pos="e,393.29,7331.71 299.37,7360.71 317.17,7360.71 334.96,7360.71 352.76,7360.71 352.76,7351.04 352.76,7341.38 352.76,7331.71 363.92,7331.71 375.08,7331.71 386.23,7331.71"];
-    "11. routes/api/write/+server.ts" -> "11. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,7365.71 75.77,7365.71 85.64,7365.71 95.50,7365.71 105.37,7365.71 111.87,7365.71 118.38,7365.71 124.88,7365.71"];
+routedTarget, withHubId", pos="e,333.34,7344.71 180.88,7337.71 190.16,7337.71 199.45,7337.71 208.73,7337.71 208.73,7340.71 208.73,7343.71 208.73,7346.71 232.80,7346.71 256.87,7346.71 280.95,7346.71 280.95,7346.04 280.95,7345.38 280.95,7344.71 296.02,7344.71 311.09,7344.71 326.16,7344.71"];
+    "11. lib/server/edit/writes.ts" -> "11. lib/server/edit/writes.ts to lib/server/edit/writes/hubs.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,7327.71 192.16,7327.71 203.45,7327.71 214.73,7327.71 214.73,7327.04 214.73,7326.38 214.73,7325.71 220.06,7325.71 225.40,7325.71 230.73,7325.71"];
+    "11. lib/server/edit/writes.ts to lib/server/edit/writes/hubs.ts (refuses)" -> "11. lib/server/edit/writes/hubs.ts" [style=dashed, pos="e,333.34,7334.71 264.95,7325.71 272.28,7325.71 279.61,7325.71 286.95,7325.71 286.95,7328.71 286.95,7331.71 286.95,7334.71 299.95,7334.71 312.95,7334.71 325.94,7334.71"];
+    "11. lib/server/edit/writes/hubs.ts" -> "11. lib/server/edit/feeds/literature.ts" [tooltip="engineLiteraturePath, literatureFile", pos="e,468.26,7399.71 377.58,7344.71 393.38,7344.71 409.18,7344.71 424.98,7344.71 424.98,7363.04 424.98,7381.38 424.98,7399.71 437.01,7399.71 449.04,7399.71 461.08,7399.71"];
+    "11. lib/server/edit/writes/hubs.ts" -> "11. lib/server/files/roots.ts" [tooltip="hubManifests", pos="e,471.50,7331.71 377.58,7334.71 395.38,7334.71 413.18,7334.71 430.98,7334.71 430.98,7333.71 430.98,7332.71 430.98,7331.71 442.06,7331.71 453.15,7331.71 464.24,7331.71"];
+    "11. routes/api/write/+server.ts" -> "11. lib/server/edit/writes.ts" [tooltip="carriedOf, handleWrite, target", pos="e,132.21,7332.71 75.77,7332.71 85.64,7332.71 95.50,7332.71 105.37,7332.71 111.87,7332.71 118.38,7332.71 124.88,7332.71"];
+    "11. lib/server/edit/writes.ts to lib/server/edit/writes/hubs.ts (refuses)" [label="homeOf", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="247.84,7325.71!"];
     subgraph "cluster_12. lib/server/core" {
         bb="372.76,7176.71,464.12,7272.71"; lp="418.44,7261.51";
         label="lib/server/core"; style=solid;

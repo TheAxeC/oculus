@@ -49,7 +49,7 @@ import {
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
-import { choicesFor, formFields, formSections, recordChoices } from '../forms/schema.ts';
+import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
 import { followedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
@@ -167,7 +167,7 @@ export type SelectorsStore = {
     boardStats: (items: BoardItem[]) => BoardStats;
     staleLag: () => number;
     disseminatedFor: (id: Id) => Dissemination[];
-    domainChoices: () => Choice[];
+    domainChoices: (hub: string) => Choice[];
     newProjectFolder: (tier: string) => string;
     hubRoot: () => string | null;
     docPlaceFor: (tab: { view: string; state: unknown }) => DocPlace;
@@ -319,12 +319,15 @@ export function createSelectors(
     }
 
     /**
-     * The domains registry as a form's choices, for the one field of the new-idea form that has
-     * any: the new project is written to the primary hub, so its domains come first, by key.
+     * The domains registry of the hub `hub` as a form's choices, by key, for the one field of the
+     * new-idea form that has any: the new project is written to the hub chosen in the form, so its
+     * `domain:` is a key of that hub's own registry. None before the config's first message.
      */
-    function domainChoices(): Choice[] {
-        const domains = entities.portfolio()?.entities.domains;
-        return recordChoices(domains, ['title'], workspace().primary ?? '');
+    function domainChoices(hub: string): Choice[] {
+        const domains = byKey(hubVocabs()?.lists ?? {}, hub)?.domains ?? {};
+        return Object.keys(domains)
+            .sort()
+            .map((key) => ({ id: key, label: domains[key].label }));
     }
 
     /**

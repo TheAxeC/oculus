@@ -27,8 +27,8 @@ import {
     homeOf,
     noHub,
     routeRefusal,
+    rootedHome,
     routed,
-    routedRoot,
     withHubId
 } from '../writes/hubs.ts';
 import {
@@ -133,14 +133,8 @@ export function feedRoute(
 
     const paper = literatureSaveWrite(body);
     if (paper !== null) {
-        const home =
-            paper.root === undefined
-                ? homeNaming(into, LITERATURE, app)
-                : routedRoot(into, paper.root, app);
-        if (home === null && paper.root !== undefined) {
-            return refused(words(text, 'server.workspace.no_hub_named', paper.root), 404);
-        }
-        if (home === null) return noHub(into, app);
+        const home = rootedHome(into, paper.root, app, () => homeNaming(into, LITERATURE, app));
+        if (home instanceof Response) return home;
         if (
             paper.root !== undefined &&
             !home.config.collections.some((one) => one.key === LITERATURE)

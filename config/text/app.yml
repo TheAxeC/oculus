@@ -114,6 +114,7 @@ text:
             kind_file_icons: File Icon Theme
             kind_finding: Finding
             kind_folder: Folder
+            kind_hub: Hub
             kind_interpreter: Interpreter
             kind_project: Project
             kind_task: Task
@@ -152,10 +153,12 @@ text:
             symbols_none: No symbol of the workspace matches.
             symbols_unavailable: No language server answers for the tab on screen.
             tab_unknown: 'No view has the id {0}.'
-            task_add_collection: The hub has no tasks collection, so no task can be added.
+            task_add_collection: No hub of the workspace holds a tasks collection, so no task can be added.
+            task_hub_collection: 'The hub {0} holds no tasks collection, so no task can be added to it.'
             task_add_key: 'The title gives no key: it needs a letter from A to Z or a digit.'
             task_add_title: Type a title for the task.
             task_added: 'Added the task {0}'
+            task_hub_title: 'Which hub takes the task {0}?'
             task_open: Open
             theme_unknown: 'No theme is named {0}.'
             unpin_editor: Unpin Editor

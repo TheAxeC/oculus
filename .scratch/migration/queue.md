@@ -1,10 +1,9 @@
-In flight (3 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O61 (one home for each vocabulary word). State: reviewed over repair round 1, waiting to land.
 - O53 (a project's people by person keys). State: reviewed over repair round 1, waiting to land.
-- O56 (a new record asks which hub takes it). State: reviewed over repair round 1, waiting to land.
 
 Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
+- O55 (the project boards by kind, role and state). Waits: after O53 and O61.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O39 (oculus in its own repository). Waits: the desktop look C8 after `npm run app:package`, then the tick.
@@ -13,6 +12,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
+- O56 (a new record asks which hub takes it), 2026-10-23, (this commit).
 - O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.
 - O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.
 - O54 (own hub first, internal ids `<hub>:<key>`), 2026-10-23, 08567e63.

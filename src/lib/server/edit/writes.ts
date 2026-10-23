@@ -61,7 +61,7 @@ import {
     routedEntry,
     routeRefusal,
     routedOrder,
-    routedRoot,
+    rootedHome,
     routedTarget,
     withHubId
 } from './writes/hubs.ts';
@@ -576,13 +576,8 @@ export async function handleWrite(
 
     const fresh = newEntry(body);
     if (fresh !== null) {
-        const home =
-            fresh.root === undefined ? homeOf(into, app) : routedRoot(into, fresh.root, app);
-        if (home === null && fresh.root !== undefined) {
-            const error = words(into.config.text, 'server.workspace.no_hub_named', fresh.root);
-            return json({ error }, { status: 404 });
-        }
-        if (home === null) return noHub(into, app);
+        const home = rootedHome(into, fresh.root, app, () => homeOf(into, app));
+        if (home instanceof Response) return home;
         if (
             fresh.root !== undefined &&
             !home.config.collections.some((one) => one.key === fresh.collection)
@@ -689,8 +684,8 @@ export async function handleWrite(
 
     const idea = newIdea(body);
     if (idea !== null) {
-        const home = homeOf(into, app);
-        if (home === null) return noHub(into, app);
+        const home = rootedHome(into, idea.root, app, () => homeOf(into, app));
+        if (home instanceof Response) return home;
         return answer(
             withHubId(createIdea(home.hub, home.config, idea.fields), home),
             'new-idea',

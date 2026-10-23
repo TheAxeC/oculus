@@ -263,6 +263,20 @@ export type NoticeSink = {
     remove: (id: number) => void;
 };
 
+/**
+ * The fields of a new project as the new-project form sends them: its id, the words it starts
+ * with, and the tier and the folder of the board that sent it.
+ */
+export type NewIdeaFields = {
+    id: string;
+    title?: string;
+    short?: string;
+    domain?: string;
+    eli5?: string;
+    tier?: string;
+    folder?: string;
+};
+
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {
     setToken: (next: string) => void;
@@ -391,15 +405,7 @@ export type WritesStore = {
     resetConfig: (file: string, key: string) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
-    newIdea: (fields: {
-        id: string;
-        title?: string;
-        short?: string;
-        domain?: string;
-        eli5?: string;
-        tier?: string;
-        folder?: string;
-    }) => Promise<WriteAnswer>;
+    newIdea: (fields: NewIdeaFields, root?: string) => Promise<WriteAnswer>;
     /** Take one recorded change back, by the moment the change log stamped it. */
     undoWrite: (at: string) => Promise<WriteAnswer>;
     writeGit: (

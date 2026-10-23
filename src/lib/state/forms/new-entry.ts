@@ -1,11 +1,14 @@
 // Layer 2, client state. What a new entry is made of before it is written: the fields the Add box
-// of a collection asks for, and the task that `:task-add <title>` writes. Pure, so the rules are
-// tested without a browser; the refusals of a value the file holds and of a value that is empty
-// are the server's (server/edit/writes/entries.ts), and are shown as it words them.
+// of a collection asks for, and the task that `:task-add <title>` writes, in the tasks collection
+// of the hub chosen, or with none chosen of the first hub that could take it (`hubsTaking` of
+// state/shared/page/hubs.ts: the primary when it holds tasks, else the one that does). Pure, so the
+// rules are tested without a browser; the refusals of a value the file holds and of a value that is
+// empty are the server's (server/edit/writes/entries.ts), and are shown as it words them.
 
 import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
 import { rootOf } from '../../data/helpers/hub-names.ts';
+import { hubsTaking } from '../shared/page/hubs.ts';
 import { wordsWith } from '../../data/shapes/vocab-keys.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
@@ -32,15 +35,6 @@ export function askFields(collection: string, schema: SchemaField[] | undefined)
     );
 }
 
-/** The collection Add writes to: the primary hub's, else the first hub's. */
-function homeCollection(
-    collections: readonly Collection[],
-    primary: string | null
-): Collection | null {
-    if (primary === null) return collections.at(0) ?? null;
-    return collections.find((one) => rootOf(one) === primary) ?? null;
-}
-
 /**
  * What `:task-add` makes of a title: the fields of the task and the name of the hub it is added to,
  * or why it adds nothing.
@@ -49,22 +43,20 @@ type TaskFields =
     { fields: Record<string, unknown>; hub: string } | { refusal: 'title' | 'key' | 'collection' };
 
 /**
- * The task a title makes in the collection `tasks` of the hub Add writes to. The key is the title
- * as lowercase ASCII words joined by hyphens, accents taken off and cut to `TASK_KEY_MAX`; a key
- * the file holds already gets `-2`, `-3` and on, inside the same length. An empty title, a title
- * that gives no key (no ASCII letter or digit after the accents are taken off) and a workspace
- * with no tasks collection give a refusal and no fields. The task's status is the word of
- * `statuses` (config/catalogs/vocab.yml) carrying `default_task`, and none when no word does.
+ * The task a title makes in `home`, the collection `tasks` of the hub it is added to. The key is
+ * the title as lowercase ASCII words joined by hyphens, accents taken off and cut to
+ * `TASK_KEY_MAX`; a key the file holds already gets `-2`, `-3` and on, inside the same length. An
+ * empty title, a title that gives no key (no ASCII letter or digit after the accents are taken off)
+ * and no tasks collection give a refusal and no fields. The task's status is the word of `statuses`
+ * (config/catalogs/vocab.yml) carrying `default_task`, and none when no word does.
  */
 function taskFields(
     title: string,
-    collections: readonly Collection[],
-    primary: string | null,
+    home: Collection | undefined,
     config: Record<string, unknown>
 ): TaskFields {
     const words = title.trim();
     if (words === '') return { refusal: 'title' };
-    const home = homeCollection(collections, primary);
     if (home?.schema === undefined) return { refusal: 'collection' };
     const identity = identityField(home.schema);
     const taken = new Set(home.entries.map((entry) => scalar(entry.fields[identity])));
@@ -89,6 +81,24 @@ function refusalWords(refusal: 'title' | 'key' | 'collection'): string {
 }
 
 /**
+ * The sentence that says why a title adds no task whichever hub takes it, its words or its key
+ * refused, or the empty text when it makes one: what Add Task says before it asks the hub.
+ */
+export function taskTitleRefusal(title: string): string {
+    const words = title.trim();
+    if (words === '') return refusalWords('title');
+    return slugOf(words, TASK_KEY_MAX) === '' ? refusalWords('key') : '';
+}
+
+/**
+ * The hubs a task can be added to: the hubs of the tasks collections given, the primary first and
+ * then the workspace's order (`hubsTaking`). The palette's hub list of `:task-add` reads it.
+ */
+export function taskHubOrder(collections: readonly Collection[], primary: string | null): string[] {
+    return hubsTaking(collections, primary);
+}
+
+/**
  * What `:task-add` did: the id in the portfolio of the task written, which the write answers with,
  * or the sentence saying why it wrote none.
  */
@@ -97,8 +107,11 @@ export type TaskAdded =
 
 /**
  * Add the task a title makes (`taskFields`) with `write`, which is the `new-entry` write of the
- * tasks collection of the hub it names. A refusal of the title, of the key or of the collection,
- * and a refusal of the write, come back as the sentence to say.
+ * tasks collection of the hub it names. `collections` are the tasks collections of the hubs, each
+ * carrying its hub's name in `root`; the task goes to the hub `hub` names, or, with none named, to
+ * the first that could take it, the primary when it holds one. A refusal of the title, of the key
+ * or of the collection, and a refusal of the write, come back as the sentence to say; a hub named
+ * that holds no tasks collection is said by its name, and no hub holding one by the workspace.
  */
 export async function addTask(
     title: string,
@@ -109,10 +122,19 @@ export async function addTask(
         collection: string,
         fields: Record<string, unknown>,
         root: string
-    ) => Promise<WriteAnswer>
+    ) => Promise<WriteAnswer>,
+    hub?: string
 ): Promise<TaskAdded> {
-    const made = taskFields(title, collections, primary, config);
-    if ('refusal' in made) return { id: '', label: '', said: refusalWords(made.refusal) };
+    const chosen = hub ?? taskHubOrder(collections, primary).at(0);
+    const home = collections.find((one) => rootOf(one) === chosen);
+    const made = taskFields(title, home, config);
+    if ('refusal' in made) {
+        const said =
+            made.refusal === 'collection' && hub !== undefined
+                ? t('app.palette.task_hub_collection', hub)
+                : refusalWords(made.refusal);
+        return { id: '', label: '', said };
+    }
     const answer = await write(TASKS, made.fields, made.hub);
     if (!answer.ok) return { id: '', label: '', said: answer.error ?? t('editor.failed', '') };
     const refused = answer.refused.map((one) => one.reason).join('; ');

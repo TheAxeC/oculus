@@ -80,8 +80,8 @@ export type HostWrite = { kind: 'host'; name: string; status: string };
 export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
 /**
- * One new entry of one collection, in the hub `root` names (when it is absent, the primary, else
- * for the page the first hub), and one new idea folder.
+ * One new entry of one collection, and one new idea folder, each in the hub `root` names (when it
+ * is absent, the primary, else for the page the first hub).
  */
 export type NewEntryWrite = {
     kind: 'new-entry';
@@ -89,7 +89,7 @@ export type NewEntryWrite = {
     fields: Record<string, unknown>;
     root?: string;
 };
-export type NewIdeaWrite = { kind: 'new-idea'; fields: Record<string, unknown> };
+export type NewIdeaWrite = { kind: 'new-idea'; fields: Record<string, unknown>; root?: string };
 
 /** One collection's entries in the order a drag left them: the identity values, all of them. */
 export type ReorderWrite = { kind: 'reorder'; collection: string; order: string[] };
@@ -453,7 +453,8 @@ const undoShape = z.object({
 
 const newIdeaShape = z.object({
     kind: z.literal('new-idea'),
-    fields: unchanged(z.looseObject({ id: wordShape }))
+    fields: unchanged(z.looseObject({ id: wordShape })),
+    root: z.string().optional()
 }) satisfies z.ZodType<NewIdeaWrite>;
 
 const auditMuteShape = z.object({

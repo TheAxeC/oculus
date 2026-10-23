@@ -153,16 +153,31 @@ export function routedEntry(
 
 /**
  * The target for a write that makes a record in the hub it names by its name (a new entry, a paper
- * saved to Literature): the primary for its own name, another hub for its name, and null for a
- * name no hub of the workspace carries and, for an app, which reaches the primary alone, for any
- * other hub.
+ * saved to Literature, a new project): the primary for its own name, another hub for its name, and
+ * null for a name no hub of the workspace carries and, for an app, which reaches the primary alone,
+ * for any other hub.
  */
-export function routedRoot(
-    into: WriteTarget,
-    root: string,
-    app: HeldApp | null
-): PrimaryTarget | null {
+function routedRoot(into: WriteTarget, root: string, app: HeldApp | null): PrimaryTarget | null {
     return hubTarget(into, root, app);
+}
+
+/**
+ * The target for a write that makes a record and may name the hub to make it in by `root`: the hub
+ * it names (`routedRoot`), refused as naming no hub (404) when no hub of the workspace carries that
+ * name or, for an app, when it is another hub than the primary; with no `root`, the target
+ * `unnamed` gives, refused as `noHub` refuses when it gives none.
+ */
+export function rootedHome(
+    into: WriteTarget,
+    root: string | undefined,
+    app: HeldApp | null,
+    unnamed: () => PrimaryTarget | null
+): PrimaryTarget | Response {
+    const home = root === undefined ? unnamed() : routedRoot(into, root, app);
+    if (home !== null) return home;
+    if (root === undefined) return noHub(into, app);
+    const error = words(into.config.text, 'server.workspace.no_hub_named', root);
+    return json({ error }, { status: 404 });
 }
 
 /**

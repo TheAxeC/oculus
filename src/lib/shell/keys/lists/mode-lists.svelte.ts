@@ -2,9 +2,10 @@
 // of their own draws, made together over the query: `:language` (language-list.svelte.ts), the
 // workspace commands (workspace-list.svelte.ts), `:interpreter` and `:compile-database` over the
 // choices the language server of the tab on screen offers (palette-modes.ts `choiceModeOf` and
-// `choiceRows`), `:eslint-config` (lint-config.svelte.ts), `:clone` (clone-list.svelte.ts) and the
-// commands whose argument is picked from a list (argument-list.svelte.ts), and whether the query is
-// one of them, which the command list then draws no row for.
+// `choiceRows`), `:eslint-config` (lint-config.svelte.ts), `:clone` (clone-list.svelte.ts), the
+// commands whose argument is picked from a list (argument-list.svelte.ts) and the hubs `:task-add`
+// asks after its title (task-hub-list.svelte.ts), and whether the query is one of them, which the
+// command list then draws no row for.
 
 import type { ChoicesView } from '$lib/state/system/machine/lsp/lsp.svelte';
 import type { ParsedCommand } from '$lib/state/workbench/palette';
@@ -25,6 +26,7 @@ import {
     type LintConfigList,
     type LintConfigListInput
 } from './lint-config.svelte';
+import { createTaskHubList, type TaskHubList, type TaskHubListInput } from './task-hub-list.svelte';
 import {
     createWorkspaceList,
     type WorkspaceList,
@@ -48,6 +50,8 @@ type ModeListsInput = {
     choices: (root: string, language: string) => ChoicesView | null;
     arguments: ArgumentListInput['choices'];
     hint: ArgumentListInput['hint'];
+    /** The hubs that hold the tasks collection, the primary first. */
+    taskHubs: TaskHubListInput['hubs'];
 };
 
 /** The lists, each read live. */
@@ -57,6 +61,12 @@ type ModeLists = {
     readonly lintConfig: LintConfigList;
     readonly clone: CloneList;
     readonly argument: ArgumentList;
+    readonly taskHub: TaskHubList;
+    /**
+     * The rows of `:eslint-config`, `:clone`, an argument list or the hubs of `:task-add` while
+     * the query is one of them, else null.
+     */
+    readonly modeRows: { value: string }[] | null;
     /** The interpreter or compile database list the query is, or null for another query. */
     readonly choiceMode: ChoiceMode | null;
     /** What the server of the tab on screen offers to choose, or null. */
@@ -88,6 +98,10 @@ export function createModeLists(input: ModeListsInput): ModeLists {
         choices: input.arguments,
         hint: input.hint
     });
+    const taskHub = createTaskHubList({ parsed: input.parsed, hubs: input.taskHubs });
+    const modeRows = $derived(
+        [lintConfig, clone, argument, taskHub].find((one) => one.active)?.rows ?? null
+    );
     const choiceMode = $derived(choiceModeOf(input.parsed(), input.served()?.language ?? ''));
     const choiceView = $derived.by(() => {
         const served = input.served();
@@ -104,7 +118,8 @@ export function createModeLists(input: ModeListsInput): ModeLists {
             choiceMode !== null ||
             lintConfig.active ||
             clone.active ||
-            argument.active
+            argument.active ||
+            taskHub.active
     );
     return {
         language,
@@ -112,6 +127,10 @@ export function createModeLists(input: ModeListsInput): ModeLists {
         lintConfig,
         clone,
         argument,
+        taskHub,
+        get modeRows() {
+            return modeRows;
+        },
         get choiceMode() {
             return choiceMode;
         },

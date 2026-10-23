@@ -1,6 +1,8 @@
-// Layer 2, client-state tests. What a new entry is made of: the fields the Add box asks, the
-// collection Add writes to, the task `:task-add` makes of a title, and what `addTask` says when the
-// title, the key, the collection or the write refuses. The write is a stub that records the call.
+// Layer 2, client-state tests. What a new entry is made of: the fields the Add box asks, the hub a
+// task is added to (the one chosen, else the first that could take it, the primary when it holds
+// tasks), the task `:task-add` makes of a title, and what `addTask` says when the title, the key,
+// the collection or the write refuses. The write is a stub that records the call. Each tasks
+// collection carries its hub's name, `research` unless another is given.
 
 import { describe, expect, it } from 'vitest';
 import type { Collection, Entry, SchemaField } from '../../../src/lib/data/model/index.ts';
@@ -20,25 +22,25 @@ const TASK_SCHEMA: SchemaField[] = [
     { field: 'status', type: 'select' }
 ];
 
-function entry(key: string, root?: string): Entry {
+function entry(key: string, root: string): Entry {
     return {
         id: key,
         title: key,
         fields: { key },
         file: '/hub/.oculus/data/academic/tasks.yml',
         index: 0,
-        ...(root === undefined ? {} : { root })
+        root
     };
 }
 
-function tasks(keys: string[], root?: string): Collection {
+function tasks(keys: string[], root = 'research'): Collection {
     return {
         id: 'tasks',
         title: 'Tasks',
         file: '/hub/.oculus/data/academic/tasks.yml',
         schema: TASK_SCHEMA,
         entries: keys.map((one) => entry(one, root)),
-        ...(root === undefined ? {} : { root })
+        root
     };
 }
 
@@ -75,16 +77,67 @@ describe('the hub a task is added to', () => {
     const own = tasks([], 'research');
     const other = tasks(['review'], 'second');
 
+    /** The hub the write is given for a title and the key it makes, or the sentence said. */
+    async function addedTo(
+        collections: Collection[],
+        primary: string | null,
+        hub?: string
+    ): Promise<{ root: string; key: unknown } | string> {
+        const written: { root: string; key: unknown }[] = [];
+        const added = await addTask(
+            'Review',
+            collections,
+            primary,
+            ENGINE,
+            (_collection, one, root) => {
+                written.push({ root, key: one.key });
+                return Promise.resolve({ ok: true, changed: [], refused: [], id: String(one.key) });
+            },
+            hub
+        );
+        return written.at(0) ?? added.said;
+    }
+
     it.each([
-        ['the primary hub when there is one', [other, own], 'research', 'review'],
-        ['the first hub when there is no primary', [other, own], null, 'review-2']
-    ])('is %s', async (_name, collections, primary, key) => {
-        expect(await made('Review', collections, primary)).toMatchObject({ key });
+        [
+            'the primary hub when there is one',
+            [other, own],
+            'research',
+            undefined,
+            'research',
+            'review'
+        ],
+        [
+            'the first hub when there is no primary',
+            [other, own],
+            null,
+            undefined,
+            'second',
+            'review-2'
+        ],
+        [
+            'the one hub holding tasks when the primary holds none',
+            [other],
+            'research',
+            undefined,
+            'second',
+            'review-2'
+        ],
+        [
+            'the hub chosen, the primary not',
+            [other, own],
+            'research',
+            'second',
+            'second',
+            'review-2'
+        ]
+    ])('is %s', async (_name, collections, primary, hub, root, key) => {
+        expect(await addedTo(collections, primary, hub)).toEqual({ root, key });
     });
 
-    it('is none when the primary hub holds no tasks collection', async () => {
-        expect(await made('Review', [other], 'research')).toBe(
-            t('app.palette.task_add_collection')
+    it('is none for a hub chosen that holds no tasks collection, said by its name', async () => {
+        expect(await addedTo([other, own], 'research', 'nowhere')).toBe(
+            t('app.palette.task_hub_collection', 'nowhere')
         );
     });
 });

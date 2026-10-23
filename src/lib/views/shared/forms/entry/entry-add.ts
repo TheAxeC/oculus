@@ -5,9 +5,10 @@
 // and its key and where the editor fills the rest; a refusal comes back as the server's sentence
 // for the box to show above what was typed.
 //
-// A collection's Add and Literature's Add write to a hub whose `collections:` names the
-// collection: when more than one hub names it, the box asks which, the primary first and chosen;
-// when one hub names it, the entry goes to that hub, primary or not, and nothing is asked.
+// A collection's Add and Literature's Add write to a hub that could take the entry, by the rule
+// every path that makes a record reads (`hubsTaking` of state/shared/page/hubs.ts): when more than
+// one hub holds the collection, the box asks which, the primary first and chosen; when one hub
+// holds it, the entry goes to that hub, primary or not, and nothing is asked.
 //
 // Literature's Add looks a DOI, an arXiv paper or a PubMed paper up through the sources the
 // Literature search asks (state/feeds/literature/lookup.ts) and saves the paper they merge into;
@@ -18,7 +19,7 @@ import type { PromptField } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
 import type { SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
-import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
+import { hubsTaking, keyOf } from '$lib/state/shared/page/hubs';
 import { askFields } from '$lib/state/forms/new-entry';
 import { radarBuckets } from '$lib/state/feeds/radar';
 import { lookUp, lookupOf, sourceName, sourcesAsked } from '$lib/state/feeds/literature/lookup';
@@ -44,19 +45,12 @@ function openPage(client: ClientState, collection: string, id: string): void {
 }
 
 /**
- * The hubs whose file of a collection the portfolio holds, the primary's first, as the choices of
- * Add's hub question: each hub's name, which is what a write names it by.
+ * The hubs that could take a new entry of a collection, the primary first, as the choices of Add's
+ * hub question: each hub's name, which is what a write names it by.
  */
 function hubChoices(client: ClientState, collection: string): { id: string; label: string }[] {
-    const primary = client.fs.primary() ?? '';
-    const names = client.selectors
-        .collectionsOfKey(collection)
-        .map((one) => rootOf(one))
-        .filter((name) => name !== '');
-    const unique = [...new Set(names)].sort((left, right) =>
-        left === primary ? -1 : right === primary ? 1 : 0
-    );
-    return unique.map((name) => ({ id: name, label: name }));
+    const hubs = hubsTaking(client.selectors.collectionsOfKey(collection), client.fs.primary());
+    return hubs.map((name) => ({ id: name, label: name }));
 }
 
 /**

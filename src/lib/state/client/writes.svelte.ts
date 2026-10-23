@@ -41,6 +41,7 @@ import { isPageFeed, type Settle } from '../forms/page-entry.ts';
 import type {
     DeckEditAct,
     FollowupAction,
+    NewIdeaFields,
     SendOptions,
     SessionFields,
     SubtaskAction,
@@ -635,20 +636,13 @@ export function createWrites(
     }
 
     /**
-     * Scaffold one new project: a manifest and a README under `<folder>/<id>`. `tier` and `folder`
-     * are the board's; a call that names neither is made in the tier `projects`, under that tier's
-     * `new_project_dir`.
+     * Scaffold one new project: a manifest and a README under `<folder>/<id>`, in the hub `root`
+     * names, else in the hub the server picks (the primary, else the first). `tier` and `folder` are
+     * the board's; a call that names no folder is made under the `new_project_dir` of its tier, the
+     * tier `projects` when it names none, in the settings of the hub written to.
      */
-    async function newIdea(fields: {
-        id: string;
-        title?: string;
-        short?: string;
-        domain?: string;
-        eli5?: string;
-        tier?: string;
-        folder?: string;
-    }): Promise<WriteAnswer> {
-        return send({ kind: 'new-idea', fields });
+    async function newIdea(fields: NewIdeaFields, root?: string): Promise<WriteAnswer> {
+        return send({ kind: 'new-idea', fields, ...(root === undefined ? {} : { root }) });
     }
 
     /**

@@ -4,8 +4,11 @@ text:
         action:
             applied: applied
             applied_tip: mark the lead applied and open Applications beside the leads with an entry filled from this lead
+            applied_hub_tip: pick the hub whose Applications takes an entry filled from this lead, open it beside the leads and mark the lead applied
             decline: decline
             decline_tip: decline this lead (off the radar, kept in the file)
+            no_applications: No hub of the workspace holds an Applications collection, so no application can be opened.
+            hub_no_applications: 'The hub {0} holds no Applications collection, so no application can be opened in it.'
             delete_lead_tip: delete this lead (removes the entry)
             delete_lead_ask: Delete this lead? Its entry is removed from the file.
             reopen: reopen

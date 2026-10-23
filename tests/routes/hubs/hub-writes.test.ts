@@ -622,6 +622,51 @@ describe('a write that makes a record', () => {
     });
 });
 
+describe('the hub a new project is written to', () => {
+    /** The files a new project `new-idea` makes under a hub's `new_project_dir` for projects. */
+    const MADE = ['projects/ideas/new-idea/README.md', 'projects/ideas/new-idea/project.yml'];
+
+    it.each([
+        {
+            name: 'the hub its root names, and no byte of the primary',
+            root: 'lab',
+            id: 'lab:new-idea'
+        },
+        { name: 'the primary, for a write that names no hub', root: undefined, id: 'hub:new-idea' }
+    ])('writes the project into $name (G8)', async (row) => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const body = { kind: 'new-idea', fields: { id: 'new-idea' } };
+        const response = await handleWrite(
+            request(row.root === undefined ? body : { ...body, root: row.root }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as { id?: string }).id).toBe(row.id);
+        const named = row.root === 'lab';
+        expect(differing(before.first, filesOf(first))).toEqual(named ? [] : MADE);
+        expect(differing(before.lab, filesOf(lab))).toEqual(named ? MADE : []);
+    });
+
+    it('refuses a new project for a hub no workspace folder carries, and writes nothing (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'new-idea', fields: { id: 'new-idea' }, root: 'nowhere' }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({
+            error: words(into.config.text, 'server.workspace.no_hub_named', 'nowhere')
+        });
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(changesOf(into)).toEqual([]);
+    });
+});
+
 describe('a write from an app', () => {
     const APP = { [APP_HEADER]: 'app:notes' };
 
