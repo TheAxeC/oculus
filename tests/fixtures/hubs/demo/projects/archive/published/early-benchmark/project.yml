@@ -1,9 +1,10 @@
 id: early-benchmark
-type: published
+stage: published
+form: conference
 tier: archive
 short: Early-Bench
 status:
-  chips: [lead, conference]
+  chips: [lead]
 title: An early benchmark for graph representations
 lead: A. Example
 authors: [A. Example, C. Senior]

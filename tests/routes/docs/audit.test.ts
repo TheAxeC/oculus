@@ -29,13 +29,13 @@ function hubWith(projects: Project[]): string {
     return hub;
 }
 
-/** The project of a tier, with an open marker, a long `eli5` and the type of a published paper. */
+/** The project of a tier, with an open marker, a long `eli5` and the stage of a published paper. */
 function projectOf(tier: 'projects' | 'personal'): Project {
     return fixtureProject({
         id: `hub:${tier}`,
         root: 'hub',
         tier,
-        type: 'published',
+        stage: 'published',
         title: `Title of ${tier}`,
         folder: `projects/${tier}`,
         file: `projects/${tier}/project.yml`,
@@ -80,7 +80,7 @@ describe('the Deposit rules of the audit', () => {
             id: 'hub:inside',
             root: 'hub',
             tier: 'projects',
-            type: 'active',
+            stage: 'active',
             title: 'Inside',
             folder: '',
             file: '.oculus/project.yml',

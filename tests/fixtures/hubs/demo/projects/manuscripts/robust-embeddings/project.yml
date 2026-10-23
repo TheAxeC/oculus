@@ -1,5 +1,5 @@
 id: robust-embeddings
-type: active
+stage: submitted
 tier: projects
 short: Robust-Emb
 title: Robust representation learning under distribution shift
@@ -7,7 +7,7 @@ lead: A. Example
 authors: [A. Example]
 focus: review
 status:
-  chips: [submitted]
+  chips: []
   line: 8 pp, submitted to JMLR; awaiting decision.
 venue_id: jmlr
 year: 2026

@@ -103,17 +103,16 @@ function sitePapers(data: unknown): SitePaper[] {
 }
 
 /**
- * The sections a hub project of this type and these chips is expected to appear in: the `kind` of
- * the first row of `publication_kinds` whose `types` holds the type and whose `chips` shares one
- * of the chips, a side the row leaves out holding to nothing; none when no row matches.
+ * The sections a hub project at this stage and of this form is expected to appear in: the `kind`
+ * of the first row of `publication_kinds` whose `stages` holds the stage and whose `forms` holds
+ * the form, a side the row leaves out holding to nothing; none when no row matches.
  */
 function expectedSections(project: Project, kinds: readonly PublicationKind[]): string[] {
-    const type = project.type ?? '';
+    const stage = project.stage ?? '';
+    const form = project.form ?? '';
     for (const row of kinds) {
-        if (row.types !== undefined && !row.types.includes(type)) continue;
-        if (row.chips !== undefined && !row.chips.some((chip) => project.chips.includes(chip))) {
-            continue;
-        }
+        if (row.stages !== undefined && !row.stages.includes(stage)) continue;
+        if (row.forms !== undefined && !row.forms.includes(form)) continue;
         return row.kind;
     }
     return [];
@@ -177,16 +176,17 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     const claimed = new Set<string>();
     for (const project of input.projects) {
         if (isPersonal(project, rules)) continue;
-        const type = project.type ?? '';
+        const stage = project.stage ?? '';
         const key = normalTitle(project.title);
-        if (key === '' || rules.negativeTypes.has(type) || rules.deadEndTypes.has(type)) continue;
+        if (key === '' || rules.negativeStages.has(stage) || rules.deadEndStages.has(stage))
+            continue;
         const found = match(key, titleWords(project.title), site);
         const hit = found.hit;
         if (hit !== null && found.score >= SAME) {
             claimed.add(hit.key);
             const wanted = expectedSections(project, rules.publicationKinds);
             if (
-                rules.publicTypes.has(type) &&
+                rules.publicStages.has(stage) &&
                 !sectionsOf(hit).some((one) => wanted.includes(one))
             ) {
                 add({
@@ -197,14 +197,14 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                     ...sentence(
                         'audit.msg_site_wrong_section',
                         printed(sectionsOf(hit)),
-                        type,
+                        stage,
                         printed(wanted)
                     )
                 });
             }
         } else if (hit !== null && found.score >= LOOSE) {
             claimed.add(hit.key);
-            if (rules.publicTypes.has(type)) {
+            if (rules.publicStages.has(stage)) {
                 add({
                     scope: scopeOf(project),
                     where: 'publications.yml',
@@ -213,7 +213,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                     ...sentence('audit.msg_site_title_differs', hit.title, printed(sectionsOf(hit)))
                 });
             }
-        } else if (rules.publicTypes.has(type)) {
+        } else if (rules.publicStages.has(stage)) {
             add({
                 scope: scopeOf(project),
                 where: 'publications.yml',
@@ -221,7 +221,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
                 file,
                 ...sentence(
                     'audit.msg_site_missing',
-                    type,
+                    stage,
                     expectedSections(project, rules.publicationKinds).join('/')
                 )
             });
@@ -231,8 +231,8 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     const deadClaimed = new Set<string>();
     for (const project of input.projects) {
         if (isPersonal(project, rules)) continue;
-        const type = project.type ?? '';
-        if (!rules.negativeTypes.has(type) && !rules.deadEndTypes.has(type)) continue;
+        const stage = project.stage ?? '';
+        if (!rules.negativeStages.has(stage) && !rules.deadEndStages.has(stage)) continue;
         const key = normalTitle(project.title);
         if (key === '') continue;
         const pool = site.filter((paper) => !claimed.has(paper.key));
@@ -245,9 +245,9 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             where: 'publications.yml',
             kind: 'publink',
             file,
-            ...(rules.negativeTypes.has(type)
-                ? sentence('audit.msg_site_negative', type, printed(sectionsOf(hit)))
-                : sentence('audit.msg_site_deadend', type, printed(sectionsOf(hit))))
+            ...(rules.negativeStages.has(stage)
+                ? sentence('audit.msg_site_negative', stage, printed(sectionsOf(hit)))
+                : sentence('audit.msg_site_deadend', stage, printed(sectionsOf(hit))))
         });
     }
 

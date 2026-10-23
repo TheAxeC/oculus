@@ -23,8 +23,8 @@ export type LabelMode = 'short' | 'full';
 export type BoardColumn = { key: string; label: string };
 
 /**
- * One group of cards of a board's `groups`: its id, its words, the types and chips it catches, and
- * the hue the config gives it, which the category facet draws its dot in.
+ * One group of cards of a board's `groups`: its id, its words, the stages, forms and chips it
+ * catches, and the hue the config gives it, which the category facet draws its dot in.
  */
 export type RollupBucket = { id: string; label: string; keys: string[]; color: string };
 
@@ -39,10 +39,10 @@ export type BoardPreset = {
     /** The groups of cards of this board, in the config's order. */
     rollup: RollupBucket[];
     /**
-     * The order types sort in, the keys of `types`; a type the list does not name sorts after
-     * every type it does.
+     * The order stages sort in, the keys of `stages`; a stage the list does not name sorts after
+     * every stage it does.
      */
-    typeOrder: string[];
+    stageOrder: string[];
     /** The tiers of `tiers` carrying `software`, whose projects are software. */
     softwareTiers: string[];
     /** The label mode the board starts in, from its row's `label_mode`. */
@@ -84,7 +84,7 @@ export type LinkedItem = Pick<
 export type BoardItem = {
     id: Id;
     project: Project;
-    /** The hue of the project's type, which the card's type chip is filled with. */
+    /** The hue of the project's stage, which the card's stage chip is filled with. */
     tone: string;
     /** The `themes:` entry of the project's domain: its words and its hue. */
     domain: { id: Id; label: string; tone: string } | null;
@@ -117,6 +117,9 @@ export type BoardItem = {
     year: string;
     /** `live`, `recent` or `none`: what the sessions payload says about the project's folder. */
     sessions: string;
+    /**
+     * The project's form, when it has one, then its chips: the words the card's status row draws.
+     */
     chips: string[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
@@ -146,11 +149,11 @@ export type BoardState = {
     /** The quick filter: only the projects that carry a deadline. */
     dated: boolean;
     /**
-     * The types switched OFF, which is what the type toggles hold. Every type is on until one is
-     * clicked, so a type the hub grows later is on the day it appears rather than hidden by a state
-     * saved before it existed.
+     * The stages switched OFF, which is what the stage toggles hold. Every stage is on until one is
+     * clicked, so a stage the hub grows later is on the day it appears rather than hidden by a
+     * state saved before it existed.
      */
-    hiddenTypes: string[];
+    hiddenStages: string[];
 };
 
 /** The counts of the strip above the board, and the venues the board's projects aim at. */
@@ -182,14 +185,16 @@ export type VenueCount = {
     warn: boolean;
 };
 
-/** One type of the board with how many carry it, in the order the board's own sort put them in. */
-export type TypeCount = { type: string; count: number };
+/**
+ * One stage of the board with how many are at it, in the order the board's own sort put them in.
+ */
+export type StageCount = { stage: string; count: number };
 
-/** The quick filters and type toggles applyFilters is given beside the facets. */
+/** The quick filters and stage toggles applyFilters is given beside the facets. */
 export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
-    hiddenTypes?: string[];
+    hiddenStages?: string[];
     /**
      * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind counts as
      * behind.
@@ -324,7 +329,7 @@ export function softwareTiers(config: Record<string, unknown>): string[] {
 /**
  * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
  * map does not hold is its first board. A config that holds no board gives a board with no tier,
- * no columns to name, no groups and no type order, which still renders: it holds no card, and the
+ * no columns to name, no groups and no stage order, which still renders: it holds no card, and the
  * category facet is not offered. A label mode other than `full` is the short handle.
  */
 export function presetFor(view: string, config: Record<string, unknown> = {}): BoardPreset {
@@ -335,7 +340,7 @@ export function presetFor(view: string, config: Record<string, unknown> = {}): B
         tiers: boardTiers(row),
         columns: readAs(columnsShape, row.columns) ?? [],
         rollup: readAs(bucketsShape, row.groups) ?? [],
-        typeOrder: vocabKeys(config.types),
+        stageOrder: vocabKeys(config.stages),
         softwareTiers: softwareTiers(config),
         labels: str(row.label_mode) === 'full' ? 'full' : 'short',
         search: str(row.search)
@@ -344,12 +349,14 @@ export function presetFor(view: string, config: Record<string, unknown> = {}): B
 
 /**
  * The lifecycle bucket of one project: the first bucket of the rollup whose keys name the project's
- * type or one of its status chips. A project no bucket catches has none, which is the empty string.
+ * stage, its form or one of its chips. A project no bucket catches has none, which is the empty
+ * string.
  */
 export function bucketOf(project: Project, rollup: RollupBucket[]): string {
+    const words = [project.stage, project.form, ...project.chips];
     for (const bucket of rollup) {
-        if (project.type !== undefined && bucket.keys.includes(project.type)) return bucket.id;
-        if (project.chips.some((chip) => bucket.keys.includes(chip))) return bucket.id;
+        if (words.some((word) => word !== undefined && bucket.keys.includes(word)))
+            return bucket.id;
     }
     return '';
 }

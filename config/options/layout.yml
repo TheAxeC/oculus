@@ -146,14 +146,14 @@ options:
                 control: choice
                 options: [short, full]
             groups:
-                help: the board's groups of cards, used by its filter (the category facet, its dot in the group's colour), a card's group and its tab count. A card lands in the first group whose keys hold its type or one of its status chips
+                help: the board's groups of cards, used by its filter (the category facet, its dot in the group's colour), a card's group and its tab count. A card lands in the first group whose keys hold its stage, its form or one of its chips
                 control: records
                 fields:
                     label: the words of the group, which also give its id
                     keys:
-                        help: the project types and status chips the group catches
+                        help: the project stages, forms and chips the group catches
                         control: multi
-                        from: [status_chips, project_types]
+                        from: [project_stages, project_forms, status_chips]
                     color:
                         help: the colour of the group's count and of its dot in the filter
                         control: colour

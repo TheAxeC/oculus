@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, Present partial. The idea cards of the grid slide, one per member of a group, with
-    // the legend of the maturity chips the group looks for and the foot line, and the one card of
-    // an `idea` slide, which is the same card alone. A card is the project's name with its domain's
-    // dot, its maturity chip and one line of what the idea is; the dot's hue and the maturity's
-    // words come from config/catalogs/vocab.yml.
+    // the legend of the stages the group looks for and the foot line, and the one card of an `idea`
+    // slide, which is the same card alone. A card is the project's name with its domain's dot, its
+    // maturity (the label of the project's stage) and one line of what the idea is; the dot's hue
+    // and the maturity's words come from config/catalogs/vocab.yml.
 
     import Dot from './Dot.svelte';
     import Legend from './Legend.svelte';
@@ -18,7 +18,7 @@
         lede?: string;
         cards: DeckIdeaCard[];
         foot?: string;
-        /** The status chips the group looks for. */
+        /** The stages the group looks for. */
         legend?: string[];
     };
 
@@ -46,7 +46,7 @@
             </div>
         {/each}
     </div>
-    <Legend statuses={legend} />
+    <Legend stages={legend} />
     {#if foot !== ''}
         <p class="hint"><Words text={foot} /></p>
     {/if}

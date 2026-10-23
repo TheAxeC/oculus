@@ -17,12 +17,12 @@ import type { PlantedPersonal } from '../../routes/edit/write-fixture.ts';
 export const MANIFEST = [
     'id: alpha',
     'tier: projects',
-    'type: active',
+    'stage: submitted',
     'title: "A title"',
     'pin: true',
     'year: 2026',
     'status:',
-    '  chips: [submitted, lead]',
+    '  chips: [lead]',
     '  line: "the line"',
     'pillar: [tensor]',
     ''

@@ -62,7 +62,7 @@
         <Project
             slide={row.slide}
             title={row.title}
-            type={row.type}
+            stage={row.stage}
             domain={row.domain}
             tagTone={tagToneOf(deck, row.slide)}
         />

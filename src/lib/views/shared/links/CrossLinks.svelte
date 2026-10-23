@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, each
-    // group nesting its members under their own project type, and each member opening its tab.
+    // group nesting its members under their own project stage, and each member opening its tab.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
@@ -8,7 +8,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         groupProjects,
-        membersByType,
+        membersByStage,
         type CrossGroup,
         type Project
     } from '$lib/state/boards/collection';
@@ -76,9 +76,9 @@
             </span>
             {#if isOpen(group.type)}
                 <div class="members">
-                    {#each membersByType(group) as kind (kind.type)}
-                        <div class="kind" data-project-kind={kind.type}>
-                            <Tag label={kind.type} />
+                    {#each membersByStage(group) as kind (kind.stage)}
+                        <div class="kind" data-project-kind={kind.stage}>
+                            <Tag label={kind.stage} />
                             {#each kind.members as member (member.id)}
                                 <span class="member">
                                     <ToolButton

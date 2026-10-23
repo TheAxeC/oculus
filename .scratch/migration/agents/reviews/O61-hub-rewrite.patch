@@ -1,0 +1,1905 @@
+--- a/.oculus/config.yml
++++ b/.oculus/config.yml
+@@ -3,21 +3,21 @@
+ # This hub's settings for oculus: the folders and files the portfolio is built from, the hub's documents, the cluster its jobs run on, the files the writing rules skip or let draw arrows, the wallpaper image, and the hub's own words: the career card's host statuses, score axes and score hues, and the fit colours of the Position Leads. A key here replaces the value of the same key in oculus's own config/*.yml whole; a key outside oculus's hub list is a finding and is not applied. The hub's data files are at oculus's own paths under .oculus/data/ (its config/sources.yml), so this file names no `collections:` list and no `career_file`; a missing file of that list is a finding, since the hub holds the folder. The research domains, with their colours, labels and whether they expect a dataset, are the entries of .oculus/data/pillars/domains.yml, and the theme words of the venues and datasets are the options of the `themes` field of .oculus/data/research/venues.yml and .oculus/data/research/data.yml.
+ # ===========================================================================
+ 
+-# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and type are the manifest's own `tier` and `type` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
++# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and stage are the manifest's own `tier` and `stage` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
+ scan:
+-  # Projects of the tier projects and the type idea.
++  # Projects of the tier projects that are ideas: nascent, scoping, de-risking or paused.
+   - { dir: projects/ideas }
+-  # Projects of the tier personal, the types idea and active; the folder `school` holds the school and thesis ones.
++  # Projects of the tier personal, at any stage; the folder `school` holds the school and thesis ones.
+   - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing
+-  # Projects of the tier projects and the type active.
++  # Projects of the tier projects in flight.
+   - { dir: projects/active }
+-  # Projects of the tier projects and the type active, each holding a manuscript folder.
++  # Projects of the tier projects in flight, each holding a manuscript folder.
+   - { dir: projects/manuscripts }
+   # Projects of the tier software, the research tools and libraries; each holds a `repository:` block.
+   - { dir: projects/software, optional: true }   # optional; a hub without the folder reports nothing
+-  # Projects of the tier coauthor, each of the type it ended as (published, in-prep, tech-report, abandoned, software).
++  # Projects of the tier coauthor, each at the stage it reached (published, submitted, in-prep, finished, abandoned).
+   - { dir: projects/coauthor }
+-  # Projects of the tier archive, each of the type it ended as (published, phd, nogo, dropped, disproved).
++  # Projects of the tier archive, each at the stage it ended at (published, nogo, dropped, disproved).
+   - { dir: projects/archive }
+ 
+ # The folder a new project is made in, for each tier: the New project form of a board offers it as the project's folder, and an app's new-project write with no folder uses the `projects` one. Each folder is a scan folder or lies under one.
+--- a/.oculus/data/academic/applications.yml
++++ b/.oculus/data/academic/applications.yml
+@@ -7,7 +7,7 @@
+   - { field: key, type: text, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
+   - { field: title,   type: text,     required: true, help: "The name of the application." }
+   - { field: sub,     type: text,     label: "Subtitle", help: "A second line under the title, such as the institution." }
+-  - { field: status,  type: select,   options: ["not applied", active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where the application stands." }
++  - { field: status,  type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where the application stands." }
+   - { field: date,    type: text, help: "The year the application was made." }
+   - { field: meta,    type: metalist, help: "Label and value rows shown on the card." }
+   - { field: tags,    type: tags, help: "Words the card is filtered by." }
+@@ -306,7 +306,7 @@
+   - key: 2025-denmark-ai-zap
+     title: "Denmark, AI ZAP"
+     sub: "Tenure-Track Assistant Professors and Associate Professors in Artificial Intelligence"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "Denmark" }
+@@ -324,7 +324,7 @@
+   - key: 2025-kth-sign-language
+     title: "KTH, Sign Language"
+     sub: "Postdoc in Foundation Models for Sign Language"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "KTH" }
+@@ -342,7 +342,7 @@
+   - key: 2025-luxembourg-ai
+     title: "Luxembourg, AI"
+     sub: "Postdoctoral fellow (Research Associate) in Clinical and Translational Medicine Informatics"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "Univ. Luxembourg" }
+@@ -359,7 +359,7 @@
+   - key: 2025-luxembourg-zap
+     title: "Luxembourg, ZAP"
+     sub: "ZAP / Faculty - AI"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "Univ. Luxembourg" }
+@@ -370,7 +370,7 @@
+   - key: 2025-umea-precision-zap
+     title: "Umeå, Precision ZAP"
+     sub: "Assistant Professor of Data-Driven Precision Medicine and Diagnostics (DDLS Fellow)"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "Umeå Univ." }
+@@ -388,7 +388,7 @@
+   - key: 2025-uppsala-precision-zap
+     title: "Uppsala, Precision ZAP"
+     sub: "Associate Senior Lecturer / Assistant Professor (DDLS Fellow) in Data-Driven Research in Precision Medicine and Diagnostics"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "Uppsala Univ." }
+@@ -406,7 +406,7 @@
+   - key: 2024-lund-paleogenomics
+     title: "Lund, Paleogenomics"
+     sub: "Postdoctoral Fellow in AI and Paleogenomics of the Silk Roads"
+-    status: not applied
++    status: not-applied
+     date: "2024"
+     meta:
+       - { label: Institution, value: "Lund Univ." }
+@@ -423,7 +423,7 @@
+   - key: 2024-hasselt-neuroscience-zap
+     title: "Hasselt, Neuroscience ZAP"
+     sub: "Tenure Track / Professor of Neurosciences, Multi-Omics Data Analysis"
+-    status: not applied
++    status: not-applied
+     date: "2024"
+     meta:
+       - { label: Institution, value: "UHasselt" }
+@@ -440,7 +440,7 @@
+   - key: 2025-ucd-rwe-zap
+     title: "UCD, RWE ZAP"
+     sub: "Ad Astra Fellow - Assistant Professor of Artificial Intelligence in Medical Diagnostics"
+-    status: not applied
++    status: not-applied
+     date: "2025"
+     meta:
+       - { label: Institution, value: "University College Dublin" }
+--- a/deck/present.yml
++++ b/deck/present.yml
+@@ -4,7 +4,7 @@
+ 
+ groups:
+     pillars:
+-        find: { folders: projects/*/*/present, tiers: [projects], types: [active, idea] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted, idea, nascent, scoping] }
+         slides:
+             - hccnet-revision
+             - covert-applied
+@@ -14,7 +14,7 @@
+             - btfno
+             - bt-operator-theory
+     more:
+-        find: { folders: projects/*/*/present, tiers: [projects], types: [active] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted] }
+         discover: true
+         sort: folder
+         slides:
+@@ -25,7 +25,7 @@
+             - meseret-cirrhosis
+             - ward-bttr-crosssubject
+     ideas:
+-        find: { folders: projects/*/*/present, tiers: [projects], types: [idea], status: [nascent, scoping, de-risking] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [nascent, scoping, de-risking] }
+         discover: true
+         slides:
+             - btd-autoencoder
+--- a/projects/active/eeg-saad-challenge/project.yml
++++ b/projects/active/eeg-saad-challenge/project.yml
+@@ -1,5 +1,5 @@
+ id: eeg-saad-challenge
+-type: active
++stage: exploring
+ tier: projects
+ domain: brain
+ short: EEG-sAAD
+@@ -21,8 +21,7 @@
+   url: ''
+   doi: ''
+ status:
+-  chips:
+-  - exploring
++  chips: []
+   line: Challenge entry, no manuscript. Development phase to 2026-11-08, blind test 2026-11-09 to 12-08.
+ venue_id: icassp
+ deadline: 2026-12-08
+--- a/projects/active/linfoot-estimator/project.yml
++++ b/projects/active/linfoot-estimator/project.yml
+@@ -1,9 +1,9 @@
+ id: linfoot-estimator
+ short: Linfoot Estimator
+-type: active
++stage: exploring
+ tier: projects
+ status:
+-  chips: [exploring]
++  chips: []
+   line: "`article`, 62 pp, compiles, no undefined references, draft in revision."
+ focus: run
+ domain: method
+--- a/projects/active/loewner/project.yml
++++ b/projects/active/loewner/project.yml
+@@ -1,5 +1,5 @@
+ id: loewner
+-type: active
++stage: exploring
+ tier: projects
+ domain: method
+ short: Loewner
+@@ -19,8 +19,7 @@
+   url: ''
+   doi: ''
+ status:
+-  chips:
+-  - exploring
++  chips: []
+   line: Research stage; algorithm development. No manuscript or experiments.
+ venue_id: null
+ eli5: Build a neural-network layer that learns a compact rational processing operator through a Loewner construction. Test whether it improves signal or image processing over direct filter learning at matched cost.
+--- a/projects/active/novel-math-primitives/project.yml
++++ b/projects/active/novel-math-primitives/project.yml
+@@ -1,6 +1,6 @@
+ id: novel-math-primitives
+ short: Math-Primitives
+-type: active
++stage: exploring
+ tier: projects
+ domain: method
+ title: "Untapped Mathematical Primitives for ML: tensor algebra, category theory, graph theory"
+@@ -9,7 +9,7 @@
+ pillar: [tensor]
+ focus: backburner
+ status:
+-  chips: [exploring]
++  chips: []
+   line: "Exploration/scan, no code or manuscript. 12 untapped primitives mapped (tensor algebra / category theory / graph theory), web novelty-checked 2026-07-13. Gate = pick one, build the differentiable bridge + separation."
+ venue_id:
+ eli5: "A shortlist of mathematical objects that machine learning does not yet use - hyperdeterminants, immanants, Schur functors, graph magnitude, and more - each with a first idea for turning it into a differentiable layer or loss, and a statement of what it could do that a standard layer cannot."
+--- a/projects/active/sandpile-operator/project.yml
++++ b/projects/active/sandpile-operator/project.yml
+@@ -1,6 +1,6 @@
+ id: sandpile-operator
+ short: Sandpile-Op
+-type: active
++stage: active
+ tier: projects
+ domain: method
+ title: "A Soft-Sandpile Progression Operator: differentiable threshold-cascade dynamics for spreading processes"
+--- a/projects/archive/disproved/ms-lipid-handshake/project.yml
++++ b/projects/archive/disproved/ms-lipid-handshake/project.yml
+@@ -2,7 +2,7 @@
+ status:
+   chips: [lead]
+ short: "MS Lipid Handshake"
+-type: disproved
++stage: disproved
+ tier: archive
+ domain: immune
+ pillar: [tensor]
+--- a/projects/archive/dropped/algebraic-subtyping/project.yml
++++ b/projects/archive/dropped/algebraic-subtyping/project.yml
+@@ -2,7 +2,7 @@
+ status:
+   chips: [lead]
+ short: "Algebraic Subtyping"
+-type: dropped
++stage: dropped
+ tier: archive
+ domain: cs
+ title: "Algebraic Subtyping for Algebraic Effects and Handlers"
+--- a/projects/archive/dropped/connectivity-motor-imagery/project.yml
++++ b/projects/archive/dropped/connectivity-motor-imagery/project.yml
+@@ -2,7 +2,7 @@
+ status:
+   chips: [lead]
+ short: "Motor-Imagery Connectivity"
+-type: dropped
++stage: dropped
+ tier: archive
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/archive/nogo/faithful-block-term-layer/project.yml
++++ b/projects/archive/nogo/faithful-block-term-layer/project.yml
+@@ -2,7 +2,7 @@
+ status:
+   chips: [lead]
+ short: "Faithful BT Layer"
+-type: nogo
++stage: nogo
+ tier: archive
+ domain: method
+ pillar: [tensor]
+--- a/projects/archive/nogo/fed-faithful-ecg/project.yml
++++ b/projects/archive/nogo/fed-faithful-ecg/project.yml
+@@ -1,5 +1,5 @@
+ id: fed-faithful-ecg
+-type: nogo
++stage: nogo
+ tier: archive
+ domain: heart
+ short: "Fed-Faithful ECG"
+--- a/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
++++ b/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
+@@ -2,7 +2,7 @@
+ status:
+   chips: [lead]
+ short: "Jacobian-Coupled BT-DP"
+-type: nogo
++stage: nogo
+ tier: archive
+ domain: privacy
+ pillar: [tensor, federated]
+--- a/projects/archive/phd/phd-thesis/project.yml
++++ b/projects/archive/phd/phd-thesis/project.yml
+@@ -1,9 +1,11 @@
+ id: phd-thesis
+ short: "PhD Thesis"
+-type: phd
++stage: published
++form: thesis
++venue_id: kuleuven-thesis
+ tier: archive
+ status:
+-  chips: [thesis, lead]
++  chips: [lead]
+ domain: brainbci
+ pillar: [tensor]
+ related: [source-localization, block-term-tensor-regression, extended-bttr-note]
+--- a/projects/archive/published/2016/bachelor-network-ids/project.yml
++++ b/projects/archive/published/2016/bachelor-network-ids/project.yml
+@@ -1,8 +1,9 @@
+ id: bachelor-network-ids
+ status:
+-  chips: [thesis, lead]
++  chips: [lead]
+ short: "Flow-based Network IDS (BSc)"
+-type: published
++stage: published
++form: thesis
+ tier: archive
+ domain: cs
+ pillar: [student-research]
+--- a/projects/archive/published/2017/icfp-src-abstract/project.yml
++++ b/projects/archive/published/2017/icfp-src-abstract/project.yml
+@@ -1,8 +1,9 @@
+ id: icfp-src-abstract
+ status:
+-  chips: [abstract, lead]
++  chips: [lead]
+ short: "Row-Based Effects Core Language (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: archive
+ domain: cs
+ pillar: [student-research]
+--- a/projects/archive/published/2017/icfp-src-poster/project.yml
++++ b/projects/archive/published/2017/icfp-src-poster/project.yml
+@@ -1,8 +1,9 @@
+ id: icfp-src-poster
+ status:
+-  chips: [poster, lead]
++  chips: [lead]
+ short: "Row-Based Effects Core Language (poster)"
+-type: published
++stage: published
++form: poster
+ tier: archive
+ domain: cs
+ pillar: [student-research]
+--- a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
++++ b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
+@@ -1,8 +1,9 @@
+ id: masters-algebraic-subtyping
+ status:
+-  chips: [thesis, lead]
++  chips: [lead]
+ short: "Algebraic Subtyping (MSc)"
+-type: published
++stage: published
++form: thesis
+ tier: archive
+ domain: cs
+ pillar: [student-research]
+--- a/projects/archive/published/2018/masters-eeg-infotheory/project.yml
++++ b/projects/archive/published/2018/masters-eeg-infotheory/project.yml
+@@ -1,8 +1,9 @@
+ id: masters-eeg-infotheory
+ status:
+-  chips: [thesis, lead]
++  chips: [lead]
+ short: "EEG Info-Theoretic Connectivity (MSc)"
+-type: published
++stage: published
++form: thesis
+ tier: archive
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
++++ b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
+@@ -1,8 +1,9 @@
+ id: abstract-bci-meeting-2021
+ status:
+-  chips: [abstract, lead]
++  chips: [lead]
+ short: "BCI Connectivity (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: archive
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/archive/published/2021/source-localization/project.yml
++++ b/projects/archive/published/2021/source-localization/project.yml
+@@ -1,8 +1,9 @@
+ id: source-localization
+ status:
+-  chips: [journal, lead]
++  chips: [lead]
+ short: "eLORETA Source Reduction"
+-type: published
++stage: published
++form: journal
+ tier: archive
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/archive/published/2021/volga-finger-trajectories/project.yml
++++ b/projects/archive/published/2021/volga-finger-trajectories/project.yml
+@@ -1,8 +1,9 @@
+ id: volga-finger-trajectories
+ status:
+-  chips: [abstract, lead]
++  chips: [lead]
+ short: "Finger Trajectories (Volga abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: archive
+ domain: brainbci
+ pillar: [tensor]
+--- a/projects/archive/published/2022/block-term-tensor-regression/project.yml
++++ b/projects/archive/published/2022/block-term-tensor-regression/project.yml
+@@ -1,8 +1,9 @@
+ id: block-term-tensor-regression
+ status:
+-  chips: [journal, lead]
++  chips: [lead]
+ short: "BTTR Finger Decoding"
+-type: published
++stage: published
++form: journal
+ tier: archive
+ domain: brainbci
+ pillar: [tensor]
+--- a/projects/archive/published/2022/connectivity-iris/project.yml
++++ b/projects/archive/published/2022/connectivity-iris/project.yml
+@@ -1,8 +1,9 @@
+ id: connectivity-iris
+ status:
+-  chips: [journal, lead]
++  chips: [lead]
+ short: "NN Connectivity"
+-type: published
++stage: published
++form: journal
+ tier: archive
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/archive/published/2022/extended-bttr-note/project.yml
++++ b/projects/archive/published/2022/extended-bttr-note/project.yml
+@@ -1,8 +1,9 @@
+ id: extended-bttr-note
+ status:
+-  chips: [journal, lead]
++  chips: [lead]
+ short: "BTTR Coactivation"
+-type: published
++stage: published
++form: journal
+ tier: archive
+ domain: brainbci
+ pillar: [tensor]
+--- a/projects/archive/published/2025/fbttr-strategies/project.yml
++++ b/projects/archive/published/2025/fbttr-strategies/project.yml
+@@ -1,8 +1,9 @@
+ id: fbttr-strategies
+ status:
+-  chips: [conference, lead]
++  chips: [lead]
+ short: "FBTTR Strategies"
+-type: published
++stage: published
++form: conference
+ tier: archive
+ domain: privacy
+ pillar: [tensor, federated]
+--- a/projects/archive/published/2025/fermat/project.yml
++++ b/projects/archive/published/2025/fermat/project.yml
+@@ -1,8 +1,9 @@
+ id: fermat
+ status:
+-  chips: [conference, lead]
++  chips: [lead]
+ short: "FERMAT"
+-type: published
++stage: published
++form: conference
+ tier: archive
+ domain: privacy
+ pillar: [tensor, federated]
+--- a/projects/archive/published/2025/go-bttr/project.yml
++++ b/projects/archive/published/2025/go-bttr/project.yml
+@@ -1,8 +1,9 @@
+ id: go-bttr
+ status:
+-  chips: [journal, lead]
++  chips: [lead]
+ short: "Sign-Language ECoG"
+-type: published
++stage: published
++form: journal
+ tier: archive
+ domain: brainbci
+ pillar: [tensor]
+--- a/projects/archive/published/2026/abduction/project.yml
++++ b/projects/archive/published/2026/abduction/project.yml
+@@ -1,8 +1,9 @@
+ id: abduction
+ status:
+-  chips: [conference, lead]
++  chips: [lead]
+ short: "Finger Abduction"
+-type: published
++stage: published
++form: conference
+ tier: archive
+ domain: brainbci
+ pillar: [tensor]
+--- a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
++++ b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
+@@ -1,6 +1,7 @@
+ id: glassbox-decision-pipelines
+ short: Robust-XAI-ECG
+-type: published
++stage: published
++form: conference
+ tier: archive
+ domain: method
+ title: "Transparent and Robust: Interpretable Inputs Improve Foundation Models in Mission-Critical Decision Pipelines"
+@@ -23,7 +24,7 @@
+   date: "2026-08-10"
+   note: "2026-08-10: re-ran the camera-ready age control, where the paper's headline claim lives, through the newly wired DAG path (jobs 560203+560208, 21/21 COMPLETED). All 5100 AUROC values bit-identical, stats.json matching to 4.6e-15, TOST p=0.017/p=0.010 and the 48/48 age lift exact. That stage is CPU-only over cached embeddings, so it re-ran from those, not from raw. Last FULL from-raw run was 2026-07-16: ONE command (code/hpc/run_all.sh) rebuilt the degradation + transport numbers from the raw MIMIC zip / CODE-15 HDF5 (base caches, raw caches, labels, 17 conditions x 6 FMs x 2 cohorts, transport) with an emptied cache dir and 4 freshly built envs. EVERY claim reported at that date reproduced, zero sign flips. Exact: MIMIC 0.757 vs 0.761; CODE-15 0.804 vs 0.812; severe EMG 0.812->0.614 vs 0.804->0.754. named+age is bit-identical everywhere (CPU features); 6/7 MIMIC models to 0.000000 across all 17 conditions; both base caches md5-identical. Derived gaps can drift ~0.004 from ordinary GPU kernel nondeterminism amplified by the discontinuous GBM head - expected for GPU baselines, far inside the CI, sign and conclusion unchanged. CAVEAT, corrected 2026-08-10: that run did NOT cover the camera-ready age control, which is where the paper's headline claim now lives - eval/age_control.py did not exist until 2026-08-07 and was a manual side-run outside the DAG until 2026-08-10, so the one-command path did not regenerate it. Now wired into hpc/submit_wave.sh on the transport job's dependency, and verified as above. See README."
+ status:
+-  chips: [conference, lead]
++  chips: [lead]
+   line: "`llncs`, 8 pp, 24 refs, compiles clean, 0 overfull, LNBIP limit met. AI-tell clean."
+ venue_id: xai-eadm
+ outcome: "Published at the XAI-EADM workshop, CBI-EDOC 2026, Enschede, 15-18 Sep 2026, Springer LNBIP (Faes). Camera-ready submitted 2026-08-07 with the signed Springer LTP form. The reviewers' age ablation reversed the submitted thesis, so the camera-ready reports the surviving positive: giving a frozen encoder the one covariate it cannot see improves it everywhere."
+--- a/projects/archive/published/2026/hcc-modality-poster/project.yml
++++ b/projects/archive/published/2026/hcc-modality-poster/project.yml
+@@ -1,8 +1,9 @@
+ id: hcc-modality-poster
+ status:
+-  chips: [poster, lead]
++  chips: [lead]
+ short: "Modality-Specific HCC Encoding (poster)"
+-type: published
++stage: published
++form: poster
+ tier: archive
+ domain: liver
+ pillar: [hcc]
+--- a/projects/archive/published/2026/hccnet-fl/project.yml
++++ b/projects/archive/published/2026/hccnet-fl/project.yml
+@@ -1,6 +1,7 @@
+ id: hccnet-fl
+ short: HCCNet-FL
+-type: published
++stage: published
++form: conference
+ tier: archive
+ domain: liver
+ title: "Federate What Transfers: Component-Aware Federation of Self-Supervised Backbones for Longitudinal 3D MRI"
+@@ -10,7 +11,7 @@
+ related: [hccnet-revision, hccnet-fl-sweden]
+ funding: [ZonMw-AI-HCC]
+ status:
+-  chips: [conference, lead]
++  chips: [lead]
+   line: "`IEEEtran`, 8 pp, compiles clean, FLTA 2026 accepted/to appear. AI-tell clean."
+ venue_id: flta
+ compute: [utwente]  # federated 3D MRI training runs on the UTwente SLURM cluster
+--- a/projects/coauthor/abandoned/individual-reference-intervals/project.yml
++++ b/projects/coauthor/abandoned/individual-reference-intervals/project.yml
+@@ -1,6 +1,6 @@
+ id: individual-reference-intervals
+ short: "Reference Intervals"
+-type: abandoned
++stage: abandoned
+ tier: coauthor
+ status:
+   chips: [coauthor]
+--- a/projects/coauthor/active/clinical-hccnet/project.yml
++++ b/projects/coauthor/active/clinical-hccnet/project.yml
+@@ -1,7 +1,7 @@
+ id: clinical-hccnet
+ focus: backburner
+ short: "Clin-HCCNet"
+-type: in-prep
++stage: in-prep
+ tier: coauthor
+ status:
+   chips: [admin-prep, coauthor]
+--- a/projects/coauthor/active/elixir-fl4e/project.yml
++++ b/projects/coauthor/active/elixir-fl4e/project.yml
+@@ -1,6 +1,6 @@
+ id: elixir-fl4e
+ short: "FL4E"
+-type: software
++stage: finished
+ tier: coauthor
+ status:
+   chips: [lead]
+--- a/projects/coauthor/active/flkit/project.yml
++++ b/projects/coauthor/active/flkit/project.yml
+@@ -1,10 +1,10 @@
+ id: flkit
+ focus: review
+ short: "FLKit"
+-type: in-prep
++stage: submitted
+ tier: coauthor
+ status:
+-  chips: [submitted, coauthor]
++  chips: [coauthor]
+ domain: privacy
+ pillar: [federated]
+ title: "Development and Design of FLKit: A Structured Onboarding Toolkit for Federated Learning in Health and Life Sciences"
+--- a/projects/coauthor/published/2016/chi-household-survival/project.yml
++++ b/projects/coauthor/published/2016/chi-household-survival/project.yml
+@@ -1,8 +1,9 @@
+ id: chi-household-survival
+ status:
+-  chips: [abstract, coauthor]
++  chips: [coauthor]
+ short: "Household Survival (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: coauthor
+ domain: cs
+ pillar: [student-research]
+--- a/projects/coauthor/published/2016/chi-purpose-centric/project.yml
++++ b/projects/coauthor/published/2016/chi-purpose-centric/project.yml
+@@ -1,8 +1,9 @@
+ id: chi-purpose-centric
+ status:
+-  chips: [abstract, coauthor]
++  chips: [coauthor]
+ short: "Objects as Game Controllers (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: coauthor
+ domain: cs
+ pillar: [student-research]
+--- a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
++++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
+@@ -1,6 +1,7 @@
+ id: algebraic-effects-compilation
+ short: "Algebraic Effects Compilation"
+-type: tech-report
++stage: finished
++form: tech-report
+ tier: coauthor
+ status:
+   chips: [coauthor]
+--- a/projects/coauthor/published/2017/http2-best-practices/project.yml
++++ b/projects/coauthor/published/2017/http2-best-practices/project.yml
+@@ -1,9 +1,10 @@
+ id: http2-best-practices
+ short: "HTTP/2 Best Practices"
+-type: published
++stage: published
++form: conference
+ tier: coauthor
+ status:
+-  chips: [conference, coauthor]
++  chips: [coauthor]
+ title: "Concatenation, embedding and sharding: Do HTTP/1 performance best practices make sense in HTTP/2?"
+ eli5: "Asks whether the HTTP/1 speed tricks (bundling files, embedding resources inline, splitting them across hostnames) still help under HTTP/2. Using a reproducible test framework called Speeder, it finds HTTP/2 mostly on par with HTTP/1 and most best practices still applicable, with HTTP/2's slower cases coming from implementation bugs, not the protocol."
+ year: 2017
+--- a/projects/coauthor/published/2018/http2-web-performance/project.yml
++++ b/projects/coauthor/published/2018/http2-web-performance/project.yml
+@@ -1,9 +1,10 @@
+ id: http2-web-performance
+ short: "HTTP/2 Web Performance"
+-type: published
++stage: published
++form: conference
+ tier: coauthor
+ status:
+-  chips: [conference, coauthor]
++  chips: [coauthor]
+ title: Web Performance Characteristics of HTTP/2 and comparison to HTTP/1.1
+ eli5: "A measurement study of HTTP/2's four main features (single-connection multiplexing, stream prioritization, Server Push, HPACK header compression) versus HTTP/1.1 across network conditions. HTTP/2 rarely improves page load much beyond lower overhead, the single connection can bottleneck under heavy packet loss, and the four features each help only modestly."
+ year: 2018
+--- a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
++++ b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
+@@ -1,8 +1,9 @@
+ id: coordinated-fingers-ecnr
+ status:
+-  chips: [abstract, coauthor]
++  chips: [coauthor]
+ short: "Coordinated Fingers from HD-EEG (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: coauthor
+ domain: brain
+ pillar: [neurotech]
+--- a/projects/coauthor/published/2023/ecog-frequency-features/project.yml
++++ b/projects/coauthor/published/2023/ecog-frequency-features/project.yml
+@@ -1,9 +1,10 @@
+ id: ecog-frequency-features
+ short: "ECoG Frequency Features"
+-type: published
++stage: published
++form: journal
+ tier: coauthor
+ status:
+-  chips: [journal, coauthor]
++  chips: [coauthor]
+ domain: brainbci
+ pillar: [neurotech]
+ title: The role of distinct ECoG frequency features in decoding finger movement
+--- a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
++++ b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
+@@ -1,8 +1,9 @@
+ id: modulation-lmp-bci
+ status:
+-  chips: [abstract, coauthor]
++  chips: [coauthor]
+ short: "LMP Gamma Modulation (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: coauthor
+ domain: brainbci
+ pillar: [neurotech]
+--- a/projects/coauthor/published/2024/highgamma-event-detection/project.yml
++++ b/projects/coauthor/published/2024/highgamma-event-detection/project.yml
+@@ -1,8 +1,9 @@
+ id: highgamma-event-detection
+ status:
+-  chips: [abstract, coauthor]
++  chips: [coauthor]
+ short: "High-Gamma Event Detection (abstract)"
+-type: published
++stage: published
++form: abstract
+ tier: coauthor
+ domain: brainbci
+ pillar: [neurotech]
+--- a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
++++ b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
+@@ -1,8 +1,9 @@
+ id: editorial-bigdata-ai-ms
+ status:
+-  chips: [journal, coauthor]
++  chips: [coauthor]
+ short: "MS Big-Data Editorial"
+-type: published
++stage: published
++form: journal
+ tier: coauthor
+ domain: meta
+ title: "Editorial introduction 'The use of big data and AI in MS'"
+--- a/projects/coauthor/published/2025/pfl-ms-npj/project.yml
++++ b/projects/coauthor/published/2025/pfl-ms-npj/project.yml
+@@ -1,9 +1,10 @@
+ id: pfl-ms-npj
+ short: "PFL-MS"
+-type: published
++stage: published
++form: journal
+ tier: coauthor
+ status:
+-  chips: [journal, coauthor]
++  chips: [coauthor]
+ domain: privacy
+ pillar: [federated]
+ datasets: [msbase]
+--- a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
++++ b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
+@@ -1,9 +1,10 @@
+ id: proprioception-exoskeleton
+ short: "Proprioception EEG"
+-type: published
++stage: published
++form: conference
+ tier: coauthor
+ status:
+-  chips: [conference, coauthor]
++  chips: [coauthor]
+ domain: brainbci
+ pillar: [neurotech]
+ title: On the Impact of Proprioception in EEG Representations and Decoding during Human-Hand Exoskeleton Interaction
+--- a/projects/ideas/adapter-format-theory/project.yml
++++ b/projects/ideas/adapter-format-theory/project.yml
+@@ -1,5 +1,5 @@
+ id: adapter-format-theory
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Format Theory"
+ domain: method
+@@ -9,7 +9,7 @@
+ focus: derisk
+ related: [bt-operator-theory, btfno, florank-personalization]
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, gate-pending. One cheap measurement decides it: does a fine-tuned weight update carry block-banded structure against a permutation null. At the null the theory collapses to parameter counting."
+ venue_id: jmlr
+ eli5: "Adapters compress the weight update of a large pretrained model. Which tensor format should that update use, and can the choice be made from data with a guarantee? The operator-theory line already proves a risk ordering across formats for spectral operators; whether that carries to weight updates depends on one measurable property of the update."
+--- a/projects/ideas/asthma-geo-tensor/project.yml
++++ b/projects/ideas/asthma-geo-tensor/project.yml
+@@ -1,6 +1,6 @@
+ id: asthma-geo-tensor
+ short: "Asthma-Geo"
+-type: idea
++stage: nascent
+ tier: projects
+ domain: method               # respiratory/environmental-health has no theme yet; filed under the Methods frontier
+ title: "Federated spatiotemporal tensor modeling of asthma exacerbation from geolocation + environmental exposure"
+@@ -9,7 +9,7 @@
+ pillar: [federated, tensor]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Speculative; needs a cited novelty check + a public asthma + environmental-exposure data source before committing."
+ venue_id:
+ eli5: "Asthma attacks track the environment (pollen, air pollution, weather), which varies by where you are and when. Modeling (patients x environmental-exposure x time) as a tensor, federated across health systems, could predict exacerbation risk while keeping each patient's location and health data local."
+--- a/projects/ideas/attention-scoped-instructions/project.yml
++++ b/projects/ideas/attention-scoped-instructions/project.yml
+@@ -1,5 +1,5 @@
+ id: attention-scoped-instructions
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Scoped Instructions"
+ domain: method
+@@ -9,7 +9,7 @@
+ focus: scope
+ related: []
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, paused. Four candidates from one literature pass, nothing built. A kill-check decides the primary one if it is ever picked up."
+ venue_id: icml
+ eli5: "A long set of written rules handed to a model has no scope: every rule sees every other one, so editing one section silently shifts behaviour governed by another. Let the sections declare who may see whom and who wins, compile that into the attention pattern, and the interference becomes impossible rather than unlikely."
+--- a/projects/ideas/block-term-nca/project.yml
++++ b/projects/ideas/block-term-nca/project.yml
+@@ -1,5 +1,5 @@
+ id: block-term-nca
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Block-term NCA"
+ domain: method
+@@ -9,7 +9,7 @@
+ focus: holding
+ related: [btfno, bt-operator-theory]
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, paused. First-pass novelty scan only, nothing built."
+ venue_id:
+ eli5: "A neural cellular automaton learns the local rule that makes a pattern grow. Write that rule as block-term pieces, each one growth mechanism, and on serial scans each patient gets numbers for how a lesion grows: pushing outward, infiltrating, or regrowing at a treated edge."
+--- a/projects/ideas/brecht-fl-partitioning/project.yml
++++ b/projects/ideas/brecht-fl-partitioning/project.yml
+@@ -1,5 +1,5 @@
+ id: brecht-fl-partitioning
+-type: idea
++stage: nascent
+ tier: projects
+ short: "FL Partitioning"
+ domain: heart
+@@ -9,7 +9,7 @@
+ related: [clinical-ai-eval-artifacts]
+ focus: scope
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Thesis read + summarised; not yet spec'd as a standalone contribution (candidate feeder for clinical-ai-eval-artifacts)."
+ eli5: "A federated-learning data-partitioning study from Brecht Heeren's Hasselt master's thesis (Axel co-supervisor). On MIT-BIH ECG arrhythmia classification, it shows that label-distribution skew across clients hurts FL far more than dataset-size skew, and that global-model accuracy can hide large per-client degradation."
+ next: "Decide standalone vs folding the label-skew and global-vs-local evaluation findings into clinical-ai-eval-artifacts (the partition-induced-optimism evidence); confirm Brecht co-authorship; verify novelty before any claim."
+--- a/projects/ideas/btd-autoencoder/project.yml
++++ b/projects/ideas/btd-autoencoder/project.yml
+@@ -1,5 +1,5 @@
+ id: btd-autoencoder
+-type: idea
++stage: scoping
+ tier: projects
+ short: "BTD Autoencoder"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [tensor]
+ focus: holding
+ status:
+-  chips: [scoping]
++  chips: []
+   line: "Idea / unstarted; combines a tensor-AE denoiser (Idea 3) + a small-N rigor benchmark (Idea 5)."
+ eli5: "A tensor-native autoencoder whose bottleneck IS a block-term decomposition: scVI-style denoising of sparse single-cell data plus interpretable, batch-invariant gene programs, in one model."
+ next: "Spec the model (NB count likelihood, block-term bottleneck, decoder batch conditioning) and the small-N benchmark protocol (datasets, leakage-free repeated CV, baselines, stability metrics)."
+--- a/projects/ideas/clinical-ai-eval-artifacts/project.yml
++++ b/projects/ideas/clinical-ai-eval-artifacts/project.yml
+@@ -1,5 +1,5 @@
+ id: clinical-ai-eval-artifacts
+-type: idea
++stage: scoping
+ tier: projects
+ pillar: [evaluation]
+ short: "Eval Artifacts"
+@@ -9,7 +9,7 @@
+ related: [brecht-fl-partitioning]
+ focus: holding
+ status:
+-  chips: [scoping]
++  chips: []
+   line: "Actionable, low-cost (evidence in hand); needs co-author consent (Brecht, Dongho) + a novelty check."
+ venue_id: 
+ eli5: "A meta-science critique plus corrected evaluation protocol arguing many federated/clinical-AI 'gains' are evaluation artifacts (partitioning, leakage, metric/selection bias), and the protocol that fixes it."
+--- a/projects/ideas/concept-bottleneck-hcc/project.yml
++++ b/projects/ideas/concept-bottleneck-hcc/project.yml
+@@ -1,5 +1,5 @@
+ id: concept-bottleneck-hcc
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Concept-Bottleneck HCC"
+ domain: liver
+@@ -9,7 +9,7 @@
+ related: [hccnet-revision]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Lighter, faithfully-explainable HCCNet alternative on the same cohort. LI-RADS annotations give ready-made concept supervision. Novelty checked 2026-07-04 (open)."
+ venue_id:
+ eli5: "Predict future liver cancer by first reading human-understandable liver concepts (LI-RADS features + fat fraction, diffusion, lesion volume) at each scan, then composing those concept trajectories with a simple, sparse model. Risk depends on the images ONLY through the concepts, so a radiologist can correct a concept and watch the risk update."
+--- a/projects/ideas/conformal-tensor-factors/project.yml
++++ b/projects/ideas/conformal-tensor-factors/project.yml
+@@ -1,5 +1,5 @@
+ id: conformal-tensor-factors
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Conformal Tensor"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [tensor]
+ focus: derisk
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Novelty checked clean 2026-07-04 (conformal x tensor decomposition = open). No-HPC methods flagship; gate = does a gauge-invariant conformity score hold coverage on a real block-term model."
+ venue_id:
+ eli5: "Interpretable tensor models output factor loadings a clinician reads as evidence, but with no calibrated uncertainty. Put distribution-free coverage on those loadings, solving the hard part: block-term factors are only defined up to a permutation / sign / rotation gauge that naive conformal breaks."
+--- a/projects/ideas/ecg-af-fair/project.yml
++++ b/projects/ideas/ecg-af-fair/project.yml
+@@ -1,5 +1,5 @@
+ id: ecg-af-fair
+-type: idea
++stage: de-risking
+ tier: projects
+ short: "ECG-AF (FAIR)"
+ domain: heart
+@@ -11,7 +11,7 @@
+ focus: run
+ datasets: [ml4af]
+ status:
+-  chips: [de-risking]
++  chips: []
+   line: "Lead hook + novelty open; must beat/distinguish Gruwez 2023; free venue."
+ eli5: "A FAIR-aligned methods advance for predicting atrial fibrillation from a sinus-rhythm ECG that a black-box CNN (Gruwez 2023) does not provide (interpretability or privacy), while matching or beating its discrimination."
+ next: "Inventoried 2026-09-07 and now on the cluster (DTA permits it): 494k ECGs / 142k patients, serial yes, but the label is patient-level with no event date, so time-to-AF needs a diagnosis date from ZOL. Open: lead hook (interpretable tensor vs FL), novelty lit-check, delta from dries-bttr-ecg."
+--- a/projects/ideas/engram/project.yml
++++ b/projects/ideas/engram/project.yml
+@@ -1,6 +1,6 @@
+ id: engram
+ short: Engram
+-type: idea
++stage: nascent
+ tier: projects
+ domain: privacy
+ title: "Locating and excising a memorised patient record inside a clinical language model"
+@@ -12,7 +12,7 @@
+ related: [bt-operator-theory, btfno]
+ datasets: [mimic-iv-note, pmc-patients]
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Instrument built and cluster-verified. Gate experiment not started. No manuscript."
+ venue_id:
+ eli5: "A model trained on clinical notes memorises some of them. The interpretability question: WHERE in the weights does one patient's record sit, and can it be cut out without breaking the model? Block-term decompositions of activation tensors propose the components; ablation tests them. Planted fake records are the ruler, not the target."
+--- a/projects/ideas/faithful-interpretability-position/project.yml
++++ b/projects/ideas/faithful-interpretability-position/project.yml
+@@ -1,5 +1,5 @@
+ id: faithful-interpretability-position
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Faithful-Interp Position"
+ domain: meta
+@@ -8,7 +8,7 @@
+ pillar: [tensor]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, held. Novelty checked 2026-07-04, differentiated from generic tensor-biomedical reviews. Waiting on its own evidence base: the work it argues from is not published yet."
+ venue_id:
+ eli5: "A position/roadmap paper arguing that 'the structure IS the explanation' only counts if faithfulness is MEASURED (probe + intervention), which almost no interpretable clinical tensor/DL model does. It gives the distinction, a taxonomy, an evaluation protocol, a critical survey through that lens, and a roadmap - staking out your research program."
+--- a/projects/ideas/fed-duplication-limits/project.yml
++++ b/projects/ideas/fed-duplication-limits/project.yml
+@@ -1,5 +1,5 @@
+ id: fed-duplication-limits
+-type: idea
++stage: nascent
+ tier: projects
+ short: "FL Duplication"
+ domain: privacy
+@@ -10,7 +10,7 @@
+ related: [engram]
+ datasets: [mimic-iv-note]
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Cited scan 2026-09-09: single-owner attribution and client-level erasure both occupied; duplication is the open wedge. Gate = is the frontier non-trivial."
+ venue_id:
+ eli5: "The same patient record sits at several hospitals. If a federated language model memorises it, which sites put it there, and how much can one site delete on its own? Once a record is duplicated the two questions stop being separable, and both turn into identifiability questions with a boundary rather than into systems."
+--- a/projects/ideas/fed-neural-operators/project.yml
++++ b/projects/ideas/fed-neural-operators/project.yml
+@@ -1,5 +1,5 @@
+ id: fed-neural-operators
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Fed Neural Operators"
+ domain: method
+@@ -9,7 +9,7 @@
+ related: [btfno]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Flagship: operator line (BT-FNO) x federated pillar. PRIOR ART: Fed-DeepONet (Moya & Lin) - wedge is block-term operators + heterogeneous-resolution clients + comms-efficiency. Checked 2026-07-04."
+ venue_id:
+ eli5: "Institutions each hold private field data and want to co-train one neural operator without sharing raw data. Because an operator is defined on functions not pixels, it can absorb clients at DIFFERENT resolutions/geometries - which plain federated learning (fixed-dimension weights) cannot - and the block-term structure makes the model cheap to communicate."
+--- a/projects/ideas/fedbtd/project.yml
++++ b/projects/ideas/fedbtd/project.yml
+@@ -1,5 +1,5 @@
+ id: fedbtd
+-type: idea
++stage: paused
+ tier: projects
+ short: "FedBTD"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [tensor, federated]
+ focus: holding
+ status:
+-  chips: [paused]
++  chips: []
+   line: "PAUSED. Core Procrustes/Grassmann alignment claim pre-empted by FedRot-LoRA (Feb 2026); below the top-tier methods bar. (2026-06-10 lit-check now stale.)"
+ eli5: "Properly federate a block-term tensor decomposition by aligning blocks (permutation + within-block subspace + scale) before aggregation: the tensor analogue of matched averaging (FedMA)."
+ next: "PAUSED / do not re-attempt: the alignment hook was pre-empted by FedRot-LoRA. Revisit only if a genuinely new, un-pre-empted angle appears."
+--- a/projects/ideas/fedlink/project.yml
++++ b/projects/ideas/fedlink/project.yml
+@@ -1,5 +1,5 @@
+ id: fedlink
+-type: idea
++stage: nascent
+ tier: projects
+ short: "FedLink"
+ domain: privacy
+@@ -8,7 +8,7 @@
+ pillar: [federated, tensor]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Side project. Novelty (application) + data availability BOTH verified clean (2026-06-21); only empirical gate left = does a coupled tensor beat NPOmix on held-out PoDP/MIBiG BGC-MS links."
+ eli5: "Train one model across hospitals/labs that each hold secret bacterial strain data, without sharing it, to predict which gene cluster makes which metabolite and whether it's an antibiotic, by coupling genome, mass-spectra, structure and activity in a block-term tensor."
+ next: "Empirical gate (novelty+data already cleared): pull PoDP+MIBiG+GNPS, reproduce an NPOmix-style KNN baseline, define the by-lab silo-partition protocol, and test whether a centralized coupled tensor beats NPOmix on held-out links."
+--- a/projects/ideas/fl-privacy-auditing/project.yml
++++ b/projects/ideas/fl-privacy-auditing/project.yml
+@@ -1,5 +1,5 @@
+ id: fl-privacy-auditing
+-type: idea
++stage: scoping
+ tier: projects
+ short: "FL Privacy Audit"
+ domain: privacy
+@@ -8,7 +8,7 @@
+ pillar: [federated]
+ focus: holding
+ status:
+-  chips: [scoping]
++  chips: []
+   line: "Actionable (own models + reusable attack code); gated on a novelty lit-check to fix the auditing angle."
+ eli5: "Turn ad-hoc privacy attacks (membership/attribute inference, gradient/representation inversion) into a standardized auditing procedure that emits a reportable privacy certificate for deployed clinical FL/DP models."
+ next: "Novelty lit-check to pin the auditing-standardization angle (the attack primitives are well-studied); assemble the attack battery against own FL models (COVERT, HCCNet-FL, immune privacy_attack.py)."
+--- a/projects/ideas/florank-personalization/project.yml
++++ b/projects/ideas/florank-personalization/project.yml
+@@ -1,5 +1,5 @@
+ id: florank-personalization
+-type: idea
++stage: scoping
+ tier: projects
+ short: "FLoRank Personalization"
+ domain: method
+@@ -9,7 +9,7 @@
+ related: [elixir-fl4e, pfl-ms-npj, adapter-format-theory]
+ focus: scope
+ status:
+-  chips: [scoping]
++  chips: []
+   line: "Collaboration idea (Pirmani/Moreau network). Branch-B block-term adapter checked open 2026-09-09; FL-personalization check and lead-branch decision still open."
+ eli5: "FLoRank (Pirmani et al., a collaborator's method) personalizes a federated model per-hospital with a low-rank adapter. The idea: bring that into my lines, either into the federated HCCNet imaging backbone for per-hospital adaptation, or by generalizing its matrix LoRA to a block-term tensor adapter (structured personalization a flat LoRA cannot express)."
+ next: "Finish the novelty check (FLoRank vs FedPer/Ditto/pFedHN/LoRA-FL + any tensor personalized-FL; the block-term-adapter half is done). Pick the lead branch with the collaborators; minimal block-term-adapter prototype on a synthetic heterogeneous benchmark."
+--- a/projects/ideas/harmonop/project.yml
++++ b/projects/ideas/harmonop/project.yml
+@@ -1,5 +1,5 @@
+ id: harmonop
+-type: idea
++stage: nascent
+ tier: projects
+ short: "HarmonOp"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [tensor, sciml]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Novelty checked 2026-07-04: harmonization is a GAN/ComBat monoculture, operator-theoretic framing is open. Strong->flagship methods; medium compute. Multi-site MRI already on cluster."
+ venue_id: tmi
+ eli5: "Learn the scanner-to-scanner map as an operator in function space. Because it is an operator, it is resolution- and field-strength-invariant and can zero-shot to a scanner it never saw in training - properties GANs structurally cannot give."
+--- a/projects/ideas/hccnet-fl-sweden/project.yml
++++ b/projects/ideas/hccnet-fl-sweden/project.yml
+@@ -1,5 +1,5 @@
+ id: hccnet-fl-sweden
+-type: idea
++stage: de-risking
+ tier: projects
+ short: "HCCNet FL Sweden"
+ domain: liverfl
+@@ -9,7 +9,7 @@
+ related: [hccnet-revision, hccnet-fl]
+ focus: holding
+ status:
+-  chips: [de-risking]
++  chips: []
+   line: "Spec scaffold (2026-06-12); method hook + Linköping DUA to settle; novelty lit-check PENDING."
+ venue_id: 
+ eli5: "Take HCCNet from simulated federation to a real two-country hospital network (Twente NL + Linköping SE), where sites genuinely hold different MRI sequence sets, distinct from the simulated-silo Paper 4."
+--- a/projects/ideas/hccnet-pathology/project.yml
++++ b/projects/ideas/hccnet-pathology/project.yml
+@@ -1,5 +1,5 @@
+ id: hccnet-pathology
+-type: idea
++stage: scoping
+ tier: projects
+ short: "HCCNet Pathology"
+ domain: liver
+@@ -9,7 +9,7 @@
+ related: [hccnet-revision]
+ focus: scope
+ status:
+-  chips: [scoping]
++  chips: []
+   line: "Spec scaffold (architecture_v3, 2026-06-12); novelty lit-check PENDING."
+ venue_id: 
+ eli5: "Predict liver-cancer risk with a model whose four parts each track one liver pathology (fibrosis, inflammation, steatosis, iron) instead of one black box, so a clinician sees which pathology drives the risk."
+--- a/projects/ideas/modality-dropping-btf/project.yml
++++ b/projects/ideas/modality-dropping-btf/project.yml
+@@ -1,5 +1,5 @@
+ id: modality-dropping-btf
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Modality-Dropping BTF"
+ domain: method
+@@ -9,7 +9,7 @@
+ related: [hccnet-revision]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Cited scan done 2026-06-18; gate 1 = pull TenMFL; gate 2 = matched-budget test; shares Linköping DUA."
+ venue_id: 
+ eli5: "Model multimodal fusion as a block-term tensor whose modes are the modalities; a hospital missing a modality drops that mode and runs a coherent sub-model, borrowing a provably-shared cross-modal factor from modality-rich sites."
+--- a/projects/ideas/multiway-biosignal-fm/project.yml
++++ b/projects/ideas/multiway-biosignal-fm/project.yml
+@@ -1,5 +1,5 @@
+ id: multiway-biosignal-fm
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Multiway FM"
+ domain: method
+@@ -9,7 +9,7 @@
+ focus: scope
+ related: [btfno, bt-operator-theory, ecg-readable-substrate, engram]
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, gate-pending. Cited scan 2026-09-09: no EEG or ECG foundation model uses a multilinear factorization of the data tensor. Gate = does the factorization objective beat a tokenizing model at matched budget."
+ venue_id:
+ eli5: "Every EEG and ECG foundation model chops the signal into tokens. None treats it as a channel by time by frequency array with shared structure. Build the backbone as a multilinear map on that array and define the pretraining objective on the factors, so a factor means the same thing across hospitals with different electrode layouts."
+--- a/projects/ideas/neurosde/project.yml
++++ b/projects/ideas/neurosde/project.yml
+@@ -1,5 +1,5 @@
+ id: neurosde
+-type: idea
++stage: nascent
+ tier: projects
+ short: "NeuroSDE"
+ domain: brainbci
+@@ -9,7 +9,7 @@
+ related: [ward-bttr-crosssubject, xsub-ecog-framework]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Adjacent to xsub-ecog-framework - differentiator is stochastic continuous-time dynamics + calibrated uncertainty, flagged honestly. No-HPC (Stanford fingerflex is small). Novelty checked 2026-07-04."
+ venue_id: jne
+ eli5: "Model one continuous-time cortical dynamics shared across all subjects as a stochastic differential equation, where the noise term absorbs inter-subject variability, and give each subject only a thin encoder/readout. Transfer to a new subject = fit the thin readout, freeze the shared dynamics."
+--- a/projects/ideas/paleogenomics-tensor/project.yml
++++ b/projects/ideas/paleogenomics-tensor/project.yml
+@@ -1,6 +1,6 @@
+ id: paleogenomics-tensor
+ short: "Paleo-Tensor"
+-type: idea
++stage: nascent
+ tier: projects
+ domain: method               # no `genomics` theme yet; filed under the Methods frontier
+ title: "Coupled block-term tensor decomposition for paleogenomic population structure"
+@@ -9,7 +9,7 @@
+ pillar: [tensor]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Speculative; needs a cited novelty check (ancient-DNA tensor methods) + a public data source before committing."
+ venue_id:
+ eli5: "Ancient-DNA data is naturally three-way (populations x genetic loci x time period). Decomposing that tensor with block-term / coupled methods could recover population structure and admixture more faithfully than flat PCA, and could run federated across institutions that cannot share raw ancient-DNA genotypes."
+--- a/projects/ideas/pathology-tensor-mil/project.yml
++++ b/projects/ideas/pathology-tensor-mil/project.yml
+@@ -1,5 +1,5 @@
+ id: pathology-tensor-mil
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Pathology Tensor-MIL"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [tensor, hcc]
+ focus: derisk
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Plants block-term interpretability in WSI. Field pain = spatial-blindness + unfaithful attention; low-rank MIL exists, faithful block-term does not. Novelty checked 2026-07-04."
+ eli5: "A whole-slide image is a bag of tiny patches; the usual model pools them with attention that is imprecise and unchecked. Arrange the patches on their spatial grid as a tensor and block-term decompose it: each block is a tissue-morphology signature in a coherent region, and its faithfulness is MEASURED (ablate the block, the prediction must move)."
+ next: "Extract frozen pathology-FM patch features (UNI/CONCH); build the per-slide (X x Y x feature) tensor; rank-(L,L,1) block-term decompose; slide-level head; benchmark AUROC vs attention-MIL/TransMIL AND run the probe+intervention faithfulness test. Novelty-check vs low-rank MIL first."
+--- a/projects/ideas/physics-tensor-hcc/project.yml
++++ b/projects/ideas/physics-tensor-hcc/project.yml
+@@ -1,5 +1,5 @@
+ id: physics-tensor-hcc
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Physics-Tensor HCC"
+ domain: liver
+@@ -8,7 +8,7 @@
+ pillar: [tensor, hcc]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Flagship for the Multi-Modal Precision Oncology pillar. Attacks HCCNet's documented fusion weakness with MR physics + block-term structure on its own cohort. Novelty checked 2026-07-04."
+ eli5: "The 4 DWI b-values are samples of one diffusion curve, and the T1 in/out pair is a fat-fraction measurement - so fold that physics in, then model the multiparametric data as a structured tensor (region x physical-contrast x time) whose block-term factors are readable clinical signatures. Makes fusion pay off, where HCCNet's naive fusion barely helps."
+ next: "Fit IVIM / ADC from the DWI b-values and fat fraction from Dixon; assemble the (region x contrast x time) tensor over visits; block-term decompose; benchmark future-HCC discrimination against the best single modality AND HCCNet's naive fusion. Real gate: beat best-single-modality decisively."
+--- a/projects/ideas/quantum-tensor-fl/project.yml
++++ b/projects/ideas/quantum-tensor-fl/project.yml
+@@ -1,5 +1,5 @@
+ id: quantum-tensor-fl
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Quantum Tensor/FL"
+ domain: method
+@@ -8,7 +8,7 @@
+ pillar: [federated, tensor]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "TEM / exploratory range bet, capped at one, lowest priority (post-tenure); pick A vs G after a lit-check."
+ eli5: "One exploratory quantum-methods paper from the tensor/FL line: either quantum/quantum-inspired tensor networks (A) or quantum federated learning (G). Pick one; not for its own sake."
+ next: "Lit-check the quantum-ML / quantum-FL / quantum-TN space to pin a concrete unoccupied angle (or a real connection to block-term/COVERT); decide A vs G. Pursue only opportunistically."
+--- a/projects/ideas/serial-ecg-af/project.yml
++++ b/projects/ideas/serial-ecg-af/project.yml
+@@ -1,5 +1,5 @@
+ id: serial-ecg-af
+-type: idea
++stage: nascent
+ tier: projects
+ short: "Serial-ECG AF"
+ domain: heart
+@@ -8,7 +8,7 @@
+ pillar: [tensor]
+ focus: run
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. The serial-ECG lever for the BTTN line: single-ECG models are near ceiling, serial ECGs see remodeling velocity. Data confirmed (MIMIC-IV-ECG, 638k sequential pairs). Novelty checked 2026-07-04."
+ venue_id:
+ eli5: "Instead of reading one ECG, the model reads a patient's whole SERIES of ECGs over time and tracks how the hidden atrial-fibrillation substrate is CHANGING, then predicts who will develop AF. The factor trajectory is the explanation - a glass-box model where every serial competitor is a black box."
+--- a/projects/ideas/ssm-longitudinal/project.yml
++++ b/projects/ideas/ssm-longitudinal/project.yml
+@@ -1,5 +1,5 @@
+ id: ssm-longitudinal
+-type: idea
++stage: nascent
+ tier: projects
+ short: "SSM Longitudinal"
+ domain: liver
+@@ -9,7 +9,7 @@
+ related: [hccnet-revision]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Actionable now (data + experience in hand); gated only on beating the HCCNet baseline."
+ venue_id: 
+ eli5: "Replace HCCNet's fixed-step Transformer over irregular MRI follow-ups with a continuous-time state-space model (Mamba/S4-style) conditioned on the actual time gap between scans."
+--- a/projects/ideas/strokeop/project.yml
++++ b/projects/ideas/strokeop/project.yml
+@@ -1,5 +1,5 @@
+ id: strokeop
+-type: idea
++stage: nascent
+ tier: projects
+ short: "StrokeOp"
+ domain: brain
+@@ -8,7 +8,7 @@
+ pillar: [tensor]
+ focus: derisk
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Novelty checked 2026-07-04: tumor-growth operators saturated, stroke tissue-fate operator/learned-PDE is open. Imaging flagship; needs HPC (3D perfusion). ISLES24 already on cluster, unused."
+ venue_id: media
+ eli5: "Learn the operator that maps a baseline perfusion field plus reperfusion status to the final infarct field. Because it is an operator (not a CNN), it is resolution-invariant and can be run counterfactually - what if reperfusion at 3h vs 6h."
+--- a/projects/ideas/tao-of-ecs/project.yml
++++ b/projects/ideas/tao-of-ecs/project.yml
+@@ -1,5 +1,5 @@
+ id: tao-of-ecs
+-type: idea
++stage: nascent
+ tier: projects
+ short: "TAO of ECS"
+ domain: cs
+@@ -8,7 +8,7 @@
+ pillar: []
+ focus: backburner
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, off-portfolio (PL, not biomedical). Blog post live on theaxec.github.io since 2026-07-22; paper only if it gets traction. Zero compute, competes only for writing time."
+ venue_id:
+ eli5: "Essay: trait-actor ECS (methods on components and prefabs) is to ECS what OOP is to imperative code - bind behavior to types, add dispatch and inheritance, keep the lower tier first-class - landing on prototype-based OOP over a relational substrate. Rite, the scripting language in ~/workspace/cathedra, is the existence proof."
+--- a/projects/ideas/xsub-ecog-framework/project.yml
++++ b/projects/ideas/xsub-ecog-framework/project.yml
+@@ -1,5 +1,5 @@
+ id: xsub-ecog-framework
+-type: idea
++stage: nascent
+ tier: projects
+ short: "XSub-ECoG"
+ domain: brainbci
+@@ -9,7 +9,7 @@
+ related: [ward-bttr-crosssubject]
+ focus: holding
+ status:
+-  chips: [nascent]
++  chips: []
+   line: "Idea-tier, exploring. Generalizes the ward paper-1 transfer method (behavior-aligned filter + shared seq2seq decoder, minimal-calibration) beyond fingerflex. Go/no-go = does it transfer on a SECOND ECoG task/dataset?"
+ venue_id: tnnls
+ eli5: "Paper 1 showed an interpretable trick can transfer a finger-movement decoder to a new brain-implant patient even though every patient's electrodes sit differently. This asks whether that trick is a general framework: does it also transfer decoders for other behaviors and on other datasets?"
+--- a/projects/manuscripts/bt-operator-theory/project.yml
++++ b/projects/manuscripts/bt-operator-theory/project.yml
+@@ -1,6 +1,7 @@
+ id: bt-operator-theory
+ short: BT-Op-Theory
+-type: active
++stage: submit-ready
++form: journal
+ tier: projects
+ domain: method
+ title: "A Generalization Separation for Block-Term Spectral Operators"
+@@ -11,7 +12,7 @@
+ related: [btfno]
+ waiting-on: [amir-haeri, btfno]
+ status:
+-  chips: [submit-ready, journal]
++  chips: []
+   line: "`article`, 28 pp, compiles clean, targeting JMLR (TNNLS/Neural Networks fallback); sequential to AAAI companion. AI-tell clean."
+ venue_id: jmlr
+ latest: "2026-07-18: reproduced from scratch (local, no data/GPU) - all 4 verification scripts regenerate every in-paper synthetic number + figure exactly; manuscript recompiles clean 28 pp."
+--- a/projects/manuscripts/btfno/project.yml
++++ b/projects/manuscripts/btfno/project.yml
+@@ -1,6 +1,6 @@
+ id: btfno
+ short: BT-FNO
+-type: active
++stage: in-prep
+ tier: projects
+ domain: method
+ title: "MoBTE: A Mixture of Block-Term Spectral Experts for Multi-PDE Operator Learning"
+@@ -10,7 +10,7 @@
+ focus: revise
+ related: [bt-operator-theory, raw-pls]
+ status:
+-  chips: [in-prep, lead]
++  chips: [lead]
+   line: "`aaai2027` set: main 7 pp + supplement 4 pp, compiles clean. AAAI 2027 rejected. AI-tell clean."
+ latest: "2026-09-24: AAAI 2027 rejected in Phase 1 (reviewer ratings 4 and 5, plus an AI review); decision and reviews in reviews/aaai2027-decision-and-reviews.pdf."
+ reproduced:
+--- a/projects/manuscripts/bttd-source-eeg/project.yml
++++ b/projects/manuscripts/bttd-source-eeg/project.yml
+@@ -1,6 +1,6 @@
+ id: bttd-source-eeg
+ short: LF-BTD
+-type: active
++stage: submit-ready
+ tier: projects
+ domain: brain
+ title: "Jointly localized spatiotemporal components of evoked EEG via a lead-field-constrained block-term decomposition"
+@@ -11,7 +11,7 @@
+ related: [source-localization]
+ focus: push
+ status:
+-  chips: [submit-ready]
++  chips: []
+   line: "elsarticle, 16 pp, compiles clean, BSPC compliance done, AI-tell clean; numbers trace to committed code. Submit-ready."
+ venue_id: bspc
+ funding: [ZonMw-AI-HCC]   # work conducted within the ZonMw AI-HCC project; statement pasted into the manuscript Funding section
+--- a/projects/manuscripts/bttn-incident-af/project.yml
++++ b/projects/manuscripts/bttn-incident-af/project.yml
+@@ -1,5 +1,5 @@
+ id: bttn-incident-af
+-type: active
++stage: submitted
+ tier: projects
+ domain: heart
+ title: An Interpretable Block-Term Tensor Network for Incident Atrial-Fibrillation Prediction from the Sinus-Rhythm 12-Lead ECG
+@@ -12,7 +12,7 @@
+ related: [dries-bttr-ecg]
+ compute: [utwente]  # 36 GB MIMIC-IV-ECG waveforms + GPU SLURM for the ladder / faithfulness / external runs
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "`elsarticle`, 35 pp, compiles clean, submitted to AIIM, under review. AI-tell clean."
+ venue_id: aiim
+ latest: "2026-10-22: submitted to Artificial Intelligence in Medicine; package (cover letter, manuscript, highlights, declaration, abstract) in admin/submission/."
+--- a/projects/manuscripts/covert-applied/project.yml
++++ b/projects/manuscripts/covert-applied/project.yml
+@@ -1,5 +1,5 @@
+ id: covert-applied
+-type: active
++stage: submitted
+ tier: projects
+ domain: method
+ title: "When Masking Meets Sparsity: COVERT for Private, Communication-Efficient Vertical Federated Tensor Regression"
+@@ -11,7 +11,7 @@
+ focus: review
+ related: [covert-theory]
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "`elsarticle`, 15 pp, compiles clean, submitted to AIIM, under review. AI-tell clean."
+ venue_id: aiim
+ latest: "2026-10-22: submitted to Artificial Intelligence in Medicine; package (cover letter, manuscript, highlights, declaration, abstract) in admin/submission/."
+--- a/projects/manuscripts/covert-theory/project.yml
++++ b/projects/manuscripts/covert-theory/project.yml
+@@ -1,6 +1,6 @@
+ id: covert-theory
+ short: PCD
+-type: active
++stage: submit-ready
+ tier: projects
+ domain: method
+ title: "Private Coupled Descent: Dimension-Free Privacy for Vertical Federated Learning by Privatizing the Coupling Variable"
+@@ -11,7 +11,7 @@
+ focus: push
+ related: [covert-applied]
+ status:
+-  chips: [submit-ready]
++  chips: []
+   line: "IEEEtran, 10 pp, compiles 0 undefined, double-blind, AI-tell clean; proofs verified, SYN-1 numbers measured. Submit-ready."
+ venue_id: tsp
+ compute: [this-mac]  # synthetic theory validation; paper.py re-runs SYN-1 on a laptop, no cluster
+--- a/projects/manuscripts/dongho-ecg-clustering/project.yml
++++ b/projects/manuscripts/dongho-ecg-clustering/project.yml
+@@ -1,5 +1,5 @@
+ id: dongho-ecg-clustering
+-type: active
++stage: submitted
+ tier: projects
+ domain: heart
+ title: "Which representation clusters? A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure on PTB-XL"
+@@ -10,7 +10,7 @@
+ focus: review
+ funding: [FAIR]
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "RESUBMITTED to BSPC after major revision, under review. `elsarticle`, 24 pp, 21 refs, compiles clean. AI-tell clean."
+ venue_id: bspc
+ compute: [this-mac]  # ECG representation benchmark re-runs on a laptop, no cluster
+--- a/projects/manuscripts/dries-bttr-ecg/project.yml
++++ b/projects/manuscripts/dries-bttr-ecg/project.yml
+@@ -1,6 +1,6 @@
+ id: dries-bttr-ecg
+ short: BTTR-AF
+-type: active
++stage: submit-ready
+ tier: projects
+ domain: heart
+ title: "An interpretable tensor model for identifying atrial fibrillation in sinus-rhythm ECG: block-term tensor regression on PTB-XL, benchmarked against deep and foundation models"
+@@ -11,7 +11,7 @@
+ funding: [FAIR]
+ related: [bttn-incident-af]
+ status:
+-  chips: [submit-ready]
++  chips: []
+   line: "`article`, 13 pp, compiles clean, MBEC format done. AI-tell clean."
+ venue_id: mbec
+ compute: [this-mac]  # PTB-XL BTTR pipeline re-runs on a laptop, no cluster
+--- a/projects/manuscripts/ecg-readable-substrate/project.yml
++++ b/projects/manuscripts/ecg-readable-substrate/project.yml
+@@ -1,6 +1,6 @@
+ id: ecg-readable-substrate
+ short: Readable-FM-ECG
+-type: active
++stage: in-prep
+ tier: projects
+ domain: heart
+ title: "You Don't Need the Black Box: Named ECG Features Rival Foundation Models for Mortality Prediction"
+@@ -20,7 +20,7 @@
+   homepage: "https://theaxec.github.io"
+   topics: [ecg, electrocardiography, foundation-models, interpretable-machine-learning, explainable-ai, mortality-prediction, gradient-boosting, named-features, sufficient-reason-certificate, cross-cohort-transfer, mimic-iv, code-15, benchmark, biomedical-signal-processing, healthcare]
+ status:
+-  chips: [in-prep]
++  chips: []
+   line: "IEEEtran (IEEE JBHI), 12 pp, compiles clean, AI-tell clean. Headline under revision."
+ venue_id: jbhi
+ eli5: "Do you need a big black-box ECG foundation model to predict who dies within a year? No. A gradient-boosted model on named measurements (age + ECG intervals + spectral/rhythm/shape features) rivals six open ECG foundation models - 7 wins / 5 ties / 0 losses, on its own hospital cohort and a separate Brazilian one - and transports better across hospitals."
+--- a/projects/manuscripts/erp-signatures/project.yml
++++ b/projects/manuscripts/erp-signatures/project.yml
+@@ -1,9 +1,9 @@
+ id: erp-signatures
+ short: "ERP Signatures"
+-type: active
++stage: submitted
+ tier: projects
+ status:
+-  chips: [submitted, lead]
++  chips: [lead]
+   line: "`docx`, under review at Frontiers in Psychology, minor revision received 2026-08-03. AF owns reviewer points 1-2 (statistics)."
+ focus: review
+ datasets: [ucr-nback-eeg]
+--- a/projects/manuscripts/fed-multicellular-immune/project.yml
++++ b/projects/manuscripts/fed-multicellular-immune/project.yml
+@@ -1,6 +1,6 @@
+ id: fed-multicellular-immune
+ short: Fed-Multicellular
+-type: active
++stage: submit-ready
+ tier: projects
+ domain: method
+ title: "Privacy-preserving federated tensor decomposition of single-cell immune data: recovering multicellular programs across institutions"
+@@ -11,7 +11,7 @@
+ related: [raw-pls]
+ focus: push
+ status:
+-  chips: [submit-ready]
++  chips: []
+   line: "IEEEtran, 8 pp, 37 refs, compiles 0 undefined, AI-tell clean. Submit-ready."
+ venue_id: jbhi
+ compute: [this-mac]  # federated scITD recovery re-runs on a laptop, no cluster
+--- a/projects/manuscripts/hccnet-revision/project.yml
++++ b/projects/manuscripts/hccnet-revision/project.yml
+@@ -1,6 +1,6 @@
+ id: hccnet-revision
+ short: HCCNet
+-type: active
++stage: submit-ready
+ tier: projects
+ domain: liver
+ title: "HCCNet: A Self-Supervised CNN-Transformer for Disease Prognosis from Longitudinal 3D MRI, with a Case Study on Hepatocellular Carcinoma"
+@@ -11,7 +11,7 @@
+ related: [hccnet-fl, hccnet-fl-sweden, hccnet-pathology, modality-dropping-btf, ssm-longitudinal]
+ funding: [ZonMw-AI-HCC]
+ status:
+-  chips: [submit-ready]
++  chips: []
+   line: "elsarticle, timing/outcome audit resolved. Submission preparation."
+ venue_id: intelmed
+ compute: [utwente]  # 3D MRI training runs on the UTwente SLURM cluster (OOMs on local)
+--- a/projects/manuscripts/meseret-cirrhosis/project.yml
++++ b/projects/manuscripts/meseret-cirrhosis/project.yml
+@@ -1,6 +1,6 @@
+ id: meseret-cirrhosis
+ short: Cirrhosis-CR
+-type: active
++stage: submitted
+ tier: projects
+ domain: liver
+ title: "From Classification to Competing Risks: A Critical Re-Examination of a Widely-Used Cirrhosis Outcome Benchmark"
+@@ -9,7 +9,7 @@
+ pillar: [evaluation]
+ focus: review
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "free-format `article`, 15 pp, compiles clean, submitted to Statistics in Medicine, under review. AI-tell clean."
+ venue_id: statmed
+ compute: [this-mac]  # no compute needed, just re-run the code to regenerate the committed numbers
+--- a/projects/manuscripts/raw-pls/project.yml
++++ b/projects/manuscripts/raw-pls/project.yml
+@@ -1,5 +1,5 @@
+ id: raw-pls
+-type: active
++stage: submitted
+ tier: projects
+ domain: brain
+ title: Registration-Free Supervised Tensor-PLS for Unaligned Multiparametric MRI
+@@ -13,7 +13,7 @@
+ funding: [ZonMw-AI-HCC]
+ compute: [utwente]  # BraTS caches + GPU/CPU SLURM on the UTwente cluster; the synthetic campaign runs locally
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "`elsarticle`, 23 pp, compiles clean, submitted to MedIA, under review. AI-tell clean."
+ venue_id: media
+ latest: "2026-10-22: submitted to Medical Image Analysis; package (highlights, manuscript, statement of significance, abstract, declaration) in admin/submission/."
+--- a/projects/manuscripts/ward-bttr-crosssubject/project.yml
++++ b/projects/manuscripts/ward-bttr-crosssubject/project.yml
+@@ -1,6 +1,6 @@
+ id: ward-bttr-crosssubject
+ short: BSA-ECoG
+-type: active
++stage: submitted
+ tier: projects
+ domain: brain
+ title: "Behavior-Supervised Alignment for Cross-Subject Neural Decoding across Non-Corresponding Electrode Grids"
+@@ -10,7 +10,7 @@
+ focus: review
+ related: [xsub-ecog-framework]
+ status:
+-  chips: [submitted]
++  chips: []
+   line: "`elsarticle` review build, 44 pp + 12 pp supplementary, builds clean under pdfLaTeX, submitted to Neural Networks, under review. AI-tell clean."
+ venue_id: neural-networks
+ reproduced:
+--- a/projects/software/bttr-block-term-tensor-regression/project.yml
++++ b/projects/software/bttr-block-term-tensor-regression/project.yml
+@@ -1,6 +1,6 @@
+ title: "bttr - Block-Term Tensor Regression"
+ tier: software
+-type: software
++stage: finished
+ eli5: "The block-term tensor-regression model: predict a tensor Y from a tensor X via latent-space regression. The block-term tensor-regression methods backbone several papers build on (Dries-AF, Ward cross-subject, COVERT, ...)."
+ tags: [tensor, block-term, library, python]
+ repository:
+--- a/projects/software/federated-learning-tutorial/project.yml
++++ b/projects/software/federated-learning-tutorial/project.yml
+@@ -1,6 +1,6 @@
+ title: "federated-learning-tutorial"
+ tier: software
+-type: software
++stage: finished
+ eli5: "FL4E guidelines (Wisconsin Breast Cancer Dataset) for the Federated Learning for Everyone framework"
+ tags: [federated-learning, elixir, tutorial, python]
+ related: [elixir-fl4e]
+--- a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
++++ b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+@@ -1,6 +1,6 @@
+ title: "fl-kit - ELIXIR Federated Learning Kit"
+ tier: software
+-type: software
++stage: finished
+ eli5: "The ELIXIR Federated Learning Kit"
+ tags: [federated-learning, elixir, tex]
+ related: [elixir-fl4e]
+--- a/side-projects/finished/axeski/project.yml
++++ b/side-projects/finished/axeski/project.yml
+@@ -1,8 +1,8 @@
+ title: "axeski"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "A visual, event-based programming IDE"
+ next: ""
+ links: []
+--- a/side-projects/finished/cardinal-revamped/project.yml
++++ b/side-projects/finished/cardinal-revamped/project.yml
+@@ -1,8 +1,8 @@
+ title: "cardinal-revamped"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "A small, completely dynamic scripting language"
+ next: ""
+ links: []
+--- a/side-projects/finished/cardinal/project.yml
++++ b/side-projects/finished/cardinal/project.yml
+@@ -1,8 +1,8 @@
+ title: "cardinal"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "A small, completely dynamic scripting language (superseded by cardinal-revamped)"
+ next: ""
+ links: []
+--- a/side-projects/finished/cv-autogenerator/project.yml
++++ b/side-projects/finished/cv-autogenerator/project.yml
+@@ -1,8 +1,8 @@
+ title: "cv-autogenerator"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Generate a CV from YAML data + LaTeX templates (AwesomeCV)"
+ next: ""
+ links: []
+--- a/side-projects/finished/ical-kuleuven/project.yml
++++ b/side-projects/finished/ical-kuleuven/project.yml
+@@ -1,8 +1,8 @@
+ title: "ical-kuleuven"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Node.js app to build an iCalendar file for KU Leuven courses"
+ next: ""
+ links: []
+--- a/side-projects/finished/theaxec-profile-readme/project.yml
++++ b/side-projects/finished/theaxec-profile-readme/project.yml
+@@ -1,8 +1,8 @@
+ title: "TheAxeC (profile README)"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Main GitHub profile README.md"
+ next: ""
+ links: []
+--- a/side-projects/ideas/gpu-game-boy/project.yml
++++ b/side-projects/ideas/gpu-game-boy/project.yml
+@@ -1,8 +1,8 @@
+ title: "GPU Game Boy"
+-type: idea
++stage: nascent
+ tier: personal
+ status:
+-  chips: [nascent]
++  chips: []
+ eli5: "A Game Boy emulator that runs as a GPU kernel, with thousands of independent consoles advancing in one launch, checked frame for frame against a CPU reference, then used as the environment for training reinforcement-learning agents on Pokemon Red."
+ next: "Stage 1: a CPU reference emulator of the SM83 processor that passes blargg cpu_instrs, written so the same core later compiles as a GPU kernel."
+ links: []
+--- a/side-projects/ideas/residual/project.yml
++++ b/side-projects/ideas/residual/project.yml
+@@ -1,8 +1,8 @@
+ title: "Residual"
+-type: idea
++stage: nascent
+ tier: personal
+ status:
+-  chips: [nascent]
++  chips: []
+ eli5: "A tumor evolution simulation in which a treatment controller rewarded for every day the patient stays under care learns to keep a curable patient ill, run beside an identical controller whose objective is remission, with the day the two treatment histories part marked."
+ next: "Settle the decisions before implementation in idea.md, starting with the cancer and its calibration source (the Voulgarelis olaparib PDX data is the recommended start)."
+ links: []
+--- a/side-projects/ideas/scripted-os/project.yml
++++ b/side-projects/ideas/scripted-os/project.yml
+@@ -1,8 +1,8 @@
+ title: "Scripted OS"
+-type: idea
++stage: nascent
+ tier: personal
+ status:
+-  chips: [nascent]
++  chips: []
+ eli5: "A hobby operating system for ARM64 on QEMU in which a small native core does only what must be native (boot, interrupts, page tables, context switch), and every driver, the scheduler's policy, the file system, the shell and the apps are written in a scripting language, with a JIT added once it runs."
+ next: "Pick the scripting language (Lua, a small Scheme, a Forth, or one of my own), then boot to a serial hello on QEMU's virt board."
+ links: []
+--- a/side-projects/research-hub/project.yml
++++ b/side-projects/research-hub/project.yml
+@@ -1,8 +1,8 @@
+ title: "research-hub"
+ tier: personal
+-type: active
++stage: building
+ status:
+-  chips: [building]
++  chips: []
+ eli5: "This private research monorepo: projects, manuscripts, registries and funding, which oculus draws"
+ next: ""
+ links: []
+--- a/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml
++++ b/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml
+@@ -1,8 +1,8 @@
+ title: "Algebraic subtyping for algebraic effects & handlers"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "MSc thesis (KU Leuven 2016-2018) - Master of Science in Engineering: Computer Science"
+ next: ""
+ links: []
+--- a/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml
++++ b/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml
+@@ -1,8 +1,8 @@
+ title: "EEG source-reconstructed connectivity (information-theoretical)"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "MSc thesis (KU Leuven 2017-2018) - Advanced Master of AI: Engineering & Computer Science"
+ next: ""
+ links: []
+--- a/side-projects/school/effect-handler-optimization-honours-project/project.yml
++++ b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+@@ -1,8 +1,8 @@
+ title: "Effect-handler optimization (honours project)"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Honours 2016-2017 - an optimized compiler for the Eff programming language"
+ next: ""
+ links: []
+--- a/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml
++++ b/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml
+@@ -1,8 +1,8 @@
+ title: "ML for flow-based network intrusion detection"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Bachelor thesis (UHasselt 2015-2016) - an IDS using machine-learning approaches"
+ next: ""
+ links: []
+--- a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
++++ b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+@@ -1,8 +1,8 @@
+ title: "Quasi-Monte-Carlo points on collections of triangles"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Honours-project proposal (not pursued)"
+ next: ""
+ links: []
+--- a/side-projects/school/row-based-effects-honours-project/project.yml
++++ b/side-projects/school/row-based-effects-honours-project/project.yml
+@@ -1,8 +1,8 @@
+ title: "Row-based effects (honours project)"
+ tier: personal
+-type: finished
++stage: finished
+ status:
+-  chips: [finished]
++  chips: []
+ eli5: "Honours 2017-2018 - a core language with row-based effects for optimised compilation"
+ next: ""
+ links: []

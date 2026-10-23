@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { focusBlock, isMap, str, strings } from './helpers/guards.ts';
 import { MEMORIES_DIR, WALLPAPER_DIR } from './helpers/files/paths.ts';
 import { filledTextShape, mapShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
-import { coloredWords, wordsWith } from './shapes/vocab-keys.ts';
+import { coloredWords, vocabKeys, wordsWith } from './shapes/vocab-keys.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_LIST_KEYS, readRegistries, registryFiles } from './sources/registries.ts';
 import {
@@ -46,7 +46,7 @@ import {
     normalise,
     selfKey
 } from './snapshot/normalise.ts';
-import { sortFindings, validate } from './snapshot/validate.ts';
+import { sortFindings, validate, withoutStageChips } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
 import { listedFields } from './snapshot/schema/manifest.ts';
@@ -173,7 +173,9 @@ export function portfolioConfigFrom(
 
     const vocab: Vocabulary = {
         statuses: coloredWords(merged.statuses),
-        acknowledged: wordsWith(merged, 'statuses', 'acknowledged')
+        acknowledged: wordsWith(merged, 'statuses', 'acknowledged'),
+        stages: vocabKeys(merged.stages),
+        forms: vocabKeys(merged.forms)
     };
 
     // The LinkedIn folder is the hub's own, so a config that names none has no LinkedIn feed.
@@ -272,8 +274,10 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
             project.workspaceFolder = manifest.workspaceFolder;
         const tier = tierOf(manifest.tier);
         if (tier !== undefined) project.tier = tier;
-        const type = str(manifest.type);
-        if (type !== undefined) project.type = type;
+        const stage = str(manifest.stage);
+        if (stage !== undefined) project.stage = stage;
+        const form = str(manifest.form);
+        if (form !== undefined) project.form = form;
         const domain = str(manifest.domain);
         if (domain !== undefined && domain !== '') project.domain = domain;
         return project;
@@ -434,7 +438,7 @@ export function builtHub(read: HubRead, options: BuildOptions): PortfolioBuild {
                 read: !unread.has('people')
             }
         }),
-        ...run.findings
+        ...withoutStageChips(run.findings, raw, config.vocab)
     ]);
     const catalog = catalogOf(config.merged);
     const references = buildReferences({

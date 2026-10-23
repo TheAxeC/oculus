@@ -85,9 +85,9 @@ export type ScanRule = {
 
 /**
  * A project.yml as it was read, plus provenance. Every key the YAML held is present untouched,
- * `tier` and `type` included, except that the provenance names below are set by the reader: `id` is
- * the folder's basename (the root's key for a repository) and the manifest's own `id` is kept as
- * `manifestId`. A disagreement of `id` is a finding, never a repair.
+ * `tier` and `stage` included, except that the provenance names below are set by the reader: `id`
+ * is the folder's basename (the root's key for a repository) and the manifest's own `id` is kept
+ * as `manifestId`. A disagreement of `id` is a finding, never a repair.
  */
 export type RawManifest = {
     [key: string]: unknown;
@@ -192,7 +192,7 @@ export type DocPresence = {
     mtime: number;
 };
 
-/** A status chip: a word from the vocabulary, resolved to colour and glyph by the view. */
+/** A project chip: a word of the vocabulary's `chips`, given its label and glyph by the view. */
 export type Chip = string;
 
 /**
@@ -347,8 +347,10 @@ export type Project = Rooted & {
      */
     tier?: Tier;
     category?: string;
-    /** The manifest's `type`, a key of the vocabulary's `types`. */
-    type?: string;
+    /** The manifest's `stage`, a key of the vocabulary's `stages`. */
+    stage?: string;
+    /** The manifest's `form`, the form of the output, a key of the vocabulary's `forms`. */
+    form?: string;
     title: string;
     short?: string;
     lead?: string;

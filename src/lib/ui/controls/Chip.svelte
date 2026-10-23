@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, primitive. An inline label in a hue: a status word and the project type, and a
+    // Layer 3, primitive. An inline label in a hue: a status word and the project stage, and a
     // filter the reader presses. The capsule is what marks a status out of the run of words on a
     // card, so every other tag a view lists is ui/controls/Tag.svelte instead. It is VS Code's
     // count badge in shape: 11px words, an 18 px minimum, a full round end. Outline is

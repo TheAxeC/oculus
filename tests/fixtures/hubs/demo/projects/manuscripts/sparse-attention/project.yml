@@ -1,5 +1,5 @@
 id: sparse-attention
-type: active
+stage: active
 tier: projects
 short: Sparse-Attn
 title: Sparse attention with learned routing

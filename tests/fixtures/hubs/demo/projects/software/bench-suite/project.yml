@@ -1,6 +1,6 @@
 title: "bench-suite"
 tier: software
-type: software
+stage: finished
 eli5: "Reproducible benchmark harness (finished, archived after the paper shipped)"
 tags: [benchmark, reproducibility, python]
 related: [early-benchmark]

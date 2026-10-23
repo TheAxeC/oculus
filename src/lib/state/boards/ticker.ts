@@ -167,10 +167,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
 
     /**
      * A project's own deadline, for a project of any tier: overdue behind it, on the paper group
-     * before it. It stops only at a chip the palette marks `deadline_met`. A deadline that is no
-     * date is open work and is a task line. A line that shows folds its conference into itself,
-     * so the call is not listed a second time below. The category is the one the `projects` row of
-     * `ticker_sources` gives; with no such row no project deadline is read.
+     * before it. It stops only at a stage whose word of `stages` carries `deadline_met`. A deadline
+     * that is no date is open work and is a task line. A line that shows folds its conference into
+     * itself, so the call is not listed a second time below. The category is the one the `projects`
+     * row of `ticker_sources` gives; with no such row no project deadline is read.
      */
     const folded = new Set<string>();
     const paper = categoryOf(sources, PROJECTS);

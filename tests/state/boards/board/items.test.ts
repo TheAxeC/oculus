@@ -22,8 +22,8 @@ const ROWS = [
 describe('the related tags of a board item', () => {
     it.each(ROWS)('are carried by a project of $name', (row) => {
         const hub = plantScratch('oculus-items-', {
-            [`${row.folder}/mine/project.yml`]: `title: Mine\ntier: ${row.tier}\ntype: idea\nrelated: [other]\n`,
-            'projects/ideas/other/project.yml': 'title: Other\ntier: projects\ntype: idea\n'
+            [`${row.folder}/mine/project.yml`]: `title: Mine\ntier: ${row.tier}\nstage: idea\nrelated: [other]\n`,
+            'projects/ideas/other/project.yml': 'title: Other\ntier: projects\nstage: idea\n'
         });
         const { snapshot } = buildOneHub(hub, {
             ...CONFIG,

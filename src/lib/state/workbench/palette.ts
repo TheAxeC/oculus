@@ -185,6 +185,8 @@ export function buildIndex(
                 project.next,
                 project.latest,
                 venue,
+                project.stage,
+                project.form,
                 project.chips
             ];
             found.push({

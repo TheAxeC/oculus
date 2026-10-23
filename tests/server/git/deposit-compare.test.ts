@@ -62,7 +62,7 @@ function manifest(id: string, url = ''): string {
     return [
         `id: ${id}`,
         'tier: projects',
-        'type: active',
+        'stage: active',
         `title: "The title of ${id}"`,
         'status:',
         '  line: "the line"',

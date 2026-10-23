@@ -34,7 +34,7 @@ import { plantHub, plantSaved, workspaceWith } from '../../fixtures/hubs/workspa
 import { hubTargets, primaryConfig } from '../../../src/lib/server/files/roots.ts';
 
 export const MANIFEST =
-    'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+    'id: alpha\ntier: projects\nstage: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 /** A collection file and a career file, at the hub paths config/defaults/sources.yml names. */
 const TASKS =
@@ -270,7 +270,7 @@ function deckProject(id: string, tier: Tier): Project {
         id: `hub:${id}`,
         root: 'hub',
         tier,
-        type: tier === 'projects' ? 'active' : 'published',
+        stage: tier === 'projects' ? 'active' : 'published',
         title: id,
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`
@@ -325,10 +325,10 @@ export function deckTarget(): PrimaryTarget {
  */
 export const PERSONAL_MANIFEST = [
     'tier: personal',
-    'type: idea',
+    'stage: nascent',
     'title: "An idea"',
     'status:',
-    '  chips: [nascent]',
+    '  chips: []',
     '  line: "New project."',
     'eli5: "what it is"',
     'snooze: 2026-11-01',
@@ -425,10 +425,10 @@ export const REPOSITORY_ID = 'gamma';
 /** The manifest of the repository `repositoryTarget` plants. */
 const REPOSITORY_MANIFEST = [
     'tier: personal',
-    'type: active',
+    'stage: building',
     'title: "A repository"',
     'status:',
-    '  chips: [building]',
+    '  chips: []',
     '  line: "the line"',
     'snooze: 2026-11-01',
     'subtasks:',

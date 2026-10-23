@@ -1,12 +1,12 @@
 id: demo-toolkit
-type: software
+stage: finished
 tier: software
 short: Demo-Toolkit
 title: Demo toolkit for graph transfer
 lead: A. Example
 authors: [A. Example, B. Coauthor]
 status:
-  chips: [software]
+  chips: []
   line: Released and documented; tagged alongside the transfer paper.
 domain: graphs
 pillar: [graphs]

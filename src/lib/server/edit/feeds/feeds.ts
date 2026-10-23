@@ -340,8 +340,8 @@ export function markLinkedinPosted(
 
 /**
  * Append one position lead in the order of the feed file's own schema. A lead given no status gets
- * the word of `statuses` carrying `default_lead`, and none when no word carries it. The outcome's
- * `id` is the new lead's title, which its hub's file names it by.
+ * the word of `lead_statuses` carrying `default_lead`, and none when no word carries it. The
+ * outcome's `id` is the new lead's title, which its hub's file names it by.
  */
 export function addLead(
     hub: string,

@@ -149,7 +149,7 @@ function plantPaper(hub: string, id: string, venue: string): string {
     mkdirSync(join(hub, 'projects', 'ideas', id), { recursive: true });
     writeFileSync(
         join(hub, path),
-        `title: ${id}\ntier: projects\ntype: idea\nvenue_id: ${venue}\n`
+        `title: ${id}\ntier: projects\nstage: idea\nvenue_id: ${venue}\n`
     );
     return path;
 }

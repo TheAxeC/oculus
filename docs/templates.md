@@ -133,13 +133,26 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
 
-# The status words of this hub's projects and entries, each with its label, icon, colour and the
-# flags that say what it does, in the form of `statuses` in oculus's config/catalogs/vocab.yml.
-# Set here, it replaces oculus's whole map for this hub.
+# The statuses of this hub's collection entries, each with its colour and the flags that say what
+# it does, in the form of `statuses` in oculus's config/catalogs/vocab.yml. Set here, it replaces
+# oculus's whole map for this hub.
 # statuses: {}
 #   example:
 #   statuses:
-#     on-hold: { label: on hold, icon: black, color: "#9ca3af", blocked: true }
+#     on-hold: { color: "#9ca3af", waiting: true }
+
+# The chips of this hub's projects, each with its label, its glyph and the flags that say what it
+# does, in the form of `chips` in oculus's config/catalogs/vocab.yml. Set here, it replaces
+# oculus's whole map for this hub.
+# chips: {}
+#   example:
+#   chips:
+#     on-hold: { label: on hold, icon: black, blocked: true }
+
+# The statuses of this hub's Position Leads, each with the flags that say what it does and a
+# colour, in the form of `lead_statuses` in oculus's config/catalogs/vocab.yml. Set here, it
+# replaces oculus's whole map for this hub.
+# lead_statuses: {}
 
 # The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
 # config/defaults/layout.yml. Set here, it replaces oculus's whole map for this hub.
@@ -476,19 +489,21 @@ End with the days since the last post against the target, and the path of any fi
 
 ## project.yml
 
-One project. `tier` and `type` are required. Every other key is optional.
+One project. `tier` and `stage` are required. Every other key is optional.
 
 ```yaml
 # --- Core
 tier: projects          # projects, coauthor, archive, personal or software: the board it is on
-type: idea              # active, published, submitted, in-prep, paused, idea, tech-report, software,
-                        # nogo, dropped, disproved, abandoned, exploring, phd, finished or archived
+stage: nascent          # idea, nascent, scoping, de-risking, exploring, in-prep, building, running,
+                        # active, submit-ready, submitted, revision, accepted, published, paused,
+                        # finished, archived, nogo, dropped, disproved or abandoned
+# form: journal         # journal, conference, thesis, abstract, poster or tech-report
 # short: my-project     # short name for cards and lists
 # title: ""
 # lead: ""              # first author or project lead
 # authors: []
 # status:
-#   chips: []           # from the status legend, such as in-prep, submitted, building
+#   chips: []           # from the chips list, such as blocked, numbers-pending, admin-prep
 #   line: ""            # one short line
 # focus: run            # Focus lane: run, push, revise, review, blocked, backburner, scope,
                         # derisk, build, or holding for an idea in the backlog
@@ -1065,7 +1080,7 @@ schema:
   - { field: key,      type: text,     required: true, help: "Short name." }
   - { field: title,    type: text,     required: true, help: "Position." }
   - { field: sub,      type: text,     help: "Institution." }
-  - { field: status,   type: select,   options: ["not applied", active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where it stands." }
+  - { field: status,   type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where it stands." }
   - { field: date,     type: text,     help: "Year applied." }
   - { field: meta,     type: metalist, help: "Label and value rows." }
   - { field: tags,     type: tags,     help: "Filter words." }
@@ -1079,7 +1094,7 @@ entries:
 #  - key: my-postdoc              # required
 #    title: "Postdoc position"    # required
 #    sub: "University"
-#    status: active               # required: not applied, active, accepted, rejected,
+#    status: active               # required: not-applied, active, accepted, rejected,
 #                                 # declined, withdrawn or applied
 #    date: "2026"
 #    meta: []
@@ -1165,7 +1180,7 @@ schema:
   - { field: typ,      type: text,     help: "Kind of position." }
   - { field: focus,    type: textarea, help: "What it is about." }
   - { field: fit,      type: textarea, help: "How it fits; strong, moderate or reach colours the card." }
-  - { field: status,   type: select,   options: [open, applied, declined], help: "Where it stands." }
+  - { field: status,   type: select,   from: vocab.lead_statuses, help: "Where it stands: open, applied, declined, closed or dismissed." }
   - { field: date,     type: date,     help: "Day found." }
   - { field: deadline, type: text,     help: "Deadline as posted." }
   - { field: url,      type: text,     help: "The posting." }
@@ -1306,7 +1321,7 @@ deck:
 
 # groups:
 #   active:
-#     find: { folders: projects/*/*/present, tiers: [projects], types: [active] }
+#     find: { folders: projects/*/*/present, tiers: [projects], stages: [active] }
 #     sort: folder           # folder or title
 #     discover: true         # also take decks found beyond `slides`
 #     slides: []             # project ids, in order

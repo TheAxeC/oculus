@@ -79,25 +79,25 @@ export function closesDeadline(config: Record<string, unknown>, status: string):
 }
 
 /**
- * Whether a project carries a chip whose word of `statuses` carries `pauses_countdown` (submitted):
- * its card and its lane stop counting the days to its deadline, compared as the chip is written.
+ * Whether a project's stage is a word of `stages` carrying `pauses_countdown` (submitted): its card
+ * and its lane stop counting the days to its deadline, compared as the stage is written.
  */
 export function pausesCountdown(
-    project: Pick<Project, 'chips'>,
+    project: Pick<Project, 'stage'>,
     config: Record<string, unknown>
 ): boolean {
-    return anyWord(config, 'statuses', 'pauses_countdown', project.chips);
+    return hasWord(config, 'stages', 'pauses_countdown', project.stage);
 }
 
 /**
- * Whether a project carries a chip whose word of `statuses` carries `blocked`, compared as the
- * chip is written: the Focus board counts it as blocked, and its lane card's wait line says so.
+ * Whether a project carries a chip whose word of `chips` carries `blocked`, compared as the chip is
+ * written: the Focus board counts it as blocked, and its lane card's wait line says so.
  */
 export function isBlocked(
     project: Pick<Project, 'chips'>,
     config: Record<string, unknown>
 ): boolean {
-    return anyWord(config, 'statuses', 'blocked', project.chips);
+    return anyWord(config, 'chips', 'blocked', project.chips);
 }
 
 /** Whether a status is still live but its own deadline is met, so nagging it is noise. */
@@ -106,13 +106,12 @@ export function deadlineMet(config: Record<string, unknown>, status: string): bo
 }
 
 /**
- * Whether a project's own deadline has stopped being yours to act on: a chip whose word of
- * `statuses` carries `deadline_met` (which is what `submitted` and `under-review` carry). A chip
- * whose word carries `closes_deadline` alone does not end it. Reading the flag is what keeps the
- * rule in config/catalogs/vocab.yml rather than in a list of chip names here.
+ * Whether a project's own deadline has stopped being yours to act on: its stage is a word of
+ * `stages` carrying `deadline_met` (submitted), compared as the stage is written. Reading the flag
+ * is what keeps the rule in config/catalogs/vocab.yml rather than in a list of stage names here.
  */
 export function settled(project: Project, config: Record<string, unknown>): boolean {
-    return project.chips.some((chip) => deadlineMet(config, chip));
+    return hasWord(config, 'stages', 'deadline_met', project.stage);
 }
 
 /**
@@ -238,8 +237,8 @@ export function movable(project: Project, focus: string, config: Record<string, 
 
 /**
  * The ideas backlog: any project of a backlog tier parked in `holding`, and any project of those
- * tiers whose type carries `idea` and whose `focus:` names no lane, which covers an idea that has
- * none at all.
+ * tiers whose stage carries `idea` in `stages` and whose `focus:` names no lane, which covers an
+ * idea that has none at all.
  */
 export function backlog(
     projects: Project[],
@@ -251,20 +250,20 @@ export function backlog(
         if (!backlogTier(project, config)) return false;
         const focus = project.focus ?? '';
         if (focus === 'holding') return true;
-        return hasWord(config, 'types', 'idea', project.type) && !keys.includes(focus);
+        return hasWord(config, 'stages', 'idea', project.stage) && !keys.includes(focus);
     });
     return out.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }
 
 /**
- * The projects of a backlog tier whose type carries `live` (active) that name no lane, so the board
- * is not showing them.
+ * The projects of a backlog tier whose stage carries `live` in `stages` (work in flight) that name
+ * no lane, so the board is not showing them.
  */
 export function unplaced(projects: Project[], config: Record<string, unknown>): Project[] {
     return projects.filter(
         (project) =>
             backlogTier(project, config) &&
-            hasWord(config, 'types', 'live', project.type) &&
+            hasWord(config, 'stages', 'live', project.stage) &&
             (project.focus ?? '') === ''
     );
 }
@@ -286,12 +285,12 @@ export function venueLabel(venue: Venue | undefined): string {
 /**
  * The awaiting-a-response box. Every tally follows `focus:` alone: only a project laneItems draws
  * on a lane is counted, so a project with no `focus:` or in `holding` is in none. For each, the
- * people named in `waiting-on:` first, then the venue holding it when it carries a chip with
- * `pauses_countdown` (submitted). The blocked tally counts the projects on a lane that carry a chip
- * with `blocked`, whatever else the project is waiting for. A `waiting-on:` value is a people key
- * or another project's id, drawn by waiting.ts. The applications are the entries whose status is in
- * `applications_sent` under `focus:` of config/defaults/behavior.yml, and the hosts those whose
- * status carries `waiting` in the hub's `career_host_status`.
+ * people named in `waiting-on:` first, then the venue holding it when its stage carries
+ * `pauses_countdown` in `stages` (submitted). The blocked tally counts the projects on a lane that
+ * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A `waiting-on:`
+ * value is a people key or another project's id, drawn by waiting.ts. The applications are the
+ * entries whose status is in `applications_sent` under `focus:` of config/defaults/behavior.yml,
+ * and the hosts those whose status carries `waiting` in the hub's `career_host_status`.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -319,7 +318,7 @@ export function waiting(
             }
             continue;
         }
-        if (anyWord(config, 'statuses', 'pauses_countdown', project.chips)) {
+        if (pausesCountdown(project, config)) {
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
             const name = venueLabel(venue);
             held[name] = (held[name] ?? 0) + 1;

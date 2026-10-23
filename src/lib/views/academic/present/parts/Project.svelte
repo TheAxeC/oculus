@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, Present partial. A project's slide: the domain and status chips, the headline and
+    // Layer 3, Present partial. A project's slide: the domain and stage chips, the headline and
     // the hook, the spec strip, then the method and results beside the equation and the figures. A
     // slide that wrote none of the rich keys reaches here carrying its Markdown alone, and that
     // Markdown is what the slide draws.
@@ -10,7 +10,7 @@
     import Panel from '../Panel.svelte';
     import Words from './Words.svelte';
     import { hasSlideContent } from '$lib/state/life/present';
-    import { domainLabel, domainTone, typeTone } from '$lib/state/shared/words/tones';
+    import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import type { PresentSlide } from '$lib/state/life/present';
 
@@ -18,15 +18,17 @@
         slide: PresentSlide;
         /** The words naming the slide when it wrote no title of its own. */
         title: string;
-        /** The project's type, drawn as its chip. */
-        type?: string;
+        /**
+         * The project's stage, drawn as its chip with the label and colour of its word of `stages`.
+         */
+        stage?: string;
         /** The project's `domain:` key, which the chip's words and the slide's edge come from. */
         domain?: string;
         /** The hue the slide's `tag.class` wears, from the deck's `tag_tones`. */
         tagTone?: string;
     };
 
-    let { slide, title, type, domain, tagTone }: Props = $props();
+    let { slide, title, stage, domain, tagTone }: Props = $props();
 
     const rich = $derived(hasSlideContent(slide));
     const tone = $derived(domain === undefined ? undefined : domainTone(domain));
@@ -38,8 +40,8 @@
         {#if domain !== undefined}
             <Tag label={domainLabel(domain)} {tone} />
         {/if}
-        {#if type !== undefined}
-            <Chip label={type} tone={typeTone(type)} filled />
+        {#if stage !== undefined}
+            <Chip label={chipLabel(stage)} tone={stageTone(stage)} filled />
         {/if}
         {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
             <Tag label={slide.tag.text} tone={tagTone} />

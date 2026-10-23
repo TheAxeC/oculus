@@ -1,5 +1,5 @@
 id: graph-transfer
-type: active
+stage: submit-ready
 tier: projects
 short: Graph-Transfer
 title: Transfer learning across graph domains
@@ -7,7 +7,7 @@ lead: A. Example
 authors: [A. Example, B. Coauthor]
 focus: push
 status:
-  chips: [submit-ready]
+  chips: []
   line: Draft complete, internal review done; ready to submit.
 domain: graphs
 pillar: [graphs]

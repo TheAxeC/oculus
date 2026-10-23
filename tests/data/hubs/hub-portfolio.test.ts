@@ -168,8 +168,8 @@ describe('the portfolio of several hubs', () => {
             writeFileSync(
                 manifest,
                 readFileSync(manifest, 'utf8').replace(
-                    /^type: active$/m,
-                    'type: active\nvenue_id: only-first'
+                    /^stage: active$/m,
+                    'stage: active\nvenue_id: only-first'
                 )
             );
             const { merged } = builds(from);
@@ -291,7 +291,7 @@ describe('the portfolio of several hubs', () => {
             const from = copies();
             const folder = join(from.hub, 'projects', 'ideas', 'lab:x');
             mkdirSync(folder, { recursive: true });
-            writeFileSync(join(folder, 'project.yml'), 'title: Colon\ntype: idea\n');
+            writeFileSync(join(folder, 'project.yml'), 'title: Colon\nstage: idea\n');
             const { merged } = builds(from);
             const named = merged.findings.filter((one) => one.file === join(folder, 'project.yml'));
             expect(named.some((one) => one.message.includes('lab:x'))).toBe(false);
@@ -326,7 +326,7 @@ function plantProject(hub: string, id: string, lines = ''): string {
     const folder = join(hub, 'projects', 'ideas', id);
     mkdirSync(folder, { recursive: true });
     const file = join(folder, 'project.yml');
-    writeFileSync(file, `title: Project ${id}\ntier: projects\ntype: idea\n${lines}`);
+    writeFileSync(file, `title: Project ${id}\ntier: projects\nstage: idea\n${lines}`);
     return file;
 }
 
@@ -387,7 +387,7 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             plantProject(a, 'alpha');
             plantProject(b, 'alpha');
             const c = plantScratch('oculus-hubs-folder-', {
-                'project.yml': 'title: Alpha\ntier: projects\ntype: idea\n'
+                'project.yml': 'title: Alpha\ntier: projects\nstage: idea\n'
             });
             const { snapshot } = published([
                 { name: 'a', dir: a },

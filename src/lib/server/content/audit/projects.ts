@@ -1,7 +1,9 @@
 // Layer 2, server. The audit's sections over the projects and collections: the open markers left in
 // a document, a manifest field a live project has not filled in, a folder that is not the one the
-// tier standard names, a status chip the project's own tier and type contradict, a field long
-// enough to stop being a glance, and a collection entry whose date or link wants doing.
+// tier standard names, a project of a finished tier with no author chip or of an unfinished tier at
+// a stage that carries `published`, a field long enough to stop being a glance, and a collection
+// entry whose date or link wants doing. A stage word or a form written as a chip is the manifest
+// check's finding (data/snapshot/validate.ts), drawn in the Findings view, and is not scanned here.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -17,7 +19,6 @@ import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import {
-    printed,
     type AuditInput,
     type AuditRules,
     sentence,
@@ -205,8 +206,8 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
-            project.type !== undefined &&
-            rules.placedTypes.has(project.type) &&
+            project.stage !== undefined &&
+            rules.placedStages.has(project.stage) &&
             project.venueId === undefined
         ) {
             add({
@@ -217,7 +218,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_no_venue')
             });
         }
-        if (project.type !== undefined && rules.liveTypes.has(project.type)) {
+        if (project.stage !== undefined && rules.liveStages.has(project.stage)) {
             const wanted = project.domainIds.some((id) => rules.dataDomains.has(id))
                 ? ['datasets', 'results']
                 : ['results'];
@@ -287,19 +288,19 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
 }
 
 /**
- * The type a project's filing folder says it has, and none when the folder says nothing: for a
- * tier carrying `outcome_folders` (the archive), a folder named by a type carrying
- * `archive_outcome`; for a tier listing `type_folders` (the coauthor tier lists `abandoned`), a
+ * The stage a project's filing folder says it has, and none when the folder says nothing: for a
+ * tier carrying `outcome_folders` (the archive), a folder named by a stage carrying
+ * `archive_outcome`; for a tier listing `stage_folders` (the coauthor tier lists `abandoned`), a
  * folder that list holds.
  */
-function folderType(project: Project, rules: AuditRules): string | undefined {
+function folderStage(project: Project, rules: AuditRules): string | undefined {
     const tier = project.tier;
     const folder = project.category;
     if (tier === undefined || folder === undefined) return undefined;
     if (rules.outcomeTiers.has(tier)) {
         return rules.archiveOutcomes.has(folder) ? folder : undefined;
     }
-    return (rules.typeFolders.get(tier) ?? []).includes(folder) ? folder : undefined;
+    return (rules.stageFolders.get(tier) ?? []).includes(folder) ? folder : undefined;
 }
 
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
@@ -309,8 +310,8 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
-            project.type !== undefined &&
-            input.rules.standardTypes.has(project.type) &&
+            project.stage !== undefined &&
+            input.rules.standardStages.has(project.stage) &&
             !existsSync(join(folder, 'README.md'))
         ) {
             add({
@@ -350,23 +351,24 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_code_no_readme')
             });
         }
-        const expected = folderType(project, input.rules);
-        const written = project.type;
+        const expected = folderStage(project, input.rules);
+        const written = project.stage;
         if (expected !== undefined && written !== undefined && written !== expected) {
             add({
                 scope,
                 where: 'project.yml',
                 kind: 'conform',
                 ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_type_not_folder', written, expected)
+                ...sentence('audit.msg_stage_not_folder', written, expected)
             });
         }
     }
 }
 
 /**
- * The status guardrails: what a project's tier and type say its chips cannot be, and the one field
- * a live project must fill in. They are soft: drift to clear, never a bad value.
+ * The status guardrails: the author chip a project of a finished tier carries, the stage a project
+ * of an unfinished tier cannot be at, and the one field a live project must fill in. They are soft:
+ * drift to clear, never a bad value.
  */
 export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
@@ -385,44 +387,20 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_no_author_chip')
             });
         }
-        const live = [...chips].filter((chip) => rules.liveChips.has(chip)).sort();
-        if (finished && project.type !== undefined && rules.terminalTypes.has(project.type)) {
-            if (live.length > 0) {
-                add({
-                    scope,
-                    where: 'status.chips',
-                    kind: 'manifest',
-                    ...fileIn(input.hub, project, project.file),
-                    ...(live.length === 1
-                        ? sentence('audit.msg_terminal_live_one', project.type, printed(live))
-                        : sentence('audit.msg_terminal_live', project.type, printed(live)))
-                });
-            }
-        }
-        // A project on a board of unfinished work that carries a chip marked `published` belongs
-        // under archive/published/ rather than on the board it was written on.
-        if (!finished && [...chips].some((chip) => rules.publishedChips.has(chip))) {
+        // A project on a board of unfinished work whose stage carries `published` belongs under
+        // archive/published/ rather than on the board it was written on.
+        if (!finished && project.stage !== undefined && rules.publishedStages.has(project.stage)) {
             add({
                 scope,
-                where: 'status.chips',
+                where: 'stage',
                 kind: 'manifest',
                 ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_projects_published')
-            });
-        }
-        for (const [one, other] of rules.contradictory) {
-            if (!chips.has(one) || !chips.has(other)) continue;
-            add({
-                scope,
-                where: 'status.chips',
-                kind: 'manifest',
-                ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_contradictory_chips', one, other)
+                ...sentence('audit.msg_projects_published', project.stage)
             });
         }
         if (
-            project.type !== undefined &&
-            rules.liveTypes.has(project.type) &&
+            project.stage !== undefined &&
+            rules.liveStages.has(project.stage) &&
             (project.eli5 ?? '') === ''
         ) {
             add({

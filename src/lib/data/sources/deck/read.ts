@@ -397,7 +397,7 @@ export function createReader(context: DeckContext): DeckReader {
                     desc: ''
                 };
                 if (project?.domain !== undefined) card.domain = project.domain;
-                if (project !== null && project.chips.length > 0) card.maturity = project.chips[0];
+                if (project?.stage !== undefined) card.maturity = project.stage;
                 return card;
             });
             return {
@@ -409,7 +409,7 @@ export function createReader(context: DeckContext): DeckReader {
                 lede: entry.lede,
                 cards,
                 foot: entry.foot,
-                legend: found.spec.find?.status ?? []
+                legend: found.spec.find?.stages ?? []
             };
         }
         const rows: DeckSummaryRow[] = found.members.map((member) => {

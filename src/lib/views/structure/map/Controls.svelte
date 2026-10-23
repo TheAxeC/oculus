@@ -4,7 +4,7 @@
     // actions are icons in the header (Map.svelte), and the relationship legend is Legend.svelte.
     //
     // A filter carries how many projects of it the graph holds now, so a reader sees what a press
-    // costs before pressing it. A project type is a pressable chip in its tone, and the connected
+    // costs before pressing it. A project stage is a pressable chip in its tone, and the connected
     // toggle is a pressable chip without one; a pillar is a text button, since its words carry the
     // count and the glyph of a line.
     //
@@ -17,23 +17,23 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { typeTone } from '$lib/state/shared/words/tones';
+    import { stageTone } from '$lib/state/shared/words/tones';
 
     type Status = { status: string; tone: string };
-    type TypeFilter = { type: string; count: number; shown: boolean };
+    type StageFilter = { stage: string; count: number; shown: boolean };
     type LineFilter = { id: string; title: string; count: number; shown: boolean };
     type Props = {
         collaborators: boolean;
         statuses: Status[];
         enabled: string[];
         connected: boolean;
-        types: TypeFilter[];
+        stages: StageFilter[];
         lines: LineFilter[];
         oncollaborators: (checked: boolean) => void;
         onarchive: (status: string, checked: boolean) => void;
-        ontype: (type: string) => void;
+        onstage: (stage: string) => void;
         online: (id: string) => void;
-        onalltypes: () => void;
+        onallstages: () => void;
         onalllines: () => void;
         onconnected: () => void;
     };
@@ -42,13 +42,13 @@
         statuses,
         enabled,
         connected,
-        types,
+        stages,
         lines,
         oncollaborators,
         onarchive,
-        ontype,
+        onstage,
         online,
-        onalltypes,
+        onallstages,
         onalllines,
         onconnected
     }: Props = $props();
@@ -56,22 +56,22 @@
 
 <div class="filters" data-map-filters>
     <Toolbar label={t('map.filters')}>
-        {#if types.length > 0}
-            <span class="set" data-map-types>
-                <span class="group">{t('map.types')}</span>
-                {#each types as item (item.type)}
+        {#if stages.length > 0}
+            <span class="set" data-map-stages>
+                <span class="group">{t('map.stages')}</span>
+                {#each stages as item (item.stage)}
                     <Chip
-                        label={t('map.count', item.type, item.count)}
-                        tone={typeTone(item.type)}
+                        label={t('map.count', item.stage, item.count)}
+                        tone={stageTone(item.stage)}
                         filled={item.shown}
                         pressed={item.shown}
-                        onclick={() => ontype(item.type)}
+                        onclick={() => onstage(item.stage)}
                     />
                 {/each}
                 <ToolButton
                     label={t('map.all')}
-                    title={t('map.all_types_tip')}
-                    onclick={onalltypes}
+                    title={t('map.all_stages_tip')}
+                    onclick={onallstages}
                 />
             </span>
         {/if}

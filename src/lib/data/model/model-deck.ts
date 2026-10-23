@@ -89,7 +89,7 @@ export type DeckIdeaCard = {
     desc: string;
     /** The project's `domain:` key, which the card's colour and words are read from. */
     domain?: string;
-    /** The status chip of the project that says how far the idea is. */
+    /** The project's stage, a word of `stages:`, drawn by its label: how far the idea is. */
     maturity?: string;
 };
 
@@ -163,8 +163,8 @@ export type DeckSlide =
     | (SlideBase & {
           kind: 'project';
           slide: PresentSlide;
-          /** The slide's project type, drawn as its chip. */
-          type?: string;
+          /** The project's stage, a word of `stages:`, drawn as its chip. */
+          stage?: string;
           /** The project's `domain:` key. */
           domain?: string;
       })
@@ -176,7 +176,7 @@ export type DeckSlide =
           lede: string;
           cards: DeckIdeaCard[];
           foot: string;
-          /** The status chips the group looks for, which the maturity legend explains. */
+          /** The stages the group's `find:` looks for, which the maturity legend explains. */
           legend: string[];
       });
 

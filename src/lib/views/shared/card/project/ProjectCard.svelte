@@ -42,6 +42,7 @@
     import { contextText } from '$lib/state/boards/project-context';
     import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
+    import { chipGlyphName, chipLabel } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -113,7 +114,7 @@
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
-    const due = $derived(deadline(item.project, item.chips, now, t, configMap()));
+    const due = $derived(deadline(item.project, now, t, configMap()));
     const wait = $derived(
         snapshot === null
             ? null
@@ -343,8 +344,13 @@
     >
         {#snippet meta()}
             <RootChip record={item.project} />
-            {#if item.project.type}
-                <Chip label={item.project.type} tone={item.tone} filled />
+            {#if item.project.stage}
+                <Chip
+                    label={chipLabel(item.project.stage)}
+                    glyph={chipGlyphName(item.project.stage)}
+                    tone={item.tone}
+                    filled
+                />
             {/if}
             {#if item.domain}
                 <Tag label={item.domain.label} tone={item.domain.tone} />

@@ -16,9 +16,11 @@ export type FindSpec = {
     folders: string[];
     /** The manifest tiers a deck's project must be in; absent keeps every tier. */
     tiers?: string[];
-    /** The manifest types a deck's project must have; absent keeps every type. */
-    types?: string[];
-    /** The status chips a deck's project must hold one of; absent keeps every deck. */
+    /** The stages of `stages:` a deck's project must be at; absent keeps every stage. */
+    stages?: string[];
+    /** The forms of `forms:` a deck's project must have; absent keeps every form. */
+    forms?: string[];
+    /** The chips of `chips:` a deck's project must hold one of; absent keeps every deck. */
     status?: string[];
 };
 
@@ -101,7 +103,8 @@ function find(name: string, value: unknown, raise: Raise): FindSpec | undefined 
     if (folders.length === 0) raise(`groups.${name}.find`, 'findings.deck.find_no_folders', name);
     const spec: FindSpec = { folders };
     if (value.tiers !== undefined) spec.tiers = strings(value.tiers);
-    if (value.types !== undefined) spec.types = strings(value.types);
+    if (value.stages !== undefined) spec.stages = strings(value.stages);
+    if (value.forms !== undefined) spec.forms = strings(value.forms);
     if (value.status !== undefined) spec.status = strings(value.status);
     return spec;
 }

@@ -1,5 +1,5 @@
 id: tensor-sketch
-type: idea
+stage: exploring
 tier: projects
 short: Sketched tensor decompositions for streaming data, online and out of core
 title: Sketched tensor decompositions for streaming data
@@ -7,7 +7,7 @@ lead: A. Example
 authors: [A. Example]
 focus: holding
 status:
-  chips: [exploring]
+  chips: []
   line: New idea - scope + novelty check open.
 domain: method
 pillar: [tensors]

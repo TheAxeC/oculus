@@ -1,22 +1,22 @@
 <script lang="ts">
-    // Layer 3, Map partial. The relationship legend under the heading: each project type the graph
+    // Layer 3, Map partial. The relationship legend under the heading: each project stage the graph
     // draws, as a chip in the tone its nodes are drawn in, and the pillar line mark. It holds no
     // control; the filters are the bar's (Controls.svelte).
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { typeTone } from '$lib/state/shared/words/tones';
+    import { stageTone } from '$lib/state/shared/words/tones';
 
     type Props = {
-        /** The types of the projects the graph draws, in the order of the bar's type chips. */
-        types: string[];
+        /** The stages of the projects the graph draws, in the order of the bar's stage chips. */
+        stages: string[];
     };
-    let { types }: Props = $props();
+    let { stages }: Props = $props();
 </script>
 
 <div class="legend">
-    {#each types as type (type)}
-        <Chip label={type} tone={typeTone(type)} filled />
+    {#each stages as stage (stage)}
+        <Chip label={stage} tone={stageTone(stage)} filled />
     {/each}
     <span class="line-dot"></span>
     <span>{t('map.legend_line')}</span>

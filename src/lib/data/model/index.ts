@@ -34,10 +34,12 @@ import type {
     FeedKind,
     Feeds,
     RawFeeds,
-    SchemaField
+    SchemaField,
+    Vocabulary
 } from './model-collections.ts';
 
 export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
+export type { SelfCheck, ValidationRules, Vocabulary } from './model-collections.ts';
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {
@@ -72,39 +74,6 @@ export type RawPortfolio = {
     decks: Record<Id, RawDeck>;
     findings: Finding[];
 };
-
-/**
- * The controlled vocabularies validate checks values against, each a list of words. `statuses` is
- * the statuses a collection entry's `status` may take (the words of `statuses` with a colour), and
- * `acknowledged` the funding statuses a manuscript acknowledges (the words carrying the flag).
- */
-export type Vocabulary = {
-    statuses: string[];
-    acknowledged: string[];
-};
-
-/**
- * What validate needs and nothing more: the vocabularies, the manifest fields the schema checks,
- * and the text its sentences are read from.
- */
-export type ValidationRules = {
-    vocab: Vocabulary;
-    /**
-     * The manifest fields the generated schema holds to the keys of their `from` sources, all of
-     * which were read: the schema reports a value of the wrong shape there, so validate does not.
-     */
-    listed?: ReadonlySet<string>;
-    /** The flat text catalog every finding's sentence is read from, by its `findings.` key. */
-    text: Record<string, string>;
-    /** The person the setting `self` names, checked against the people file; none checks none. */
-    self?: SelfCheck;
-};
-
-/**
- * The person key the workspace setting `self` names (empty for none), the people file it is
- * looked up in and whether that file read.
- */
-export type SelfCheck = { key: string; file: string; read: boolean };
 
 /** Everything a portfolio build needs: where to read, and what to check what it read against. */
 export type PortfolioConfig = {
@@ -383,9 +352,9 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 
 /**
  * Which section of the audit a finding belongs to: an open marker left in a document, a manifest
- * field a live project has not filled in, a folder the tier standard does not name, a status the
- * project's own tier and type contradict, a field that has stopped being a glance, and the public
- * website's list against the portfolio.
+ * field a live project has not filled in, a folder the tier standard does not name, a project of a
+ * finished tier with no author chip or of an unfinished tier at a stage that carries `published`, a
+ * field that has stopped being a glance, and the public website's list against the portfolio.
  */
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 

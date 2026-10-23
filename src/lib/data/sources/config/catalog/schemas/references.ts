@@ -1,10 +1,11 @@
 // Layer 1, data. The options catalog as the places that name a hub key, for the reference index
 // (data/snapshot/references/): an option or a field of an options family whose `from` names a list
 // of the hub (`domains`, `clusters`, `people`) or a vocabulary list the catalog reads from
-// vocab.yml (`project_types`, `tiers`, `status_chips`, `entry_statuses`) is a place a key is
-// written. A defaults file of oculus (config/defaults/) that has such an option is read as a record
-// of those places; a file with none is not read. The open workspace file's `settings:` is read
-// with the places of every such file together, since it keys its settings as they do.
+// vocab.yml (`project_stages`, `project_forms`, `tiers`, `status_chips`, `entry_statuses`) is a
+// place a key is written. A defaults file of oculus (config/defaults/) that has such an option is
+// read as a record of those places; a file with none is not read. The open workspace file's
+// `settings:` is read with the places of every such file together, since it keys its settings as
+// they do.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -29,9 +30,10 @@ const OPTION_SOURCES: Record<string, string | undefined> = {
     domains: 'domains',
     clusters: 'clusters',
     people: 'people',
-    project_types: `${VOCAB_SOURCE}types`,
+    project_stages: `${VOCAB_SOURCE}stages`,
+    project_forms: `${VOCAB_SOURCE}forms`,
     tiers: `${VOCAB_SOURCE}tiers`,
-    status_chips: `${VOCAB_SOURCE}statuses.chip`,
+    status_chips: `${VOCAB_SOURCE}chips`,
     entry_statuses: `${VOCAB_SOURCE}statuses`
 };
 

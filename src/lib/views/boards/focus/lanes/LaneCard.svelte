@@ -26,7 +26,12 @@
     import { firstSentence } from '$lib/state/boards/board';
     import type { Project } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
-    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
+    import {
+        chipGlyphName,
+        chipLabel,
+        statusMarkTone,
+        projectStatusWords
+    } from '$lib/state/shared/words/tones';
 
     type Props = {
         project: Project;
@@ -69,8 +74,11 @@
     /** How much of `next` a card shows. */
     const CARD_NEXT = 130;
 
-    /** How many status chips a card carries; the rest are on the project's own tab. */
+    /** How many status marks a card carries; the rest are on the project's own tab. */
     const CARD_CHIPS = 2;
+
+    /** The status marks: the stage when its word has a glyph, then the form and the chips. */
+    const marks = $derived(projectStatusWords(project.stage, project.form, project.chips));
 </script>
 
 <div
@@ -96,7 +104,7 @@
                 {/each}
             </ToolButton>
         </span>
-        {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
+        {#each marks.slice(0, CARD_CHIPS) as chip (chip)}
             <span class="mark">
                 <Tag
                     label={chipLabel(chip)}

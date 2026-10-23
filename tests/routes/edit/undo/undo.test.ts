@@ -277,9 +277,9 @@ describe('taking a change back', () => {
             body: { kind: 'manifest', id: `hub:${id}`, fields: { tier: 'coauthor' } }
         },
         {
-            name: `${id}: a type written`,
+            name: `${id}: a stage written`,
             id,
-            body: { kind: 'manifest', id: `hub:${id}`, fields: { type: 'paused-stage' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { stage: 'paused-stage' } }
         },
         {
             name: `${id}: a tick`,

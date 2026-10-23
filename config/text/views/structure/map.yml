@@ -3,7 +3,7 @@ text:
     map:
         all: all
         all_lines_tip: Draw every pillar again
-        all_types_tip: Draw every project type again
+        all_stages_tip: Draw every project stage again
         archived: '+ archived:'
         collaborators: + collaborators
         connected: connected only
@@ -27,7 +27,7 @@ text:
         retune_glyph: refresh
         retune_tip: Lay the map out again from another start
         toolbar: Map actions
-        types: 'types:'
+        stages: 'stages:'
     views:
         map: Map
         map_glyph: link

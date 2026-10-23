@@ -30,7 +30,7 @@ export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
     return days !== undefined && days >= lag;
 }
 
-/** Apply facet, text, stale, dated and hidden-type controls to board items. */
+/** Apply facet, text, stale, dated and hidden-stage controls to board items. */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
@@ -38,11 +38,11 @@ export function applyFilters(
     quick: QuickFilters = {}
 ): BoardItem[] {
     const needle = search.trim().toLowerCase();
-    const hidden = quick.hiddenTypes ?? [];
+    const hidden = quick.hiddenStages ?? [];
     const lag = quick.staleLag ?? STALE_LAG;
     return items.filter((item) => {
-        const type = item.project.type;
-        if (type !== undefined && hidden.includes(type)) return false;
+        const stage = item.project.stage;
+        if (stage !== undefined && hidden.includes(stage)) return false;
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
         for (const facet of FACETS) {
@@ -66,7 +66,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         labels,
         stale: false,
         dated: false,
-        hiddenTypes: []
+        hiddenStages: []
     };
 }
 
@@ -77,7 +77,7 @@ const boardStateShape = z.object({
     search: optionalTextShape,
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
-    hiddenTypes: fieldItemsShape,
+    hiddenStages: fieldItemsShape,
     expanded: recordItemsShape,
     more: recordItemsShape,
     filters: mapShape.optional().catch(undefined)
@@ -101,7 +101,7 @@ export function parseBoardState(
     if (held.search !== undefined) state.search = held.search;
     state.stale = held.stale;
     state.dated = held.dated;
-    state.hiddenTypes = held.hiddenTypes;
+    state.hiddenStages = held.hiddenStages;
     state.expanded = held.expanded;
     state.more = held.more;
     for (const [facet, selected] of Object.entries(held.filters ?? {})) {

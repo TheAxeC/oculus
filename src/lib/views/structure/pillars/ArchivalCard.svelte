@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. Non-real work grouped by the types of `types` that carry a `dead`
+    // Layer 3, Pillars partial. Non-real work grouped by the words of `stages` that carry a `dead`
     // number, in the order of those numbers, with one collapsible category at a time and project
     // links inside it.
 
@@ -43,14 +43,14 @@
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p>{@html inlineMarkdown(t('pillars.archival_blurb'))}</p>
         <div class="groups">
-            {#each groups as group (group.type)}
+            {#each groups as group (group.stage)}
                 <div class="group">
                     <Chip
-                        label={`${group.type} ${group.count}`}
-                        pressed={shown === group.type}
-                        onclick={() => (shown = shown === group.type ? '' : group.type)}
+                        label={`${group.stage} ${group.count}`}
+                        pressed={shown === group.stage}
+                        onclick={() => (shown = shown === group.stage ? '' : group.stage)}
                     />
-                    {#if shown === group.type}
+                    {#if shown === group.stage}
                         <div class="members">
                             {#each group.projects as project (project.id)}
                                 <ToolButton

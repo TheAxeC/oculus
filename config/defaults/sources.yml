@@ -6,7 +6,7 @@
 # ===========================================================================
 
 
-# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and type are the manifest's own `tier` and `type` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
+# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and stage are the manifest's own `tier` and `stage` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
 scan:
   - { dir: projects/ideas }
   - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing

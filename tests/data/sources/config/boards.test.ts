@@ -56,7 +56,7 @@ describe('boardsFindings', () => {
         [
             { projects: { groups: [{ label: 'idea', keys: ['nosuch'], color: '#7c5cff' }] } },
             [
-                'boards.projects.groups[0].keys: boards.projects.groups[0].keys must be one of the items of the list status_chips, project_types; it is not read'
+                'boards.projects.groups[0].keys: boards.projects.groups[0].keys must be one of the items of the list project_stages, project_forms, status_chips; it is not read'
             ]
         ],
         [

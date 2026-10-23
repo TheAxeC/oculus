@@ -169,19 +169,16 @@ const rowLabelShape = z.object({ label: filledTextShape }).transform((row) => ro
 
 /**
  * The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices, or the keys of
- * one held as a map (`data_access`), read as the schema check reads them. A source that names a
- * field (`vocab.statuses.chip`) offers the keys of the map whose row carries it as `true`, each
- * under its row's `label` when it has one.
+ * one held as a map (`stages`, `chips`, `data_access`), read as the schema check reads them, each
+ * under its row's `label` when it has one. A source that names a field
+ * (`vocab.statuses.acknowledged`) offers the keys of the map whose row carries it as `true`.
  */
 function vocabChoices(config: Record<string, unknown>, name: string): Choice[] {
     const { key, field } = vocabSource(name);
     const raw = byKey(config, key);
     const map = readAs(mapShape, raw);
     if (map === null) return readAs(vocabChoicesShape, raw) ?? [];
-    return vocabKeys(raw, field).map((id) => {
-        const label = field === undefined ? undefined : readAs(rowLabelShape, map[id]);
-        return { id, label: label ?? id };
-    });
+    return vocabKeys(raw, field).map((id) => ({ id, label: readAs(rowLabelShape, map[id]) ?? id }));
 }
 
 /**
@@ -328,7 +325,8 @@ export function fieldValues(
     return {
         id: bareId(project),
         tier: project.tier,
-        type: project.type,
+        stage: project.stage,
+        form: project.form,
         short: project.short,
         title: project.title,
         links: project.links,

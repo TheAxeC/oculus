@@ -18,7 +18,7 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import { hasWord, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
-import { typeTone } from '../../shared/words/tones.ts';
+import { stageTone } from '../../shared/words/tones.ts';
 
 /**
  * What a node stands for: the Map's projects, pillar lines and collaborators, a Notes Graph note.
@@ -32,7 +32,7 @@ export type GraphNode = {
     entityId: string;
     label: string;
     kind: GraphKind;
-    type?: string;
+    stage?: string;
     archived?: string;
     degree: number;
     radius: number;
@@ -54,8 +54,8 @@ export type Graph = { nodes: GraphNode[]; edges: GraphEdge[] };
  * saved Map state that names no filter draws the whole graph.
  */
 export type GraphFilter = {
-    /** The project types drawn. */
-    types?: string[];
+    /** The project stages drawn. */
+    stages?: string[];
     /** The pillars drawn, by their registry key. */
     lines?: string[];
     /** Drop a project with no membership edge to a line that is still drawn. */
@@ -90,9 +90,9 @@ export function labelModeOf(config: Record<string, unknown>): string {
     return wordShape.parse(config.map_label_mode);
 }
 
-/** The type of a project of a tier carrying `finished`, which a Map toggle shows; else none. */
+/** The stage of a project of a tier carrying `finished`, which a Map toggle shows; else none. */
 function archived(project: Project, config: Record<string, unknown>): string | undefined {
-    return hasWord(config, 'tiers', 'finished', project.tier) ? project.type : undefined;
+    return hasWord(config, 'tiers', 'finished', project.tier) ? project.stage : undefined;
 }
 
 /** Build only nodes reached by visible projects and only edges whose two ends are visible. */
@@ -117,7 +117,7 @@ export function buildGraph(
                 ? project.title
                 : (project.short ?? project.title),
         kind: 'project',
-        type: project.type,
+        stage: project.stage,
         ...(archived(project, config) === undefined ? {} : { archived: archived(project, config) }),
         degree: 0,
         radius: 7
@@ -244,18 +244,18 @@ function joining(edges: GraphEdge[], kept: Set<string>): GraphEdge[] {
 
 /**
  * The part of a graph one Map instance draws, as a pure function over the whole of it. The three
- * rules run in order: the types and the lines take their own nodes out, `connected` then takes out
+ * rules run in order: the stages and the lines take their own nodes out, `connected` then takes out
  * a project left with no membership edge, and a line or a collaborator whose projects have all gone
  * leaves with them, since such a node is in the graph only to carry a project's edge.
  */
 export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
-    const types = new Set(filter.types ?? []);
+    const stages = new Set(filter.stages ?? []);
     const lines = new Set(filter.lines ?? []);
     let nodes = graph.nodes.filter((node) => {
-        // A project whose manifest names no type is outside the type filter rather than under it:
-        // the row carries no chip for it, so a filter that dropped it could not bring it back.
+        // A project whose manifest names no stage is outside the stage filter rather than under
+        // it: the row carries no chip for it, so a filter that dropped it could not bring it back.
         if (node.kind === 'project') {
-            return types.size === 0 || node.type === undefined || types.has(node.type);
+            return stages.size === 0 || node.stage === undefined || stages.has(node.stage);
         }
         if (node.kind === 'line') return lines.size === 0 || lines.has(node.entityId);
         return true;
@@ -274,19 +274,19 @@ export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
 }
 
 /**
- * A saved filter narrowed to what one graph holds: a type or a line the graph no longer draws is
+ * A saved filter narrowed to what one graph holds: a stage or a line the graph no longer draws is
  * dropped from its list, and a list left empty by that is nothing filtered, so a map saved against
  * a portfolio that has since changed opens on the whole graph rather than on an empty canvas.
  */
 export function presentFilter(graph: Graph, filter: GraphFilter = {}): Required<GraphFilter> {
-    const types = new Set<string>();
+    const stages = new Set<string>();
     const lines = new Set<string>();
     for (const node of graph.nodes) {
-        if (node.kind === 'project' && node.type !== undefined) types.add(node.type);
+        if (node.kind === 'project' && node.stage !== undefined) stages.add(node.stage);
         if (node.kind === 'line') lines.add(node.entityId);
     }
     return {
-        types: (filter.types ?? []).filter((type) => types.has(type)),
+        stages: (filter.stages ?? []).filter((stage) => stages.has(stage)),
         lines: (filter.lines ?? []).filter((id) => lines.has(id)),
         connected: filter.connected === true
     };
@@ -302,12 +302,12 @@ export function toggleFilter(list: string[], id: string): string[] {
     return list.includes(id) ? list.filter((one) => one !== id) : [...list, id];
 }
 
-/** How many projects of each type a graph draws, which is the count one filter carries. */
-export function typeCounts(graph: Graph): Record<string, number> {
+/** How many projects at each stage a graph draws, which is the count one filter carries. */
+export function stageCounts(graph: Graph): Record<string, number> {
     const counted: Record<string, number> = {};
     for (const node of graph.nodes) {
-        if (node.kind !== 'project' || node.type === undefined) continue;
-        counted[node.type] = (counted[node.type] ?? 0) + 1;
+        if (node.kind !== 'project' || node.stage === undefined) continue;
+        counted[node.stage] = (counted[node.stage] ?? 0) + 1;
     }
     return counted;
 }
@@ -328,9 +328,9 @@ export function lineCounts(graph: Graph): Record<string, number> {
 }
 
 /**
- * The archive statuses the Map offers a toggle for: every type of a project of a tier carrying
+ * The archive statuses the Map offers a toggle for: every stage of a project of a tier carrying
  * `finished` (the archived and coauthor projects), each with the tone the `color` of its row of
- * `types` gives, the tone its board card and its node are drawn in.
+ * `stages` gives, the tone its board card and its node are drawn in.
  */
 export function archiveStatuses(
     snapshot: Snapshot | null,
@@ -338,31 +338,31 @@ export function archiveStatuses(
 ): { status: string; tone: string }[] {
     const found = new Set<string>();
     for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-        const type = archived(project, config);
-        if (type) found.add(type);
+        const stage = archived(project, config);
+        if (stage) found.add(stage);
     }
-    return [...found].map((status) => ({ status, tone: typeTone(status) }));
+    return [...found].map((status) => ({ status, tone: stageTone(status) }));
 }
 
 /**
- * One chip per project type the base graph holds: the keys of `types` of the merged config first,
+ * One chip per project stage the base graph holds: the keys of `stages` of the merged config first,
  * in its order, then the rest by name, each with how many the drawn graph holds and whether the
- * filter shows it (an empty filter shows every type).
+ * filter shows it (an empty filter shows every stage).
  */
-export function typeFilters(
+export function stageFilters(
     base: Graph,
     drawn: Graph,
     config: Record<string, unknown>,
-    types: string[]
-): { type: string; count: number; shown: boolean }[] {
-    const ordered = vocabKeys(config.types);
-    const counted = typeCounts(drawn);
-    const names = Object.keys(typeCounts(base));
-    const rest = names.filter((type) => !ordered.includes(type)).sort();
-    return [...ordered.filter((type) => names.includes(type)), ...rest].map((type) => ({
-        type,
-        count: counted[type] ?? 0,
-        shown: types.length === 0 || types.includes(type)
+    stages: string[]
+): { stage: string; count: number; shown: boolean }[] {
+    const ordered = vocabKeys(config.stages);
+    const counted = stageCounts(drawn);
+    const names = Object.keys(stageCounts(base));
+    const rest = names.filter((stage) => !ordered.includes(stage)).sort();
+    return [...ordered.filter((stage) => names.includes(stage)), ...rest].map((stage) => ({
+        stage,
+        count: counted[stage] ?? 0,
+        shown: stages.length === 0 || stages.includes(stage)
     }));
 }
 
@@ -426,12 +426,12 @@ export function layoutSeed(nodes: GraphNode[]): number {
 export type MapState = GraphFilter & {
     /** Whether collaboration nodes join the graph. */
     collaborators: boolean;
-    /** The archive types whose projects are shown, by their own status word. */
+    /** The archive stages whose projects are shown, by their own stage word. */
     enabled: string[];
     /** Whether a click starts a link rather than selecting. */
     linkMode: boolean;
-    /** The project types drawn. Empty is every type, which is what an unfiltered map holds. */
-    types: string[];
+    /** The project stages drawn. Empty is every stage, which is what an unfiltered map holds. */
+    stages: string[];
     /** The pillars drawn, by their ids in the portfolio. Empty is every pillar. */
     lines: string[];
     /** Whether a project with no membership edge to a line still drawn is dropped. */
@@ -451,7 +451,7 @@ const mapStateShape = z.object({
     collaborators: z.boolean().catch(false),
     enabled: fieldItemsShape,
     linkMode: z.boolean().catch(false),
-    types: fieldItemsShape,
+    stages: fieldItemsShape,
     lines: recordItemsShape,
     connected: z.boolean().catch(false),
     start: startShape.optional().catch(undefined)
@@ -480,7 +480,7 @@ export function parseMapState(raw: unknown): MapState {
         collaborators: false,
         enabled: [],
         linkMode: false,
-        types: [],
+        stages: [],
         lines: [],
         connected: false,
         start: undefined

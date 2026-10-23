@@ -28,13 +28,13 @@ export const UNKNOWN_TONE = 'grey';
 /** A tone is a CSS custom-property name fragment, so it may hold nothing else. */
 const TONE = /^[a-z][a-z0-9-]*$/;
 
-/** One status chip, a word of `statuses` with a `label`: the word, its glyph name and its words. */
+/** One word of the legend, a stage, a form or a chip: the word, its glyph name and its words. */
 type Legend = { key: string; icon: string; label: string };
 
 /** The palette hex is written in either case in the config, and matched in lower case here. */
 let palette: Record<string, string | undefined> = {};
 let statusPalette: Record<string, string | undefined> = {};
-let typeColor: Record<string, string | undefined> = {};
+let stageColor: Record<string, string | undefined> = {};
 let legend: Record<string, Legend | undefined> = {};
 let domainColor: Record<string, Record<string, string | undefined> | undefined> = {};
 let domainText: Record<string, Record<string, string | undefined> | undefined> = {};
@@ -52,7 +52,7 @@ const labelShape = z.object({ label: z.string() }).transform((row) => row.label)
 /**
  * A map of lower-cased name to string, from a map whose values `value` reads: the string itself, or
  * the string a record holds. It reads the hexes of `palette` and `data_access`, the `color` of a
- * word of `statuses` and `types`, and the `color` and the `label` of a `domains` entry. A value
+ * word of `statuses` and `stages`, and the `color` and the `label` of a `domains` entry. A value
  * `value` refuses leaves its name out.
  */
 function stringMap(node: unknown, value: z.ZodType<string>): Record<string, string> {
@@ -64,16 +64,15 @@ function stringMap(node: unknown, value: z.ZodType<string>): Record<string, stri
     );
 }
 
-/** A word of `statuses` that is a chip: `chip: true`, and the icon and label it may leave out. */
+/** A word of `stages`, `forms` or `chips`: the icon and the label it may leave out. */
 const legendRowShape = z.object({
-    chip: z.literal(true),
     icon: z.string().catch(''),
     label: z.string().optional().catch(undefined)
 });
 
 /**
- * The status chips of `statuses`, in order: each word whose row carries `chip: true`, drawn with
- * its `label`, or the word itself when the row holds no label as text.
+ * The words of one of `stages`, `forms` and `chips`, in order, each drawn with its `label`, or the
+ * word itself when the row holds no label as text, and its `icon`, none when it holds no text.
  */
 function legendRows(value: unknown): Legend[] {
     const map = readAs(mapShape, value) ?? {};
@@ -85,16 +84,17 @@ function legendRows(value: unknown): Legend[] {
 
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), the `color` of the
- * words of `statuses` and `types`, the chips of `statuses` (its words carrying `chip: true`), and
- * from `hubs` the research `domains` of every hub of the workspace, read from each hub's domains
- * registry, each under its hub's name; a domain with no colour wears the neutral tone. A key the
- * config does not hold installs as empty, so every lookup answers with its unknown case rather
- * than throwing: a half-read config still renders a page.
+ * words of `statuses` and `stages`, the legend of the words a project shows (its stage of
+ * `stages`, its form of `forms` and its chips of `chips`, a word of a later list taking the place
+ * of one of an earlier list), and from `hubs` the research `domains` of every hub of the workspace,
+ * read from each hub's domains registry, each under its hub's name; a domain with no colour wears
+ * the neutral tone. A key the config does not hold installs as empty, so every lookup answers with
+ * its unknown case rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
     palette = stringMap(config.palette, hexShape);
     statusPalette = stringMap(config.statuses, colorShape);
-    typeColor = stringMap(config.types, colorShape);
+    stageColor = stringMap(config.stages, colorShape);
     domainColor = {};
     domainText = {};
     for (const [name, vocab] of Object.entries(hubs.lists)) {
@@ -104,7 +104,8 @@ export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void
     }
     dataAccess = stringMap(config.data_access, hexShape);
     legend = Object.fromEntries(
-        legendRows(config.statuses)
+        [config.stages, config.forms, config.chips]
+            .flatMap((list) => legendRows(list))
             .filter((row) => row.key !== '__proto__')
             .map((row) => [row.key, row])
     );
@@ -154,10 +155,10 @@ export function statusTone(status: unknown): string {
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
-/** The tone of a project type, through the `color` of its word of `types`. */
-export function typeTone(type: unknown): string {
+/** The tone of a project's stage, through the `color` of its word of `stages`. */
+export function stageTone(stage: unknown): string {
     configGeneration();
-    const hex = byKey(typeColor, scalar(type).toLowerCase());
+    const hex = byKey(stageColor, scalar(stage).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
@@ -194,7 +195,10 @@ export function domainLabel(domain: unknown): string {
     return named.entry ?? named.key;
 }
 
-/** The glyph name a status chip carries, and nothing for a chip the legend does not list. */
+/**
+ * The glyph name a stage, a form or a chip carries, and nothing for a word the legend does not
+ * list or one whose row names no icon.
+ */
 export function chipGlyphName(chip: string): string {
     configGeneration();
     return byKey(legend, chip)?.icon ?? '';
@@ -220,36 +224,53 @@ const ICON_HUES: Record<string, string> = {
 };
 
 /**
- * The hue a status mark is drawn in: the tone of its word's `color` when the word has one, and
- * otherwise the colour its legend icon is named by, so a mark drawn as a line icon keeps the
- * colour its dot had. The unknown tone for a status the legend does not list.
+ * The hue a status mark is drawn in: the tone of its word's `color` of `stages` when the word is a
+ * stage with one, and otherwise the colour its legend icon is named by, so a mark drawn as a line
+ * icon keeps the colour its dot had. The unknown tone for a word neither gives a colour.
  */
-export function statusMarkTone(chip: string): string {
+export function statusMarkTone(word: string): string {
     configGeneration();
-    if (byKey(statusPalette, chip.toLowerCase()) !== undefined) return statusTone(chip);
-    return byKey(ICON_HUES, byKey(legend, chip)?.icon ?? '') ?? UNKNOWN_TONE;
+    if (byKey(stageColor, word.toLowerCase()) !== undefined) return stageTone(word);
+    return byKey(ICON_HUES, byKey(legend, word)?.icon ?? '') ?? UNKNOWN_TONE;
 }
 
-/** A status chip's words, and the chip's own key for one the legend does not list. */
+/**
+ * The words of a stage, a form or a chip, its row's `label`, and the word itself for one the legend
+ * does not list.
+ */
 export function chipLabel(chip: string): string {
     configGeneration();
     return byKey(legend, chip)?.label ?? chip;
 }
 
-/** Every chip the legend lists, in the config's order. */
+/**
+ * The words a project's status marks draw on a lane card and in the board's list, in order: its
+ * stage when the stage's word of `stages` has a glyph, then its form and its chips. A stage with no
+ * glyph (idea, active, archived) gives no mark; a board card draws every stage as its filled chip.
+ */
+export function projectStatusWords(
+    stage: string | undefined,
+    form: string | undefined,
+    chips: readonly string[]
+): string[] {
+    const marked = stage !== undefined && chipGlyphName(stage) !== '' ? [stage] : [];
+    return [...marked, ...(form === undefined ? [] : [form]), ...chips];
+}
+
+/** Every word the legend lists: the stages, the forms, then the chips, in the config's order. */
 export function chipKeys(): string[] {
     configGeneration();
     return Object.keys(legend);
 }
 
 /**
- * The hue a chip of the vocabulary wears: its project type's, and its status's where no type has
- * one. The two maps cover different halves of the vocabulary, and taking both is what gives the
- * gallery's row its spread of hues instead of a wall of grey.
+ * The hue a word of the vocabulary wears: its stage's, and its status's where no stage has one. The
+ * two maps cover different halves of the vocabulary, and taking both is what gives the gallery's
+ * row its spread of hues instead of a wall of grey.
  */
 export function chipTone(key: string): string {
-    const type = typeTone(key);
-    return type === UNKNOWN_TONE ? statusTone(key) : type;
+    const stage = stageTone(key);
+    return stage === UNKNOWN_TONE ? statusTone(key) : stage;
 }
 
 /**

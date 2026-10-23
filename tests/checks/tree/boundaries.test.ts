@@ -480,7 +480,7 @@ const FROZEN = [
     'lib/state/shared/words/text.ts:icons',
     'lib/state/shared/words/tones.ts:palette',
     'lib/state/shared/words/tones.ts:statusPalette',
-    'lib/state/shared/words/tones.ts:typeColor',
+    'lib/state/shared/words/tones.ts:stageColor',
     'lib/state/shared/words/tones.ts:legend',
     'lib/state/shared/words/tones.ts:domainColor',
     'lib/state/shared/words/tones.ts:domainText',

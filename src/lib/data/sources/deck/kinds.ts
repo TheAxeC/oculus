@@ -33,10 +33,16 @@ export type DeckProject = {
     workspaceFolder?: { root: string; dir: string };
     /** The manifest's `tier`, absent when it names none of the five. */
     tier?: string;
+    /** The manifest's `status.chips`, which a `find:` with `status:` keeps a deck by. */
     chips: string[];
     short: string;
     title: string;
-    type?: string;
+    /**
+     * The manifest's `stage`, a word of `stages:`: the chip of a project slide, an idea's maturity.
+     */
+    stage?: string;
+    /** The manifest's `form`, a word of `forms:`, which a `find:` with `forms:` keeps a deck by. */
+    form?: string;
     domain?: string;
 };
 
@@ -209,7 +215,7 @@ function ideaCard(meta: Record<string, unknown>, body: string, context: KindCont
         desc: text(meta, 'desc') !== '' ? text(meta, 'desc') : body
     };
     if (project?.domain !== undefined) card.domain = project.domain;
-    if (project !== null && project.chips.length > 0) card.maturity = project.chips[0];
+    if (project?.stage !== undefined) card.maturity = project.stage;
     return card;
 }
 
@@ -329,7 +335,7 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                 kind,
                 title: slide.title !== undefined ? plain(slide.title) : (project?.short ?? title),
                 slide,
-                type: project?.type,
+                stage: project?.stage,
                 domain: project?.domain
             });
             return { slide: built };

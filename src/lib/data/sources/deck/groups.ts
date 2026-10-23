@@ -2,10 +2,10 @@
 // discovery, and what is wrong with the names.
 //
 // A group looks for decks with `find:` (globs of folders under the root, kept by the tiers, the
-// types and the status chips of the deck's project) and lists them in `slides:`. The members are
-// the decks `slides:` names, in its order, then, under `discover: true`, every found deck that no
-// group of the deck names, in the order `sort:` gives. Two groups that discover the same unnamed
-// deck both lose it, and say so. A group with no `find:` names project decks of the hub.
+// stages, the forms and the chips of the deck's project) and lists them in `slides:`. The members
+// are the decks `slides:` names, in its order, then, under `discover: true`, every found deck that
+// no group of the deck names, in the order `sort:` gives. Two groups that discover the same
+// unnamed deck both lose it, and say so. A group with no `find:` names project decks of the hub.
 //
 // Nothing here reads a file: the reader hands in the decks each glob found.
 
@@ -51,17 +51,19 @@ export type Resolved = {
     conflicts: { doc: Doc; others: string[] }[];
 };
 
-/** Whether a found deck passes the tiers, types and status chips of a `find:`. */
+/**
+ * Whether a value is one of the words of a `find:` list; a list the find does not give keeps all.
+ */
+function within(words: string[] | undefined, value: string | undefined): boolean {
+    return words === undefined || (value !== undefined && words.includes(value));
+}
+
+/** Whether a found deck passes the tiers, stages, forms and status chips of a `find:`. */
 function keeps(find: FindSpec, doc: Doc): boolean {
     const project = doc.project;
-    if (find.tiers !== undefined) {
-        const tier = project?.tier;
-        if (tier === undefined || !find.tiers.includes(tier)) return false;
-    }
-    if (find.types !== undefined) {
-        const type = project?.type;
-        if (type === undefined || !find.types.includes(type)) return false;
-    }
+    if (!within(find.tiers, project?.tier)) return false;
+    if (!within(find.stages, project?.stage)) return false;
+    if (!within(find.forms, project?.form)) return false;
     if (find.status === undefined) return true;
     const wanted = find.status;
     return project?.chips.some((chip) => wanted.includes(chip)) === true;

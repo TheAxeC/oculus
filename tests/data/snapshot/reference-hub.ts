@@ -162,7 +162,7 @@ export const HUB_FILES: Record<string, string> = {
     ].join('\n'),
     'projects/active/alpha/project.yml': [
         'id: alpha',
-        'type: active',
+        'stage: active',
         'title: Alpha',
         'venue_id: jbhi',
         'pillar: [tensor, federated]',
@@ -174,7 +174,7 @@ export const HUB_FILES: Record<string, string> = {
     ].join('\n'),
     'projects/active/beta/project.yml': [
         'id: beta',
-        'type: active',
+        'stage: active',
         'title: Beta',
         'venue_id: "jbhi"',
         'related:',
@@ -199,7 +199,7 @@ export const ENGINE_FILES: Record<string, string> = {
         'palette:',
         '  "#e2374d": c-red',
         '  "#7c3aed": c-violet',
-        'types:',
+        'stages:',
         '  active: { color: "#ea580c" }',
         '  manuscript: { color: "#0d9488" }',
         ''

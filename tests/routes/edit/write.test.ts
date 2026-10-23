@@ -100,9 +100,9 @@ describe('the write endpoint', () => {
                 line: (text: string) => text.replace(/^tier: .*$/m, 'tier: coauthor')
             },
             {
-                field: 'type',
+                field: 'stage',
                 value: 'paused-stage',
-                line: (text: string) => text.replace(/^type: .*$/m, 'type: paused-stage')
+                line: (text: string) => text.replace(/^stage: .*$/m, 'stage: paused-stage')
             }
         ];
         for (const one of projects) {

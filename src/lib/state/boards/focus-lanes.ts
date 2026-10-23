@@ -86,8 +86,8 @@ export type Band = {
 };
 
 /**
- * The projects of a type carrying `live` whose manifest lags their documents past the grace of
- * `stale_lag_days` under `focus:`.
+ * The projects whose stage carries `live` in `stages` whose manifest lags their documents past the
+ * grace of `stale_lag_days` under `focus:`.
  */
 export function manifestsBehind(
     projects: Project[],
@@ -98,7 +98,7 @@ export function manifestsBehind(
     const stale = projects
         .filter(
             (project) =>
-                hasWord(config, 'types', 'live', project.type) &&
+                hasWord(config, 'stages', 'live', project.stage) &&
                 project.staleDays !== undefined &&
                 project.staleDays >= grace
         )

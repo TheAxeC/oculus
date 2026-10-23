@@ -28,19 +28,22 @@ import { focusFindings } from './sections/focus.ts';
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
- * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the theme, the theme a
- * desktop window starts on, the text size, the terminal themes' three settings, the wallpaper, the
- * CRT overlay, the code theme and the lists that shape its choice, the pane strip's three settings
- * and the status bar's values state/shared/words/appearance.ts reads. `themes`, `theme`,
- * `app_theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`, `code_themes`, `file_icons`,
- * `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are options of the appearance defaults
- * file, and `status_bar` of the behavior defaults file. The research domains and the venue and
- * dataset themes are each hub's own, read from its registry files (`hubVocabOf` of data/index.ts).
+ * the words of the stages, forms and chips state/shared/words/tones.ts reads, and the theme list,
+ * the theme, the theme a desktop window starts on, the text size, the terminal themes' three
+ * settings, the wallpaper, the CRT overlay, the code theme and the lists that shape its choice, the
+ * pane strip's three settings and the status bar's values state/shared/words/appearance.ts reads.
+ * `themes`, `theme`, `app_theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`,
+ * `code_themes`, `file_icons`, `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are
+ * options of the appearance defaults file, and `status_bar` of the behavior defaults file. The
+ * research domains and the venue and dataset themes are each hub's own, read from its registry
+ * files (`hubVocabOf` of data/index.ts).
  */
 export const VOCAB_KEYS = [
     'palette',
     'statuses',
-    'types',
+    'stages',
+    'forms',
+    'chips',
     'data_access',
     'themes',
     'theme',

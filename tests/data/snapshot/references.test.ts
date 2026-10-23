@@ -133,7 +133,7 @@ const ROWS: Row[] = [
         at: ['hub', 'side-projects/idea/project.yml', 3, 16],
         hub: {
             'side-projects/idea/project.yml':
-                'title: An idea\ntier: personal\ntype: idea\ncollaborators: [amir]\n'
+                'title: An idea\ntier: personal\nstage: idea\ncollaborators: [amir]\n'
         },
         engine: {
             'defaults/sources.yml': [
@@ -246,13 +246,13 @@ const ROWS: Row[] = [
     },
     {
         name: 'a vocabulary value, defined as a key of its map in vocab.yml',
-        at: ['hub', 'projects/active/alpha/project.yml', 1, 6],
+        at: ['hub', 'projects/active/alpha/project.yml', 1, 7],
         kind: 'reference',
         key: 'active',
         targets: ['engine:catalogs/vocab.yml:4'],
         references: [
-            'hub:projects/active/alpha/project.yml:1:6',
-            'hub:projects/active/beta/project.yml:1:6'
+            'hub:projects/active/alpha/project.yml:1:7',
+            'hub:projects/active/beta/project.yml:1:7'
         ]
     },
     {
@@ -324,7 +324,7 @@ const ROWS: Row[] = [
         open: {
             'projects/active/alpha/project.yml': [
                 'id: alpha',
-                'type: active',
+                'stage: active',
                 'title: Alpha',
                 'venue_id: bspc',
                 ''

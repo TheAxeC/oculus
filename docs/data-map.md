@@ -77,7 +77,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 25 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 27 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                 # the folders projects are found in
@@ -96,7 +96,9 @@ apps_dir:             # where the machine's apps are kept
 wallpaper.image:      # the backdrop shown
 docs:                 # the hub's documents, each a tab of a page
 counts:               # the counts the tabs draw
-statuses:             # the status words, with their colours and roles
+statuses:             # the statuses of collection entries, with their colours and roles
+chips:                # the chips of projects, with their labels and glyphs
+lead_statuses:        # the statuses of Position Leads, with their roles
 career_host_status:   # the career card's host statuses
 career_score_dims:    # the career card's score axes
 career_score_tones:   # the career card's score hues
@@ -124,8 +126,9 @@ project.yml:
   collaborators: [people key]
   waiting-on: [people key, or a project]
   related: [a project]
-  type: vocab types
-  status.chips: [vocab statuses, the words with a label]
+  stage: vocab stages
+  form: vocab forms
+  status.chips: [vocab chips]
   focus: vocab focus_lanes, or holding
   priority: vocab priority_levels
 people:
@@ -155,6 +158,8 @@ radar:
 deck present.yml:
   groups.<name>.slides: [a project]
 ```
+
+The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`. A status that is no word of its list is a finding naming the closest word of the list, and a stage word or a form written as a chip is a finding naming the field it belongs in.
 
 One key of `config.yml` names a primary key and is not checked by the Findings view: `slurm.resource` is a `resources` key of an entry with `kind: cluster` and a `host`; Live HPC says which condition fails.
 
@@ -192,7 +197,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 |---|---|
 | `label` | the field's name on screen |
 | `options` | the allowed values of a `select` or `tags` field, each a word or `{ key, label }` |
-| `from` | where the keys come from: a registry (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`), `projects`, `vocab.<list>`, `vocab.<map>.<field>` (the keys of a vocabulary map whose row carries the field as `true`, such as `vocab.statuses.chip`), or a list of these |
+| `from` | where the keys come from: a registry (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`), `projects`, `vocab.<list>`, `vocab.<map>.<field>` (the keys of a vocabulary map whose row carries the field as `true`, such as `vocab.statuses.acknowledged`), or a list of these |
 | `required` | `true`, or `{ when: ... }` |
 | `when` | the field is allowed only while these fields hold these values |
 | `help` | the hover text in the editor |

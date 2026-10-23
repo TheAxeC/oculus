@@ -22,7 +22,7 @@ export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.t
  */
 export type TierRow = { key: string; label: string; color?: string; fallback?: boolean };
 export type TierCount = TierRow & { count: number };
-export type ArchiveGroup = { type: string; count: number; projects: Project[] };
+export type ArchiveGroup = { stage: string; count: number; projects: Project[] };
 export type PillarsState = { reveal?: string };
 export type DomainsState = { reveal?: string };
 
@@ -54,9 +54,9 @@ export function lineMembers(
     return realProjects(projects, config).filter((project) => project.pillarIds.includes(line.id));
 }
 
-/** The projects of a type carrying `live`, the work counted as currently in flight. */
+/** The projects whose stage carries `live` in `stages`, the work counted as in flight. */
 export function inFlight(projects: Project[], config: Record<string, unknown>): Project[] {
-    return projects.filter((project) => hasWord(config, 'types', 'live', project.type));
+    return projects.filter((project) => hasWord(config, 'stages', 'live', project.stage));
 }
 
 /**
@@ -97,23 +97,23 @@ export function orphans(
 }
 
 /**
- * Non-real projects grouped by type, in the order of the numbers the types of `types` carry as
+ * Non-real projects grouped by stage, in the order of the numbers the words of `stages` carry as
  * `dead` (nogo, dropped, disproved, abandoned, paused in oculus's own vocab.yml).
  */
 export function archival(projects: Project[], config: Record<string, unknown>): ArchiveGroup[] {
     const real = new Set(realProjects(projects, config));
     const unreal = projects.filter((project) => !real.has(project));
-    return wordsNumbered(config, 'types', 'dead')
-        .map((type) => {
-            const grouped = unreal.filter((project) => project.type === type);
-            return { type, count: grouped.length, projects: grouped };
+    return wordsNumbered(config, 'stages', 'dead')
+        .map((stage) => {
+            const grouped = unreal.filter((project) => project.stage === stage);
+            return { stage, count: grouped.length, projects: grouped };
         })
         .filter((group) => group.count > 0);
 }
 
-/** A card is dormant when it has no member of a type carrying `on_map`. */
+/** A card is dormant when it has no member whose stage carries `on_map` in `stages`. */
 export function isDormant(members: Project[], config: Record<string, unknown>): boolean {
-    return !members.some((project) => hasWord(config, 'types', 'on_map', project.type));
+    return !members.some((project) => hasWord(config, 'stages', 'on_map', project.stage));
 }
 
 /** Real projects that name one domain, preserving project order. */

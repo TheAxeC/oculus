@@ -26,7 +26,8 @@ function list(lines: string[], name: string, values: string[]): void {
 /** The project fields a pasted chat needs, with absent fields omitted rather than invented. */
 export function contextText(project: Project, snapshot: Snapshot): string {
     const lines = [`# ${project.title}`, `id: ${project.id}`];
-    scalar(lines, 'type', project.type);
+    scalar(lines, 'stage', project.stage);
+    scalar(lines, 'form', project.form);
     if (project.chips.length > 0) scalar(lines, 'status', project.chips.join(', '));
     scalar(lines, 'venue', venue(project, snapshot));
     scalar(lines, 'deadline', project.deadline);

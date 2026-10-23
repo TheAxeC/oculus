@@ -480,7 +480,8 @@ const FROM_CONFIG: readonly Source[] = [
     'rail_pages',
     'catalogue_groups',
     'collections',
-    'project_types',
+    'project_stages',
+    'project_forms',
     'tiers',
     'status_chips',
     'entry_statuses',
@@ -538,12 +539,14 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return catalogueGroupIds(config);
         case 'collections':
             return keysOfRows(config.collections);
-        case 'project_types':
-            return vocabKeys(config.types);
+        case 'project_stages':
+            return vocabKeys(config.stages);
+        case 'project_forms':
+            return vocabKeys(config.forms);
         case 'tiers':
             return vocabKeys(config.tiers);
         case 'status_chips':
-            return vocabKeys(config.statuses, 'chip');
+            return vocabKeys(config.chips);
         case 'entry_statuses':
             return coloredWords(config.statuses);
         default: {

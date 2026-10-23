@@ -1,5 +1,5 @@
 id: failed-quantization
-type: nogo
+stage: nogo
 tier: archive
 short: Quant-NoGo
 status:

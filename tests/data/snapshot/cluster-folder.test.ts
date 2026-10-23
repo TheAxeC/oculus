@@ -48,7 +48,7 @@ describe("a manifest's paths.cluster", () => {
             plantScratch(
                 'oculus-cluster-hub-',
                 {
-                    [file]: `id: alpha\ntype: active\ntitle: alpha\npaths:\n  cluster: ${written}\n`
+                    [file]: `id: alpha\nstage: active\ntitle: alpha\npaths:\n  cluster: ${written}\n`
                 },
                 ['projects/active']
             ),

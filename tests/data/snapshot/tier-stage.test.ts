@@ -1,6 +1,6 @@
-// Layer 1, data tests. A manifest whose `tier` or `type` is missing or outside its words: the
-// project is still in the snapshot, a finding on the key says what is wrong, and a project with no
-// usable tier is on no board. A hub planted in a scratch directory is built through
+// Layer 1, data tests. A manifest whose `tier` or `stage` is missing or outside its words: the
+// project is in the snapshot all the same, a finding on the key says what is wrong, and a project
+// with no usable tier is on no board. A hub planted in a scratch directory is built through
 // buildOneHub, and the findings on the manifest's file are read from the snapshot.
 
 import { describe, expect } from 'vitest';
@@ -16,32 +16,37 @@ type Row = {
     /** The manifest's lines. */
     manifest: string;
     /** The key the finding sits on. */
-    key: 'tier' | 'type';
+    key: 'tier' | 'stage';
     /** The tier the project is read with: absent when the manifest names none of the five. */
     tier: string | undefined;
 };
 
 const ROWS: Row[] = [
-    { name: 'no tier', manifest: 'type: idea\n', key: 'tier', tier: undefined },
-    { name: 'the tier ideas', manifest: 'tier: ideas\ntype: idea\n', key: 'tier', tier: undefined },
+    { name: 'no tier', manifest: 'stage: idea\n', key: 'tier', tier: undefined },
     {
-        name: 'a tier that is a number',
-        manifest: 'tier: 3\ntype: idea\n',
+        name: 'the tier ideas',
+        manifest: 'tier: ideas\nstage: idea\n',
         key: 'tier',
         tier: undefined
     },
-    { name: 'no type', manifest: 'tier: projects\n', key: 'type', tier: 'projects' },
     {
-        name: 'the type manuscript',
-        manifest: 'tier: projects\ntype: manuscript\n',
-        key: 'type',
+        name: 'a tier that is a number',
+        manifest: 'tier: 3\nstage: idea\n',
+        key: 'tier',
+        tier: undefined
+    },
+    { name: 'no stage', manifest: 'tier: projects\n', key: 'stage', tier: 'projects' },
+    {
+        name: 'the stage manuscript',
+        manifest: 'tier: projects\nstage: manuscript\n',
+        key: 'stage',
         tier: 'projects'
     }
 ];
 
-describe('a manifest with a tier or a type outside its words', () => {
+describe('a manifest with a tier or a stage outside its words', () => {
     it.each(ROWS)('shows the project of $name with a finding', (row) => {
-        const hub = plantScratch('oculus-tier-type-', {
+        const hub = plantScratch('oculus-tier-stage-', {
             'projects/ideas/x/project.yml': `title: X\n${row.manifest}`
         });
         const { snapshot } = buildOneHub(hub, CONFIG);

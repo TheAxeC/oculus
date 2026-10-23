@@ -1,11 +1,11 @@
-// Layer 1, data. The rules of the integrity gate that a schema cannot state: ids that
-// refer to each other across files, identities that must be unique and a status in its vocabulary.
-// What a file's own `schema:` states (the keys, the
-// types, the allowed values, the references and the conditions) is checked by schema/check.ts over
-// the schemas schema/run.ts generates, and its findings are merged with these by `sortFindings`.
-// Pure, so it can run anywhere: it reads no file, calls no clock, throws nothing, and repairs
-// nothing. One problem is one Finding, and the list comes back sorted by file then key, so two runs
-// over one tree agree.
+// Layer 1, data. The rules of the integrity gate that a schema cannot state: ids that refer to each
+// other across files, identities that must be unique, a status in its vocabulary and a project chip
+// that is no stage word and no form. What a file's own `schema:` states (the keys, the types, the
+// allowed values, the references and the conditions) is checked by schema/check.ts over the schemas
+// schema/run.ts generates, and its findings are merged with these by `sortFindings`. Pure, so it
+// can run anywhere: it reads no file, calls no clock, throws nothing, and repairs nothing. One
+// problem is one Finding, and the list comes back sorted by file then key, so two runs over one
+// tree agree.
 //
 // The findings the sources already reported (a manifest that does not parse, a registry file that
 // is missing, an id that is not its folder name) are passed through untouched, never re-derived:
@@ -17,7 +17,8 @@ import type {
     RawPortfolio,
     RegistryName,
     SelfCheck,
-    ValidationRules
+    ValidationRules,
+    Vocabulary
 } from '../model/index.ts';
 import { domainColorOf } from '../model/index.ts';
 import { z } from 'zod';
@@ -34,6 +35,7 @@ import {
     wordShape
 } from '../shapes/shapes.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
+import { closestWord } from '../shapes/vocab-keys.ts';
 import { isWords } from './schema/check.ts';
 import { checkDatasetSources, checkResources } from './validate-kinds.ts';
 
@@ -208,30 +210,114 @@ function checkWaitingOn(manifest: RawManifest, catalog: TextCatalog, findings: F
     }
 }
 
-/** A collection entry's `status`, when it has one, is a word of the status vocabulary. */
+/** The sentence of a status outside its list: the status as shown, and the closest word if any. */
+type StatusSaid = (shown: string, closest: string | undefined) => string;
+
+/**
+ * The finding of each entry whose `status` is not a word of `words`, naming the closest word of the
+ * list, or, for a list with no word, saying so, in the sentence `said` gives. An entry with no
+ * status has nothing to check.
+ */
+function statusFindings(
+    file: string,
+    entries: Record<string, unknown>[],
+    words: string[],
+    said: StatusSaid
+): Finding[] {
+    return entries.flatMap((entry, index) => {
+        const status = entry.status;
+        if (status === undefined) return [];
+        if (typeof status === 'string' && words.includes(status)) return [];
+        const shown = JSON.stringify(status);
+        const closest = closestWord(typeof status === 'string' ? status : shown, words);
+        return [{ file, key: `entries[${index}].status`, message: said(shown, closest) }];
+    });
+}
+
+/** A collection entry's `status`, when it has one, is a word of `statuses:` of the vocabulary. */
 function checkEntryStatus(
     raw: RawPortfolio,
     statuses: string[],
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
+    const said: StatusSaid = (shown, closest) =>
+        closest === undefined
+            ? findingText(catalog, 'findings.validate.status_no_vocab', shown)
+            : findingText(catalog, 'findings.validate.status_not_in_vocab', shown, closest);
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
-        collection.entries.forEach((entry, index) => {
-            const status = entry.status;
-            if (status === undefined) return;
-            if (typeof status === 'string' && statuses.includes(status)) return;
-            findings.push({
-                file: collection.file,
-                key: `entries[${index}].status`,
-                message: findingText(
-                    catalog,
-                    'findings.validate.status_not_in_vocab',
-                    JSON.stringify(status)
-                )
-            });
-        });
+        findings.push(...statusFindings(collection.file, collection.entries, statuses, said));
     }
+}
+
+/**
+ * The findings of the Position Leads file: a lead's `status`, when it has one, is a word of
+ * `lead_statuses:` of the vocabulary, `words`. The feed reader calls it, since the leads file is no
+ * collection of the raw portfolio.
+ */
+export function leadStatusFindings(
+    file: string,
+    entries: Record<string, unknown>[],
+    words: string[],
+    catalog: TextCatalog
+): Finding[] {
+    const said: StatusSaid = (shown, closest) =>
+        closest === undefined
+            ? findingText(catalog, 'findings.validate.lead_status_no_vocab', shown)
+            : findingText(catalog, 'findings.validate.lead_status_not_in_vocab', shown, closest);
+    return statusFindings(file, entries, words, said);
+}
+
+/** The chips of a manifest's `status.chips`, each with its place in the list. */
+function manifestChips(manifest: RawManifest): [string, number][] {
+    const status = readAs(mapShape, manifest.status);
+    const chips = readOr(itemsShape, status?.chips, []);
+    return chips.flatMap((chip, index): [string, number][] =>
+        typeof chip === 'string' ? [[chip, index]] : []
+    );
+}
+
+/**
+ * A project chip is no stage word and no form: a word of `stages:` belongs in the manifest's
+ * `stage:` and a word of `forms:` in its `form:`, and each such chip is one finding naming the
+ * field. `withoutStageChips` keeps the schema from naming the same chip as a value outside the
+ * chips.
+ */
+function checkStageChips(
+    manifest: RawManifest,
+    vocab: Vocabulary,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
+    for (const [chip, index] of manifestChips(manifest)) {
+        const message = vocab.stages.includes(chip)
+            ? findingText(catalog, 'findings.validate.chip_is_stage', chip)
+            : vocab.forms.includes(chip)
+              ? findingText(catalog, 'findings.validate.chip_is_form', chip)
+              : null;
+        if (message === null) continue;
+        findings.push({ file: manifest.file, key: `status.chips[${index}]`, message });
+    }
+}
+
+/**
+ * The schema's findings with those on a chip that is a stage word or a form left out, since
+ * `checkStageChips` gives that chip its one finding.
+ */
+export function withoutStageChips(
+    schema: Finding[],
+    raw: RawPortfolio,
+    vocab: Vocabulary
+): Finding[] {
+    const taken = new Set(
+        raw.manifests.flatMap((manifest) =>
+            manifestChips(manifest)
+                .filter(([chip]) => vocab.stages.includes(chip) || vocab.forms.includes(chip))
+                .map(([, index]) => `${manifest.file}\nstatus.chips[${index}]`)
+        )
+    );
+    return schema.filter((finding) => !taken.has(`${finding.file}\n${finding.key}`));
 }
 
 /** The field a file's entries are addressed by: its schema's first field, `title` without one. */
@@ -392,6 +478,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkSelfRelated(manifest, catalog, findings);
         checkClusterFolder(manifest, catalog, findings);
         checkWaitingOn(manifest, catalog, findings);
+        checkStageChips(manifest, rules.vocab, catalog, findings);
     }
     checkFolderNames(raw, catalog, findings);
     checkSelf(raw, rules.self, catalog, findings);

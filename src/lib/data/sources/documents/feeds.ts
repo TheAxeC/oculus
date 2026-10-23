@@ -21,7 +21,8 @@ import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../../model/inde
 import { text as str } from '../../helpers/guards.ts';
 import { itemsShape, mapShape, readOr, rowsShape } from '../../shapes/shapes.ts';
 import { isLeadClosed } from '../../accounts/leads.ts';
-import { identityFieldOf, identityFindings } from '../../snapshot/validate.ts';
+import { identityFieldOf, identityFindings, leadStatusFindings } from '../../snapshot/validate.ts';
+import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { errorLine, readYamlMap } from '../yaml-file.ts';
 
@@ -57,8 +58,9 @@ function lead(entry: Record<string, unknown>): Lead {
 /**
  * The leads file answers two of the five feeds: the live leads themselves, and the position scout's
  * own run date, which the file records as the leading date of a `meta.log` line rather than as a
- * run field of its own. It also reports the identity findings of every lead of the file, since the
- * live leads alone carry no file and no position the snapshot could check them by.
+ * run field of its own. It also reports the identity findings of every lead of the file and each
+ * status that is no word of `lead_statuses:`, since the live leads alone carry no file and no
+ * position the snapshot could check them by.
  */
 function leads(
     file: string,
@@ -73,6 +75,7 @@ function leads(
     // Every lead of the file is checked for its identity, the closed ones too, since a write
     // addresses a lead by its title whether it is live or not.
     findings.push(...identityFindings(file, identityFieldOf(data.schema), entries, catalog));
+    findings.push(...leadStatusFindings(file, entries, vocabKeys(merged.lead_statuses), catalog));
     const live = entries.filter((entry) => !isLeadClosed(merged, entry.status)).map(lead);
     const runs = readOr(itemsShape, metaOf(data).log, [])
         .map((line) => SCOUT_RUN.exec(str(line)))

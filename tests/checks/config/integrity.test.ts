@@ -86,7 +86,8 @@ function deckProjects(projects: Project[]): DeckProject[] {
         file: project.file,
         folder: project.folder,
         tier: project.tier,
-        type: project.type,
+        ...(project.stage === undefined ? {} : { stage: project.stage }),
+        ...(project.form === undefined ? {} : { form: project.form }),
         chips: project.chips,
         short: project.short ?? '',
         title: project.title
@@ -282,7 +283,15 @@ describe.skipIf(!REAL.asked)(realHubName('the real hub', REAL), () => {
         expect(personal.map((project) => project.id).sort()).toEqual(folders);
         for (const one of personal) {
             expect(one.title).not.toBe('');
-            expect(['idea', 'active', 'finished']).toContain(one.type);
+            expect([
+                'idea',
+                'nascent',
+                'building',
+                'running',
+                'active',
+                'paused',
+                'finished'
+            ]).toContain(one.stage);
         }
         expect(snapshot.findings.filter((finding) => finding.file.includes(PERSONAL_DIR))).toEqual(
             []

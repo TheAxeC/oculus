@@ -26,27 +26,91 @@ const keyed = z.strictObject({
         )
 });
 
-/**
- * One word of `statuses`: its words, glyph and colour, and the flags the code reads. Each help
- * sentence says how the code compares a word with the flag's words: `wordFlag` trims a record's
- * status and puts it in lower case, `anyWord` compares a project's chips as written.
- */
-const statusWord = z.strictObject({
-    label: text.optional().describe('The words the status is drawn with.'),
-    icon: text.optional().describe('The glyph name a chip of the status is drawn with.'),
+/** One stage of `stages`: its words, glyph and colour, and the flags the code reads. */
+const stageWord = z.strictObject({
+    label: text
+        .optional()
+        .describe('The words the stage is drawn with on a card, the form and an idea card.'),
+    icon: text.optional().describe('The glyph name a chip of the stage is drawn with.'),
     color: colour
         .optional()
         .describe(
-            'The colour the status is drawn in; a word with a colour is a status a collection entry takes.'
+            "The colour of a project at the stage wherever it is drawn: its board card, the Map, the Present view's project chip."
         ),
-    chip: flag(
-        "A status chip a manifest's `status.chips` picks from (the status legend), offered by the project form in this order."
+    idea: flag(
+        'The idea group: the backlog of ideas on the Focus board and the cross-link group of ideas.'
     ),
-    closes_deadline: flag(
-        "The status ends a collection entry's deadline on the deadline radar; the status is compared trimmed and in lower case."
+    live: flag(
+        "The in-flight group: the audit's rules over in-flight work, the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work."
+    ),
+    terminal: flag('The done group, a done or closed outcome; no rule of oculus reads it.'),
+    dead: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe(
+            "A dead or paused outcome, the only kind that is not real work, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order, and a project at the stage on a tier carrying `finished` is left out of a pillar's and a domain's members, a venue's use counts and the cross-link groups. A stage with no number is real work."
+        ),
+    archive_outcome: flag(
+        'A `stage:` a project is archived with, and the name of its archive/<outcome>/ filing folder; the audit lists an archived project whose `stage:` differs from its folder.'
+    ),
+    on_map: flag(
+        'A stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.'
+    ),
+    placed: flag('A stage that has a venue, so the audit asks for one.'),
+    standard: flag('The stages the audit holds to the one-README standard.'),
+    public: flag(
+        "A public outcome: the audit of the website's publications asks for its project on the site, in the sections `publication_kinds` gives."
+    ),
+    negative: flag(
+        "A negative result, which stays in the hub: the audit of the website's publications reports its project when the site shows it."
+    ),
+    dead_end: flag(
+        "A dead end: the audit of the website's publications reports its project when the site shows it, to be given another stage or taken off the site."
+    ),
+    submit_ready: flag('A stage the board statistics count as ready to go out.'),
+    pauses_countdown: flag(
+        "A stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue."
     ),
     deadline_met: flag(
-        "The status ends a project's own deadline (a chip whose word carries `closes_deadline` alone does not); compared trimmed and in lower case."
+        "A stage that ends a project's own deadline, which then leaves the deadline radar."
+    ),
+    new_idea: flag(
+        'The stage a new idea is made with: the first stage carrying it is written, and with none the new manifest names no stage.'
+    ),
+    published: flag('The stage the audit expects only on a tier carrying `finished`.')
+});
+
+/** One form of `forms`: the words and the glyph it is drawn with. */
+const formWord = z.strictObject({
+    label: text.optional().describe('The words the form is drawn with on a card and in the form.'),
+    icon: text.optional().describe('The glyph name a chip of the form is drawn with.')
+});
+
+/**
+ * One chip of `chips`: the words and the glyph it is drawn with, and the one flag the code reads.
+ */
+const chipWord = z.strictObject({
+    label: text.optional().describe('The words the chip is drawn with on a card and in the form.'),
+    icon: text.optional().describe('The glyph name the chip is drawn with.'),
+    blocked: flag(
+        "A chip the Focus board's awaiting box counts as blocked, which the wait line of a card and a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
+    )
+});
+
+/**
+ * One status of `statuses`, a word a collection entry's `status` takes: its colour and the flags
+ * the code reads. Each help sentence says how the code compares a status with the flag's words:
+ * `wordFlag` trims an entry's status and puts it in lower case.
+ */
+const statusWord = z.strictObject({
+    color: colour.optional().describe('The colour the status is drawn in.'),
+    closes_deadline: flag(
+        "The status ends an entry's deadline on the deadline radar; the status is compared trimmed and in lower case."
+    ),
+    deadline_met: flag(
+        "The status ends a funding entry's or another entry's own deadline, so it leaves the deadline radar, and a funding entry carrying it is listed in the Focus board's awaiting box; compared trimmed and in lower case."
     ),
     live_subtasks: flag(
         "A status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case."
@@ -57,76 +121,29 @@ const statusWord = z.strictObject({
     acknowledged: flag(
         "A funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written."
     ),
-    lead_closed: flag(
-        'A Position Lead that is closed, counted and listed as done; compared trimmed and in lower case.'
-    ),
-    lead_declined: flag(
-        'A Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes, and a status is compared trimmed and in lower case.'
-    ),
-    lead_applied: flag(
-        'A Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes, and a status is compared trimmed and in lower case.'
-    ),
-    default_lead: flag(
-        'The status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on; compared trimmed and in lower case.'
-    ),
     default_application: flag(
         "The status of the Applications entry a Position Lead's apply control makes: the first word carrying it is written."
     ),
     default_task: flag(
         'The status of a task added from the palette: the first word carrying it is written.'
-    ),
-    new_idea: flag('The chip a new idea is made with: the first word carrying it is written.'),
-    pauses_countdown: flag(
-        "A chip that stops a card's and a lane's countdown, and that the Focus board and the board statistics count as submitted work; a project's chips are compared as written."
-    ),
-    blocked: flag(
-        "A chip the Focus board and the board statistics count as blocked, which also keeps a project out of the backlog; a project's chips are compared as written."
-    ),
-    submit_ready: flag(
-        "A chip the board statistics count as ready to go out; a project's chips are compared as written."
-    ),
-    published: flag(
-        "The chip the audit expects on a published project; a project's chips are compared as written."
     )
 });
 
 /**
- * One word of `types`: its colour and the flags the code reads, each compared with a project's
- * `type` as the manifest writes it. `dead` is a number, the type's place in the Archival band.
+ * One status of `lead_statuses`, a word a Position Lead's `status` takes: its colour and the flags
+ * the code reads, each compared trimmed and in lower case.
  */
-const typeWord = z.strictObject({
-    color: colour
-        .optional()
-        .describe(
-            "The colour of a project of the type wherever it is drawn: its board card, the Map, the Present view's project chip."
-        ),
-    dead: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .describe(
-            "A dead or paused outcome, the only kind that is not real work, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order, and the type is left out of a pillar's and a domain's members. A type with no number is real work."
-        ),
-    terminal: flag('A done or closed outcome, which the audit holds to no live chip.'),
-    archive_outcome: flag(
-        'A `type:` a project is archived with, and the name of its archive/<outcome>/ filing folder; the audit lists an archived project whose `type:` differs from its folder.'
+const leadStatusWord = z.strictObject({
+    color: colour.optional().describe('The colour the status is drawn in.'),
+    lead_closed: flag('A Position Lead that is closed, counted and listed as done.'),
+    lead_declined: flag(
+        'A Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes.'
     ),
-    live: flag(
-        "Work in flight: the audit's rules over in-flight work, the cross-link group of in-flight projects, a venue's in-flight papers, the Map's in-flight members, the Focus lanes and the backlog."
+    lead_applied: flag(
+        'A Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes.'
     ),
-    on_map: flag('A type the Map draws as a node of the portfolio.'),
-    placed: flag('A type that has a venue, so the audit asks for one.'),
-    standard: flag('The types of the projects tier the audit expects there.'),
-    idea: flag('The backlog of ideas on the Focus board.'),
-    public: flag(
-        "A public outcome: the audit of the website's publications asks for its project on the site, in the sections `publication_kinds` gives."
-    ),
-    negative: flag(
-        "A negative result, which stays in the hub: the audit of the website's publications reports its project when the site shows it."
-    ),
-    dead_end: flag(
-        "A dead end: the audit of the website's publications reports its project when the site shows it, to be retyped or taken off the site."
+    default_lead: flag(
+        'The status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on.'
     )
 });
 
@@ -146,34 +163,34 @@ const tierWord = z.strictObject({
     ),
     personal: flag("Projects the audit's research rules leave alone."),
     outcome_folders: flag(
-        "A tier whose category folder is its project's outcome: the audit expects a project filed under a folder named by a type carrying `archive_outcome` to have that type."
+        "A tier whose category folder is its project's outcome: the audit expects a project filed under a folder named by a stage carrying `archive_outcome` to be at that stage."
     ),
-    type_folders: z
+    stage_folders: z
         .array(text)
         .optional()
         .describe(
-            "The category folders of a tier that name its project's type, which the audit expects the project to have."
+            "The category folders of a tier that name its project's stage, which the audit expects the project to be at."
         )
 });
 
-/** One row of `publication_kinds`: the sections it gives and the types and chips it holds to. */
+/** One row of `publication_kinds`: the sections it gives and the stages and forms it holds to. */
 const publicationKind = z.strictObject({
     kind: z
         .array(text)
         .describe(
             "The sections of the website's publication feed a project this row matches may sit in."
         ),
-    types: z
+    stages: z
         .array(text)
         .optional()
         .describe(
-            "The types of `types` the row holds to, compared with a project's type as written; absent, the row places no condition on the type."
+            "The stages of `stages` the row holds to, compared with a project's stage as written; absent, the row places no condition on the stage."
         ),
-    chips: z
+    forms: z
         .array(text)
         .optional()
         .describe(
-            'The status chips the row holds to, of which a project must carry one, compared as written; absent, the row places no condition on the chips.'
+            "The forms of `forms` the row holds to, compared with a project's form as written; absent, the row places no condition on the form."
         )
 });
 
@@ -209,20 +226,10 @@ const scoreDim = z.strictObject({
 
 /** The lists of words the audit's lifecycle guardrails read. */
 const lifecycle = z.strictObject({
-    live_chips: z
-        .array(text)
-        .optional()
-        .describe('The in-flight chips a terminal project must not still carry.'),
     author_chips: z
         .array(text)
         .optional()
-        .describe('The chips that mark the author role on finished or contributed work.'),
-    contradictory_chips: z
-        .array(z.array(text))
-        .optional()
-        .describe(
-            'The pairs of chips that cannot both be true; the audit reports a project carrying a pair.'
-        )
+        .describe('The chips that mark the author role on finished or contributed work.')
 });
 
 /** config/catalogs/vocab.yml: the controlled vocabularies the boards and the schemas draw from. */
@@ -232,17 +239,35 @@ export const vocabFileShape = z.strictObject({
         .describe(
             'Each configured hex with the named colour token it is drawn as; a hex not listed is drawn as it is.'
         ),
-    types: z
-        .record(z.string(), typeWord)
+    stages: z
+        .record(z.string(), stageWord)
         .optional()
         .describe(
-            "The project types, by the manifest's `type`, in the order the boards, the Map and the board statistics list them, each with its colour and the flags that say what it decides."
+            "The project stages, by the manifest's `stage`, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides."
+        ),
+    forms: z
+        .record(z.string(), formWord)
+        .optional()
+        .describe(
+            "The forms of a project's output, by the manifest's `form`, each with the words and the glyph it is drawn with."
+        ),
+    chips: z
+        .record(z.string(), chipWord)
+        .optional()
+        .describe(
+            "The chips a manifest's `status.chips` picks from, in the order the form offers them, each with its words, its glyph and its flag."
         ),
     statuses: z
         .record(z.string(), statusWord)
         .optional()
         .describe(
-            "The status words of a project's chips and of a collection entry's `status`, each with what is drawn for it and the flags that say what it decides."
+            "The statuses a collection entry's `status` takes, each with its colour and the flags that say what it decides."
+        ),
+    lead_statuses: z
+        .record(z.string(), leadStatusWord)
+        .optional()
+        .describe(
+            "The statuses a Position Lead's `status` takes, each with its colour and the flags that say what it decides."
         ),
     focus_lanes: z
         .array(keyed)
@@ -291,7 +316,7 @@ export const vocabFileShape = z.strictObject({
         .array(publicationKind)
         .optional()
         .describe(
-            "The sections of the website's publication feed a project is expected in: the first row whose types and chips match the project gives them."
+            "The sections of the website's publication feed a project is expected in: the first row whose stages and forms match the project gives them."
         ),
     leads_fit: textMap.optional().describe("The colour of a Position Lead's fit chip, by its fit."),
     lifecycle: lifecycle.optional().describe("The chip words the audit's status guardrails read."),

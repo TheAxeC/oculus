@@ -151,12 +151,11 @@ export function codeLabel(value: string, translate: Translate): string {
 }
 
 /**
- * The deadline badge label and tone for one project; a project carrying a chip with
- * `pauses_countdown` (submitted) shows its date with no countdown.
+ * The deadline badge label and tone for one project; a project whose stage carries
+ * `pauses_countdown` in `stages` (submitted) shows its date with no countdown.
  */
 export function deadline(
     project: BoardItem['project'],
-    chips: string[],
     now: number,
     translate: Translate,
     config: Record<string, unknown>
@@ -164,7 +163,7 @@ export function deadline(
     const date = project.deadline;
     if (date === undefined || date === '') return null;
     const days = daysUntil(date, now);
-    if (days === null || pausesCountdown({ chips }, config)) return { label: date };
+    if (days === null || pausesCountdown(project, config)) return { label: date };
     if (days < 0) return { label: translate('project.card.overdue', -days), tone: 'red' };
     if (days <= DEADLINE_SOON) {
         return { label: translate('project.card.due_days', days), tone: 'amber' };

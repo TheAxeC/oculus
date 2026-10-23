@@ -4,7 +4,7 @@
 // so one unparseable manifest costs its own record and no more.
 //
 // One reader serves every project: a project of a scan folder and a project of a workspace folder
-// are the same record, and the manifest's own `tier` and `type` say which board and which stage it
+// are the same record, and the manifest's own `tier` and `stage` say which board and which stage it
 // is on. The folder a project lies in decides neither.
 //
 // A project is a folder holding `project.yml` at its top or `.oculus/project.yml`, in a scan folder
@@ -182,7 +182,7 @@ function readManifestFile(file: string, catalog: TextCatalog, findings: Finding[
  * Build one record of the project `id` whose folder is `folder` (hub-relative, or a workspace
  * folder's absolute path) and whose manifest is `file`. Provenance wins over the manifest for `id`;
  * the manifest's own value is kept (`manifestId`) or reported, never silently replaced. Every other
- * key, `tier` and `type` among them, is the manifest's as written.
+ * key, `tier` and `stage` among them, is the manifest's as written.
  */
 function record(
     place: { file: string; folder: string; id: string; dir: string },

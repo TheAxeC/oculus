@@ -1,5 +1,5 @@
 id: online-clustering
-type: idea
+stage: exploring
 tier: projects
 short: Online-Cluster
 title: Drift-aware clustering for non-stationary streams
@@ -7,7 +7,7 @@ lead: A. Example
 authors: [A. Example]
 focus: scope
 status:
-  chips: [exploring]
+  chips: []
   line: Early exploration - a promising angle, no experiments yet.
 domain: method
 pillar: [graphs]

@@ -55,7 +55,7 @@ type Defines =
     | { kind: 'manifest'; id: string }
     /**
      * The lists of vocab.yml that are sources, by the top-level key of each, or by the key and a
-     * field (`statuses.chip`) for the keys of a map whose row carries that field as `true`.
+     * field (`statuses.acknowledged`) for the keys of a map whose row carries that field as `true`.
      */
     | { kind: 'vocab'; lists: string[] };
 

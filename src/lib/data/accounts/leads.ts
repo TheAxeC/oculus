@@ -1,6 +1,6 @@
 // Layer 1, data, pure. Which status words take a position lead off the radar, which of them say the
 // reader declined it, which are the leads the view's toggle holds back, and which word each of the
-// lead's controls writes. Every answer is a flag of the word in `statuses` of
+// lead's controls writes. Every answer is a flag of the word in `lead_statuses` of
 // config/catalogs/vocab.yml: `lead_closed`, `lead_declined`, `lead_applied` and `default_lead`.
 //
 // The rule lives here rather than beside the view because readers on both sides need the same
@@ -20,12 +20,12 @@ type Config = Record<string, unknown>;
 
 /** Whether a lead's status carries a flag, read trimmed and in lower case. */
 function leadFlag(config: Config, status: unknown, flag: string): boolean {
-    return wordFlag(config, 'statuses', scalar(status), flag);
+    return wordFlag(config, 'lead_statuses', scalar(status), flag);
 }
 
-/** The first word of `statuses` carrying a flag, the word a control writes, or the empty text. */
+/** The first word of `lead_statuses` carrying a flag, the word a control writes, or empty text. */
 function wordOf(config: Config, flag: string): string {
-    return wordsWith(config, 'statuses', flag).at(0) ?? '';
+    return wordsWith(config, 'lead_statuses', flag).at(0) ?? '';
 }
 
 /** The status a new lead gets and a reopened one goes back to: the word carrying `default_lead`. */

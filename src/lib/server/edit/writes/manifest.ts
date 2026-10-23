@@ -585,9 +585,9 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 
 /**
  * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
- * the project's `id`, its `tier`, the first type of `types` carrying `idea` and, as its one chip,
- * the first status carrying `new_idea`; a tier carrying `backlog` starts it in the Focus backlog
- * (`focus: holding`). Its status line, its `next` and its README are the words of
+ * the project's `id`, its `tier`, as its `stage` the first word of `stages` carrying `new_idea` (no
+ * `stage` line when no word carries it) and no chip; a tier carrying `backlog` starts it in the
+ * Focus backlog (`focus: holding`). Its status line, its `next` and its README are the words of
  * config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no
  * `next` word gets no `next`). `fields.tier` is the tier of the board that sent the form and
  * `fields.folder` the folder it was made in; a write that names neither is made in the first tier
@@ -666,10 +666,9 @@ export function createIdea(
     const nextText = byKey(catalog, `server.manifest_write.idea_next_${tier}`);
     const title = form.title || id;
     const eli5 = form.eli5 || title;
-    const type = wordsWith(vocab, 'types', 'idea').at(0);
-    const chip = wordsWith(vocab, 'statuses', 'new_idea').at(0);
+    const stage = wordsWith(vocab, 'stages', 'new_idea').at(0);
     const lines = [`id: ${id}`, `tier: ${tier}`];
-    if (type !== undefined) lines.push(`type: ${renderScalar(type)}`);
+    if (stage !== undefined) lines.push(`stage: ${renderScalar(stage)}`);
     const { short, domain } = form;
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
@@ -677,7 +676,7 @@ export function createIdea(
     if (hasWord(vocab, 'tiers', 'backlog', tier)) lines.push('focus: holding');
     lines.push(
         'status:',
-        `  chips: [${chip === undefined ? '' : renderScalar(chip)}]`,
+        '  chips: []',
         `  line: ${renderScalar(statusText)}`,
         `eli5: ${renderScalar(eli5)}`
     );

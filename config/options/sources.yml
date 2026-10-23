@@ -12,7 +12,7 @@ options:
     scan:
         heading: sources
         section: Project scan
-        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and type are the manifest's own tier and type lines, not the folder's. When a project lies deeper than one level, the first folder under the rule's dir is its category. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
+        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and stage are the manifest's own tier and stage lines, not the folder's. When a project lies deeper than one level, the first folder under the rule's dir is its category. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
         fields:
             dir:
                 help: the folder scanned, relative to the hub

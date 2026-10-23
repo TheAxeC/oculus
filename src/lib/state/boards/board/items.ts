@@ -3,7 +3,7 @@
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
-import { domainLabel, domainTone, typeTone } from '../../shared/words/tones.ts';
+import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
 import {
@@ -112,7 +112,7 @@ function itemOf(
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
         project,
-        tone: typeTone(project.type ?? ''),
+        tone: stageTone(project.stage ?? ''),
         domain:
             domainId === undefined
                 ? null
@@ -145,29 +145,29 @@ function itemOf(
         reproduced: project.reproduced !== undefined,
         year: project.year === undefined ? '' : String(project.year),
         sessions: sessionsOf(project),
-        chips: project.chips,
+        chips: project.form === undefined ? project.chips : [project.form, ...project.chips],
         related: relatedTags(project, snapshot)
     };
     return { ...item, haystack: haystack(project, item) };
 }
 
-/** Pinned first, then the config's type order, then the title. */
+/** Pinned first, then the config's stage order, then the title. */
 function compare(left: BoardItem, right: BoardItem, order: string[]): number {
     const pinned = Number(right.project.pin === true) - Number(left.project.pin === true);
     if (pinned !== 0) return pinned;
     const rank = (item: BoardItem): number => {
-        const at = item.project.type === undefined ? -1 : order.indexOf(item.project.type);
+        const at = item.project.stage === undefined ? -1 : order.indexOf(item.project.stage);
         return at < 0 ? order.length : at;
     };
-    const byType = rank(left) - rank(right);
-    if (byType !== 0) return byType;
+    const byStage = rank(left) - rank(right);
+    if (byStage !== 0) return byStage;
     return left.project.title.localeCompare(right.project.title);
 }
 
 /**
  * One project joined, whatever tier it is on. A board reaches it through boardItems below; a tab
  * opened for a project of a tier no board shows reaches it here, since the join itself reads the
- * preset for its rollup and its type order alone and never for which tier the project is on.
+ * preset for its rollup and its stage order alone and never for which tier the project is on.
  */
 export function boardItemFor(
     snapshot: Snapshot,
@@ -191,7 +191,7 @@ export function boardItems(
     const items = Object.values(snapshot.entities.projects)
         .filter((project) => project.tier !== undefined && preset.tiers.includes(project.tier))
         .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));
-    return items.sort((left, right) => compare(left, right, preset.typeOrder));
+    return items.sort((left, right) => compare(left, right, preset.stageOrder));
 }
 
 /** The Markdown a project's tab can draw: the fixed documents the folder holds. */

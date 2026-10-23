@@ -35,7 +35,7 @@ function manifest(data: Record<string, unknown>, id: string): RawManifest {
         folder: `projects/active/${id}`,
         id,
         tier: 'projects',
-        type: 'active',
+        stage: 'active',
         ...data
     };
 }
@@ -254,7 +254,7 @@ describe('normalise, the field mapping', () => {
         expect(alpha).toEqual({
             id: 'alpha',
             tier: 'projects',
-            type: 'active',
+            stage: 'active',
             title: 'Alpha',
             short: 'a',
             lead: 'Faes',

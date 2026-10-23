@@ -1,5 +1,5 @@
 id: streaming-anomaly
-type: active
+stage: active
 tier: projects
 short: Stream-Anomaly
 title: Low-rank streaming anomaly detection

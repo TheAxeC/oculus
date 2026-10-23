@@ -1,9 +1,9 @@
-// Layer 2, client state. Board statistics, waiting lines, type counts, sizes and dissemination live
-// here because they describe board content rather than its saved controls.
+// Layer 2, client state. Board statistics, waiting lines, stage counts, sizes and dissemination
+// live here because they describe board content rather than its saved controls.
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
-import { anyWord } from '../../../data/shapes/vocab-keys.ts';
+import { anyWord, hasWord } from '../../../data/shapes/vocab-keys.ts';
 import {
     holdersOf,
     joinedEntries,
@@ -17,7 +17,7 @@ import {
     setting,
     type BoardItem,
     type BoardStats,
-    type TypeCount,
+    type StageCount,
     type VenueCount
 } from './presets.ts';
 
@@ -34,13 +34,13 @@ export const VENUE_WARN = 4;
 export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string };
 
 /**
- * What a project is waiting on. Explicit people win over submission review (a chip whose word of
- * `statuses` carries `pauses_countdown`), which wins over a generic external block (a chip carrying
- * `blocked`). A `waiting-on:` value is a person drawn by name or another project drawn by its
- * label, through the one rule of waiting.ts.
+ * What a project is waiting on. Explicit people win over submission review (a stage whose word of
+ * `stages` carries `pauses_countdown`), which wins over a generic external block (a chip whose word
+ * of `chips` carries `blocked`). A `waiting-on:` value is a person drawn by name or another project
+ * drawn by its label, through the one rule of waiting.ts.
  */
 export function waitingLine(
-    project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'chips' | 'venueId'>>,
+    project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'stage' | 'chips' | 'venueId'>>,
     config: Record<string, unknown>,
     venues: Record<Id, Venue>,
     people: Record<Id, string>,
@@ -50,8 +50,7 @@ export function waitingLine(
         const names = project.waitingOn.map((id) => waitingLabel(id, people, projects)).join(', ');
         return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
-    const chips = project.chips ?? [];
-    if (anyWord(config, 'statuses', 'pauses_countdown', chips)) {
+    if (hasWord(config, 'stages', 'pauses_countdown', project.stage)) {
         const venue = project.venueId === undefined ? undefined : venues[project.venueId];
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
         const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
@@ -63,20 +62,20 @@ export function waitingLine(
                     : t('project.helper.under_review_at', name)
         };
     }
-    if (anyWord(config, 'statuses', 'blocked', chips)) {
+    if (anyWord(config, 'chips', 'blocked', project.chips ?? [])) {
         return { kind: 'blocked', text: t('project.helper.blocked_external') };
     }
     return null;
 }
 
 /**
- * The strip above the board: how many projects it holds, how many are ready to go out (a chip whose
- * word of `statuses` carries `submit_ready`), how many are waiting on somebody, how many are
- * dated, and where they are aimed. The counts are over the
- * board's own projects, before any filter, so the strip says what the board is rather than what is
- * on screen. The venues come from the registry rather than from the manifests, so a chip carries
- * the catalogued short name and the full one it stands for. A venue is counted by its name, so the
- * one journal catalogued in two hubs of the workspace is one chip with the papers of both.
+ * The strip above the board: how many projects it holds, how many are ready to go out (a stage
+ * whose word of `stages` carries `submit_ready`), how many are waiting on somebody, how many are
+ * dated, and where they are aimed. The counts are over the board's own projects, before any
+ * filter, so the strip says what the board is rather than what is on screen. The venues come from
+ * the registry rather than from the manifests, so a chip carries the catalogued short name and the
+ * full one it stands for. A venue is counted by its name, so the one journal catalogued in two hubs
+ * of the workspace is one chip with the papers of both.
  */
 export function stats(
     items: BoardItem[],
@@ -89,7 +88,7 @@ export function stats(
     let blocked = 0;
     let dated = 0;
     for (const item of items) {
-        if (anyWord(config, 'statuses', 'submit_ready', item.chips)) submitReady += 1;
+        if (hasWord(config, 'stages', 'submit_ready', item.project.stage)) submitReady += 1;
         if (item.project.focus === BLOCKED) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
@@ -119,24 +118,24 @@ export function stats(
 }
 
 /**
- * How many projects carry each type, in the order of `types` of the config, with a type that map
- * does not name after the ones it does and in its own order. A project with no type is not counted:
- * there is no toggle to draw for a type that has no name.
+ * How many projects are at each stage, in the order of `stages` of the config, with a stage that
+ * map does not name after the ones it does and in its own order. A project with no stage is not
+ * counted: there is no toggle to draw for a stage that has no name.
  */
-export function typeCounts(items: BoardItem[], order: string[] = []): TypeCount[] {
+export function stageCounts(items: BoardItem[], order: string[] = []): StageCount[] {
     const counts = new Map<string, number>();
     for (const item of items) {
-        const type = item.project.type;
-        if (type === undefined || type === '') continue;
-        counts.set(type, (counts.get(type) ?? 0) + 1);
+        const stage = item.project.stage;
+        if (stage === undefined || stage === '') continue;
+        counts.set(stage, (counts.get(stage) ?? 0) + 1);
     }
-    const rank = (type: string): number => {
-        const at = order.indexOf(type);
+    const rank = (stage: string): number => {
+        const at = order.indexOf(stage);
         return at < 0 ? order.length : at;
     };
     return [...counts.entries()]
-        .map(([type, count]) => ({ type, count }))
-        .sort((left, right) => rank(left.type) - rank(right.type));
+        .map(([stage, count]) => ({ stage, count }))
+        .sort((left, right) => rank(left.stage) - rank(right.stage));
 }
 
 /** A size as the file finder writes it: megabytes to one decimal, else whole kilobytes. */

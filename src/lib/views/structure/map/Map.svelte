@@ -47,7 +47,7 @@
         nextStart,
         startFor,
         toggleFilter,
-        typeFilters as typeChips
+        stageFilters as stageChips
     } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -93,17 +93,17 @@
         });
     });
     /**
-     * The filter the graph is drawn under: what the saved state names, narrowed to the types and
+     * The filter the graph is drawn under: what the saved state names, narrowed to the stages and
      * the lines the base graph still holds, so a stale name neither hides a node nor a chip.
      */
     const kept = $derived(presentFilter(base, held));
-    const types = $derived(kept.types);
+    const stages = $derived(kept.stages);
     const lines = $derived(kept.lines);
     const graph = $derived(filterGraph(base, kept));
     /** The seed this pane lays the set of nodes it is drawing out from. */
     const seed = $derived(startFor(held, graph.nodes));
 
-    const typeFilters = $derived(typeChips(base, graph, configMap(), types));
+    const stageFilters = $derived(stageChips(base, graph, configMap(), stages));
     const lineFilters = $derived(lineChips(base, graph, snapshot, lines));
     const hasRelationships = $derived(relationshipsOf(snapshot));
 
@@ -165,13 +165,13 @@
         {statuses}
         {enabled}
         {connected}
-        types={typeFilters}
+        stages={stageFilters}
         lines={lineFilters}
         oncollaborators={(checked: boolean) => write({ collaborators: checked })}
         onarchive={toggleArchive}
-        ontype={(type: string) => write({ types: toggleFilter(types, type) })}
+        onstage={(stage: string) => write({ stages: toggleFilter(stages, stage) })}
         online={(id: string) => write({ lines: toggleFilter(lines, id) })}
-        onalltypes={() => write({ types: [] })}
+        onallstages={() => write({ stages: [] })}
         onalllines={() => write({ lines: [] })}
         onconnected={() => write({ connected: !connected })}
     />
@@ -189,9 +189,9 @@
                     <span>{t('map.head')}</span>
                 </div>
                 <Legend
-                    types={typeFilters
+                    stages={stageFilters
                         .filter((item) => item.shown && item.count > 0)
-                        .map((item) => item.type)}
+                        .map((item) => item.stage)}
                 />
             </div>
         </Surface>

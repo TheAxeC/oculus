@@ -61,7 +61,7 @@ text:
         stat_venues_tip: where the board's projects are aimed
         stats: Board totals
         toolbar: Board controls
-        type_toggle_tip: show or hide the {0} projects
+        stage_toggle_tip: show or hide the projects at the stage {0}
         venue_dist_glyph: venue_dist
         view: View
         view_cards: Cards

@@ -48,7 +48,8 @@ function deckProject(project: Project): DeckProject {
         title: project.title
     };
     if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
-    if (project.type !== undefined) one.type = project.type;
+    if (project.stage !== undefined) one.stage = project.stage;
+    if (project.form !== undefined) one.form = project.form;
     const domain = project.domainIds.at(0);
     if (domain !== undefined) one.domain = domain;
     return one;

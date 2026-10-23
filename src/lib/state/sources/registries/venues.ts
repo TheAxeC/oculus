@@ -29,19 +29,19 @@ export type VenuesState = {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /**
  * The projects included in venue use and concentration counts: every project but one of a tier
- * carrying `finished` whose type carries a `dead` number.
+ * carrying `finished` whose stage carries a `dead` number in `stages`.
  */
 export function realProjects(projects: Project[], config: Record<string, unknown>): Project[] {
     return projects.filter(
         (project) =>
             !hasWord(config, 'tiers', 'finished', project.tier) ||
-            wordNumber(config, 'types', 'dead', project.type) === null
+            wordNumber(config, 'stages', 'dead', project.stage) === null
     );
 }
 
 /**
- * Projects targeting one venue, with the concentration marker: two or more of them of a type
- * carrying `live`.
+ * Projects targeting one venue, with the concentration marker: two or more of them at a stage
+ * carrying `live` in `stages`.
  */
 export function venueUsers(
     venue: Venue,
@@ -52,7 +52,7 @@ export function venueUsers(
     return {
         projects: users,
         concentrated:
-            users.filter((project) => hasWord(config, 'types', 'live', project.type)).length >= 2
+            users.filter((project) => hasWord(config, 'stages', 'live', project.stage)).length >= 2
     };
 }
 

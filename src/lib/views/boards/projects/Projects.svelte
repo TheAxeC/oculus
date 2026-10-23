@@ -28,7 +28,7 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles,
+    // Layer 3, view. The project board: cards or a table, a search, quick filters, stage toggles,
     // one filter menu headed by every way the board can be split, a stats strip and a short or full
     // title. It is registered five times, as `projects`, `coauthor`, `archive`, `personal` and
     // `software`, and reads which board it is from the instance it was mounted as, so the five
@@ -69,14 +69,19 @@
         filterLabel,
         firstSentence,
         parseBoardState,
-        typeCounts,
+        stageCounts,
         type BoardItem,
         type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
-    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
+    import {
+        chipGlyphName,
+        chipLabel,
+        statusMarkTone,
+        projectStatusWords
+    } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -96,13 +101,13 @@
     const offered = $derived(facets(items, preset));
     const held = $derived(parseBoardState(instanceState(instance.id), preset.labels, offered));
     const groups = $derived(filterGroups(offered, held.filters, preset));
-    const types = $derived(typeCounts(items, preset.typeOrder));
+    const stages = $derived(stageCounts(items, preset.stageOrder));
     const lag = $derived(staleLag());
     const shown = $derived(
         applyFilters(items, held.filters, held.search, {
             stale: held.stale,
             dated: held.dated,
-            hiddenTypes: held.hiddenTypes,
+            hiddenStages: held.hiddenStages,
             staleLag: lag
         })
     );
@@ -165,13 +170,13 @@
         write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
     }
 
-    /** Every type is on until it is clicked off, so the state holds the ones that are off. */
-    function toggleType(type: string): void {
-        const off = held.hiddenTypes.includes(type);
+    /** Every stage is on until it is clicked off, so the state holds the ones that are off. */
+    function toggleStage(stage: string): void {
+        const off = held.hiddenStages.includes(stage);
         write({
-            hiddenTypes: off
-                ? held.hiddenTypes.filter((one) => one !== type)
-                : [...held.hiddenTypes, type]
+            hiddenStages: off
+                ? held.hiddenStages.filter((one) => one !== stage)
+                : [...held.hiddenStages, stage]
         });
     }
 
@@ -216,13 +221,14 @@
     /** One row of the list mode. Every column key of both presets is filled here. */
     function row(item: BoardItem): Record<string, unknown> {
         const next = item.project.next;
+        const words = projectStatusWords(item.project.stage, item.project.form, item.project.chips);
         return {
             id: item.id,
             title: label(item),
             authors: item.authors,
             venue: item.venue?.short ?? '',
-            status: item.chips.map((chip) => chipLabel(chip)).join(' '),
-            statusMarks: item.chips.filter((chip) => chipGlyphName(chip) !== ''),
+            status: words.map((word) => chipLabel(word)).join(' '),
+            statusMarks: words.filter((word) => chipGlyphName(word) !== ''),
             focus: item.project.focus ?? '',
             next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
             domain: item.domain?.label ?? '',
@@ -307,12 +313,12 @@
             pressed={held.dated}
             onclick={() => write({ dated: !held.dated })}
         />
-        {#each types as one (one.type)}
+        {#each stages as one (one.stage)}
             <Chip
-                label={`${one.type} ${one.count}`}
-                title={t('board.type_toggle_tip', one.type)}
-                pressed={!held.hiddenTypes.includes(one.type)}
-                onclick={() => toggleType(one.type)}
+                label={`${one.stage} ${one.count}`}
+                title={t('board.stage_toggle_tip', one.stage)}
+                pressed={!held.hiddenStages.includes(one.stage)}
+                onclick={() => toggleStage(one.stage)}
             />
         {/each}
         <ModeSwitch mode={held.mode} onchange={setMode} />

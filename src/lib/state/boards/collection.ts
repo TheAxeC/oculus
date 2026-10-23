@@ -713,8 +713,8 @@ export function entryFollowups(entry: Pick<Entry, 'fields'>): Followup[] {
     return followups(entry.fields.followup);
 }
 
-/** One member of a cross-link group. Its project type remains visible inside the broader group. */
-export type CrossMember = { id: string; label: string; type: string };
+/** One member of a cross-link group. Its project stage remains visible inside the broader group. */
+export type CrossMember = { id: string; label: string; stage: string };
 
 /** One of the three cross-link groups the portfolio uses everywhere. */
 export type CrossGroup = {
@@ -725,15 +725,15 @@ export type CrossGroup = {
 };
 
 /**
- * The type a cross-link group is keyed by: the project's own `type:`, its tier without one, and an
- * empty word for a project that names neither, which is left out of every group.
+ * The word a cross-link member is filed under: the project's own `stage:`, its tier without one,
+ * and an empty word for a project that names neither, which is left out of every group.
  */
-function typeOf(project: Project): string {
-    return project.type ?? project.tier ?? '';
+function stageOf(project: Project): string {
+    return project.stage ?? project.tier ?? '';
 }
 
 /**
- * The projects that name one entry, grouped by type with a count each.
+ * The projects that name one entry, grouped by stage with a count each.
  *
  * Which projects those are is the collection's own question and has three answers: funding is the
  * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and
@@ -772,10 +772,9 @@ export function crossLinks(
 
 /**
  * Projects in work, published and ideas groups, in that order and by project id within each. A
- * project of a tier carrying `finished` is published work, left out when its type carries a `dead`
- * number;
- * a project of a type carrying `idea` is an idea; any other project with a type is work, flagged
- * when one of its chips carries `blocked`.
+ * project of a tier carrying `finished` is published work, left out when its stage carries a `dead`
+ * number in `stages`; a project whose stage carries `idea` is an idea; any other project with a
+ * stage is work, flagged when one of its chips carries `blocked` in `chips`.
  */
 export function groupProjects(projects: Project[], config: Record<string, unknown>): CrossGroup[] {
     const grouped: Record<CrossGroup['type'], CrossMember[]> = {
@@ -784,14 +783,14 @@ export function groupProjects(projects: Project[], config: Record<string, unknow
         ideas: []
     };
     for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
-        const type = typeOf(project);
+        const stage = stageOf(project);
         const finished = hasWord(config, 'tiers', 'finished', project.tier);
-        if (finished && wordNumber(config, 'types', 'dead', type) !== null) continue;
+        if (finished && wordNumber(config, 'stages', 'dead', stage) !== null) continue;
         const group = finished
             ? 'published'
-            : hasWord(config, 'types', 'idea', type)
+            : hasWord(config, 'stages', 'idea', stage)
               ? 'ideas'
-              : type === ''
+              : stage === ''
                 ? null
                 : 'work';
         if (group === null) continue;
@@ -799,7 +798,7 @@ export function groupProjects(projects: Project[], config: Record<string, unknow
         grouped[group].push({
             id: project.id,
             label: short === '' ? project.title : short,
-            type
+            stage
         });
     }
     return (['work', 'published', 'ideas'] as const)
@@ -813,13 +812,13 @@ export function groupProjects(projects: Project[], config: Record<string, unknow
                 projects.some(
                     (project) =>
                         grouped.work.some((member) => member.id === project.id) &&
-                        anyWord(config, 'statuses', 'blocked', project.chips)
+                        anyWord(config, 'chips', 'blocked', project.chips)
                 )
         }));
 }
 
 /**
- * The projects of a type carrying `live` (the work that is still running) no funding scheme of
+ * The projects whose stage carries `live` in `stages` (the work in flight) no funding scheme of
  * the file covers, which is the Funding tab's one synthetic card. A project naming a scheme the
  * file does not hold is not covered by it, so the schemes are the file's own keys rather than
  * whatever a manifest happens to name.
@@ -831,7 +830,7 @@ export function noFunding(
 ): Project[] {
     return projects.filter(
         (project) =>
-            hasWord(config, 'types', 'live', project.type) &&
+            hasWord(config, 'stages', 'live', project.stage) &&
             !project.fundingIds.some((id) => schemes.includes(id))
     );
 }
@@ -854,15 +853,15 @@ export function openSubtaskCount(subtasks: readonly { done: boolean }[]): number
     return subtasks.filter((one) => !one.done).length;
 }
 
-/** One cross-link group's members by their own project type, in the order the members are in. */
-export function membersByType(
+/** One cross-link group's members by their own project stage, in the order the members are in. */
+export function membersByStage(
     group: CrossGroup
-): { type: string; members: CrossGroup['members'] }[] {
+): { stage: string; members: CrossGroup['members'] }[] {
     const held = new Map<string, CrossGroup['members']>();
     for (const member of group.members) {
-        const found = held.get(member.type);
-        if (found === undefined) held.set(member.type, [member]);
+        const found = held.get(member.stage);
+        if (found === undefined) held.set(member.stage, [member]);
         else found.push(member);
     }
-    return [...held].map(([type, members]) => ({ type, members }));
+    return [...held].map(([stage, members]) => ({ stage, members }));
 }

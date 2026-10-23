@@ -33,7 +33,7 @@ export type {
     QuickFilters,
     RollupBucket,
     SessionsOf,
-    TypeCount,
+    StageCount,
     VenueCount
 } from './presets.ts';
 export { absentDocs, boardItemFor, boardItems, markdownDocNames, newestDocDate } from './items.ts';
@@ -46,6 +46,6 @@ export {
     valueLabel
 } from './filter-menu.ts';
 export type { FilterChoice, FilterGroup } from './filter-menu.ts';
-export { VENUE_WARN, disseminated, humanSize, stats, typeCounts, waitingLine } from './stats.ts';
+export { VENUE_WARN, disseminated, humanSize, stageCounts, stats, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';
 export { STALE_LAG, applyFilters, emptyBoardState, isStale, parseBoardState } from './state.ts';

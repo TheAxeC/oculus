@@ -212,8 +212,11 @@ describe("oculus's own config directory", () => {
         ],
         'catalogs/vocab.yml': [
             'palette',
-            'types',
+            'stages',
+            'forms',
+            'chips',
             'statuses',
+            'lead_statuses',
             'focus_lanes',
             'holding_color',
             'priority_levels',
@@ -329,7 +332,7 @@ describe("oculus's own config directory", () => {
             'statuses',
             'statuses must be a map'
         ],
-        ['catalogs/vocab.yml', 'types: [active]\n', 'types', 'types must be a map'],
+        ['catalogs/vocab.yml', 'stages: [active]\n', 'stages', 'stages must be a map'],
         ['catalogs/vocab.yml', 'tiers: 3\n', 'tiers', 'tiers must be a map'],
         [
             'catalogs/vocab.yml',
@@ -647,7 +650,7 @@ describe("oculus's own config directory", () => {
         expect(problems).toEqual([]);
     });
 
-    it('describes every flag of statuses, types and tiers and every key of publication_kinds in the schema of vocab.yml', () => {
+    it('describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of publication_kinds in the schema of vocab.yml', () => {
         const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const portfolio = portfolioConfigFrom(config);
         const dir = join(engineDir(), 'config');
@@ -667,8 +670,11 @@ describe("oculus's own config directory", () => {
         type Row = { properties?: Record<string, { description?: string }> };
         const vocab = schema.properties ?? {};
         const rows: [string, Row | undefined][] = [
+            ['stages', vocab.stages?.additionalProperties],
+            ['forms', vocab.forms?.additionalProperties],
+            ['chips', vocab.chips?.additionalProperties],
             ['statuses', vocab.statuses?.additionalProperties],
-            ['types', vocab.types?.additionalProperties],
+            ['lead_statuses', vocab.lead_statuses?.additionalProperties],
             ['tiers', vocab.tiers?.additionalProperties],
             ['publication_kinds', vocab.publication_kinds?.items]
         ];
@@ -679,7 +685,8 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 17 status flags, 11 of types, 7 of tiers and the 3 keys of a publication_kinds row.
+        // 16 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, 7 tier
+        // flags and the 3 keys of a publication_kinds row.
         expect(keys).toHaveLength(38);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });

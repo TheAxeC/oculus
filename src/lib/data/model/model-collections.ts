@@ -1,4 +1,5 @@
-// Layer 1, data. Editable collections, generated feeds and the career record.
+// Layer 1, data. Editable collections, generated feeds, the career record, and the vocabularies and
+// rules validate checks the portfolio's files against.
 // The portfolio aggregate imports these leaf types while data/model/index.ts is the facade.
 
 import type { Id, Rooted } from './model-entities.ts';
@@ -227,3 +228,40 @@ export type Career = {
     /** The file's own `schema:`, one field per section, absent when the file has none. */
     schema?: SchemaField[];
 };
+
+/**
+ * The controlled vocabularies validate checks values against, each a list of words. `statuses` is
+ * the statuses a collection entry's `status` may take (the words of `statuses` with a colour),
+ * `acknowledged` the funding statuses a manuscript acknowledges (the words carrying the flag), and
+ * `stages` and `forms` the words of those lists, which a project writes in `stage:` and `form:`
+ * and never as a chip.
+ */
+export type Vocabulary = {
+    statuses: string[];
+    acknowledged: string[];
+    stages: string[];
+    forms: string[];
+};
+
+/**
+ * What validate needs and nothing more: the vocabularies, the manifest fields the schema checks,
+ * and the text its sentences are read from.
+ */
+export type ValidationRules = {
+    vocab: Vocabulary;
+    /**
+     * The manifest fields the generated schema holds to the keys of their `from` sources, all of
+     * which were read: the schema reports a value of the wrong shape there, so validate does not.
+     */
+    listed?: ReadonlySet<string>;
+    /** The flat text catalog every finding's sentence is read from, by its `findings.` key. */
+    text: Record<string, string>;
+    /** The person the setting `self` names, checked against the people file; none checks none. */
+    self?: SelfCheck;
+};
+
+/**
+ * The person key the workspace setting `self` names (empty for none), the people file it is
+ * looked up in and whether that file read.
+ */
+export type SelfCheck = { key: string; file: string; read: boolean };

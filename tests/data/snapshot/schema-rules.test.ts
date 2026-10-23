@@ -5,8 +5,11 @@
 // a reference to a key that does not exist, a key that stands twice in the referenced file, a
 // value outside its options, written as words or as `{ key, label }` rows, an option row that is
 // no such row, an option row holding a key besides key and label, which stays an option, a field
-// outside its `when:`, a required field that is missing, and a field no schema declares. Every
-// sentence is looked up in the shipped catalog.
+// outside its `when:`, a required field that is missing, and a field no schema declares. A second
+// table checks a collection entry's status against `statuses:` and a Position Lead's against
+// `lead_statuses:`, each finding naming the closest word of the list, and a stage word or a form
+// written as a project chip is one finding naming the field it belongs in. Every sentence is looked
+// up in the shipped catalog.
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -167,6 +170,61 @@ const ROWS: Row[] = [
     }
 ];
 
+type StatusRow = {
+    name: string;
+    /** The file the status is written in: an applications entry or a Position Lead. */
+    file: 'applications' | 'leads';
+    status: string;
+    /** The list the check reads holds no word. */
+    empty?: boolean;
+    /** The closest word the finding names, or none for no finding. */
+    closest: string | null;
+};
+
+const STATUS_ROWS: StatusRow[] = [
+    { name: 'an exact word', file: 'applications', status: 'submitted', closest: null },
+    { name: 'one edit', file: 'applications', status: 'acepted', closest: 'accepted' },
+    {
+        name: "a tie, the first in the list's order",
+        file: 'applications',
+        status: 'pased',
+        closest: 'paused'
+    },
+    { name: 'a case difference', file: 'applications', status: 'In Prep', closest: 'in-prep' },
+    { name: 'not applied', file: 'applications', status: 'not applied', closest: 'not-applied' },
+    {
+        name: 'under review',
+        file: 'applications',
+        status: 'under review',
+        closest: 'under-review'
+    },
+    { name: 'canceled', file: 'applications', status: 'canceled', closest: 'cancelled' },
+    { name: 'a lead status', file: 'leads', status: 'dismised', closest: 'dismissed' },
+    {
+        name: 'an entry status and an empty list',
+        file: 'applications',
+        status: 'submitted',
+        empty: true,
+        closest: ''
+    },
+    {
+        name: 'a lead status and an empty list',
+        file: 'leads',
+        status: 'open',
+        empty: true,
+        closest: ''
+    }
+];
+
+/** The finding a status row gets: its sentence, or none for a word of the list. */
+function statusSentence(row: StatusRow): string[] {
+    if (row.closest === null) return [];
+    const lead = row.file === 'leads' ? 'lead_' : '';
+    const status = JSON.stringify(row.status);
+    if (row.empty === true) return [sentence(`findings.validate.${lead}status_no_vocab`, status)];
+    return [sentence(`findings.validate.${lead}status_not_in_vocab`, status, row.closest)];
+}
+
 describe('the rules of a hub schema', () => {
     it.each(ROWS)('gives the finding of $name, with its file and line', (row) => {
         const hub = plantScratch(
@@ -210,7 +268,7 @@ describe('the rules of a hub schema', () => {
         {
             name: "a manifest's program",
             file: 'projects/active/alpha/project.yml',
-            text: 'id: alpha\ntier: projects\ntype: active\ntitle: Alpha\nprogram: y\n',
+            text: 'id: alpha\ntier: projects\nstage: active\ntitle: Alpha\nprogram: y\n',
             key: 'program'
         }
     ])('gives the one finding of a key no schema declares for $name', (row) => {
@@ -224,6 +282,46 @@ describe('the rules of a hub schema', () => {
         );
         expect(found.map((one) => [one.key, one.message])).toEqual([
             [row.key, sentence('findings.schema.not_declared', row.key)]
+        ]);
+    });
+
+    it.each(STATUS_ROWS)('a status outside its vocabulary names the closest word: $name', (row) => {
+        const file = `.oculus/data/academic/${row.file}.yml`;
+        const hub = plantScratch(
+            'oculus-status-closest-',
+            { [file]: `entries:\n  - { title: One, status: ${JSON.stringify(row.status)} }\n` },
+            ['projects/active']
+        );
+        const list = row.file === 'leads' ? 'lead_statuses' : 'statuses';
+        const config = row.empty === true ? portfolioConfigFrom({ ...LOADED, [list]: {} }) : CONFIG;
+        const found = buildOneHub(hub, config).snapshot.findings.filter(
+            (one) => one.file.endsWith(`/${row.file}.yml`) && one.key === 'entries[0].status'
+        );
+        expect(found.map((one) => one.message)).toEqual(statusSentence(row));
+        if (row.closest) expect(found.at(0)?.message).toContain(row.closest);
+    });
+
+    it('a stage word or a form as a chip is one finding naming its field', () => {
+        const file = 'projects/active/alpha/project.yml';
+        const text = [
+            'id: alpha',
+            'tier: projects',
+            'stage: active',
+            'title: Alpha',
+            'status: { chips: [submitted, journal, blocked] }',
+            ''
+        ].join('\n');
+        const hub = plantScratch(
+            'oculus-stage-chip-',
+            { '.oculus/data/research/venues.yml': venues([]), [file]: text },
+            ['projects/active']
+        );
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((one) =>
+            one.file.endsWith(`/${file}`)
+        );
+        expect(found.map((one) => [one.key, one.message])).toEqual([
+            ['status.chips[0]', sentence('findings.validate.chip_is_stage', 'submitted')],
+            ['status.chips[1]', sentence('findings.validate.chip_is_form', 'journal')]
         ]);
     });
 

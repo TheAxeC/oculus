@@ -47,6 +47,7 @@ import {
     tasksOf
 } from './writes-fixture.ts';
 import { PERSONAL_MANIFEST } from '../../routes/edit/write-fixture.ts';
+import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 
 /**
  * The files a row of the tables below writes in: a research manifest and two personal manifests.
@@ -637,16 +638,25 @@ describe('adding an entry', () => {
 const RESEARCH_STATUS = 'New idea: scope and novelty check open.';
 const RESEARCH_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.';
 
-/** The manifest `createIdea` writes for a project named `new-idea`, from the lines that differ. */
-function ideaManifest(tier: string, focus: boolean, line: string, next: string | null): string {
+/**
+ * The manifest `createIdea` writes for a project named `new-idea`, from the lines that differ: its
+ * `stage` is the first stage carrying `new_idea`, and with none the manifest names no stage.
+ */
+function ideaManifest(
+    tier: string,
+    focus: boolean,
+    line: string,
+    next: string | null,
+    stage: string | null = 'nascent'
+): string {
     return [
         'id: new-idea',
         `tier: ${tier}`,
-        'type: idea',
+        ...(stage === null ? [] : [`stage: ${stage}`]),
         'title: A new idea',
         ...(focus ? ['focus: holding'] : []),
         'status:',
-        '  chips: [nascent]',
+        '  chips: []',
         `  line: ${line.includes(':') ? `"${line}"` : line}`,
         'eli5: what it is',
         ...(next === null ? [] : [`next: ${next}`]),
@@ -699,6 +709,34 @@ describe('adding an idea', () => {
         expect(readFileSync(join(folder, 'project.yml'), 'utf8')).toBe(row.manifest);
         expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(row.readme);
     });
+
+    /** The shipped configuration with the `new_idea` flag of `stages:` on the stage `on` alone. */
+    function newIdeaOn(on: string | null): PortfolioConfig {
+        const config = configFor();
+        const shipped = (config.merged.stages ?? {}) as Record<string, Record<string, unknown>>;
+        const stages = Object.fromEntries(
+            Object.entries(shipped).map(([word, row]) => [word, { ...row, new_idea: word === on }])
+        );
+        return { ...config, merged: { ...config.merged, stages } };
+    }
+
+    const NEW_IDEA_ROWS = [
+        { name: 'the stage scoping', on: 'scoping', stage: 'scoping' },
+        { name: 'no stage', on: null, stage: null }
+    ];
+
+    it.each(NEW_IDEA_ROWS)(
+        'writes as the stage of a new idea the one stages: flags new_idea, here $name',
+        (row) => {
+            const root = wider();
+            const out = createIdea(root, newIdeaOn(row.on), { ...FORM, tier: 'projects' });
+            expect(out.refused).toEqual([]);
+            const file = join(root, 'projects/ideas/new-idea/project.yml');
+            expect(readFileSync(file, 'utf8')).toBe(
+                ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT, row.stage)
+            );
+        }
+    );
 
     const NONE = { ...configFor(), newProjectDir: {} };
 

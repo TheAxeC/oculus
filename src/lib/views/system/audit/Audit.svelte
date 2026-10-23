@@ -18,8 +18,10 @@
 <script lang="ts">
     // Layer 3, view. What the hub is missing, in the six sections the scan reports: an open marker
     // left in a document, a manifest field a live project has not filled in, a folder the tier
-    // standard does not name, a status chip the project's own tier and type contradict, a field
-    // that has stopped being a glance, and the public website's list against the portfolio.
+    // standard does not name, a project of a finished tier with no author chip or of an unfinished
+    // tier at a stage that carries `published`, a field that has stopped being a glance, and the
+    // public website's list against the portfolio. A stage word or a form written as a chip is a
+    // finding of the manifest check, drawn in the Findings view rather than here.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
     // control writes its signature into the `audit_ignore:` list of the open workspace file's
