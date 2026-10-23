@@ -269,3 +269,4 @@ Each finding closed by a change to `agents/briefs/O61.md`, before the preparatio
 - 7, ADRs: none.
 - 8, Dictated text: the history word list replaced by `spec.md`'s list (Verify 9); the `publication_kinds` rows rewritten for ruling 253 (item 9), one line per row, ASCII.
 - Rulings 252 (a) and 253 (a), given after the check: items 1, 2, 7, 9, 12 and 13, cases C4, C6, C12 to C14, C20 and C22, decisions 1 to 10 and the paths written for the rename and the form field; the changed text read line by line against `spec.md` (ASCII, no history, one line per row).
+- Premises read again on main at 08567e63, after O54 landed: the line numbers in "What is on the tree", items 4, 6, 7 and 12, "Paths this step writes" and "Read" corrected to main's; no premise changed in substance; rulings 255 to 257 named as the hub's landing rewrite.

@@ -40,6 +40,8 @@ dispatch:         # steps in flight, up to six (Z632)
   round_1: agents/briefs/O65-round1.md (P1, P2, T1, T2, B1 with S3, B2 sent; S1 and S2 recorded at landing; P3 at the look), snapshot .agents/worktrees/migration-O65-round-1
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
+- step: O61
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,11 +179,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code.
 
 
 
 ## Closed items
+- 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code. Ruled 2026-10-23: (a) (Axel: "259 (a)"); O65 has had its one repair round, so the binding is made at O65's landing as a fix at landing, with its test.
 - 258 (2026-10-22, O65's brief check): the step line of O65 (ruling 250) says the editor's keys work as VS Code's do and every default key Monaco binds that fails is fixed at its cause; D46 (ruling 28) says Cmd+K stays as it is, the palette's. The two collide on the keys the editor gives up to the palette (`src/lib/ui/controls/editor/chords.ts`, `freedKeys`): Cmd+K and its 31 chords (in VS Code, Cmd+K Cmd+C comments a line and Cmd+K Cmd+0 folds all, inside the editor; in oculus they run only from the palette), and on macOS Ctrl+K (in VS Code, Delete All Right in the editor; in oculus, the palette). F1, F8 and Shift+F8 are not in the clash: VS Code's workbench takes them too.
   - (a) Cmd+K and Ctrl+K stay the palette's everywhere, as D46 says; O65's key table lists the Cmd+K chords and Ctrl+K as given up to the palette under D46, each still run from the palette. Pro: nothing you press today changes. Con: the editor keeps differing from VS Code on 32 keys, which is what O65's line asks to end. This is the lazy option: it records the difference instead of ending it.
   - (b) Recommended. Inside the editor, Cmd+K is VS Code's chord key: Cmd+K then the second key runs Monaco's chord, and on macOS Ctrl+K is Delete All Right; outside the editor Cmd+K stays the palette, and in the editor the palette opens with Cmd+Shift+P, Cmd+P and F1, as in VS Code. Pro: the editor's keys are VS Code's, which O65's line asks for. Con: Cmd+K pressed in the editor no longer opens the palette; D46 changes for the editor.
