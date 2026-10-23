@@ -190,3 +190,48 @@ Findings:
 - `docs/diagrams/`: not regenerated or read beyond the grep hits.
 
 Agent usage: ac6a30fd8fba25176, claude-opus-5-5, 286213 tokens, 83 tool uses, 13 min 20 s.
+
+## Closed
+
+Each finding is closed in the brief `agents/briefs/O67.md` by the orchestrator, or by Axel's rulings 283 and 284 where it needed him.
+
+- 1.1: `items.ts:86`, `project-context.ts:10`, `palette.ts:174-177` and `derive.ts:86` are named under "What is on the tree", joined to "Paths this step writes", and item 6 removes the three readers; item 3 rewrites `derive.ts:86`.
+- 1.2: `Focus.svelte:18` (item 4), `focus.yml:76-77` (item 4, the unplaced text), `manifest-schema.yml:40` (item 2), `docs/apps.md:375` (item 5) and the orphan keys `focus.ideas` and `focus.idea_backlog` (item 4) are each named; item 8 adds `git grep -nw focus` and `git grep -ni "numbers pending"`.
+- 1.3: `vocab.yml:51` and `vocab.ts:41,53` (item 1), `vocab.ts:19`, the missing test path at `vocab.yml:180` and "Ideas lane" at `:180` and `:209` (item 3), `pillars.yml:5` and `:14`, `map.yml:13`, `audit.yml:42`, `HELP.md:272`, `templates.md:497-499,504,696,716-717,824,832`, the demo `pillars.yml:1` (items 6 and 8), `lines.ts:101` and `tones.ts:249` (item 8) are each named.
+- 1.4: `templates.md:1193` is dropped from item 8 and named under "What is on the tree" as the Position Lead's field, not touched.
+- 1.5: the same-spelling hits are listed under "What is on the tree" as not touched, and item 8 names them as hits to judge.
+- 2, the venues registry's help line: `templates.md:696` named in item 6.
+- 2, ruling 280: item 1 has the `stage` help at `manifest-schema.yml:36` say `published` covers accepted and to appear; decision 6 keeps the label.
+- 2, the board drawn as now: item 4 keeps the backlog in title order, out of the awaiting tallies, with the glyph `focus.ideas_glyph` in its summary.
+- 3.1: corrected under "What is on the tree" with the `git grep -nP` command and the three readers.
+- 3.2: corrected to 11 manifests and the comment in `pillars.yml:1`.
+- 3.3: `model-entities.ts:363` named as the behavior section, not touched.
+- 3.4: the test list corrected to `normalise.test.ts:77,262` and `writes.test.ts:647-657`, the three other files named as other things, and the about 90 lines in about 30 test files that write a removed stage named with their grep; item 10 rewrites them.
+- 3.5: corrected under "What is on the tree" (`manifest.ts:410-480`); item 4 has `movable` refuse a lane whose first stage or chip is not a word of the vocabulary, so a move's write is never refused in part.
+- 3.6: item 9 gives the table for every removed stage with no lane; decision 4 records it.
+- 4.1: the Push case is rewritten: a `submit-ready` project on Push writes nothing, an `exploring` one writes `in-prep`.
+- 4.2: item 4 puts the move's fields in one state function of `focus.ts`, run by the move cases.
+- 4.3: the lighting during a drag is named as seen at the look on landing; the case runs `movable`.
+- 4.4: the case quotes the finding text from `check.ts:254-275` and `findings.yml:242`, and says the unchanged tree gives none.
+- 4.5: no change needed.
+- 4.6: item 10 adds no `schema-rules` row; the undeclared-key cases are case runs.
+- 4.7: the lane shape refuses a row with both keys, with neither, and a stage held by two rows (item 3, its cases); the chip `parked` and the cluster `parked` live in different lists and are read from different keys, so no code compares one with the other; decision 7 places the chip after `blocked`.
+- 4.8: the cluster word `backlog` is a constant beside `CLUSTERS` in `focus.ts` (item 3 and Conventions).
+- 5: each gap is closed by the findings above it names; the List's Focus cell and the stats blocked count read the lane function (item 4) and are seen at the look.
+- 6.1: refused by the vocabulary shape (item 3).
+- 6.2 and 6.3: refused by the vocabulary shape (item 3); `movable` also refuses a lane with neither key.
+- 6.4: ruling 284 (2) (a): a drop on a chip lane removes the other lane's chip; case added.
+- 6.5: ruling 284 (1) (a): the stage is kept when the lane holds it; case added.
+- 6.6: closed with 3.5.
+- 6.7: item 4 states that a move changing both fields makes two change records, as a form save of two fields does, and the report states it under before and after.
+- 6.8: item 4 states a project of any tier sits on the lane its stage or chips give; the coauthor `in-prep` case is added.
+- 6.9: the lane menu case is added.
+- 6.10: the `admin-prep` case is added.
+- 6.11: `unplaced` lists a nascent project of a backlog tier that no lane takes (item 4, decision 2); case added.
+- 6.12: closed with 2.
+- 6.13: the folder cases are added; the hub folders are renamed at landing by the orchestrator, which the state file's landing note carries.
+- 6.14: the `venue: nowhere` and `pillars: [nowhere]` cases are added.
+- 6.15: no change needed.
+- 8, the backlog's line: ruling 284 (3) (a) gives "ideas not started yet: drag onto a lane to start, or drop here to make it an idea again", written in item 3.
+- 8, the dictated row without `stages: [nascent]`: the row in item 3 carries `stages: [nascent]`.
+- 8, the place of `parked` in `chips:`: decision 7.
