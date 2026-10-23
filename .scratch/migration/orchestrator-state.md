@@ -33,7 +33,8 @@ dispatch:         # steps in flight, up to six (Z632)
   session_id: a3f42e66388dd0742 (claude-opus-5-5)
   report: .scratch/migration/agents/reviews/O67-report.md
   builder_usage: 283624 tokens, 233 tool uses, 50 min 13 s (round 0; the report came as its final message, its file write refused)
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O67-refuter.md (a8c4020c0f56479db, claude-opus-5-5, 337683 tokens, 81 tool uses, 15 min 46 s)
+  round: 1
   landing: not-started
 ```
 
@@ -448,6 +449,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (O67 round 1 sent). The reviewer a8c4020c0f56479db on claude-opus-5-5 wrote `agents/reviews/O67-refuter.md`: items 1 to 7, 9 and 10 hold, item 8 violated (S-1); every case met; findings P-1, S-1 to S-4, B-1. Round 1 (`agents/briefs/O67-round1.md`, 8 items) sent to the builder a3f42e66388dd0742; snapshot `.agents/worktrees/migration-O67-round-1` with `files.txt`. P-1 is ruled under spec.md:68: the new test files run on a scratch copy of the base, no code changed, so the no-breakage rule is not reached. In flight (1 of 6): O67 (round 1). Next: the round's report, the review over it, then /land. Open items: 285.
 - 2026-10-23 (O39 ticked). The desktop look C8 was taken after Axel's `npm run app:package` and met: in the packaged app and in `npm run app`, on Ember and on the default config, the first frame of the main window, the float window, a reload and the find bar is the start theme's ground (recorded under "Taken" in `agents/reviews/owed-looks.md`). O39 is ticked in `plan.md` with its booking. Found at the look: a reload draws the default arrangement for about 0.2 s, open item 285. O67's builder report is saved at `agents/reviews/O67-report.md`; its reviewer a8c4020c0f56479db is running. In flight (1 of 6): O67 (under review). Next: O67's review, then its repair round or /land. Open items: 285.
 - 2026-10-23 (ruling 284). Axel ruled 284 (1) (a), (2) (a), (3) (a); booked in plan.md Rulings and O67's line. /spec O67 runs again without a new brief check. Open items: none.
 - 2026-10-23 (O67 stopped at its brief check). The brief check (`agents/reviews/O67-brief-check.md`, ac6a30fd8fba25176, claude-opus-5-5) found three move cases ruling 283 does not settle as intended: open item 284, booked under O67's Step 0, O67's second stop before its build. The brief is kept aside in the session scratchpad and restored to main's copy (none); its other findings are closed when /spec runs again after the ruling. In flight (0 of 6): none. Open items: 284.
