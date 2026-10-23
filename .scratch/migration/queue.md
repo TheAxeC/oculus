@@ -1,7 +1,7 @@
 In flight (4 of 6 slots in use):
 - O61 (one home for each vocabulary word). State: review over repair round 1.
 - O53 (a project's people by person keys). State: repair round 1.
-- O56 (a new record asks which hub takes it). State: repair round 1.
+- O56 (a new record asks which hub takes it). State: review over repair round 1.
 - O39 part F (the first frame paints the theme's ground). State: review over repair round 1.
 
 Queued, in order (4 steps):

@@ -167,3 +167,184 @@ No case was found that the brief's own rules get wrong.
 - `root: ''` in a body is refused with `no_hub_named` and an empty name in the words.
 - The pattern "the primary's view-source file for the primary, `fileUnder` for another hub" appears in six places: `lead-apply.ts:47-49` (this step), `page-file.ts:30-32`, `registry-file.svelte.ts:62-64`, `Collection.svelte:140-142`, `Person.svelte:101-103` and `focus/rows.ts:104-106` (read with `grep -n -B2 -A2 "fileUnder("`). One helper would serve all six; it is a different concern from ruling 210 and five of the files lie outside this step's paths, so it is a proposal for the orchestrator to book, not done here.
 - Nothing in the brief was found wrong or impossible.
+
+# Repair round 1
+
+Every ruling of `agents/briefs/O56-round1.md` is done. Ruling 5 is the orchestrator's at landing and asks no work here. The verify list ran once after this round's last change, and it was green.
+
+## Ruling 1: the focus after a pick that saves (DONE)
+
+Save to Literature (`src/lib/views/shared/card/feed/SaveToLiterature.svelte`):
+```svelte
+<span class="save" bind:this={box}>
+    {#if saved}
+        <ToolButton label={t('literature.in_literature')} glyph="book" waiting ... />   <!-- was: disabled -->
+    {:else if hubs.length > 1}
+        <Menu ... waiting={saving} ... onpick={(hub: string) => void save(hub)} />
+    {:else}
+        <ToolButton label={t('literature.save')} glyph="book" waiting={saving} ... />   <!-- was: disabled={saving} -->
+```
+```ts
+async function save(hub: string | undefined): Promise<void> {
+    if (saving) return;
+    saving = true;
+    refocus = box?.contains(document.activeElement) ?? false;     // :68
+    try {
+        const answer = await saveLiterature(source, paper, hub);
+        const refused = refusalWords(answer);
+        if (refused !== '') refocus = false;                        // :72
+        ...
+// :82-90
+$effect(() => {
+    if (!saved || !refocus) return;
+    untrack(() => {
+        refocus = false;
+        const now = document.activeElement;
+        if (now === null || now === document.body) box?.querySelector('button')?.focus();
+    });
+});
+```
+What the code does:
+- `Menu.svelte:14-16` gives the focus back to its opener before `onpick` runs, so when `save` starts the focus is inside `box` and `refocus` is set.
+- When the paper is held, `saved` turns true and the `{#if}` swaps the opener for In Literature. That button is drawn `waiting` (`ToolButton.svelte:100`: `aria-disabled`, not `disabled`), so it stays in the focus order. Removing the focused opener leaves the focus on the body, and the effect then gives the focus to In Literature.
+- The one-hub button is drawn `waiting={saving}` instead of `disabled={saving}`. It keeps the focus while the save is out and hands it to In Literature the same way.
+- When the save is refused, `refocus` is cleared, so the focus stays on the Save control, which is still drawn.
+- When the focus went somewhere else while the save was out, the effect leaves it there.
+- The head comment states this.
+
+`ToolButton.svelte` is unchanged: its `waiting` look already keeps the button in the focus order.
+
+Checked by reading only. No test drives the focus, and the page and the browser are not run. The look at landing sees it with two hubs.
+
+Apply menu on a Position Lead card: I read the base copy for where the focus goes after a press of the base's apply button.
+- On the base, `applyFromLead` (base `lead-apply.ts`) calls `placeInFile`. `placeInFile` (`entry-file.ts`) opens the Applications tab beside the view and calls `arrived`. `arrived` calls `openSourceFile` with a range and no `focus: false`. `Editor.svelte` `goingTo` turns that range into a `range` command with the focus asked. `runCommand` (`ui/controls/editor/commands.ts:93`) runs `if (command.focus !== false) made.focus();`.
+- So after a press that places the entry, the base leaves the focus in the Applications tab's editor, at the new entry. When a press places nothing (no file, or no tab opened), the focus stays on the apply button, and the lead is not marked applied, so the button stays drawn.
+- The step's apply menu does the same. `Menu.svelte` gives the focus back to the opener, then `onpick` runs `apply`, and the editor takes the focus when the entry is placed. When nothing is placed, the lead is not applied, the Menu stays drawn, and its opener keeps the focus.
+- In no case does the base leave the focus on the card while the lead reads applied. The second half of ruling 1 ("the control drawn in the menu's place takes it the same way") therefore has no case to act on, and no code was added for it. The look at landing checks where the focus lands.
+
+## Ruling 2: a true sentence for a chosen hub that holds no collection (DONE)
+
+The text, dictated word for word:
+- `config/text/app.yml:157`: `task_hub_collection: 'The hub {0} holds no tasks collection, so no task can be added to it.'`
+- `config/text/views/feeds/leads.yml:11`: `hub_no_applications: 'The hub {0} holds no Applications collection, so no application can be opened in it.'`
+
+`src/lib/state/forms/new-entry.ts:131-137`:
+```ts
+if ('refusal' in made) {
+    const said =
+        made.refusal === 'collection' && hub !== undefined
+            ? t('app.palette.task_hub_collection', hub)
+            : refusalWords(made.refusal);
+    return { id: '', label: '', said };
+}
+```
+With no hub named, `addTask` takes the first hub holding tasks. It says `task_add_collection` only when no hub holds one. The doc comment of `addTask` says this.
+
+`src/lib/views/shared/card/feed/lead-apply.ts:44-50`:
+```ts
+const holders = collectionsOfKey(APPLICATIONS);
+const held = holders.find((one) => rootOf(one) === hub);
+if (held === undefined) {
+    return holders.length === 0
+        ? t('leads.action.no_applications')
+        : t('leads.action.hub_no_applications', hub);
+}
+```
+The doc comment of `applyFromLead` says this.
+
+The test row, `tests/state/forms/new-entry.test.ts:138-142`:
+- Before: `it('is none for a hub chosen that holds no tasks collection', ...)`, expecting `t('app.palette.task_add_collection')`.
+- After: `it('is none for a hub chosen that holds no tasks collection, said by its name', ...)`, expecting `t('app.palette.task_hub_collection', 'nowhere')`, for the same input `addedTo([other, own], 'research', 'nowhere')`.
+
+The run on the base copy used a case-run program (ruling 262 a). It is a copy of the test file with its imports pointed at the base copy's `src`, run once, then deleted. It wrote nothing into the step's diff (`ls tests/state/forms` afterwards shows no extra file). Its source:
+```
+sed "s#'../../../src/#'../../../../migration-O56-base/src/#" tests/state/forms/new-entry.test.ts > tests/state/forms/new-entry-onbase.test.ts
+npx vitest run tests/state/forms/new-entry-onbase.test.ts -t "said by its name"
+rm tests/state/forms/new-entry-onbase.test.ts
+```
+Its output:
+```
+ FAIL  |unit| tests/state/forms/new-entry-onbase.test.ts > the hub a task is added to > is none for a hub chosen that holds no tasks collection, said by its name
+Error: text key not in the text catalog (config/text/): app.palette.task_hub_collection
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 skipped (20)
+```
+The base has neither the sentence nor the hub argument. In round 0, the same input on the base gave `{ root: 'research', key: 'review' }`, the task written to the primary.
+
+After the change: `npx vitest run tests/state/forms/new-entry.test.ts` passed 20 of 20.
+
+No test file guards `lead-apply.ts` (`grep -rln "lead-apply" tests` printed nothing). The apply case is therefore checked by reading the code at `:44-50` above.
+
+## Ruling 3: the apply pick in flight, and every new key or asynchronous path (DONE)
+
+`src/lib/views/shared/card/feed/LeadCard.svelte`:
+```ts
+let applying = $state(false);                                        // :84
+async function apply(hub: string): Promise<void> {
+    if (applying) return;
+    applying = true;
+    try {
+        onsaid(await applyFromLead(client, entry, beside, hub));
+    } finally {
+        applying = false;
+    }
+}
+```
+The Menu's `waiting={blocked !== '' || applying}` (`:177`) and the one-hub ToolButton's `waiting={applying}` (`:187`) draw the control waiting while the placement is out. The head comment says "While the entry is being placed the control waits, and a second press or pick does nothing."
+
+What the code does for each key and asynchronous path the step adds:
+- **The palette row value `task-hub:<hub>`** (`task-hub-list.svelte.ts:51`). I grepped every row value prefix of `src/lib/shell/keys` and `src/lib/state/workbench/palette*.ts`. The prefixes are `app:`, `clone:`, `collection:`, `command:`, `config:`, `database:`, `editor:`, `eslint-config:`, `feed:`, `finding:`, `folder:`, `group:`, `hidden-view:`, `interpreter:`, `language-action:`, `language:`, `project:`, `symbol:`, `task:`, `task-hub:`, `view:` and `workspace:`.
+  - No other prefix is `task-hub:`. `task:` differs at its fifth character (`:` against `-`), so no `task:` value can equal a `task-hub:` value.
+  - The hub rows are drawn only while the hub list is the active mode list (`mode-lists.svelte.ts:102-104`), which replaces the other rows.
+  - `hubsTaking` gives each hub once and drops the empty name, so two hub rows never share a value and no row is `task-hub:` alone.
+- **A second apply pick or press while a placement is out**: does nothing (the guard above), and the control is drawn waiting.
+- **A second press of the title or of a hub row while a task is being written** (Add Task): `CommandRows.svelte:115-133` adds an `adding` flag, set before `addTask` and cleared in its `.finally`. The press does nothing, so no second `new-entry` write is sent. The head comment states it.
+- **`addTaskTitled` answering after the palette closed**: the write lands; the notice "Added the task" is posted (notices are the app's); with Shift held the task's page opens; then `onclose()` sets the workbench's `paletteOpen` to false (`Workbench.svelte:410`).
+  - When the reader has opened the palette again in the meantime, that late `onclose()` closes it.
+  - A refusal answered after the close is set as the palette's `said`. It is not shown, because the palette is closed (`Palette.svelte:342` draws nothing while closed).
+  - The base's Add Task does the same after its write (base `CommandRows.svelte:98-120`). The step adds no new behaviour after the close.
+- **A Save to Literature pick while a save is out**: does nothing (`saving`, as in round 0), and the opener is drawn waiting.
+
+## Ruling 4: a before-and-after row for the apply control with no Applications file (DONE)
+
+This row joins the table "Cases before and after":
+
+| Case | Unchanged tree | After | Evidence after |
+| --- | --- | --- | --- |
+| Apply on a Position Lead, no hub holding an Applications file | opened the path the merged `collections:` names for `applications` under the primary (`config/defaults/sources.yml:41`, through `viewSourceFile`), whether or not the file was there; drew nothing with no primary (`if (file === null) return '';`) | the card says `leads.action.no_applications`, "No hub of the workspace holds an Applications collection, so no application can be opened." | `lead-apply.ts:44-48` by reading |
+
+## Ruling 5
+
+Ruling 5 is the orchestrator's at landing: G8's Code and Test lines in `agents/guarded.md`. No work was done here.
+
+## Verify lines, from the run after this round's last change
+
+Test files run while working: `tests/state/forms/new-entry.test.ts` (20 passed), and the base-copy run above.
+
+`npm run format` exited 0. `npm run diagrams && npm run test:quick` ran once and exited 0:
+```
+test:quick: 43 changed file(s), from git since HEAD
+test:quick: 117 test file(s)
+ok      prettier (2.3 s): All matched files use Prettier code style!
+ok      ASCII gate (2.4 s)
+ok      svelte-kit sync (5.0 s)
+ok      svelte-check (134.0 s): 1792750208175 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (174.1 s)
+ok      vitest checks (224.8 s): Duration  193.85s (transform 149.97s, setup 0ms, import 417.99s, tests 249.62s, environment 2ms)
+ok      vitest (231.3 s): Duration  204.51s (transform 454.29s, setup 0ms, import 589.79s, tests 103.86s, environment 47.57s)
+ok      vitest slow (301.8 s): Duration  275.11s (transform 23.49s, setup 0ms, import 319.93s, tests 755.82s, environment 15ms)
+test:quick: 307.3 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+```
+The verify list ran once in this round, and no whole-suite command ran.
+
+The other checks over this round's files, run after the last change:
+- **ASCII gate** of `spec.md` over the eight files this round changed: printed nothing.
+- **Sizes**: `SaveToLiterature.svelte` 141, `LeadCard.svelte` 327, `CommandRows.svelte` 276, `new-entry.ts` 143, `lead-apply.ts` 70, `app.yml` 321, `leads.yml` 38, `new-entry.test.ts` 237.
+- **Unused exports**: `sh utils/unused-exports.sh` compared with the base copy's `unused-exports.txt`; `diff` printed nothing.
+- **History words** in the added lines: two hits, "refused before any hub is asked" (the rewrapped CommandRows head) and "before it asks the hub" (new-entry.ts). Both state the order at run time, and both are kept from round 0.
+- `docs/diagrams/` changes stay at the same ten files as in round 0 (`git status --short docs/diagrams`).
+
+Paths outside the round's list: none. `ToolButton.svelte` is unchanged.
+
+Sharp edge, still open: `refocus` stays set when a save answers ok but the card's `saved` does not turn true, which happens if the server keeps the paper under ids the card does not compare by. In that case a later `saved` change on the same card would move a lost focus to In Literature. The effect moves the focus only from the body, so it never takes the focus from another element.

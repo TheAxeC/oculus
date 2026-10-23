@@ -67,8 +67,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O56
   brief_check: agents/reviews/O56-brief-check.md (a837bbfa456b7963d, claude-opus-5-5, 232172 tokens, 78 tool uses, 10 min 51 s)
   report: agents/reviews/O56-report.md
-  builder_usage: before the pause: no completion notice (stopped); after the resume: 161697 tokens, 201 tool uses, 21 min 37 s
-  reviewer_report: agents/reviews/O56-refuter.md (a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s)
+  builder_usage: before the pause: no completion notice (stopped); after the resume: 161697 tokens, 201 tool uses, 21 min 37 s; round 1: 250368 tokens, 110 tool uses, 18 min 25 s
+  reviewer_report: agents/reviews/O56-refuter.md (a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s); over round 1: running: ab082e1a8e90c900f, claude-opus-5-5
   round: 1
   landing: not-started
   shared_paths: with O53: as O53's entry says; with O61: new-entry.ts (O61 the vocabulary words, O56 the collection taskFields and addTask take), the comment of lead-apply.ts:5 (O61) beside the apply menu (O56), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
