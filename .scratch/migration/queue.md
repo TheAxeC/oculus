@@ -1,8 +1,8 @@
 In flight (4 of 6 slots in use):
-- O61 (one home for each vocabulary word). State: building, paused on Axel's word.
-- O53 (a project's people by person keys). State: building, paused on Axel's word.
-- O56 (a new record asks which hub takes it). State: building, paused on Axel's word.
-- O39 part F (the first frame paints the theme's ground). State: prepared, worktree installed; its builder waits for Axel's go.
+- O61 (one home for each vocabulary word). State: building.
+- O53 (a project's people by person keys). State: building.
+- O56 (a new record asks which hub takes it). State: building.
+- O39 part F (the first frame paints the theme's ground). State: building.
 
 Queued, in order (4 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.

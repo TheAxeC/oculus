@@ -28,7 +28,7 @@ dispatch:         # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   session_id: ac3718e2ed885f054
-  paused: 2026-10-23, on Axel's word: stopped through the runner's stop tool with its transcript kept; resumed by a message to its session_id, never relaunched
+  paused: 2026-10-23 on Axel's word, resumed the same day on his word by a message to its session_id
   model: claude-opus-5-5
   launched: 2026-10-23
   base: 282f3c2a
@@ -42,7 +42,7 @@ dispatch:         # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   session_id: ac515994c74d874b8
-  paused: 2026-10-23, on Axel's word: stopped through the runner's stop tool with its transcript kept; resumed by a message to its session_id, never relaunched
+  paused: 2026-10-23 on Axel's word, resumed the same day on his word by a message to its session_id
   model: claude-opus-5-5
   launched: 2026-10-23
   base: 74020bf0
@@ -56,7 +56,7 @@ dispatch:         # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   session_id: a449c7dbd8ad9a6ed
-  paused: 2026-10-23, on Axel's word: stopped through the runner's stop tool with its transcript kept; resumed by a message to its session_id, never relaunched
+  paused: 2026-10-23 on Axel's word, resumed the same day on his word by a message to its session_id
   model: claude-opus-5-5
   launched: 2026-10-23
   base: 892189d7
@@ -67,8 +67,17 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O53: as O53's entry says; with O61: new-entry.ts (O61 the vocabulary words, O56 the collection taskFields and addTask take), the comment of lead-apply.ts:5 (O61) beside the apply menu (O56), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
 - step: O39 part F
+  executor: agent
+  worker: claude:opus
+  session_id: ad81f9b1c597670ba
+  model: claude-opus-5-5
+  launched: 2026-10-23
+  base: d82cd0c3
+  worktree: .agents/worktrees/migration-O39-partF
   brief_check: agents/reviews/O39-partF-brief-check.md (af556f98c3e4cc9ab, claude-opus-5-5, 228914 tokens, 59 tool uses, 10 min 42 s)
-  landing: preparing
+  report: agents/reviews/O39-partF-report.md
+  round: 0
+  landing: not-started
   shared_paths: with O53, O56 and O61: none of their briefs names a file part F writes; docs/diagrams/ regenerated at each landing (npm run diagrams)
 ```
 
@@ -458,7 +467,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-10-23 (O65 landed). O65 is on main (booked under O65 in `plan.md`, report `agents/reviews/O65-landing.md`), checked in the gate worktree (`test:quick` 137.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME); ruling 259 (a) made at landing (Cmd+K Shift+Enter pins and unpins in the editor), looked at on a scratch server on 8797. Open item 260 raised (three test rows with no approved entry). The brief-check findings of O53 and O56 are closed in their briefs (each report's Closed heading), prepared at 74020bf0 and 892189d7. In flight (4 of 6): O61 (paused), O53 (paused, ac515994c74d874b8), O56 (paused, a449c7dbd8ad9a6ed), O39 part F (prepared at d82cd0c3, worktree installed, ruling 261 (a) in its brief; its builder is not launched until Axel says so). Axel paused the three builders (O61, O53, O56); each resumes by a message to its session_id on his word. Rulings 260 (a) and 261 (a) booked. Open items: none. `queue.md` rewritten whole.
+- 2026-10-23 (O65 landed). O65 is on main (booked under O65 in `plan.md`, report `agents/reviews/O65-landing.md`), checked in the gate worktree (`test:quick` 137.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME); ruling 259 (a) made at landing (Cmd+K Shift+Enter pins and unpins in the editor), looked at on a scratch server on 8797. Open item 260 raised (three test rows with no approved entry). The brief-check findings of O53 and O56 are closed in their briefs (each report's Closed heading), prepared at 74020bf0 and 892189d7. In flight (4 of 6): O61 (building), O53 (building, ac515994c74d874b8), O56 (building, a449c7dbd8ad9a6ed), O39 part F (building, ad81f9b1c597670ba, the brief with ruling 261 (a) copied into its worktree). Axel paused the three builders (O61, O53, O56) and resumed them the same day. Rulings 260 (a) and 261 (a) booked. Open items: none. `queue.md` rewritten whole.
 - 2026-10-23 (O54 landed). O54 is on main (booked under O54 in `plan.md`, report `agents/reviews/O54-landing.md`), checked in the gate worktree (`test:quick` 240.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME, 229 files); nine fixes at landing, among them the page of a feed entry in a workspace with no primary (`hubSchemas`) and the shared-module run of part E's hook row. Ruling 238's one-time change of `~/.oculus/layouts.json` and `views.json` is applied (six places; a second run finds nothing). Found at the look and folded into O60 (Z468): with no primary the merged config reads no hub's settings file, so a lead's fit shows `-`. In flight (1 of 6): O65 (reviewed over round 1, /land next). Next: /land O65; then /spec O61, O53 and O56; O39's dev-server first paint and its closing (C8, the desktop look after `npm run app:package`).
 - 2026-10-23 (O54 round 1 reported; its review over round 1 running). The builder reported round 1 (`agents/reviews/O54-report.md`, saved; 343126 tokens, 333 tool uses, 74 min 33 s); the orchestrator read the round's source delta. It handed back: three red rows of its last verify run outside the round's files (two timeouts, one `source.test.ts` assertion), the create-target guard of `write-files.ts:146` by the primary hub, `/api/deposit`'s 404 for a bare id, and P2's mute in the workspace file. The review over round 1 runs (a16b86dd29919143f, claude-opus-5-5) and judges each. In flight (3 of 6): O54 (review over round 1), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.
 - 2026-10-23 (O39 part E round 1 reported). The builder closed every ruling of round 1 (`agents/reviews/O39-partE-report.md`, saved); B1 was a real frame (an app theme with no first-load file paints the mounted workbench before its draw sets the derived tokens), closed by the derived tokens on the root element of the first HTML. The orchestrator read the round's source delta. The review over round 1 runs (aa1b7392be4f5e72b, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.
