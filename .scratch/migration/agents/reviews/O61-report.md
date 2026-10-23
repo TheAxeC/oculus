@@ -223,3 +223,682 @@ Commands run from the worktree root after the last change (the last source chang
 - History grep 9 over the comment lines and titles the step added or changed: `vocab.yml:134` "still on the deadline radar", `tones.ts:92` "still renders a page", `presets.ts:328` "which still renders", `graph.ts:277` "no longer draws", `ticker.ts:170` "before it", `presets.ts:152` "a state saved before it existed", `board/stats.ts:74` "before any filter", `map/Controls.svelte:7` "costs before pressing it": each is base text in a paragraph the step rewrapped or a word next to a changed word, and each describes the code's present behaviour (a saved state that predates a stage, a row before a deadline), not the code's history. The new comments of `vocab-keys.ts` (`distance`), `vocab.ts` (`dead_end` help) and `tier-stage.test.ts` hold none of the words.
 
 Nothing in the brief was found wrong or impossible.
+
+# Repair round 1
+
+Every ruling of `agents/briefs/O61-round1.md` is done, under the coordinator's rulings 262 (a), 263 (a) and 264 (a). Under 262 (a) the probe source is quoted at the end of this section. Under 263 (a) `git diff` was read, for the docs and size lines. Under 264 (a) ruling 6 stays a report line. Ruling 1's words "the stage word or a form written as a chip (item 8) among it" are met as the head comments naming that finding as the manifest check's, not the audit's: brief item 8 puts the rule in the manifest check (`src/lib/data/snapshot/validate.ts:287` `checkStageChips`), and `src/lib/server/content/audit/scan.ts:6-10` says the audit does not repeat what the data layer reports, so a comment saying the audit checks it would be false.
+
+## Rulings
+
+| Ruling | State | Check |
+| --- | --- | --- |
+| 1 S1, audit head comments | DONE | the grep below prints no false hit |
+| 2 S2, comments over 100 columns | DONE | the sweep below prints nothing |
+| 3 S3, `projectStatusWords` | DONE | `grep -rn "[^a-zA-Z]statusWords"` prints only `navigation/status.ts` and its caller `routes/+page.svelte` |
+| 4 S4, `stageLabel` gone | DONE | `grep -rn "stageLabel" src tests docs config` prints nothing |
+| 5 B1, the stage glyph on a board card | DONE | reading `ProjectCard.svelte:348-354`, before and after below |
+| 6 B2, hue changes in the report | DONE | the table below |
+| 7 P2, files outside the write list | DONE | the list below |
+| 8 the verify list once | DONE | the verify lines below |
+
+### 1. S1
+
+`src/lib/server/content/audit/projects.ts:1-6`, after:
+```
+// Layer 2, server. The audit's sections over the projects and collections: the open markers left in
+// a document, a manifest field a live project has not filled in, a folder that is not the one the
+// tier standard names, a project of a finished tier with no author chip or of an unfinished tier at
+// a stage that carries `published`, a field long enough to stop being a glance, and a collection
+// entry whose date or link wants doing. A stage word or a form written as a chip is the manifest
+// check's finding (data/snapshot/validate.ts), drawn in the Findings view, and is not scanned here.
+```
+The middle clause names the two rules of `guardrails` (`projects.ts:371-414`): `audit.msg_no_author_chip` and `audit.msg_projects_published`. Before, line 3 read "a status chip the project's own tier and type contradict".
+
+`src/lib/views/system/audit/Audit.svelte:19-24`, after:
+```
+    // Layer 3, view. What the hub is missing, in the six sections the scan reports: an open marker
+    // left in a document, a manifest field a live project has not filled in, a folder the tier
+    // standard does not name, a project of a finished tier with no author chip or of an unfinished
+    // tier at a stage that carries `published`, a field that has stopped being a glance, and the
+    // public website's list against the portfolio. A stage word or a form written as a chip is a
+    // finding of the manifest check, drawn in the Findings view rather than here.
+```
+
+The grep `grep -rn --exclude=local.yml -i "contradict\|terminal_live\|live_chips\|tier and type" src docs config tests` found two more false hits, both fixed:
+- `src/lib/data/model/index.ts:353-358`, the doc comment of `AuditKind`: "a status the project's own tier and type contradict" is now "a project of a finished tier with no author chip or of an unfinished tier at a stage that carries `published`".
+- `config/options/sources.yml:15`, the help of the project sources: "a project's tier and type are the manifest's own tier and type lines" is now "a project's tier and stage are the manifest's own tier and stage lines".
+
+The grep after the fixes prints only `config/catalogs/latex.yml:647` (the LaTeX keywords "Proposition contradictory contradiction") and `tests/state/system/apps/store-cache.test.ts:3,105,252` (a push that contradicts a fetched answer). Neither is about the audit. `grep -rniE "tier and type|type and tier|tier or type|tier, type"` over the same folders prints nothing.
+
+### 2. S2
+
+The 14 lines the review lists are rewrapped. A one-line doc comment over 100 columns became a three-line block with the same words: `vocab.ts` `chipWord`, `groups.ts` `within`, `kinds.ts` `stage`, `rules.ts` `liveStages` and `stageFolders`, `presets.ts` `chips` and `StageCount`, `rail-badges.ts` `rollup`, `parts/Project.svelte` `stage`. The paragraphs at `stats.ts:121-123`, `focus-lanes.ts:89-90`, `config-folder.test.ts:688-689` and `CardStatus.svelte:2-6` (rewritten under ruling 5) are rewrapped as whole paragraphs.
+
+The sweep over every file the step changes under `src` and `tests` prints every comment line over 100 columns that does not occur in the file's base copy. A file with no base copy is checked in full: `tier-stage.test.ts`, the one such file.
+```
+grep -E '^(src|tests)/' r1-paths.txt | while read f; do b=migration-O61-base/$f; w=migration-O61/$f;
+  if [ -f "$b" ]; then awk -v F="$f" 'NR==FNR{base[$0]=1; next} length($0)>100 && $0 ~ /^[ \t]*(\/\/|\*|\/\*\*|<!--|#)/ && !($0 in base) {print F":"FNR": "length($0)}' "$b" "$w";
+  else awk -v F="$f" 'length($0)>100 && $0 ~ /^[ \t]*(\/\/|\*|\/\*\*|<!--|#)/ {print F":"FNR": "length($0)}' "$w"; fi; done; echo "sweep done"
+```
+Output, run from `.agents/worktrees` after `npm run format`: `sweep done` and nothing else. Before this round's rewraps, the same sweep printed `CardStatus.svelte:3: 101` and `:4: 101`, so the review's other twelve lines had been rewrapped by then.
+
+### 3. S3
+
+`src/lib/state/shared/words/tones.ts:251` is now `export function projectStatusWords(stage, form, chips)`. Its two callers changed with it: `src/lib/views/boards/focus/lanes/LaneCard.svelte:33,81` and `src/lib/views/boards/projects/Projects.svelte:83,224`. The doc comment now says where the words are drawn and that a stage with no glyph gives no mark:
+```
+/**
+ * The words a project's status marks draw on a lane card and in the board's list, in order: its
+ * stage when the stage's word of `stages` has a glyph, then its form and its chips. A stage with no
+ * glyph (idea, active, archived) gives no mark; a board card draws every stage as its filled chip.
+ */
+```
+Before, its last sentence said such a stage "is drawn by the card's stage chip alone". That is false for a lane card, which draws no stage chip.
+
+### 4. S4
+
+`stageLabel` is removed from `tones.ts`. Its callers read `chipLabel`:
+- `ProjectCard.svelte` (the stage chip);
+- `views/academic/present/parts/Legend.svelte:25`;
+- `parts/Project.svelte:44`;
+- `parts/Grid.svelte:42` (the maturity).
+
+### 5. B1
+
+`src/lib/views/shared/card/project/ProjectCard.svelte:348-354`, after:
+```svelte
+{#if item.project.stage}
+    <Chip
+        label={chipLabel(item.project.stage)}
+        glyph={chipGlyphName(item.project.stage)}
+        tone={item.tone}
+        filled
+    />
+{/if}
+```
+Before, the line was `<Chip label={stageLabel(item.project.stage)} tone={item.tone} filled />`, which drew no glyph. A board card now draws its stage as one filled chip, with the stage's label and the glyph of its row of `stages`. `chipGlyphName` returns the empty string for idea, active and archived, which have no `icon`, so those draw no glyph. `projectStatusWords` makes the same test (`chipGlyphName(stage) !== ''`). `item.tone` is `stageTone(project.stage)` (`board/items.ts:115`). The head comment of `CardStatus.svelte` says the stage chip carries the label and glyph of its word of `stages`.
+
+Board card before and after, by reading `ProjectCard.svelte` and `CardStatus.svelte` on both trees with the `vocab.yml` of each:
+
+| Manifest | Before (base manifest form) | After |
+| --- | --- | --- |
+| `stage: submitted` (base: `type: active`, `chips: [submitted]`) | filled chip "active" in the tone of `#ea580c` (`types.active`); outline chip "submitted / under review" with the `brown` glyph (a circle) in the tone of `#b45309` (`statusTone`, `statuses.submitted`) | filled chip "submitted / under review" with the `brown` glyph in the tone of `#0ea5e9` (`stages.submitted`); no other mark |
+| `stage: in-prep`, `form: journal` (base: `type: active`, `chips: [in-prep, journal]`) | filled "active" in `#ea580c`; outline "in preparation" with the `writing` glyph in `#7c5cff` (`statuses.in-prep`); outline "journal article" with the `journals` glyph in the neutral tone (`statuses.journal` has no colour) | filled "in preparation" with the `writing` glyph in `#a16207` (`stages.in-prep`); outline "journal article" with the `journals` glyph in the neutral tone |
+
+The form and the situation chips draw in the same neutral tone as before: none of journal, conference, thesis, abstract, poster, tech-report, blocked, results-positive, admin-prep, numbers-pending, ai-tells, lead or coauthor had a `color` in the base `statuses:` (base `vocab.yml:98-131`), so the base `statusTone` gave each the unknown tone, `grey`.
+
+### 6. B2, the status-mark hues that change
+
+`statusMarkTone` (`tones.ts:231-235`) colours a mark on a lane card and in the Projects list. On the base, it used the word's `color` of `statuses:` and otherwise the hue its icon is named by (`ICON_HUES`, identical on both trees). An icon with no entry there gives the unknown tone, `grey`. Now every stage word takes its `color` of `stages:`. Stages without a glyph (idea, active, archived) draw no mark. Base colours are from the base `vocab.yml:97-131`, new ones from `vocab.yml:65-85`.
+
+| Stage word | Base hue | New hue |
+| --- | --- | --- |
+| exploring | `#7c5cff` | `#f59e0b` |
+| in-prep | `#7c5cff` | `#a16207` |
+| submit-ready | `green` (its icon `green`) | `#ea580c` |
+| submitted | `#b45309` | `#0ea5e9` |
+| published | `#0ea5e9` | `#16a34a` |
+| finished | `#0ea5e9` | `#16a34a` |
+| nogo | `grey` (icon `overdue`, no hue) | `#b45309` |
+| dropped | `#ea580c` | `#9ca3af` |
+| disproved | `grey` (icon `cross_box`, no hue) | `#dc2626` |
+| abandoned | `grey` (icon `cross`, no hue) | `#6b7280` |
+
+Unchanged: nascent `#7c5cff`, scoping `#0891b2`, de-risking `#16a34a`, building `#d4a017`, running `#16a34a`, revision `#b45309`, accepted `#2563eb`, paused `#9ca3af`. Exploring had a `color` of its own in the base `statuses:` (`#7c5cff`, base `vocab.yml:118`), not its icon's hue. No code changed for this ruling. Open item 264 is Axel's.
+
+### 7. P2, files the step changed outside "Paths this step writes"
+
+Config:
+- `config/defaults/sources.yml:9`, the YAML comment: "project types" now says "project stages", because the field is renamed (ruling 252).
+- `config/options/appearance.yml:8`, the YAML comment: the example "project types" in the list of map families now says "project stages" (ruling 252).
+- `config/options/sources.yml:15`, the help of the project sources: "tier and type" now says "tier and stage". This round's ruling 1 grep found it.
+- `config/options/layout.yml:149`: the help of the board groups names the project stages and forms. This line is beside the `from:` source names at `:154-156`, which the write list covers.
+
+`config/defaults/layout.yml` changes only lines inside the listed range (base 225, 239-240, 253, 255, 270, 303, 321). `src/lib/data/helpers/hub-names.ts` changes only lines 361-364 and 384-385.
+
+Files under "any other file under `src/`", each with what it reads:
+- `src/lib/data/sources/documents/feeds.ts`: reads `lead_statuses` (`vocabKeys(merged.lead_statuses)`) and runs `leadStatusFindings`, the lead status check of item 10. This is the moved flag word list for Position Leads.
+- `src/lib/data/sources/manifests.ts`: renamed only. The head comment and a doc comment say `stage`.
+- `src/lib/server/content/audit/scan.ts`: renamed only. The head comment says `stage` and no longer names the removed contradiction rule.
+- `src/lib/server/content/deck/read.ts`: reads `project.stage` and `project.form` into a deck project (renamed field, new field).
+- `src/lib/state/boards/board/index.ts`: renamed only (`stageCounts`, `StageCount`).
+- `src/lib/state/boards/board/state.ts`: reads `project.stage` for the hidden-stage toggles (`hiddenStages`). Renamed field.
+- `src/lib/state/boards/project-context.ts`: writes `stage` and `form` into the project context lines. Renamed field and the new field.
+- `src/lib/state/workbench/palette.ts`: reads `project.stage` and `project.form` into the search words. Renamed field and the new field.
+- `src/lib/state/workbench/rail-badges/rail-badges.ts`: reads `stage`, `form` and the chips for the rollup group a project counts in. Renamed field and the new field.
+- `src/lib/ui/controls/Chip.svelte`: renamed only, in the head comment.
+- `src/lib/views/academic/present/Slide.svelte`: passes `row.stage` to the project slide. Renamed field.
+- `src/lib/views/shared/graph/Nodes.svelte`: renamed only. The head comment says "project stage" and is rewrapped.
+- `src/lib/views/shared/links/CrossLinks.svelte`: reads `membersByStage` (`collection.ts`, renamed). Renamed only.
+- `src/lib/views/structure/map/Map.svelte`: reads `stageFilters` and the saved `stages` filter. Renamed only.
+- `src/lib/views/structure/pillars/ArchivalCard.svelte`: reads `group.stage`. The groups are the words of `stages` carrying `dead`, the moved `dead` flag.
+- `src/lib/views/system/audit/Audit.svelte` (this round, ruling 1): head comment only.
+
+`src/lib/data/model/model-collections.ts` is inside `src/lib/data/model/`, so the write list already covers it.
+
+Tests outside the write list:
+- `tests/data/sources/config/boards.test.ts:59`: the expected finding names the option sources `project_stages, project_forms, status_chips`, renamed from `status_chips, project_types`.
+- `tests/checks/tree/boundaries.test.ts:483`: the exported name `tones.ts:stageColor`, renamed from `typeColor`.
+
+Every other changed test file writes `type:`/`stage:` in a manifest, or is `config-folder.test.ts` or an item-14 file.
+
+## Cases, each with the test row or the reading that checks it
+
+No script, probe file or program was written in this round.
+
+- C1, by reading:
+  - `focus.ts:89` `pausesCountdown` reads `stages` `pauses_countdown`; `card.ts:155` calls it.
+  - `focus.ts:114` reads `stages` `deadline_met` for a project.
+  - `ticker.ts:170` stops at a stage carrying `deadline_met`.
+  - `vocab.yml:76` gives `submitted` both flags and `live`.
+- C2, by reading: `stats.ts:91` counts `stages` `submit_ready`; `vocab.yml:74` gives `submit-ready` `#ea580c`, the colour of `active`.
+- C3, by reading: `focus.ts:100`, `collection.ts:815` and `stats.ts:65` read `chips` `blocked`; `vocab.yml:101-117` gives `blocked` the flag.
+- C4, by test row and reading:
+  - Test row 'a stage word or a form as a chip is one finding naming its field' (`tests/data/snapshot/schema-rules.test.ts`).
+  - Reading: the `terminal_live` and `contradictory_chips` findings are gone, by verify grep 7.
+- C5, by reading: the group flags of `vocab.yml:65-85` (ruling 219); `focus.ts:266`, `lines.ts:59` and `collection.ts:833` read `live`. The demo Projects tab count stays as reported in the first section, 5 before and 7 after.
+- C6, by reading: the `publication_kinds` rows `vocab.yml:230-241` read `stages` and `forms`, matched in `audit/publications.ts`.
+- C7, by reading:
+  - `vocab.yml:139` `under-review` carries `#b45309` and `deadline_met`.
+  - `vocab.yml:120` `submitted` carries `deadline_met` and `waiting`.
+  - `vocab.yml:176` `dismissed` carries `lead_closed` and `lead_declined`.
+  - `blocked` has label "blocked (external)" and glyph `purple` (`vocab.yml:101-117`).
+- C8, by test rows of the table 'a status outside its vocabulary names the closest word' (`schema-rules.test.ts`): `not applied`, `under review`, `canceled`, and the case difference `In Prep`.
+- C9, by reading: `lead-application.ts:39` takes the first `statuses` word carrying `default_application`, which is `not-applied` (`vocab.yml:156`).
+- C10, by test row 'writes as the stage of a new idea the one stages: flags new_idea, here the stage scoping' (`tests/server/edit/writes.test.ts`), and by reading `manifest.ts:669`.
+- C11, by reading: `fund_stages` `vocab.yml:204` reads `[in-prep]`, `[submitted, under-review]`, `[planned]`; `config/defaults/layout.yml:322` matches `[in-prep, submitted]`.
+- C12, by reading: `config/defaults/layout.yml:239-241` (in progress, idea, paused) and `:255` (coauthor papers, `journal` and `conference`).
+- C13, by reading:
+  - `manifest-schema.yml:36` `stage` reads `vocab.stages`, which holds the 21 words with no `software`, `tech-report` or `phd`.
+  - `:37` `form` reads `vocab.forms`, the six forms.
+  - `:42` `status.chips` reads `vocab.chips`.
+  - The option sources are at `options.ts:483-548`.
+  - The form on screen is for the landing look.
+- C14, by reading: `ProjectCard.svelte:348-354` and `CardStatus.svelte`, as in ruling 5's table. On screen at landing.
+- C15: not checkable here. No fixture of oculus holds two stage chips; the rule is applied by the landing rewrite (ruling 247).
+- C16, by reading: `hub-names.ts:384-385` adds `chips` and `lead_statuses` to `HUB_LIST`; `stages` and `forms` are not in it, so a hub setting them is the unknown-key finding.
+- C17, by reading: `lines.ts:116` makes a card dormant when no member's stage carries `on_map`. `finished` has no `on_map` and `submitted` has it (`vocab.yml:76`, `:80`).
+- C18, by reading: `rules.ts:186` builds `placedStages` from `stages` `placed`, read at `projects.ts:210`. `submit-ready` carries `placed`; `building` does not (`vocab.yml:72`, `:74`).
+- C19, by test rows 'an entry status and an empty list' and 'a lead status and an empty list' (`schema-rules.test.ts`).
+- C20, by reading:
+  - `manifest-schema.yml:36` makes `stage` required, and no `type` field is declared.
+  - `normalise.ts` reads `manifest.stage` and `manifest.form` only.
+  - Verify grep 7 finds no reader of the old names.
+- C21, by test row 'writes as the stage of a new idea the one stages: flags new_idea, here no stage' (`writes.test.ts`).
+- C22, by reading:
+  - `deck/groups.ts:61-66` keeps a deck by `find.stages` and `find.forms`.
+  - `deck/read.ts:400` takes the maturity from `project.stage`.
+  - `parts/Grid.svelte:42` draws it through `chipLabel`, which gives "nascent (concept)" (`vocab.yml:67`).
+
+## Verify lines after this round's last change
+
+These commands ran from the worktree root after this round's last source change, the `projectStatusWords` doc comment in `tones.ts`. In this round the verify list ran once, and no whole-suite command ran.
+
+1. While working, only the targeted greps and the comment sweep ran. No test file ran outside the verify list.
+2. `npm run format` (exit 0). Then `npm run diagrams && npm run test:quick -- <143 paths>`. The paths are the 125 changed files under `src`, `tests` and `config` (from `diff -rq` against the base copy) plus `docs/HELP.md`, `apps.md`, `data-map.md`, `templates.md` and every file of `docs/diagrams/`:
+   ```
+   test:quick: 143 changed file(s), from the given paths
+   test:quick: 294 test file(s)
+   ok      ASCII gate (1.4 s)
+   ok      prettier (2.1 s): All matched files use Prettier code style!
+   ok      svelte-kit sync (3.3 s)
+   ok      svelte-check (135.4 s): ... COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+   ok      eslint (146.2 s)
+   ok      vitest checks (200.1 s)
+   ok      vitest (270.4 s)
+   ok      vitest slow (362.2 s)
+   test:quick: 365.5 s; every command passed
+   test:quick: not covered: tests that reach no changed file within the import depth, the build, the lint of unchanged files
+   ```
+3. The ASCII gate of `spec.md` over the 143 paths and this report prints nothing (exit 0).
+4. `wc -l` over every file in `git diff --name-only` (134 files) and the new `tier-stage.test.ts`. Over the limit are only documents that were already over it at the base: `docs/templates.md` 1330, `docs/diagrams/writes.dot` 1151, `docs/diagrams/writes.svg` 3895. Sizes of the files this round changed:
+   - `tones.ts` 291
+   - `ProjectCard.svelte` 498
+   - `Audit.svelte` 352
+   - `audit/projects.ts` 546
+   - `data/model/index.ts` 852
+
+   `git diff --stat -- docs` shows only `HELP.md`, `apps.md`, `data-map.md`, `templates.md` and the `layer-data`, `layer-views`, `layers` and `writes` diagrams.
+5. `sh utils/unused-exports.sh` diffed with `migration-O61-base/unused-exports.txt` prints only the two renamed lines: `typeCounts` to `stageCounts` (`structure/graph.ts`) and `TypeCount` to `StageCount` (`board/index.ts`). `projectStatusWords` is not on the list.
+6. Grep 6 prints the same lines as in the first section, each judged there. No line was added.
+7. Grep 7 prints only the `typeWords` lines judged in the first section. `grep -rnE "\btypes:" config/catalogs/vocab.yml` prints nothing. `grep -rn "stageLabel\|hiddenTypes\|typeCounts" src tests docs config --exclude=local.yml` prints nothing.
+8. This round changed one test file, `tests/checks/config/config-folder.test.ts:688-689`. Only the comment was rewrapped, and no assertion changed.
+9. History grep over the comment lines added or changed in the files this round touched. Hits:
+   - `tones.ts` "still renders a page";
+   - `presets.ts` "state saved before it existed" and "which still renders";
+   - `stats.ts` "before any filter".
+
+   All four are the base text already judged in the first section. The new comments of this round hold none of the words. The comments are in `audit/projects.ts`, `Audit.svelte`, `model/index.ts`, `CardStatus.svelte` and `tones.ts`, plus the help line of `config/options/sources.yml`.
+
+## The first run's probe source
+
+Under ruling 262 (a), here is the source of the case probe that gave the first section's before and after results. Its path was `tests/o61-probe.test.ts` in each tree while it ran. The copy kept in the scratchpad was removed after it was quoted here, together with the scratch base copy it ran in. C14 and C22 look up `stageLabel` by name. Ruling 4 of this round removed it, so C14 now gives `label: null` and C22 falls back to `chipLabel`. The label a card draws is checked by reading `ProjectCard.svelte` and `Grid.svelte`, under Cases above.
+
+```ts
+// Scratch probe of the O61 cases, run on the unchanged tree and after the change. Not a test of the
+// suite: it is copied into the worktree for a run and removed afterwards.
+
+import { describe, expect, it } from 'vitest';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { portfolioConfigFrom } from '../src/lib/data/index.ts';
+import { buildOneHub } from './fixtures/hubs/hub-build.ts';
+import { engineDir, loadConfig } from '../src/lib/data/sources/config.ts';
+import { plantScratch } from './fixtures/scratch.ts';
+import { DEMO_HUB } from './fixtures/hubs/real-hub.ts';
+import * as focus from '../src/lib/state/boards/focus.ts';
+import * as stats from '../src/lib/state/boards/board/stats.ts';
+import * as ticker from '../src/lib/state/boards/ticker.ts';
+import * as collection from '../src/lib/state/boards/collection.ts';
+import * as lanes from '../src/lib/state/boards/focus-lanes.ts';
+import * as lines from '../src/lib/state/boards/structure/lines.ts';
+import * as presets from '../src/lib/state/boards/board/presets.ts';
+import * as tones from '../src/lib/state/shared/words/tones.ts';
+import * as keys from '../src/lib/data/shapes/vocab-keys.ts';
+import * as leads from '../src/lib/data/accounts/leads.ts';
+import * as application from '../src/lib/state/feeds/lead-application.ts';
+import * as options from '../src/lib/data/sources/config/catalog/options.ts';
+import * as card from '../src/lib/views/shared/card/card.ts';
+import { auditFindings } from '../src/lib/server/content/audit/scan.ts';
+import { auditRules } from '../src/lib/server/content/audit/rules.ts';
+import { holdersOf } from '../src/lib/data/helpers/hub-names.ts';
+import { textCatalog } from '../src/lib/data/sources/config.ts';
+import { createIdea } from '../src/lib/server/edit/writes/manifest.ts';
+import { configFor } from './server/edit/writes-fixture.ts';
+import { scratchDir } from './fixtures/scratch.ts';
+import { readDeck } from '../src/lib/server/content/deck/read.ts';
+import type { Project } from '../src/lib/data/model/index.ts';
+import { setCatalog } from '../src/lib/state/shared/words/text.ts';
+
+const LOADED = loadConfig(engineDir()).config;
+const CONFIG = portfolioConfigFrom(LOADED);
+const CATALOG = textCatalog(LOADED);
+setCatalog(CATALOG);
+const NOW = Date.parse('2026-10-20T12:00:00Z');
+const SOON = '2026-10-23';
+const anyOf = (mod: Record<string, unknown>, ...names: string[]): any =>
+    names.map((name) => mod[name]).find((one) => typeof one === 'function');
+
+/** A hub of one or more manifests, each `id: text`, under projects/active. */
+function hubOf(manifests: Record<string, string>, extra: Record<string, string> = {}): any {
+    const files: Record<string, string> = { ...extra };
+    for (const [id, text] of Object.entries(manifests)) {
+        files[`projects/active/${id}/project.yml`] = `id: ${id}\ntitle: ${id}\n${text}`;
+    }
+    const hub = plantScratch('oculus-o61-', files, ['projects/active']);
+    return { hub, ...buildOneHub(hub, CONFIG) };
+}
+
+const translate = (key: string, ...args: (string | number)[]): string => `${key}(${args.join(',')})`;
+
+/** The deadline of a card through card.ts, whichever of its two signatures the tree has. */
+function dueOf(project: Project): unknown {
+    const fn = card.deadline as unknown as (...args: unknown[]) => unknown;
+    return fn.length >= 5
+        ? fn(project, project.chips, NOW, translate, LOADED)
+        : fn(project, NOW, translate, LOADED);
+}
+
+describe('O61 cases', () => {
+    it('C1 a stage submitted with a deadline', () => {
+        const { snapshot } = hubOf({
+            alpha: `tier: projects\nstage: submitted\ndeadline: ${SOON}\nfocus: review\n`
+        });
+        const project = snapshot.entities.projects.alpha as Project;
+        const due = dueOf(project);
+        const tick = ticker.ticker(snapshot, LOADED, NOW);
+        const onTicker = JSON.stringify(tick).includes('"alpha"');
+        const wait = focus.waiting(snapshot, LOADED, {});
+        console.log('C1', JSON.stringify({ due, onTicker, venues: wait.venues }));
+        expect(due).toEqual({ label: SOON });
+        expect(onTicker).toBe(false);
+        expect(wait.venues.reduce((n, one) => n + one.count, 0)).toBe(1);
+    });
+
+    it('C2 a stage submit-ready', () => {
+        const { snapshot } = hubOf({ alpha: 'tier: projects\nstage: submit-ready\n' });
+        const project = snapshot.entities.projects.alpha as Project;
+        const counted = stats.stats([{ project, chips: project.chips } as never], {}, LOADED);
+        tones.setVocab(LOADED, { primary: null, lists: {} });
+        const stageTone = anyOf(tones as never, 'stageTone', 'typeTone');
+        const tone = stageTone((project as any).stage ?? (project as any).type ?? 'submit-ready');
+        console.log('C2', JSON.stringify({ submitReady: counted.submitReady, tone, active: tones.toneOf('#ea580c') }));
+        expect(counted.submitReady).toBe(1);
+        expect(tone).toBe(tones.toneOf('#ea580c'));
+    });
+
+    it('C3 chips [blocked] on stage active', () => {
+        const { snapshot } = hubOf({ alpha: 'tier: projects\nstage: active\nstatus:\n  chips: [blocked]\n' });
+        const project = snapshot.entities.projects.alpha as Project;
+        const blocked = focus.isBlocked(project, LOADED);
+        const groups = collection.groupProjects([project], LOADED);
+        const line = stats.waitingLine(project, LOADED, {}, {});
+        console.log('C3', JSON.stringify({ blocked, groups: groups.map((g) => [g.type, g.warn]), line }));
+        expect(blocked).toBe(true);
+        expect(groups.map((g) => [g.type, g.warn])).toEqual([['work', true]]);
+        expect(line?.kind).toBe('blocked');
+    });
+
+    it('C4 a stage word or a form as a chip', () => {
+        const { snapshot } = hubOf({
+            alpha: 'tier: projects\nstage: active\nstatus:\n  chips: [submitted]\n',
+            beta: 'tier: projects\nstage: active\nstatus:\n  chips: [journal]\n'
+        });
+        const of = (id: string): string[] =>
+            snapshot.findings
+                .filter((one: any) => one.file.endsWith(`/${id}/project.yml`))
+                .map((one: any) => `${one.key}: ${one.message}`);
+        console.log('C4 alpha', JSON.stringify(of('alpha')));
+        console.log('C4 beta', JSON.stringify(of('beta')));
+        const projects = [
+            { id: 'p1', tier: 'archive', stage: 'published', type: 'published', chips: ['numbers-pending', 'lead'] },
+            { id: 'p2', tier: 'projects', stage: 'active', type: 'active', chips: ['submit-ready', 'blocked'] }
+        ].map((one) => ({
+            ...(snapshot.entities.projects.alpha as Project),
+            ...one,
+            folder: `projects/${one.id}`,
+            file: `projects/${one.id}/project.yml`
+        })) as Project[];
+        const found = auditFindings({
+            hub: scratchDir('oculus-o61-audit-'),
+            root: 'hub',
+            primary: true,
+            held: holdersOf(projects),
+            projects,
+            collections: [],
+            rules: auditRules(LOADED),
+            catalog: CATALOG
+        });
+        const old = found.filter((one) => /terminal|contradict|cannot both/i.test(one.message));
+        console.log('C4 audit', JSON.stringify(old.map((one) => one.message)));
+        expect(of('alpha').length).toBe(1);
+        expect(of('alpha')[0]).toMatch(/submitted.*stage/);
+        expect(of('beta').length).toBe(1);
+        expect(of('beta')[0]).toMatch(/journal.*form/);
+        expect(old).toEqual([]);
+    });
+
+    it('C5 the groups of the stage words, and the demo Projects tab count', () => {
+        const stages = (LOADED as any).stages ?? {};
+        const groupOf = (row: any): string =>
+            row?.idea === true ? 'idea' : row?.live === true ? 'live' : row?.terminal === true ? 'terminal' : 'none';
+        const groups = Object.fromEntries(Object.entries(stages).map(([word, row]) => [word, groupOf(row)]));
+        console.log('C5 groups', JSON.stringify(groups));
+        const { snapshot } = hubOf({ alpha: 'tier: projects\nstage: submitted\n' });
+        const project = snapshot.entities.projects.alpha as Project;
+        const inFlight = lines.inFlight([project], LOADED).length;
+        const cross = collection.groupProjects([project], LOADED).map((g) => g.type);
+        const unplaced = focus.unplaced([project], LOADED).length;
+        const demo = loadConfig(engineDir(), { hub: DEMO_HUB }).config;
+        const built = buildOneHub(DEMO_HUB, portfolioConfigFrom(demo)).snapshot;
+        const preset = presets.presetFor('projects', demo);
+        const first = preset.rollup[0]?.id;
+        const count = Object.values(built.entities.projects as Record<string, Project>).filter(
+            (one) => one.tier === 'projects' && presets.bucketOf(one, preset.rollup) === first
+        ).length;
+        console.log('C5', JSON.stringify({ inFlight, cross, unplaced, demoProjectsTab: count }));
+        expect(groups).toEqual({
+            idea: 'idea', nascent: 'idea', scoping: 'idea',
+            'de-risking': 'live', exploring: 'live', 'in-prep': 'live', building: 'live', running: 'live',
+            active: 'live', 'submit-ready': 'live', submitted: 'live', revision: 'live', accepted: 'live',
+            published: 'terminal', paused: 'none', finished: 'terminal', archived: 'terminal', nogo: 'terminal',
+            dropped: 'terminal', disproved: 'terminal', abandoned: 'terminal'
+        });
+        expect([inFlight, cross, unplaced]).toEqual([1, ['work'], 1]);
+    });
+
+    it('C6 publication_kinds', () => {
+        const hub = scratchDir('oculus-o61-pub-');
+        const site = ['elsewhere:', '  papers:'];
+        const rows: [string, string, string][] = [
+            ['p1', 'in-prep', ''],
+            ['p2', 'submit-ready', ''],
+            ['p3', 'submitted', ''],
+            ['p4', 'revision', ''],
+            ['p5', 'published', 'thesis'],
+            ['p6', 'published', 'journal']
+        ];
+        for (const [id] of rows) site.push(`    - title: Paper ${id} on clustering`);
+        writeFileSync(join(hub, 'publications.yml'), `${site.join('\n')}\n`);
+        const projects = rows.map(([id, stage, form]) => ({
+            id,
+            tier: 'projects',
+            stage,
+            type: stage,
+            ...(form === '' ? {} : { form }),
+            chips: form === '' ? [] : [form],
+            title: `Paper ${id} on clustering`,
+            folder: `projects/${id}`,
+            file: `projects/${id}/project.yml`,
+            results: [], ideas: [], waitingOn: [], followups: [], subtasks: [], relatedIds: [],
+            resourceIds: [], fundingIds: [], datasetIds: [], pillarIds: [], domainIds: [],
+            collaborators: [], docs: []
+        })) as unknown as Project[];
+        const found = auditFindings({
+            hub,
+            root: 'hub',
+            primary: true,
+            held: holdersOf(projects),
+            projects,
+            collections: [],
+            rules: { ...auditRules(LOADED), publicationsFile: 'publications.yml' },
+            catalog: CATALOG
+        }).filter((one) => one.kind === 'publink' && one.scope !== 'website');
+        const said = Object.fromEntries(found.map((one) => [one.scope, one.message]));
+        console.log('C6', JSON.stringify(said));
+        expect(said['projects/p1']).toContain('papers-in-preparation');
+        expect(said['projects/p2']).toContain('papers-in-preparation');
+        expect(said['projects/p3']).toContain('papers-in-review');
+        expect(said['projects/p4']).toContain('papers-in-review');
+        expect(said['projects/p5']).toContain('thesis');
+        expect(said['projects/p6']).toContain('journal');
+    });
+
+    it('C7 entry, grant, lead and chip as today', () => {
+        const { snapshot } = hubOf(
+            {},
+            {
+                '.oculus/data/academic/events.yml': `schema:\n  - { field: title, type: text }\n  - { field: status, type: text }\n  - { field: date, type: date }\nentries:\n  - { title: Talk, status: under-review, date: "${SOON}" }\n`,
+                '.oculus/data/academic/funding.yml': `schema:\n  - { field: title, type: text }\n  - { field: status, type: text }\n  - { field: deadline, type: date }\nentries:\n  - { title: Grant, status: submitted, deadline: "${SOON}" }\n`
+            }
+        );
+        const statusFindings = snapshot.findings.filter((one: any) => /status/.test(one.key)).map((one: any) => one.message);
+        tones.setVocab(LOADED, { primary: null, lists: {} });
+        const tone = tones.statusTone('under-review');
+        const tick = JSON.stringify(ticker.ticker(snapshot, LOADED, NOW));
+        const grants = focus.waiting(snapshot, LOADED, {}).grants;
+        const lead = [leads.isLeadClosed(LOADED, 'dismissed'), leads.isLeadDeclined(LOADED, 'dismissed')];
+        const chip = [tones.chipLabel('blocked'), tones.chipGlyphName('blocked')];
+        console.log('C7', JSON.stringify({ statusFindings, tone, talkOnTicker: tick.includes('Talk'), grantOnTicker: tick.includes('Grant'), grants, lead, chip }));
+        expect(statusFindings).toEqual([]);
+        expect(tone).toBe(tones.toneOf('#b45309'));
+        expect(tick.includes('Talk')).toBe(false);
+        expect(tick.includes('Grant')).toBe(false);
+        expect(grants).toEqual(['Grant']);
+        expect(lead).toEqual([true, true]);
+        expect(chip).toEqual(['blocked (external)', 'purple']);
+    });
+
+    it('C8 a spaced or misspelled entry status names the closest word', () => {
+        const { snapshot } = hubOf(
+            {},
+            {
+                '.oculus/data/academic/applications.yml': 'schema:\n  - { field: title, type: text }\n  - { field: status, type: text }\nentries:\n  - { title: A, status: not applied }\n  - { title: B, status: canceled }\n  - { title: C, status: In Prep }\n'
+            }
+        );
+        const said = snapshot.findings
+            .filter((one: any) => one.file.endsWith('applications.yml') && /status/.test(one.key))
+            .map((one: any) => `${one.key}: ${one.message}`);
+        console.log('C8', JSON.stringify(said));
+        expect(said.length).toBe(3);
+        expect(said[0]).toContain('not-applied');
+        expect(said[1]).toContain('cancelled');
+        expect(said[2]).toContain('in-prep');
+    });
+
+    it('C9 the apply control writes not-applied', () => {
+        const fields = application.applicationFromLead({ title: 'A lead' }, LOADED);
+        console.log('C9', JSON.stringify(fields));
+        expect(fields.status).toBe('not-applied');
+    });
+
+    it('C10 a new idea writes stage nascent and no chip', () => {
+        const root = scratchDir('oculus-o61-idea-');
+        const out = createIdea(root, { ...configFor(), scan: [{ dir: 'projects/ideas' }], newProjectDir: { projects: 'projects/ideas' } } as never, { id: 'new-idea', title: 'New', tier: 'projects' });
+        const text = out.changed.length > 0 ? readFileSync(join(root, out.changed[0]), 'utf8') : JSON.stringify(out);
+        console.log('C10', JSON.stringify(text));
+        expect(text).toContain('stage: nascent');
+        expect(text).toContain('chips: []');
+        expect(text).not.toMatch(/^type:/m);
+    });
+
+    it('C11 the Focus funding column and the Funding count', () => {
+        const { snapshot } = hubOf(
+            {},
+            {
+                '.oculus/data/academic/funding.yml': 'schema:\n  - { field: title, type: text }\n  - { field: status, type: text }\nentries:\n  - { title: G1, status: in-prep }\n  - { title: G2, status: under-review }\n'
+            }
+        );
+        const band = lanes.collectionLanes(snapshot, LOADED);
+        const placed = band.funding.map((stage) => [stage.label, stage.items.map((one) => one.title)]);
+        const match = (LOADED as any).counts?.funding?.match;
+        console.log('C11', JSON.stringify({ placed, match }));
+        expect(placed).toEqual([['In prep', ['G1']], ['Submitted', ['G2']]]);
+        expect(match).toEqual(['in-prep', 'submitted']);
+    });
+
+    it('C12 the board groups', () => {
+        const { snapshot } = hubOf({
+            a: 'tier: projects\nstage: submitted\n',
+            b: 'tier: projects\nstage: exploring\n',
+            c: 'tier: projects\nstage: nascent\n',
+            d: 'tier: projects\nstage: paused\n',
+            e: 'tier: coauthor\nstage: published\nform: journal\n'
+        });
+        const projectsBoard = presets.presetFor('projects', LOADED).rollup;
+        const coauthorBoard = presets.presetFor('coauthor', LOADED).rollup;
+        const all = snapshot.entities.projects as Record<string, Project>;
+        const got = {
+            a: presets.bucketOf(all.a, projectsBoard),
+            b: presets.bucketOf(all.b, projectsBoard),
+            c: presets.bucketOf(all.c, projectsBoard),
+            d: presets.bucketOf(all.d, projectsBoard),
+            e: presets.bucketOf(all.e, coauthorBoard)
+        };
+        console.log('C12', JSON.stringify(got));
+        expect(got).toEqual({ a: 'in-progress', b: 'in-progress', c: 'idea', d: 'paused', e: 'papers' });
+    });
+
+    it('C13 the form offers the stages, the forms and the chips', () => {
+        const items = (source: string): unknown => options.configItems(source as never, LOADED);
+        const got = {
+            stages: items('project_stages'),
+            forms: items('project_forms'),
+            chips: items('status_chips'),
+            types: items('project_types')
+        };
+        console.log('C13', JSON.stringify(got));
+        expect((got.stages as string[] | null)?.length).toBe(21);
+        expect(got.forms).toEqual(['journal', 'conference', 'thesis', 'abstract', 'poster', 'tech-report']);
+        expect(got.chips).toEqual(['blocked', 'results-positive', 'admin-prep', 'numbers-pending', 'ai-tells', 'lead', 'coauthor']);
+    });
+
+    it('C14 a card of stage in-prep and form journal', () => {
+        tones.setVocab(LOADED, { primary: null, lists: {} });
+        const stageTone = anyOf(tones as never, 'stageTone', 'typeTone');
+        const stageLabel = anyOf(tones as never, 'stageLabel');
+        const got = {
+            label: stageLabel === undefined ? null : stageLabel('in-prep'),
+            tone: stageTone('in-prep'),
+            journal: [tones.chipLabel('journal'), tones.chipGlyphName('journal')]
+        };
+        console.log('C14', JSON.stringify(got));
+        expect(got).toEqual({ label: 'in preparation', tone: tones.toneOf('#a16207'), journal: ['journal article', 'journals'] });
+    });
+
+    it('C16 a hub sets chips, lead_statuses, stages and forms', () => {
+        const hub = plantScratch('oculus-o61-hubcfg-', {
+            '.oculus/config.yml': 'chips:\n  waiting: { label: waiting }\nlead_statuses:\n  open: { default_lead: true }\nstages:\n  idea: {}\nforms:\n  journal: {}\n'
+        });
+        const loaded = loadConfig(engineDir(), { hub });
+        const said = loaded.findings.filter((one) => one.file.endsWith('config.yml')).map((one) => `${one.key}: ${one.message}`);
+        console.log('C16', JSON.stringify({ said, chips: Object.keys((loaded.config as any).chips ?? {}), leadStatuses: Object.keys((loaded.config as any).lead_statuses ?? {}) }));
+        expect(Object.keys((loaded.config as any).chips ?? {})).toEqual(['waiting']);
+        expect(Object.keys((loaded.config as any).lead_statuses ?? {})).toEqual(['open']);
+        expect(said.map((one) => one.split(':')[0]).sort()).toEqual(['forms', 'stages']);
+    });
+
+    it('C17 the dormancy of a Pillars or Domains card', () => {
+        const { snapshot } = hubOf({ a: 'tier: projects\nstage: finished\n', b: 'tier: projects\nstage: submitted\n' });
+        const all = snapshot.entities.projects as Record<string, Project>;
+        const got = [lines.isDormant([all.a], LOADED), lines.isDormant([all.a, all.b], LOADED)];
+        console.log('C17', JSON.stringify(got));
+        expect(got).toEqual([true, false]);
+    });
+
+    it('C18 the venue finding of a placed stage', () => {
+        const { snapshot, hub } = hubOf({ a: 'tier: projects\nstage: submit-ready\n', b: 'tier: projects\nstage: building\n' });
+        const projects = Object.values(snapshot.entities.projects) as Project[];
+        const found = auditFindings({ hub, root: 'hub', primary: true, held: holdersOf(projects), projects, collections: [], rules: auditRules(LOADED), catalog: CATALOG })
+            .filter((one) => one.where === 'venue_id')
+            .map((one) => one.scope);
+        console.log('C18', JSON.stringify(found));
+        expect(found).toEqual(['projects/active/a']);
+    });
+
+    it('C19 the closest word of an empty list', () => {
+        const closest = anyOf(keys as never, 'closestWord');
+        console.log('C19', closest === undefined ? 'no closestWord' : JSON.stringify(closest('x', [])));
+        expect(closest).toBeDefined();
+        expect(closest('x', [])).toBeUndefined();
+    });
+
+    it('C20 a manifest that still writes type:', () => {
+        const { snapshot } = hubOf({ a: 'tier: projects\ntype: active\n' });
+        const said = snapshot.findings.filter((one: any) => one.file.endsWith('/a/project.yml')).map((one: any) => `${one.key}: ${one.message}`);
+        const project = snapshot.entities.projects.a as any;
+        console.log('C20', JSON.stringify({ said, stage: project.stage, type: project.type }));
+        expect(said.some((one: string) => one.startsWith('type:'))).toBe(true);
+        expect(said.some((one: string) => one.startsWith('stage:'))).toBe(true);
+        expect(project.stage).toBeUndefined();
+        expect(project.type).toBeUndefined();
+    });
+
+    it('C21 no stage carries new_idea', () => {
+        const root = scratchDir('oculus-o61-idea2-');
+        const base = configFor();
+        const stages = Object.fromEntries(Object.entries((base.merged as any).stages ?? (base.merged as any).types ?? {}).map(([word, row]: [string, any]) => [word, { ...row, new_idea: undefined, idea: undefined }]));
+        const merged = { ...base.merged, stages, types: stages };
+        const out = createIdea(root, { ...base, merged, scan: [{ dir: 'projects/ideas' }], newProjectDir: { projects: 'projects/ideas' } } as never, { id: 'new-idea', title: 'New', tier: 'projects' });
+        const text = out.changed.length > 0 ? readFileSync(join(root, out.changed[0]), 'utf8') : JSON.stringify(out);
+        console.log('C21', JSON.stringify(text));
+        expect(text).not.toMatch(/^(stage|type):/m);
+    });
+
+    it('C22 the Present deck of ideas', () => {
+        const hub = plantScratch('oculus-o61-deck-', {
+            'projects/active/a/project.yml': 'id: a\ntitle: A\ntier: projects\nstage: nascent\n',
+            'projects/active/b/project.yml': 'id: b\ntitle: B\ntier: projects\nstage: building\n',
+            'projects/active/a/present/present.yml': "deck: { title: A }\norder: [main.md]\n",
+            'projects/active/a/present/main.md': '# A\n',
+            'projects/active/b/present/present.yml': "deck: { title: B }\norder: [main.md]\n",
+            'projects/active/b/present/main.md': '# B\n',
+            'deck/present.yml': "deck: { title: P }\ngroups:\n  ideas:\n    find: { folders: projects/*/*/present, stages: [nascent, scoping, de-risking] }\n    discover: true\norder:\n  - { kind: grid, of: ideas, title: Ideas }\n"
+        }, ['projects/active']);
+        const config = { ...CONFIG, portfolioDeck: 'deck' };
+        const { snapshot } = buildOneHub(hub, config);
+        const projects = (Object.values(snapshot.entities.projects) as Project[]).map((one) => ({ ...one, id: 'hub:' + one.id.replace(/^hub:/, ''), root: 'hub' }));
+        const deck = readDeck(
+            { roots: [{ key: 'hub', dir: hub }] as never, primary: { key: 'hub', dir: hub }, config, projects } as never,
+            'hub',
+            'deck'
+        );
+        const grid = (deck as any).slides?.find((one: any) => one.kind === 'grid');
+        console.log('C22', JSON.stringify(grid?.cards ?? deck));
+        tones.setVocab(LOADED, { primary: null, lists: {} });
+        const label = anyOf(tones as never, 'stageLabel') ?? tones.chipLabel;
+        const drawn = (grid.cards as any[]).map((one) => [one.name, label(one.maturity ?? '')]);
+        console.log('C22 drawn', JSON.stringify(drawn));
+        expect(drawn).toEqual([['A', 'nascent (concept)']]);
+    });
+});
+```

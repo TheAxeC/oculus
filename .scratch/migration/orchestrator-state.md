@@ -35,8 +35,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O61
   brief_check: agents/reviews/O61-brief-check.md (adc42eb23995ab62d, claude-opus-5-5, 259489 tokens, 97 tool uses, 11 min 56 s)
   report: agents/reviews/O61-report.md
-  builder_usage: before the pause: no completion notice (stopped); after the resume: 101296 tokens, 180 tool uses, 19 min 59 s
-  reviewer_report: agents/reviews/O61-refuter.md (a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s)
+  builder_usage: before the pause: no completion notice (stopped); after the resume: 101296 tokens, 180 tool uses, 19 min 59 s; round 1: 215797 tokens, 66 tool uses, 12 min 41 s
+  reviewer_report: agents/reviews/O61-refuter.md (a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s); over round 1: running: a0a3962a17cebf0fb, claude-opus-5-5
   round: 1
   landing: not-started
   shared_paths: with O65: docs/HELP.md (O65 lines 115-124 and 160-169, O61 the lines naming the type, the chips and the statuses, near 509 and 541): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
