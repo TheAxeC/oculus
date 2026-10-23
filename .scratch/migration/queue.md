@@ -13,7 +13,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O39 part F (the first frame paints the theme's ground), 2026-10-23, 467ffbec.
+- O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.
 - O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.
 - O54 (own hub first, internal ids `<hub>:<key>`), 2026-10-23, 08567e63.
 - O39 part E (the first HTML carries the start theme), 2026-10-23, a7d82144.
