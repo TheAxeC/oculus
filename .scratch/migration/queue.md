@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). State: building (builder ac3718e2ed885f054, base 282f3c2a).
-- O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). State: brief checked (`agents/reviews/O53-brief-check.md`); its findings are closed in the brief next, then the preparation commit and the launch.
-- O56 (new project, entry and Save to Literature ask which hub). State: brief checked (`agents/reviews/O56-brief-check.md`); its findings are closed in the brief next, then the preparation commit and the launch.
+- O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). State: building (builder ac515994c74d874b8, base 74020bf0).
+- O56 (new project, entry and Save to Literature ask which hub). State: building (builder a449c7dbd8ad9a6ed, base 892189d7).
 
 Queued, in order (4 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
