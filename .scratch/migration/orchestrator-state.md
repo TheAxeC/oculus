@@ -36,8 +36,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O61-brief-check.md (adc42eb23995ab62d, claude-opus-5-5, 259489 tokens, 97 tool uses, 11 min 56 s)
   report: agents/reviews/O61-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 101296 tokens, 180 tool uses, 19 min 59 s
-  reviewer_report: running: a808f3fdfae84a0f5, claude-opus-5-5
-  round: 0
+  reviewer_report: agents/reviews/O61-refuter.md (a808f3fdfae84a0f5, claude-opus-5-5, 109966 tokens, 90 tool uses, 29 min 55 s)
+  round: 1
   landing: not-started
   shared_paths: with O65: docs/HELP.md (O65 lines 115-124 and 160-169, O61 the lines naming the type, the chips and the statuses, near 509 and 541): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
 - step: O53
@@ -52,8 +52,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O53-brief-check.md (a778b73d30beb0302, claude-opus-5-5, 254814 tokens, 101 tool uses, 11 min 49 s)
   report: agents/reviews/O53-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 238668 tokens, 87 tool uses, 20 min 1 s
-  reviewer_report: running: a9541a55695dc8e97, claude-opus-5-5
-  round: 0
+  reviewer_report: agents/reviews/O53-refuter.md (a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s)
+  round: 1
   landing: not-started
   shared_paths: with O61: config/schemas/manifest-schema.yml, normalise.ts, validate.ts, src/lib/data/model/, presets.ts, items.ts, collection.ts, graph.ts, forms/schema.ts, new-entry.ts, card.ts, ProjectCard.svelte, Projects.svelte, map Controls.svelte, config/text/, docs/HELP.md, data-map.md, templates.md, apps.md, the demo hub's project.yml files (O53 the lead, authors, collaborators and self lines; O61 the type, stage, status and vocabulary lines): different lines of each file, simple to merge, any adjacent-line conflict resolved by the orchestrator at the later landing; with O56: new-entry.ts (O53 takes taskFields's key loop out into a key maker, O56 changes the collection taskFields and addTask take), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, new-entry.ts merged by hand at the later landing; docs/diagrams/ regenerated at each landing (npm run diagrams)
 - step: O56
@@ -68,8 +68,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O56-brief-check.md (a837bbfa456b7963d, claude-opus-5-5, 232172 tokens, 78 tool uses, 10 min 51 s)
   report: agents/reviews/O56-report.md
   builder_usage: before the pause: no completion notice (stopped); after the resume: 161697 tokens, 201 tool uses, 21 min 37 s
-  reviewer_report: running: a11ec4587720951e0, claude-opus-5-5
-  round: 0
+  reviewer_report: agents/reviews/O56-refuter.md (a11ec4587720951e0, claude-opus-5-5, 281356 tokens, 71 tool uses, 26 min 1 s)
+  round: 1
   landing: not-started
   shared_paths: with O53: as O53's entry says; with O61: new-entry.ts (O61 the vocabulary words, O56 the collection taskFields and addTask take), the comment of lead-apply.ts:5 (O61) beside the apply menu (O56), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
 - step: O39 part F
@@ -83,8 +83,8 @@ dispatch:         # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O39-partF-brief-check.md (af556f98c3e4cc9ab, claude-opus-5-5, 228914 tokens, 59 tool uses, 10 min 42 s)
   report: agents/reviews/O39-partF-report.md
   builder_usage: 267220 tokens, 109 tool uses, 24 min 8 s
-  reviewer_report: running: add6b720b0361987f, claude-opus-5-5
-  round: 0
+  reviewer_report: agents/reviews/O39-partF-refuter.md (add6b720b0361987f, claude-opus-5-5, 243598 tokens, 57 tool uses, 24 min 10 s)
+  round: 1
   landing: not-started
   shared_paths: with O53, O56 and O61: none of their briefs names a file part F writes; docs/diagrams/ regenerated at each landing (npm run diagrams)
 ```
@@ -224,6 +224,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 264 (2026-10-23, O61's review, B2): after O61 a project's status mark (the glyph beside a stage word on Focus lanes and the Projects list) takes the stage's one colour, where it took the old `statuses:` colour of the chip before. Words whose hue changes: `submitted` amber `#b45309` to sky `#0ea5e9`, `in-prep` violet `#7c5cff` to `#a16207`, `published` sky `#0ea5e9` to green `#16a34a`, and exploring, submit-ready, nogo, disproved, abandoned and dropped, which took their icon's hue and now take the stage colour. The brief gave each stage row one colour (the type colour where the word had one) and said nothing of the mark. Options: (a) one colour per stage word, the card's fill and the mark alike; (b) stage rows gain a second key, the mark's colour, holding today's hues, a new key of `vocab.yml`. Recommendation: (a), a judgment: one word with one colour is what ruling 219's rows give, and the two hues existed only because one word sat in two lists; (b) adds a config key to keep a split the merge removes. Neither option leaves work undone. O61's report states the change either way; O61 does not land until you rule.
+- 263 (2026-10-23, O39 part F's review): two rule texts disagree on whether a builder may read git. spec.md "Where you work" says a builder runs no git command, read-only ones included, and every repair-round brief repeats it. The `plan-orchestration` skill's text for the builder's dispatch message says that reading with `git status`, `git diff` and `git show` is fine, and part F's builder ran such reads on that word. Skills are never edited, so the choice is in spec.md or in the dispatch messages. Options: (a) spec.md allows a builder the three read-only forms the skill names (`git status`, `git diff`, `git show`), and nothing else; (b) spec.md stands, and every dispatch message from now on says that no git command is run, read-only ones included, against the skill's text. Recommendation: (a), a judgment: the three reads change nothing, the reviewer already runs the same three, and a builder that compares its tree with the base copy by hand does the same work slower and with more room for a wrong read; (b) keeps a ban that only costs the builder time. Until you rule, part F's git reads are not counted as a finding.
 - 262 (2026-10-23, the reports of O61 and O53): both builders ran their cases through programs their briefs did not build, and each brief says no script is written for the step without your approval quoted from a line of `plan.md`'s Rulings. O61 wrote a probe test file, `tests/o61-probe.test.ts`, into a copy of the base tree, ran it there (18 failed, 3 passed of 21) and in its worktree after the change (21 passed), then deleted it; nothing of it is in the diff. O53 ran its cases as `node --input-type=module -` programs given on the command line, with no file written (its report, judgment J1). Until you rule, the case results those programs gave are not used, and neither step lands. Options: (a) approve, for these two steps and the steps after them, a case-run program that only prints the result of each case of the brief, writes nothing into the step's diff, and has its source and output quoted in the report; the results of O61 and O53 are then used, and each brief from now on states this approval; (b) do not approve: the results are discarded, each case is judged by the reviewer and at landing by reading the code and by the tests the step has, and each brief from now on forbids such programs outright; (c) do not approve for the future, but accept these two runs once. Recommendation: (a), a judgment: a case run computes one fact per input (what the code gives for it), which is what the hub's rule lets a script do, and a quoted run is better evidence than a reading; (b) is the lazy option, since it throws away runs already made and replaces evidence with a reading; (c) leaves the next builder in the same place.
 
 ## Closed items
@@ -477,6 +479,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (four steps in repair round 1). The four reviews are saved and recorded under `reviewer_report`: `agents/reviews/O61-refuter.md`, `O53-refuter.md`, `O56-refuter.md`, `O39-partF-refuter.md`. Each step's round 1 is sent (`agents/briefs/<step>-round1.md`, copied into its worktree's ledger; snapshot `.agents/worktrees/migration-<step>-round-1` with `files.txt`) and its builder resumed. Open items 263 (spec.md's git ban against the skill's dispatch text) and 264 (O61's status-mark hues) raised. O61 and O53 do not land until 262 is ruled, O61 also until 264. In flight (4 of 6): O61, O53, O56, O39 part F, each in repair round 1. Open items: 264, 263, 262.
 - 2026-10-23 (O61, O53 and O56 reported; their reviews running). The builders of O61, O53 and O56 reported, each report saved under `agents/reviews/` with its `builder_usage`. `/refute` was run for each: reviewers a808f3fdfae84a0f5 (O61), a9541a55695dc8e97 (O53) and a11ec4587720951e0 (O56), each served claude-opus-5-5, each recorded under `reviewer_report` as running. Open item 262 raised: the case-run programs of O61 (a probe test file in a base copy, removed) and O53 (inline `node --input-type=module -` programs) were not built by their briefs; their results are not used and neither step lands until Axel rules. In flight (4 of 6): O61 (review), O53 (review), O56 (review), O39 part F (review; its builder reported, report saved with its usage, reviewer add6b720b0361987f, claude-opus-5-5). Open items: 262.
 - 2026-10-23 (O65 landed). O65 is on main (booked under O65 in `plan.md`, report `agents/reviews/O65-landing.md`), checked in the gate worktree (`test:quick` 137.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME); ruling 259 (a) made at landing (Cmd+K Shift+Enter pins and unpins in the editor), looked at on a scratch server on 8797. Open item 260 raised (three test rows with no approved entry). The brief-check findings of O53 and O56 are closed in their briefs (each report's Closed heading), prepared at 74020bf0 and 892189d7. In flight (4 of 6): O61 (building), O53 (building, ac515994c74d874b8), O56 (building, a449c7dbd8ad9a6ed), O39 part F (building, ad81f9b1c597670ba, the brief with ruling 261 (a) copied into its worktree). Axel paused the three builders (O61, O53, O56) and resumed them the same day. Rulings 260 (a) and 261 (a) booked. Open items: none. `queue.md` rewritten whole.
 - 2026-10-23 (O54 landed). O54 is on main (booked under O54 in `plan.md`, report `agents/reviews/O54-landing.md`), checked in the gate worktree (`test:quick` 240.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME, 229 files); nine fixes at landing, among them the page of a feed entry in a workspace with no primary (`hubSchemas`) and the shared-module run of part E's hook row. Ruling 238's one-time change of `~/.oculus/layouts.json` and `views.json` is applied (six places; a second run finds nothing). Found at the look and folded into O60 (Z468): with no primary the merged config reads no hub's settings file, so a lead's fit shows `-`. In flight (1 of 6): O65 (reviewed over round 1, /land next). Next: /land O65; then /spec O61, O53 and O56; O39's dev-server first paint and its closing (C8, the desktop look after `npm run app:package`).
