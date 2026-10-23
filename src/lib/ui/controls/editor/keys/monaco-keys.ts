@@ -1,9 +1,9 @@
 // Layer 3, primitive. Monaco's own keys, as the Keyboard Shortcuts view lists them: each editor
 // action Monaco registers, under its label, with each of its default keybindings, which Monaco's
-// keybinding registry holds already bound to the platform the page runs on. A keybinding whose
-// first press is a key the editor gives up (chords.ts `freedKeys`) runs nothing in the editor, so
-// it is left out, and the chords given up are listed as the palette lists them: under the
-// action's label with the chord beside it, run from the palette (chords.ts `chordActions`).
+// keybinding registry holds already bound to the platform the page runs on, the chords under Cmd+K
+// and, on macOS, Delete All Right on Ctrl+K among them. A keybinding whose first press is a key the
+// editor gives up to the workbench (chords.ts `freedKeys`) runs nothing in the editor, so it is
+// left out.
 //
 // Monaco's public API gives the actions without their keys, so the registry of editor actions and
 // the keybinding registry are read, internal modules loaded once Monaco has started its services
@@ -11,14 +11,11 @@
 
 import type * as Monaco from 'monaco-editor';
 import { sameChord, type Chord } from '$lib/data/helpers/keys/oculus/bindings';
-import { freedKeys, removedChords } from '../chords';
+import { freedKeys } from '../chords';
 import type { KeyPress } from '../types';
 
-/**
- * One key of Monaco's: the action's id and label and the presses one after the other. `palette`
- * marks a chord the editor gave up, which the palette runs under the action's label.
- */
-export type EditorShortcut = { id: string; label: string; chords: Chord[]; palette?: true };
+/** One key of Monaco's: the action's id and label and the presses one after the other. */
+export type EditorShortcut = { id: string; label: string; chords: Chord[] };
 
 /** A press of the editor's own tables as a chord: Cmd on macOS is Meta, Monaco's CtrlCmd. */
 function chordOfPress(monaco: typeof Monaco, press: KeyPress, mac: boolean): Chord {
@@ -42,7 +39,7 @@ export async function loadShortcuts(
         import('monaco-editor/editor/browser/editorExtensions'),
         import('monaco-editor/platform/keybinding/common/keybindingsRegistry')
     ]);
-    const freed = freedKeys(mac).map((press) => chordOfPress(monaco, press, mac));
+    const freed = freedKeys().map((press) => chordOfPress(monaco, press, mac));
     return () => {
         const labels = new Map(
             extensions.EditorExtensionsRegistry.getEditorActions().map((action) => [
@@ -74,12 +71,6 @@ export async function loadShortcuts(
             seen.add(text);
             return [{ id: item.command, label, chords }];
         });
-        const given = removedChords(mac).flatMap((chord) => {
-            const label = chord.command === true ? undefined : labels.get(chord.id);
-            if (label === undefined) return [];
-            const chords = chord.keys.map((press) => chordOfPress(monaco, press, mac));
-            return [{ id: chord.id, label, chords, palette: true as const }];
-        });
-        return [...bound, ...given].sort((left, right) => left.label.localeCompare(right.label));
+        return bound.sort((left, right) => left.label.localeCompare(right.label));
     };
 }

@@ -10,8 +10,8 @@
 //             registry, in the words the catalog gives them;
 //   commands  commands() of src/lib/state/workbench/palette.ts, with every source tab and server
 //             assumed so that every command is listed;
-//   editor    the chords the editor gives up to the palette (chords.ts removedChords) with the
-//             chord each was run by, and the Pin Editor and Unpin Editor items;
+//   editor    the chords of Monaco's that the palette lists (chords.ts editorChords) with the chord
+//             that runs each in the editor, and the Pin Editor and Unpin Editor items;
 //   present   the acts of a slide (SLIDE_ACTS) in the words of the Present menu, and Export to PDF;
 //   prefixes, keys  the rows of the palette table (data/helpers/keys/oculus/palette-table.ts), the
 //             table the palette's query and key readers run on.
@@ -86,7 +86,11 @@ export async function paletteText(engine) {
         views.registerCollections(registry, source.collectionKeys(config));
 
         const pinItems = [false, true].flatMap((pinned) =>
-            palette.pinItems({ id: 'tab', pinned }, words.t)
+            palette.pinItems(
+                { id: 'tab', pinned },
+                chords.chordHint(chords.PIN_KEYS, true),
+                words.t
+            )
         );
 
         return page.palettePage(
@@ -103,7 +107,7 @@ export async function paletteText(engine) {
                         ) => ({ name: one.name, hint: one.hint, description: one.description })
                     ),
                 editor: chords
-                    .removedChords(true)
+                    .editorChords(true)
                     .filter((/** @type {{ command?: true }} */ one) => one.command !== true)
                     .map((/** @type {{ id: string, keys: unknown }} */ one) => ({
                         id: one.id,

@@ -11,9 +11,11 @@
 //
 // A row that cannot be used is left out and the rest are kept: an `@` suggestion with no prefix or
 // no body, an environment whose name is not letters with an optional star, a chord whose key is not
-// one character or whose command is not a name of letters, and a symbol with no name, no source or
-// nothing to insert. A group left with no symbol is left out too. A key that is absent is an empty
-// table, and a value that is not the shape the key names is one dropped list.
+// one character or whose command is not a name of letters, a text chord whose second press is one
+// the LaTeX tab keeps for a command of its own on some platform (`l`, `w`, and `m`,
+// data/helpers/keys/oculus/editor-keys.ts `takesChordSecond`), and a symbol with no name, no
+// source or nothing to insert. A group left with no symbol is left out too. A key that is absent
+// is an empty table, and a value that is not the shape the key names is one dropped list.
 
 import { z } from 'zod';
 import {
@@ -23,6 +25,7 @@ import {
     latexUnimathRow
 } from '../../../shapes/catalog-files/latex.ts';
 import { filledTextShape, mapShape, optionalTextShape } from '../../../shapes/shapes.ts';
+import { takesChordSecond } from '../../../helpers/keys/oculus/editor-keys.ts';
 
 /** One `@` suggestion: what is typed after the `@`, the snippet it inserts, what it means. */
 type AtSuggestion = { prefix: string; body: string; description: string };
@@ -88,8 +91,14 @@ function surviving<T>(list: unknown, shape: z.ZodType<T>): { kept: T[]; lost: nu
     return { kept, lost: list.length - kept.length };
 }
 
-/** The usable rows of one chord map, and whether one was left out. */
-function chordsOf(value: unknown): { kept: Record<string, string>; lost: boolean } {
+/**
+ * The usable rows of one chord map, and whether one was left out; `taken` names the keys whose
+ * press the tab keeps for a command of its own.
+ */
+function chordsOf(
+    value: unknown,
+    taken: (key: string) => boolean = () => false
+): { kept: Record<string, string>; lost: boolean } {
     const kept: Record<string, string> = {};
     if (value === undefined) return { kept, lost: false };
     const map = mapShape.safeParse(value);
@@ -98,6 +107,7 @@ function chordsOf(value: unknown): { kept: Record<string, string>; lost: boolean
     for (const [key, command] of Object.entries(map.data)) {
         if (
             /^[A-Za-z0-9-]$/.test(key) &&
+            !taken(key) &&
             typeof command === 'string' &&
             /^[A-Za-z]+$/.test(command)
         ) {
@@ -118,7 +128,7 @@ export function readLatexEditing(config: Record<string, unknown>): LatexEditingR
     if (at.lost > 0) dropped.push('latex_editing.at');
     const environments = surviving(root.environments, environmentShape);
     if (environments.lost > 0) dropped.push('latex_editing.environments');
-    const text = chordsOf(mapShape.safeParse(root.chords).data?.text);
+    const text = chordsOf(mapShape.safeParse(root.chords).data?.text, takesChordSecond);
     const math = chordsOf(mapShape.safeParse(root.chords).data?.math);
     if (text.lost) dropped.push('latex_editing.chords.text');
     if (math.lost) dropped.push('latex_editing.chords.math');

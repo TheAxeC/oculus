@@ -19,10 +19,12 @@ import {
 } from '$lib/data/helpers/keys/oculus/bindings';
 import {
     LATEX_CHORD_FIRST,
-    LATEX_CHORD_SECONDS,
     LATEX_PRESSES,
+    LATEX_SCOPES,
     latexChordSecond,
-    latexMathFirst
+    latexChordSeconds,
+    latexMathFirst,
+    type LatexScope
 } from '$lib/data/helpers/keys/oculus/editor-keys';
 import { KEY_ROWS, PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
 import type { ChordOrder, KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
@@ -193,7 +195,20 @@ function latexMeaning(action: keyof typeof LATEX_PRESSES): string {
     return words[action]();
 }
 
-/** The LaTeX tab's keys: its one-press actions, its own chords and the configured chords. */
+/** What a LaTeX key does, with the files it is bound in (`LATEX_SCOPES`). */
+function inFiles(meaning: string, scope: LatexScope): string {
+    const words: Record<LatexScope, () => string> = {
+        tex: () => t('latex.keys_tex', meaning),
+        texOrBib: () => t('latex.keys_tex_or_bib', meaning),
+        texOrStyle: () => t('latex.keys_tex_or_style', meaning)
+    };
+    return words[scope]();
+}
+
+/**
+ * The LaTeX tab's keys: its one-press actions, its own chords and the configured chords, each with
+ * the files it is bound in.
+ */
 export function latexRows(
     chords: { text: Record<string, string>; math: Record<string, string> },
     mac: boolean
@@ -206,18 +221,32 @@ export function latexRows(
     const first = pressChord(LATEX_CHORD_FIRST, mac);
     const mathFirst = pressChord(latexMathFirst(mac), mac);
     const second = (character: string): Chord => pressChord(latexChordSecond(character), mac);
+    const seconds = latexChordSeconds(mac);
+    const own = (second: keyof typeof seconds, meaning: string): KeyRow =>
+        row([first, pressChord(seconds[second], mac)], inFiles(meaning, LATEX_SCOPES[second]));
     const actions = Object.keys(LATEX_PRESSES) as (keyof typeof LATEX_PRESSES)[];
     return [
         ...actions.map((action) =>
-            row([pressChord(LATEX_PRESSES[action], mac)], latexMeaning(action))
+            row(
+                [pressChord(LATEX_PRESSES[action], mac)],
+                inFiles(latexMeaning(action), LATEX_SCOPES[action])
+            )
         ),
-        row([first, pressChord(LATEX_CHORD_SECONDS.item, mac)], t('latex.cmd_item')),
-        row([first, pressChord(LATEX_CHORD_SECONDS.surround, mac)], t('latex.cmd_surround')),
+        own('item', t('latex.cmd_item')),
+        own('surround', t('latex.cmd_surround')),
+        own('selectLine', t('latex.cmd_select_line')),
+        own('tabFocus', t('latex.cmd_tab_focus')),
         ...Object.entries(chords.text).map(([character, command]) =>
-            row([first, second(character)], t('latex.cmd_command', command))
+            row(
+                [first, second(character)],
+                inFiles(t('latex.cmd_command', command), LATEX_SCOPES.text)
+            )
         ),
         ...Object.entries(chords.math).map(([character, command]) =>
-            row([mathFirst, second(character)], t('latex.cmd_command', command))
+            row(
+                [mathFirst, second(character)],
+                inFiles(t('latex.cmd_command', command), LATEX_SCOPES.math)
+            )
         )
     ];
 }
@@ -284,12 +313,12 @@ export function workbenchRows(
     ];
 }
 
-/** Monaco's keys as rows: a chord the editor gave up is said to run from the palette. */
+/** Monaco's keys as rows, each under its action's label. */
 export function editorRows(shortcuts: readonly EditorShortcut[], mac: boolean): KeyRow[] {
     return shortcuts.map((one) => ({
         group: 'editor',
         keys: [chordsLabel(one.chords, mac)],
-        meaning: one.palette === true ? t('keys.palette', one.label) : one.label
+        meaning: one.label
     }));
 }
 

@@ -68,7 +68,7 @@
     import type { PaletteKey } from '$lib/data/helpers/keys/oculus/palette-keys';
     import type { FirstThemeFiles } from '$lib/ui/theme/app-theme';
     import { modeOf } from '$lib/state/workbench/palette';
-    import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
+    import { COMMAND_PALETTE_EVENT, PIN_EDITOR_EVENT } from '$lib/ui/controls/editor/chords';
     import {
         docState,
         heldDocState,
@@ -310,6 +310,18 @@
         const open = (): void => showPalette('commands');
         window.addEventListener(COMMAND_PALETTE_EVENT, open);
         return () => window.removeEventListener(COMMAND_PALETTE_EVENT, open);
+    });
+
+    // Cmd+K Shift+Enter in the editor raises this, and pins or unpins the tab on screen.
+    $effect(() => {
+        const pin = (): void => {
+            const tab = activeInstance();
+            if (tab === null) return;
+            if (tab.pinned === true) client.layout.unpinTab(tab.id);
+            else client.layout.pinTab(tab.id);
+        };
+        window.addEventListener(PIN_EDITOR_EVENT, pin);
+        return () => window.removeEventListener(PIN_EDITOR_EVENT, pin);
     });
 
     function openUpdate(): void {

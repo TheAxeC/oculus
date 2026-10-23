@@ -1,18 +1,20 @@
-// Layer 3, primitive. The keys the editor gives up so the shell receives them from inside the
-// editor: Cmd+K and Ctrl+K, which open the palette (every chord Monaco binds under Cmd+K, Ctrl+K
-// off macOS, and on macOS Ctrl+K, which Monaco binds to Delete All Right), F1, which Monaco binds
-// to its own command palette and the workbench's palette takes in its command mode, and F8 and
-// Shift+F8, which walk the Problems view's rows across files where Monaco's own walk stays in one
-// file. Monaco's Command Palette item of the editor's menu runs the same palette: its command is
-// replaced by one that raises `COMMAND_PALETTE_EVENT` on the window (kit/load.ts), which the
-// workbench answers by opening the palette in its command mode.
+// Layer 3, primitive. The editor's keys the shell has a say in. Three keys the editor gives up so
+// the shell receives them from inside the editor (`freedKeys`): F1, which Monaco binds to its own
+// command palette and the workbench's palette takes in its command mode, and F8 and Shift+F8,
+// which walk the Problems view's rows across files where Monaco's own walk stays in one file.
+// Monaco's Command Palette item of the editor's menu runs the same palette: its command is replaced
+// by one that raises `COMMAND_PALETTE_EVENT` on the window (kit/load.ts), which the workbench
+// answers by opening the palette in its command mode.
 //
-// Monaco resolves a chord through its first key, so one rule binding that key to no command frees
-// every chord under it (`freedKeys`, turned into Monaco's key codes when Monaco has loaded). The
-// list of what was freed is kept with each chord's action id, so the palette offers each action
-// under Monaco's own label with its old chord beside it. Two of the chords run commands rather
-// than editor actions (`workbench.action.showHover` and `togglePeekWidgetFocus`); they are freed
-// with the rest, and the palette leaves them out since the editor has no action to run for them.
+// Cmd+K (Ctrl+K off macOS) stays the first key of Monaco's chords inside the editor, as in VS
+// Code, and on macOS Ctrl+K stays Delete All Right; the workbench opens the palette on them only
+// outside the editor (shell/keys/workbench-keys.svelte.ts). The palette lists the actions of these
+// chords while a source tab is on screen (`editorChords`), each under Monaco's own label with the
+// chord that runs it in the editor beside it. Two of the chords run commands rather than editor
+// actions (`workbench.action.showHover` and `togglePeekWidgetFocus`), and the palette leaves them
+// out since the editor has no action to run for them. Cmd+K Shift+Enter in the editor pins or
+// unpins the tab, as in VS Code: the editor raises `PIN_EDITOR_EVENT` on the window (kit/load.ts),
+// which the workbench answers on the tab on screen.
 //
 // A key is named by Monaco's `KeyCode` member and the modifiers it is pressed with, so this module
 // holds no value of Monaco's and loads nowhere near it. It also names the save key, which the
@@ -24,10 +26,11 @@ import { SAVE_PRESS } from '$lib/data/helpers/keys/oculus/page-keys';
 import type { EditorAction, EditorOwnAction, KeyPress } from './types';
 
 /**
- * A chord the editor gave up: the action or command it ran and its keys in order. A `command`
- * chord runs a command rather than an editor action, so the palette has nothing to run for it.
+ * A chord of Monaco's that the palette lists: the action or command it runs and its keys in order.
+ * A `command` chord runs a command rather than an editor action, so the palette has nothing to run
+ * for it.
  */
-export type RemovedChord = { id: string; keys: KeyPress[]; command?: true };
+type EditorChord = { id: string; keys: KeyPress[]; command?: true };
 
 /** The save key: Cmd+S, Ctrl+S off macOS. */
 export const SAVE_KEY: KeyPress = SAVE_PRESS;
@@ -41,13 +44,19 @@ const SHIFT_F8: KeyPress = { code: 'F8', shift: true };
 /** The event on the window that asks the workbench to open the palette in its command mode. */
 export const COMMAND_PALETTE_EVENT = 'oculus-command-palette';
 
+/** The event on the window that asks the workbench to pin or unpin the tab on screen. */
+export const PIN_EDITOR_EVENT = 'oculus-pin-editor';
+
+/** The chord VS Code binds Pin Editor and Unpin Editor to, which the editor binds the same way. */
+export const PIN_KEYS: [KeyPress, KeyPress] = [CMD_K, { code: 'Enter', shift: true }];
+
 /** A Cmd+K chord whose second key is held with Cmd too, as most of them are. */
-function underCmdK(id: string, code: KeyPress['code'], shift = false): RemovedChord {
+function underCmdK(id: string, code: KeyPress['code'], shift = false): EditorChord {
     return { id, keys: [CMD_K, shift ? { code, cmd: true, shift: true } : { code, cmd: true }] };
 }
 
 /** Every chord monaco-editor 0.57 binds under Cmd+K, by the action or command it runs. */
-const CMD_K_CHORDS: RemovedChord[] = [
+const CMD_K_CHORDS: EditorChord[] = [
     underCmdK('editor.action.addCommentLine', 'KeyC'),
     underCmdK('editor.action.removeCommentLine', 'KeyU'),
     underCmdK('editor.action.formatSelection', 'KeyF'),
@@ -81,17 +90,17 @@ const CMD_K_CHORDS: RemovedChord[] = [
     { id: 'togglePeekWidgetFocus', keys: [CMD_K, { code: 'F2' }], command: true }
 ];
 
-/** Every chord the editor gives up on this platform: the Cmd+K chords, and Ctrl+K on macOS. */
-export function removedChords(mac: boolean): RemovedChord[] {
+/** The chords the palette lists on a platform: the Cmd+K chords, and Ctrl+K on macOS. */
+export function editorChords(mac: boolean): EditorChord[] {
     return mac ? [...CMD_K_CHORDS, { id: 'deleteAllRight', keys: [CTRL_K] }] : [...CMD_K_CHORDS];
 }
 
 /**
- * The first keys bound to no command, which frees every chord that starts with them: the Cmd+K
- * chords, Ctrl+K on macOS, F1, and the two keys of the workbench's walk through the problems.
+ * The keys bound to no command in the editor, so the workbench receives them: F1, and the two keys
+ * of the workbench's walk through the problems.
  */
-export function freedKeys(mac: boolean): KeyPress[] {
-    return mac ? [CMD_K, CTRL_K, F1, F8, SHIFT_F8] : [CMD_K, F1, F8, SHIFT_F8];
+export function freedKeys(): KeyPress[] {
+    return [F1, F8, SHIFT_F8];
 }
 
 /** Monaco's name for a key as its keycap reads: `KeyC` is C and `Digit0` is 0. */
@@ -137,14 +146,15 @@ export function ownListing(actions: readonly EditorOwnAction[], mac: boolean): E
 }
 
 /**
- * The removed chords whose action an editor has, each under Monaco's label with its chord as the
- * hint; the two that run commands have no action and are left out.
+ * The palette's rows for the chords of `editorChords` whose action an editor has, each under
+ * Monaco's label with the chord that runs it in the editor as the hint; the two that run commands
+ * have no action and are left out.
  */
 export function chordActions(
     made: Pick<editor.IStandaloneCodeEditor, 'getAction'>,
     mac: boolean
 ): EditorAction[] {
-    return removedChords(mac).flatMap((chord) => {
+    return editorChords(mac).flatMap((chord) => {
         const action = made.getAction(chord.id);
         if (action === null) return [];
         return [{ id: chord.id, label: action.label, hint: chordHint(chord.keys, mac) }];

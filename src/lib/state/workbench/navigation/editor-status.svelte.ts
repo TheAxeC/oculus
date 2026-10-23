@@ -11,9 +11,10 @@
 // carries a sequence number, so a view performs one ask once, and a view that mounts after an ask
 // was made does not perform it.
 //
-// A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
-// up so Cmd+K reaches the palette (F1 is given up the same way, and opens the palette's
-// command mode, so it has no action to list), and the palette asks the tab to run one by its id.
+// A tab also publishes the editor actions it offers the palette, those of the editor's Cmd+K
+// chords (and of Ctrl+K on macOS) with the chord that runs each in the editor (F1, which the
+// editor gives up to the workbench and which opens the palette's command mode, has no action to
+// list), and the palette asks the tab to run one by its id.
 // A diff pane publishes its diff editor's actions the same way, and says nothing else of use to
 // the bar.
 //
@@ -36,7 +37,7 @@ import type { Layout } from '../layout/model.ts';
 
 /**
  * One editor action a tab offers the palette: its id, the editor's label, and its keys as the hint
- * (a removed chord's old chord, or a mark action's key), empty for an action with none.
+ * (the chord that runs it in the editor, or a mark action's key), empty for an action with none.
  */
 export type EditorAction = { id: string; label: string; hint: string };
 

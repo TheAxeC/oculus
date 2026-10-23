@@ -389,8 +389,8 @@ export function commentGutter(
 }
 
 /**
- * The editor's actions for the palette: the chords the editor gave up, and Add Comment on Line
- * while comments are offered and a label is given for it.
+ * The editor's actions for the palette: the actions of Monaco's Cmd+K chords, and Add Comment on
+ * Line while comments are offered and a label is given for it.
  */
 export function listedWithComment(
     listed: readonly EditorAction[],

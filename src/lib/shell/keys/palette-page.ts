@@ -25,7 +25,7 @@ export type PaletteViewRow = { id: string; label: string };
 /** One colon command: its name, what follows the name, and what it does. */
 export type PaletteCommandRow = { name: string; hint: string; description: string };
 
-/** One editor command of Cmd-K: the editor's action and the chord that ran it. */
+/** One editor command the palette lists: the editor's action and the chord that runs it. */
 export type PaletteEditorRow = { id: string; chord: string };
 
 /**
@@ -39,9 +39,9 @@ export type PaletteInputRow = { input: string[]; word: string };
 export type PaletteRegistry = {
     views: PaletteViewRow[];
     commands: PaletteCommandRow[];
-    /** Cmd-K chords of the editor, by the action each runs. */
+    /** The editor's Cmd+K chords and Ctrl+K on macOS, by the action each runs. */
     editor: PaletteEditorRow[];
-    /** The words of Pin Editor and Unpin Editor, and the chord they stand in for. */
+    /** The words of Pin Editor and Unpin Editor, and the chord that runs them in the editor. */
     pin: { labels: string[]; chord: string };
     /** The words of the commands a Present tab offers. */
     present: string[];

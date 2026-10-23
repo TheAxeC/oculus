@@ -171,6 +171,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G120. A portfolio or project chat's index holds every hub of the workspace, each hub's projects under its own section and the collection files its `chat_context` names, and no other collection file.
   Code: `src/lib/server/machine/pty/start/context.ts`, the index's caller in `src/lib/server/machine/pty/start/chat.ts`, and the `chat_context` reader `chatContext` in `src/lib/data/sources/config/settings/files.ts`.
   Test: `tests/routes/sessions/terminal-actions.test.ts`, describe 'POST /api/terminal, the chat action', the table case 'writes one section per hub of the workspace into the index', one row per workspace.
+- G121. Every language the editor registers has a comment rule, so Cmd+/ and Shift+Alt+A comment in a file of any of them: the settings oculus gives Monaco, or Monaco's own settings of the id, hold a `comments` field.
+  Code: `src/lib/ui/controls/editor/kit/rite/settings.ts` (`registerSettings`), `src/lib/ui/controls/editor/kit/rite/latex-settings.ts`, `src/lib/ui/controls/editor/kit/languages/configuration.ts` (`languageConfiguration`).
+  Test: `tests/ui/controls/editor/kit/comment-rules.test.ts`, describe 'the comment rule of every language the editor registers', '$id has a comment rule', every row (32).
 
 ## It starts, and configuration is checked
 

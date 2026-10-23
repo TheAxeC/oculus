@@ -27,14 +27,19 @@
     // the hidden set is the ui store's, saved with the appearance. The items apps add stand last in
     // the list, each named as `<name> (<app title>)` and kept hidden under `<view id>/<item id>`.
     //
-    // An item is drawn whole or not at all. The bar is one row and never wraps: when the items do
-    // not all fit, the fewest are left out whole in the order status-items.ts states beside the
-    // groups (`DROP_ORDER`, the caret, the language, the problems and the branch last), and an item
-    // left out is not drawn (one-row.ts) and is listed in the right-click menu as any other is. The
+    // The bar is one row and never wraps, and every item is drawn. When the items fit, the left
+    // group stands at the bar's left edge and the right group at its right edge; when they do not,
+    // the right group follows the left one and the bar scrolls sideways, opening at its left end.
+    // A trackpad's sideways swipe scrolls it, a wheel's turn moves it sideways by the tab strip's
+    // rule (ui/tabs/tab-strip.ts `horizontalWheelDelta`), and an item the Tab key focuses is
+    // scrolled into view. No scrollbar is drawn, so the bar keeps its height, and a swipe that
+    // reaches either end stops there rather than reaching the browser's back gesture. An item that
+    // arrives or leaves keeps the scroll where it is, the browser clamping it to the new width. The
     // right group's markup is written in reverse order and the row reverses it back, so the bell
-    // stands at the window's right edge and the Tab key walks the right group from its right end to
-    // its left. An item is at most 40 % of the window wide, a longer text ends in an ellipsis, and
-    // the several buttons of the linter item share its width, each ending in an ellipsis.
+    // stands last at the right end and the Tab key walks the right group from its right end to its
+    // left.
+    // An item is at most 40 % of the window wide, a longer text ends in an ellipsis, and the
+    // several buttons of the linter item share its width, each ending in an ellipsis.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -46,8 +51,8 @@
     import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
-    import { fitOneRow } from './one-row';
     import { toggleView } from '$lib/shell/keys/keys';
+    import { horizontalWheelDelta } from '$lib/ui/tabs/tab-strip';
     import {
         STATUS_ITEMS,
         isStatusItem,
@@ -182,6 +187,19 @@
         switchPage(found.page);
         activateInstance(found.instance, found.page);
     }
+
+    /**
+     * A wheel or a trackpad over the bar while its items do not fit: either axis of the gesture
+     * moves the bar sideways, and the page neither scrolls nor goes back.
+     */
+    function wheeled(event: WheelEvent & { currentTarget: HTMLElement }): void {
+        const bar = event.currentTarget;
+        if (bar.scrollWidth <= bar.clientWidth) return;
+        const delta = horizontalWheelDelta(event.deltaX, event.deltaY);
+        if (delta === 0) return;
+        event.preventDefault();
+        bar.scrollLeft += delta;
+    }
 </script>
 
 <ContextMenu label={t('statusbar.hide_menu')} items={choices} onpick={toggled}>
@@ -190,7 +208,7 @@
         class:debugging={debug.active() && debug.status() !== 'starting'}
         aria-label={t('statusbar.label')}
         data-status-bar
-        {@attach fitOneRow}
+        onwheel={wheeled}
     >
         <div class="group" data-status-group="left">
             {#if shown('host')}
@@ -358,8 +376,11 @@
 
 <style>
     /* VS Code's status bar (statusbarpart.css): one row the bar's height, a left group and a right
-       group, the ground's colour with a line along its top. The bar and its groups clip, which
-       scrolls nothing, so the focus never brings a clipped row into view. */
+       group, the ground's colour with a line along its top. The bar scrolls sideways when its
+       items do not fit, with no scrollbar drawn, so the focus brings an item into view. A swipe
+       past either end stays in the bar (overscroll-behavior-x), and the scroll is not moved to
+       follow an item when another arrives or leaves (overflow-anchor). The ground is the bar's
+       own, so it fills the bar at any scroll position. */
     .bar {
         --status-item-max: 40vw;
         display: flex;
@@ -368,37 +389,41 @@
         box-sizing: border-box;
         height: var(--status-height);
         min-width: 0;
-        overflow: clip;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        overflow-anchor: none;
+        scrollbar-width: none;
         border-top: 1px solid var(--line);
         background: var(--bg);
         color: var(--ink-txt, var(--ink));
         font-size: var(--status-text);
     }
 
-    /* A group lays its items out on one row and never wraps; the items that do not fit are left
-       out whole (one-row.ts). The right group takes the rest of the bar and lays its items out
-       from its right end, its markup written reversed (flex-direction: row-reverse draws the first
-       item at the right). */
+    .bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* A group lays its items out on one row and never wraps, as wide as its items. The right group
+       stands at the bar's right edge while there is room (its left margin takes the room) and
+       follows the left group when there is none; it lays its items out from its right end, its
+       markup written reversed (flex-direction: row-reverse draws the first item at the right). */
     .group {
         display: flex;
+        flex: 0 0 auto;
         flex-wrap: nowrap;
         align-items: stretch;
-        overflow: clip;
     }
 
     .group[data-status-group='right'] {
-        flex: 1 1 0;
         flex-direction: row-reverse;
+        margin-left: auto;
     }
 
     .group > :global(*) {
         display: flex;
         flex: 0 0 auto;
         max-width: var(--status-item-max);
-    }
-
-    .group > :global([data-left-out]) {
-        display: none;
     }
 
     /* A session runs or is paused: the whole bar takes the orange and the ink derived for it. A

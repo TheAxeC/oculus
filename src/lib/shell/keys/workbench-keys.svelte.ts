@@ -143,6 +143,10 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return;
         }
         if (togglesPalette(event)) {
+            // In the editor Cmd+K is the first key of Monaco's chords, which Monaco takes before
+            // it bubbles here, and on macOS Ctrl+K is Delete All Right; a Ctrl+K Monaco leaves (in
+            // a read-only editor) is left to the browser rather than opening the palette.
+            if (inEditor(event.target)) return;
             event.preventDefault();
             if (options.paletteOpen()) options.setPaletteOpen(false);
             else options.openPalette('');

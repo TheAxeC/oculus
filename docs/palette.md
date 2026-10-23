@@ -1,6 +1,6 @@
 # The palette
 
-Cmd+K opens the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
+Cmd+K opens the palette outside the editor; in the editor Cmd+K starts the editor's chords, and Cmd+Shift+P, F1 and Cmd+P open the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
 
 ## Contents
 
@@ -139,7 +139,7 @@ A colon starts a command. The commands that list choices type their name and a s
 
 ## Editor commands
 
-While a source tab is on screen the palette also lists the editor's own Cmd-K commands, each under the editor's own label with its chord beside it. The table names each by the editor's action id.
+While a source tab is on screen the palette also lists the actions of the editor's Cmd+K chords, and on macOS Delete All Right, each under the editor's own label with the keys that run it in the editor beside it. Pin Editor and Unpin Editor are listed with the chord that runs them in the editor, as in VS Code. The table names each action by the editor's action id.
 
 | Editor action | Chord |
 | --- | --- |
@@ -192,7 +192,7 @@ While a Present tab is on screen the palette lists these commands for the slide 
 
 | Key | What it does |
 | --- | --- |
-| `Cmd+K` | opens the palette, or closes it when it is open |
+| `Cmd+K` | opens the palette, or closes it when it is open; in the editor it starts the editor's chords instead |
 | `Cmd+Shift+P`, `F1` | opens the palette in its command mode, as a colon does; either key closes it again |
 | `Cmd+P` | lists files by name across the served roots |
 | `Cmd+T` | lists the symbols of the workspace through the language server of the source tab on screen |

@@ -69,67 +69,6 @@ export const RIGHT_ITEMS = [
 ] as const;
 
 /**
- * The order the bar leaves its items out in when they do not all fit on its one row, the first to
- * leave first: the apps' items, the left group's machine, extension and repository items, the
- * language server's items, the blame and the text's own items, then the sessions, the unsaved tabs
- * and the bell, and last the items a reader reads most, the branch, the problems, the language and
- * the caret. `publish` is the sync item's place when the branch has no upstream.
- */
-const DROP_ORDER: readonly string[] = [
-    'app-progress',
-    'app',
-    'latex',
-    'server',
-    'usage',
-    'hpc',
-    'debug',
-    'findings',
-    'host',
-    'repository',
-    'sync',
-    'publish',
-    'svelte_config',
-    'compile_database',
-    'interpreter',
-    'language_server',
-    'linter',
-    'blame',
-    'line_ending',
-    'encoding',
-    'indent',
-    'sessions',
-    'unsaved',
-    'bell',
-    'branch',
-    'problems',
-    'language',
-    'caret'
-];
-
-/**
- * The places of the items to leave out so the rest fit in `room` pixels: the fewest, taken in
- * DROP_ORDER, an id the order does not name before every one it names, and among items of one id
- * the last drawn first.
- */
-export function leftOut(
-    items: readonly { id: string; width: number }[],
-    room: number
-): Set<number> {
-    let total = items.reduce((sum, one) => sum + one.width, 0);
-    const rank = (id: string): number => DROP_ORDER.indexOf(id);
-    const order = items
-        .map((one, at) => ({ at, rank: rank(one.id) }))
-        .sort((a, b) => a.rank - b.rank || b.at - a.at);
-    const out = new Set<number>();
-    for (const { at } of order) {
-        if (total <= room) break;
-        out.add(at);
-        total -= items[at].width;
-    }
-    return out;
-}
-
-/**
  * A count as VS Code's status bar packs it: as it is up to 999, whole thousands from 1000 (`1K`
  * to `9K`), and `10K+` from 10000.
  */

@@ -2,8 +2,9 @@
     // Layer 3, partial of Source.svelte. The LaTeX controls at the right end of the breadcrumb bar
     // of a LaTeX source tab, LaTeX Workshop's title actions: Build, with the running state and Kill
     // Build while the root builds, View PDF (not on a `.bib` file) and Build Log. Each tooltip
-    // names the key it has. The tab hands them up with the bar's other actions
-    // (actions/BarActions.svelte).
+    // names the key it has in the file, and Build has none in a `.bib` file, where LaTeX Workshop
+    // binds none (editor-keys.ts `LATEX_SCOPES`). The tab hands them up with the bar's other
+    // actions (actions/BarActions.svelte).
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { chordHint } from '$lib/ui/controls/editor/chords';
@@ -41,7 +42,7 @@
     <ToolButton
         bare
         label={t('latex.bar_build')}
-        title={t('latex.bar_build_title', hint('KeyB'))}
+        title={tab.bib ? t('latex.bar_build_bare') : t('latex.bar_build_title', hint('KeyB'))}
         glyph="latex_build"
         onclick={tab.press.build}
     />

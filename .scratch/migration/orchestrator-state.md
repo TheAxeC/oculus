@@ -24,22 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
-- step: O65
-  executor: agent
-  worker: claude:opus
-  session_id: a74c242e2ce17311a
-  model: claude-opus-5-5
-  launched: 2026-10-22
-  base: 3a35d993
-  worktree: .agents/worktrees/migration-O65
-  brief_check: agents/reviews/O65-brief-check.md (a6b632fc3fe084af5, claude-opus-5-5, 244624 tokens, 103 tool uses, 16 min 38 s)
-  report: agents/reviews/O65-report.md
-  builder_usage: 265990 tokens, 348 tool uses, 70 min 1 s; round 1 284949 tokens, 189 tool uses, 48 min 36 s
-  reviewer_report: agents/reviews/O65-refuter.md (a9ee849e1a46ad40f, claude-opus-5-5, 285514 tokens, 70 tool uses, 24 min 12 s); over round 1: a2f74dc039b54f0ee, claude-opus-5-5, 291871 tokens, 87 tool uses, 15 min 42 s
-  round: 1
-  round_1: agents/briefs/O65-round1.md (P1, P2, T1, T2, B1 with S3, B2 sent; S1 and S2 recorded at landing; P3 at the look), snapshot .agents/worktrees/migration-O65-round-1
-  landing: not-started
-  shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O61
   executor: agent
   worker: claude:opus
@@ -53,6 +37,12 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
   shared_paths: with O65: docs/HELP.md (O65 lines 115-124 and 160-169, O61 the lines naming the type, the chips and the statuses, near 509 and 541): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
+- step: O53
+  brief_check: agents/reviews/O53-brief-check.md (a778b73d30beb0302, claude-opus-5-5, 254814 tokens, 101 tool uses, 11 min 49 s)
+  landing: preparing
+- step: O56
+  brief_check: agents/reviews/O56-brief-check.md (a837bbfa456b7963d, claude-opus-5-5, 232172 tokens, 78 tool uses, 10 min 51 s)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -190,11 +180,13 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 260 (2026-10-23, O65's landing): O65 lands with three test rows that no entry of `agents/guarded.md` names, and spec.md says a test exists only as the test of an entry Axel approved. The rows: the Julia row and the app-settings row of `tests/ui/controls/editor/kit/comment-rules.test.ts` (Julia keeps VS Code's brackets and auto-closing pairs; an app's settings of a language win over oculus's), and the four rows of `tests/views/sources/source/latex-keys.client.test.ts` (which LaTeX keys each kind of file takes). The orchestrator's repair round ordered the first and the third without asking for their entries; the builder wrote the second on its own. G121, the comment-rule table ruling 250 ordered, is added to `guarded.md` at the landing. Options: (a) add the two entries the builder proposed (`agents/reviews/O65-report.md`, "Doc text") and keep the rows; (b) delete the three rows, since spec.md and the hub's test rule keep a test only for behaviour whose failure costs something (lost work, a broken installation, a wrong configuration accepted), and a bracket or a LaTeX key that differs from VS Code costs none of these; the landing's look checks them instead. Recommendation: (b), by the test rule (a judgment). Neither option leaves work undone.
+
 
 
 
 ## Closed items
-- 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code. Ruled 2026-10-23: (a) (Axel: "259 (a)"); O65 has had its one repair round, so the binding is made at O65's landing as a fix at landing, with its test.
+- 259 (2026-10-22, O65): Pin Editor and Unpin Editor show the chord Cmd+K Shift+Enter in the palette, but no key runs it, on main or in O65; with Cmd+K now the editor's chord key (ruling 258 (b)), the hint names a key that does nothing. Options: (a) bind Cmd+K Shift+Enter in the editor to pin and unpin the tab, as VS Code does, in O65's repair round; (b) keep the hint as it is, naming a key that does nothing; (c) drop the hint, the lazy option. Recommendation: (a), since the palette then tells the truth and the key behaves as in VS Code. Ruled 2026-10-23: (a) (Axel: "259 (a)"); O65 has had its one repair round, so the binding is made at O65's landing as a fix at landing, checked at the look; it gets no test, since a key that does nothing loses no work and the test rule (spec.md) gives such behaviour none.
 - 258 (2026-10-22, O65's brief check): the step line of O65 (ruling 250) says the editor's keys work as VS Code's do and every default key Monaco binds that fails is fixed at its cause; D46 (ruling 28) says Cmd+K stays as it is, the palette's. The two collide on the keys the editor gives up to the palette (`src/lib/ui/controls/editor/chords.ts`, `freedKeys`): Cmd+K and its 31 chords (in VS Code, Cmd+K Cmd+C comments a line and Cmd+K Cmd+0 folds all, inside the editor; in oculus they run only from the palette), and on macOS Ctrl+K (in VS Code, Delete All Right in the editor; in oculus, the palette). F1, F8 and Shift+F8 are not in the clash: VS Code's workbench takes them too.
   - (a) Cmd+K and Ctrl+K stay the palette's everywhere, as D46 says; O65's key table lists the Cmd+K chords and Ctrl+K as given up to the palette under D46, each still run from the palette. Pro: nothing you press today changes. Con: the editor keeps differing from VS Code on 32 keys, which is what O65's line asks to end. This is the lazy option: it records the difference instead of ending it.
   - (b) Recommended. Inside the editor, Cmd+K is VS Code's chord key: Cmd+K then the second key runs Monaco's chord, and on macOS Ctrl+K is Delete All Right; outside the editor Cmd+K stays the palette, and in the editor the palette opens with Cmd+Shift+P, Cmd+P and F1, as in VS Code. Pro: the editor's keys are VS Code's, which O65's line asks for. Con: Cmd+K pressed in the editor no longer opens the palette; D46 changes for the editor.
@@ -442,6 +434,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (O65 landed). O65 is on main (booked under O65 in `plan.md`, report `agents/reviews/O65-landing.md`), checked in the gate worktree (`test:quick` 137.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME); ruling 259 (a) made at landing (Cmd+K Shift+Enter pins and unpins in the editor), looked at on a scratch server on 8797. Open item 260 raised (three test rows with no approved entry). The brief checks of O53 and O56 reported (`agents/reviews/O53-brief-check.md`, `agents/reviews/O56-brief-check.md`); their findings are closed in the briefs next. In flight (3 of 6): O61 (building), O53 and O56 (brief checked, closing the findings). Open items: 260.
 - 2026-10-23 (O54 landed). O54 is on main (booked under O54 in `plan.md`, report `agents/reviews/O54-landing.md`), checked in the gate worktree (`test:quick` 240.0 s, every command passed) and on main (`cmp` of the staged diffs: SAME, 229 files); nine fixes at landing, among them the page of a feed entry in a workspace with no primary (`hubSchemas`) and the shared-module run of part E's hook row. Ruling 238's one-time change of `~/.oculus/layouts.json` and `views.json` is applied (six places; a second run finds nothing). Found at the look and folded into O60 (Z468): with no primary the merged config reads no hub's settings file, so a lead's fit shows `-`. In flight (1 of 6): O65 (reviewed over round 1, /land next). Next: /land O65; then /spec O61, O53 and O56; O39's dev-server first paint and its closing (C8, the desktop look after `npm run app:package`).
 - 2026-10-23 (O54 round 1 reported; its review over round 1 running). The builder reported round 1 (`agents/reviews/O54-report.md`, saved; 343126 tokens, 333 tool uses, 74 min 33 s); the orchestrator read the round's source delta. It handed back: three red rows of its last verify run outside the round's files (two timeouts, one `source.test.ts` assertion), the create-target guard of `write-files.ts:146` by the primary hub, `/api/deposit`'s 404 for a bare id, and P2's mute in the workspace file. The review over round 1 runs (a16b86dd29919143f, claude-opus-5-5) and judges each. In flight (3 of 6): O54 (review over round 1), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.
 - 2026-10-23 (O39 part E round 1 reported). The builder closed every ruling of round 1 (`agents/reviews/O39-partE-report.md`, saved); B1 was a real frame (an app theme with no first-load file paints the mounted workbench before its draw sets the derived tokens), closed by the derived tokens on the root element of the first HTML. The orchestrator read the round's source delta. The review over round 1 runs (aa1b7392be4f5e72b, claude-opus-5-5). In flight (3 of 6): O54 (round 1 building), O65 (round 1 building), O39 part E (review over round 1). Open items: 259.

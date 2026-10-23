@@ -1,9 +1,12 @@
-// Layer 3, primitive. A language configuration file of an app, as Monaco takes it. The file is
-// VS Code's: comments, brackets, auto-closing and surrounding pairs, folding markers, the word
-// pattern, indentation rules and `onEnterRules`. A pattern is a string or `{ pattern, flags }`; a
-// pattern that does not compile, and a part of the wrong shape, is left out and the rest applies.
-// The function builds the object without Monaco (the indent actions are its enum's numbers), so the
-// reading is the same wherever it runs.
+// Layer 3, primitive. A language configuration file, as Monaco takes it: an app's, and the files
+// the editor's own settings are copied from (kit/rite/settings.ts). The file is VS Code's:
+// comments (a line comment as a string, or as `{ comment, noIndent }` for one written at the line's
+// first column), brackets, auto-closing and surrounding pairs, the characters before which a pair
+// closes (`autoCloseBefore`), folding markers, the word pattern, indentation rules and
+// `onEnterRules`. A pattern is a string or `{ pattern, flags }`; a pattern that does not compile,
+// and a part of the wrong shape, is left out and the rest applies. The function builds the object
+// without Monaco (the indent actions are its enum's numbers), so the reading is the same wherever
+// it runs.
 
 import type * as Monaco from 'monaco-editor';
 
@@ -77,16 +80,19 @@ function surroundingOf(value: unknown): Monaco.languages.IAutoClosingPair[] | un
     });
 }
 
-/** The comment markers: a line comment (a string or `{ comment }`) and a block comment pair. */
+/** A line comment: a string, or `{ comment, noIndent }` with the flag kept when it is a boolean. */
+function lineCommentOf(value: unknown): Monaco.languages.CommentRule['lineComment'] {
+    if (typeof value === 'string') return value;
+    if (!isRecord(value) || typeof value.comment !== 'string') return undefined;
+    return typeof value.noIndent === 'boolean'
+        ? { comment: value.comment, noIndent: value.noIndent }
+        : value.comment;
+}
+
+/** The comment markers: a line comment and a block comment pair. */
 function commentsOf(value: unknown): Monaco.languages.CommentRule | undefined {
     if (!isRecord(value)) return undefined;
-    const line = value.lineComment;
-    const lineComment =
-        typeof line === 'string'
-            ? line
-            : isRecord(line) && typeof line.comment === 'string'
-              ? line.comment
-              : undefined;
+    const lineComment = lineCommentOf(value.lineComment);
     const blockComment = pairOf(value.blockComment);
     if (lineComment === undefined && blockComment === undefined) return undefined;
     return {
@@ -178,6 +184,7 @@ export function languageConfiguration(file: unknown): Configuration {
     if (closing !== undefined) out.autoClosingPairs = closing;
     const surrounding = surroundingOf(file.surroundingPairs);
     if (surrounding !== undefined) out.surroundingPairs = surrounding;
+    if (typeof file.autoCloseBefore === 'string') out.autoCloseBefore = file.autoCloseBefore;
     const folding = foldingOf(file.folding);
     if (folding !== undefined) out.folding = folding;
     const word = expression(file.wordPattern);

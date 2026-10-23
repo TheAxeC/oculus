@@ -13,10 +13,13 @@
 import { untrack } from 'svelte';
 import {
     LATEX_CHORD_FIRST,
-    LATEX_CHORD_SECONDS,
     LATEX_PRESSES,
+    LATEX_SCOPES,
+    inLatexScope,
     latexChordSecond,
-    latexMathFirst
+    latexChordSeconds,
+    latexMathFirst,
+    type LatexFileKind
 } from '$lib/data/helpers/keys/oculus/editor-keys';
 import { isLatexLanguage } from '$lib/state/sources/fs';
 import { onMac } from '$lib/ui/controls/editor/kit/load';
@@ -105,6 +108,10 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
             input.path() !== ''
     );
     const bib = $derived(applies && input.path().toLowerCase().endsWith('.bib'));
+    /** Whether the file is a class or a package, which takes none of the chords. */
+    const style = $derived(applies && /\.(sty|cls)$/i.test(input.path()));
+    /** The kind of file, which says which of the tab's keys it takes (editor-keys.ts). */
+    const kind: LatexFileKind = $derived(bib ? 'bib' : style ? 'style' : 'tex');
 
     let found = $state<NonNullable<LatexRoot> | null>(null);
     let asking: LatexAsking | null = $state(null);
@@ -288,20 +295,37 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
             });
         };
         const here = { root: input.root(), path: input.path() };
+        // A key is bound in the files LaTeX Workshop binds it in (`LATEX_SCOPES`); in any other
+        // file the command is listed with no key, and the press is left to the editor.
+        const keyed = <K extends EditorKey>(
+            scope: keyof typeof LATEX_SCOPES,
+            key: K
+        ): K | undefined => (inLatexScope(LATEX_SCOPES[scope], kind) ? key : undefined);
         // Build and SyncTeX from Cursor are in the right-click menu when `latex.context_menu` is
         // true.
         const menu = latex.settings()?.contextMenu === true ? 'navigation' : undefined;
-        add('oculus.latex.build', t('latex.cmd_build'), press.build, LATEX_PRESSES.build, menu);
+        add(
+            'oculus.latex.build',
+            t('latex.cmd_build'),
+            press.build,
+            keyed('build', LATEX_PRESSES.build),
+            menu
+        );
         add('oculus.latex.buildRecipe', t('latex.cmd_build_recipe'), askRecipe);
         if (building) add('oculus.latex.kill', t('latex.cmd_kill'), press.kill);
         add(
             'oculus.latex.clean',
             t('latex.cmd_clean'),
             () => void latexActions.clean(here.root, here.path),
-            LATEX_PRESSES.clean
+            keyed('clean', LATEX_PRESSES.clean)
         );
         if (!bib) {
-            add('oculus.latex.view', t('latex.cmd_view'), press.view, LATEX_PRESSES.view);
+            add(
+                'oculus.latex.view',
+                t('latex.cmd_view'),
+                press.view,
+                keyed('view', LATEX_PRESSES.view)
+            );
             add(
                 'oculus.latex.synctex',
                 t('latex.cmd_synctex'),
@@ -315,14 +339,14 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
                         input.instance()
                     );
                 },
-                LATEX_PRESSES.synctex,
+                keyed('synctex', LATEX_PRESSES.synctex),
                 menu
             );
             add(
                 'oculus.latex.mathPreview',
                 t('latex.cmd_math_preview'),
                 () => void client.layout.openBeside('math-preview', {}),
-                LATEX_PRESSES.mathPreview
+                keyed('mathPreview', LATEX_PRESSES.mathPreview)
             );
         }
         if (input.editing()) {
@@ -373,9 +397,20 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         if (on === null || !input.editing()) return listed;
         const { text, math } = latex.editing().chords;
         const first = LATEX_CHORD_FIRST;
+        const seconds = latexChordSeconds(mac);
         const mathFirst = latexMathFirst(mac);
-        add('oculus.latex.promote', t('latex.cmd_promote'), on.promote, LATEX_PRESSES.promote);
-        add('oculus.latex.demote', t('latex.cmd_demote'), on.demote, LATEX_PRESSES.demote);
+        add(
+            'oculus.latex.promote',
+            t('latex.cmd_promote'),
+            on.promote,
+            keyed('promote', LATEX_PRESSES.promote)
+        );
+        add(
+            'oculus.latex.demote',
+            t('latex.cmd_demote'),
+            on.demote,
+            keyed('demote', LATEX_PRESSES.demote)
+        );
         add('oculus.latex.navigate', t('latex.cmd_navigate'), on.navigate);
         add(
             'oculus.latex.selectEnvironment',
@@ -389,17 +424,37 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         add('oculus.latex.closeEnvironment', t('latex.cmd_close_environment'), on.closeEnvironment);
         add('oculus.latex.wrapEnvironment', t('latex.cmd_wrap_environment'), on.wrapEnvironment);
         add('oculus.latex.selectSection', t('latex.cmd_select_section'), on.selectSection);
-        add('oculus.latex.item', t('latex.cmd_item'), on.item, [first, LATEX_CHORD_SECONDS.item]);
-        add('oculus.latex.surround', t('latex.cmd_surround'), on.surround, [
-            first,
-            LATEX_CHORD_SECONDS.surround
-        ]);
+        const chord = (one: KeyPress, other: KeyPress): EditorKey => [one, other];
+        add(
+            'oculus.latex.item',
+            t('latex.cmd_item'),
+            on.item,
+            keyed('item', chord(first, seconds.item))
+        );
+        add(
+            'oculus.latex.surround',
+            t('latex.cmd_surround'),
+            on.surround,
+            keyed('surround', chord(first, seconds.surround))
+        );
+        add(
+            'oculus.latex.selectLine',
+            t('latex.cmd_select_line'),
+            on.selectLine,
+            keyed('selectLine', chord(first, seconds.selectLine))
+        );
+        add(
+            'oculus.latex.tabFocus',
+            t('latex.cmd_tab_focus'),
+            on.tabFocus,
+            keyed('tabFocus', chord(first, seconds.tabFocus))
+        );
         for (const [character, command] of Object.entries(text)) {
             add(
                 `oculus.latex.text.${command}`,
                 t('latex.cmd_command', command),
                 () => on.keyword(command),
-                chordKey(first, character)
+                keyed('text', chordKey(first, character))
             );
         }
         for (const [character, command] of Object.entries(math)) {
@@ -407,7 +462,7 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
                 `oculus.latex.math.${command}`,
                 t('latex.cmd_command', command),
                 () => on.keyword(command),
-                chordKey(mathFirst, character)
+                keyed('math', chordKey(mathFirst, character))
             );
         }
         return listed;

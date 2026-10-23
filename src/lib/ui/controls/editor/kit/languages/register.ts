@@ -1,11 +1,13 @@
 // Layer 3, primitive. The acting apps' languages put into Monaco: each language an app adds is
 // registered (an id Monaco has not seen is made, one it knows is kept), its configuration file
-// applied with `setLanguageConfiguration`, its snippets offered by completion, and the JSON
-// schemas the apps bring given to Monaco's JSON support beside the schemas the editor already
-// holds. The kit calls `applyAppLanguages` once the page loaded the editor and again for every
-// change of what the apps give; what an earlier call put in is taken away first, so a language an
-// app stopped adding keeps its id (Monaco cannot unregister one) and loses its configuration,
-// snippets and schemas.
+// given through Monaco's language configuration service, its snippets offered by completion, and
+// the JSON schemas the apps bring given to Monaco's JSON support beside the schemas the editor
+// already holds. A configuration is given at a rank above the settings the editor gives at start
+// (rite/settings.ts), so an app's settings of a language win over oculus's and Monaco's for every
+// field they hold. The kit calls `applyAppLanguages` once the page loaded the editor and again for
+// every change of what the apps give; what an earlier call put in is taken away first, so a
+// language an app stopped adding keeps its id (Monaco cannot unregister one) and loses its
+// configuration, snippets and schemas.
 //
 // A schema's `fileMatch` is matched by Monaco against the address of the model, whose path is
 // `/<tab instance>/<path from the root>`, so an entry that is not already rooted or started with
@@ -15,14 +17,22 @@ import type * as Monaco from 'monaco-editor';
 import { schemaGlob } from '$lib/data/helpers/files/apps/tools/language-kit';
 import type { AppLanguageKit } from '$lib/data/helpers/files/apps/tools/language-kit';
 import { languageConfiguration } from './configuration';
+import { OCULUS_RANK, type Registry } from '../rite/settings';
 import { registerSnippets } from './snippets';
 
 /** What an earlier call put in, to take away at the next one. */
 export type Applied = { dispose(): void };
 
-/** Put the kit into Monaco, taking away what `before` put in. */
+/** The rank an app's settings of a language are given at, above oculus's own. */
+const APP_RANK = OCULUS_RANK + 1;
+
+/**
+ * Put the kit into Monaco, taking away what `before` put in; the languages' settings go to
+ * `settings`, Monaco's language configuration service.
+ */
 export function applyAppLanguages(
     monaco: typeof Monaco,
+    settings: Registry,
     kit: AppLanguageKit,
     before: Applied | null
 ): Applied {
@@ -36,9 +46,10 @@ export function applyAppLanguages(
         }
         if (language.configuration !== null) {
             owned.push(
-                monaco.languages.setLanguageConfiguration(
+                settings.register(
                     language.id,
-                    languageConfiguration(language.configuration)
+                    languageConfiguration(language.configuration),
+                    APP_RANK
                 )
             );
         }

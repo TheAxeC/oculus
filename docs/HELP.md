@@ -69,7 +69,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - A view opened for something (a project, a person, an entry, a document, a file, a diff) never covers the tool views. It lands, in this order: in a workbench's documents pane; in the pane that took the last such tab; in the pane you are in, if it holds such tabs; in an empty documents pane; in a new pane split off to the right.
 - A pane from the arrangement stays, empty, when its last tab closes; a pane you split off closes with its last tab. Lock Group (pane right-click) makes a pane take no tab opened from elsewhere.
 - Hide Tab Row (pane menu) hides that pane's tab row and its path bar, so the view fills the pane. They show again over the view while the pointer is at the pane's top edge or over the row, while a menu opened from the row or its path bar is open, while the focus is in the row and a key brought it there, and while a tab of the pane is dragged. With `editor_actions: hidden` the item is in the strip's right-click menu. Show Tab Row brings the row back. A pane that draws no tab row and no path bar does not offer it.
-- The tabs a page starts with are pinned. Cmd+W on a pinned tab closes nothing; Close in its menu does. Pin and unpin from the tab's menu, Pin Editor in the palette, or by dragging into the pinned tabs.
+- The tabs a page starts with are pinned. Cmd+W on a pinned tab closes nothing; Close in its menu does. Pin and unpin from the tab's menu, Pin Editor in the palette, Cmd+K Shift+Enter in the editor, or by dragging into the pinned tabs.
 - Reopen Closed Tab (Cmd+Shift+T in the app, `:reopen-closed-tab` in the palette) reopens the tabs the last close closed, in the pane you are in on the page on screen. The window keeps twenty until it reloads.
 - A new tab opens right after the active one; closing the shown tab shows the one shown before it.
 - The options `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` set the tab strip; Settings and the strip's right-click menu write them into the open workspace file's `settings:`.
@@ -91,7 +91,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ### The palette
 
-- Cmd+K opens the palette. Empty, it lists the views. A typed word matches fuzzily, letters in order (`rpls` finds RAW-PLS), across views, projects and entries.
+- Cmd+K opens the palette outside the editor. In the editor Cmd+K starts the editor's chords, as in VS Code (Cmd+K, then Cmd+C comments the line), and Cmd+Shift+P, F1 and Cmd+P open the palette. Empty, the palette lists the views. A typed word matches fuzzily, letters in order (`rpls` finds RAW-PLS), across views, projects and entries.
 - With a source tab on screen it also lists the editor's commands; with a Present tab, the slide commands.
 - `:` starts a command. `:` and a number goes to that line. `:language`, `:interpreter`, `:compile-database`, `:theme`, `:file-icons`, `:tab` and `:goto` list what they choose from, the one in force marked; typing narrows the list. In `:theme` and `:file-icons` moving the selection shows each choice, Esc puts back the one in force, and Enter keeps the one chosen. `:theme` draws the themes under a heading per group, in the order Settings draws them: the arrow keys pass over the headings, and a group whose themes the typed words all leave out shows no heading.
 - `:task-add <title>` adds a task to the primary hub's Tasks file with `status: todo`; Shift+Enter also opens it. History undoes it.
@@ -119,13 +119,13 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - The problems item toggles the Problems view. The debug item lists the launch configurations. Right-click the bar to hide or show any item; the hidden items are `status_bar.hidden`.
 - In a source tab: the blame item opens the commit in the graph; the line and column open `:`; indentation, encoding and line ending convert the text; the language server item restarts or shows the server.
 - The LaTeX item shows during a LaTeX tab or a build, and opens the TeX view. It turns amber while a build waits for your approval.
-- When the bar is too narrow, items leave from the middle; hidden ones stay listed in the right-click menu.
+- When the bar is too narrow, every item stays drawn and the bar scrolls sideways: swipe, turn the wheel over it, or Tab to an item. It opens at its left end, with the right group following the left.
 - The bell counts unread notifications. Do Not Disturb is `status_bar.quiet`, so it holds on every page and after a reload. A toast shows for eight seconds.
 - The status bar's choices are options, written into the open workspace file's `settings:` like every option Settings sets; with no workspace file open, oculus offers Save Workspace As... and writes nothing.
 
 ## The keys
 
-`?`, the palette's `:keys` and the app's Help > Keyboard Shortcuts open the Keyboard Shortcuts view, a tab of the Help page: every key the workbench, the palette, the editor, the LaTeX tab, the debugger, the desktop app (in the app) and the apps bind, with what it does, and a box that searches them. A key the editor gives up to the palette (Cmd+K and the chords under it) is listed with its action, which the palette runs. A letter then a digit opens a view: the letter is the group's `chord` (on its `rail:` entry, or in `nav_groups` for the float), the digit its place. The table below also holds the keys a control answers while it has the focus.
+`?`, the palette's `:keys` and the app's Help > Keyboard Shortcuts open the Keyboard Shortcuts view, a tab of the Help page: every key the workbench, the palette, the editor, the LaTeX tab, the debugger, the desktop app (in the app) and the apps bind, with what it does, and a box that searches them. The editor's chords under Cmd+K are listed with their actions like its other keys. A letter then a digit opens a view: the letter is the group's `chord` (on its `rail:` entry, or in `nav_groups` for the float), the digit its place. The table below also holds the keys a control answers while it has the focus.
 
 | Key | What it does |
 |---|---|
@@ -158,19 +158,20 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | Alt+Z | toggle word wrap |
 | Cmd+Shift+M; F8 / Shift+F8 | Problems view; next / previous problem |
 | Cmd+Shift+B / Cmd+Alt+T | default build / default test of the repository |
-| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | LaTeX build / clean / view PDF |
-| Cmd+Alt+J | LaTeX: show the caret's line in the PDF |
+| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | LaTeX build / clean / view PDF, in a `.tex`, `.sty` or `.cls` tab |
+| Cmd+Alt+J | LaTeX: show the caret's line in the PDF, in a `.tex` tab |
 | Cmd+click | in a PDF: open the source line |
-| Cmd+Alt+M / Cmd+Alt+X | Math Preview / TeX view |
-| Cmd+Alt+[ / Cmd+Alt+] | promote / demote sections |
+| Cmd+Alt+M / Cmd+Alt+X | Math Preview, in a `.tex` tab / TeX view |
+| Cmd+Alt+[ / Cmd+Alt+] | promote / demote sections, in a `.tex` tab |
 | Enter / Alt+Enter | in a list environment: new `\item` / plain new line |
-| Cmd+L, then Cmd+B, I, U, E, R, T, S, C, N, 6 or - | wrap in `\textbf`, `\textit`, `\underline`, `\emph`, `\textrm`, `\texttt`, `\textsl`, `\textsc`, `\textnormal`, `\textsuperscript`, `\textsubscript` |
-| Cmd+L, then Cmd+Enter / Cmd+W | insert `\item` / surround with a command |
-| Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb`, `\mathcal` |
+| Cmd+L, then Cmd+B, I, U, E, R, T, S, C, N, 6 or - | wrap in `\textbf`, `\textit`, `\underline`, `\emph`, `\textrm`, `\texttt`, `\textsl`, `\textsc`, `\textnormal`, `\textsuperscript`, `\textsubscript`, in a `.tex` or `.bib` tab |
+| Cmd+L, then Cmd+Enter / Cmd+W | insert `\item` / surround with a command, in a `.tex` tab |
+| Cmd+L, then Cmd+L / Ctrl+Shift+M | select the line / toggle whether Tab moves the focus, in a `.tex` tab; off macOS Ctrl+L, then Ctrl+M |
+| Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb`, `\mathcal`, in a `.tex` or `.bib` tab |
 | Shift+F10 | the right-click menu of the focused control |
 | arrows, Enter, Escape | in a menu: move, open a submenu, go back |
 | arrows | on a docked float's handle: resize it |
-| Cmd+K | palette |
+| Cmd+K | open the palette, or close it when open; in the editor, the first key of the editor's chords |
 | Shift+Enter | palette, on `:task-add`: add and open |
 | Cmd+P | find a file by name |
 | Cmd+Shift+P, F1 | palette in command mode |

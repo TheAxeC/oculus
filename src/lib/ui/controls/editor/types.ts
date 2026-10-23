@@ -18,8 +18,8 @@ export type EditorEnding = 'LF' | 'CRLF';
 export type EditorEdit = 'type' | 'undo' | 'redo';
 
 /**
- * One of the editor's actions the palette offers: its id, its label, and its keys as the hint (a
- * removed chord's old chord, or a mark action's key), empty for an action with none.
+ * One of the editor's actions the palette offers: its id, its label, and its keys as the hint (the
+ * chord that runs it in the editor, or a mark action's key), empty for an action with none.
  */
 export type EditorAction = { id: string; label: string; hint: string };
 

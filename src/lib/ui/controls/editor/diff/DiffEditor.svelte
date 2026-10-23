@@ -384,9 +384,9 @@
         return () => watch.dispose();
     });
 
-    // The palette's actions: the chords the editor gave up, and Add Comment on Line, registered on
-    // each side offered (and so in the line's right-click menu) and listed only while comments are
-    // offered.
+    // The palette's actions: the actions of Monaco's Cmd+K chords, and Add Comment on Line,
+    // registered on each side offered (and so in the line's right-click menu) and listed only while
+    // comments are offered.
     $effect(() => {
         const loaded = kit;
         const made = diff;

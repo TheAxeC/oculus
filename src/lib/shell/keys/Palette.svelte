@@ -26,12 +26,12 @@
     // source tab on screen the palette says there is none. While a source tab is on screen its
     // editor's actions are listed with the other results: Go to Next Change and Go to Previous
     // Change with their keys beside them, and Open Change, while the file has quick diff marks, and
-    // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
-    // its old chord beside it. Choosing one asks the tab to run it. A diff pane on screen lists its
-    // diff editor's actions the same way, and takes no line or language query. A view that offers
-    // commands of its own (the Present view's slide actions and Export to PDF) has them listed
-    // while its tab is on screen, and choosing one runs it. The tasks that apps offer for the
-    // repository holding the file on screen are listed too, each run as a press of it in the
+    // the actions of the editor's Cmd+K chords (and of Ctrl+K on macOS), each with the chord that
+    // runs it in the editor beside it. Choosing one asks the tab to run it. A diff pane on screen
+    // lists its diff editor's actions the same way, and takes no line or language query. A view
+    // that offers commands of its own (the Present view's slide actions and Export to PDF) has them
+    // listed while its tab is on screen, and choosing one runs it. The tasks that apps offer for
+    // the repository holding the file on screen are listed too, each run as a press of it in the
     // Repositories view runs.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
@@ -83,6 +83,8 @@
     import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
     import { dockedEdges } from '$lib/shell/window/colon-effects';
     import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
+    import { PIN_KEYS, chordHint } from '$lib/ui/controls/editor/chords';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
     import {
         appItems,
         buildIndex,
@@ -182,7 +184,7 @@
             ? [
                   ...buildIndex(current.snapshot, current.feeds, knownViews, current.primary),
                   ...editorItems(acting),
-                  ...pinItems(pinnable, t),
+                  ...pinItems(pinnable, chordHint(PIN_KEYS, onMac()), t),
                   ...viewItems(tab?.id ?? null, offered),
                   ...appItems(
                       appShell.commandRows(appShell.place(tab, source?.status ?? null, false))

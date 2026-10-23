@@ -43,6 +43,10 @@ export type LatexCommands = {
     promote: () => void;
     demote: () => void;
     selectSection: () => void;
+    /** The editor's own Expand Line Selection, whose key (Cmd+L) the tab's chords start with. */
+    selectLine: () => void;
+    /** The editor's own Toggle Tab Key Moves Focus, whose key the math chords start with. */
+    tabFocus: () => void;
 };
 
 /** What the extension is given by the page. */
@@ -167,7 +171,9 @@ export function latexEditing(deps: LatexEditingDeps): EditorExtension {
                 if (found !== null) {
                     apply({ edits: [], select: [{ anchor: found.start, active: found.end }] });
                 }
-            }
+            },
+            selectLine: () => editor.trigger('keyboard', 'expandLineSelection', null),
+            tabFocus: () => editor.trigger('keyboard', 'editor.action.toggleTabFocusMode', null)
         };
 
         const text = (): string => model.getValue();

@@ -36,7 +36,8 @@ export function paletteKeyOf(event: PaletteKeyEvent, mac: boolean): PaletteKey |
 
 /**
  * Whether the key is a press of the open row, its command modifier read as Cmd or Ctrl on every
- * platform: Cmd+K or Ctrl+K opens the palette or closes it when it is open.
+ * platform: Cmd+K or Ctrl+K opens the palette or closes it when it is open. The workbench leaves a
+ * press made in the editor to the editor, where Cmd+K starts Monaco's chords.
  */
 export function togglesPalette(event: PaletteKeyEvent): boolean {
     const held = event.metaKey === true || event.ctrlKey === true;

@@ -92,11 +92,12 @@ import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './language
 import { appKit, appKitVersion, onAppKit, servedLanguages } from './languages/apps.svelte';
 import { grammarsOf, hasGrammar, injectionsOf } from './languages/app-grammars';
 import { applyAppLanguages, type Applied } from './languages/register';
-import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
+import { COMMAND_PALETTE_EVENT, PIN_EDITOR_EVENT, PIN_KEYS, freedKeys } from '../chords';
 import { loadSuggest, type SuggestKit } from '../keys/suggest';
 import { loadShortcuts, type EditorShortcut } from '../keys/monaco-keys';
 import { pageWidgets, type PageWidgets } from '../options';
 import type { GitDiffs } from '../diff/git-provider';
+import type { LanguageConfigurationService } from 'monaco-editor/editor/common/languages/languageConfigurationRegistry';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './languages/folding';
@@ -268,6 +269,9 @@ export function onMac(): boolean {
     return typeof navigator !== 'undefined' && navigator.userAgent.includes('Macintosh');
 }
 
+/** The editor's command for Cmd+K Shift+Enter, which asks the workbench to pin or unpin the tab. */
+const PIN_COMMAND = 'oculus.togglePinEditor';
+
 /** A key press as Monaco's key code with its modifiers. */
 export function keyCode(monaco: typeof Monaco, press: KeyPress): number {
     let code: number = monaco.KeyCode[press.code];
@@ -310,6 +314,18 @@ async function pageDiffs(): Promise<GitDiffs> {
     );
 }
 
+/**
+ * Monaco's language configuration service, through which the editor's language settings are given
+ * at a rank of their own (rite/settings.ts); read once the first editor has started the services.
+ */
+async function languageSettings(): Promise<LanguageConfigurationService> {
+    const [standalone, registry] = await Promise.all([
+        import('monaco-editor/editor/standalone/browser/standaloneServices'),
+        import('monaco-editor/editor/common/languages/languageConfigurationRegistry')
+    ]);
+    return standalone.StandaloneServices.get(registry.ILanguageConfigurationService);
+}
+
 async function start(): Promise<EditorKit> {
     const [monaco, shiki, bridge, workers] = await Promise.all([
         import('monaco-editor'),
@@ -344,18 +360,26 @@ async function start(): Promise<EditorKit> {
     const mac = onMac();
     const shortcuts = await loadShortcuts(monaco, mac);
     monaco.editor.addKeybindingRules(
-        freedKeys(mac).map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
+        freedKeys().map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
     );
     // The newest command of an id is the one that runs, so the editor's Command Palette menu item
     // opens the workbench's palette in place of Monaco's own.
     monaco.editor.registerCommand('editor.action.quickCommand', () => {
         window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
     });
+    monaco.editor.registerCommand(PIN_COMMAND, () => {
+        window.dispatchEvent(new CustomEvent(PIN_EDITOR_EVENT));
+    });
+    monaco.editor.addKeybindingRule({
+        keybinding: keysCode(monaco, PIN_KEYS),
+        command: PIN_COMMAND
+    });
     const known = new Set(monaco.languages.getLanguages().map((language) => language.id));
     for (const id of SHIKI_LANGUAGES) {
         if (!known.has(id)) monaco.languages.register({ id });
     }
-    registerSettings(monaco);
+    const settings = await languageSettings();
+    registerSettings(settings);
     // The kit asks the painting for the theme's semantic rules and for the languages' grammars, and
     // the painting is made after it, so each is read through a call made when it is needed.
     const painting: { current: Painting | null } = { current: null };
@@ -368,7 +392,7 @@ async function start(): Promise<EditorKit> {
             painting.current?.onPainted(listener) ?? { dispose: () => undefined }
     });
     registerFolding(monaco, lsp.served);
-    let applied: Applied | null = applyAppLanguages(monaco, appKit(), null);
+    let applied: Applied | null = applyAppLanguages(monaco, settings, appKit(), null);
     silenceBuiltin(monaco);
     const made = painter({
         monaco,
@@ -401,7 +425,7 @@ async function start(): Promise<EditorKit> {
     });
     painting.current = made;
     onAppKit(() => {
-        applied = applyAppLanguages(monaco, appKit(), applied);
+        applied = applyAppLanguages(monaco, settings, appKit(), applied);
         void made.refresh();
     });
     made.onPainted(widgets.follow);

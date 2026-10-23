@@ -7,7 +7,8 @@ text:
         approve_title: 'Run the LaTeX configuration of {0}?'
         approve_weave: 'The recipe {0} runs the code of the document with:'
         bar_build: Build
-        bar_build_title: Build the LaTeX project (Cmd+Alt+B)
+        bar_build_bare: Build the LaTeX project
+        bar_build_title: Build the LaTeX project ({0})
         bar_building: Building
         bar_building_title: A build is running
         bar_kill: Kill
@@ -15,7 +16,7 @@ text:
         bar_log: Log
         bar_log_title: Open the log file of the last build
         bar_view: View
-        bar_view_title: View the PDF (Cmd+Alt+V)
+        bar_view_title: View the PDF ({0})
         bib_unread: The bibliography could not be read, so it was not changed.
         build: build
         build_tip: run latexmk on this file and show it running
@@ -46,10 +47,12 @@ text:
         cmd_save_quietly: Save without building
         cmd_select_content: Select the content of the current environment
         cmd_select_environment: Select the current environment
+        cmd_select_line: Select the current line
         cmd_select_name: Select the name of the current environment
         cmd_select_section: Select the current section
         cmd_surround: Surround the selection with a command
         cmd_synctex: Show the PDF at the caret (SyncTeX)
+        cmd_tab_focus: Toggle whether Tab moves the focus
         cmd_texdoc: Open the documentation of a package
         cmd_texdoc_packages: Open the documentation of a package this project loads
         cmd_toggle_equation: Toggle between inline and display equation
@@ -77,6 +80,9 @@ text:
         hover_ref_number: 'Number {0}'
         hover_ref_pdf: View on PDF
         jump_failed: The main window could not be reached. Reconnect and try again.
+        keys_tex: '{0}, in a .tex tab'
+        keys_tex_or_bib: '{0}, in a .tex or .bib tab'
+        keys_tex_or_style: '{0}, in a .tex, .sty or .cls tab'
         kill: kill
         labels: Labels
         no_build: '{0} has no build to show a log of in this session.'

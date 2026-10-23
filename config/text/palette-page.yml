@@ -15,12 +15,12 @@ text:
         commands_intro: A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run. A command whose argument is empty or names no view, project, theme or file icon theme says so in the palette, which stays open.
         contents: Contents
         editor: Editor commands
-        editor_intro: While a source tab is on screen the palette also lists the editor's own Cmd-K commands, each under the editor's own label with its chord beside it. The table names each by the editor's action id.
-        intro: Cmd+K opens the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
+        editor_intro: While a source tab is on screen the palette also lists the actions of the editor's Cmd+K chords, and on macOS Delete All Right, each under the editor's own label with the keys that run it in the editor beside it. Pin Editor and Unpin Editor are listed with the chord that runs them in the editor, as in VS Code. The table names each action by the editor's action id.
+        intro: Cmd+K opens the palette outside the editor; in the editor Cmd+K starts the editor's chords, and Cmd+Shift+P, F1 and Cmd+P open the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
         key_close: closes the palette
         key_commands: opens the palette in its command mode, as a colon does; either key closes it again
         key_files: lists files by name across the served roots
-        key_open: opens the palette, or closes it when it is open
+        key_open: opens the palette, or closes it when it is open; in the editor it starts the editor's chords instead
         key_symbols: lists the symbols of the workspace through the language server of the source tab on screen
         key_task_add: on :task-add, adds the task and opens its page in its editor
         key_walk: move through the results and open the selected one

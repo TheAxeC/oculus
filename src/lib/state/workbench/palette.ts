@@ -3,8 +3,8 @@
 // and command rule is tested without a browser or a live socket.
 //
 // While a source tab is on screen the index also holds its editor's actions: those that step
-// through and open the quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K
-// opens the palette from inside it. Each is under the editor's own label with its keys as the
+// through and open the quick diff marks, and those of the editor's Cmd+K chords (and of Ctrl+K on
+// macOS). Each is under the editor's own label with the keys that run it in the editor as the
 // hint, none for an action without keys, and choosing one asks that tab to run it. A view that
 // offers commands of its own (the Present view's slide actions) has them listed the same way while
 // its tab is on screen, and choosing one runs the command the view handed in.
@@ -97,7 +97,7 @@ export type PaletteItem = {
     view: string;
     state?: Record<string, unknown>;
     /**
-     * What is drawn beside a result: an editor action's keys or old chord, or the key of the hub a
+     * What is drawn beside a result: the keys of an editor action, or the key of the hub a
      * record of a hub other than the primary is of, so two hubs' records of one title are told
      * apart.
      */
@@ -339,16 +339,14 @@ export function taskItems(
     );
 }
 
-/** The chord VS Code binds Pin Editor and Unpin Editor to, which the palette stands in for. */
-const PIN_CHORD = 'Cmd+K Shift+Enter';
-
 /**
  * Pin Editor for an unpinned active tab and Unpin Editor for a pinned one, as palette items of kind
- * `editor` with VS Code's chord as the hint, and none while the pane holds no tab. Picking one
- * toggles the pin of the tab it names.
+ * `editor` with `chord`, the keys that pin and unpin in the editor, as the hint, and none while the
+ * pane holds no tab. Picking one toggles the pin of the tab it names.
  */
 export function pinItems(
     active: { id: string; pinned: boolean } | null,
+    chord: string,
     t: (key: string) => string
 ): PaletteItem[] {
     if (active === null) return [];
@@ -361,7 +359,7 @@ export function pinItems(
             title: label,
             text: 'pin',
             view: '',
-            hint: PIN_CHORD,
+            hint: chord,
             state: { instance: active.id, pin: !active.pinned }
         }
     ];

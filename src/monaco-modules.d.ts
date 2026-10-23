@@ -9,9 +9,14 @@
 // editor actions and the storage service, through which ui/controls/editor/keys/suggest.ts puts
 // Show Suggestions in the right-click menu and keeps the suggest list's description panel; the
 // default keybindings, which ui/controls/editor/keys/monaco-keys.ts lists in the Keyboard
-// Shortcuts view; and the key codes, which data/helpers/keys/oculus/bindings.ts walks to find
-// every key the workbench answers. Each subpath is declared here as the part of it that the tree
-// uses.
+// Shortcuts view; the key codes, which data/helpers/keys/oculus/bindings.ts walks to find every
+// key the workbench answers; the language configuration service, through which
+// ui/controls/editor/kit/load.ts gives the language settings of kit/rite/settings.ts at a rank
+// above Monaco's own and the apps' settings (kit/languages/register.ts) at a rank above those, and
+// the registry it keeps, over which
+// tests/ui/controls/editor/kit/comment-rules.test.ts resolves the settings given; and Monaco's
+// module of Julia, whose settings that test gives after oculus's. Each subpath is declared here as
+// the part of it that the tree uses.
 
 declare module 'monaco-editor/platform/contextkey/common/contextkey' {
     /**
@@ -169,6 +174,45 @@ declare module 'monaco-editor/editor/common/core/ranges/lineRange' {
     }
 }
 
+declare module 'monaco-editor/languages/definitions/julia/julia.js' {
+    import type * as Monaco from 'monaco-editor';
+
+    /** Monaco's own settings of Julia, which it gives the first time it meets the language. */
+    export const conf: Monaco.languages.LanguageConfiguration;
+}
+
+declare module 'monaco-editor/editor/common/languages/languageConfigurationRegistry' {
+    import type * as Monaco from 'monaco-editor';
+
+    /** The key of the language configuration service, which StandaloneServices answers it for. */
+    export const ILanguageConfigurationService: { readonly languageConfiguration: true };
+
+    /**
+     * What takes a language's settings at a rank. They merge field by field: a field a higher rank
+     * holds wins, and of two at one rank the one given later.
+     */
+    export type LanguageConfigurationService = {
+        register(
+            languageId: string,
+            configuration: Monaco.languages.LanguageConfiguration,
+            priority: number
+        ): Monaco.IDisposable;
+    };
+
+    /** The registry of language settings the service keeps, resolving them as the editor does. */
+    export class LanguageConfigurationRegistry implements LanguageConfigurationService {
+        register(
+            languageId: string,
+            configuration: Monaco.languages.LanguageConfiguration,
+            priority: number
+        ): Monaco.IDisposable;
+        /** The settings of a language resolved field by field, or null when none were given. */
+        getLanguageConfiguration(
+            languageId: string
+        ): { underlyingConfig: Monaco.languages.LanguageConfiguration } | null;
+    }
+}
+
 declare module 'monaco-editor/editor/common/core/range' {
     /** A range of characters of a model, the class the public entry exports as `Range`. */
     export { Range } from 'monaco-editor';
@@ -249,10 +293,15 @@ declare module 'monaco-editor/editor/standalone/browser/standaloneServices' {
         IStorageService,
         StorageService
     } from 'monaco-editor/platform/storage/common/storage';
+    import type {
+        ILanguageConfigurationService,
+        LanguageConfigurationService
+    } from 'monaco-editor/editor/common/languages/languageConfigurationRegistry';
 
     /** The services of the page's editors, read after the first editor was made. */
     export const StandaloneServices: {
         get(id: typeof IStorageService): StorageService;
+        get(id: typeof ILanguageConfigurationService): LanguageConfigurationService;
         get(id: object): InstantiationService;
     };
 }

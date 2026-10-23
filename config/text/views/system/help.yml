@@ -41,7 +41,6 @@ text:
         next_tab: next tab in the focused pane
         open: 'open {0}'
         page: 'show the rail page {0}'
-        palette: '{0}, run from the palette, which draws this key beside it'
         previous_problem: go to the previous problem
         previous_tab: previous tab in the focused pane
         problems: show the Problems view, or hide it when it is the one on screen
