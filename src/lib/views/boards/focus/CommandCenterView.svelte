@@ -75,7 +75,7 @@
 
     /**
      * Whether the Needs attention group shows: it has an attention line, the row of manifests
-     * behind their docs or the row of active projects on no lane.
+     * behind their docs or the row of the projects no lane shows.
      */
     const needsAttention = $derived(
         attentionRows.length > 0 ||

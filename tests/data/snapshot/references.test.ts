@@ -85,23 +85,23 @@ const PICKED = [
 
 const ROWS: Row[] = [
     {
-        name: 'a manifest select, venue_id, plain and double-quoted',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        name: 'a manifest select, venue, plain and double-quoted',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         kind: 'reference',
         key: 'jbhi',
         targets: ['hub:.oculus/data/research/venues.yml:4'],
         references: [
-            'hub:projects/active/alpha/project.yml:3:10',
-            'hub:projects/active/beta/project.yml:3:11'
+            'hub:projects/active/alpha/project.yml:3:7',
+            'hub:projects/active/beta/project.yml:3:8'
         ]
     },
     {
-        name: 'a manifest list, pillar',
-        at: ['hub', 'projects/active/alpha/project.yml', 4, 17],
+        name: 'a manifest list, pillars',
+        at: ['hub', 'projects/active/alpha/project.yml', 4, 18],
         kind: 'reference',
         key: 'federated',
         targets: ['hub:.oculus/data/pillars/pillars.yml:4'],
-        references: ['hub:projects/active/alpha/project.yml:4:17']
+        references: ['hub:projects/active/alpha/project.yml:4:18']
     },
     {
         name: 'a project named by related, its definition the id line of its manifest',
@@ -133,7 +133,7 @@ const ROWS: Row[] = [
         at: ['hub', 'side-projects/idea/project.yml', 3, 16],
         hub: {
             'side-projects/idea/project.yml':
-                'title: An idea\ntier: personal\nstage: idea\ncollaborators: [amir]\n'
+                'title: An idea\ntier: personal\nstage: nascent\ncollaborators: [amir]\n'
         },
         engine: {
             'defaults/sources.yml': [
@@ -248,7 +248,7 @@ const ROWS: Row[] = [
         name: 'a vocabulary value, defined as a key of its map in vocab.yml',
         at: ['hub', 'projects/active/alpha/project.yml', 1, 7],
         kind: 'reference',
-        key: 'active',
+        key: 'in-prep',
         targets: ['engine:catalogs/vocab.yml:4'],
         references: [
             'hub:projects/active/alpha/project.yml:1:7',
@@ -314,19 +314,19 @@ const ROWS: Row[] = [
             'hub:.oculus/data/research/venues.yml:4'
         ],
         references: [
-            'hub:projects/active/alpha/project.yml:3:10',
-            'hub:projects/active/beta/project.yml:3:11'
+            'hub:projects/active/alpha/project.yml:3:7',
+            'hub:projects/active/beta/project.yml:3:8'
         ]
     },
     {
         name: 'an open text laid over its file, a key typed and not saved',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         open: {
             'projects/active/alpha/project.yml': [
                 'id: alpha',
-                'stage: active',
+                'stage: in-prep',
                 'title: Alpha',
-                'venue_id: bspc',
+                'venue: bspc',
                 ''
             ].join('\n')
         },
@@ -335,7 +335,7 @@ const ROWS: Row[] = [
         targets: ['hub:.oculus/data/research/venues.yml:5'],
         references: [
             'hub:.oculus/data/academic/applications.yml:10:15',
-            'hub:projects/active/alpha/project.yml:3:10'
+            'hub:projects/active/alpha/project.yml:3:7'
         ]
     },
     {
@@ -362,17 +362,17 @@ const ROWS: Row[] = [
     },
     {
         name: 'an anchored key used through an alias, one reference at the anchor',
-        at: ['hub', 'projects/active/alpha/project.yml', 4, 12],
+        at: ['hub', 'projects/active/alpha/project.yml', 4, 13],
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace(
-                'pillar: [tensor, federated]',
-                'pillar: [&p tensor, *p, federated]'
+                'pillars: [tensor, federated]',
+                'pillars: [&p tensor, *p, federated]'
             )
         },
         kind: 'reference',
         key: 'tensor',
         targets: ['hub:.oculus/data/pillars/pillars.yml:3'],
-        references: ['hub:projects/active/alpha/project.yml:4:12']
+        references: ['hub:projects/active/alpha/project.yml:4:13']
     },
     {
         name: 'an open text under the hub root of a config file that lies inside the hub folder',
@@ -478,9 +478,9 @@ describe('the reference index', () => {
     it('finds the references of every document of a file of several', () => {
         const spec: FieldNode = {
             kind: 'record',
-            fields: { venue_id: { kind: 'leaf', sources: ['venues'] } }
+            fields: { venue: { kind: 'leaf', sources: ['venues'] } }
         };
-        const text = 'venue_id: jbhi\n---\nvenue_id: bspc\n';
+        const text = 'venue: jbhi\n---\nvenue: bspc\n';
         const scan = scanText({ root: 'hub', path: 'both.yml' }, text, {
             spec,
             defines: { kind: 'none' }
@@ -505,12 +505,12 @@ describe('the reference index', () => {
 
     it('takes a double-quoted empty value for no key', () => {
         const planted = plantHub({
-            'projects/active/alpha/project.yml': ALPHA.replace('venue_id: jbhi', 'venue_id: ""')
+            'projects/active/alpha/project.yml': ALPHA.replace('venue: jbhi', 'venue: ""')
         });
         const alpha = planted.file('hub', 'projects/active/alpha/project.yml');
         expect(alpha.references.map((one) => one.value)).not.toContain('');
         expect(
-            planted.hit('hub', 'projects/active/alpha/project.yml', { line: 3, character: 11 }).hit
+            planted.hit('hub', 'projects/active/alpha/project.yml', { line: 3, character: 8 }).hit
         ).toBeNull();
     });
 
@@ -521,11 +521,11 @@ describe('the reference index', () => {
 
     it('gives no hit in a text that does not read as YAML, and marks the file', () => {
         const planted = plantHub();
-        const text = 'id: alpha\nvenue_id: [jbhi\n';
+        const text = 'id: alpha\nvenue: [jbhi\n';
         const { hit, graph } = planted.hit(
             'hub',
             'projects/active/alpha/project.yml',
-            { line: 1, character: 12 },
+            { line: 1, character: 9 },
             { 'projects/active/alpha/project.yml': text }
         );
         expect(hit).toBeNull();

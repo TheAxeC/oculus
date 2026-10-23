@@ -10,7 +10,7 @@ text:
         connected_tip: Leave out a project with no membership of a pillar still drawn
         count: '{0} ({1})'
         edge_failed: 'Edge edit failed: {0}'
-        empty: 'No relationships yet: add pillar or related to manifests.'
+        empty: 'No relationships yet: add pillars or related to manifests.'
         empty_filtered: Nothing is left under these filters. Press a filter again, or all, to widen them.
         empty_glyph: circle_empty
         filters: Map filters

@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
-    // the cards on them, and the ideas backlog under them. A card is lanes/LaneCard.svelte, drawn
-    // from what this module works out for it: its deadline, what it waits on, its flames and its
-    // move menu.
+    // the cards on them, and the backlog lane under them, drawn full width. A card is
+    // lanes/LaneCard.svelte, drawn from what this module works out for it: its deadline, what it
+    // waits on, its flames and its move menu. Which lane a card sits on and what a move writes are
+    // state/boards/focus.ts's laneOf and moveOnto, so a drop and the menu write the same fields.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -20,16 +21,17 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
     import {
-        backlog,
+        BACKLOG,
         CLUSTERS,
         flamesOf,
         focusLabel,
-        holdingTone,
         laneItems,
+        laneOf,
         isBlocked,
         lanes,
         lanesIn,
         movable,
+        moveOnto,
         nextPriority,
         pausesCountdown,
         portfolioProjects,
@@ -63,15 +65,14 @@
     const snapshot = $derived(portfolio());
     const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(config));
-    const items = $derived(laneItems(projects, board));
-    const ideas = $derived(backlog(projects, board, config));
+    const items = $derived(laneItems(projects, board, config));
     const levels = $derived(priorities(config));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
     let over = $state<string | null>(null);
 
-    /** The project being dragged, and the lane it came from. */
-    let dragging: { project: Project; from: string } | null = null;
+    /** The project being dragged. */
+    let dragging: { project: Project } | null = null;
 
     /** The deadline badge of a card: how overdue it is, how long is left, or the date itself. */
     function deadline(project: Project): { label: string; tone?: string } | null {
@@ -108,15 +109,20 @@
         return '';
     }
 
-    /** The menu a card carries: every lane, then every priority, with the one in force marked. */
+    /**
+     * The menu a card carries: every lane the card may move to (`movable`), then every priority,
+     * with the lane it sits on and the priority in force marked.
+     */
     function menuFor(project: Project): MenuItem[] {
-        const held = project.focus ?? '';
+        const held = laneOf(project, board, config)?.key ?? '';
         return [
-            ...board.map((lane) => ({
-                id: `lane:${lane.key}`,
-                label: lane.label,
-                active: lane.key === held
-            })),
+            ...board
+                .filter((lane) => movable(project, lane, config))
+                .map((lane) => ({
+                    id: `lane:${lane.key}`,
+                    label: lane.label,
+                    active: lane.key === held
+                })),
             ...levels.map((level) => ({
                 id: `prio:${level.key}`,
                 label: level.label,
@@ -131,10 +137,25 @@
         onsaid(answerWords(answer));
     }
 
-    /** Picking a lane writes `focus:`; picking a priority writes `priority:`. */
+    /** Picking a lane moves the card onto it (`move`); picking a priority writes `priority:`. */
     async function choose(project: Project, choice: string): Promise<void> {
-        const field = choice.startsWith('lane:') ? 'focus' : 'priority';
-        said(await writeManifest(project.id, { [field]: choice.slice(choice.indexOf(':') + 1) }));
+        const value = choice.slice(choice.indexOf(':') + 1);
+        if (!choice.startsWith('lane:')) {
+            said(await writeManifest(project.id, { priority: value }));
+            return;
+        }
+        const lane = board.find((one) => one.key === value);
+        if (lane !== undefined) await move(project, lane);
+    }
+
+    /**
+     * Move a card onto a lane: the fields state/boards/focus.ts's moveOnto gives, the stage or the
+     * chips that put the card on that lane, in one manifest write, and nothing when it gives none.
+     */
+    async function move(project: Project, lane: Lane): Promise<void> {
+        const fields = moveOnto(project, lane, board, config);
+        if (fields === null) return;
+        said(await writeManifest(project.id, fields));
     }
 
     /** Write the next priority of the cycle, which state/boards/focus.ts's nextPriority gives. */
@@ -150,7 +171,7 @@
     }
 
     function started(project: Project, event: DragEvent): void {
-        dragging = { project, from: project.focus ?? '' };
+        dragging = { project };
         if (event.dataTransfer === null) return;
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', project.id);
@@ -162,24 +183,24 @@
     }
 
     /**
-     * A lane that may not take the dragged project, the Ideas lane for a project outside the live
-     * tiers, leaves the event alone, so the browser refuses the drop and the lane does not light.
+     * A lane that may not take the dragged project (`movable`), a backlog lane for a project of a
+     * tier without `backlog` among them, leaves the event alone, so the browser refuses the drop
+     * and the lane does not light.
      */
-    function draggedOver(lane: string, event: DragEvent): void {
+    function draggedOver(lane: Lane, event: DragEvent): void {
         if (dragging === null || !movable(dragging.project, lane, config)) return;
         event.preventDefault();
         if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
-        over = lane;
+        over = lane.key;
     }
 
-    /** Dropping a card on a lane writes its `focus:`, which is what puts it on that lane. */
-    async function dropped(lane: string, event: DragEvent): Promise<void> {
+    /** Dropping a card on a lane moves it there (`move`), and onto its own lane writes nothing. */
+    async function dropped(lane: Lane, event: DragEvent): Promise<void> {
         if (dragging === null || !movable(dragging.project, lane, config)) return;
         event.preventDefault();
         const held = dragging;
         ended();
-        if (lane === held.from) return;
-        said(await writeManifest(held.project.id, { focus: lane }));
+        await move(held.project, lane);
     }
 </script>
 
@@ -196,9 +217,9 @@
             class="lane-body"
             class:grid
             role="list"
-            ondragover={(event) => draggedOver(one.key, event)}
+            ondragover={(event) => draggedOver(one, event)}
             ondragleave={() => (over = over === one.key ? null : over)}
-            ondrop={(event) => dropped(one.key, event)}
+            ondrop={(event) => dropped(one, event)}
         >
             {#each held as project (project.id)}
                 <LaneCard
@@ -248,27 +269,19 @@
     {/if}
 {/each}
 
-<details class="cluster muted" open>
-    <summary>
-        <Surface inline>
-            <Glyph name={t('focus.ideas_glyph')} />{t('focus.ideas')}
-        </Surface>
-    </summary>
-    <div class="lanes one">
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render lane(
-            {
-                key: 'holding',
-                label: t('focus.ideas'),
-                sub: t('focus.idea_backlog'),
-                tone: holdingTone(config),
-                cluster: 'incubate'
-            },
-            ideas,
-            true
-        )}
-    </div>
-</details>
+{#each lanesIn(board, BACKLOG) as one (one.key)}
+    <details class="cluster muted" open>
+        <summary>
+            <Surface inline>
+                <Glyph name={t('focus.ideas_glyph')} />{one.label}
+            </Surface>
+        </summary>
+        <div class="lanes one">
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render lane(one, items[one.key] ?? [], true)}
+        </div>
+    </details>
+{/each}
 
 <style>
     summary {

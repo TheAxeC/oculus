@@ -1,17 +1,16 @@
 id: sparse-attention
-stage: active
+stage: in-prep
 tier: projects
 short: Sparse-Attn
 title: Sparse attention with learned routing
 lead: [dana-example]
 collaborators: [c-senior]
-focus: blocked
 status:
   chips: [blocked]
   line: Draft paused - waiting on a co-author's compute results.
-venue_id: tmlr
+venue: tmlr
 domain: nlp
-pillar: [repr]
+pillars: [repr]
 datasets: [toy-embed]
 related: [robust-embeddings]
 eli5: Let the model learn WHICH tokens to attend to, so attention stays cheap at long context.

@@ -98,7 +98,7 @@ export function orphans(
 
 /**
  * Non-real projects grouped by stage, in the order of the numbers the words of `stages` carry as
- * `dead` (nogo, dropped, disproved, abandoned, paused in oculus's own vocab.yml).
+ * `dead` (failed, then stopped, in oculus's own vocab.yml).
  */
 export function archival(projects: Project[], config: Record<string, unknown>): ArchiveGroup[] {
     const real = new Set(realProjects(projects, config));

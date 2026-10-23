@@ -35,7 +35,7 @@ import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
-import { hasWord, wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import { setFields } from '../yaml/yaml-edit.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { insertRemoved } from './restore.ts';
@@ -586,15 +586,16 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 /**
  * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
  * the project's `id`, its `tier`, as its `stage` the first word of `stages` carrying `new_idea` (no
- * `stage` line when no word carries it) and no chip; a tier carrying `backlog` starts it in the
- * Focus backlog (`focus: holding`). Its status line, its `next` and its README are the words of
- * config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no
- * `next` word gets no `next`). `fields.tier` is the tier of the board that sent the form and
- * `fields.folder` the folder it was made in; a write that names neither is made in the first tier
- * carrying `main` under that tier's `new_project_dir`. A bad id, an id a project already holds, a
- * tier with no words, a hub that names no folder for the tier, an empty folder, a folder outside
- * every scan folder, a folder inside a project and a folder that is already there are all refused,
- * so nothing existing is ever written over. The outcome's `id` is the new project's id.
+ * `stage` line when no word carries it) and no chip, so a project of a tier carrying `backlog`
+ * starts on the Focus board's backlog lane when that lane holds the stage, as the shipped lanes
+ * do. Its status line, its `next` and its README are the words of config/text/server.yml for that
+ * tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no `next` word gets no `next`).
+ * `fields.tier` is the tier of the board that sent the form and `fields.folder` the folder it was
+ * made in; a write that names neither is made in the first tier carrying `main` under that tier's
+ * `new_project_dir`. A bad id, an id a project already holds, a tier with no words, a hub that
+ * names no folder for the tier, an empty folder, a folder outside every scan folder, a folder
+ * inside a project and a folder that is already there are all refused, so nothing existing is
+ * ever written over. The outcome's `id` is the new project's id.
  */
 export function createIdea(
     hub: string,
@@ -673,7 +674,6 @@ export function createIdea(
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
     lines.push(`title: ${renderScalar(title)}`);
-    if (hasWord(vocab, 'tiers', 'backlog', tier)) lines.push('focus: holding');
     lines.push(
         'status:',
         '  chips: []',

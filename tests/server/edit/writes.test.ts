@@ -120,12 +120,12 @@ const PERSONAL_ROWS = (['idea', 'r'] as const).flatMap((id): FieldRow[] => [
     {
         name: `${id}: a field outside the manifest schema`,
         id,
-        fields: { venue: 'somewhere' },
+        fields: { venue_id: 'somewhere' },
         changes: null,
         answer: () => ({
             found: true,
             changed: [],
-            refused: [{ field: 'venue', reason: 'the manifest schema does not name the field' }],
+            refused: [{ field: 'venue_id', reason: 'the manifest schema does not name the field' }],
             records: []
         })
     },
@@ -644,7 +644,6 @@ const RESEARCH_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.
  */
 function ideaManifest(
     tier: string,
-    focus: boolean,
     line: string,
     next: string | null,
     stage: string | null = 'nascent'
@@ -654,7 +653,6 @@ function ideaManifest(
         `tier: ${tier}`,
         ...(stage === null ? [] : [`stage: ${stage}`]),
         'title: A new idea',
-        ...(focus ? ['focus: holding'] : []),
         'status:',
         '  chips: []',
         `  line: ${line.includes(':') ? `"${line}"` : line}`,
@@ -671,28 +669,28 @@ const IDEA_ROWS = [
         name: 'the Projects board, in the hub folder of the tier',
         fields: { ...FORM, tier: 'projects' },
         parent: 'projects/ideas',
-        manifest: ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     },
     {
         name: 'the Personal board, in the hub folder of the tier',
         fields: { ...FORM, tier: 'personal' },
         parent: 'side-projects',
-        manifest: ideaManifest('personal', true, 'New project.', null),
+        manifest: ideaManifest('personal', 'New project.', null),
         readme: '# A new idea\n\nwhat it is\n'
     },
     {
         name: 'the Archive board, in a folder the reader typed',
         fields: { ...FORM, tier: 'archive', folder: 'projects/archive/old' },
         parent: 'projects/archive/old',
-        manifest: ideaManifest('archive', false, RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('archive', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     },
     {
         name: 'a write that names no tier and no folder, as Lit Watch makes it',
         fields: FORM,
         parent: 'projects/ideas',
-        manifest: ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     }
 ];
@@ -733,7 +731,7 @@ describe('adding an idea', () => {
             expect(out.refused).toEqual([]);
             const file = join(root, 'projects/ideas/new-idea/project.yml');
             expect(readFileSync(file, 'utf8')).toBe(
-                ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT, row.stage)
+                ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT, row.stage)
             );
         }
     );

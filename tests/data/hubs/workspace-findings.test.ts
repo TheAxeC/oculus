@@ -13,7 +13,7 @@ import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 const { config } = loadConfig(engineDir());
 const CATALOG = textCatalog(config);
 
-const MANIFEST = 'tier: personal\nstage: idea\n';
+const MANIFEST = 'tier: personal\nstage: nascent\n';
 
 describe('a folder of the workspace that holds a project manifest', () => {
     it('raises no finding and is a root of the workspace wherever it lies', () => {

@@ -48,7 +48,6 @@ import {
     type RepositoryGroup
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
-import { movable } from '../boards/focus.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
 import { followedSession } from '../workbench/selection.svelte.ts';
@@ -485,11 +484,7 @@ export function createSelectors(
         hub?: string
     ): Choice[] {
         const root = hub ?? project?.root ?? workspace().primary ?? '';
-        const all = choicesFor(field, entities.portfolio(), configMap(), root);
-        // The Focus lane of a project offers only what the board may move it to, so `holding` is
-        // not offered to a project of a tier the backlog does not draw.
-        if (project === null || field.field !== 'focus') return all;
-        return all.filter((choice) => movable(project, choice.id, configMap()));
+        return choicesFor(field, entities.portfolio(), configMap(), root);
     }
 
     // ------------------------------------------------------------------ sessions The joins over

@@ -12,7 +12,7 @@
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.stages, vocab.forms, vocab.chips, vocab.focus_lanes), or
+# `vocab.<key>` (vocab.stages, vocab.forms, vocab.chips, vocab.priority_levels), or
 # `vocab.<key>.<field>` for the keys of a map whose row carries that field as true
 # (vocab.statuses.acknowledged, the funding statuses a manuscript acknowledges). A list of sources
 # offers their keys together (`waiting-on` takes people and projects). Each value of a `from` field
@@ -33,16 +33,15 @@ manifest_schema:
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
     tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive, personal or software. The project is shown with a finding when the key is missing or is not one of these five." }
-    stage:         { label: "Stage", type: select, from: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (idea, nascent, scoping), work in flight (de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted), paused, or done (published, finished, archived, nogo, dropped, disproved, abandoned). The stage sets the board group, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
+    stage:         { label: "Stage", type: select, from: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the board group, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
     form:          { label: "Form", type: select, from: vocab.forms, section: Core, help: "The form of the output, one word of the forms list: journal, conference, thesis, abstract, poster or tech-report. Leave it empty for a project with no such output; a software project is its tier." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
-    "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked or numbers pending, or the role on the paper. A stage word belongs in Stage and a form in Form." }
+    "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run, or the role on the paper. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
-    focus:         { label: "Focus lane", type: select, options: [holding], from: vocab.focus_lanes, section: Core, help: "The lane of the Focus board the project sits in; holding keeps an idea in the backlog." }
     priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
-    venue_id:      { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
+    venue:         { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
     links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }
     tags:          { label: "Tags", type: tags, section: Core, help: "Words the project is found by, one per entry, such as the language of a software project. The board search reads them." }
     year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
@@ -52,7 +51,7 @@ manifest_schema:
     results:       { label: "Results", type: lines, section: Content, help: "One headline result per line, each one a result you can claim." }
     ideas:         { label: "Ideas", type: lines, section: Content, help: "One avenue to try per line." }
     domain:        { label: "Domain", type: select, from: domains, section: Connections, help: "The research domain the project belongs to, picked from the domains list." }
-    pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
+    pillars:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
     lead:          { label: "Lead", type: chips, from: people, section: Connections, help: "The person or people who lead the project, several for co-first authors, picked from the people list; pick as many as apply." }
     collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply." }

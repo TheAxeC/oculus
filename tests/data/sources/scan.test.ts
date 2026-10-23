@@ -95,7 +95,7 @@ const ROWS: Row[] = [
 describe('a wrong scan or new_project_dir value', () => {
     it.each(ROWS)('refuses $name with a finding naming the key', (row) => {
         const hub = plantScratch('oculus-scan-', {
-            'projects/ideas/a/project.yml': 'tier: projects\nstage: idea\ntitle: A\n'
+            'projects/ideas/a/project.yml': 'tier: projects\nstage: nascent\ntitle: A\n'
         });
         const merged = {
             ...MERGED,

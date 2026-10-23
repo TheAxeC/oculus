@@ -127,7 +127,10 @@ export type Ticker = {
     venueLoad: Tally[];
     snoozed: TickerItem[];
     behind: ManifestBehind | null;
-    /** The active projects of the Projects or Personal board that name no lane. */
+    /**
+     * The projects of the Projects or Personal board whose stage is in flight or an idea and that
+     * no lane takes.
+     */
     unplaced: Unplaced | null;
 };
 

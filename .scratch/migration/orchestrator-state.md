@@ -23,19 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:         # steps in flight, up to six (Z632)
-- step: O67
-  brief_check: agents/reviews/O67-brief-check.md (ac6a30fd8fba25176, claude-opus-5-5, 286213 tokens, 83 tool uses, 13 min 20 s)
-  base: 132a0e1fcd7d9ad3c03ecbfd799032f9b33798d5
-  worktree: .agents/worktrees/migration-O67
-  executor: agent
-  worker: claude:opus
-  session_id: a3f42e66388dd0742 (claude-opus-5-5)
-  report: .scratch/migration/agents/reviews/O67-report.md
-  builder_usage: 283624 tokens, 233 tool uses, 50 min 13 s (round 0; the report came as its final message, its file write refused); round 1 202031 tokens, 97 tool uses, 19 min 20 s
-  reviewer_report: .scratch/migration/agents/reviews/O67-refuter.md (a8c4020c0f56479db, claude-opus-5-5, 337683 tokens, 81 tool uses, 15 min 46 s)
-  round: 1
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -173,7 +161,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- none.
+- Open item 286 (2026-10-23, O67's landing, ruling 271): the hub's data and the workspace repositories' manifests rewritten once for O67, shown as a diff and committed on Axel's word. The diff: `agents/reviews/O67-hub-rewrite.patch` (223 files of the hub: the 110 manifests, `README.md`, `.oculus/config.yml`, `data.yml`, `venues.yml`'s help line, the UGent letter's source ledger, `deck/present.yml`, and the four folder moves `archive/nogo/*` and `archive/disproved/*` to `archive/failed/`, `archive/dropped/*` to `archive/stopped/`, `coauthor/abandoned/*` to `coauthor/stopped/`) and `agents/reviews/O67-workspace-manifests.patch` (cathedra, game-engine, oculus, officium, ordo, scotoma, theaxec.github.io, youtube-downloader). It is applied by `mv` of the four folders (their ignored `__pycache__` folders move with them), then the content patch, `git add` by path and one commit in the hub, and one commit in each workspace repository; the patch applies on the live hub today (`git apply --check`), and is made again over the live files at apply time if they change first. Until it is applied, oculus on main reads the live hub with 254 snapshot findings, each a line the rewrite changes. One choice inside it, `deck/present.yml`'s ideas group: ECG-AF (FAIR) moves from `de-risking` to `exploring` (its lane Run), and the group takes only `nascent`, `scoping` and `de-risking`. (a) add `exploring` to the group's stages, so the deck is as it is now: pro, nothing on the deck changes and the slide Axel listed by name stays; con, the ideas group now also takes a future exploring project that has a deck. (b) remove `ecg-af-fair` from the group's slides: pro, the group holds only pre-run ideas; con, ECG-AF (FAIR)'s slide leaves the deck. Recommendation (a), in the patch as shown; (b) is the lazy option, since it fits the deck to the filter by dropping a slide.
 
 ## Closed items
 - 285 (2026-10-23, O39's look C8): a reload draws the default arrangement for about 0.2 s before the saved one. In the second checkout Ember run the page had a Funding tab open in front of Focus; after Cmd+R it drew the Focus tab from 64.55 s to 64.77 s into the recording, then the Funding tab again. The cause, read in `src/lib/state/workbench/layout/saved/storage.ts:5-9`: the saved arrangement is read only once the workspace answer has named the workspace, so the page's first draw is the default arrangement. No step in the plan changes the layout's load (O55, O60, O63 and O66 do not), so folding it into one under Z468 would put it in a step it does not belong to, and a new step needs your permission. Options: (a) a new step after O66: the page draws its panes only once the saved arrangement is read, or the server sends the arrangement with the first HTML as part E does with the theme, the choice taken in its brief; (b) folded into O55, which changes the Focus and Projects boards but not the layout's load; (c) left as it is. Recommendation: (a), a judgment: the flash is seen on every reload and at every start with a saved arrangement, and the first-HTML route already exists for the theme; (b) puts the fix in a step about something else; (c) is the lazy option. Closed 2026-10-23: Axel ruled (b); folded into O55's line, booked in plan.md Rulings.
@@ -450,6 +438,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-23 (O67 landed). O67 is on main, 96 files, ticked in `plan.md` with its booking; the gate run of the verify list passed, the rewritten hub passes the hub checks with the new code (integrity 14 of 14, the real-hub tests 104 of 104, the probe 0 findings), and the look on a scratch server over the rewritten hub is recorded in the booking. The hub and workspace rewrite waits for Axel's word, open item 286; the look on TEST is owed until it is applied. In flight (0 of 6): none. Next: Axel's word on 286, then O55 after his go. Open items: 286.
 - 2026-10-23 (O67 round 1 reported; its review running). The builder's round report is saved in `agents/reviews/O67-report.md` under "Repair round 1": items 1 to 5, 7 and 8 done, item 6 (S-4) handed back, since the module-level `WeakMap` the round brief named fails `tests/checks/tree/boundaries.test.ts:666` (no process-wide state under src). The orchestrator rules its option A, fixed at landing: `ProjectCard.svelte` takes the lanes as a prop from `Projects.svelte` and `Project.svelte`, which parse them once; adding the memo to FROZEN was the lazy option. The delta was read whole: three comments and the `blocked` flag text in `vocab.yml` and `vocab.ts`. The review over round 1 runs (a542e6574a932d89b, claude-opus-5-5). In flight (1 of 6): O67 (review over round 1). Next: that review, then /land. Open items: none.
 - 2026-10-23 (ruling 285). Axel ruled (b): the reload's first draw of the default arrangement is folded into O55's line; booked in plan.md Rulings. In flight (1 of 6): O67 (round 1). Next: the round's report, the review over it, then /land. Open items: none.
 - 2026-10-23 (O67 round 1 sent). The reviewer a8c4020c0f56479db on claude-opus-5-5 wrote `agents/reviews/O67-refuter.md`: items 1 to 7, 9 and 10 hold, item 8 violated (S-1); every case met; findings P-1, S-1 to S-4, B-1. Round 1 (`agents/briefs/O67-round1.md`, 8 items) sent to the builder a3f42e66388dd0742; snapshot `.agents/worktrees/migration-O67-round-1` with `files.txt`. P-1 is ruled under spec.md:68: the new test files run on a scratch copy of the base, no code changed, so the no-breakage rule is not reached. In flight (1 of 6): O67 (round 1). Next: the round's report, the review over it, then /land. Open items: 285.

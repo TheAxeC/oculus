@@ -40,6 +40,7 @@
     import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
     import { placeOf } from '$lib/state/shared/page/hubs';
     import { isStale, newestDocDate, waitingLine, type BoardItem } from '$lib/state/boards/board';
+    import { laneOf, type Lane } from '$lib/state/boards/focus';
     import { contextText } from '$lib/state/boards/project-context';
     import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
@@ -76,6 +77,8 @@
         now: number;
         /** How many stale days make the manifest warning visible. */
         staleLag: number;
+        /** The Focus board's lanes, parsed once by the view that draws the cards. */
+        focusLanes: Lane[];
         /** Toggle the expanded details when the board allows expansion. */
         ontoggle?: () => void;
         /** Whether the deposit action belongs in this card's controls. */
@@ -100,6 +103,7 @@
         tab,
         now,
         staleLag,
+        focusLanes,
         ontoggle,
         deposit = false,
         onsaid,
@@ -116,6 +120,8 @@
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
     const due = $derived(deadline(item.project, now, t, configMap()));
+    /** The Focus board lane the project sits on, drawn as a tag before its status chips. */
+    const lane = $derived(laneOf(item.project, focusLanes, configMap()));
     const wait = $derived(
         snapshot === null
             ? null
@@ -373,8 +379,8 @@
 
         <div class="folder">{item.project.workspaceFolder?.root ?? item.project.folder}</div>
         <div class="row">
-            {#if item.project.focus}
-                <Tag label={item.project.focus} />
+            {#if lane}
+                <Tag label={lane.label} />
             {/if}
             <CardStatus {item} />
             {#if item.code !== ''}

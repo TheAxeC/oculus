@@ -24,7 +24,7 @@ import { plantHub, workspaceWith, type FolderSpec } from '../../fixtures/hubs/wo
 
 /** A manifest of a project of this tier and title. */
 const manifest = (title: string, tier: string): string =>
-    `title: ${title}\ntier: ${tier}\nstage: active\n`;
+    `title: ${title}\ntier: ${tier}\nstage: exploring\n`;
 
 /** The hub's own files: one project in a scan folder and one in `side-projects`. */
 const HUB_FILES: Record<string, string> = {

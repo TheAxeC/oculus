@@ -8,7 +8,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
-
+- O67, on TEST on Axel's server on 8790, once the hub rewrite of open item 286 is applied: the Focus board's lanes and backlog, a card's lane tag on the Projects board, the List's Focus column on the projects and personal boards, the stats strip's blocked count, the stage words `released`, `failed` and `stopped` and the chips `parked`, `results-in` and `numbers-to-run` on cards and the Map, the Pillars view's Archival band. Taken on a scratch server over the rewritten hub at the landing (plan.md, O67's booking); TEST shows the live hub, which holds the old words until 286 is applied.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 

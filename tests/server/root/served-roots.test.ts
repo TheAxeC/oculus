@@ -56,7 +56,7 @@ function started() {
     mkdirSync(join(cathedra, '.oculus'), { recursive: true });
     writeFileSync(
         join(cathedra, '.oculus', 'project.yml'),
-        'tier: projects\nstage: active\ntitle: Cathedra\n'
+        'tier: projects\nstage: exploring\ntitle: Cathedra\n'
     );
     const files = join(research, '.oculus', 'workspaces');
     mkdirSync(files, { recursive: true });

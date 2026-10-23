@@ -83,7 +83,7 @@ function haystack(project: Project, item: Omit<BoardItem, 'haystack'>, team: Boa
         project.latest ?? '',
         project.next ?? '',
         project.outcome ?? '',
-        item.venue?.text ?? project.venue ?? '',
+        item.venue?.text ?? '',
         ...project.results,
         ...project.ideas,
         ...(project.tags ?? []),

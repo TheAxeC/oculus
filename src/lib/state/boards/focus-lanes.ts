@@ -1,6 +1,7 @@
 // Layer 2, client state. Collection cards and the two attention rows of projects for Focus: the
-// manifests behind their docs and the active projects on no lane. All values are derived from the
-// supplied snapshot and config; the view resolves configured colours through toneOf.
+// manifests behind their docs and the projects no lane shows, work in flight or ideas of the
+// Projects and Personal boards. All values are derived from the supplied snapshot and config; the
+// view resolves configured colours through toneOf.
 
 import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
@@ -29,8 +30,8 @@ export type ManifestBehind = {
 };
 
 /**
- * The attention row of the active projects no lane shows, with the four project links it draws and
- * the remainder count, the shape of the manifest-lag line.
+ * The attention row of the projects no lane shows, with the four project links it draws and the
+ * remainder count, the shape of the manifest-lag line.
  */
 export type Unplaced = {
     count: number;

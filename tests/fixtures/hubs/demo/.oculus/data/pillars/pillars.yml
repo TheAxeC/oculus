@@ -1,4 +1,4 @@
-# Research pillars (lines of work) -> the Pillars tab. Membership is computed from each manifest's `pillar:`.
+# Research pillars (lines of work) -> the Pillars tab. Membership is computed from each manifest's `pillars:`.
 schema:
   - { field: key,   type: text, required: true }
   - { field: title, type: text, required: true }

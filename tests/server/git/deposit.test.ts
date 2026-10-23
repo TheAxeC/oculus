@@ -60,7 +60,7 @@ function manifest(id: string, repo: string, url = ''): string {
     return [
         `id: ${id}`,
         'tier: projects',
-        'stage: active',
+        'stage: exploring',
         `title: "The title of ${id}"`,
         'status:',
         '  line: "the line"',

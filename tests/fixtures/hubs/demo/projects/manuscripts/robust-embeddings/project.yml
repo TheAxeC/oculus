@@ -4,14 +4,13 @@ tier: projects
 short: Robust-Emb
 title: Robust representation learning under distribution shift
 lead: [dana-example]
-focus: review
 status:
   chips: []
   line: 8 pp, submitted to JMLR; awaiting decision.
-venue_id: jmlr
+venue: jmlr
 year: 2026
 domain: nlp
-pillar: [repr]
+pillars: [repr]
 funding: [ecf]
 datasets: [toy-embed]
 related: [graph-transfer, sparse-attention]

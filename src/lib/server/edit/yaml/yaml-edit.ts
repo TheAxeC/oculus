@@ -175,7 +175,7 @@ function spliced(text: string, from: number, to: number, insert: string): Writte
 /**
  * Write a value over the bytes of an existing one. A list keeps the style the file has it in: a
  * flow list stays flow and a block list stays block, at its own indentation. An empty value
- * (`venue_id:` with nothing after it) is a zero-width range, so the rendering is inserted there and
+ * (`venue:` with nothing after it) is a zero-width range, so the rendering is inserted there and
  * given the space the colon has not got. `style` is the quoting a string is written in when the
  * caller knows the node's own would not read back, as a plain string inside a flow map.
  */

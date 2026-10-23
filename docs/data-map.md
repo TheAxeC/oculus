@@ -59,7 +59,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 | View | Page | Draws |
 |---|---|---|
-| Focus | Focus | projects by `focus`, the dated lines, follow-ups and subtasks of every file, the live leads, the career panel |
+| Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career panel |
 | Live HPC | the float at the right edge | the cluster `slurm.resource` names |
 | Projects, Coauthor, Archive, Personal | Projects | the projects of that `tier` |
 | Project, Editor | opened from a card | one project, and its form |
@@ -117,9 +117,9 @@ Below, each file is named by its collection key, and `[ ]` marks a list.
 
 ```yaml
 project.yml:
-  venue_id: venues id
+  venue: venues id
   domain: domains key
-  pillar: [pillars key]
+  pillars: [pillars key]
   funding: [funding key]
   datasets: [data key]
   compute: [resources key]
@@ -130,7 +130,6 @@ project.yml:
   stage: vocab stages
   form: vocab forms
   status.chips: [vocab chips]
-  focus: vocab focus_lanes, or holding
   priority: vocab priority_levels
 people:
   affiliations: [organisations key]
@@ -174,7 +173,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `people`: the workspace setting `self` names the key of one entry, the user's own; a key no entry carries is a finding.
 - `resources`: `host` is needed for `slurm.resource` to poll the cluster.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
-- `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date; `holding` as `focus` only on the tiers `projects` and `personal`.
+- `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date. The Focus lane is no key: a project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`, and the backlog lane holds `nascent` projects of the tiers `projects` and `personal` only.
 
 In a schema, `when:` allows a field only while the condition holds, and `required: { when: ... }` requires it only then.
 

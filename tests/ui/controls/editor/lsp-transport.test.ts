@@ -61,7 +61,7 @@ function rig(outcome: LspEditOutcome = { applied: true }) {
     transport.register(
         {
             uri: { toString: () => 'inmemory://model/1' },
-            getValue: () => 'venue_id: media\n',
+            getValue: () => 'venue: media\n',
             getVersionId: () => 1,
             getLanguageId: () => 'yaml',
             onDidChangeContent: () => ({ dispose: () => undefined })

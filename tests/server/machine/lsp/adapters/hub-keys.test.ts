@@ -132,7 +132,7 @@ describe('the answer to prepareRename and rename of a hub key', () => {
     it('refuses a rename over a text that does not read as YAML at prepareRename', () => {
         const hub = plantHub();
         const answer = ask(hub, 'textDocument/prepareRename', VENUE_AT, {
-            tabs: { 'projects/active/beta/project.yml': 'id: beta\nvenue_id: [jbhi\n' }
+            tabs: { 'projects/active/beta/project.yml': 'id: beta\nvenue: [jbhi\n' }
         });
         expect(messageOf(answer)).toBe(
             words(TEXT, 'source.rename_unparsed', 'projects/active/beta/project.yml')

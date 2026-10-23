@@ -34,7 +34,7 @@ import { plantHub, plantSaved, workspaceWith } from '../../fixtures/hubs/workspa
 import { hubTargets, primaryConfig } from '../../../src/lib/server/files/roots.ts';
 
 export const MANIFEST =
-    'id: alpha\ntier: projects\nstage: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+    'id: alpha\ntier: projects\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 /** A collection file and a career file, at the hub paths config/defaults/sources.yml names. */
 const TASKS =
@@ -270,7 +270,7 @@ function deckProject(id: string, tier: Tier): Project {
         id: `hub:${id}`,
         root: 'hub',
         tier,
-        stage: tier === 'projects' ? 'active' : 'published',
+        stage: tier === 'projects' ? 'exploring' : 'published',
         title: id,
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`

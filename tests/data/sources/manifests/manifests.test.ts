@@ -52,14 +52,16 @@ const HUB_FILES: Record<string, string> = {
     '.oculus/data/research/venues.yml':
         'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
     '.oculus/data/people/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
-    'projects/ideas/tensor-spark/project.yml': 'title: Tensor spark\ntier: projects\nstage: idea\n',
-    'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\nstage: idea\n',
-    'projects/active/loewner/project.yml': 'title: Loewner layers\ntier: projects\nstage: active\n'
+    'projects/ideas/tensor-spark/project.yml':
+        'title: Tensor spark\ntier: projects\nstage: nascent\n',
+    'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\nstage: nascent\n',
+    'projects/active/loewner/project.yml':
+        'title: Loewner layers\ntier: projects\nstage: exploring\n'
 };
 
 /** A workspace folder's manifest: a personal project with a venue, a collaborator and a link. */
 const PERSONAL =
-    'title: Alpha\ntier: personal\nstage: building\nstatus:\n  chips: []\nlinks: [https://example.org]\nvenue_id: jmlr\ncollaborators: [rivera]\n';
+    'title: Alpha\ntier: personal\nstage: building\nstatus:\n  chips: []\nlinks: [https://example.org]\nvenue: jmlr\ncollaborators: [rivera]\n';
 
 const NESTED_FILE = '.oculus/project.yml';
 const TOP_FILE = 'project.yml';
@@ -135,11 +137,11 @@ const ROWS: Row[] = [
         name: 'a scan of the folder above the stages, each manifest with its own tier and stage, a category and no personal map',
         scan: [{ dir: 'projects' }, { dir: 'side-projects', optional: true }],
         hub: plain(
-            ['projects/x/a/project.yml', 'tier: projects\nstage: idea\ntitle: A\n'],
+            ['projects/x/a/project.yml', 'tier: projects\nstage: nascent\ntitle: A\n'],
             ['projects/b/project.yml', 'tier: archive\nstage: published\ntitle: B\n'],
             [
                 'side-projects/c/project.yml',
-                'tier: personal\nstage: running\ntitle: C\nstatus:\n  chips: []\n'
+                'tier: personal\nstage: building\ntitle: C\nstatus:\n  chips: []\n'
             ]
         ),
         check: (read) => {
@@ -147,7 +149,7 @@ const ROWS: Row[] = [
             expect(idsOf(read)).toEqual(withHub('a', 'b', 'c'));
             expect(projects['hub:a']).toMatchObject({
                 tier: 'projects',
-                stage: 'idea',
+                stage: 'nascent',
                 category: 'x',
                 folder: 'projects/x/a',
                 file: join(read.at.hub, 'projects/x/a/project.yml')
@@ -156,7 +158,7 @@ const ROWS: Row[] = [
             expect(projects['hub:b'].category).toBeUndefined();
             expect(projects['hub:c']).toMatchObject({
                 tier: 'personal',
-                stage: 'running',
+                stage: 'building',
                 chips: []
             });
             expect(read.snapshot.entities).not.toHaveProperty('personal');
@@ -164,7 +166,7 @@ const ROWS: Row[] = [
     },
     {
         name: 'a folder with no manifest as a filing folder with no record of its own, and a project below it',
-        hub: plain(['projects/ideas/d/e/project.yml', 'tier: projects\nstage: idea\n']),
+        hub: plain(['projects/ideas/d/e/project.yml', 'tier: projects\nstage: nascent\n']),
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub('e'));
             expect(read.snapshot.entities.projects['hub:e'].category).toBe('d');
@@ -173,9 +175,9 @@ const ROWS: Row[] = [
     {
         name: 'a manifest inside a project as no project, and a link to a project folder not entered',
         hub: plain(
-            ['projects/active/f/project.yml', 'tier: projects\nstage: active\n'],
-            ['projects/active/f/code/project.yml', 'tier: projects\nstage: active\n'],
-            ['projects/active/f/sub/project.yml', 'tier: projects\nstage: active\n']
+            ['projects/active/f/project.yml', 'tier: projects\nstage: exploring\n'],
+            ['projects/active/f/code/project.yml', 'tier: projects\nstage: exploring\n'],
+            ['projects/active/f/sub/project.yml', 'tier: projects\nstage: exploring\n']
         ),
         setup: (at) => {
             symlinkSync(join(at.hub, 'projects/ideas/beta'), join(at.hub, 'projects/ideas/linked'));
@@ -187,8 +189,8 @@ const ROWS: Row[] = [
     {
         name: 'a dot folder and node_modules as folders the walk does not enter',
         hub: plain(
-            ['projects/ideas/.hidden/project.yml', 'tier: projects\nstage: idea\n'],
-            ['projects/ideas/node_modules/pkg/project.yml', 'tier: projects\nstage: idea\n']
+            ['projects/ideas/.hidden/project.yml', 'tier: projects\nstage: nascent\n'],
+            ['projects/ideas/node_modules/pkg/project.yml', 'tier: projects\nstage: nascent\n']
         ),
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub());
@@ -197,8 +199,8 @@ const ROWS: Row[] = [
     {
         name: 'two folders of one name as one project, the first in folder order, and one finding naming both files',
         hub: plain(
-            ['projects/ideas/z/project.yml', 'tier: projects\nstage: idea\ntitle: First\n'],
-            ['projects/archive/old/z/project.yml', 'tier: archive\nstage: dropped\ntitle: Second\n']
+            ['projects/ideas/z/project.yml', 'tier: projects\nstage: nascent\ntitle: First\n'],
+            ['projects/archive/old/z/project.yml', 'tier: archive\nstage: stopped\ntitle: Second\n']
         ),
         check: (read) => {
             const first = join(read.at.hub, 'projects/ideas/z/project.yml');
@@ -213,8 +215,8 @@ const ROWS: Row[] = [
         name: 'a scan entry on a project folder as that one project, its subfolders not read',
         scan: [{ dir: 'projects/x' }],
         hub: plain(
-            ['projects/x/project.yml', 'tier: projects\nstage: active\ntitle: X\n'],
-            ['projects/x/sub/project.yml', 'tier: projects\nstage: active\n']
+            ['projects/x/project.yml', 'tier: projects\nstage: exploring\ntitle: X\n'],
+            ['projects/x/sub/project.yml', 'tier: projects\nstage: exploring\n']
         ),
         check: (read) => {
             expect(idsOf(read)).toEqual(['hub:x']);
@@ -231,11 +233,11 @@ const ROWS: Row[] = [
     },
     {
         name: 'a manifest with the tier personal inside the ideas folder as a personal project',
-        hub: plain(['projects/ideas/p/project.yml', 'tier: personal\nstage: idea\ntitle: P\n']),
+        hub: plain(['projects/ideas/p/project.yml', 'tier: personal\nstage: nascent\ntitle: P\n']),
         check: (read) => {
             expect(read.snapshot.entities.projects['hub:p']).toMatchObject({
                 tier: 'personal',
-                stage: 'idea'
+                stage: 'nascent'
             });
         }
     },
@@ -279,8 +281,8 @@ const ROWS: Row[] = [
         name: 'a scan folder holding a top project.yml in one folder and a .oculus/project.yml in another as two projects with no finding',
         scan: [{ dir: 'side-projects' }],
         hub: plain(
-            ['side-projects/a/project.yml', 'title: A\ntier: personal\nstage: idea\n'],
-            ['side-projects/b/.oculus/project.yml', 'title: B\ntier: personal\nstage: idea\n']
+            ['side-projects/a/project.yml', 'title: A\ntier: personal\nstage: nascent\n'],
+            ['side-projects/b/.oculus/project.yml', 'title: B\ntier: personal\nstage: nascent\n']
         ),
         check: (read) => {
             const { projects } = read.snapshot.entities;
@@ -327,7 +329,7 @@ const ROWS: Row[] = [
     {
         name: 'a hub that scans its own folder as no project of its own, with the projects below it read',
         scan: [{ dir: '.' }],
-        hub: plain(['.oculus/project.yml', 'title: The hub\ntier: projects\nstage: idea\n']),
+        hub: plain(['.oculus/project.yml', 'title: The hub\ntier: projects\nstage: nascent\n']),
         check: (read) => {
             const ids = idsOf(read);
             expect(ids).toEqual(expect.arrayContaining(HUB_IDS));
@@ -378,7 +380,7 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         hub: plain([
             'projects/ideas/alpha/project.yml',
-            'tier: projects\nstage: idea\ntitle: Hub alpha\n'
+            'tier: projects\nstage: nascent\ntitle: Hub alpha\n'
         ]),
         check: (read) => {
             const alpha = read.snapshot.entities.projects['hub:alpha'];
@@ -397,7 +399,7 @@ const ROWS: Row[] = [
     {
         name: 'a manifest whose id is another as a project, with the id finding and its own id kept',
         entries: entry,
-        manifest: 'id: other\ntitle: Alpha\ntier: personal\nstage: active\n',
+        manifest: 'id: other\ntitle: Alpha\ntier: personal\nstage: exploring\n',
         check: (read) => {
             expect(read.snapshot.entities.projects['hub:alpha']).toBeDefined();
             expect(findingsOn(read, 'id', join(read.at.repo, NESTED_FILE))).toEqual([
@@ -411,7 +413,7 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         hub: plain([
             'projects/active/loewner/project.yml',
-            'title: Loewner layers\ntier: projects\nstage: active\nrelated: [alpha]\nwaiting-on: [alpha]\n'
+            'title: Loewner layers\ntier: projects\nstage: exploring\nrelated: [alpha]\nwaiting-on: [alpha]\n'
         ]),
         check: (read) => {
             expect(findingsOn(read, 'related')).toEqual([]);
@@ -426,11 +428,11 @@ const ROWS: Row[] = [
         name: 'a project folder that holds a code folder as having a code folder, and one that holds a file named code or nothing as having none',
         scan: [{ dir: 'side-projects' }],
         hub: plain(
-            ['side-projects/p/project.yml', 'title: P\ntier: personal\nstage: active\n'],
+            ['side-projects/p/project.yml', 'title: P\ntier: personal\nstage: exploring\n'],
             ['side-projects/p/code/main.py', 'print(1)\n'],
-            ['side-projects/q/project.yml', 'title: Q\ntier: personal\nstage: active\n'],
+            ['side-projects/q/project.yml', 'title: Q\ntier: personal\nstage: exploring\n'],
             ['side-projects/q/code', 'a file, not a folder\n'],
-            ['side-projects/r/project.yml', 'title: R\ntier: personal\nstage: active\n']
+            ['side-projects/r/project.yml', 'title: R\ntier: personal\nstage: exploring\n']
         ),
         check: (read) => {
             const { 'hub:p': p, 'hub:q': q, 'hub:r': r } = read.snapshot.entities.projects;
@@ -446,7 +448,7 @@ const ROWS: Row[] = [
         placement: 'top',
         hub: plain([
             'side-projects/p/project.yml',
-            'title: P\ntier: personal\nstage: active\nrepository:\n  url: https://github.com/theaxec/p\n'
+            'title: P\ntier: personal\nstage: exploring\nrepository:\n  url: https://github.com/theaxec/p\n'
         ]),
         setup: (at) => origin(at.repo, 'git@github.com:TheAxeC/p.git'),
         check: (read) => {
@@ -463,7 +465,7 @@ const ROWS: Row[] = [
         placement: 'top',
         hub: plain([
             'side-projects/p/project.yml',
-            'title: P\ntier: personal\nstage: active\nrepository:\n  url: https://github.com/theaxec/p\n'
+            'title: P\ntier: personal\nstage: exploring\nrepository:\n  url: https://github.com/theaxec/p\n'
         ]),
         setup: (at) => origin(at.repo, 'https://github.com/theaxec/other'),
         check: (read) => {
@@ -476,9 +478,9 @@ const ROWS: Row[] = [
         hub: plain(
             [
                 'side-projects/p/project.yml',
-                'title: P\ntier: personal\nstage: active\nrepository:\n  url: ssh://git@github.com/theaxec/p\n'
+                'title: P\ntier: personal\nstage: exploring\nrepository:\n  url: ssh://git@github.com/theaxec/p\n'
             ],
-            ['side-projects/c/project.yml', 'title: C\ntier: personal\nstage: active\n'],
+            ['side-projects/c/project.yml', 'title: C\ntier: personal\nstage: exploring\n'],
             [
                 'side-projects/c/.git/config',
                 '[remote "origin"]\n\turl = https://github.com/TheAxeC/p.git\n'
@@ -495,12 +497,12 @@ const ROWS: Row[] = [
         hub: plain(
             [
                 'side-projects/a/project.yml',
-                'title: A\ntier: personal\nstage: active\nrepository:\n  url: https://example.org/o/r\n'
+                'title: A\ntier: personal\nstage: exploring\nrepository:\n  url: https://example.org/o/r\n'
             ],
             ['side-projects/a/.git/config', '[remote "origin"]\n\turl = https://example.org/o/r\n'],
             [
                 'side-projects/b/project.yml',
-                'title: B\ntier: personal\nstage: active\nrepository:\n  url: https://example.org/o/r.git\n'
+                'title: B\ntier: personal\nstage: exploring\nrepository:\n  url: https://example.org/o/r.git\n'
             ],
             ['side-projects/b/.git/config', '[remote "origin"]\n\turl = https://example.org/o/r\n']
         ),
@@ -514,11 +516,11 @@ const ROWS: Row[] = [
         hub: plain(
             [
                 'side-projects/early/project.yml',
-                'title: P\ntier: personal\nstage: active\nrepository:\n  url: https://example.org/o/p\n'
+                'title: P\ntier: personal\nstage: exploring\nrepository:\n  url: https://example.org/o/p\n'
             ],
             [
                 'side-projects/late/project.yml',
-                'title: P\ntier: personal\nstage: active\nrepository:\n  url: https://example.org/o/p\n'
+                'title: P\ntier: personal\nstage: exploring\nrepository:\n  url: https://example.org/o/p\n'
             ],
             [
                 'side-projects/late/.git/config',
@@ -544,7 +546,7 @@ const ROWS: Row[] = [
         scan: [{ dir: 'side-projects' }],
         hub: plain([
             'side-projects/q/project.yml',
-            'title: Q\ntier: personal\nstage: active\nrepository:\n  url: https://example.org/q\n'
+            'title: Q\ntier: personal\nstage: exploring\nrepository:\n  url: https://example.org/q\n'
         ]),
         check: (read) => {
             expect(read.snapshot.entities.projects['hub:q'].repository).toEqual({
@@ -565,7 +567,8 @@ function plant(row: Row): Places {
             : row.placement === 'both'
               ? {
                     [`alpha/${TOP_FILE}`]: manifest ?? '',
-                    [`alpha/${NESTED_FILE}`]: 'title: Nested alpha\ntier: personal\nstage: idea\n'
+                    [`alpha/${NESTED_FILE}`]:
+                        'title: Nested alpha\ntier: personal\nstage: nascent\n'
                 }
               : { [`alpha/${NESTED_FILE}`]: manifest ?? '' };
     const parent = plantScratch(
@@ -631,8 +634,8 @@ function joinedWith(
 
 describe('a hub reports only the files its own configuration names', () => {
     const PROJECTS = {
-        'one/project.yml': 'title: One\ntier: personal\nstage: active\n',
-        'two/project.yml': 'title: Two\ntier: personal\nstage: active\n'
+        'one/project.yml': 'title: One\ntier: personal\nstage: exploring\n',
+        'two/project.yml': 'title: Two\ntier: personal\nstage: exploring\n'
     };
 
     it('raises no finding for a registry, collection or deck it inherits and does not hold', () => {

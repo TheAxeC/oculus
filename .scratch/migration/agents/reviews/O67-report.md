@@ -496,7 +496,7 @@ The head comments, doc comments and catalog paragraphs that describe the changed
 | `Focus.svelte:112-113` | still true |
 | `derive.ts:84-86` | rewritten (first build) |
 | `ProjectCard.svelte:120`, `Projects.svelte:118` | still true (first-build lines) |
-| `LaneHead.svelte:4` | still true for the project lanes; not checked for the backlog snippet |
+| `LaneHead.svelte:4` | still true |
 | `lines.ts:101` (archival) | rewritten (first build) |
 | `vocab.yml` paragraphs at `:50`, `:51`, `:52`, `:54`, `:61` | still true |
 | `vocab.yml:173`, `:200`, `:208` | rewritten (first build) |
@@ -601,7 +601,7 @@ test:quick: not covered: tests that reach no changed file within the import dept
             the build, the lint of unchanged files
 ```
 
-The ASCII scan (`perl -ne 'print if /[^\x00-\x7f]/'`) over the round's changed files (`focus.ts`, `focus-lanes.ts`, `CommandCenterView.svelte`, `LaneCard.svelte`, `vocab.yml`, `vocab.ts`) printed nothing.
+The ASCII scan (`perl -ne 'print if /[^\x00-\x7f]/'`) over the round's changed files (`focus-lanes.ts`, `CommandCenterView.svelte`, `LaneCard.svelte`, `vocab.yml`, `vocab.ts`) printed nothing.
 
 ### Files the round changed
 

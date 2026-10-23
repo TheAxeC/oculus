@@ -74,6 +74,7 @@
         type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
+    import { laneOf, lanes } from '$lib/state/boards/focus';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import {
@@ -86,7 +87,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        selectors: { board, boardPreset, boardStats, staleLag },
+        selectors: { board, boardPreset, boardStats, configMap, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -113,6 +114,9 @@
     );
     const rows = $derived(shown.map(row));
     const strip = $derived(boardStats(items));
+    const config = $derived(configMap());
+    /** The Focus board's lanes, for the List's Focus cell: the label of the lane a card sits on. */
+    const focusLanes = $derived(lanes(config));
 
     /** What the last write on this board answered, shown under the toolbar until the next one. */
     let said = $state('');
@@ -232,7 +236,7 @@
             venue: item.venue?.short ?? '',
             status: words.map((word) => chipLabel(word)).join(' '),
             statusMarks: words.filter((word) => chipGlyphName(word) !== ''),
-            focus: item.project.focus ?? '',
+            focus: laneOf(item.project, focusLanes, config)?.label ?? '',
             next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
             domain: item.domain?.label ?? '',
             pillar: item.pillars.map((tag) => tag.label).join(' | '),
@@ -370,6 +374,7 @@
                         label={label(item)}
                         tab={tabLabel(item)}
                         staleLag={lag}
+                        {focusLanes}
                         ontoggle={() => toggleCard(item.id)}
                         onsaid={(answer: string) => (said = answer)}
                     />

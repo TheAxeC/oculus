@@ -218,7 +218,6 @@ describe("oculus's own config directory", () => {
             'statuses',
             'lead_statuses',
             'focus_lanes',
-            'holding_color',
             'priority_levels',
             'fund_stages',
             'focus_lane_tones',
@@ -332,7 +331,7 @@ describe("oculus's own config directory", () => {
             'statuses',
             'statuses must be a map'
         ],
-        ['catalogs/vocab.yml', 'stages: [active]\n', 'stages', 'stages must be a map'],
+        ['catalogs/vocab.yml', 'stages: [exploring]\n', 'stages', 'stages must be a map'],
         ['catalogs/vocab.yml', 'tiers: 3\n', 'tiers', 'tiers must be a map'],
         [
             'catalogs/vocab.yml',

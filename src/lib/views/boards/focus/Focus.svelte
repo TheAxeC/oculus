@@ -15,7 +15,7 @@
     // Layer 3, view. The landing board, one page, top to bottom: the career banner, the command
     // center of everything with a date, the tasks section of the open work that carries none, the
     // quick add, the box of what is out for an answer, the band of durable work that is not a
-    // project, the lanes each manifest's `focus:` puts it on, and the ideas backlog.
+    // project, the lanes each project's stage and chips put it on, and the backlog lane.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
     // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six

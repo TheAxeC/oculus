@@ -1,16 +1,15 @@
 id: graph-bandits
-stage: active
+stage: in-prep
 tier: projects
 short: Graph-Bandits
 title: Bandit algorithms over evolving graphs
 lead: [dana-example]
 collaborators: [b-coauthor]
-focus: push
 status:
-  chips: [results-positive]
+  chips: [results-in]
   line: Method drafted, ablations running.
 domain: graphs
-pillar: [graphs]
+pillars: [graphs]
 datasets: [synthgraph, stream-bench, probe-logs, node-traces]
 related: [tensor-sketch, graph-transfer]
 eli5: Pick the most informative node to probe next when the graph keeps changing under you.

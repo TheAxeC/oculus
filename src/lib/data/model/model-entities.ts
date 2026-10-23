@@ -108,7 +108,7 @@ export type RawManifest = {
     id: Id;
     /**
      * The first folder under the scan folder when the project lies deeper than one level, and
-     * absent otherwise: `published`, `nogo`.
+     * absent otherwise: `published`, `failed`.
      */
     category?: string;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
@@ -336,7 +336,7 @@ export type Subtask = {
 
 /**
  * A project. The relation fields hold ids; data/snapshot/normalise.ts fills them from the
- * manifest's `venue_id`, `funding`, `datasets`, `pillar`, `domain`, `lead` and `collaborators`
+ * manifest's `venue`, `funding`, `datasets`, `pillars`, `domain`, `lead` and `collaborators`
  * keys, and leaves them empty when it has none.
  */
 export type Project = Rooted & {
@@ -365,7 +365,6 @@ export type Project = Rooted & {
     staleDays?: number;
     chips: Chip[];
     statusLine?: string;
-    focus?: string;
     /**
      * The flame badge of the Focus card: `high`, `med` or `low`, the `priority_levels` of
      * vocab.yml.
@@ -420,12 +419,6 @@ export type Project = Rooted & {
      * the same pairs from the other side. With `lead` they are the project's team.
      */
     collaborators: Id[];
-    /**
-     * The free-text venue prose, for a manifest that names no `venue_id`. The manifest schema does
-     * not name a `venue` key today, so a manifest carrying one is a finding and this is unset on
-     * every project of the hub; it is here for the model to hold what the field means.
-     */
-    venue?: string;
     /**
      * The four fixed project documents, in the order sources/documents/docs.ts lists them, presence
      * only.

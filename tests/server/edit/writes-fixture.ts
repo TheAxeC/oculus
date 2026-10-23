@@ -24,7 +24,7 @@ export const MANIFEST = [
     'status:',
     '  chips: [lead]',
     '  line: "the line"',
-    'pillar: [tensor]',
+    'pillars: [tensor]',
     ''
 ].join('\n');
 

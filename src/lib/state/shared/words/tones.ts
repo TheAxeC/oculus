@@ -219,8 +219,7 @@ const ICON_HUES: Record<string, string> = {
     orange: 'orange',
     white: 'grey',
     black: 'slate',
-    orange_square: 'orange',
-    green_square: 'green'
+    orange_square: 'orange'
 };
 
 /**
@@ -245,8 +244,9 @@ export function chipLabel(chip: string): string {
 
 /**
  * The words a project's status marks draw on a lane card and in the board's list, in order: its
- * stage when the stage's word of `stages` has a glyph, then its form and its chips. A stage with no
- * glyph (idea, active, archived) gives no mark; a board card draws every stage as its filled chip.
+ * stage when the stage's word of `stages` has a glyph, then its form and its chips. Every stage of
+ * oculus's own vocab.yml has a glyph; a stage without one, in a hub that names such a stage, gives
+ * no mark. A board card draws every stage as its filled chip.
  */
 export function projectStatusWords(
     stage: string | undefined,

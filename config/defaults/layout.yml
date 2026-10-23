@@ -236,9 +236,8 @@ boards:
     search: "Search title | eli5 | results | ideas | doc text ..."
     label_mode: short
     groups:
-      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted], color: "#16a34a" }
-      - { label: idea,          keys: [idea, nascent, scoping], color: "#7c5cff" }
-      - { label: paused,        keys: [paused],                 color: "#9ca3af" }
+      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision], color: "#16a34a" }
+      - { label: idea,          keys: [nascent, scoping], color: "#7c5cff" }
   coauthor:
     tier: coauthor
     columns:
@@ -251,10 +250,10 @@ boards:
     search: "Search coauthor | title | eli5 | outcome | doc text ..."
     label_mode: short
     groups:
-      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted], color: "#16a34a" }
+      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision], color: "#16a34a" }
       - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
       - { label: outputs,       keys: [abstract, poster, tech-report],                   color: "#0ea5e9" }
-      - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+      - { label: dead-ends,     keys: [failed, stopped],                                 color: "#9ca3af" }
   archive:
     tier: archive
     columns:
@@ -269,7 +268,7 @@ boards:
     groups:
       - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
       - { label: outputs,       keys: [thesis, abstract, poster, tech-report],           color: "#0ea5e9" }
-      - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+      - { label: dead-ends,     keys: [failed, stopped],                                 color: "#9ca3af" }
   personal:
     tier: personal
     columns:
@@ -283,9 +282,7 @@ boards:
     label_mode: short
     groups:
       - { label: building,      keys: [building],                                color: "#d4a017" }
-      - { label: running,       keys: [running],                                 color: "#16a34a" }
-      - { label: paused,        keys: [paused],                                  color: "#9ca3af" }
-      - { label: finished,      keys: [finished],                                color: "#0ea5e9" }
+      - { label: released,      keys: [released],                                color: "#0ea5e9" }
       - { label: idea,          keys: [nascent, scoping, de-risking, exploring], color: "#7c5cff" }
   software:
     tier: software

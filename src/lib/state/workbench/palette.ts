@@ -174,7 +174,7 @@ export function buildIndex(
         for (const project of Object.values(snapshot.entities.projects)) {
             const venue =
                 project.venueId === undefined
-                    ? project.venue
+                    ? undefined
                     : snapshot.entities.venues[project.venueId];
             const fields = [
                 project.title,

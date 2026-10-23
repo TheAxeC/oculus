@@ -212,7 +212,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
         ) {
             add({
                 scope,
-                where: 'venue_id',
+                where: 'venue',
                 kind: 'data',
                 ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_no_venue')
@@ -290,7 +290,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
 /**
  * The stage a project's filing folder says it has, and none when the folder says nothing: for a
  * tier carrying `outcome_folders` (the archive), a folder named by a stage carrying
- * `archive_outcome`; for a tier listing `stage_folders` (the coauthor tier lists `abandoned`), a
+ * `archive_outcome`; for a tier listing `stage_folders` (the coauthor tier lists `stopped`), a
  * folder that list holds.
  */
 function folderStage(project: Project, rules: AuditRules): string | undefined {

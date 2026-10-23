@@ -5,16 +5,15 @@ short: Graph-Transfer
 title: Transfer learning across graph domains
 lead: [dana-example]
 collaborators: [b-coauthor]
-focus: push
 status:
   chips: []
   line: Draft complete, internal review done; ready to submit.
 domain: graphs
-pillar: [graphs]
+pillars: [graphs]
 funding: [ecf]
 datasets: [synthgraph]
 related: [graph-bandits, robust-embeddings]
-venue_id: kdd
+venue: kdd
 deadline: "2026-09-10"
 eli5: Reuse what a model learned on one graph to warm-start it on a different, related graph.
 results:

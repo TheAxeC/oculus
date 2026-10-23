@@ -39,7 +39,7 @@ text:
         msg_markers_one: 'one open marker, "{1}"'
         msg_intro_marker: 'intro: "{0}"'
         msg_entry_marker: 'open marker: "{0}"'
-        msg_no_venue: published/submitted but no venue_id (no venue renders on the card)
+        msg_no_venue: published/submitted but no venue (no venue renders on the card)
         msg_missing_field: 'missing `{0}`'
         msg_provisional: '{0} provisional results: the numbers are not final'
         msg_provisional_one: 'one provisional result: the number is not final'

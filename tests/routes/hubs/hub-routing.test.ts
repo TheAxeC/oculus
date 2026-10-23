@@ -149,7 +149,7 @@ function plantPaper(hub: string, id: string, venue: string): string {
     mkdirSync(join(hub, 'projects', 'ideas', id), { recursive: true });
     writeFileSync(
         join(hub, path),
-        `title: ${id}\ntier: projects\nstage: idea\nvenue_id: ${venue}\n`
+        `title: ${id}\ntier: projects\nstage: nascent\nvenue: ${venue}\n`
     );
     return path;
 }
@@ -192,7 +192,7 @@ describe('a rename of a key across the hubs of a workspace', () => {
         const text = readFileSync(join(from.lab, labPaper), 'utf8');
         expect(applyTextEdits(text, lab.edits)).toEqual({
             ok: true,
-            text: text.replace('venue_id: science', 'venue_id: science-two')
+            text: text.replace('venue: science', 'venue: science-two')
         });
     });
 });

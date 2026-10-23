@@ -105,7 +105,7 @@ function checkClusterFolder(
  */
 const NOT_BARE: { field: string; list: boolean }[] = [
     { field: 'domain', list: false },
-    { field: 'pillar', list: true },
+    { field: 'pillars', list: true },
     { field: 'datasets', list: true },
     { field: 'related', list: true },
     { field: 'lead', list: true },

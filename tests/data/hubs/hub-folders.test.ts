@@ -54,17 +54,17 @@ function world(): At {
     const cathedra = join(base, 'cathedra');
     writeFileSync(
         join(folder(cathedra, '.oculus'), 'project.yml'),
-        'tier: projects\nstage: active\n'
+        'tier: projects\nstage: exploring\n'
     );
     const notes = folder(base, 'notes');
     const link = join(base, 'link');
     symlinkSync(notes, link);
     const inside = folder(hub, 'projects', 'x', '.oculus');
-    writeFileSync(join(inside, 'project.yml'), 'tier: projects\nstage: active\n');
+    writeFileSync(join(inside, 'project.yml'), 'tier: projects\nstage: exploring\n');
     const insideTop = folder(hub, 'projects', 'y');
-    writeFileSync(join(insideTop, 'project.yml'), 'tier: projects\nstage: active\n');
+    writeFileSync(join(insideTop, 'project.yml'), 'tier: projects\nstage: exploring\n');
     const topAway = folder(base, 'top-away');
-    writeFileSync(join(topAway, 'project.yml'), 'tier: personal\nstage: active\n');
+    writeFileSync(join(topAway, 'project.yml'), 'tier: personal\nstage: exploring\n');
     return {
         hub,
         lab,

@@ -35,7 +35,7 @@ function manifest(data: Record<string, unknown>, id: string): RawManifest {
         folder: `projects/active/${id}`,
         id,
         tier: 'projects',
-        stage: 'active',
+        stage: 'in-prep',
         ...data
     };
 }
@@ -74,7 +74,7 @@ function portfolio(): RawPortfolio {
                     lead: ['someone'],
                     year: 2026,
                     status: { chips: ['lead'], line: 'submit-ready' },
-                    focus: 'run',
+                    stage: 'exploring',
                     eli5: 'about alpha',
                     next: 'run it',
                     latest: 'ran it',
@@ -83,9 +83,9 @@ function portfolio(): RawPortfolio {
                     deadline: '2026-11-17',
                     doi: '10.0/alpha',
                     outcome: 'in review',
-                    venue_id: 'bspc',
+                    venue: 'bspc',
                     domain: 'heart',
-                    pillar: ['federated'],
+                    pillars: ['federated'],
                     datasets: ['mimic'],
                     funding: ['FAIR'],
                     related: ['beta'],
@@ -119,10 +119,9 @@ function portfolio(): RawPortfolio {
             manifest(
                 {
                     title: 'Beta',
-                    venue_id: 'nowhere',
+                    venue: 'nowhere',
                     related: ['ghost'],
                     pin: false,
-                    venue: 'a journal with no catalogue entry',
                     code_availability: { visibility: 'private' },
                     reproduced: 'not a map',
                     priority: 7,
@@ -252,14 +251,13 @@ describe('normalise, the field mapping', () => {
         expect(alpha).toEqual({
             id: 'alpha',
             tier: 'projects',
-            stage: 'active',
+            stage: 'exploring',
             title: 'Alpha',
             short: 'a',
             lead: ['someone'],
             year: 2026,
             chips: ['lead'],
             statusLine: 'submit-ready',
-            focus: 'run',
             priority: 'high',
             eli5: 'about alpha',
             next: 'run it',

@@ -494,20 +494,19 @@ One project. `tier` and `stage` are required. Every other key is optional.
 ```yaml
 # --- Core
 tier: projects          # projects, coauthor, archive, personal or software: the board it is on
-stage: nascent          # idea, nascent, scoping, de-risking, exploring, in-prep, building, running,
-                        # active, submit-ready, submitted, revision, accepted, published, paused,
-                        # finished, archived, nogo, dropped, disproved or abandoned
+stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, building, submit-ready,
+                        # submitted, revision, published, released, failed or stopped; the stage
+                        # puts the project on its Focus lane
 # form: journal         # journal, conference, thesis, abstract, poster or tech-report
 # short: my-project     # short name for cards and lists
 # title: ""
 # status:
-#   chips: []           # from the chips list, such as blocked, numbers-pending, admin-prep
+#   chips: []           # from the chips list, such as blocked, parked, numbers-to-run, results-in;
+                        # blocked and parked put the card on the Blocked and Backburner lanes
 #   line: ""            # one short line
-# focus: run            # Focus lane: run, push, revise, review, blocked, backburner, scope,
-                        # derisk, build, or holding for an idea in the backlog
 # priority: high        # high, med or low
 # pin: true             # keep the card at the top of its board
-# venue_id: ""          # a venue's id from the venues registry
+# venue: ""             # a venue's id from the venues registry
 # links: []
 # tags: []
 # year: 2026
@@ -521,7 +520,7 @@ stage: nascent          # idea, nascent, scoping, de-risking, exploring, in-prep
 
 # --- Connections (keys of other files)
 # domain: ""            # domains registry
-# pillar: []            # pillars registry
+# pillars: []           # pillars registry
 # funding: []           # funding registry
 # lead: []             # people registry: who leads the project, several for co-first authors
 # collaborators: []     # people registry
@@ -693,7 +692,7 @@ A schema line takes these keys:
 title: Venues
 schema:
   - { field: name,           type: text,     required: true, help: "The venue's full name." }
-  - { field: id,             type: text,     help: "The id a project's venue_id names." }
+  - { field: id,             type: text,     help: "The id a project's venue names." }
   - { field: short,          type: text,     help: "Short name or acronym." }
   - { field: category,       type: select,   from: vocab.venue_categories, help: "journal, conference, thesis or meeting." }
   - { field: jif,            type: text,     help: "Impact factor." }
@@ -713,8 +712,8 @@ schema:
   - { field: call,           type: text,     help: "Call-for-papers address." }
   - { field: email,          type: text,     help: "Editorial office address." }
 entries:
-#  - name: Neurocomputing         # required; renaming it keeps every venue_id
-#    id: neucom                   # what a project's venue_id names
+#  - name: Neurocomputing         # required; renaming it keeps every project's venue
+#    id: neucom                   # what a project's venue names
 #    short: NEUCOM
 #    category: journal            # journal, conference, thesis or meeting
 #    jif: "6.5"
@@ -821,7 +820,7 @@ datasets:
 ```yaml
 title: Pillars
 schema:
-  - { field: key,     type: text,     required: true, help: "The pillar's key, used by a project's pillar." }
+  - { field: key,     type: text,     required: true, help: "The pillar's key, used by a project's pillars." }
   - { field: title,   type: text,     required: true, help: "Name." }
   - { field: kind,    type: text,     help: "pillar, provisional or offpillar." }
   - { field: goal,    type: textarea, help: "One-line aim." }
@@ -829,7 +828,7 @@ schema:
   - { field: funding, type: text,     help: "Granted support only." }
   - { field: blurb,   type: textarea, help: "What it covers." }
 entries:
-#  - key: tensor                  # required; what a project's pillar names
+#  - key: tensor                  # required; what a project's pillars name
 #    title: "Tensor methods"      # required
 #    kind: pillar                 # pillar, provisional or offpillar
 #    goal: ""
@@ -1320,7 +1319,7 @@ deck:
 
 # groups:
 #   active:
-#     find: { folders: projects/*/*/present, tiers: [projects], stages: [active] }
+#     find: { folders: projects/*/*/present, tiers: [projects], stages: [in-prep] }
 #     sort: folder           # folder or title
 #     discover: true         # also take decks found beyond `slides`
 #     slides: []             # project ids, in order

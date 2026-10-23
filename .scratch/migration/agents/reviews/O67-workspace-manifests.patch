@@ -1,0 +1,98 @@
+--- a/cathedra/.oculus/project.yml
++++ b/cathedra/.oculus/project.yml
+@@ -1,8 +1,8 @@
+ title: "Cathedra"
+-stage: paused
++stage: building
+ tier: personal
+ status:
+-  chips: []
++  chips: [parked]
+ eli5: "A simulation core for games built in C++: a Lisp-like scripting language called rite, an entity-component system called curia, and a coordinator called monastery that runs many scripts over one shared world. Scripts can be reloaded while the game runs and the things already on screen keep going."
+ next: "Refactoring 28.4 + rite debugger bugfix + symbols api (and continue roadmap)"
+ links: []
+--- a/game-engine/.oculus/project.yml
++++ b/game-engine/.oculus/project.yml
+@@ -1,8 +1,8 @@
+ title: "Missal"
+-stage: paused
++stage: building
+ tier: personal
+ status:
+-  chips: []
++  chips: [parked]
+ eli5: "Missal, a C++20 game engine whose simulation is a scripting language: the engine handles the window, the graphics card, the files on disk and the frame loop, and the language handles everything that happens in the game world. It runs on desktop and in the browser."
+ next: "Refactor Test + Serialization"
+ waiting-on: [cathedra]
+--- a/oculus/.oculus/project.yml
++++ b/oculus/.oculus/project.yml
+@@ -2,9 +2,9 @@
+ stage: building
+ tier: personal
+ status:
++  chips: [parked]
+     chips: []
+ eli5: 'Oculus is the research workbench that reads a research hub (its projects, manuscripts, grants, data and code) and shows it in one VS Code-like app. It runs on your own machine and keeps the hub private.'
+ next: 'Close the migration plan once oculus runs from its own repository, then take the next open item of .scratch/ROADMAP.md; before the repository is made public, take the ledger out of its history.'
+ links: []
+ short: oculus
+-focus: backburner
+--- a/officium/.oculus/project.yml
++++ b/officium/.oculus/project.yml
+@@ -1,5 +1,5 @@
+ title: 'Officium'
+-stage: finished
++stage: released
+ tier: personal
+ status:
+     chips: []
+--- a/ordo/.oculus/project.yml
++++ b/ordo/.oculus/project.yml
+@@ -1,9 +1,8 @@
+ title: "Ordo"
+-stage: building
++stage: exploring
+ tier: personal
+ status:
+   chips: []
+ eli5: "A set of agent skills for Claude Code that turn a multi-step change into a plan: each step gets a written brief, is built in its own git worktree, is reviewed by a fresh reviewer, and reaches the main branch only after its checks pass."
+ next: "Continuing with 2.F"
+ links: []
+-focus: run
+--- a/scotoma/.oculus/project.yml
++++ b/scotoma/.oculus/project.yml
+@@ -1,8 +1,8 @@
+ title: "scotoma"
+-stage: paused
++stage: building
+ tier: personal
+ status:
+-  chips: []
++  chips: [parked]
+ eli5: "A first person horror crawler for the Super Nintendo, built as a ROM that runs in an accurate emulator and on a flash cart. You walk a dark forest on a Mode 7 ground plane, in a game styled after Basilisk."
+ next: "Step 9 of the order of work: place the hooded figure at the fire, in the keep and at the end, remembering the earlier meetings through an SRAM flag, with his three encounters written as one arc."
+ links: []
+--- a/theaxec.github.io/.oculus/project.yml
++++ b/theaxec.github.io/.oculus/project.yml
+@@ -2,11 +2,10 @@
+ tier: personal
+ stage: building
+ status:
+-  chips: []
++  chips: [parked]
+ eli5: "My personal website"
+ next: "Keep the website up to date with new information and publications."
+ links: []
+ tags: [personal, website, tex]
+ repository:
+   url: "https://github.com/TheAxeC/theaxec.github.io"
+-focus: backburner
+--- a/youtube-downloader/.oculus/project.yml
++++ b/youtube-downloader/.oculus/project.yml
+@@ -1,5 +1,5 @@
+ title: "yt-downloader"
+-stage: finished
++stage: released
+ tier: personal
+ status:
+   chips: []

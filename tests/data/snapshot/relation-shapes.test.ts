@@ -33,7 +33,7 @@ const TEXT = findingText(CATALOG, 'findings.shape.is_other', 'string');
 
 const ROWS = [
     { row: 'a bare domain', written: 'domain:', field: 'domain', wanted: 'text', got: NULL },
-    { row: 'a bare pillar', written: 'pillar:', field: 'pillar', wanted: 'list', got: NULL },
+    { row: 'a bare pillars', written: 'pillars:', field: 'pillars', wanted: 'list', got: NULL },
     { row: 'a bare datasets', written: 'datasets:', field: 'datasets', wanted: 'list', got: NULL },
     { row: 'a bare related', written: 'related:', field: 'related', wanted: 'list', got: NULL },
     { row: 'a bare lead', written: 'lead:', field: 'lead', wanted: 'list', got: NULL },
@@ -65,7 +65,7 @@ describe('the relation fields of a manifest', () => {
         const hub = plantScratch(
             'oculus-relation-shapes-',
             {
-                'projects/active/alpha/project.yml': `id: alpha\ntier: projects\nstage: active\ntitle: alpha\n${written}\n`
+                'projects/active/alpha/project.yml': `id: alpha\ntier: projects\nstage: exploring\ntitle: alpha\n${written}\n`
             },
             ['.oculus/data/people']
         );
@@ -77,12 +77,12 @@ describe('the relation fields of a manifest', () => {
         ]);
     });
 
-    it('gives none for a bare venue_id, funding or compute, which may be empty', () => {
+    it('gives none for a bare venue, funding or compute, which may be empty', () => {
         const hub = plantScratch(
             'oculus-relation-shapes-',
             {
                 'projects/active/alpha/project.yml':
-                    'id: alpha\ntier: projects\nstage: active\ntitle: alpha\nvenue_id:\nfunding:\ncompute:\n'
+                    'id: alpha\ntier: projects\nstage: exploring\ntitle: alpha\nvenue:\nfunding:\ncompute:\n'
             },
             ['.oculus/data/people']
         );
@@ -99,9 +99,9 @@ describe('the relation fields of a manifest', () => {
                 '.oculus/data/people/people.yml':
                     'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
-                    'id: alpha\ntier: projects\nstage: active\ntitle: alpha\nwaiting-on: ada\n',
+                    'id: alpha\ntier: projects\nstage: exploring\ntitle: alpha\nwaiting-on: ada\n',
                 'projects/active/beta/project.yml':
-                    'id: beta\ntier: projects\nstage: active\ntitle: beta\nwaiting-on: [ada, alpha]\n'
+                    'id: beta\ntier: projects\nstage: exploring\ntitle: beta\nwaiting-on: [ada, alpha]\n'
             },
             ['.oculus/data/people']
         );
@@ -121,9 +121,9 @@ describe('the relation fields of a manifest', () => {
                 '.oculus/data/people/people.yml':
                     'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
-                    'id: alpha\ntier: projects\nstage: active\ntitle: alpha\nlead: Faes\n',
+                    'id: alpha\ntier: projects\nstage: exploring\ntitle: alpha\nlead: Faes\n',
                 'projects/active/beta/project.yml':
-                    'id: beta\ntier: projects\nstage: active\ntitle: beta\nlead: [ada]\n'
+                    'id: beta\ntier: projects\nstage: exploring\ntitle: beta\nlead: [ada]\n'
             },
             ['.oculus/data/people']
         );

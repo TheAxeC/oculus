@@ -80,7 +80,7 @@ describe('the Deposit rules of the audit', () => {
             id: 'hub:inside',
             root: 'hub',
             tier: 'projects',
-            stage: 'active',
+            stage: 'exploring',
             title: 'Inside',
             folder: '',
             file: '.oculus/project.yml',

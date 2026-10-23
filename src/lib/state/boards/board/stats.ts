@@ -21,9 +21,6 @@ import {
     type VenueCount
 } from './presets.ts';
 
-/** The focus lane the stats strip counts as waiting on somebody else, a key of `focus_lanes`. */
-const BLOCKED = 'blocked';
-
 /** How many venues the strip's distribution shows, most aimed at first. */
 const STATS_VENUES = 8;
 
@@ -89,7 +86,7 @@ export function stats(
     let dated = 0;
     for (const item of items) {
         if (hasWord(config, 'stages', 'submit_ready', item.project.stage)) submitReady += 1;
-        if (item.project.focus === BLOCKED) blocked += 1;
+        if (anyWord(config, 'chips', 'blocked', item.project.chips)) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
         if (id === undefined) continue;

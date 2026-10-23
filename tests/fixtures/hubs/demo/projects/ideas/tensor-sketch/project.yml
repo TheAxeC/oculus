@@ -1,15 +1,14 @@
 id: tensor-sketch
-stage: exploring
+stage: nascent
 tier: projects
 short: Sketched tensor decompositions for streaming data, online and out of core
 title: Sketched tensor decompositions for streaming data
 lead: [dana-example]
-focus: holding
 status:
   chips: []
   line: New idea - scope + novelty check open.
 domain: method
-pillar: [tensors]
+pillars: [tensors]
 related: [streaming-anomaly]
 eli5: Can we recover a big tensor's decomposition from a small random sketch, updated online as data streams in?
 next: Scope the idea; run a novelty check against streaming-PARAFAC work.

@@ -12,12 +12,13 @@ import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
 import { joinedEntries } from '../../data/helpers/hub-names.ts';
-import { anyWord, hasWord, wordFlag } from '../../data/shapes/vocab-keys.ts';
+import { anyWord, hasWord, vocabKeys, wordFlag } from '../../data/shapes/vocab-keys.ts';
 import {
     fieldItemsShape,
     mapShape,
     readAs,
     rowsShape,
+    stringItemsShape,
     wordShape
 } from '../../data/shapes/shapes.ts';
 
@@ -26,21 +27,34 @@ import {
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 export { setting } from './board/index.ts';
-import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
+import { toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
 /**
- * The clusters of `focus_lanes`, top to bottom: your move, then on others, then idea to project.
+ * The clusters of `focus_lanes` the board draws as clusters, top to bottom: your move, then on
+ * others, then idea to project.
  */
 export const CLUSTERS = ['now', 'parked', 'incubate'];
 
-/** One lane of the board: what `focus:` value it holds, its words, its hue and its cluster. */
+/**
+ * The cluster of the backlog: a lane of it is drawn full width under the three clusters and takes
+ * only a project of a tier carrying `backlog`.
+ */
+export const BACKLOG = 'backlog';
+
+/**
+ * One lane of the board: its key, its words, its hue and its cluster, and what puts a project on
+ * it, the stages of `stages` or the chips of `chips` its row names, each empty when the row names
+ * none.
+ */
 export type Lane = {
     key: string;
     label: string;
     sub: string;
     tone: string;
     cluster: string;
+    stages: string[];
+    chips: string[];
 };
 
 /** One priority level of `priority_levels`: its manifest value, its words and its flame count. */
@@ -127,21 +141,28 @@ export function snoozed(value: unknown, now: number): boolean {
     return days !== null && days > 0;
 }
 
-/** One row of `focus_lanes`: a map with a key; its label is the key when it names none. */
+/**
+ * One row of `focus_lanes`: a map with a key; its label is the key when it names none, and its
+ * `stages` and `chips` are lists of words, empty when the row leaves them out.
+ */
 const laneShape = z
     .object({
         key: wordShape.refine((key) => key !== ''),
         label: wordShape,
         sub: wordShape,
         color: wordShape,
-        cluster: wordShape
+        cluster: wordShape,
+        stages: stringItemsShape.catch([]),
+        chips: stringItemsShape.catch([])
     })
     .transform((row): Lane => ({
         key: row.key,
         label: row.label === '' ? row.key : row.label,
         sub: row.sub,
         tone: toneOf(row.color),
-        cluster: row.cluster
+        cluster: row.cluster,
+        stages: row.stages,
+        chips: row.chips
     }));
 
 const lanesShape = rowsShape(laneShape);
@@ -149,12 +170,6 @@ const lanesShape = rowsShape(laneShape);
 /** The lanes of `focus_lanes`, in the config's order, each hue already a tone. */
 export function lanes(config: Record<string, unknown>): Lane[] {
     return readAs(lanesShape, config.focus_lanes) ?? [];
-}
-
-/** The tone of the ideas backlog, the `holding_color` of vocab.yml. */
-export function holdingTone(config: Record<string, unknown>): string {
-    const hex = str(config.holding_color);
-    return hex === '' ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** One row of `priority_levels`: a map with a key; its label is the key when it names none. */
@@ -194,6 +209,11 @@ function laneOrder(a: Project, b: Project): number {
     if (one !== '' && two !== '') return one < two ? -1 : one > two ? 1 : 0;
     if (one !== '') return -1;
     if (two !== '') return 1;
+    return titleOrder(a, b);
+}
+
+/** A project of the backlog sorts by its title alone. */
+function titleOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
@@ -201,70 +221,129 @@ function laneOrder(a: Project, b: Project): number {
  * Whether a project is of a tier whose projects may sit in the backlog: a tier of `tiers`
  * (config/catalogs/vocab.yml) carrying `backlog`, which are Projects and Personal.
  */
-function backlogTier(project: Project, config: Record<string, unknown>): boolean {
+function backlogTier(project: Pick<Project, 'tier'>, config: Record<string, unknown>): boolean {
     return hasWord(config, 'tiers', 'backlog', project.tier);
 }
 
 /**
- * What sits on each lane, by lane key, sorted deadline first then title. `holding` is not a lane
- * and neither is a `focus:` no lane names, so a project carrying either is on no lane: `backlog`
- * takes a project of the Projects or Personal board in `holding` and an idea on no lane, `unplaced`
- * names an active project of those boards with no focus, and a project of another tier is
- * drawn by neither. A project of any tier is drawn on the lane its `focus:` names: a project
- * whose manifest names a lane is work the reader placed there.
+ * Whether a lane may hold a project at all: a lane of the cluster `backlog` holds only a project of
+ * a backlog tier, so an idea of another tier is never drawn there; every other lane holds any.
  */
-export function laneItems(projects: Project[], all: Lane[]): Record<string, Project[]> {
+function holds(
+    lane: Lane,
+    project: Pick<Project, 'tier'>,
+    config: Record<string, unknown>
+): boolean {
+    return lane.cluster !== BACKLOG || backlogTier(project, config);
+}
+
+/**
+ * The lane a project sits on: the first lane, in the order of `focus_lanes`, whose `chips` holds
+ * one of the project's chips; else the first whose `stages` holds its stage; else none. Chips and
+ * stage are compared as written. A lane that may not hold the project (`holds`) is passed over, so
+ * a project of a tier without `backlog` is on no backlog lane and on whatever lane its chips or its
+ * stage give otherwise.
+ */
+export function laneOf(
+    project: Pick<Project, 'tier' | 'stage' | 'chips'>,
+    all: Lane[],
+    config: Record<string, unknown>
+): Lane | undefined {
+    const open = all.filter((lane) => holds(lane, project, config));
+    const stage = project.stage ?? '';
+    return (
+        open.find((lane) => lane.chips.some((chip) => project.chips.includes(chip))) ??
+        open.find((lane) => stage !== '' && lane.stages.includes(stage))
+    );
+}
+
+/**
+ * What sits on each lane, by lane key: each project on the lane `laneOf` gives it, and on none
+ * when it gives none. A lane of the cluster `backlog` is sorted by title, every other lane by
+ * deadline first and then title.
+ */
+export function laneItems(
+    projects: Project[],
+    all: Lane[],
+    config: Record<string, unknown>
+): Record<string, Project[]> {
     const out: Record<string, Project[]> = {};
     for (const lane of all) out[lane.key] = [];
     for (const project of projects) {
-        const key = project.focus ?? '';
-        const lane = byKey(out, key);
-        if (lane === undefined) continue;
-        lane.push(project);
+        const lane = laneOf(project, all, config);
+        if (lane !== undefined) byKey(out, lane.key)?.push(project);
     }
-    for (const lane of Object.values(out)) lane.sort(laneOrder);
+    for (const lane of all)
+        byKey(out, lane.key)?.sort(lane.cluster === BACKLOG ? titleOrder : laneOrder);
     return out;
 }
 
 /**
- * Whether the board may move a project to a `focus:` value. Any project may go to a lane, and only
- * a project of a backlog tier (Projects or Personal) may go to `holding`: the backlog draws those
- * alone, so a project of another tier sent there would leave the board.
+ * Whether the board may move a project onto a lane: the lane may hold it (`holds`), and the word a
+ * move writes is a word of the vocabulary, the lane's first chip a word of `chips` for a lane with
+ * `chips`, its first stage a word of `stages` otherwise. A lane that names neither takes no move.
+ * So a move's write is never refused in part, and a project of a tier without `backlog` is never
+ * sent to a backlog lane, which would leave it off the board.
  */
-export function movable(project: Project, focus: string, config: Record<string, unknown>): boolean {
-    return focus !== 'holding' || backlogTier(project, config);
+export function movable(project: Project, lane: Lane, config: Record<string, unknown>): boolean {
+    if (!holds(lane, project, config)) return false;
+    const chip = lane.chips.at(0);
+    if (chip !== undefined) return vocabKeys(config.chips).includes(chip);
+    const stage = lane.stages.at(0);
+    return stage !== undefined && vocabKeys(config.stages).includes(stage);
 }
 
 /**
- * The ideas backlog: any project of a backlog tier parked in `holding`, and any project of those
- * tiers whose stage carries `idea` in `stages` and whose `focus:` names no lane, which covers an
- * idea that has none at all.
+ * The manifest fields a move of a project onto a lane writes in one write, or null when it writes
+ * nothing: a lane `movable` refuses, or the lane the project sits on. Onto a lane with `chips`, the
+ * lane's first chip is added when the project carries none of the lane's chips and the chips of
+ * every other lane with `chips` are taken off, so the card sits where it was dropped, and `stage`
+ * is not written. Onto any other lane, `stage` is the project's own when the lane's `stages` holds
+ * it and the lane's first stage otherwise, written only when it differs, and the chips of every
+ * lane with `chips` are taken off. The other chips stay in their order, and `status.chips` is
+ * written only when it changes.
  */
-export function backlog(
-    projects: Project[],
+export function moveOnto(
+    project: Project,
+    lane: Lane,
     all: Lane[],
     config: Record<string, unknown>
-): Project[] {
-    const keys = all.map((lane) => lane.key);
-    const out = projects.filter((project) => {
-        if (!backlogTier(project, config)) return false;
-        const focus = project.focus ?? '';
-        if (focus === 'holding') return true;
-        return hasWord(config, 'stages', 'idea', project.stage) && !keys.includes(focus);
-    });
-    return out.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
+): Record<string, unknown> | null {
+    if (!movable(project, lane, config)) return null;
+    if (laneOf(project, all, config)?.key === lane.key) return null;
+    const fields: Record<string, unknown> = {};
+    let chips: string[];
+    if (lane.chips.length > 0) {
+        const others = all.filter((one) => one.key !== lane.key).flatMap((one) => one.chips);
+        chips = project.chips.filter((chip) => lane.chips.includes(chip) || !others.includes(chip));
+        if (!chips.some((chip) => lane.chips.includes(chip))) chips.push(lane.chips[0]);
+    } else {
+        const laned = all.flatMap((one) => one.chips);
+        chips = project.chips.filter((chip) => !laned.includes(chip));
+        const stage = project.stage ?? '';
+        const next = lane.stages.includes(stage) ? stage : lane.stages[0];
+        if (next !== stage) fields.stage = next;
+    }
+    const same =
+        chips.length === project.chips.length &&
+        chips.every((chip, at) => chip === project.chips[at]);
+    if (!same) fields['status.chips'] = chips;
+    return Object.keys(fields).length === 0 ? null : fields;
 }
 
 /**
- * The projects of a backlog tier whose stage carries `live` in `stages` (work in flight) that name
- * no lane, so the board is not showing them.
+ * The projects of a backlog tier whose stage carries `live` (work in flight) or `idea` in `stages`
+ * and that no lane of `focus_lanes` takes, so the board is not showing them: with the shipped lanes
+ * none, and a hub whose lanes leave out a stage or the backlog row lists them.
  */
 export function unplaced(projects: Project[], config: Record<string, unknown>): Project[] {
+    const all = lanes(config);
     return projects.filter(
         (project) =>
             backlogTier(project, config) &&
-            hasWord(config, 'stages', 'live', project.stage) &&
-            (project.focus ?? '') === ''
+            (hasWord(config, 'stages', 'live', project.stage) ||
+                hasWord(config, 'stages', 'idea', project.stage)) &&
+            laneOf(project, all, config) === undefined
     );
 }
 
@@ -283,14 +362,15 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
- * The awaiting-a-response box. Every tally follows `focus:` alone: only a project laneItems draws
- * on a lane is counted, so a project with no `focus:` or in `holding` is in none. For each, the
- * people named in `waiting-on:` first, then the venue holding it when its stage carries
+ * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of the
+ * three clusters of `CLUSTERS`, so a project on no lane or on a backlog lane is in none. For each,
+ * the people named in `waiting-on:` first, then the venue holding it when its stage carries
  * `pauses_countdown` in `stages` (submitted). The blocked tally counts the projects on a lane that
- * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A `waiting-on:`
- * value is a people key or another project's id, drawn by waiting.ts. The applications are the
- * entries whose status is in `applications_sent` under `focus:` of config/defaults/behavior.yml,
- * and the hosts those whose status carries `waiting` in the hub's `career_host_status`.
+ * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
+ * `waiting-on:` value is a people key or another project's id, drawn by waiting.ts. The
+ * applications are the entries whose status is in `applications_sent` under `focus:` of
+ * config/defaults/behavior.yml, and the hosts those whose status carries `waiting` in the hub's
+ * `career_host_status`.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -299,9 +379,12 @@ export function waiting(
 ): Waiting {
     const venues = snapshot.entities.venues;
     const projects = snapshot.entities.projects;
+    const board = lanes(config);
+    const items = laneItems(Object.values(projects), board, config);
     const onLanes = new Set(
-        Object.values(laneItems(Object.values(projects), lanes(config)))
-            .flat()
+        board
+            .filter((lane) => CLUSTERS.includes(lane.cluster))
+            .flatMap((lane) => items[lane.key] ?? [])
             .map((project) => project.id)
     );
     const people: Record<string, number> = {};

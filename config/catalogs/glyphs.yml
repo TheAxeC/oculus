@@ -152,7 +152,6 @@ glyphs:
   white: "(.)"
   black: "(X)"
   orange_square: "[o]"
-  green_square: "[+]"
   cross_box: "[-]"
   trash: "[d]"
   fire: "^"     # per-card priority badge (repeated by flame count)

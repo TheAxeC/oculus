@@ -133,7 +133,7 @@ function idsOf(keys: readonly string[], resolve: (key: string) => Id | null): Id
 function projectOf(one: Project, own: string, resolve: Resolve): Project {
     const at = (source: Source, field: string) => (key: string) =>
         resolve([source], key, { file: one.file, key: field, field });
-    const venueId = one.venueId === undefined ? null : at('venues', 'venue_id')(one.venueId);
+    const venueId = one.venueId === undefined ? null : at('venues', 'venue')(one.venueId);
     const waiting = { file: one.file, key: 'waiting-on', field: 'waiting-on' };
     const out: Project = {
         ...one,
@@ -142,7 +142,7 @@ function projectOf(one: Project, own: string, resolve: Resolve): Project {
         relatedIds: idsOf(one.relatedIds, at('projects', 'related')),
         fundingIds: idsOf(one.fundingIds, at('funding', 'funding')),
         datasetIds: idsOf(one.datasetIds, at('datasets', 'datasets')),
-        pillarIds: idsOf(one.pillarIds, at('pillars', 'pillar')),
+        pillarIds: idsOf(one.pillarIds, at('pillars', 'pillars')),
         domainIds: idsOf(one.domainIds, at('domains', 'domain')),
         lead: idsOf(one.lead, at('people', 'lead')),
         collaborators: idsOf(one.collaborators, at('people', 'collaborators')),

@@ -111,18 +111,12 @@ const AMIR_RENAMED: Texts = {
 const EDITED: Edited[] = [
     {
         name: 'a plain and a double-quoted reference and the definition, and no other byte',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
         after: {
             'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
-            'hub:projects/active/alpha/project.yml': ALPHA.replace(
-                'venue_id: jbhi',
-                'venue_id: jama'
-            ),
-            'hub:projects/active/beta/project.yml': BETA.replace(
-                'venue_id: "jbhi"',
-                'venue_id: "jama"'
-            )
+            'hub:projects/active/alpha/project.yml': ALPHA.replace('venue: jbhi', 'venue: jama'),
+            'hub:projects/active/beta/project.yml': BETA.replace('venue: "jbhi"', 'venue: "jama"')
         }
     },
     {
@@ -130,40 +124,31 @@ const EDITED: Edited[] = [
         at: ['hub', '.oculus/data/research/venues.yml', 4, 10],
         newKey: 'jama',
         hub: {
-            'projects/active/alpha/project.yml': ALPHA.replace('venue_id: jbhi', "venue_id: 'jbhi'")
+            'projects/active/alpha/project.yml': ALPHA.replace('venue: jbhi', "venue: 'jbhi'")
         },
         after: {
             'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
-            'hub:projects/active/alpha/project.yml': ALPHA.replace(
-                'venue_id: jbhi',
-                "venue_id: 'jama'"
-            ),
-            'hub:projects/active/beta/project.yml': BETA.replace(
-                'venue_id: "jbhi"',
-                'venue_id: "jama"'
-            )
+            'hub:projects/active/alpha/project.yml': ALPHA.replace('venue: jbhi', "venue: 'jama'"),
+            'hub:projects/active/beta/project.yml': BETA.replace('venue: "jbhi"', 'venue: "jama"')
         }
     },
     {
         name: 'a trailing comment on the line, which stays',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace(
-                'venue_id: jbhi',
-                'venue_id: jbhi # the target'
+                'venue: jbhi',
+                'venue: jbhi # the target'
             )
         },
         after: {
             'hub:.oculus/data/research/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
-                'venue_id: jbhi',
-                'venue_id: jama # the target'
+                'venue: jbhi',
+                'venue: jama # the target'
             ),
-            'hub:projects/active/beta/project.yml': BETA.replace(
-                'venue_id: "jbhi"',
-                'venue_id: "jama"'
-            )
+            'hub:projects/active/beta/project.yml': BETA.replace('venue: "jbhi"', 'venue: "jama"')
         }
     },
     {
@@ -195,8 +180,8 @@ const EDITED: Edited[] = [
         newKey: 'tens',
         hub: {
             'projects/active/alpha/project.yml': ALPHA.replace(
-                'pillar: [tensor, federated]',
-                'pillar: [&p tensor, *p, federated]'
+                'pillars: [tensor, federated]',
+                'pillars: [&p tensor, *p, federated]'
             )
         },
         after: {
@@ -204,8 +189,8 @@ const EDITED: Edited[] = [
                 '.oculus/data/pillars/pillars.yml'
             ].replace('key: tensor', 'key: tens'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
-                'pillar: [tensor, federated]',
-                'pillar: [&p tens, *p, federated]'
+                'pillars: [tensor, federated]',
+                'pillars: [&p tens, *p, federated]'
             )
         }
     },
@@ -275,29 +260,29 @@ const REFUSED: Refused[] = [
     {
         name: 'an open tab whose unsaved text is not YAML',
         when: 'prepare',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
-        open: { 'projects/active/beta/project.yml': 'id: beta\nvenue_id: [jbhi\n' },
+        open: { 'projects/active/beta/project.yml': 'id: beta\nvenue: [jbhi\n' },
         refusal: { code: 'unparsed', file: 'projects/active/beta/project.yml' }
     },
     {
         name: 'an empty new key',
         when: 'rename',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: '',
         refusal: { code: 'empty' }
     },
     {
         name: 'a new key of white space only',
         when: 'rename',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: '  ',
         refusal: { code: 'empty' }
     },
     {
         name: 'a new key that already stands in the key source',
         when: 'rename',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'bspc',
         refusal: { code: 'exists', key: 'bspc', source: 'venues' }
     },
@@ -371,7 +356,7 @@ const REFUSED: Refused[] = [
     {
         name: 'a file larger than the write limit',
         when: 'prepare',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
         read: () => ({ large: true }),
         refusal: { code: 'large', file: '.oculus/data/research/venues.yml' }
@@ -379,7 +364,7 @@ const REFUSED: Refused[] = [
     {
         name: 'a file that cannot be read',
         when: 'prepare',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
         read: () => null,
         refusal: { code: 'unread', file: '.oculus/data/research/venues.yml' }
@@ -387,7 +372,7 @@ const REFUSED: Refused[] = [
     {
         name: 'a file whose text is no longer the text the index was built from, so the edit does not read back',
         when: 'rename',
-        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
         newKey: 'jama',
         read: () => NOTHING_SAVED,
         refusal: { code: 'readback', key: 'jama', file: '.oculus/data/research/venues.yml' }
@@ -421,7 +406,7 @@ describe('the rename of a hub key', () => {
             HUB_FILES['.oculus/data/pillars/pillars.yml'].replace('key: tensor', `key: ${written}`)
         );
         expect(edited['hub:projects/active/alpha/project.yml']).toBe(
-            ALPHA.replace('pillar: [tensor,', `pillar: [${written},`)
+            ALPHA.replace('pillars: [tensor,', `pillars: [${written},`)
         );
     });
 

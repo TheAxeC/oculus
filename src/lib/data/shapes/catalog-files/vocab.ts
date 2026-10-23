@@ -13,10 +13,6 @@ const keyed = z.strictObject({
     icon: text.optional().describe('The glyph name the row is drawn with, a key of glyphs.yml.'),
     color: colour.optional().describe('The colour the row is drawn in, a hex the palette maps.'),
     glyph: text.optional().describe('The glyph name the row is drawn with, a key of glyphs.yml.'),
-    sub: text.optional().describe("The line drawn under a Focus lane's label."),
-    cluster: text
-        .optional()
-        .describe('The group a Focus lane belongs to on the board: now, parked or incubate.'),
     flames: z.number().optional().describe("The number of flames a priority's badge draws."),
     assignable: z
         .boolean()
@@ -24,6 +20,54 @@ const keyed = z.strictObject({
         .describe(
             "false keeps a venue tier out of the choices a venue's `tier` offers; it stays a word the views draw, as the fallback for a venue with no tier."
         )
+});
+
+/**
+ * One row of `focus_lanes`: a lane's words, colour and cluster, and the stages or the chips that
+ * put a project on it. A row names `stages` or `chips`, never both and never neither, so a move
+ * onto the lane has one defined write.
+ */
+const laneRow = z
+    .strictObject({
+        key: text.describe('The word the lane is named by.'),
+        label: text.optional().describe('The words the lane is drawn with.'),
+        sub: text.optional().describe("The line drawn under the lane's label."),
+        color: colour
+            .optional()
+            .describe("The colour of the lane's header, a hex the palette maps."),
+        cluster: text
+            .optional()
+            .describe(
+                'The group the lane belongs to on the board: now, parked or incubate, drawn as three clusters, or backlog, a lane drawn full width under them that takes only a project of a tier carrying `backlog`.'
+            ),
+        stages: z
+            .array(text)
+            .optional()
+            .describe(
+                "The stages of `stages` whose projects sit on the lane, compared with a project's stage as written; a move onto the lane keeps a stage the list holds and writes its first stage otherwise."
+            ),
+        chips: z
+            .array(text)
+            .optional()
+            .describe(
+                "The chips of `chips` that put a project on the lane whatever its stage, compared with its chips as written, which decide before any lane's `stages` do; a move onto the lane adds its first chip."
+            )
+    })
+    .refine((row) => {
+        const byStage = (row.stages ?? []).length > 0;
+        const byChip = (row.chips ?? []).length > 0;
+        return byStage !== byChip;
+    });
+
+/** The rows of `focus_lanes`, each stage word held by one row only. */
+const laneRows = z.array(laneRow).superRefine((rows, context) => {
+    const seen = new Set<string>();
+    rows.forEach((row, at) => {
+        for (const stage of row.stages ?? []) {
+            if (seen.has(stage)) context.addIssue({ code: 'custom', path: [at, 'stages'] });
+            seen.add(stage);
+        }
+    });
 });
 
 /** One stage of `stages`: its words, glyph and colour, and the flags the code reads. */
@@ -38,7 +82,7 @@ const stageWord = z.strictObject({
             "The colour of a project at the stage wherever it is drawn: its board card, the Map, the Present view's project chip."
         ),
     idea: flag(
-        'The idea group: the backlog of ideas on the Focus board and the cross-link group of ideas.'
+        "The idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list an idea of a tier carrying `backlog` that neither the backlog lane nor another lane takes."
     ),
     live: flag(
         "The in-flight group: the audit's rules over in-flight work, the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work."
@@ -50,7 +94,7 @@ const stageWord = z.strictObject({
         .min(1)
         .optional()
         .describe(
-            "A dead or paused outcome, the only kind that is not real work, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order, and a project at the stage on a tier carrying `finished` is left out of a pillar's and a domain's members, a venue's use counts and the cross-link groups. A stage with no number is real work."
+            "A dead outcome, the only kind that is not real work, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order, and a project at the stage on a tier carrying `finished` is left out of a pillar's and a domain's members, a venue's use counts and the cross-link groups. A stage with no number is real work."
         ),
     archive_outcome: flag(
         'A `stage:` a project is archived with, and the name of its archive/<outcome>/ filing folder; the audit lists an archived project whose `stage:` differs from its folder.'
@@ -95,7 +139,7 @@ const chipWord = z.strictObject({
     label: text.optional().describe('The words the chip is drawn with on a card and in the form.'),
     icon: text.optional().describe('The glyph name the chip is drawn with.'),
     blocked: flag(
-        "A chip the Focus board's awaiting box counts as blocked, which the wait line of a card and a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
+        "A chip the Focus board's awaiting box counts as blocked and a board's statistics strip counts in its blocked number, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
     )
 });
 
@@ -159,7 +203,7 @@ const tierWord = z.strictObject({
         "The research board's tier: the venue load of the Command Center and the Inbox, the manifests behind, the projects quick add writes to, and the tier a new project is made in when none is named."
     ),
     backlog: flag(
-        'A tier whose projects may sit in the Focus backlog (`focus: holding`), where a new project of the tier starts.'
+        "A tier whose `nascent` projects sit in the Focus board's backlog lane, the lane of the cluster `backlog`, which is where a new project of the tier starts."
     ),
     personal: flag("Projects the audit's research rules leave alone."),
     outcome_folders: flag(
@@ -269,15 +313,11 @@ export const vocabFileShape = z.strictObject({
         .describe(
             "The statuses a Position Lead's `status` takes, each with its colour and the flags that say what it decides."
         ),
-    focus_lanes: z
-        .array(keyed)
+    focus_lanes: laneRows
         .optional()
         .describe(
-            'The lanes of the Focus board, in their order, each with its words, colour and cluster.'
+            'The lanes of the Focus board, in their order, each with its words, colour and cluster and the stages or the chips that put a project on it.'
         ),
-    holding_color: colour
-        .optional()
-        .describe("The colour of the Focus backlog's header and of a project's holding pill."),
     priority_levels: z
         .array(keyed)
         .optional()

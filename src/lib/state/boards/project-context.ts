@@ -7,7 +7,7 @@ import type { Project, Snapshot } from '../../data/model/index.ts';
 function venue(project: Project, snapshot: Snapshot): string {
     const found =
         project.venueId === undefined ? undefined : snapshot.entities.venues[project.venueId];
-    if (found === undefined) return project.venue ?? '';
+    if (found === undefined) return '';
     const short = found.short?.trim() ?? '';
     return short === '' ? found.name : short;
 }

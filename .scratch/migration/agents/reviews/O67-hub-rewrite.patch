@@ -1,0 +1,2752 @@
+diff --git a/.oculus/config.yml b/.oculus/config.yml
+index 6bb0a63..2c01c46 100644
+--- a/.oculus/config.yml
++++ b/.oculus/config.yml
+@@ -5,7 +5,7 @@
+ 
+ # Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and stage are the manifest's own `tier` and `stage` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
+ scan:
+-  # Projects of the tier projects that are ideas: nascent, scoping, de-risking or paused.
++  # Projects of the tier projects that are ideas: nascent, scoping or de-risking, or stopped and kept parked.
+   - { dir: projects/ideas }
+   # Projects of the tier personal, at any stage; the folder `school` holds the school and thesis ones.
+   - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing
+@@ -15,9 +15,9 @@ scan:
+   - { dir: projects/manuscripts }
+   # Projects of the tier software, the research tools and libraries; each holds a `repository:` block.
+   - { dir: projects/software, optional: true }   # optional; a hub without the folder reports nothing
+-  # Projects of the tier coauthor, each at the stage it reached (published, submitted, in-prep, finished, abandoned).
++  # Projects of the tier coauthor, each at the stage it reached (published, submitted, in-prep, released, stopped).
+   - { dir: projects/coauthor }
+-  # Projects of the tier archive, each at the stage it ended at (published, nogo, dropped, disproved).
++  # Projects of the tier archive, each at the stage it ended at (published, failed, stopped).
+   - { dir: projects/archive }
+ 
+ # The folder a new project is made in, for each tier: the New project form of a board offers it as the project's folder, and an app's new-project write with no folder uses the `projects` one. Each folder is a scan folder or lies under one.
+diff --git a/.oculus/data/research/data.yml b/.oculus/data/research/data.yml
+index a06aa48..bfe1b75 100644
+--- a/.oculus/data/research/data.yml
++++ b/.oculus/data/research/data.yml
+@@ -763,7 +763,7 @@ datasets:
+         unpack: true
+ 
+   # -- MS lesion single-nucleus cohorts | GEO + Zenodo (open) ---------------
+-  # The ms-lipid-handshake (archive/disproved) inputs, each in the folder of its key under ~/data (MSLH_DATA moves the folder that holds them). The caches built from them are ms-lipid-handshake, under MSLH_SCRATCH. Nothing is local now, so re-running that project means recovering all three.
++  # The ms-lipid-handshake (archive/failed) inputs, each in the folder of its key under ~/data (MSLH_DATA moves the folder that holds them). The caches built from them are ms-lipid-handshake, under MSLH_SCRATCH. Nothing is local now, so re-running that project means recovering all three.
+   - key: absinta-gse180759
+     name: "Absinta 2021 - chronic active MS lesions (snRNA-seq)"
+     modality: "snRNA-seq | MS brain lesions (csv.gz + txt.gz)"
+@@ -831,7 +831,7 @@ datasets:
+     retrieval:
+       - kind: derived
+         from: [absinta-gse180759, jakel-gse118257, macnair2024]
+-        script: projects/archive/disproved/ms-lipid-handshake/code/paper.py
++        script: projects/archive/failed/ms-lipid-handshake/code/paper.py
+ 
+   # -- Single-cell immune atlases | CZ CELLxGENE (open) ---------------------
+   # Every entry below carries the EXACT dataset-version URL, so each is one download, not a portal hunt, saved under the file name fed-multicellular-immune reads in the folder of its key (FED_IMMUNE_DATA moves the folder that holds them). All nine were re-verified 2026-08-10 by reading `uns/citation` out of the local h5ad before the 65 GB copy was deleted; that field is the authority if a link ever rots (open the collection page and take the current dataset version).
+diff --git a/.oculus/data/research/venues.yml b/.oculus/data/research/venues.yml
+index 43cbfd2..30549ec 100644
+--- a/.oculus/data/research/venues.yml
++++ b/.oculus/data/research/venues.yml
+@@ -12,7 +12,7 @@ intro: "Target venues: pick on merit (fit, impact and indexing). The free route
+ # Schema: field -> type / options / required / help. Drives the fields a new entry is built with, the in-place controls, the editor's completion and marks, the type check of a write and selftest.
+ schema:
+   - { field: name,           type: text,     required: true, label: "Venue name", help: "The venue's full name." }
+-  - { field: id,             type: text,     help: "The catalogue id that a project's venue_id names." }
++  - { field: id,             type: text,     help: "The catalogue id that a project's venue names." }
+   - { field: short,          type: text,     label: "Short name", help: "The venue's short name or acronym." }
+   - { field: category,       type: select,   from: vocab.venue_categories, help: "The kind of venue: a journal, a conference, a thesis or a meeting." }
+   - { field: jif,            type: text,     label: "JIF", help: "The journal impact factor as text." }
+diff --git a/README.md b/README.md
+index 4eeb4e3..3557cb0 100644
+--- a/README.md
++++ b/README.md
+@@ -49,10 +49,10 @@ projects/archive/**/<id>/   project.yml + any real content it has (README.md dea
+ | archive | `projects/archive/**/<id>/` | `project.yml` with `archive_status`, `eli5`, the outcome and `venue_id`/DOI/year, plus whatever real content the project has, never deleted to slim it |
+ | coauthor | `projects/coauthor/**/<id>/` | `project.yml` (chips include `coauthor`) + whatever real content it carries; co-authored work that Axel does not lead |
+ 
+-- The three live tiers (`ideas`, `active`, `manuscripts`) are flat: one folder per project, directly under the tier. Archive and coauthor are nested: the folder holding a `project.yml` or a `.oculus/project.yml` is the project, and the folders between it and the tier are free filing (`archive/published/<year>/`, `archive/nogo/`, `coauthor/published/<year>/`, `coauthor/active/`, `coauthor/abandoned/`). An id is unique across the whole of `projects/`.
++- The three live tiers (`ideas`, `active`, `manuscripts`) are flat: one folder per project, directly under the tier. Archive and coauthor are nested: the folder holding a `project.yml` or a `.oculus/project.yml` is the project, and the folders between it and the tier are free filing (`archive/published/<year>/`, `archive/failed/`, `archive/stopped/`, `coauthor/published/<year>/`, `coauthor/active/`, `coauthor/stopped/`). An id is unique across the whole of `projects/`.
+ - `code/` is the deposit root: its generated `results/` and `figures/` are tracked in the hub and listed in `code/.depositignore`, so the public deposit leaves them out; `code/attic/` holds runnable, documented dead-end experiments that back no published claim. The deposit is tracked in the manifest as `code_availability: { status: none|review-anon|deposited, url, doi }`, and `submit-ready` requires `deposited`.
+ - A project's `README.md` `## Data` section records each external dataset (source, version, access, local path, HPC path, cache recipe), and the manifest's `datasets:` lists their registry keys.
+-- A project normally moves `idea` -> `active` -> `manuscript` -> published (folder to `archive/published/`) or a dead end (nogo, dropped, disproved, abandoned; folder to `archive/`). A move is a folder move plus setting `type:` and clearing the in-flight status chips.
++- A project normally moves `idea` -> `active` -> `manuscript` -> published (folder to `archive/published/`) or a dead end (failed or stopped; folder to `archive/failed/` or `archive/stopped/`). A move is a folder move plus setting `stage:` and clearing the in-flight status chips.
+ 
+ ## Conventions
+ - Per-project standard layout and tiers: "Project layout and tiers" above.
+diff --git a/applications/active/2026-ugent-biml-doctor-assistent/letter/work/source-ledger.md b/applications/active/2026-ugent-biml-doctor-assistent/letter/work/source-ledger.md
+index ec35baf..60f0d8b 100644
+--- a/applications/active/2026-ugent-biml-doctor-assistent/letter/work/source-ledger.md
++++ b/applications/active/2026-ugent-biml-doctor-assistent/letter/work/source-ledger.md
+@@ -146,7 +146,7 @@ Verbatim lede: "I teach at the intersection of computation and clinical applicat
+ | D/data.yml:143-145 | Student entry, "Doctoral Program in Sciences, Statistics (co-supervisor, 2024 - 2025)" |
+ | P/teaching.md:45 | "Individual Reference Intervals for Clinical Event Prediction - PhD Statistics (co-supervisor)" |
+ | EDU/education.yml:119, :126, :128 | "(+ Anh Phuong DO, doctoral co-supervisor)"; related project individual-reference-intervals; "Doctoral, Statistics; co-supervisor" |
+-| projects/coauthor/abandoned/individual-reference-intervals/project.yml:3, :11, :13, :14 | type abandoned; "Co-author. Abandoned (was targeted at IEEE JBHI, 2024; Do, Faes, et al.). Not pursued to a full paper."; lead Do; tier coauthor |
++| projects/coauthor/stopped/individual-reference-intervals/project.yml:3, :11, :13, :14 | type abandoned; "Co-author. Abandoned (was targeted at IEEE JBHI, 2024; Do, Faes, et al.). Not pursued to a full paper."; lead Do; tier coauthor |
+ | ARCH/2025-hasselt-data-science-zap/onderwijs.tex:50 | "co-promotor van Anh Phuong Do (Individual Reference Intervals for Clinical Event Prediction, voor de titel Doctor in de wetenschappen: statistiek) met als hoofdpromotor Olivier Thas" |
+ | ARCH/2025-hasselt-data-science-zap/wetenschappelijke-management.tex:62-66 | "Rol: Co-promotor. Status: Lopend doctoraat (startjaar: 2025)"; university UHasselt |
+ | ARCH/2025-hasselt-data-science-zap/wetenschappelijk-activiteiten.tex:81 | "Anh Phuong Do, Axel Faes, et al. Individual Reference Intervals for Clinical Event Prediction, (in preparation)" |
+@@ -400,12 +400,12 @@ Count: the list of manifest paths (one per project.yml under projects/ and side-
+ 
+ | Source (file:line of title) | Title | Type, tier, focus | Status in source | One-line idea (source words) | BioML line named in manifest text |
+ |---|---|---|---|---|---|
+-| projects/archive/disproved/ms-lipid-handshake/project.yml:9 | MS Lipid Handshake (BTD) | disproved, archive | lead | Tested whether multiple-sclerosis lesions show a 'lipid handshake': myeloid cells exporting cholesterol from cleared myelin debris coupling, within a lesion, to oligodendrocytes rebuilding myelin. | LS: single-nucleus RNA, multiple sclerosis lesions |
+-| projects/archive/dropped/algebraic-subtyping/project.yml:8 | Algebraic Subtyping for Algebraic Effects and Handlers | dropped, archive | lead | Extends Dolan's algebraic subtyping with effect information, building a type-and-effect system for algebraic effects and handlers. | none named |
+-| projects/archive/dropped/connectivity-motor-imagery/project.yml:10 | Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources | dropped, archive | lead | Aimed to model directed (causal) functional connectivity between reconstructed EEG sources (targeting motor-imagery analysis), combining a Temporal Causal Discovery Framework with Causal Graph Processes. | SEQ: EEG source connectivity; LS: EEG |
+-| projects/archive/nogo/faithful-block-term-layer/project.yml:9 | Faithful Block-Term Layer | nogo, archive | lead | Tried to give block-term tensor networks (BTTN) a built-in faithfulness / no-leakage guarantee: an interpretability claim with a formal bound, pursued as a standalone methods contribution. | none named |
+-| projects/archive/nogo/fed-faithful-ecg/project.yml:6 | Faithfulness-Preserving Federated Learning for Interpretable ECG | nogo, archive | lead | Tested whether training a shared glass-box ECG model across hospitals by federated averaging secretly breaks its self-explanation while accuracy stays fine. | LS: ECG |
+-| projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml:9 | Jacobian-coupled block-term model with a structure-revealing DP floor | nogo, archive | lead | Tried to make a block-term model's differential-privacy floor depend on the inter-block spectral gap, a structure-revealing privacy advantage the parent COVERT model could not give. | none named |
++| projects/archive/failed/ms-lipid-handshake/project.yml:9 | MS Lipid Handshake (BTD) | disproved, archive | lead | Tested whether multiple-sclerosis lesions show a 'lipid handshake': myeloid cells exporting cholesterol from cleared myelin debris coupling, within a lesion, to oligodendrocytes rebuilding myelin. | LS: single-nucleus RNA, multiple sclerosis lesions |
++| projects/archive/stopped/algebraic-subtyping/project.yml:8 | Algebraic Subtyping for Algebraic Effects and Handlers | dropped, archive | lead | Extends Dolan's algebraic subtyping with effect information, building a type-and-effect system for algebraic effects and handlers. | none named |
++| projects/archive/stopped/connectivity-motor-imagery/project.yml:10 | Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources | dropped, archive | lead | Aimed to model directed (causal) functional connectivity between reconstructed EEG sources (targeting motor-imagery analysis), combining a Temporal Causal Discovery Framework with Causal Graph Processes. | SEQ: EEG source connectivity; LS: EEG |
++| projects/archive/failed/faithful-block-term-layer/project.yml:9 | Faithful Block-Term Layer | nogo, archive | lead | Tried to give block-term tensor networks (BTTN) a built-in faithfulness / no-leakage guarantee: an interpretability claim with a formal bound, pursued as a standalone methods contribution. | none named |
++| projects/archive/failed/fed-faithful-ecg/project.yml:6 | Faithfulness-Preserving Federated Learning for Interpretable ECG | nogo, archive | lead | Tested whether training a shared glass-box ECG model across hospitals by federated averaging secretly breaks its self-explanation while accuracy stays fine. | LS: ECG |
++| projects/archive/failed/jacobian-coupled-blockterm-dp/project.yml:9 | Jacobian-coupled block-term model with a structure-revealing DP floor | nogo, archive | lead | Tried to make a block-term model's differential-privacy floor depend on the inter-block spectral gap, a structure-revealing privacy advantage the parent COVERT model could not give. | none named |
+ | projects/archive/phd/phd-thesis/project.yml:10 | Finger movement decoding: From source-localisation to tensor regression modelling | phd, archive | thesis,lead | Axel Faes's PhD thesis (KU Leuven, 2023) on decoding single and coordinated finger movements from electrocorticography (ECoG). | SEQ/LS: ECoG decoding of finger movement |
+ | projects/archive/published/2016/bachelor-network-ids/project.yml:9 | Machine Learning Techniques for Flow-Based Network Intrusion Detection Systems | published, archive | thesis,lead | Bachelor's thesis on flow-based network intrusion detection with machine learning: it uses aggregated IP-flow features (no payload) to flag intrusions, comparing supervised and unsupervised algorithms across labelled and ... | none named |
+ | projects/archive/published/2017/icfp-src-abstract/project.yml:9 | Towards a Core Language with Row-Based Effects for Optimised Compilation | published, archive | abstract,lead | Student Research Competition abstract proposing a core language with row-based effects as an intermediate representation for optimising the compilation of algebraic effect handlers. | none named |
+@@ -430,7 +430,7 @@ Count: the list of manifest paths (one per project.yml under projects/ and side-
+ 
+ | Source (file:line of title) | Title | Type, tier, focus | Status in source | One-line idea (source words) | BioML line named in manifest text |
+ |---|---|---|---|---|---|
+-| projects/coauthor/abandoned/individual-reference-intervals/project.yml:8 | Individual Reference Intervals for Clinical Event Prediction | abandoned, coauthor | coauthor | Explored combining individual (personalized) clinical reference intervals with machine learning to predict clinical events such as readmissions or disease progression, instead of population-wide normal ranges. | LS: clinical event prediction; 'reference intervals' (manifest does not use the word uncertainty) |
++| projects/coauthor/stopped/individual-reference-intervals/project.yml:8 | Individual Reference Intervals for Clinical Event Prediction | abandoned, coauthor | coauthor | Explored combining individual (personalized) clinical reference intervals with machine learning to predict clinical events such as readmissions or disease progression, instead of population-wide normal ranges. | LS: clinical event prediction; 'reference intervals' (manifest does not use the word uncertainty) |
+ | projects/coauthor/active/clinical-hccnet/project.yml:12 | Prediction of hepatocellular carcinoma by MRI: the development of MRI-HCC prediction model | in-prep, coauthor, revise | admin-prep,coauthor; `article`, 16 pp, compiles clean. JHEP Reports, in preparation. | A student-led clinical application of HCCNet (Paper 3): the self-supervised longitudinal-MRI backbone put to a clinical hepatocellular-carcinoma risk setting. | LS: liver MRI |
+ | projects/coauthor/active/elixir-fl4e/project.yml:8 | ELIXIR / FL4E: Federated Learning for Everyone (framework contribution) | software, coauthor | lead | A collaboration around FL4E ('Federated Learning for Everyone'), a privacy-preserving federated-learning infrastructure for health. | LS: health federated learning |
+ | projects/coauthor/active/flkit/project.yml:10 | Development and Design of FLKit: A Structured Onboarding Toolkit for Federated Learning in Health and Life Sciences | in-prep, coauthor, review | submitted,coauthor | FLKit is a structured onboarding toolkit that lowers the entry barrier to federated learning for health and life-science researchers, bundling environment setup, client/server orchestration, and worked examples. | LS: federated learning toolkit for health and life sciences |
+@@ -565,7 +565,7 @@ Commands: `/usr/bin/grep -rIn -i -E "<pattern>" <root>` (the shell function `gre
+ | Pattern | Hits (file:line, text) |
+ |---|---|
+ | multi-target and variants, website folder | no hits (D/, P/, W/_scripts) |
+-| multi-target and variants, hub | PM/covert-theory/manuscript/main.tex:800 "multi-label residual is the only new ingredient, left to future work"; PM/covert-applied/manuscript/main.tex:983 "multi-label and feature-overlapping settings, as with P3LS, are open"; tools/skills/catalog.yaml:466 "multi-output models. Relevant wherever a glass-box claim rests on them"; feeds/position-leads.yml:130 (the vacancy record: "multi-target prediction, generative AI, time series, uncertainty quantification and probabilistic models"); feeds/literature-radar.yml:613, :2854, :6220 (radar items by other authors); projects/archive/nogo/jacobian-coupled-blockterm-dp/README.md:39 and :70 ("any linear multi-output vertical FL (P3LS included)"; "a flat/P3LS multi-output model has the same score Gram"); tools/oculus/.scratch/migration/agents/reviews/D17-brief-check.md:99 (makefile "multi-target" lines, unrelated); projects/manuscripts/dongho-ecg-clustering/notes/thesis/referenties.bib:362 (abstract of a cited dataset paper: "annotated by up to two cardiologists as a multi-label dataset"). No hit says "multivariate regression" |
++| multi-target and variants, hub | PM/covert-theory/manuscript/main.tex:800 "multi-label residual is the only new ingredient, left to future work"; PM/covert-applied/manuscript/main.tex:983 "multi-label and feature-overlapping settings, as with P3LS, are open"; tools/skills/catalog.yaml:466 "multi-output models. Relevant wherever a glass-box claim rests on them"; feeds/position-leads.yml:130 (the vacancy record: "multi-target prediction, generative AI, time series, uncertainty quantification and probabilistic models"); feeds/literature-radar.yml:613, :2854, :6220 (radar items by other authors); projects/archive/failed/jacobian-coupled-blockterm-dp/README.md:39 and :70 ("any linear multi-output vertical FL (P3LS included)"; "a flat/P3LS multi-output model has the same score Gram"); tools/oculus/.scratch/migration/agents/reviews/D17-brief-check.md:99 (makefile "multi-target" lines, unrelated); projects/manuscripts/dongho-ecg-clustering/notes/thesis/referenties.bib:362 (abstract of a cited dataset paper: "annotated by up to two cardiologists as a multi-label dataset"). No hit says "multivariate regression" |
+ | Research Affiliate | D/data.yml:50; D/website.yml:69; W/_scripts/_tmp/cv/experience.tex:8; registries/career.yml:59; PM/ward-bttr-crosssubject/admin/submission/author-biographies.tex:23; INFO/uantwerpen-delputte-inquiry.md:14 and :30 ("research affiliate aan UHasselt, Biomedische Datawetenschappen"; "research affiliate at UHasselt, Biomedical Data Sciences"); INFO/vib-ai-aerts-inquiry.md:46 (note on the official title); FUND/2026-nwo-veni-self-explaining-hospital/preproposal/veni2026.tex:202 and its .bak copy; FUND/2026-fwo-senior-transplant/proposal/proposal/form-fields.md:197 and :218 |
+ | Vrijwillig | INFO/vib-ai-aerts-inquiry.md:22 and :46; ARCH/2026-hasselt-immunology-zap/other/wetenschappelijk-activiteiten.tex:29 ("Vrijwillig wetenschappelijk medewerker, UHasselt (2026--heden)") |
+ | co-titularis | ARCH/2026-hasselt-immunology-zap/onderwijs.tex:21; ARCH/2026-hasselt-immunology-zap/motivatie.tex:30; ARCH/2026-hasselt-immunology-zap/other/wetenschappelijk-activiteiten.tex:30, :156, :157; ARCH/2025-hasselt-data-science-zap/wetenschappelijk-activiteiten.tex:137, :138; ARCH/2025-hasselt-data-science-zap/motivatie.tex:22; none in the website folder |
+@@ -577,7 +577,7 @@ Context of the "co-titularis" line in the 2026 Hasselt immunology application (o
+ 
+ | No. | Subject | Source A | Source B (and others) |
+ |---|---|---|---|
+-| J1 | Anh Phuong Do, role and status | co-supervisor, 2024-2025, listed on the website and in the education register (D/data.yml:145; P/teaching.md:45; EDU/education.yml:119) | "co-promotor" in the 2025 Hasselt, Maynooth applications (ARCH/2025-hasselt-data-science-zap/onderwijs.tex:50; ARCH/2025-maynooth-cs-zap/onderwijs.tex:38); start year 2025 "Lopend doctoraat" (wetenschappelijke-management.tex:62-66); manuscript "abandoned" (projects/coauthor/abandoned/individual-reference-intervals/project.yml:11); "removed everywhere" decision 2026-06-22 (ARCH/2026-hasselt-immunology-zap/NEXT.md:19); live BKO text omits it, older lines commented (BKO/onderwijs.tex:159, :608) |
++| J1 | Anh Phuong Do, role and status | co-supervisor, 2024-2025, listed on the website and in the education register (D/data.yml:145; P/teaching.md:45; EDU/education.yml:119) | "co-promotor" in the 2025 Hasselt, Maynooth applications (ARCH/2025-hasselt-data-science-zap/onderwijs.tex:50; ARCH/2025-maynooth-cs-zap/onderwijs.tex:38); start year 2025 "Lopend doctoraat" (wetenschappelijke-management.tex:62-66); manuscript "abandoned" (projects/coauthor/stopped/individual-reference-intervals/project.yml:11); "removed everywhere" decision 2026-06-22 (ARCH/2026-hasselt-immunology-zap/NEXT.md:19); live BKO text omits it, older lines commented (BKO/onderwijs.tex:159, :608) |
+ | J2 | Number of supervised students | "17+" (P/teaching.md:17; INFO/teaching-statement.template.md:19); 17 entries (D/data.yml:134-182); "17 master's students (3 of which are his current students)" (Peeters letter) | "15+" (D/industry.yml:546); "over fifteen" (ARCH/withdrawn/2025-tilburg-eeg/cover.tex:40); "over 12" (Moreau letter); FWO form: eleven master theses, two daily-supervised doctoral researchers, one co-supervised doctoral researcher, three interns (form-fields.md:195), which sums to 17 only when the co-supervised doctoral researcher is counted |
+ | J3 | Role in Bioinformatics (3740) | "Coordinating lecturer" (D/data.yml:104, :116; P/teaching.md:31; EDU/education.yml:38; form-fields.md:193) | "co-lecturer" (Peeters letter); "co-titularis" (archived Hasselt applications); BKO text names collaboration with Peeters and Volders (BKO/onderwijs.tex:341) |
+ | J4 | Bioinformatics period | "2024-2026" in one row (P/teaching.md:31) | two rows, Sept 2024 to Sept 2025 and Sept 2025 to Sept 2026 (D/data.yml:104-106, :116-118); BKO text: involvement "from June 2024" (BKO/onderwijs.tex:273) |
+@@ -617,7 +617,7 @@ Context of the "co-titularis" line in the 2026 Hasselt immunology application (o
+ | Datasets the hub registers (life-science data in use) | about 60 datasets in registries/data.yml, including MS registry (msbase), hccnet-mri (371-390), ml4af (1011-1033), ucr-nback, single-cell CellxGene sets used in fed-multicellular-immune, PTB-XL, MIMIC-IV-ECG, CODE-15, BraTS 2020/2021, Stanford fingerflex, Miller ECoG library | registries/data.yml; PM/fed-multicellular-immune/project.yml:31; PM/*/project.yml datasets keys |
+ | Uncertainty, calibration and probabilistic wording in Axel's own records | conformal proposals A, B and D (section C5); idea conformal-tensor-factors ("distribution-free coverage"); idea neurosde ("calibrated uncertainty"); FWO senior track ("gauge-invariant conformal, certified differential diagnosis + abstention triage"); manuscript meseret-cirrhosis ("calibrated, clinically-coherent risk", competing risks, Brier); EFSA case study "Bayesian spatial modeling"; Mohsen thesis metrics CRPS and calibrated intervals; ecg-readable-substrate "calibration slope ~1.0, Brier 0.099/0.100"; industry CV "honest uncertainty"; profile roadmap lists Bayesian hierarchical modelling and uncertainty quantification as a technique still to learn | EDU/student-supervision/2026-2027/proposals/README.md:7-10; projects/ideas/conformal-tensor-factors/project.yml:1; projects/ideas/neurosde/project.yml:1; FUND/funding.yml:52; PM/meseret-cirrhosis/project.yml:19; D/data.yml:434; PM/ecg-readable-substrate/project.yml:30; D/industry.yml:369; INFO/profile.md:7 |
+ | Time-series and sequence wording in Axel's own records | PhD thesis on ECoG finger-movement decoding (trajectories over time), BTTR/eBTTR/Go-BTTR; "AI for time series imputation" (Mohsen); serial ECG project; continuous-time state-space idea; EEG-SAAD attention-decoding challenge; industry CV "high-density time-series" | D/data.yml:85; EDU/education.yml:128; projects/ideas/serial-ecg-af/project.yml:1; projects/ideas/ssm-longitudinal/project.yml:1; projects/active/eeg-saad-challenge/project.yml:1; D/industry.yml:253 |
+-| Omics wording in Axel's own records | "multi-omics" in the Twente role (D/data.yml:46) and Veni; single-cell immune tensor manuscript; MS lipid handshake single-nucleus RNA study (disproved, archive); BTD autoencoder idea (single-cell); FedLink idea (genome, mass spectra, metabolites); paleogenomics idea; Bio-informatics course; FWO form mentions the MSBase registry | PM/fed-multicellular-immune/project.yml:6; projects/archive/disproved/ms-lipid-handshake/project.yml:1; projects/ideas/btd-autoencoder/project.yml:1; projects/ideas/fedlink/project.yml:1; projects/ideas/paleogenomics-tensor/project.yml:1 |
++| Omics wording in Axel's own records | "multi-omics" in the Twente role (D/data.yml:46) and Veni; single-cell immune tensor manuscript; MS lipid handshake single-nucleus RNA study (disproved, archive); BTD autoencoder idea (single-cell); FedLink idea (genome, mass spectra, metabolites); paleogenomics idea; Bio-informatics course; FWO form mentions the MSBase registry | PM/fed-multicellular-immune/project.yml:6; projects/archive/failed/ms-lipid-handshake/project.yml:1; projects/ideas/btd-autoencoder/project.yml:1; projects/ideas/fedlink/project.yml:1; projects/ideas/paleogenomics-tensor/project.yml:1 |
+ | Funded-by statements for manuscripts | FAIR, ZonMw AI-HCC and FWO acknowledgment texts stored as `statement:` | FUND/funding.yml:79, :118, :127 |
+ | Strategy documents in the hub (record only) | INFO/profile.md (roadmap to a professorship); INFO/strategy.md (fit estimates for other positions, e.g. "Uppsala Computational Epidemiology: 45-55%"); INFO/research-vision.template.md; INFO/teaching-statement.template.md | INFO/ |
+ | Mentioned hub statements about being "early in postdoctoral career" or "independent investigator" | "As an independent investigator, I want to build a group around the self-explaining hospital" (P/research.md:54); career target "assistant professor / tenure-track" | P/research.md:54; registries/career.yml:55-61 |
+diff --git a/deck/present.yml b/deck/present.yml
+index 9a17954..f1decda 100644
+--- a/deck/present.yml
++++ b/deck/present.yml
+@@ -4,7 +4,7 @@ deck:
+ 
+ groups:
+     pillars:
+-        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted, idea, nascent, scoping] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision, published, nascent, scoping] }
+         slides:
+             - hccnet-revision
+             - covert-applied
+@@ -14,7 +14,7 @@ groups:
+             - btfno
+             - bt-operator-theory
+     more:
+-        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, running, active, submit-ready, submitted, revision, accepted] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision, published] }
+         discover: true
+         sort: folder
+         slides:
+@@ -25,7 +25,7 @@ groups:
+             - meseret-cirrhosis
+             - ward-bttr-crosssubject
+     ideas:
+-        find: { folders: projects/*/*/present, tiers: [projects], stages: [nascent, scoping, de-risking] }
++        find: { folders: projects/*/*/present, tiers: [projects], stages: [nascent, scoping, de-risking, exploring] }
+         discover: true
+         slides:
+             - btd-autoencoder
+diff --git a/projects/active/eeg-saad-challenge/project.yml b/projects/active/eeg-saad-challenge/project.yml
+index 7e67c9b..bf78c80 100644
+--- a/projects/active/eeg-saad-challenge/project.yml
++++ b/projects/active/eeg-saad-challenge/project.yml
+@@ -5,13 +5,12 @@ domain: brain
+ short: EEG-sAAD
+ title: Cross-Dataset Selective Auditory Attention Decoding (ICASSP 2027 Grand Challenge)
+ lead: [axel-faes]
+-pillar:
++pillars:
+ - tensor
+ - neurotech
+ related:
+ - multiway-biosignal-fm
+ - xsub-ecog-framework
+-focus: run
+ compute: [utwente]
+ datasets: [aad-dtu, aad-kul, aad-kul-av-gc, aad-kul-hd, aad-ustc]
+ code_availability:
+@@ -21,7 +20,7 @@ code_availability:
+ status:
+   chips: []
+   line: Challenge entry, no manuscript. Development phase to 2026-11-08, blind test 2026-11-09 to 12-08.
+-venue_id: icassp
++venue: icassp
+ deadline: 2026-12-08
+ eli5: Decode which of two competing talkers a listener is attending to, from EEG, on datasets the model has never seen. Five public training sets across three languages and two amplifier systems, two blind held-out test sets, and attention switches inside the test trials. Ranking is the harmonic mean of accuracy and how fast a switch is detected.
+ latest: '2026-09-10: challenge scoped from the Codabench page. Not registered, no data staged, no code.'
+diff --git a/projects/active/linfoot-estimator/project.yml b/projects/active/linfoot-estimator/project.yml
+index 9dfead2..1640c3b 100644
+--- a/projects/active/linfoot-estimator/project.yml
++++ b/projects/active/linfoot-estimator/project.yml
+@@ -5,9 +5,8 @@ tier: projects
+ status:
+   chips: []
+   line: "`article`, 62 pp, compiles, no undefined references, draft in revision."
+-focus: run
+ domain: method
+-pillar: ["evaluation"]
++pillars: ["evaluation"]
+ title: "Towards a pretrained deep learning estimator of the Linfoot informational correlation"
+ lead: [van-den-berg]
+ eli5: "Stephanie's pretrained estimator reads the Linfoot correlation, a bounded rescaling of mutual information, off a bivariate scatter. Hers is trained on two copula families with positive dependence. The work here makes it invariant to what the estimand is invariant to, and trains it on a generator of unlimited shapes with exact labels."
+@@ -28,6 +27,6 @@ next: "Cluster batch 1: train and score sets B and C (6e), the two-family and pr
+ followup:
+   - { do: "Run the plan" }
+ outcome: "Coauthor involvement on Stéphanie van den Berg's pretrained Linfoot estimator (arXiv:2512.12358, with Halekoh, Möller and von Bornemann Hjelmborg at SDU and Kryger Jensen at Copenhagen). She asked for help improving it. No contribution is in the paper yet. The Linfoot estimand, Proposition 2.1 and Proposition 2.2 including the Clayton closed form are hers and stay hers."
+-venue_id:
++venue:
+ doi: 
+ collaborators: ["van-den-berg"]
+diff --git a/projects/active/loewner/project.yml b/projects/active/loewner/project.yml
+index bbcf0b4..8f500cc 100644
+--- a/projects/active/loewner/project.yml
++++ b/projects/active/loewner/project.yml
+@@ -1,16 +1,15 @@
+ id: loewner
+-stage: exploring
++stage: scoping
+ tier: projects
+ domain: method
+ short: Loewner
+ title: Trainable Loewner Layers for Signal and Image Processing
+ lead: [axel-faes]
+-pillar:
++pillars:
+ - sciml
+ related:
+ - novel-math-primitives
+ compute: [this-mac]
+-focus: scope
+ datasets: []
+ code_availability:
+   status: none
+@@ -19,7 +18,7 @@ code_availability:
+ status:
+   chips: []
+   line: Research stage; algorithm development. No manuscript or experiments.
+-venue_id: null
++venue: null
+ eli5: Build a neural-network layer that learns a compact rational processing operator through a Loewner construction. Test whether it improves signal or image processing over direct filter learning at matched cost.
+ latest: '2026-09-08: 26-source novelty audit consolidated into README.md. The structured learning algorithm remains to be derived and tested.'
+ next: Derive the structured correction and derivative algorithm, resolve closest optimization precedents, then implement the matched local synthetic pilot.
+diff --git a/projects/active/novel-math-primitives/project.yml b/projects/active/novel-math-primitives/project.yml
+index 3eec0f7..dc6e91d 100644
+--- a/projects/active/novel-math-primitives/project.yml
++++ b/projects/active/novel-math-primitives/project.yml
+@@ -5,12 +5,11 @@ tier: projects
+ domain: method
+ title: "Untapped Mathematical Primitives for ML: tensor algebra, category theory, graph theory"
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: backburner
++pillars: [tensor]
+ status:
+-  chips: []
++  chips: [parked]
+   line: "Exploration/scan, no code or manuscript. 12 untapped primitives mapped (tensor algebra / category theory / graph theory), web novelty-checked 2026-07-13. Gate = pick one, build the differentiable bridge + separation."
+-venue_id:
++venue:
+ eli5: "A shortlist of mathematical objects that machine learning does not yet use - hyperdeterminants, immanants, Schur functors, graph magnitude, and more - each with a first idea for turning it into a differentiable layer or loss, and a statement of what it could do that a standard layer cannot."
+ latest: "2026-07-14: 12-agent deep sweep consolidated ~24 genuine ML-empty survivors into README, ranked with medical fit; corrected 6 over-claims; chip-firing/sandpile converged #1. Detail in README."
+ next: "Pick ONE survivor and run the 4-step gate (object -> differentiable bridge -> separation + assumption relaxed -> one provable property before benchmarking). Top candidates: chip-firing/sandpile (#1), Cayley-Menger determinant, Bose-Mesner filters, Dunkl operators, Edgeworth head. See README Next."
+diff --git a/projects/active/sandpile-operator/project.yml b/projects/active/sandpile-operator/project.yml
+index ccff498..af71943 100644
+--- a/projects/active/sandpile-operator/project.yml
++++ b/projects/active/sandpile-operator/project.yml
+@@ -1,18 +1,17 @@
+ id: sandpile-operator
+ short: Sandpile-Op
+-stage: active
++stage: exploring
+ tier: projects
+ domain: method
+ title: "A Soft-Sandpile Progression Operator: differentiable threshold-cascade dynamics for spreading processes"
+ lead: [axel-faes]
+-pillar: [hcc]
+-focus: run
++pillars: [hcc]
+ code_availability: { status: none, url: "", doi: "" }
+ compute: [this-mac]
+ status:
+-  chips: [numbers-pending]
++  chips: [numbers-to-run]
+   line: "Exploration; stage-0 synthetic toy. code/paper.py reproduces from scratch (CPU, ~2 min, no args). Code ASCII-clean, no manuscript yet."
+-venue_id:
++venue:
+ eli5: "Tumours, stroke infarcts and seizures spread as all-or-none cascades, not smooth diffusion. A new neural-network layer models spreading as a differentiable sandpile: mass topples to neighbours only after crossing a threshold, and never crosses barriers. One command reproduces a synthetic proof it captures wall-respecting fronts smooth diffusion cannot."
+ latest: "2026-07-14: scaffolded + built stage-0 synthetic toy. code/paper.py reproduces from scratch on CPU ~2 min (sandpile vs linear-diffusion vs CNN). Verified locally; ISLES24 + HCC ready for real stages."
+ next: "Stage 1: run the operator on ISLES24 stroke tissue-fate on SLURM (cleanest real task, no treatment confound). Stage 2: longitudinal HCC progression (serial SEG masks, 87 patients), condition on treatment. Method: swap the fixed rollout for a deep-equilibrium fixed point; add longer rollouts."
+diff --git a/projects/archive/nogo/faithful-block-term-layer/README.md b/projects/archive/failed/faithful-block-term-layer/README.md
+similarity index 100%
+rename from projects/archive/nogo/faithful-block-term-layer/README.md
+rename to projects/archive/failed/faithful-block-term-layer/README.md
+diff --git a/projects/archive/nogo/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.pdf b/projects/archive/failed/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.pdf
+similarity index 100%
+rename from projects/archive/nogo/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.pdf
+rename to projects/archive/failed/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.pdf
+diff --git a/projects/archive/nogo/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.tex b/projects/archive/failed/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.tex
+similarity index 100%
+rename from projects/archive/nogo/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.tex
+rename to projects/archive/failed/faithful-block-term-layer/notes/derivations/faithfulness-guarantee.tex
+diff --git a/projects/archive/nogo/faithful-block-term-layer/project.yml b/projects/archive/failed/faithful-block-term-layer/project.yml
+similarity index 95%
+rename from projects/archive/nogo/faithful-block-term-layer/project.yml
+rename to projects/archive/failed/faithful-block-term-layer/project.yml
+index 6666936..f2c8375 100644
+--- a/projects/archive/nogo/faithful-block-term-layer/project.yml
++++ b/projects/archive/failed/faithful-block-term-layer/project.yml
+@@ -2,10 +2,10 @@ id: faithful-block-term-layer
+ status:
+   chips: [lead]
+ short: "Faithful BT Layer"
+-stage: nogo
++stage: failed
+ tier: archive
+ domain: method
+-pillar: [tensor]
++pillars: [tensor]
+ title: Faithful Block-Term Layer
+ eli5: "Tried to give block-term tensor networks (BTTN) a built-in faithfulness / no-leakage guarantee: an interpretability claim with a formal bound, pursued as a standalone methods contribution. The aim was a layer whose attributions provably reflect the computation."
+ outcome: "No-go. The faithfulness frontier was already owned by prior work, an opposite-direction landmine made the guarantee fragile, and only a partial bound was reachable. Don't re-attempt."
+diff --git a/projects/archive/nogo/fed-faithful-ecg/AGENTS.md b/projects/archive/failed/fed-faithful-ecg/AGENTS.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/AGENTS.md
+rename to projects/archive/failed/fed-faithful-ecg/AGENTS.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/CLAUDE.md b/projects/archive/failed/fed-faithful-ecg/CLAUDE.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/CLAUDE.md
+rename to projects/archive/failed/fed-faithful-ecg/CLAUDE.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/README.md b/projects/archive/failed/fed-faithful-ecg/README.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/README.md
+rename to projects/archive/failed/fed-faithful-ecg/README.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/.depositignore b/projects/archive/failed/fed-faithful-ecg/code/.depositignore
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/.depositignore
+rename to projects/archive/failed/fed-faithful-ecg/code/.depositignore
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/LICENSE b/projects/archive/failed/fed-faithful-ecg/code/LICENSE
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/LICENSE
+rename to projects/archive/failed/fed-faithful-ecg/code/LICENSE
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/README.md b/projects/archive/failed/fed-faithful-ecg/code/README.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/README.md
+rename to projects/archive/failed/fed-faithful-ecg/code/README.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/build_caches.py b/projects/archive/failed/fed-faithful-ecg/code/build_caches.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/build_caches.py
+rename to projects/archive/failed/fed-faithful-ecg/code/build_caches.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/__init__.py b/projects/archive/failed/fed-faithful-ecg/code/core/__init__.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/__init__.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/__init__.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/config.py b/projects/archive/failed/fed-faithful-ecg/code/core/config.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/config.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/config.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/labels.py b/projects/archive/failed/fed-faithful-ecg/code/core/labels.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/labels.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/labels.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/mimic_ecg.py b/projects/archive/failed/fed-faithful-ecg/code/core/mimic_ecg.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/mimic_ecg.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/mimic_ecg.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/ptbxl.py b/projects/archive/failed/fed-faithful-ecg/code/core/ptbxl.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/ptbxl.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/ptbxl.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/silos.py b/projects/archive/failed/fed-faithful-ecg/code/core/silos.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/silos.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/silos.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/core/wfdb_io.py b/projects/archive/failed/fed-faithful-ecg/code/core/wfdb_io.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/core/wfdb_io.py
+rename to projects/archive/failed/fed-faithful-ecg/code/core/wfdb_io.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/__init__.py b/projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/__init__.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/__init__.py
+rename to projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/__init__.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/backbone.py b/projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/backbone.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/backbone.py
+rename to projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/backbone.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/faithfulness.py b/projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/faithfulness.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/faithfulness.py
+rename to projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/faithfulness.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/federate.py b/projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/federate.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/federate.py
+rename to projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/federate.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/run_experiment.py b/projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/run_experiment.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/fed_faithfulness/run_experiment.py
+rename to projects/archive/failed/fed-faithful-ecg/code/fed_faithfulness/run_experiment.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/pilot_mechanism/run_pilot.py b/projects/archive/failed/fed-faithful-ecg/code/pilot_mechanism/run_pilot.py
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/pilot_mechanism/run_pilot.py
+rename to projects/archive/failed/fed-faithful-ecg/code/pilot_mechanism/run_pilot.py
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/results/fed_faithfulness/summary.md b/projects/archive/failed/fed-faithful-ecg/code/results/fed_faithfulness/summary.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/results/fed_faithfulness/summary.md
+rename to projects/archive/failed/fed-faithful-ecg/code/results/fed_faithfulness/summary.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/results/fed_faithfulness/summary_smoke.md b/projects/archive/failed/fed-faithful-ecg/code/results/fed_faithfulness/summary_smoke.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/results/fed_faithfulness/summary_smoke.md
+rename to projects/archive/failed/fed-faithful-ecg/code/results/fed_faithfulness/summary_smoke.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/code/results/pilot_mechanism/summary.md b/projects/archive/failed/fed-faithful-ecg/code/results/pilot_mechanism/summary.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/code/results/pilot_mechanism/summary.md
+rename to projects/archive/failed/fed-faithful-ecg/code/results/pilot_mechanism/summary.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/present/main.md b/projects/archive/failed/fed-faithful-ecg/present/main.md
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/present/main.md
+rename to projects/archive/failed/fed-faithful-ecg/present/main.md
+diff --git a/projects/archive/nogo/fed-faithful-ecg/present/present.yml b/projects/archive/failed/fed-faithful-ecg/present/present.yml
+similarity index 100%
+rename from projects/archive/nogo/fed-faithful-ecg/present/present.yml
+rename to projects/archive/failed/fed-faithful-ecg/present/present.yml
+diff --git a/projects/archive/nogo/fed-faithful-ecg/project.yml b/projects/archive/failed/fed-faithful-ecg/project.yml
+similarity index 97%
+rename from projects/archive/nogo/fed-faithful-ecg/project.yml
+rename to projects/archive/failed/fed-faithful-ecg/project.yml
+index 41df381..585857c 100644
+--- a/projects/archive/nogo/fed-faithful-ecg/project.yml
++++ b/projects/archive/failed/fed-faithful-ecg/project.yml
+@@ -1,11 +1,11 @@
+ id: fed-faithful-ecg
+-stage: nogo
++stage: failed
+ tier: archive
+ domain: heart
+ short: "Fed-Faithful ECG"
+ title: Faithfulness-Preserving Federated Learning for Interpretable ECG
+ lead: [axel-faes]
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ related: [ecg-readable-substrate]
+ status:
+   chips: [lead]
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/README.md b/projects/archive/failed/jacobian-coupled-blockterm-dp/README.md
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/README.md
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/README.md
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/.depositignore b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/.depositignore
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/.depositignore
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/.depositignore
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/LICENSE b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/LICENSE
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/LICENSE
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/LICENSE
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/README.md b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/README.md
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/README.md
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/README.md
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/core/__init__.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/core/__init__.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/core/__init__.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/core/__init__.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/core/floor.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/core/floor.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/core/floor.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/core/floor.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/__init__.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/__init__.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/__init__.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/__init__.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/floor_sign_probe.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/floor_sign_probe.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/floor_sign_probe.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/floor_sign_probe.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm_v2.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm_v2.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm_v2.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/generic_vs_blockterm_v2.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/rank_sweep_v3.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/rank_sweep_v3.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/rank_sweep_v3.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/rank_sweep_v3.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/utility_probe.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/utility_probe.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/experiments/utility_probe.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/experiments/utility_probe.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/paper.py b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/paper.py
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/paper.py
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/paper.py
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/code/requirements.txt b/projects/archive/failed/jacobian-coupled-blockterm-dp/code/requirements.txt
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/code/requirements.txt
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/code/requirements.txt
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.pdf b/projects/archive/failed/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.pdf
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.pdf
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.pdf
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.tex b/projects/archive/failed/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.tex
+similarity index 100%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.tex
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/notes/derivations/coupled-floor-setup.tex
+diff --git a/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml b/projects/archive/failed/jacobian-coupled-blockterm-dp/project.yml
+similarity index 95%
+rename from projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
+rename to projects/archive/failed/jacobian-coupled-blockterm-dp/project.yml
+index ed0d30e..2ef00da 100644
+--- a/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
++++ b/projects/archive/failed/jacobian-coupled-blockterm-dp/project.yml
+@@ -2,10 +2,10 @@ id: jacobian-coupled-blockterm-dp
+ status:
+   chips: [lead]
+ short: "Jacobian-Coupled BT-DP"
+-stage: nogo
++stage: failed
+ tier: archive
+ domain: privacy
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ title: Jacobian-coupled block-term model with a structure-revealing DP floor
+ eli5: "Tried to make a block-term model's differential-privacy floor depend on the inter-block spectral gap, a structure-revealing privacy advantage the parent COVERT model could not give. The mechanism: release whitened block scores (S = T G^{-1/2}) so the coupling Jacobian stops being block-diagonal and the gap enters the floor."
+ outcome: "NO-GO. The matched-rho test showed the whitening advantage is generic R-block-Gram preconditioning, shared by flat/P3LS linear models: block-term L=2 tracks FLAT, with no multilinearity scaling (same trap as COVERT). The within-block multiway structure never enters the coupling. Don't re-attempt without a genuinely different mechanism"
+diff --git a/projects/archive/disproved/ms-lipid-handshake/README.md b/projects/archive/failed/ms-lipid-handshake/README.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/README.md
+rename to projects/archive/failed/ms-lipid-handshake/README.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/.depositignore b/projects/archive/failed/ms-lipid-handshake/code/.depositignore
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/.depositignore
+rename to projects/archive/failed/ms-lipid-handshake/code/.depositignore
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/LICENSE b/projects/archive/failed/ms-lipid-handshake/code/LICENSE
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/LICENSE
+rename to projects/archive/failed/ms-lipid-handshake/code/LICENSE
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/README.md b/projects/archive/failed/ms-lipid-handshake/code/README.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/README.md
+rename to projects/archive/failed/ms-lipid-handshake/code/README.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/core/config.py b/projects/archive/failed/ms-lipid-handshake/code/core/config.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/core/config.py
+rename to projects/archive/failed/ms-lipid-handshake/code/core/config.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/core/coupled_handshake.py b/projects/archive/failed/ms-lipid-handshake/code/core/coupled_handshake.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/core/coupled_handshake.py
+rename to projects/archive/failed/ms-lipid-handshake/code/core/coupled_handshake.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/core/coupled_handshake_v2.py b/projects/archive/failed/ms-lipid-handshake/code/core/coupled_handshake_v2.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/core/coupled_handshake_v2.py
+rename to projects/archive/failed/ms-lipid-handshake/code/core/coupled_handshake_v2.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/core/decompose.py b/projects/archive/failed/ms-lipid-handshake/code/core/decompose.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/core/decompose.py
+rename to projects/archive/failed/ms-lipid-handshake/code/core/decompose.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/_setup.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/_setup.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/_setup.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/_setup.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/analyze.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/analyze.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/analyze.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/analyze.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/build_macnair.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/build_macnair.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/build_macnair.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/build_macnair.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/build_pseudobulk.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/build_pseudobulk.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/build_pseudobulk.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/build_pseudobulk.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/compositional.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/compositional.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/compositional.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/compositional.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/extract_myeloid.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/extract_myeloid.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/extract_myeloid.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/extract_myeloid.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/handshake_stats.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/handshake_stats.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/handshake_stats.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/handshake_stats.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/lipid_tensor.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/lipid_tensor.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/lipid_tensor.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/lipid_tensor.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/phagocytosis_coupling.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/phagocytosis_coupling.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/phagocytosis_coupling.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/phagocytosis_coupling.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/phagocytosis_coupling2.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/phagocytosis_coupling2.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/phagocytosis_coupling2.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/phagocytosis_coupling2.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/sweep_decomp.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/sweep_decomp.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/sweep_decomp.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/sweep_decomp.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/experiments/within_cohort.py b/projects/archive/failed/ms-lipid-handshake/code/experiments/within_cohort.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/experiments/within_cohort.py
+rename to projects/archive/failed/ms-lipid-handshake/code/experiments/within_cohort.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/coupled_handshake.png b/projects/archive/failed/ms-lipid-handshake/code/figures/coupled_handshake.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/coupled_handshake.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/coupled_handshake.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/coupled_handshake_v2.png b/projects/archive/failed/ms-lipid-handshake/code/figures/coupled_handshake_v2.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/coupled_handshake_v2.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/coupled_handshake_v2.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_btd_top_genes.png b/projects/archive/failed/ms-lipid-handshake/code/figures/decomp_btd_top_genes.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_btd_top_genes.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/decomp_btd_top_genes.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_component_trajectory.png b/projects/archive/failed/ms-lipid-handshake/code/figures/decomp_component_trajectory.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_component_trajectory.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/decomp_component_trajectory.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_recon_error.png b/projects/archive/failed/ms-lipid-handshake/code/figures/decomp_recon_error.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/decomp_recon_error.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/decomp_recon_error.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/handshake.png b/projects/archive/failed/ms-lipid-handshake/code/figures/handshake.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/handshake.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/handshake.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/handshake_bootstrap.png b/projects/archive/failed/ms-lipid-handshake/code/figures/handshake_bootstrap.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/handshake_bootstrap.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/handshake_bootstrap.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/jam_per_donor.png b/projects/archive/failed/ms-lipid-handshake/code/figures/jam_per_donor.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/jam_per_donor.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/jam_per_donor.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/lipid_cp_geneloadings.png b/projects/archive/failed/ms-lipid-handshake/code/figures/lipid_cp_geneloadings.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/lipid_cp_geneloadings.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/lipid_cp_geneloadings.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/myeloid_lipid_trajectory.png b/projects/archive/failed/ms-lipid-handshake/code/figures/myeloid_lipid_trajectory.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/myeloid_lipid_trajectory.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/myeloid_lipid_trajectory.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_coupling_by_stage.png b/projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_coupling_by_stage.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_coupling_by_stage.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_coupling_by_stage.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_doseresponse.png b/projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_doseresponse.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_doseresponse.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_doseresponse.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_poisson_slopes.png b/projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_poisson_slopes.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/phag_efflux_poisson_slopes.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/phag_efflux_poisson_slopes.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/sweep_decomp.png b/projects/archive/failed/ms-lipid-handshake/code/figures/sweep_decomp.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/sweep_decomp.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/sweep_decomp.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/uptake_vs_efflux.png b/projects/archive/failed/ms-lipid-handshake/code/figures/uptake_vs_efflux.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/uptake_vs_efflux.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/uptake_vs_efflux.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/within_cohort_absinta.png b/projects/archive/failed/ms-lipid-handshake/code/figures/within_cohort_absinta.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/within_cohort_absinta.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/within_cohort_absinta.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/figures/within_cohort_macnair.png b/projects/archive/failed/ms-lipid-handshake/code/figures/within_cohort_macnair.png
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/figures/within_cohort_macnair.png
+rename to projects/archive/failed/ms-lipid-handshake/code/figures/within_cohort_macnair.png
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/paper.py b/projects/archive/failed/ms-lipid-handshake/code/paper.py
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/paper.py
+rename to projects/archive/failed/ms-lipid-handshake/code/paper.py
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/requirements.txt b/projects/archive/failed/ms-lipid-handshake/code/requirements.txt
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/requirements.txt
+rename to projects/archive/failed/ms-lipid-handshake/code/requirements.txt
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/compositional_macnair.md b/projects/archive/failed/ms-lipid-handshake/code/results/compositional_macnair.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/compositional_macnair.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/compositional_macnair.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/compositional_macnair_val.md b/projects/archive/failed/ms-lipid-handshake/code/results/compositional_macnair_val.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/compositional_macnair_val.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/compositional_macnair_val.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/coupled_handshake.md b/projects/archive/failed/ms-lipid-handshake/code/results/coupled_handshake.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/coupled_handshake.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/coupled_handshake.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/coupled_handshake_v2.md b/projects/archive/failed/ms-lipid-handshake/code/results/coupled_handshake_v2.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/coupled_handshake_v2.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/coupled_handshake_v2.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/decomp_gene_loadings.csv b/projects/archive/failed/ms-lipid-handshake/code/results/decomp_gene_loadings.csv
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/decomp_gene_loadings.csv
+rename to projects/archive/failed/ms-lipid-handshake/code/results/decomp_gene_loadings.csv
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/decomp_summary.md b/projects/archive/failed/ms-lipid-handshake/code/results/decomp_summary.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/decomp_summary.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/decomp_summary.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/handshake.csv b/projects/archive/failed/ms-lipid-handshake/code/results/handshake.csv
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/handshake.csv
+rename to projects/archive/failed/ms-lipid-handshake/code/results/handshake.csv
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/handshake_stats.md b/projects/archive/failed/ms-lipid-handshake/code/results/handshake_stats.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/handshake_stats.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/handshake_stats.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/lipid_components.csv b/projects/archive/failed/ms-lipid-handshake/code/results/lipid_components.csv
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/lipid_components.csv
+rename to projects/archive/failed/ms-lipid-handshake/code/results/lipid_components.csv
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/lipid_tensor_summary.md b/projects/archive/failed/ms-lipid-handshake/code/results/lipid_tensor_summary.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/lipid_tensor_summary.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/lipid_tensor_summary.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/module_scores.csv b/projects/archive/failed/ms-lipid-handshake/code/results/module_scores.csv
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/module_scores.csv
+rename to projects/archive/failed/ms-lipid-handshake/code/results/module_scores.csv
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/phagocytosis_coupling.md b/projects/archive/failed/ms-lipid-handshake/code/results/phagocytosis_coupling.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/phagocytosis_coupling.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/phagocytosis_coupling.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/phagocytosis_coupling_v2.md b/projects/archive/failed/ms-lipid-handshake/code/results/phagocytosis_coupling_v2.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/phagocytosis_coupling_v2.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/phagocytosis_coupling_v2.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/summary.md b/projects/archive/failed/ms-lipid-handshake/code/results/summary.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/summary.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/summary.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/sweep_decomp.md b/projects/archive/failed/ms-lipid-handshake/code/results/sweep_decomp.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/sweep_decomp.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/sweep_decomp.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/within_cohort_absinta.md b/projects/archive/failed/ms-lipid-handshake/code/results/within_cohort_absinta.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/within_cohort_absinta.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/within_cohort_absinta.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/code/results/within_cohort_macnair.md b/projects/archive/failed/ms-lipid-handshake/code/results/within_cohort_macnair.md
+similarity index 100%
+rename from projects/archive/disproved/ms-lipid-handshake/code/results/within_cohort_macnair.md
+rename to projects/archive/failed/ms-lipid-handshake/code/results/within_cohort_macnair.md
+diff --git a/projects/archive/disproved/ms-lipid-handshake/project.yml b/projects/archive/failed/ms-lipid-handshake/project.yml
+similarity index 97%
+rename from projects/archive/disproved/ms-lipid-handshake/project.yml
+rename to projects/archive/failed/ms-lipid-handshake/project.yml
+index ca86c48..95efa39 100644
+--- a/projects/archive/disproved/ms-lipid-handshake/project.yml
++++ b/projects/archive/failed/ms-lipid-handshake/project.yml
+@@ -2,10 +2,10 @@ id: ms-lipid-handshake
+ status:
+   chips: [lead]
+ short: "MS Lipid Handshake"
+-stage: disproved
++stage: failed
+ tier: archive
+ domain: immune
+-pillar: [tensor]
++pillars: [tensor]
+ title: MS Lipid Handshake (BTD)
+ eli5: "Tested whether multiple-sclerosis lesions show a 'lipid handshake': myeloid cells exporting cholesterol from cleared myelin debris coupling, within a lesion, to oligodendrocytes rebuilding myelin. The test scored curated lipid-gene programs and applied block-term and coupled tensor factorization to single-nucleus RNA data across lesion stages."
+ outcome: "Disproved. On the powered Macnair 2024 cohort (632k nuclei, 156 samples, 65 paired donor-by-stage), the within-sample myeloid-export to oligo-rebuild coupling is slope -0.06, p=0.73, bootstrap CI [-0.75, 0.14] under donor and stage control; the only significant raw signal is negative (opposite the hypothesis) and a stage confound. Underpowering is excluded at this N. The tensor method machinery is sound (code/ is kept runnable), the biological claim is not. Do not re-attempt the transcriptomic handshake."
+diff --git a/projects/archive/phd/phd-thesis/project.yml b/projects/archive/phd/phd-thesis/project.yml
+index 96790fa..bcd2ea5 100644
+--- a/projects/archive/phd/phd-thesis/project.yml
++++ b/projects/archive/phd/phd-thesis/project.yml
+@@ -2,12 +2,12 @@ id: phd-thesis
+ short: "PhD Thesis"
+ stage: published
+ form: thesis
+-venue_id: kuleuven-thesis
++venue: kuleuven-thesis
+ tier: archive
+ status:
+   chips: [lead]
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ related: [source-localization, block-term-tensor-regression, extended-bttr-note]
+ title: "Finger movement decoding: From source-localisation to tensor regression modelling"
+ eli5: "Axel Faes's PhD thesis (KU Leuven, 2023) on decoding single and coordinated finger movements from electrocorticography (ECoG). It compiles four papers, from EEG source localisation and directed connectivity to the block-term tensor-regression decoders (BTTR, eBTTR) that became the core method line, with an emphasis on fast, real-time-capable decoding."
+diff --git a/projects/archive/published/2016/bachelor-network-ids/project.yml b/projects/archive/published/2016/bachelor-network-ids/project.yml
+index 843f5df..287a432 100644
+--- a/projects/archive/published/2016/bachelor-network-ids/project.yml
++++ b/projects/archive/published/2016/bachelor-network-ids/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: thesis
+ tier: archive
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ title: "Machine Learning Techniques for Flow-Based Network Intrusion Detection Systems"
+ eli5: "Bachelor's thesis on flow-based network intrusion detection with machine learning: it uses aggregated IP-flow features (no payload) to flag intrusions, comparing supervised and unsupervised algorithms across labelled and real-world traffic."
+ year: 2016
+@@ -14,4 +14,4 @@ results:
+   - "Supervised learning outperformed unsupervised on the tested traffic, with K-Nearest Neighbours the strongest supervised method; adding TCP-flag features improved detection notably."
+ outcome: "Bachelor's thesis, KU Leuven 2016 (Faes)."
+ lead: [axel-faes]
+-venue_id: uhasselt-thesis
++venue: uhasselt-thesis
+diff --git a/projects/archive/published/2017/icfp-src-abstract/project.yml b/projects/archive/published/2017/icfp-src-abstract/project.yml
+index 7c49c45..609ef6c 100644
+--- a/projects/archive/published/2017/icfp-src-abstract/project.yml
++++ b/projects/archive/published/2017/icfp-src-abstract/project.yml
+@@ -6,10 +6,10 @@ stage: published
+ form: abstract
+ tier: archive
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ title: "Towards a Core Language with Row-Based Effects for Optimised Compilation"
+ eli5: "Student Research Competition abstract proposing a core language with row-based effects as an intermediate representation for optimising the compilation of algebraic effect handlers."
+ year: 2017
+ outcome: "Extended abstract, ICFP 2017 Student Research Competition (Faes, Schrijvers)."
+ lead: [axel-faes]
+-venue_id: icfp-src
++venue: icfp-src
+diff --git a/projects/archive/published/2017/icfp-src-poster/project.yml b/projects/archive/published/2017/icfp-src-poster/project.yml
+index 42ce654..61c02a8 100644
+--- a/projects/archive/published/2017/icfp-src-poster/project.yml
++++ b/projects/archive/published/2017/icfp-src-poster/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: poster
+ tier: archive
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ related: [icfp-src-abstract]
+ title: "Towards a Core Language with Row-Based Effects for Optimised Compilation"
+ eli5: "Student Research Competition poster for the row-based-effects core language, a compilation-oriented intermediate representation for algebraic effect handlers."
+ year: 2017
+ outcome: "Poster, ICFP 2017 Student Research Competition (Faes, Schrijvers). Companion to the SRC abstract (icfp-src-abstract)."
+ lead: [axel-faes]
+-venue_id: icfp-src
++venue: icfp-src
+diff --git a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
+index 1578c7b..2b7ae8d 100644
+--- a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
++++ b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: thesis
+ tier: archive
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ related: [algebraic-subtyping]
+ title: "Algebraic Subtyping for Algebraic Effects and Handlers"
+ eli5: "Master's thesis extending Stephen Dolan's algebraic-subtyping type system with effect information, giving a type-and-effect system for algebraic effects and handlers that keeps Dolan's algebraic and meta-theoretical properties (type soundness, principal types). Implemented as a proof-of-concept in the Eff language."
+ year: 2018
+-outcome: "Master's thesis, KU Leuven 2018 (Faes). Distinct from the dropped journal-paper attempt (archive/dropped/algebraic-subtyping) and the later compiler report (algebraic-effects-compilation)."
++outcome: "Master's thesis, KU Leuven 2018 (Faes). Distinct from the dropped journal-paper attempt (archive/stopped/algebraic-subtyping) and the later compiler report (algebraic-effects-compilation)."
+ lead: [axel-faes]
+-venue_id: kuleuven-thesis
++venue: kuleuven-thesis
+diff --git a/projects/archive/published/2018/masters-eeg-infotheory/project.yml b/projects/archive/published/2018/masters-eeg-infotheory/project.yml
+index 0311ac6..010ca2d 100644
+--- a/projects/archive/published/2018/masters-eeg-infotheory/project.yml
++++ b/projects/archive/published/2018/masters-eeg-infotheory/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: thesis
+ tier: archive
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ related: [connectivity-iris]
+ title: "An Information-Theoretical Approach to EEG Source-Reconstructed Connectivity"
+ eli5: "Master's thesis building an information-theoretic framework (mutual information, conditional MI, interaction information) to estimate functional connectivity between source-reconstructed EEG signals, sidestepping the spurious links scalp volume conduction introduces. Applied to a high-density EEG dataset from a semantic word-processing experiment."
+ year: 2018
+ outcome: "Advanced Master's thesis, KU Leuven 2018 (Faes). A model-free, probability-based connectivity framework in Python for source-reconstructed activity; a precursor to the later neural-network directed-connectivity work (connectivity-iris)."
+ lead: [axel-faes]
+-venue_id: kuleuven-thesis
++venue: kuleuven-thesis
+diff --git a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
+index b37a171..f303d1f 100644
+--- a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
++++ b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: abstract
+ tier: archive
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ related: [connectivity-motor-imagery]
+ title: Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources
+ eli5: "A conference abstract modelling directed (causal) functional connectivity between reconstructed EEG sources with a graphical-model approach. It frames source-space connectivity estimation as a causal-graph problem, an early step toward the later neural-network connectivity work."
+@@ -16,5 +16,5 @@ results:
+ outcome: "Published abstract, 8th International BCI Meeting 2021 (Faes, Fahimi Hnazaee, Van Hulle). The journal follow-up (connectivity-motor-imagery) was not pursued."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: intl-bci-meeting
++venue: intl-bci-meeting
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2021/source-localization/project.yml b/projects/archive/published/2021/source-localization/project.yml
+index d1f6d16..9be4191 100644
+--- a/projects/archive/published/2021/source-localization/project.yml
++++ b/projects/archive/published/2021/source-localization/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: journal
+ tier: archive
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: Source space reduction for eLORETA
+ eli5: "Sparse eLORETA reconstructs which brain sources produced a scalp EEG signal, but with a much sparser solution than standard eLORETA. It first shrinks the lead-field source space with structured sparse Bayesian learning, then runs eLORETA on the reduced space, trading a little signal fidelity for far fewer active sources."
+ year: 2021
+@@ -15,6 +15,6 @@ results:
+ outcome: "Published in J. Neural Eng. 18(6) 066014, 2021 (Faes, de Borman, Van Hulle). Useful for data-driven analyses where regions of interest are hard to pre-specify, or as a front-end to source-space connectivity analysis."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: jne
++venue: jne
+ doi: "10.1088/1741-2552/ac2bb6"
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2021/volga-finger-trajectories/project.yml b/projects/archive/published/2021/volga-finger-trajectories/project.yml
+index 2cbafb1..c2d5510 100644
+--- a/projects/archive/published/2021/volga-finger-trajectories/project.yml
++++ b/projects/archive/published/2021/volga-finger-trajectories/project.yml
+@@ -6,12 +6,12 @@ stage: published
+ form: abstract
+ tier: archive
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ related: [block-term-tensor-regression]
+ title: "Reconstructing Single Finger Trajectories from Intracranial Brain Activity"
+ eli5: "Extended abstract reconstructing single-finger movement trajectories from intracranial (ECoG) recordings with multiway tensor regression, an early presentation of the block-term decoding line."
+ year: 2021
+ outcome: "Extended abstract, III International Conference Volga Neuroscience Meeting 2021 (Faes, Wittevrongel, Van Hulle)."
+ lead: [axel-faes]
+-venue_id: volga-neuroscience
++venue: volga-neuroscience
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2022/block-term-tensor-regression/project.yml b/projects/archive/published/2022/block-term-tensor-regression/project.yml
+index 6e144f3..c77ce23 100644
+--- a/projects/archive/published/2022/block-term-tensor-regression/project.yml
++++ b/projects/archive/published/2022/block-term-tensor-regression/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: journal
+ tier: archive
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ related: [extended-bttr-note]
+ title: Single finger trajectory prediction from intracranial brain activity using Block-Term Tensor Regression with fast and automatic component extraction
+ eli5: "Predicts single-finger movement trajectories from intracranial (ECoG) brain activity using Block-Term Tensor Regression, which exploits the multilinear structure of brain signals that vector and matrix methods miss. Two new tensor factorizations plus a marginalization step extract the components automatically and cheaply, with less overfitting."
+@@ -16,5 +16,5 @@ results:
+ outcome: "Published in IEEE Trans. Neural Networks and Learning Systems, 2022 (Faes, Camarrone, Van Hulle). The foundational BTTR method that the later eBTTR and Go-BTTR work builds on."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: tnnls
++venue: tnnls
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2022/connectivity-iris/project.yml b/projects/archive/published/2022/connectivity-iris/project.yml
+index da7cfa1..8ea8d20 100644
+--- a/projects/archive/published/2022/connectivity-iris/project.yml
++++ b/projects/archive/published/2022/connectivity-iris/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: journal
+ tier: archive
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: Neural Networks for Directed Connectivity Estimation in Source-Reconstructed EEG Data
+ eli5: "Estimates directed (causal) connectivity between reconstructed EEG sources with neural networks instead of the usual statistical estimators, whose linearity/stationarity assumptions often fail for EEG. Across ground-truth benchmarks, an LSTM with non-uniform embedding is most robust to differing dipole locations and competes with established methods."
+ year: 2022
+@@ -15,6 +15,6 @@ results:
+ outcome: "Published in Applied Sciences 2022, 12, 2889 (Faes, Vantieghem, Van Hulle; 'IRIS' = co-author Iris Vantieghem, equal contribution). Shows neural networks can be a model-free alternative for EEG source-connectivity analysis."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: appliedsci
++venue: appliedsci
+ doi: "10.3390/app12062889"
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2022/extended-bttr-note/project.yml b/projects/archive/published/2022/extended-bttr-note/project.yml
+index 0c0fe7d..8b7ef00 100644
+--- a/projects/archive/published/2022/extended-bttr-note/project.yml
++++ b/projects/archive/published/2022/extended-bttr-note/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: journal
+ tier: archive
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ related: [block-term-tensor-regression]
+ title: Finger movement and coactivation predicted from intracranial brain activity using extended Block-Term Tensor Regression
+ eli5: "Predicts finger movement trajectories, including unintended finger coactivations, from intracranial (ECoG) brain activity. Extended Block-Term Tensor Regression (eBTTR) uses recursive Tucker decomposition with automatic component extraction to match multilinear baselines and beat deep-learning ones at lower compute, with its edge on coactivations."
+@@ -16,6 +16,6 @@ results:
+ outcome: "Published in J. Neural Eng. 19 (2022) 066011 (Faes, Van Hulle). The recursive-Tucker eBTTR extension of BTTR, which the decoder Go-BTTR later graph-regularizes."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: jne
++venue: jne
+ doi: "10.1088/1741-2552/ac9a75"
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2025/fbttr-strategies/project.yml b/projects/archive/published/2025/fbttr-strategies/project.yml
+index 93e10d7..9c4084d 100644
+--- a/projects/archive/published/2025/fbttr-strategies/project.yml
++++ b/projects/archive/published/2025/fbttr-strategies/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: conference
+ tier: archive
+ domain: privacy
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ title: "Optimizing Federated Block-Term Tensor Regression: Strategy Comparisons and Applications"
+ eli5: "Federated Block-Term Tensor Regression (FBTTR) trains a BTTR decoder across sites without pooling data; this work compares its aggregation strategies (FedAvg, FedAdagrad, FedYogi, FedProx). On BCI Competition IV finger decoding, plain FedAvg is the most stable and accurate, while adaptive methods like FedYogi overcorrect when client gradients already agree."
+ year: 2025
+@@ -15,5 +15,5 @@ results:
+ outcome: "Published at the Int. Conf. on Foundation and Large Language Models (FLLM 2025), FLICS symposium (Faes, Peeters). Open-source; shows federated tensor decomposition can preserve or improve model quality vs centralized training."
+ funding: [FAIR]
+ lead: [axel-faes]
+-venue_id: fllm
++venue: fllm
+ collaborators: [peeters]
+diff --git a/projects/archive/published/2025/fermat/project.yml b/projects/archive/published/2025/fermat/project.yml
+index 77cd4b5..9f4fc5e 100644
+--- a/projects/archive/published/2025/fermat/project.yml
++++ b/projects/archive/published/2025/fermat/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: conference
+ tier: archive
+ domain: privacy
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ title: Applying Federated Learning to Block-Term Tensor Regression for Decentralised Data Analysis of Biomedical Data
+ eli5: "Federated Block-Term Tensor Regression (FBTTR) lets institutions jointly fit a privacy-preserving multilinear regression model without sharing raw data. This paper validates it on two case studies, ECoG finger decoding and clinical heart-disease prediction, where it beats standard federated learning and matches or beats centralized BTTR."
+ year: 2025
+@@ -15,6 +15,6 @@ results:
+ outcome: "Published at the IEEE Conf. on Federated Learning Technologies and Applications (FLTA 2025) (Faes, Pirmani, Moreau, Peeters). The naive FBTTR line; the extended version is arXiv preprint 2412.06815 ('Federated Block-Term Tensor Regression for decentralised data analysis in healthcare'), applying block-term tensor regression to federated clinical and BCI data."
+ funding: [FAIR]
+ lead: [axel-faes]
+-venue_id: flta
++venue: flta
+ doi: "10.1109/FLTA67013.2025.11336663"
+ collaborators: [moreau, peeters, pirmani]
+diff --git a/projects/archive/published/2025/go-bttr/project.yml b/projects/archive/published/2025/go-bttr/project.yml
+index 527005c..0953355 100644
+--- a/projects/archive/published/2025/go-bttr/project.yml
++++ b/projects/archive/published/2025/go-bttr/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: journal
+ tier: archive
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ title: Decoding Sign Language Finger Flexions from high-density electrocorticography using Graph-Optimized Block Term Tensor Regression
+ eli5: "Decodes individual finger movements during sign-language gestures from high-density ECoG. Go-BTTR adds a Causal Graph Process over a block-term tensor regression to decide which fingers to decode jointly vs separately, capturing the sign-language finger co-activations that per-finger decoders miss."
+ year: 2025
+@@ -15,6 +15,6 @@ results:
+ outcome: "Published in J. Neural Eng. 22(2) 026065, 2025 (Faes, Calvo Merino, Branco, Van Hoylandt, Keirse, Theys, Ramsey, Van Hulle). First graph-regularized block-term decoder for coactivated finger movements; efficient enough for acute pre-surgical ECoG."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: jne
++venue: jne
+ doi: "10.1088/1741-2552/adcd9e"
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2026/abduction/project.yml b/projects/archive/published/2026/abduction/project.yml
+index a92c8fe..ecd26e0 100644
+--- a/projects/archive/published/2026/abduction/project.yml
++++ b/projects/archive/published/2026/abduction/project.yml
+@@ -6,7 +6,7 @@ stage: published
+ form: conference
+ tier: archive
+ domain: brainbci
+-pillar: [tensor]
++pillars: [tensor]
+ title: Finger abduction trajectory prediction from high-density ECoG
+ eli5: "Shows for the first time that finger abduction (sideways spreading), not only finger flexion, can be decoded from high-density ECoG. In two patients implanted during their clinical workup, an eBTTR decoder predicted abduction trajectories with precision comparable to flexion, even during sign-language gestures that combine both."
+ year: 2026
+@@ -15,5 +15,5 @@ results:
+ outcome: "Published at the 10th Graz BCI Conference, Graz, 14-18 Sep 2026 (Faes, Calvo Merino, Van Hoylandt, Keirse, Theys, Van Hulle). First demonstration that finger abduction is ECoG-decodable, extending finger-flexion BCIs toward fuller sign-language gestures."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
+-venue_id: graz-bci
++venue: graz-bci
+ collaborators: [van-hulle]
+diff --git a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
+index c090168..6b58f75 100644
+--- a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
++++ b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
+@@ -7,7 +7,7 @@ domain: method
+ title: "Transparent and Robust: Interpretable Inputs Improve Foundation Models in Mission-Critical Decision Pipelines"
+ lead: [axel-faes]
+ year: 2026
+-pillar: [evaluation]
++pillars: [evaluation]
+ related: [ecg-readable-substrate]
+ datasets: [mimic-iv-ecg, code15]
+ code_availability:
+@@ -25,7 +25,7 @@ reproduced:
+ status:
+   chips: [lead]
+   line: "`llncs`, 8 pp, 24 refs, compiles clean, 0 overfull, LNBIP limit met. AI-tell clean."
+-venue_id: xai-eadm
++venue: xai-eadm
+ outcome: "Published at the XAI-EADM workshop, CBI-EDOC 2026, Enschede, 15-18 Sep 2026, Springer LNBIP (Faes). Camera-ready submitted 2026-08-07 with the signed Springer LTP form. The reviewers' age ablation reversed the submitted thesis, so the camera-ready reports the surviving positive: giving a frozen encoder the one covariate it cannot see improves it everywhere."
+ eli5: "Six black-box ECG foundation models cannot see a patient's age, one of the strongest predictors of dying within a year. Concatenate that single number to the model's output vector and all six improve, in all 48 test settings, by up to 0.16 AUROC - most where noisy recordings hurt them worst. Give the black box the plain facts the clinician already holds."
+ latest: "2026-08-10: camera-ready age control wired into the SLURM DAG and re-verified on the cluster, 5100/5100 AUROCs bit-identical. Deposit refreshed to 89 files locally; GitHub push pending."
+diff --git a/projects/archive/published/2026/hcc-modality-poster/project.yml b/projects/archive/published/2026/hcc-modality-poster/project.yml
+index 42b1de4..2fb32d2 100644
+--- a/projects/archive/published/2026/hcc-modality-poster/project.yml
++++ b/projects/archive/published/2026/hcc-modality-poster/project.yml
+@@ -6,12 +6,12 @@ stage: published
+ form: poster
+ tier: archive
+ domain: liver
+-pillar: [hcc]
++pillars: [hcc]
+ related: [hccnet-revision]
+ title: "Modality-Specific Encoding with a Shared Backbone for Early HCC Prediction from Multi-Modal Liver MRI"
+ eli5: "Poster on early hepatocellular-carcinoma prediction from multi-modal liver MRI using modality-specific encoders over a shared backbone."
+ year: 2026
+ outcome: "Poster, XAI-NL Meet-up 2026 (Faes, Guichelaar, Bouman, van den Berg, Amir Haeri)."
+ lead: [axel-faes]
+-venue_id: xai-nl
++venue: xai-nl
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
+diff --git a/projects/archive/published/2026/hccnet-fl/project.yml b/projects/archive/published/2026/hccnet-fl/project.yml
+index 7b7b7f4..fbcbca9 100644
+--- a/projects/archive/published/2026/hccnet-fl/project.yml
++++ b/projects/archive/published/2026/hccnet-fl/project.yml
+@@ -6,13 +6,13 @@ tier: archive
+ domain: liver
+ title: "Federate What Transfers: Component-Aware Federation of Self-Supervised Backbones for Longitudinal 3D MRI"
+ lead: [axel-faes]
+-pillar: [hcc, federated]
++pillars: [hcc, federated]
+ related: [hccnet-revision, hccnet-fl-sweden]
+ funding: [ZonMw-AI-HCC]
+ status:
+   chips: [lead]
+   line: "`IEEEtran`, 8 pp, compiles clean, FLTA 2026 accepted/to appear. AI-tell clean."
+-venue_id: flta
++venue: flta
+ compute: [utwente]  # federated 3D MRI training runs on the UTwente SLURM cluster
+ eli5: "When hospitals can't pool patient scans, federated learning trains a shared model without moving data, but WHAT you federate matters. We federate only the part that transfers (HCCNet's label-free self-supervised backbone), personalise each site's temporal model, and keep labels local; what to share is read from the model's transfer-importance profile."
+ next: "Present at FLTA 2026 (Paris, 27-30 Oct 2026; registered). Deposit code/ to the public component-aware-federation repo and fill the code-availability URL/DOI."
+diff --git a/projects/archive/dropped/algebraic-subtyping/project.yml b/projects/archive/stopped/algebraic-subtyping/project.yml
+similarity index 93%
+rename from projects/archive/dropped/algebraic-subtyping/project.yml
+rename to projects/archive/stopped/algebraic-subtyping/project.yml
+index 74c617e..d872603 100644
+--- a/projects/archive/dropped/algebraic-subtyping/project.yml
++++ b/projects/archive/stopped/algebraic-subtyping/project.yml
+@@ -2,11 +2,11 @@ id: algebraic-subtyping
+ status:
+   chips: [lead]
+ short: "Algebraic Subtyping"
+-stage: dropped
++stage: stopped
+ tier: archive
+ domain: cs
+ title: "Algebraic Subtyping for Algebraic Effects and Handlers"
+ eli5: "Extends Dolan's algebraic subtyping with effect information, building a type-and-effect system for algebraic effects and handlers. This was Axel's KU Leuven Master's-thesis topic in programming languages and type theory."
+ outcome: "Dropped. The algebraic-subtyping work was not pursued into a standalone paper; the Master's thesis (KU Leuven 2018) and the CW708 compilation report are published separately, and this sits outside the current research line."
+-pillar: [student-research]
++pillars: [student-research]
+ lead: [axel-faes]
+diff --git a/projects/archive/dropped/algebraic-subtyping/todo.md b/projects/archive/stopped/algebraic-subtyping/todo.md
+similarity index 100%
+rename from projects/archive/dropped/algebraic-subtyping/todo.md
+rename to projects/archive/stopped/algebraic-subtyping/todo.md
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/figs/simulation.png b/projects/archive/stopped/connectivity-motor-imagery/manuscript/figs/simulation.png
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/figs/simulation.png
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/figs/simulation.png
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/figs/tcdf-arch.png b/projects/archive/stopped/connectivity-motor-imagery/manuscript/figs/tcdf-arch.png
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/figs/tcdf-arch.png
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/figs/tcdf-arch.png
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/main.bib b/projects/archive/stopped/connectivity-motor-imagery/manuscript/main.bib
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/main.bib
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/main.bib
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/main.doc b/projects/archive/stopped/connectivity-motor-imagery/manuscript/main.doc
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/main.doc
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/main.doc
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/main.pdf b/projects/archive/stopped/connectivity-motor-imagery/manuscript/main.pdf
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/main.pdf
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/main.pdf
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/manuscript/main.tex b/projects/archive/stopped/connectivity-motor-imagery/manuscript/main.tex
+similarity index 100%
+rename from projects/archive/dropped/connectivity-motor-imagery/manuscript/main.tex
+rename to projects/archive/stopped/connectivity-motor-imagery/manuscript/main.tex
+diff --git a/projects/archive/dropped/connectivity-motor-imagery/project.yml b/projects/archive/stopped/connectivity-motor-imagery/project.yml
+similarity index 96%
+rename from projects/archive/dropped/connectivity-motor-imagery/project.yml
+rename to projects/archive/stopped/connectivity-motor-imagery/project.yml
+index 6f45ff0..c426e31 100644
+--- a/projects/archive/dropped/connectivity-motor-imagery/project.yml
++++ b/projects/archive/stopped/connectivity-motor-imagery/project.yml
+@@ -2,10 +2,10 @@ id: connectivity-motor-imagery
+ status:
+   chips: [lead]
+ short: "Motor-Imagery Connectivity"
+-stage: dropped
++stage: stopped
+ tier: archive
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ related: [abstract-bci-meeting-2021]
+ title: Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources
+ eli5: "Aimed to model directed (causal) functional connectivity between reconstructed EEG sources (targeting motor-imagery analysis), combining a Temporal Causal Discovery Framework with Causal Graph Processes. Only a simulation validation was drafted; the full journal paper was never completed."
+diff --git a/projects/coauthor/active/clinical-hccnet/project.yml b/projects/coauthor/active/clinical-hccnet/project.yml
+index 857e799..409c955 100644
+--- a/projects/coauthor/active/clinical-hccnet/project.yml
++++ b/projects/coauthor/active/clinical-hccnet/project.yml
+@@ -1,19 +1,18 @@
+ id: clinical-hccnet
+-focus: backburner
+ short: "Clin-HCCNet"
+ stage: in-prep
+ tier: coauthor
+ status:
+-  chips: [admin-prep, coauthor]
++  chips: [admin-prep, coauthor, parked]
+   line: "`article`, 16 pp, compiles clean. JHEP Reports, in preparation."
+ domain: liver
+-pillar: [hcc]
++pillars: [hcc]
+ related: [hccnet-revision]
+ title: "Prediction of hepatocellular carcinoma by MRI: the development of MRI-HCC prediction model"
+ lead: [jasper-van-leengoed]
+ eli5: "A student-led clinical application of HCCNet (Paper 3): the self-supervised longitudinal-MRI backbone put to a clinical hepatocellular-carcinoma risk setting. Jasper van Leengoed leads; I am a coauthor. The clinical manuscript is in preparation; analyses and figures are documented in README.md."
+ outcome: "Coauthor involvement; clinical manuscript in preparation. Clinical variant/application of HCCNet (see hccnet-revision, Paper 3) led by the student Jasper van Leengoed. Analyses and figures are available; the venue is unconfirmed. DATA CAVEAT: the inputs in code/data/ (the prediction files and label tables) are gitignored and NOT regenerable here; they come from the hccnet-revision project (the related: entry); restore by regenerating them there and copying them back. Resolve that project by its id, no path is recorded because the folder can move. Full detail in README.md."
+-venue_id:
++venue:
+ doi: ""
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
+ latest: "2026-10-06: Age- and sex-corrected analysis for the coauthors (code/results/material/ADJUSTED.md), no manuscript change."
+diff --git a/projects/coauthor/active/elixir-fl4e/project.yml b/projects/coauthor/active/elixir-fl4e/project.yml
+index 228c416..a226a03 100644
+--- a/projects/coauthor/active/elixir-fl4e/project.yml
++++ b/projects/coauthor/active/elixir-fl4e/project.yml
+@@ -1,13 +1,13 @@
+ id: elixir-fl4e
+ short: "FL4E"
+-stage: finished
++stage: released
+ tier: coauthor
+ status:
+   chips: [lead]
+ domain: method
+ title: "ELIXIR / FL4E: Federated Learning for Everyone (framework contribution)"
+ lead: [axel-faes]
+-pillar: [federated]
++pillars: [federated]
+ related: [florank-personalization]
+ eli5: "A collaboration around FL4E ('Federated Learning for Everyone'), a privacy-preserving federated-learning infrastructure for health. My contribution was the guideline scripts (a Flower-based federated MLP plus a data-cleaning step on the Wisconsin breast-cancer dataset) and the MS/registry federated direction. An involvement record, not a publication of mine."
+ outcome: "Involvement/contribution to the FL4E federated-learning framework and the MS-RWD federated direction (same ELIXIR-Belgium / Moreau / MSBase network as the FLoRank idea). Code and notes preserved in this folder; the FL tutorial code was cleaned to runnable + documented (see code/README.md)."
+diff --git a/projects/coauthor/active/flkit/project.yml b/projects/coauthor/active/flkit/project.yml
+index 3bc0a20..671ca28 100644
+--- a/projects/coauthor/active/flkit/project.yml
++++ b/projects/coauthor/active/flkit/project.yml
+@@ -1,16 +1,15 @@
+ id: flkit
+-focus: review
+ short: "FLKit"
+ stage: submitted
+ tier: coauthor
+ status:
+   chips: [coauthor]
+ domain: privacy
+-pillar: [federated]
++pillars: [federated]
+ title: "Development and Design of FLKit: A Structured Onboarding Toolkit for Federated Learning in Health and Life Sciences"
+ eli5: "FLKit is a structured onboarding toolkit that lowers the entry barrier to federated learning for health and life-science researchers, bundling environment setup, client/server orchestration, and worked examples. It treats FL adoption as an onboarding and usability problem, not only an algorithmic one."
+ year: 2026
+ outcome: "Co-author. In preparation, submitted to JMIR (Pirmani, Vermeulen, ... Faes, ... Peeters)."
+ lead: [pirmani]
+-venue_id: jmir
++venue: jmir
+ collaborators: [peeters, pirmani]
+diff --git a/projects/coauthor/published/2016/chi-household-survival/project.yml b/projects/coauthor/published/2016/chi-household-survival/project.yml
+index bb96645..1fcfcfd 100644
+--- a/projects/coauthor/published/2016/chi-household-survival/project.yml
++++ b/projects/coauthor/published/2016/chi-household-survival/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: abstract
+ tier: coauthor
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ related: [chi-purpose-centric]
+ title: "Household Survival: Immersive Room-Sized Gaming Using Everyday Objects as Weapons"
+ eli5: "Student-competition extended abstract on an immersive, room-sized game that repurposes everyday household objects as weapons."
+ year: 2016
+ outcome: "Extended abstract, CHI EA 2016 Student Game Competition (Berghmans, Faes, Kaminski, Todi; shared first authorship)."
+ lead: [brent-berghmans]
+-venue_id: chi-ea
++venue: chi-ea
+diff --git a/projects/coauthor/published/2016/chi-purpose-centric/project.yml b/projects/coauthor/published/2016/chi-purpose-centric/project.yml
+index 970bb83..47250c0 100644
+--- a/projects/coauthor/published/2016/chi-purpose-centric/project.yml
++++ b/projects/coauthor/published/2016/chi-purpose-centric/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: abstract
+ tier: coauthor
+ domain: cs
+-pillar: [student-research]
++pillars: [student-research]
+ related: [chi-household-survival]
+ title: "Purpose-Centric Appropriation of Everyday Objects as Game Controllers"
+ eli5: "Student-competition extended abstract exploring purpose-centric appropriation of everyday objects as game controllers."
+ year: 2016
+ outcome: "Extended abstract, CHI EA 2016 Student Game Competition (Todi, Degraen, Berghmans, Faes, Kaminski, Luyten)."
+ lead: [kashyap-todi]
+-venue_id: chi-ea
++venue: chi-ea
+diff --git a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
+index 8dada4b..9f10705 100644
+--- a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
++++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
+@@ -1,6 +1,6 @@
+ id: algebraic-effects-compilation
+ short: "Algebraic Effects Compilation"
+-stage: finished
++stage: published
+ form: tech-report
+ tier: coauthor
+ status:
+@@ -11,7 +11,7 @@ year: 2017
+ results:
+   - "The basic free-monad scheme runs 25x-50x slower than hand-written OCaml; both optimizations combined close that to 1x-1.5x. On N-Queens, optimized Eff is the fastest effect-handler system tested, about 25-30% faster than Multicore OCaml."
+ outcome: "Co-author. KU Leuven Dept. of Computer Science technical report CW708, October 2017 (Pretnar, Saleh, Faes, Schrijvers). Programming-languages / type-theory work from Axel's KU Leuven period."
+-pillar: [student-research]
++pillars: [student-research]
+ domain: cs
+ lead: [matija-pretnar]
+-venue_id: kuleuven-cw-techreport
++venue: kuleuven-cw-techreport
+diff --git a/projects/coauthor/published/2017/http2-best-practices/project.yml b/projects/coauthor/published/2017/http2-best-practices/project.yml
+index 5abcfc1..e8f1d67 100644
+--- a/projects/coauthor/published/2017/http2-best-practices/project.yml
++++ b/projects/coauthor/published/2017/http2-best-practices/project.yml
+@@ -11,7 +11,7 @@ year: 2017
+ results:
+   - "Concatenation and hostname sharding stay useful under HTTP/2 and Push replaces resource embedding; HTTP/2 rarely beats HTTP/1 by much and its slow cases trace to implementation bugs, not the protocol."
+ outcome: "Co-author. Published at WEBIST 2017 (Marx, Quax, Faes, Lamotte; UHasselt-tUL-imec). Introduces the Speeder web-performance testing framework. Early-career CS / web-networking work from Axel's Hasselt period."
+-pillar: [student-research]
++pillars: [student-research]
+ domain: cs
+ lead: [robin-marx]
+-venue_id: webist
++venue: webist
+diff --git a/projects/coauthor/published/2018/http2-web-performance/project.yml b/projects/coauthor/published/2018/http2-web-performance/project.yml
+index 47832fb..f0ee3d4 100644
+--- a/projects/coauthor/published/2018/http2-web-performance/project.yml
++++ b/projects/coauthor/published/2018/http2-web-performance/project.yml
+@@ -11,7 +11,7 @@ year: 2018
+ results:
+   - "HTTP/2 rarely improves page load much over HTTP/1.1 (but rarely much slower); its single connection bottlenecks under high packet loss; prioritization, Server Push and HPACK help only sparingly; immature implementations hurt time-to-render."
+ outcome: "Co-author. Published at WEBIST 2018 (Marx, Wijnants, Quax, Faes, Lamotte; UHasselt-tUL-imec). Continues the Speeder-framework HTTP/2 measurement line. Early-career CS / web-networking work from Axel's Hasselt period."
+-pillar: [student-research]
++pillars: [student-research]
+ domain: cs
+ lead: [robin-marx]
+-venue_id: webist
++venue: webist
+diff --git a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
+index 90697c9..dbc017c 100644
+--- a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
++++ b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
+@@ -6,12 +6,12 @@ stage: published
+ form: abstract
+ tier: coauthor
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ related: [proprioception-exoskeleton]
+ title: "Individual and Coordinated Finger Movements Decoding from High-Density EEG and Its Implication in Hand Exoskeleton Control"
+ eli5: "Extended abstract decoding individual and coordinated finger movements from high-density EEG, aimed at hand-exoskeleton control."
+ year: 2023
+ outcome: "Extended abstract, European Congress of NeuroRehabilitation 2023 (Sun, Faes, Van Hulle)."
+ lead: [qiang-sun]
+-venue_id: ecnr
++venue: ecnr
+ collaborators: [van-hulle]
+diff --git a/projects/coauthor/published/2023/ecog-frequency-features/project.yml b/projects/coauthor/published/2023/ecog-frequency-features/project.yml
+index 19c9ff9..de3da7e 100644
+--- a/projects/coauthor/published/2023/ecog-frequency-features/project.yml
++++ b/projects/coauthor/published/2023/ecog-frequency-features/project.yml
+@@ -6,7 +6,7 @@ tier: coauthor
+ status:
+   chips: [coauthor]
+ domain: brainbci
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: The role of distinct ECoG frequency features in decoding finger movement
+ eli5: "Identifies which ECoG spectral features encode finger movement during repeated flexions (Stanford dataset): high gamma band distinguishes movement from rest, the local motor potential codes dynamics. Decoding from these two beats using the whole spectrum, and tuning the LMP cutoff to the movement rate helps further."
+ year: 2023
+@@ -14,6 +14,6 @@ results:
+   - "On the Stanford ECoG dataset, a decoder using just high-gamma and local-motor-potential features lifts average trajectory correlation from 0.45 (whole spectrum) to 0.50 and cuts spurious movement predictions during rest."
+ outcome: "Co-author (2nd). Published in J. Neural Eng. 20 (2023) 066014 (Calvo Merino, Faes, Van Hulle). First to show the LMP upper-cutoff should track the finger movement rate; argues for feature analysis before decoder design."
+ lead: [eva-calvo-merino]
+-venue_id: jne
++venue: jne
+ doi: "10.1088/1741-2552/ad0c5e"
+ collaborators: [van-hulle]
+diff --git a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
+index 66a6a9a..0f8851e 100644
+--- a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
++++ b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: abstract
+ tier: coauthor
+ domain: brainbci
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: "Modulation of LMPs Using the Gamma Band Increases the Stability of Finger Trajectories Decoded from ECoG"
+ eli5: "Extended abstract showing that modulating the local motor potential with gamma-band information increases the stability of ECoG-decoded finger trajectories."
+ year: 2023
+ outcome: "Extended abstract, BCI Society Meeting 2023 (Calvo Merino, Faes, Van Hulle)."
+ lead: [eva-calvo-merino]
+-venue_id: intl-bci-meeting
++venue: intl-bci-meeting
+ collaborators: [van-hulle]
+diff --git a/projects/coauthor/published/2024/highgamma-event-detection/project.yml b/projects/coauthor/published/2024/highgamma-event-detection/project.yml
+index dde995c..fb989cd 100644
+--- a/projects/coauthor/published/2024/highgamma-event-detection/project.yml
++++ b/projects/coauthor/published/2024/highgamma-event-detection/project.yml
+@@ -6,11 +6,11 @@ stage: published
+ form: abstract
+ tier: coauthor
+ domain: brainbci
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: "High-Gamma Band Event Detection Improves Stability of Finger Trajectories Decoded from ECoG-LMP Activity"
+ eli5: "Extended abstract showing that detecting movement events from the ECoG high-gamma band stabilises finger-trajectory predictions decoded from the local motor potential (LMP)."
+ year: 2024
+ outcome: "Extended abstract, International BCI Meeting 2024 (Calvo Merino, Faes, Van Hulle)."
+ lead: [eva-calvo-merino]
+-venue_id: intl-bci-meeting
++venue: intl-bci-meeting
+ collaborators: [van-hulle]
+diff --git a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
+index 636fc17..15a7046 100644
+--- a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
++++ b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
+@@ -11,8 +11,8 @@ eli5: "An editorial introducing a Frontiers in Immunology special collection on
+ year: 2025
+ outcome: "Published editorial in Frontiers in Immunology 16:1679482, 2025 (Peeters, Faes, Hartung), for the Research Topic 'Use of big data and artificial intelligence in multiple sclerosis'. Sets the agenda for the collection rather than reporting new results."
+ funding: [FAIR]
+-pillar: [clinical-collab]
++pillars: [clinical-collab]
+ lead: [peeters]
+-venue_id: frontimmunol
++venue: frontimmunol
+ doi: "10.3389/fimmu.2025.1679482"
+ collaborators: [peeters]
+diff --git a/projects/coauthor/published/2025/pfl-ms-npj/project.yml b/projects/coauthor/published/2025/pfl-ms-npj/project.yml
+index 0cbfd80..1ee5a37 100644
+--- a/projects/coauthor/published/2025/pfl-ms-npj/project.yml
++++ b/projects/coauthor/published/2025/pfl-ms-npj/project.yml
+@@ -6,7 +6,7 @@ tier: coauthor
+ status:
+   chips: [coauthor]
+ domain: privacy
+-pillar: [federated]
++pillars: [federated]
+ datasets: [msbase]
+ title: Personalized Federated Learning for Predicting Disability Progression in Multiple Sclerosis Using Real-World Routine Clinical Data
+ eli5: "Predicts 2-year disability progression in multiple sclerosis from routine clinical data across many MSBase centres (>26,000 patients) without pooling it. Personalizing the federated model (an adaptive dual-branch network, or fine-tuning the global model per site) clearly beats plain federated learning and can surpass centralized training."
+@@ -16,6 +16,6 @@ results:
+ outcome: "Co-author (middle). Published in npj Digital Medicine 2025, 8:478 (Pirmani, De Brouwer, ... Faes, ... Peeters, Moreau). Large MSBase-consortium study establishing personalization as the key to scalable, privacy-aware clinical prediction."
+ funding: [FAIR]
+ lead: [pirmani]
+-venue_id: npjdm
++venue: npjdm
+ doi: "10.1038/s41746-025-01788-8"
+ collaborators: [moreau, peeters, pirmani]
+diff --git a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
+index 4c9c1f0..4a220b1 100644
+--- a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
++++ b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
+@@ -6,7 +6,7 @@ tier: coauthor
+ status:
+   chips: [coauthor]
+ domain: brainbci
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: On the Impact of Proprioception in EEG Representations and Decoding during Human-Hand Exoskeleton Interaction
+ eli5: "Quantifies how a hand exoskeleton's proprioceptive feedback shows up in sensorimotor EEG and affects BCI decoding, across 25 subjects doing imagined, passive and combined finger flexion. The feedback is clearly detectable (stronger alpha/beta desynchronization), but separating motor intent during assisted movement stays hard."
+ year: 2025
+@@ -14,5 +14,5 @@ results:
+   - "Across 25 subjects: assisted-movement vs rest reaches 0.80 +/- 0.07 (combined) / 0.72 +/- 0.10 (passive), but telling intended from passive movement is only 0.61 +/- 0.09, below intention-vs-rest without the exoskeleton (0.73 +/- 0.08)."
+ outcome: "Co-author. Published at IEEE Int. Conf. on Rehabilitation Robotics (ICORR) 2025 (Sun, Calvo Merino, Yang, Faes, Van Hulle). Motivates better decoders and control for continuous BCI-actuated hand exoskeletons."
+ lead: [qiang-sun]
+-venue_id: icorr
++venue: icorr
+ collaborators: [van-hulle]
+diff --git a/projects/coauthor/abandoned/individual-reference-intervals/project.yml b/projects/coauthor/stopped/individual-reference-intervals/project.yml
+similarity index 93%
+rename from projects/coauthor/abandoned/individual-reference-intervals/project.yml
+rename to projects/coauthor/stopped/individual-reference-intervals/project.yml
+index 7583755..224faac 100644
+--- a/projects/coauthor/abandoned/individual-reference-intervals/project.yml
++++ b/projects/coauthor/stopped/individual-reference-intervals/project.yml
+@@ -1,6 +1,6 @@
+ id: individual-reference-intervals
+ short: "Reference Intervals"
+-stage: abandoned
++stage: stopped
+ tier: coauthor
+ status:
+   chips: [coauthor]
+@@ -9,5 +9,5 @@ title: Individual Reference Intervals for Clinical Event Prediction
+ eli5: "Explored combining individual (personalized) clinical reference intervals with machine learning to predict clinical events such as readmissions or disease progression, instead of population-wide normal ranges. The bet was that per-patient baselines could sharpen event prediction."
+ year: 2024
+ outcome: "Co-author. Abandoned (was targeted at IEEE JBHI, 2024; Do, Faes, et al.). Not pursued to a full paper."
+-pillar: [clinical-collab]
++pillars: [clinical-collab]
+ lead: [do]
+diff --git a/projects/ideas/adapter-format-theory/project.yml b/projects/ideas/adapter-format-theory/project.yml
+index 98e851b..b2334bc 100644
+--- a/projects/ideas/adapter-format-theory/project.yml
++++ b/projects/ideas/adapter-format-theory/project.yml
+@@ -1,17 +1,16 @@
+ id: adapter-format-theory
+-stage: nascent
++stage: de-risking
+ tier: projects
+ short: "Format Theory"
+ domain: method
+ title: A risk ordering and an adaptive format selector for structured-tensor adaptation of foundation models
+ lead: [axel-faes]
+-pillar: [tensor, sciml]
+-focus: derisk
++pillars: [tensor, sciml]
+ related: [bt-operator-theory, btfno, florank-personalization]
+ status:
+   chips: []
+   line: "Idea-tier, gate-pending. One cheap measurement decides it: does a fine-tuned weight update carry block-banded structure against a permutation null. At the null the theory collapses to parameter counting."
+-venue_id: jmlr
++venue: jmlr
+ eli5: "Adapters compress the weight update of a large pretrained model. Which tensor format should that update use, and can the choice be made from data with a guarantee? The operator-theory line already proves a risk ordering across formats for spectral operators; whether that carries to weight updates depends on one measurable property of the update."
+ next: "Run the gate before writing any theorem. Full fine-tune a backbone, form the weight update, tensorize with the layer-and-matrix-type axis intact, and measure block-banded energy against a permutation null. At the null it reduces to parameter counting Khavari and Rabusseau published in 2021."
+ ideas:
+diff --git a/projects/ideas/asthma-geo-tensor/project.yml b/projects/ideas/asthma-geo-tensor/project.yml
+index 06761bc..314dc69 100644
+--- a/projects/ideas/asthma-geo-tensor/project.yml
++++ b/projects/ideas/asthma-geo-tensor/project.yml
+@@ -6,12 +6,11 @@ domain: method               # respiratory/environmental-health has no theme yet
+ title: "Federated spatiotemporal tensor modeling of asthma exacerbation from geolocation + environmental exposure"
+ lead: [axel-faes]
+ funding:
+-pillar: [federated, tensor]
+-focus: holding
++pillars: [federated, tensor]
+ status:
+   chips: []
+   line: "Speculative; needs a cited novelty check + a public asthma + environmental-exposure data source before committing."
+-venue_id:
++venue:
+ eli5: "Asthma attacks track the environment (pollen, air pollution, weather), which varies by where you are and when. Modeling (patients x environmental-exposure x time) as a tensor, federated across health systems, could predict exacerbation risk while keeping each patient's location and health data local."
+ next: "Cited lit-check on spatiotemporal/tensor models for asthma exacerbation; find a public asthma cohort + open geolocation-indexed environmental feeds (AQI / pollen / weather) to prototype on."
+ ideas: []
+diff --git a/projects/ideas/attention-scoped-instructions/project.yml b/projects/ideas/attention-scoped-instructions/project.yml
+index e55e430..e7c3bc2 100644
+--- a/projects/ideas/attention-scoped-instructions/project.yml
++++ b/projects/ideas/attention-scoped-instructions/project.yml
+@@ -1,17 +1,16 @@
+ id: attention-scoped-instructions
+-stage: nascent
++stage: scoping
+ tier: projects
+ short: "Scoped Instructions"
+ domain: method
+ title: Declared scope and precedence for instruction context in language-model agents
+ lead: [axel-faes]
+-pillar: []
+-focus: scope
++pillars: []
+ related: []
+ status:
+   chips: []
+   line: "Idea-tier, paused. Four candidates from one literature pass, nothing built. A kill-check decides the primary one if it is ever picked up."
+-venue_id: icml
++venue: icml
+ eli5: "A long set of written rules handed to a model has no scope: every rule sees every other one, so editing one section silently shifts behaviour governed by another. Let the sections declare who may see whom and who wins, compile that into the attention pattern, and the interference becomes impossible rather than unlikely."
+ next: "Run the kill-check before building anything. Reproduce the published leakage measurement on open weights unmasked, then compare four conditions including one agent per module. If sub-agent isolation wins on compliance and cost, candidate 1 closes and candidate 4 becomes primary."
+ ideas:
+diff --git a/projects/ideas/block-term-nca/project.yml b/projects/ideas/block-term-nca/project.yml
+index ef0585d..6a38fc7 100644
+--- a/projects/ideas/block-term-nca/project.yml
++++ b/projects/ideas/block-term-nca/project.yml
+@@ -5,13 +5,12 @@ short: "Block-term NCA"
+ domain: method
+ title: Neural cellular automata with a block-term update rule that separates growth mechanisms
+ lead: [axel-faes]
+-pillar: [tensor, sciml, hcc]
+-focus: holding
++pillars: [tensor, sciml, hcc]
+ related: [btfno, bt-operator-theory]
+ status:
+   chips: []
+   line: "Idea-tier, paused. First-pass novelty scan only, nothing built."
+-venue_id:
++venue:
+ eli5: "A neural cellular automaton learns the local rule that makes a pattern grow. Write that rule as block-term pieces, each one growth mechanism, and on serial scans each patient gets numbers for how a lesion grows: pushing outward, infiltrating, or regrowing at a treated edge."
+ next: "Run the synthetic gate before anything clinical: on systems with known separate terms (Gray-Scott, Fisher-KPP, Lenia, a threshold automaton), do the blocks recover one true term each better than a post-hoc decomposition of an MLP-NCA at equal parameters."
+ ideas:
+diff --git a/projects/ideas/brecht-fl-partitioning/project.yml b/projects/ideas/brecht-fl-partitioning/project.yml
+index 70b55fb..6e1e63c 100644
+--- a/projects/ideas/brecht-fl-partitioning/project.yml
++++ b/projects/ideas/brecht-fl-partitioning/project.yml
+@@ -1,13 +1,12 @@
+ id: brecht-fl-partitioning
+-stage: nascent
++stage: scoping
+ tier: projects
+ short: "FL Partitioning"
+ domain: heart
+ title: Brecht FL Partitioning
+ lead: [axel-faes]
+-pillar: [federated]
++pillars: [federated]
+ related: [clinical-ai-eval-artifacts]
+-focus: scope
+ status:
+   chips: []
+   line: "Thesis read + summarised; not yet spec'd as a standalone contribution (candidate feeder for clinical-ai-eval-artifacts)."
+diff --git a/projects/ideas/btd-autoencoder/project.yml b/projects/ideas/btd-autoencoder/project.yml
+index 56825ef..97e9e7d 100644
+--- a/projects/ideas/btd-autoencoder/project.yml
++++ b/projects/ideas/btd-autoencoder/project.yml
+@@ -1,12 +1,11 @@
+ id: btd-autoencoder
+-stage: scoping
++stage: nascent
+ tier: projects
+ short: "BTD Autoencoder"
+ domain: method
+ title: BTD Autoencoder
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: holding
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Idea / unstarted; combines a tensor-AE denoiser (Idea 3) + a small-N rigor benchmark (Idea 5)."
+diff --git a/projects/ideas/clinical-ai-eval-artifacts/project.yml b/projects/ideas/clinical-ai-eval-artifacts/project.yml
+index ae88bf2..fb680a7 100644
+--- a/projects/ideas/clinical-ai-eval-artifacts/project.yml
++++ b/projects/ideas/clinical-ai-eval-artifacts/project.yml
+@@ -1,17 +1,16 @@
+ id: clinical-ai-eval-artifacts
+-stage: scoping
++stage: nascent
+ tier: projects
+-pillar: [evaluation]
++pillars: [evaluation]
+ short: "Eval Artifacts"
+ domain: meta
+ title: Clinical-AI Eval Artifacts
+ lead: [axel-faes]
+ related: [brecht-fl-partitioning]
+-focus: holding
+ status:
+   chips: []
+   line: "Actionable, low-cost (evidence in hand); needs co-author consent (Brecht, Dongho) + a novelty check."
+-venue_id: 
++venue: 
+ eli5: "A meta-science critique plus corrected evaluation protocol arguing many federated/clinical-AI 'gains' are evaluation artifacts (partitioning, leakage, metric/selection bias), and the protocol that fixes it."
+ next: "Extract recurring failure modes into a taxonomy; build the corrected protocol; show the 'gain' shrinks on a public benchmark; confirm Brecht/Dongho co-authorship + consent (keep it constructive, not a takedown)."
+ ideas:
+diff --git a/projects/ideas/concept-bottleneck-hcc/project.yml b/projects/ideas/concept-bottleneck-hcc/project.yml
+index 1c5f919..9df99ae 100644
+--- a/projects/ideas/concept-bottleneck-hcc/project.yml
++++ b/projects/ideas/concept-bottleneck-hcc/project.yml
+@@ -5,13 +5,12 @@ short: "Concept-Bottleneck HCC"
+ domain: liver
+ title: A Longitudinal Concept-Bottleneck Model for Future-HCC Risk from Serial Liver MRI
+ lead: [axel-faes]
+-pillar: [hcc]
++pillars: [hcc]
+ related: [hccnet-revision]
+-focus: holding
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Lighter, faithfully-explainable HCCNet alternative on the same cohort. LI-RADS annotations give ready-made concept supervision. Novelty checked 2026-07-04 (open)."
+-venue_id:
++venue:
+ eli5: "Predict future liver cancer by first reading human-understandable liver concepts (LI-RADS features + fat fraction, diffusion, lesion volume) at each scan, then composing those concept trajectories with a simple, sparse model. Risk depends on the images ONLY through the concepts, so a radiologist can correct a concept and watch the risk update."
+ next: "Fix the concept set (LI-RADS features + fat fraction / ADC / SEG volume); train small per-concept heads against lirads.csv; fit a sparse temporal predictor on the concept trajectories; benchmark discrimination vs HCCNet AND demonstrate test-time concept intervention. Novelty-check first."
+ ideas:
+diff --git a/projects/ideas/conformal-tensor-factors/project.yml b/projects/ideas/conformal-tensor-factors/project.yml
+index 8ec62dc..7d78c97 100644
+--- a/projects/ideas/conformal-tensor-factors/project.yml
++++ b/projects/ideas/conformal-tensor-factors/project.yml
+@@ -1,16 +1,15 @@
+ id: conformal-tensor-factors
+-stage: nascent
++stage: de-risking
+ tier: projects
+ short: "Conformal Tensor"
+ domain: method
+ title: Gauge-Aware Conformal Prediction for Block-Term Tensor Factors
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: derisk
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Novelty checked clean 2026-07-04 (conformal x tensor decomposition = open). No-HPC methods flagship; gate = does a gauge-invariant conformity score hold coverage on a real block-term model."
+-venue_id:
++venue:
+ eli5: "Interpretable tensor models output factor loadings a clinician reads as evidence, but with no calibrated uncertainty. Put distribution-free coverage on those loadings, solving the hard part: block-term factors are only defined up to a permutation / sign / rotation gauge that naive conformal breaks."
+ next: "Prototype on an existing block-term model: define a gauge-invariant conformity score (canonical alignment, or score on gauge-invariant functionals - block energies, subspace principal angles), then check finite-sample coverage on held-out calibration. Confirm novelty first."
+ ideas:
+diff --git a/projects/ideas/ecg-af-fair/project.yml b/projects/ideas/ecg-af-fair/project.yml
+index f50c3de..e4edc8c 100644
+--- a/projects/ideas/ecg-af-fair/project.yml
++++ b/projects/ideas/ecg-af-fair/project.yml
+@@ -1,14 +1,13 @@
+ id: ecg-af-fair
+-stage: de-risking
++stage: exploring
+ tier: projects
+ short: "ECG-AF (FAIR)"
+ domain: heart
+ title: ECG-AF (FAIR / Vandervoort)
+ lead: [axel-faes]
+-pillar: [tensor]
++pillars: [tensor]
+ related: [bttn-incident-af]
+ funding: [FAIR]
+-focus: run
+ datasets: [ml4af]
+ status:
+   chips: []
+diff --git a/projects/ideas/engram/project.yml b/projects/ideas/engram/project.yml
+index 869e83b..00ac44c 100644
+--- a/projects/ideas/engram/project.yml
++++ b/projects/ideas/engram/project.yml
+@@ -1,19 +1,18 @@
+ id: engram
+ short: Engram
+-stage: nascent
++stage: exploring
+ tier: projects
+ domain: privacy
+ title: "Locating and excising a memorised patient record inside a clinical language model"
+ lead: [axel-faes]
+ funding:
+-pillar: [tensor, federated, evaluation, llmprivacy]
+-focus: run
++pillars: [tensor, federated, evaluation, llmprivacy]
+ related: [bt-operator-theory, btfno]
+ datasets: [mimic-iv-note, pmc-patients]
+ status:
+   chips: []
+   line: "Instrument built and cluster-verified. Gate experiment not started. No manuscript."
+-venue_id:
++venue:
+ eli5: "A model trained on clinical notes memorises some of them. The interpretability question: WHERE in the weights does one patient's record sit, and can it be cut out without breaking the model? Block-term decompositions of activation tensors propose the components; ablation tests them. Planted fake records are the ruler, not the target."
+ latest: "2026-09-01: pipeline verified end to end on the cluster (job 579312, A40, 13 min). A fitted exposure estimator resolves the eight grid cells that sampling can only bound."
+ next: "Run the gate: train the 72M model on MIMIC-IV-Note, then test whether a block-term decomposition of the MLP activation tensor beats K-FAC curvature editing and a plain SVD on extraction-drop per unit of perplexity cost. Everything before that is instrument, and the instrument is finished."
+diff --git a/projects/ideas/faithful-interpretability-position/project.yml b/projects/ideas/faithful-interpretability-position/project.yml
+index 08e0146..9b1cd5c 100644
+--- a/projects/ideas/faithful-interpretability-position/project.yml
++++ b/projects/ideas/faithful-interpretability-position/project.yml
+@@ -5,12 +5,11 @@ short: "Faithful-Interp Position"
+ domain: meta
+ title: "Measured, Not Asserted: A Position Paper on Faithful Interpretability for Structured-Tensor Clinical Models"
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: holding
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Idea-tier, held. Novelty checked 2026-07-04, differentiated from generic tensor-biomedical reviews. Waiting on its own evidence base: the work it argues from is not published yet."
+-venue_id:
++venue:
+ eli5: "A position/roadmap paper arguing that 'the structure IS the explanation' only counts if faithfulness is MEASURED (probe + intervention), which almost no interpretable clinical tensor/DL model does. It gives the distinction, a taxonomy, an evaluation protocol, a critical survey through that lens, and a roadmap - staking out your research program."
+ next: "Held until a good share of the submit-ready set is accepted: the citation list IS the argument and it currently rests on unpublished work. Then draft the thesis + outline, assemble the evidence base, and write the delta from existing reviews (JMSS 2024, 2025 biomedical-signal review)."
+ ideas:
+diff --git a/projects/ideas/fed-duplication-limits/project.yml b/projects/ideas/fed-duplication-limits/project.yml
+index 54930a7..649ef75 100644
+--- a/projects/ideas/fed-duplication-limits/project.yml
++++ b/projects/ideas/fed-duplication-limits/project.yml
+@@ -1,18 +1,17 @@
+ id: fed-duplication-limits
+-stage: nascent
++stage: de-risking
+ tier: projects
+ short: "FL Duplication"
+ domain: privacy
+ title: Identifiability and erasure limits under record duplication in federated clinical language models
+ lead: [axel-faes]
+-pillar: [federated, llmprivacy, evaluation]
+-focus: derisk
++pillars: [federated, llmprivacy, evaluation]
+ related: [engram]
+ datasets: [mimic-iv-note]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Cited scan 2026-09-09: single-owner attribution and client-level erasure both occupied; duplication is the open wedge. Gate = is the frontier non-trivial."
+-venue_id:
++venue:
+ eli5: "The same patient record sits at several hospitals. If a federated language model memorises it, which sites put it there, and how much can one site delete on its own? Once a record is duplicated the two questions stop being separable, and both turn into identifiability questions with a boundary rather than into systems."
+ next: "Gate first: plant one canary at k of n simulated sites over a duplication sweep, then check whether set-valued attribution from the released global model alone beats chance under secure aggregation, and whether one site's unilateral removal leaves an extraction floor that grows with k."
+ ideas:
+diff --git a/projects/ideas/fed-neural-operators/project.yml b/projects/ideas/fed-neural-operators/project.yml
+index 8c07c72..f110a00 100644
+--- a/projects/ideas/fed-neural-operators/project.yml
++++ b/projects/ideas/fed-neural-operators/project.yml
+@@ -5,13 +5,12 @@ short: "Fed Neural Operators"
+ domain: method
+ title: "Federated Block-Term Neural Operators: Communication-Efficient Operator Learning across Heterogeneous-Resolution Silos"
+ lead: [axel-faes]
+-pillar: [tensor, federated, sciml]
++pillars: [tensor, federated, sciml]
+ related: [btfno]
+-focus: holding
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Flagship: operator line (BT-FNO) x federated pillar. PRIOR ART: Fed-DeepONet (Moya & Lin) - wedge is block-term operators + heterogeneous-resolution clients + comms-efficiency. Checked 2026-07-04."
+-venue_id:
++venue:
+ eli5: "Institutions each hold private field data and want to co-train one neural operator without sharing raw data. Because an operator is defined on functions not pixels, it can absorb clients at DIFFERENT resolutions/geometries - which plain federated learning (fixed-dimension weights) cannot - and the block-term structure makes the model cheap to communicate."
+ next: "Confirm the delta from Fed-DeepONet (Moya & Lin) and any federated-FNO work; prototype federated block-term operator training across simulated silos with heterogeneous discretization; measure comms cost vs a dense-FNO federated baseline and accuracy vs centralized."
+ ideas:
+diff --git a/projects/ideas/fedbtd/project.yml b/projects/ideas/fedbtd/project.yml
+index 74bc5e8..0138c2f 100644
+--- a/projects/ideas/fedbtd/project.yml
++++ b/projects/ideas/fedbtd/project.yml
+@@ -1,14 +1,13 @@
+ id: fedbtd
+-stage: paused
++stage: stopped
+ tier: projects
+ short: "FedBTD"
+ domain: method
+ title: Federated Block-Term Decomposition (FedBTD)
+ lead: [axel-faes]
+-pillar: [tensor, federated]
+-focus: holding
++pillars: [tensor, federated]
+ status:
+-  chips: []
++  chips: [parked]
+   line: "PAUSED. Core Procrustes/Grassmann alignment claim pre-empted by FedRot-LoRA (Feb 2026); below the top-tier methods bar. (2026-06-10 lit-check now stale.)"
+ eli5: "Properly federate a block-term tensor decomposition by aligning blocks (permutation + within-block subspace + scale) before aggregation: the tensor analogue of matched averaging (FedMA)."
+ next: "PAUSED / do not re-attempt: the alignment hook was pre-empted by FedRot-LoRA. Revisit only if a genuinely new, un-pre-empted angle appears."
+diff --git a/projects/ideas/fedlink/project.yml b/projects/ideas/fedlink/project.yml
+index d82ea21..68e0a0d 100644
+--- a/projects/ideas/fedlink/project.yml
++++ b/projects/ideas/fedlink/project.yml
+@@ -5,8 +5,7 @@ short: "FedLink"
+ domain: privacy
+ title: "FedLink: federated coupled block-term tensor for BGC-metabolite-bioactivity linking"
+ lead: [axel-faes]
+-pillar: [federated, tensor]
+-focus: holding
++pillars: [federated, tensor]
+ status:
+   chips: []
+   line: "Side project. Novelty (application) + data availability BOTH verified clean (2026-06-21); only empirical gate left = does a coupled tensor beat NPOmix on held-out PoDP/MIBiG BGC-MS links."
+diff --git a/projects/ideas/fl-privacy-auditing/project.yml b/projects/ideas/fl-privacy-auditing/project.yml
+index 327141d..5b38739 100644
+--- a/projects/ideas/fl-privacy-auditing/project.yml
++++ b/projects/ideas/fl-privacy-auditing/project.yml
+@@ -1,12 +1,11 @@
+ id: fl-privacy-auditing
+-stage: scoping
++stage: nascent
+ tier: projects
+ short: "FL Privacy Audit"
+ domain: privacy
+ title: FL Privacy Auditing
+ lead: [axel-faes]
+-pillar: [federated]
+-focus: holding
++pillars: [federated]
+ status:
+   chips: []
+   line: "Actionable (own models + reusable attack code); gated on a novelty lit-check to fix the auditing angle."
+diff --git a/projects/ideas/florank-personalization/project.yml b/projects/ideas/florank-personalization/project.yml
+index b5d30d5..6f8f858 100644
+--- a/projects/ideas/florank-personalization/project.yml
++++ b/projects/ideas/florank-personalization/project.yml
+@@ -5,9 +5,8 @@ short: "FLoRank Personalization"
+ domain: method
+ title: "FLoRank x HCCNet / Block-Term: structured personalization for federated clinical models"
+ lead: [axel-faes]
+-pillar: [federated, tensor]
++pillars: [federated, tensor]
+ related: [elixir-fl4e, pfl-ms-npj, adapter-format-theory]
+-focus: scope
+ status:
+   chips: []
+   line: "Collaboration idea (Pirmani/Moreau network). Branch-B block-term adapter checked open 2026-09-09; FL-personalization check and lead-branch decision still open."
+diff --git a/projects/ideas/harmonop/project.yml b/projects/ideas/harmonop/project.yml
+index 360130e..73f5244 100644
+--- a/projects/ideas/harmonop/project.yml
++++ b/projects/ideas/harmonop/project.yml
+@@ -5,12 +5,11 @@ short: "HarmonOp"
+ domain: method
+ title: Operator-Theoretic MRI Harmonization (HarmonOp)
+ lead: [axel-faes]
+-pillar: [tensor, sciml]
+-focus: holding
++pillars: [tensor, sciml]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Novelty checked 2026-07-04: harmonization is a GAN/ComBat monoculture, operator-theoretic framing is open. Strong->flagship methods; medium compute. Multi-site MRI already on cluster."
+-venue_id: tmi
++venue: tmi
+ eli5: "Learn the scanner-to-scanner map as an operator in function space. Because it is an operator, it is resolution- and field-strength-invariant and can zero-shot to a scanner it never saw in training - properties GANs structurally cannot give."
+ next: "2D prototype: learn a transfer operator between two sites in the multi-site BraTS cohort, evaluate resolution-transfer (train at one resolution, apply at another) and zero-shot to a held-out site vs a CycleGAN baseline (downstream task metric + distributional distance)."
+ ideas:
+diff --git a/projects/ideas/hccnet-fl-sweden/project.yml b/projects/ideas/hccnet-fl-sweden/project.yml
+index 428421d..26c65d2 100644
+--- a/projects/ideas/hccnet-fl-sweden/project.yml
++++ b/projects/ideas/hccnet-fl-sweden/project.yml
+@@ -1,17 +1,16 @@
+ id: hccnet-fl-sweden
+-stage: de-risking
++stage: nascent
+ tier: projects
+ short: "HCCNet FL Sweden"
+ domain: liverfl
+ title: HCCNet FL Network (Sweden)
+ lead: [axel-faes]
+-pillar: [hcc, federated]
++pillars: [hcc, federated]
+ related: [hccnet-revision, hccnet-fl]
+-focus: holding
+ status:
+   chips: []
+   line: "Spec scaffold (2026-06-12); method hook + Linköping DUA to settle; novelty lit-check PENDING."
+-venue_id: 
++venue: 
+ eli5: "Take HCCNet from simulated federation to a real two-country hospital network (Twente NL + Linköping SE), where sites genuinely hold different MRI sequence sets, distinct from the simulated-silo Paper 4."
+ next: "Confirm Linköping cohort + sequences + GDPR/DUA (the make-or-break dependency); settle the method hook (modality-incomplete is the lead); run the cited novelty lit-check."
+ ideas:
+diff --git a/projects/ideas/hccnet-pathology/project.yml b/projects/ideas/hccnet-pathology/project.yml
+index 199deae..012f69c 100644
+--- a/projects/ideas/hccnet-pathology/project.yml
++++ b/projects/ideas/hccnet-pathology/project.yml
+@@ -5,13 +5,12 @@ short: "HCCNet Pathology"
+ domain: liver
+ title: HCCNet Pathology Networks
+ lead: [axel-faes]
+-pillar: [hcc]
++pillars: [hcc]
+ related: [hccnet-revision]
+-focus: scope
+ status:
+   chips: []
+   line: "Spec scaffold (architecture_v3, 2026-06-12); novelty lit-check PENDING."
+-venue_id: 
++venue: 
+ eli5: "Predict liver-cancer risk with a model whose four parts each track one liver pathology (fibrosis, inflammation, steatosis, iron) instead of one black box, so a clinician sees which pathology drives the risk."
+ next: "De-risk the central honesty risk (validate the four scores vs references, or drop the pathology names); run the cited novelty lit-check before any 'first'; then decide the architecture commit."
+ ideas:
+diff --git a/projects/ideas/modality-dropping-btf/project.yml b/projects/ideas/modality-dropping-btf/project.yml
+index d7d0314..e694528 100644
+--- a/projects/ideas/modality-dropping-btf/project.yml
++++ b/projects/ideas/modality-dropping-btf/project.yml
+@@ -5,13 +5,12 @@ short: "Modality-Dropping BTF"
+ domain: method
+ title: Modality-Dropping Block-Term Fusion
+ lead: [axel-faes]
+-pillar: [hcc, tensor]
++pillars: [hcc, tensor]
+ related: [hccnet-revision]
+-focus: holding
+ status:
+   chips: []
+   line: "Cited scan done 2026-06-18; gate 1 = pull TenMFL; gate 2 = matched-budget test; shares Linköping DUA."
+-venue_id: 
++venue: 
+ eli5: "Model multimodal fusion as a block-term tensor whose modes are the modalities; a hospital missing a modality drops that mode and runs a coherent sub-model, borrowing a provably-shared cross-modal factor from modality-rich sites."
+ next: "Pull TenMFL (IEEE TCE 2024) full text (the one open landmine); matched-budget test vs BLOSSOM late-fusion; confirm real modality heterogeneity in the NL+SE schema. Pick framing (this vs the HCCNet FL study) before committing the data."
+ ideas:
+diff --git a/projects/ideas/multiway-biosignal-fm/project.yml b/projects/ideas/multiway-biosignal-fm/project.yml
+index 3ec31a5..c005832 100644
+--- a/projects/ideas/multiway-biosignal-fm/project.yml
++++ b/projects/ideas/multiway-biosignal-fm/project.yml
+@@ -1,17 +1,16 @@
+ id: multiway-biosignal-fm
+-stage: nascent
++stage: scoping
+ tier: projects
+ short: "Multiway FM"
+ domain: method
+ title: A multiway biosignal foundation model with a self-supervised objective defined on the factorization
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: scope
++pillars: [tensor]
+ related: [btfno, bt-operator-theory, ecg-readable-substrate, engram]
+ status:
+   chips: []
+   line: "Idea-tier, gate-pending. Cited scan 2026-09-09: no EEG or ECG foundation model uses a multilinear factorization of the data tensor. Gate = does the factorization objective beat a tokenizing model at matched budget."
+-venue_id:
++venue:
+ eli5: "Every EEG and ECG foundation model chops the signal into tokens. None treats it as a channel by time by frequency array with shared structure. Build the backbone as a multilinear map on that array and define the pretraining objective on the factors, so a factor means the same thing across hospitals with different electrode layouts."
+ next: "Two gates in order. Entry price: does a multilinear backbone at matched parameters and budget reach a tokenizing baseline downstream. Contribution: does a factor-level objective give factors that transfer across montages better than a tokenizing model."
+ ideas:
+diff --git a/projects/ideas/neurosde/project.yml b/projects/ideas/neurosde/project.yml
+index a244d5a..f64dd5e 100644
+--- a/projects/ideas/neurosde/project.yml
++++ b/projects/ideas/neurosde/project.yml
+@@ -5,13 +5,12 @@ short: "NeuroSDE"
+ domain: brainbci
+ title: Shared Latent SDE for Cross-Subject ECoG Decoding (NeuroSDE)
+ lead: [axel-faes]
+-pillar: []
++pillars: []
+ related: [ward-bttr-crosssubject, xsub-ecog-framework]
+-focus: holding
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Adjacent to xsub-ecog-framework - differentiator is stochastic continuous-time dynamics + calibrated uncertainty, flagged honestly. No-HPC (Stanford fingerflex is small). Novelty checked 2026-07-04."
+-venue_id: jne
++venue: jne
+ eli5: "Model one continuous-time cortical dynamics shared across all subjects as a stochastic differential equation, where the noise term absorbs inter-subject variability, and give each subject only a thin encoder/readout. Transfer to a new subject = fit the thin readout, freeze the shared dynamics."
+ next: "Delimit from xsub-ecog-framework and the ward paper FIRST (ward = deterministic filter; this = stochastic continuous-time substrate with calibrated uncertainty). Then prototype a latent-SDE decoder on Stanford fingerflex and check it beats the deterministic baseline on transfer with calibration."
+ ideas:
+diff --git a/projects/ideas/paleogenomics-tensor/project.yml b/projects/ideas/paleogenomics-tensor/project.yml
+index 9140d08..4497040 100644
+--- a/projects/ideas/paleogenomics-tensor/project.yml
++++ b/projects/ideas/paleogenomics-tensor/project.yml
+@@ -6,12 +6,11 @@ domain: method               # no `genomics` theme yet; filed under the Methods
+ title: "Coupled block-term tensor decomposition for paleogenomic population structure"
+ lead: [axel-faes]
+ funding:
+-pillar: [tensor]
+-focus: holding
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Speculative; needs a cited novelty check (ancient-DNA tensor methods) + a public data source before committing."
+-venue_id:
++venue:
+ eli5: "Ancient-DNA data is naturally three-way (populations x genetic loci x time period). Decomposing that tensor with block-term / coupled methods could recover population structure and admixture more faithfully than flat PCA, and could run federated across institutions that cannot share raw ancient-DNA genotypes."
+ next: "Cited lit-check: has block-term / coupled tensor decomposition been applied to ancient-DNA population structure? Identify a public ancient-DNA resource (e.g. the Allen Ancient DNA Resource) to prototype on."
+ ideas: []
+diff --git a/projects/ideas/pathology-tensor-mil/project.yml b/projects/ideas/pathology-tensor-mil/project.yml
+index 97a3b5c..56f3597 100644
+--- a/projects/ideas/pathology-tensor-mil/project.yml
++++ b/projects/ideas/pathology-tensor-mil/project.yml
+@@ -1,12 +1,11 @@
+ id: pathology-tensor-mil
+-stage: nascent
++stage: de-risking
+ tier: projects
+ short: "Pathology Tensor-MIL"
+ domain: method
+ title: Faithful Block-Term Tensor Multiple-Instance Learning for Whole-Slide Pathology
+ lead: [axel-faes]
+-pillar: [tensor, hcc]
+-focus: derisk
++pillars: [tensor, hcc]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Plants block-term interpretability in WSI. Field pain = spatial-blindness + unfaithful attention; low-rank MIL exists, faithful block-term does not. Novelty checked 2026-07-04."
+diff --git a/projects/ideas/physics-tensor-hcc/project.yml b/projects/ideas/physics-tensor-hcc/project.yml
+index 7b93304..bbb32db 100644
+--- a/projects/ideas/physics-tensor-hcc/project.yml
++++ b/projects/ideas/physics-tensor-hcc/project.yml
+@@ -5,8 +5,7 @@ short: "Physics-Tensor HCC"
+ domain: liver
+ title: Physics-Informed Structured-Tensor Fusion of Longitudinal Multiparametric Liver MRI for HCC Risk
+ lead: [axel-faes]
+-pillar: [tensor, hcc]
+-focus: holding
++pillars: [tensor, hcc]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Flagship for the Multi-Modal Precision Oncology pillar. Attacks HCCNet's documented fusion weakness with MR physics + block-term structure on its own cohort. Novelty checked 2026-07-04."
+diff --git a/projects/ideas/quantum-tensor-fl/project.yml b/projects/ideas/quantum-tensor-fl/project.yml
+index 9a1a4ee..2d1338f 100644
+--- a/projects/ideas/quantum-tensor-fl/project.yml
++++ b/projects/ideas/quantum-tensor-fl/project.yml
+@@ -5,8 +5,7 @@ short: "Quantum Tensor/FL"
+ domain: method
+ title: Quantum Tensor / Quantum FL
+ lead: [axel-faes]
+-pillar: [federated, tensor]
+-focus: holding
++pillars: [federated, tensor]
+ status:
+   chips: []
+   line: "TEM / exploratory range bet, capped at one, lowest priority (post-tenure); pick A vs G after a lit-check."
+diff --git a/projects/ideas/serial-ecg-af/project.yml b/projects/ideas/serial-ecg-af/project.yml
+index 76037c6..2f2f199 100644
+--- a/projects/ideas/serial-ecg-af/project.yml
++++ b/projects/ideas/serial-ecg-af/project.yml
+@@ -1,16 +1,15 @@
+ id: serial-ecg-af
+-stage: nascent
++stage: exploring
+ tier: projects
+ short: "Serial-ECG AF"
+ domain: heart
+ title: Interpretable Atrial-Substrate Progression from Serial ECGs for Future-Onset AF
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: run
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. The serial-ECG lever for the BTTN line: single-ECG models are near ceiling, serial ECGs see remodeling velocity. Data confirmed (MIMIC-IV-ECG, 638k sequential pairs). Novelty checked 2026-07-04."
+-venue_id:
++venue:
+ eli5: "Instead of reading one ECG, the model reads a patient's whole SERIES of ECGs over time and tracks how the hidden atrial-fibrillation substrate is CHANGING, then predicts who will develop AF. The factor trajectory is the explanation - a glass-box model where every serial competitor is a black box."
+ next: "Check if the Gruwez cohort (delivered 2026-07-16) carries serial ECGs; if not, stay on MIMIC-IV-ECG. Confirm dated future-AF outcomes join to the series; prototype the longitudinal coupling of block-term factors; benchmark vs the single-ECG BTTN and the black-box serial bar."
+ ideas:
+diff --git a/projects/ideas/ssm-longitudinal/project.yml b/projects/ideas/ssm-longitudinal/project.yml
+index 6dd4f4a..0e7ebdf 100644
+--- a/projects/ideas/ssm-longitudinal/project.yml
++++ b/projects/ideas/ssm-longitudinal/project.yml
+@@ -5,13 +5,12 @@ short: "SSM Longitudinal"
+ domain: liver
+ title: SSM Longitudinal Imaging
+ lead: [axel-faes]
+-pillar: [hcc]
++pillars: [hcc]
+ related: [hccnet-revision]
+-focus: holding
+ status:
+   chips: []
+   line: "Actionable now (data + experience in hand); gated only on beating the HCCNet baseline."
+-venue_id: 
++venue: 
+ eli5: "Replace HCCNet's fixed-step Transformer over irregular MRI follow-ups with a continuous-time state-space model (Mamba/S4-style) conditioned on the actual time gap between scans."
+ next: "Quick head-to-head: continuous-time SSM vs the HCCNet CNN-Transformer on the same cohort/endpoints (C-index/AUC, with CIs) BEFORE committing effort."
+ ideas:
+diff --git a/projects/ideas/strokeop/project.yml b/projects/ideas/strokeop/project.yml
+index f78d11c..01d24e3 100644
+--- a/projects/ideas/strokeop/project.yml
++++ b/projects/ideas/strokeop/project.yml
+@@ -1,16 +1,15 @@
+ id: strokeop
+-stage: nascent
++stage: de-risking
+ tier: projects
+ short: "StrokeOp"
+ domain: brain
+ title: Operator Learning for Ischemic Tissue-Fate (StrokeOp)
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: derisk
++pillars: [tensor]
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Novelty checked 2026-07-04: tumor-growth operators saturated, stroke tissue-fate operator/learned-PDE is open. Imaging flagship; needs HPC (3D perfusion). ISLES24 already on cluster, unused."
+-venue_id: media
++venue: media
+ eli5: "Learn the operator that maps a baseline perfusion field plus reperfusion status to the final infarct field. Because it is an operator (not a CNN), it is resolution-invariant and can be run counterfactually - what if reperfusion at 3h vs 6h."
+ next: "De-risk on ISLES24 (~/data/ISLES24, currently unused): build a 2D/slice operator prototype (baseline perfusion -> final lesion), compare against a CNN tissue-fate baseline on the same split (Dice / volume error, with CIs) BEFORE scaling to 3D on HPC."
+ ideas:
+diff --git a/projects/ideas/tao-of-ecs/project.yml b/projects/ideas/tao-of-ecs/project.yml
+index 5159828..8e1f196 100644
+--- a/projects/ideas/tao-of-ecs/project.yml
++++ b/projects/ideas/tao-of-ecs/project.yml
+@@ -5,12 +5,11 @@ short: "TAO of ECS"
+ domain: cs
+ title: "The TAO of ECS: Trait-Actor Orientation as the Object-Orientation of Entity-Component Systems"
+ lead: [axel-faes]
+-pillar: []
+-focus: backburner
++pillars: []
+ status:
+-  chips: []
++  chips: [parked]
+   line: "Idea-tier, off-portfolio (PL, not biomedical). Blog post live on theaxec.github.io since 2026-07-22; paper only if it gets traction. Zero compute, competes only for writing time."
+-venue_id:
++venue:
+ eli5: "Essay: trait-actor ECS (methods on components and prefabs) is to ECS what OOP is to imperative code - bind behavior to types, add dispatch and inheritance, keep the lower tier first-class - landing on prototype-based OOP over a relational substrate. Rite, the scripting language in ~/workspace/cathedra, is the existence proof."
+ next: "Blog post live (2026-07-22, theaxec.github.io/blog/tao-of-ecs/). Nothing until reactions land. If pursued: draft the Onward! essay via academic-paper - the skeleton is the blog post plus cathedra docs/user/trait-actor.md (README `## Next`)."
+ ideas:
+diff --git a/projects/ideas/xsub-ecog-framework/project.yml b/projects/ideas/xsub-ecog-framework/project.yml
+index 74160dc..6d37c00 100644
+--- a/projects/ideas/xsub-ecog-framework/project.yml
++++ b/projects/ideas/xsub-ecog-framework/project.yml
+@@ -5,13 +5,12 @@ short: "XSub-ECoG"
+ domain: brainbci
+ title: "A Behavior-Aligned Transfer Framework for Cross-Subject Decoding across Non-Corresponding ECoG Grids"
+ lead: [axel-faes]
+-pillar: [tensor]
++pillars: [tensor]
+ related: [ward-bttr-crosssubject]
+-focus: holding
+ status:
+   chips: []
+   line: "Idea-tier, exploring. Generalizes the ward paper-1 transfer method (behavior-aligned filter + shared seq2seq decoder, minimal-calibration) beyond fingerflex. Go/no-go = does it transfer on a SECOND ECoG task/dataset?"
+-venue_id: tnnls
++venue: tnnls
+ eli5: "Paper 1 showed an interpretable trick can transfer a finger-movement decoder to a new brain-implant patient even though every patient's electrodes sit differently. This asks whether that trick is a general framework: does it also transfer decoders for other behaviors and on other datasets?"
+ next: "De-risk: run paper 1's alignment + seq2seq pipeline on a SECOND cross-subject ECoG setting - the cheapest being BCI-IV-4 (on ~/data/bci-iv-4, tests dataset generalization) - and check minimal-calibration transfer holds. If it holds on >=1 new dataset + task, commit the framework paper."
+ ideas:
+diff --git a/projects/manuscripts/bt-operator-theory/project.yml b/projects/manuscripts/bt-operator-theory/project.yml
+index fdea4a5..e61a93d 100644
+--- a/projects/manuscripts/bt-operator-theory/project.yml
++++ b/projects/manuscripts/bt-operator-theory/project.yml
+@@ -1,19 +1,18 @@
+ id: bt-operator-theory
+ short: BT-Op-Theory
+-stage: submit-ready
++stage: revision
+ form: journal
+ tier: projects
+ domain: method
+ title: "A Generalization Separation for Block-Term Spectral Operators"
+ lead: [axel-faes]
+-pillar: [tensor, sciml]
+-focus: revise
++pillars: [tensor, sciml]
+ related: [btfno]
+ waiting-on: [amir-haeri, btfno]
+ status:
+   chips: []
+   line: "`article`, 28 pp, compiles clean, targeting JMLR (TNNLS/Neural Networks fallback); sequential to AAAI companion. AI-tell clean."
+-venue_id: jmlr
++venue: jmlr
+ latest: "2026-07-18: reproduced from scratch (local, no data/GPU) - all 4 verification scripts regenerate every in-paper synthetic number + figure exactly; manuscript recompiles clean 28 pp."
+ reproduced:
+   date: 2026-07-18
+diff --git a/projects/manuscripts/btfno/project.yml b/projects/manuscripts/btfno/project.yml
+index 23c0902..d7782dc 100644
+--- a/projects/manuscripts/btfno/project.yml
++++ b/projects/manuscripts/btfno/project.yml
+@@ -1,13 +1,12 @@
+ id: btfno
+ short: BT-FNO
+-stage: in-prep
++stage: revision
+ tier: projects
+ domain: method
+ title: "MoBTE: A Mixture of Block-Term Spectral Experts for Multi-PDE Operator Learning"
+ lead: [axel-faes]
+ collaborators: [amir-haeri]
+-pillar: [tensor, sciml]
+-focus: revise
++pillars: [tensor, sciml]
+ related: [bt-operator-theory, raw-pls]
+ status:
+   chips: [lead]
+@@ -16,7 +15,7 @@ latest: "2026-09-24: AAAI 2027 rejected in Phase 1 (reviewer ratings 4 and 5, pl
+ reproduced:
+   date: 2026-07-19
+   note: "From scratch on the UTwente cluster (2026-07-18/19). Rebuilt pdebench_multi5.pt from the raw PDEBench HDF5 on the login node (deterministic - byte-identical size to the original) after archiving the old caches, then re-ran all 3 GPU campaigns from it + the local paper.py. EVERY headline reproduces: gate MoBTE-SM vs BT/CP +16.3% / +29.2% (headline +17/+29); block-term experts beat CP experts +8.9% (~9%); block-term kernel floor over CP/Tucker ~7-15% (headline 8-14%, same direction); gen-gap CP 0.029 -> BT 0.019 -> MoBTE-SM 0.012 EXACT at matched train error + block-term-vs-CP-expert gap 0.018 vs 0.012 (~33%); diversity-scaling LAW MoBTE-vs-BT margin monotone N=2 +0.1% (tie) -> N=3 +5.1% -> N=4 +13.8% -> N=5 +15.1%; mechanism freq-TV BT 0.715 < Tucker 0.802 < CP 0.922 (local MPS; the pinned-seed CUDA rerun of 2026-07-20 job 540980 gives BT 0.715 exact, Tucker 0.797, CP 0.924 - the two retrained values are device-dependent at the third decimal, ordering stable, and the manuscript now quotes the CUDA numbers); Darcy sanity frontier reproduced. Also applied the admin-requested /local/<jobid> convention to the 3 campaign jobs (cleanup trap + TMPDIR + flock env-.ready guard) - verified in production: no leftover scratch dirs after the runs. Login-node cache build was the chosen path since the 175 GB raw HDF5 live only on login /local (staging to sbatch would copy 175 GB read as slices)."
+-venue_id: aaai
++venue: aaai
+ compute: [utwente]  # headline campaigns are GPU SLURM jobs on the UTwente cluster
+ eli5: "Replace slow physics simulations with a neural net that solves the PDEs far faster: a small team of specialist low-rank blocks, each tuned to its own scale, instead of one generalist."
+ next: "Rework from the AAAI reviews through academic-paper (revision mode); next venue to be chosen."
+diff --git a/projects/manuscripts/bttd-source-eeg/project.yml b/projects/manuscripts/bttd-source-eeg/project.yml
+index 862968c..a88056b 100644
+--- a/projects/manuscripts/bttd-source-eeg/project.yml
++++ b/projects/manuscripts/bttd-source-eeg/project.yml
+@@ -6,13 +6,12 @@ domain: brain
+ title: "Jointly localized spatiotemporal components of evoked EEG via a lead-field-constrained block-term decomposition"
+ lead: [axel-faes]
+ collaborators: [amir-haeri]
+-pillar: [tensor]
++pillars: [tensor]
+ related: [source-localization]
+-focus: review
+ status:
+   chips: []
+   line: "`elsarticle`, 16 pp, compiles clean, submitted to BSPC, under review. AI-tell clean."
+-venue_id: bspc
++venue: bspc
+ funding: [ZonMw-AI-HCC]   # work conducted within the ZonMw AI-HCC project; statement pasted into the manuscript Funding section
+ compute: [this-mac]  # simulation-based inverse; run_paper_sim regenerates the numbers on a laptop, no cluster
+ reproduced:
+diff --git a/projects/manuscripts/bttn-incident-af/project.yml b/projects/manuscripts/bttn-incident-af/project.yml
+index 75f032d..c4bd345 100644
+--- a/projects/manuscripts/bttn-incident-af/project.yml
++++ b/projects/manuscripts/bttn-incident-af/project.yml
+@@ -5,15 +5,14 @@ domain: heart
+ title: An Interpretable Block-Term Tensor Network for Incident Atrial-Fibrillation Prediction from the Sinus-Rhythm 12-Lead ECG
+ short: BTTN
+ lead: [axel-faes]
+-pillar: [tensor]
+-focus: review
++pillars: [tensor]
+ funding: [FAIR]
+ related: [dries-bttr-ecg]
+ compute: [utwente]  # 36 GB MIMIC-IV-ECG waveforms + GPU SLURM for the ladder / faithfulness / external runs
+ status:
+   chips: []
+   line: "`elsarticle`, 35 pp, compiles clean, submitted to AIIM, under review. AI-tell clean."
+-venue_id: aiim
++venue: aiim
+ latest: "2026-10-22: submitted to Artificial Intelligence in Medicine; package (cover letter, manuscript, highlights, declaration, abstract) in admin/submission/."
+ reproduced:
+   date: "2026-07-05"
+diff --git a/projects/manuscripts/covert-applied/project.yml b/projects/manuscripts/covert-applied/project.yml
+index 37653d5..e28fc6f 100644
+--- a/projects/manuscripts/covert-applied/project.yml
++++ b/projects/manuscripts/covert-applied/project.yml
+@@ -5,14 +5,13 @@ domain: method
+ title: "When Masking Meets Sparsity: COVERT for Private, Communication-Efficient Vertical Federated Tensor Regression"
+ short: COVERT
+ lead: [axel-faes]
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ funding: [ZonMw-AI-HCC]
+-focus: review
+ related: [covert-theory]
+ status:
+   chips: []
+   line: "`elsarticle`, 15 pp, compiles clean, submitted to AIIM, under review. AI-tell clean."
+-venue_id: aiim
++venue: aiim
+ latest: "2026-10-22: submitted to Artificial Intelligence in Medicine; package (cover letter, manuscript, highlights, declaration, abstract) in admin/submission/."
+ reproduced:
+   date: "2026-07-07"
+diff --git a/projects/manuscripts/covert-theory/project.yml b/projects/manuscripts/covert-theory/project.yml
+index 7a3e4c7..05cdb6e 100644
+--- a/projects/manuscripts/covert-theory/project.yml
++++ b/projects/manuscripts/covert-theory/project.yml
+@@ -6,13 +6,12 @@ domain: method
+ title: "Private Coupled Descent: Dimension-Free Privacy for Vertical Federated Learning by Privatizing the Coupling Variable"
+ lead: [axel-faes]
+ collaborators: [amir-haeri, van-den-berg]
+-pillar: [tensor, federated]
+-focus: push
++pillars: [tensor, federated]
+ related: [covert-applied]
+ status:
+   chips: []
+   line: "IEEEtran, 10 pp, compiles 0 undefined, double-blind, AI-tell clean; proofs verified, SYN-1 numbers measured. Submit-ready."
+-venue_id: tsp
++venue: tsp
+ compute: [this-mac]  # synthetic theory validation; paper.py re-runs SYN-1 on a laptop, no cluster
+ reproduced:
+   date: "2026-06-28"
+diff --git a/projects/manuscripts/dongho-ecg-clustering/project.yml b/projects/manuscripts/dongho-ecg-clustering/project.yml
+index 0300ca1..7c1f783 100644
+--- a/projects/manuscripts/dongho-ecg-clustering/project.yml
++++ b/projects/manuscripts/dongho-ecg-clustering/project.yml
+@@ -5,13 +5,12 @@ domain: heart
+ title: "Which representation clusters? A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure on PTB-XL"
+ short: ECG-Repr
+ lead: [dongho]
+-pillar: [evaluation]
+-focus: review
++pillars: [evaluation]
+ funding: [FAIR]
+ status:
+   chips: []
+   line: "RESUBMITTED to BSPC after major revision, under review. `elsarticle`, 24 pp, 21 refs, compiles clean. AI-tell clean."
+-venue_id: bspc
++venue: bspc
+ compute: [this-mac]  # ECG representation benchmark re-runs on a laptop, no cluster
+ reproduced:
+   date: "2026-06-28"
+diff --git a/projects/manuscripts/dries-bttr-ecg/project.yml b/projects/manuscripts/dries-bttr-ecg/project.yml
+index 65b35d6..111e18a 100644
+--- a/projects/manuscripts/dries-bttr-ecg/project.yml
++++ b/projects/manuscripts/dries-bttr-ecg/project.yml
+@@ -5,14 +5,13 @@ tier: projects
+ domain: heart
+ title: "An interpretable tensor model for identifying atrial fibrillation in sinus-rhythm ECG: block-term tensor regression on PTB-XL, benchmarked against deep and foundation models"
+ lead: [dries-cornelissen]
+-pillar: [tensor]
+-focus: review
++pillars: [tensor]
+ funding: [FAIR]
+ related: [bttn-incident-af]
+ status:
+   chips: []
+   line: "`article`, 13 pp, compiles clean, submitted to MBEC, under review. AI-tell clean."
+-venue_id: mbec
++venue: mbec
+ compute: [this-mac]  # PTB-XL BTTR pipeline re-runs on a laptop, no cluster
+ reproduced:
+   date: "2026-06-28"
+diff --git a/projects/manuscripts/ecg-readable-substrate/project.yml b/projects/manuscripts/ecg-readable-substrate/project.yml
+index 3b8b796..54a2930 100644
+--- a/projects/manuscripts/ecg-readable-substrate/project.yml
++++ b/projects/manuscripts/ecg-readable-substrate/project.yml
+@@ -5,9 +5,8 @@ tier: projects
+ domain: heart
+ title: "You Don't Need the Black Box: Named ECG Features Rival Foundation Models for Mortality Prediction"
+ lead: [axel-faes]
+-pillar: [tensor]
++pillars: [tensor]
+ related: [fed-faithful-ecg]
+-focus: push
+ datasets: [mimic-iv-ecg, code15]
+ code_availability:
+   status: deposited
+@@ -21,7 +20,7 @@ code_availability:
+ status:
+   chips: []
+   line: "IEEEtran (IEEE JBHI), 12 pp, compiles clean, AI-tell clean. Headline under revision."
+-venue_id: jbhi
++venue: jbhi
+ eli5: "Do you need a big black-box ECG foundation model to predict who dies within a year? No. A gradient-boosted model on named measurements (age + ECG intervals + spectral/rhythm/shape features) rivals six open ECG foundation models - 7 wins / 5 ties / 0 losses, on its own hospital cohort and a separate Brazilian one - and transports better across hospitals."
+ latest: "2026-09-15: equal-input check (FMs also given age, substrate/age_equal.py) changes Table I from 7/5/0 to 5/1/6; the headline needs revision before submission."
+ reproduced:
+diff --git a/projects/manuscripts/erp-signatures/project.yml b/projects/manuscripts/erp-signatures/project.yml
+index 03dbeb9..06a37a6 100644
+--- a/projects/manuscripts/erp-signatures/project.yml
++++ b/projects/manuscripts/erp-signatures/project.yml
+@@ -5,10 +5,9 @@ tier: projects
+ status:
+   chips: [lead]
+   line: "`docx`, under review at Frontiers in Psychology, minor revision received 2026-08-03. AF owns reviewer points 1-2 (statistics)."
+-focus: review
+ datasets: [ucr-nback-eeg]
+ domain: brain
+-pillar: [neurotech]
++pillars: [neurotech]
+ title: How stimulus type and task structure can affect ERP signatures
+ eli5: "Compares ERP signatures across nine N-Back working-memory variants and finds that stimulus type (words vs pictures) drives differences in the N2 and P3 components. The takeaway is that N-Back studies are only comparable when stimulus type and task structure are matched."
+ year: 2024
+@@ -18,5 +17,5 @@ latest: "Round-1 minor revision. Points 1-2 answered and both revised documents
+ next: "Read the two revised documents and hand both to Valentina, who owns comments 3 and 4, and ask her agreement to an MIT licence for code/."
+ outcome: "Co-first author (Pergher and Faes contributed equally). Under review at Frontiers in Psychology, 2024 (Pergher, Faes, Li, Van Hulle)."
+ lead: [valentina-pergher]
+-venue_id: frontpsychol
++venue: frontpsychol
+ collaborators: [van-hulle]
+diff --git a/projects/manuscripts/fed-multicellular-immune/project.yml b/projects/manuscripts/fed-multicellular-immune/project.yml
+index 38ca500..4fea645 100644
+--- a/projects/manuscripts/fed-multicellular-immune/project.yml
++++ b/projects/manuscripts/fed-multicellular-immune/project.yml
+@@ -6,14 +6,13 @@ domain: method
+ title: "Privacy-preserving federated tensor decomposition of single-cell immune data: recovering multicellular programs across institutions"
+ lead: [axel-faes]
+ collaborators: [amir-haeri]
+-pillar: [tensor, federated]
++pillars: [tensor, federated]
+ related: [raw-pls]
+ funding: [ZonMw-AI-HCC]   # work conducted within the ZonMw AI-HCC project; statement pasted into the manuscript Funding section
+-focus: push
+ status:
+   chips: []
+   line: "`article`, 16 pp, compiles clean. Venue open."
+-venue_id: bioinformatics
++venue: bioinformatics
+ compute: [this-mac]  # federated scITD recovery re-runs on a laptop, no cluster
+ reproduced:
+   date: "2026-06-28"
+diff --git a/projects/manuscripts/hccnet-revision/project.yml b/projects/manuscripts/hccnet-revision/project.yml
+index 7f3abb2..692f7c6 100644
+--- a/projects/manuscripts/hccnet-revision/project.yml
++++ b/projects/manuscripts/hccnet-revision/project.yml
+@@ -5,14 +5,13 @@ tier: projects
+ domain: liver
+ title: "HCCNet: A Self-Supervised CNN-Transformer for Disease Prognosis from Longitudinal 3D MRI, with a Case Study on Hepatocellular Carcinoma"
+ lead: [axel-faes, jakob-nolte]
+-pillar: [hcc]
+-focus: push
++pillars: [hcc]
+ related: [hccnet-fl, hccnet-fl-sweden, hccnet-pathology, modality-dropping-btf, ssm-longitudinal]
+ funding: [ZonMw-AI-HCC]
+ status:
+   chips: []
+   line: "elsarticle, timing/outcome audit resolved. Submission preparation."
+-venue_id: intelmed
++venue: intelmed
+ compute: [utwente]  # 3D MRI training runs on the UTwente SLURM cluster (OOMs on local)
+ eli5: "HCCNet reads a patient's whole SERIES of 3D MRI scans over time (not just one) to predict disease outcome: a 3D ConvNeXt for each scan's anatomy + a Transformer for how the disease changes across irregular screening visits, both self-supervised pre-trained so it learns from scarce, irregularly-timed clinical data."
+ next: "AI-vocabulary cleanup, then Intelligent Medicine formatting + external-validation rebuttal + cover letter; author read-through (AI-use disclosure); code deposit public on acceptance. NOTE Intelligent Medicine is gold-OA APC (waiver possible) vs MedIA's APC-exempt route. See README Next."
+diff --git a/projects/manuscripts/meseret-cirrhosis/project.yml b/projects/manuscripts/meseret-cirrhosis/project.yml
+index af6be44..9c70e00 100644
+--- a/projects/manuscripts/meseret-cirrhosis/project.yml
++++ b/projects/manuscripts/meseret-cirrhosis/project.yml
+@@ -5,12 +5,11 @@ tier: projects
+ domain: liver
+ title: "From Classification to Competing Risks: A Critical Re-Examination of a Widely-Used Cirrhosis Outcome Benchmark"
+ lead: [kerga]
+-pillar: [evaluation]
+-focus: review
++pillars: [evaluation]
+ status:
+   chips: []
+   line: "free-format `article`, 15 pp, compiles clean, submitted to Statistics in Medicine, under review. AI-tell clean."
+-venue_id: statmed
++venue: statmed
+ compute: [this-mac]  # no compute needed, just re-run the code to regenerate the committed numbers
+ reproduced:
+   date: "2026-06-28"
+diff --git a/projects/manuscripts/raw-pls/project.yml b/projects/manuscripts/raw-pls/project.yml
+index 4aecb30..38ddf9d 100644
+--- a/projects/manuscripts/raw-pls/project.yml
++++ b/projects/manuscripts/raw-pls/project.yml
+@@ -6,15 +6,14 @@ title: Registration-Free Supervised Tensor-PLS for Unaligned Multiparametric MRI
+ short: RAW-PLS
+ lead: [axel-faes]
+ collaborators: [amir-haeri]
+-pillar: [tensor]
++pillars: [tensor]
+ related: [btfno, fed-multicellular-immune]
+-focus: review
+ funding: [ZonMw-AI-HCC]
+ compute: [utwente]  # BraTS caches + GPU/CPU SLURM on the UTwente cluster; the synthetic campaign runs locally
+ status:
+   chips: []
+   line: "`elsarticle`, 23 pp, compiles clean, submitted to MedIA, under review. AI-tell clean."
+-venue_id: media
++venue: media
+ latest: "2026-10-22: submitted to Medical Image Analysis; package (highlights, manuscript, statement of significance, abstract, declaration) in admin/submission/."
+ reproduced:
+   date: "2026-07-06"
+diff --git a/projects/manuscripts/ward-bttr-crosssubject/project.yml b/projects/manuscripts/ward-bttr-crosssubject/project.yml
+index b9a9724..28d10c9 100644
+--- a/projects/manuscripts/ward-bttr-crosssubject/project.yml
++++ b/projects/manuscripts/ward-bttr-crosssubject/project.yml
+@@ -5,13 +5,12 @@ tier: projects
+ domain: brain
+ title: "Behavior-Supervised Alignment for Cross-Subject Neural Decoding across Non-Corresponding Electrode Grids"
+ lead: [ward]
+-pillar: [tensor]
+-focus: review
++pillars: [tensor]
+ related: [xsub-ecog-framework]
+ status:
+   chips: []
+   line: "`elsarticle` review build, 44 pp + 12 pp supplementary, builds clean under pdfLaTeX, submitted to Neural Networks, under review. AI-tell clean."
+-venue_id: neural-networks
++venue: neural-networks
+ reproduced:
+   date: "2026-07-05"
+   note: "run_all.sh reran all 8 GPU jobs from scratch on the cluster (28/28 elements); every headline + load-bearing number regenerates within the GPU-nondeterminism band (config-2 r 0.561 vs 0.566, full-9 0.547 vs 0.550). Public Stanford data + a GPU cluster; in-band, not byte-exact."
+diff --git a/projects/software/bttr-block-term-tensor-regression/project.yml b/projects/software/bttr-block-term-tensor-regression/project.yml
+index 62f3760..9542e28 100644
+--- a/projects/software/bttr-block-term-tensor-regression/project.yml
++++ b/projects/software/bttr-block-term-tensor-regression/project.yml
+@@ -1,6 +1,6 @@
+ title: "bttr - Block-Term Tensor Regression"
+ tier: software
+-stage: finished
++stage: released
+ eli5: "The block-term tensor-regression model: predict a tensor Y from a tensor X via latent-space regression. The block-term tensor-regression methods backbone several papers build on (Dries-AF, Ward cross-subject, COVERT, ...)."
+ tags: [tensor, block-term, library, python]
+ repository:
+diff --git a/projects/software/federated-learning-tutorial/project.yml b/projects/software/federated-learning-tutorial/project.yml
+index 8dd95cb..1dfcea3 100644
+--- a/projects/software/federated-learning-tutorial/project.yml
++++ b/projects/software/federated-learning-tutorial/project.yml
+@@ -1,6 +1,6 @@
+ title: "federated-learning-tutorial"
+ tier: software
+-stage: finished
++stage: released
+ eli5: "FL4E guidelines (Wisconsin Breast Cancer Dataset) for the Federated Learning for Everyone framework"
+ tags: [federated-learning, elixir, tutorial, python]
+ related: [elixir-fl4e]
+diff --git a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+index 51ffa05..b8e2937 100644
+--- a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
++++ b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+@@ -1,6 +1,6 @@
+ title: "fl-kit - ELIXIR Federated Learning Kit"
+ tier: software
+-stage: finished
++stage: released
+ eli5: "The ELIXIR Federated Learning Kit"
+ tags: [federated-learning, elixir, tex]
+ related: [elixir-fl4e]
+diff --git a/side-projects/finished/axeski/project.yml b/side-projects/finished/axeski/project.yml
+index 1f80f8a..06bdae9 100644
+--- a/side-projects/finished/axeski/project.yml
++++ b/side-projects/finished/axeski/project.yml
+@@ -1,6 +1,6 @@
+ title: "axeski"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "A visual, event-based programming IDE"
+diff --git a/side-projects/finished/cardinal-revamped/project.yml b/side-projects/finished/cardinal-revamped/project.yml
+index b91a3d2..ae7908d 100644
+--- a/side-projects/finished/cardinal-revamped/project.yml
++++ b/side-projects/finished/cardinal-revamped/project.yml
+@@ -1,6 +1,6 @@
+ title: "cardinal-revamped"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "A small, completely dynamic scripting language"
+diff --git a/side-projects/finished/cardinal/project.yml b/side-projects/finished/cardinal/project.yml
+index f0db55b..20460c7 100644
+--- a/side-projects/finished/cardinal/project.yml
++++ b/side-projects/finished/cardinal/project.yml
+@@ -1,6 +1,6 @@
+ title: "cardinal"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "A small, completely dynamic scripting language (superseded by cardinal-revamped)"
+diff --git a/side-projects/finished/cv-autogenerator/project.yml b/side-projects/finished/cv-autogenerator/project.yml
+index 9f9fd9d..7a02a13 100644
+--- a/side-projects/finished/cv-autogenerator/project.yml
++++ b/side-projects/finished/cv-autogenerator/project.yml
+@@ -1,6 +1,6 @@
+ title: "cv-autogenerator"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Generate a CV from YAML data + LaTeX templates (AwesomeCV)"
+diff --git a/side-projects/finished/ical-kuleuven/project.yml b/side-projects/finished/ical-kuleuven/project.yml
+index 15300f8..e21862c 100644
+--- a/side-projects/finished/ical-kuleuven/project.yml
++++ b/side-projects/finished/ical-kuleuven/project.yml
+@@ -1,6 +1,6 @@
+ title: "ical-kuleuven"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Node.js app to build an iCalendar file for KU Leuven courses"
+diff --git a/side-projects/finished/theaxec-profile-readme/project.yml b/side-projects/finished/theaxec-profile-readme/project.yml
+index 1fd055b..71a88ca 100644
+--- a/side-projects/finished/theaxec-profile-readme/project.yml
++++ b/side-projects/finished/theaxec-profile-readme/project.yml
+@@ -1,6 +1,6 @@
+ title: "TheAxeC (profile README)"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Main GitHub profile README.md"
+diff --git a/side-projects/research-hub/project.yml b/side-projects/research-hub/project.yml
+index 0998819..ae0ef08 100644
+--- a/side-projects/research-hub/project.yml
++++ b/side-projects/research-hub/project.yml
+@@ -2,7 +2,7 @@ title: "research-hub"
+ tier: personal
+ stage: building
+ status:
+-  chips: []
++  chips: [parked]
+ eli5: "This private research monorepo: projects, manuscripts, registries and funding, which oculus draws"
+ next: ""
+ links: []
+@@ -10,4 +10,3 @@ tags: [private, research-hub, infrastructure, tex]
+ repository:
+   url: "https://github.com/TheAxeC/research-hub"
+   visibility: private
+-focus: backburner
+diff --git a/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml b/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml
+index 9e2a0c1..1102e2f 100644
+--- a/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml
++++ b/side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers/project.yml
+@@ -1,6 +1,6 @@
+ title: "Algebraic subtyping for algebraic effects & handlers"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "MSc thesis (KU Leuven 2016-2018) - Master of Science in Engineering: Computer Science"
+diff --git a/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml b/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml
+index 7f838fe..c715784 100644
+--- a/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml
++++ b/side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical/project.yml
+@@ -1,6 +1,6 @@
+ title: "EEG source-reconstructed connectivity (information-theoretical)"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "MSc thesis (KU Leuven 2017-2018) - Advanced Master of AI: Engineering & Computer Science"
+diff --git a/side-projects/school/effect-handler-optimization-honours-project/project.yml b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+index 5574b17..5e28769 100644
+--- a/side-projects/school/effect-handler-optimization-honours-project/project.yml
++++ b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+@@ -1,6 +1,6 @@
+ title: "Effect-handler optimization (honours project)"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Honours 2016-2017 - an optimized compiler for the Eff programming language"
+diff --git a/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml b/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml
+index 471ecdc..c9caa05 100644
+--- a/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml
++++ b/side-projects/school/ml-for-flow-based-network-intrusion-detection/project.yml
+@@ -1,6 +1,6 @@
+ title: "ML for flow-based network intrusion detection"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Bachelor thesis (UHasselt 2015-2016) - an IDS using machine-learning approaches"
+diff --git a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+index 4ba25d5..0c744ea 100644
+--- a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
++++ b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+@@ -1,6 +1,6 @@
+ title: "Quasi-Monte-Carlo points on collections of triangles"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Honours-project proposal (not pursued)"
+diff --git a/side-projects/school/row-based-effects-honours-project/project.yml b/side-projects/school/row-based-effects-honours-project/project.yml
+index 4d3c840..9ae4264 100644
+--- a/side-projects/school/row-based-effects-honours-project/project.yml
++++ b/side-projects/school/row-based-effects-honours-project/project.yml
+@@ -1,6 +1,6 @@
+ title: "Row-based effects (honours project)"
+ tier: personal
+-stage: finished
++stage: released
+ status:
+   chips: []
+ eli5: "Honours 2017-2018 - a core language with row-based effects for optimised compilation"

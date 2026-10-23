@@ -22,16 +22,16 @@ type Row = {
 };
 
 const ROWS: Row[] = [
-    { name: 'no tier', manifest: 'stage: idea\n', key: 'tier', tier: undefined },
+    { name: 'no tier', manifest: 'stage: nascent\n', key: 'tier', tier: undefined },
     {
         name: 'the tier ideas',
-        manifest: 'tier: ideas\nstage: idea\n',
+        manifest: 'tier: ideas\nstage: nascent\n',
         key: 'tier',
         tier: undefined
     },
     {
         name: 'a tier that is a number',
-        manifest: 'tier: 3\nstage: idea\n',
+        manifest: 'tier: 3\nstage: nascent\n',
         key: 'tier',
         tier: undefined
     },

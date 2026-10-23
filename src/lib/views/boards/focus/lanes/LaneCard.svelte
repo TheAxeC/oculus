@@ -46,7 +46,7 @@
         /** How many flames the badge draws, and whether none is set, which draws one faint. */
         flames: number;
         unset: boolean;
-        /** The move menu's choices: every lane, then every priority. */
+        /** The move menu's choices: every lane the card may move to, then every priority. */
         items: MenuItem[];
         onpick: (id: string) => void;
         oncycle: () => void;

@@ -283,15 +283,9 @@ describe.skipIf(!REAL.asked)(realHubName('the real hub', REAL), () => {
         expect(personal.map((project) => project.id).sort()).toEqual(folders);
         for (const one of personal) {
             expect(one.title).not.toBe('');
-            expect([
-                'idea',
-                'nascent',
-                'building',
-                'running',
-                'active',
-                'paused',
-                'finished'
-            ]).toContain(one.stage);
+            expect(['nascent', 'building', 'exploring', 'in-prep', 'released']).toContain(
+                one.stage
+            );
         }
         expect(snapshot.findings.filter((finding) => finding.file.includes(PERSONAL_DIR))).toEqual(
             []

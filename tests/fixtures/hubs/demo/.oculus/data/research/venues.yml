@@ -1,4 +1,4 @@
-# Venue catalogue -> the Venues tab. A project points at one by `venue_id:`.
+# Venue catalogue -> the Venues tab. A project points at one by `venue:`.
 schema:
   - { field: id,       type: text, required: true }
   - { field: name,     type: text, required: true }

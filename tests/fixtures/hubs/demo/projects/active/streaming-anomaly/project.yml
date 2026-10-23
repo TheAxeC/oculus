@@ -1,15 +1,14 @@
 id: streaming-anomaly
-stage: active
+stage: revision
 tier: projects
 short: Stream-Anomaly
 title: Low-rank streaming anomaly detection
 lead: [dana-example]
-focus: revise
 status:
-  chips: [numbers-pending]
+  chips: [numbers-to-run]
   line: Reviewer comments in hand; revising the experiments.
 domain: method
-pillar: [tensors]
+pillars: [tensors]
 datasets: [stream-bench]
 related: [tensor-sketch, online-clustering]
 collaborators: [rivera-lab]

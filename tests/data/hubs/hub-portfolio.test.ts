@@ -168,8 +168,8 @@ describe('the portfolio of several hubs', () => {
             writeFileSync(
                 manifest,
                 readFileSync(manifest, 'utf8').replace(
-                    /^stage: active$/m,
-                    'stage: active\nvenue_id: only-first'
+                    /^stage: in-prep$/m,
+                    'stage: in-prep\nvenue: only-first'
                 )
             );
             const { merged } = builds(from);
@@ -291,7 +291,7 @@ describe('the portfolio of several hubs', () => {
             const from = copies();
             const folder = join(from.hub, 'projects', 'ideas', 'lab:x');
             mkdirSync(folder, { recursive: true });
-            writeFileSync(join(folder, 'project.yml'), 'title: Colon\nstage: idea\n');
+            writeFileSync(join(folder, 'project.yml'), 'title: Colon\nstage: nascent\n');
             const { merged } = builds(from);
             const named = merged.findings.filter((one) => one.file === join(folder, 'project.yml'));
             expect(named.some((one) => one.message.includes('lab:x'))).toBe(false);
@@ -326,7 +326,7 @@ function plantProject(hub: string, id: string, lines = ''): string {
     const folder = join(hub, 'projects', 'ideas', id);
     mkdirSync(folder, { recursive: true });
     const file = join(folder, 'project.yml');
-    writeFileSync(file, `title: Project ${id}\ntier: projects\nstage: idea\n${lines}`);
+    writeFileSync(file, `title: Project ${id}\ntier: projects\nstage: nascent\n${lines}`);
     return file;
 }
 
@@ -344,8 +344,8 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             const from = copies();
             plantVenue(from.hub, 'nature');
             plantVenue(from.lab, 'nature');
-            plantProject(from.hub, 'own-paper', 'venue_id: nature\n');
-            plantProject(from.lab, 'lab-paper', 'venue_id: nature\n');
+            plantProject(from.hub, 'own-paper', 'venue: nature\n');
+            plantProject(from.lab, 'lab-paper', 'venue: nature\n');
             const { merged } = builds(from);
             const { venues, projects } = merged.entities;
             expect(venues['hub:nature']).toMatchObject({ id: 'hub:nature', root: 'hub' });
@@ -365,7 +365,7 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             plantPerson(from.lab, 'rivera');
             plantVenue(from.hub, 'science');
             const own = plantProject(from.hub, 'own-paper', 'collaborators: [rivera]\n');
-            const lab = plantProject(from.lab, 'lab-paper', 'venue_id: science\n');
+            const lab = plantProject(from.lab, 'lab-paper', 'venue: science\n');
             const { merged } = builds(from);
             const { projects } = merged.entities;
             expect(projects['hub:own-paper'].collaborators).toEqual(['lab:rivera']);
@@ -387,7 +387,7 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             plantProject(a, 'alpha');
             plantProject(b, 'alpha');
             const c = plantScratch('oculus-hubs-folder-', {
-                'project.yml': 'title: Alpha\ntier: projects\nstage: idea\n'
+                'project.yml': 'title: Alpha\ntier: projects\nstage: nascent\n'
             });
             const { snapshot } = published([
                 { name: 'a', dir: a },
@@ -409,7 +409,7 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             const team = copyHub(from.base, 'team');
             plantVenue(from.lab, 'cell');
             plantVenue(team, 'cell');
-            const own = plantProject(from.hub, 'own-paper', 'venue_id: cell\n');
+            const own = plantProject(from.hub, 'own-paper', 'venue: cell\n');
             const { snapshot } = published(
                 [
                     { name: 'hub', dir: from.hub },

@@ -88,7 +88,7 @@ export type BoardItem = {
     tone: string;
     /** The `themes:` entry of the project's domain: its words and its hue. */
     domain: { id: Id; label: string; tone: string } | null;
-    /** The venue joined through `venue_id`: the card's line and the list row's short name. */
+    /** The venue joined through `venue`: the card's line and the list row's short name. */
     venue: { id: Id; text: string; short: string } | null;
     pillars: BoardTag[];
     funding: BoardTag[];
@@ -166,7 +166,7 @@ export type BoardStats = {
     /** How many projects the board holds, before any filter. */
     active: number;
     submitReady: number;
-    /** The `focus: blocked` lane, which is a lane and not a status chip. */
+    /** How many carry a chip whose word of `chips` carries the flag `blocked`. */
     blocked: number;
     /** How many carry a deadline. */
     dated: number;

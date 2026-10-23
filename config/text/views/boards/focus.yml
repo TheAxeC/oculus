@@ -73,8 +73,8 @@ text:
             submission_deadline: submission deadline in {0}d
             this_month: this month
             unplaced_glyph: compass
-            unplaced_many: active projects not on the board (set <code>focus:</code>)
-            unplaced_one: active project not on the board (set <code>focus:</code>)
+            unplaced_many: projects whose stage is on no lane of the board
+            unplaced_one: project whose stage is on no lane of the board
             venue_count: '{0} x{1}'
             venue_load_tail: (>={0} in flight; consider spreading)
             word_application: application
@@ -94,8 +94,6 @@ text:
         funding_sub: grant applications
         host: 'host: {0}'
         host_pipeline: Host pipeline
-        idea_backlog: 'idea backlog: drag onto a lane to start, or drop here to park'
-        ideas: Ideas
         ideas_glyph: idea
         in_days: in {0}d
         in_flight: '{0} in flight'

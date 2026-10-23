@@ -19,7 +19,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { FilesTarget } from '../../../src/lib/server/files/project/project-files.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
-const MANIFEST = 'id: alpha\ntier: projects\nstage: active\ntitle: "A title"\n';
+const MANIFEST = 'id: alpha\ntier: projects\nstage: exploring\ntitle: "A title"\n';
 
 const HOST = '127.0.0.1:8791';
 
