@@ -163,7 +163,7 @@ export type Relations = {
     projectDomain: [Id, Id][];
     projectRelated: [Id, Id][];
     fundingPillar: [Id, Id][];
-    /** A project and a person its `collaborators:` names. */
+    /** A project and a person its `lead:` or its `collaborators:` names, a person of its team. */
     projectPerson: [Id, Id][];
     /** An entry of the joint-work collection and the person its `person:` names. */
     jointWorkPerson: [Id, Id][];
@@ -476,20 +476,7 @@ export type {
     RegistryName,
     RepositoryBlock,
     RepositoryRoot,
-    RecoverAccess,
-    RecoverChecksum,
-    RecoverFile,
-    RecoverFileState,
-    RecoverLive,
-    RecoverLiveRun,
-    RecoverRefusal,
-    RecoverRow,
-    RecoverRun,
-    RecoverService,
-    RecoverSession,
     RecoverSource,
-    RecoverState,
-    RecoverTotals,
     Reproduced,
     Resource,
     Rooted,
@@ -503,6 +490,8 @@ export type {
     MainComparison,
     MirrorState
 } from './model-entities.ts';
+
+export type * from './machine/model-recover.ts';
 
 export type {
     Deck,

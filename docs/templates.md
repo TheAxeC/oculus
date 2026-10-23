@@ -500,8 +500,6 @@ stage: nascent          # idea, nascent, scoping, de-risking, exploring, in-prep
 # form: journal         # journal, conference, thesis, abstract, poster or tech-report
 # short: my-project     # short name for cards and lists
 # title: ""
-# lead: ""              # first author or project lead
-# authors: []
 # status:
 #   chips: []           # from the chips list, such as blocked, numbers-pending, admin-prep
 #   line: ""            # one short line
@@ -525,6 +523,7 @@ stage: nascent          # idea, nascent, scoping, de-risking, exploring, in-prep
 # domain: ""            # domains registry
 # pillar: []            # pillars registry
 # funding: []           # funding registry
+# lead: []             # people registry: who leads the project, several for co-first authors
 # collaborators: []     # people registry
 # waiting-on: []        # people or projects
 # related: []           # other projects

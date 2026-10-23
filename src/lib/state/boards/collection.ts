@@ -43,6 +43,7 @@ import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
 import { entryPageState } from '../forms/page-entry.ts';
 import { JOINT_WORK } from '../forms/referrers.ts';
+import { teamOf } from './board/team.ts';
 import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
@@ -736,12 +737,13 @@ function stageOf(project: Project): string {
  * The projects that name one entry, grouped by stage with a count each.
  *
  * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and
- * every other collection has no project-side inverse, so it is the entry's own `related:` list of
- * keys. A key of the entry's file names the record its hub resolves it to, the entry's own hub
- * first, then the one other hub that holds it (`resolvedId`); `people` are the people of the
- * snapshot, which a joint work's person is resolved among. A related key no project of the snapshot
- * resolves is left out rather than drawn as a dead link.
+ * manifests' `funding:` tags, a joint work is the projects whose team (`lead:` and
+ * `collaborators:`, state/boards/board/team.ts) holds its person, and every other collection has no
+ * project-side inverse, so it is the entry's own `related:` list of keys. A key of the entry's file
+ * names the record its hub resolves it to, the entry's own hub first, then the one other hub that
+ * holds it (`resolvedId`); `people` are the people of the snapshot, which a joint work's person is
+ * resolved among. A related key no project of the snapshot resolves is left out rather than drawn
+ * as a dead link.
  */
 export function crossLinks(
     entry: Entry,
@@ -757,9 +759,7 @@ export function crossLinks(
         const own = readAs(stringShape, entry.fields.person);
         const key = own ?? bareId(entry);
         const person = resolvedId(holdersOf(people), rootOf(entry), key);
-        named = projects.filter(
-            (project) => person !== null && project.collaborators.includes(person)
-        );
+        named = projects.filter((project) => person !== null && teamOf(project).includes(person));
     } else {
         const held = holdersOf(projects);
         named = wordsOf(entry.fields.related)

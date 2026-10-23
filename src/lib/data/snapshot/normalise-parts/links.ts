@@ -1,9 +1,10 @@
 // Layer 1, data. The relation tables of a snapshot and the id lists filled from them: a project's
-// venue, funding, datasets, pillars, domains, related projects and people, a scheme's funder and a
-// person's organisations, and the other side of each. A pair is written only when both ends are
-// records known to the workspace's hubs: one hub's own records and the keys the other hubs hold,
-// which normalise.ts hands in as `known`, so a reference that names nothing in any hub reaches no
-// table and no list, and a pair of one hub's build may name a key only another hub holds.
+// venue, funding, datasets, pillars, domains, related projects and team (its lead and its
+// collaborators), a scheme's funder and a person's organisations, and the other side of each. A
+// pair is written only when both ends are records known to the workspace's hubs: one hub's own
+// records and the keys the other hubs hold, which normalise.ts hands in as `known`, so a reference
+// that names nothing in any hub reaches no table and no list, and a pair of one hub's build may
+// name a key only another hub holds.
 //
 // One hub's build (normalise.ts) and the merge of the hubs of a workspace (hubs/merge.ts) both fill
 // their records here, the merge after it has resolved every reference to the id of the record it
@@ -45,7 +46,9 @@ type Sides = {
 
 /**
  * The relation tables. A pair is written only when both ends are entities of the snapshot, so a
- * dangling id (which validate has reported) reaches no table and no entity's id list.
+ * dangling id (which validate has reported) reaches no table and no entity's id list. A project's
+ * `projectPerson` pairs are its team, the people its `lead:` names and those its `collaborators:`
+ * name, a person on both lists once.
  *
  * `fundingPillar` is the one table with no field behind it: pillars.yml carries no funding key,
  * its `funding:` is prose, so a scheme and a pillar are related here when at least one
@@ -69,7 +72,7 @@ function relations(
     const fundingOrganisation: [Id, Id][] = [];
 
     for (const item of projects) {
-        for (const id of item.collaborators) {
+        for (const id of [...item.lead, ...item.collaborators]) {
             if (entities.people.has(id)) projectPerson.push([item.id, id]);
         }
         if (item.venueId !== undefined && entities.venues.has(item.venueId)) {
@@ -159,7 +162,10 @@ export function linked(
         item.datasetIds = targets(tables.projectDataset, item.id);
         item.pillarIds = targets(tables.projectPillar, item.id);
         item.domainIds = targets(tables.projectDomain, item.id);
-        item.collaborators = targets(tables.projectPerson, item.id);
+        // The lead keeps the manifest's order, since its first person is the first author.
+        const team = targets(tables.projectPerson, item.id);
+        item.lead = [...new Set(item.lead)].filter((id) => team.includes(id));
+        item.collaborators = team.filter((id) => item.collaborators.includes(id));
         item.resourceIds = [...new Set(item.resourceIds)].filter((id) => known.resources.has(id));
         if (item.venueId !== undefined && !known.venues.has(item.venueId)) delete item.venueId;
     }

@@ -545,7 +545,7 @@ describe('POST /api/terminal, the chat action', () => {
             CHAT_CATALOG['server.chat.chat_instruction']
                 .replace('{0}', task.chatHub)
                 .replace('{1}', task.chatProject)
-                .replace('{2}', CHAT_CATALOG['server.chat.chat_owner_fallback']),
+                .replace('{2}', CHAT_CATALOG['server.chat.chat_user_fallback']),
             CHAT_CATALOG['server.chat.chat_focus_note']
                 .replace('{0}', 'alpha')
                 .replace('{1}', 'Alpha Study')
@@ -576,19 +576,19 @@ describe('POST /api/terminal, the chat action', () => {
         expect(lineOf(started)).toEqual([expected]);
         expect(lineOf(started)[0]).not.toContain("'-p'");
         expect(indexAtStart).toBe(true);
-        expect(system).toContain('research hub of its owner (oculus)');
+        expect(system).toContain('research hub of its user (oculus)');
         expect(system).not.toMatch(/null|negative result| - /);
 
         const owned = tmux();
         const named = await handleTerminal(
             request({ action: 'chat', id: 'hub:alpha', cols: 101, rows: 31 }),
             TOKEN,
-            { ...chatOptions(owned), ownerFor: () => 'John Smith' }
+            { ...chatOptions(owned), userFor: () => 'John Smith' }
         );
         expect(named.status).toBe(200);
         const ownedStart = owned.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(lineOf(ownedStart)[0]).toContain('research hub of John Smith (oculus)');
-        expect(lineOf(ownedStart)[0]).not.toContain('its owner');
+        expect(lineOf(ownedStart)[0]).not.toContain('its user');
     });
 
     const VENUES = '.oculus/data/research/venues.yml';

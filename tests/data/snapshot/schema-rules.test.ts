@@ -270,6 +270,12 @@ describe('the rules of a hub schema', () => {
             file: 'projects/active/alpha/project.yml',
             text: 'id: alpha\ntier: projects\nstage: active\ntitle: Alpha\nprogram: y\n',
             key: 'program'
+        },
+        {
+            name: "a manifest's authors",
+            file: 'projects/active/alpha/project.yml',
+            text: 'id: alpha\ntier: projects\nstage: active\ntitle: Alpha\nauthors: [A. Example]\n',
+            key: 'authors'
         }
     ])('gives the one finding of a key no schema declares for $name', (row) => {
         const hub = plantScratch(

@@ -1,6 +1,9 @@
 # Oculus text owned by the editor view.
 text:
     editor:
+        add_person: 'Add person {0}'
+        add_person_collection: The hub has no people collection, so no person can be added.
+        add_person_name: add a person by name
         clean: nothing changed
         dirty: '{0} changed'
         empty_choice: (none)

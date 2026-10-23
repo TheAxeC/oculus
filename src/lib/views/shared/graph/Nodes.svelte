@@ -3,12 +3,12 @@
 <script lang="ts">
     // Layer 3, shared graph partial. The node layer of the graph, drawn inside the SVG of
     // Graph.svelte: a circle in the tone of its project stage for a project (node-tone.ts), a
-    // circle in the accent for a note, a square for a pillar or a collaborator, each a keyboard
-    // stop that opens it on Enter or Space. The layer holds no pointer state of its own: a press
-    // goes to the graph, which owns the drag, the link and the pan, and the node the pointer or the
-    // keyboard is on is handed back through the two bound props, since the graph draws that node's
-    // label on top. An archived project is dimmed, and drawn at full strength while it is the node
-    // the pointer or the keyboard is on.
+    // circle in the accent for a note, a square for a pillar or a person of a project's team, each
+    // a keyboard stop that opens it on Enter or Space. The layer holds no pointer state of its own:
+    // a press goes to the graph, which owns the drag, the link and the pan, and the node the
+    // pointer or the keyboard is on is handed back through the two bound props, since the graph
+    // draws that node's label on top. An archived project is dimmed, and drawn at full strength
+    // while it is the node the pointer or the keyboard is on.
 
     import { nodeTone } from './node-tone';
     import type { PointNode } from '$lib/state/boards/structure/graph';

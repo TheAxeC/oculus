@@ -562,7 +562,7 @@ function workspaceAt(where: Where): Workspace {
     const listed = folders.map((one) => `  - { name: ${one.name}, path: ${one.dir} }`);
     writeFileSync(
         file,
-        ['folders:', ...listed, 'primary: hub', 'settings:', '  self: owner', ''].join('\n')
+        ['folders:', ...listed, 'primary: hub', 'settings:', '  self: dana-example', ''].join('\n')
     );
     const state = scratchDir('oculus-workspace-state-');
     writeState(state, { open: file, recent: [file], unsaved: { folders: [] } });
@@ -592,12 +592,12 @@ describe('the open workspace file in the reference index', { tags: ['slow'] }, (
         {
             name: 'the file under the primary hub, for a file in its folder',
             where: 'primary',
-            scans: [{ root: 'hub', path: WORKSPACE, of: undefined, named: ['owner'] }]
+            scans: [{ root: 'hub', path: WORKSPACE, of: undefined, named: ['dana-example'] }]
         },
         {
             name: 'the file under another folder, naming the primary hub, for a file in that folder',
             where: 'other folder',
-            scans: [{ root: 'lab', path: WORKSPACE, of: 'hub', named: ['owner'] }]
+            scans: [{ root: 'lab', path: WORKSPACE, of: 'hub', named: ['dana-example'] }]
         }
     ])('scans $name', (row) => {
         const scans = watchedIndex(workspaceAt(row.where))

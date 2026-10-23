@@ -218,14 +218,17 @@
         return marks.filter((chip): chip is string => typeof chip === 'string');
     }
 
-    /** One row of the list mode. Every column key of both presets is filled here. */
+    /**
+     * One row of the list mode. Every column key of both presets is filled here; the Authors cell
+     * is the team line, the names of the lead and the collaborators without the user.
+     */
     function row(item: BoardItem): Record<string, unknown> {
         const next = item.project.next;
         const words = projectStatusWords(item.project.stage, item.project.form, item.project.chips);
         return {
             id: item.id,
             title: label(item),
-            authors: item.authors,
+            authors: item.teamLine,
             venue: item.venue?.short ?? '',
             status: words.map((word) => chipLabel(word)).join(' '),
             statusMarks: words.filter((word) => chipGlyphName(word) !== ''),

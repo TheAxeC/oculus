@@ -35,6 +35,11 @@
     // The follow-up notes and the subtasks are shown read-only, each list as one text: the
     // project's card adds, changes and removes them line by line (state/forms/schema.ts decides
     // which fields write).
+    //
+    // A person field's Add person writes the new person to the people registry of the project's own
+    // hub (state/forms/new-entry.ts, `addPerson`), since a key the manifest writes resolves in its
+    // own hub first; the person's key is then an edit of the field like any pick. A Revert while
+    // the write is out leaves the field as the Revert left it (`unlessReverted`).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -52,6 +57,9 @@
         writableField,
         type FormField
     } from '$lib/state/forms/schema';
+    import { addPerson, unlessReverted } from '$lib/state/forms/new-entry';
+    import { PEOPLE } from '$lib/state/forms/page-entry';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -60,9 +68,17 @@
     const client = useState();
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
-        selectors: { fieldChoices, manifestFields, manifestSections, projectOf, waitedOn },
+        fs: { primary },
+        selectors: {
+            collectionsOfKey,
+            fieldChoices,
+            manifestFields,
+            manifestSections,
+            projectOf,
+            waitedOn
+        },
         settled,
-        writes: { writeManifest }
+        writes: { newEntry, writeManifest }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -114,7 +130,11 @@
         editDraft(instance.id, DRAFT_KIND, id, field, value);
     }
 
+    /** How many Reverts this editor has had, which an Add person compares across its write. */
+    let reverts = 0;
+
     function revert(): void {
+        reverts += 1;
         revertDraft(instance.id);
         result = [];
     }
@@ -182,6 +202,18 @@
         ];
     }
 
+    /**
+     * Write a new person to the people registry of the hub `hub`, the project's own, or the
+     * primary's for a project that names none.
+     */
+    function addTo(hub: string): (name: string) => ReturnType<typeof addPerson> {
+        const home = hub === '' ? primary() : hub;
+        return unlessReverted(
+            (name) => addPerson(name, collectionsOfKey(PEOPLE), home, newEntry),
+            () => reverts
+        );
+    }
+
     /** A field the schema names but the snapshot does not carry: the form opens it empty. */
     function noteFor(field: FormField): string | undefined {
         return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
@@ -234,6 +266,7 @@
                             {changed}
                             choices={(one: FormField) => fieldChoices(one, project)}
                             note={noteFor}
+                            addPerson={addTo(rootOf(project))}
                         />
                     </section>
                 {/if}

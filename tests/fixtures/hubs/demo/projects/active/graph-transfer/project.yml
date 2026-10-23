@@ -3,8 +3,8 @@ stage: submit-ready
 tier: projects
 short: Graph-Transfer
 title: Transfer learning across graph domains
-lead: A. Example
-authors: [A. Example, B. Coauthor]
+lead: [dana-example]
+collaborators: [b-coauthor]
 focus: push
 status:
   chips: []

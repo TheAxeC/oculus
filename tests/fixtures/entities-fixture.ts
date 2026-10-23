@@ -33,6 +33,7 @@ export function fixtureProject(over: Partial<Project> = {}): Project {
         datasetIds: [],
         pillarIds: [],
         domainIds: [],
+        lead: [],
         collaborators: [],
         docs: [],
         folder: '',

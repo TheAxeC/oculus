@@ -18,10 +18,12 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import { hasWord, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
+import { selfIds, shownTeam } from '../board/team.ts';
 import { stageTone } from '../../shared/words/tones.ts';
 
 /**
- * What a node stands for: the Map's projects, pillar lines and collaborators, a Notes Graph note.
+ * What a node stands for: the Map's projects, pillar lines and people (the people of a project's
+ * team, `collaborator` nodes), a Notes Graph note.
  */
 export type GraphKind = 'project' | 'line' | 'collaborator' | 'note';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
@@ -95,7 +97,11 @@ function archived(project: Project, config: Record<string, unknown>): string | u
     return hasWord(config, 'tiers', 'finished', project.tier) ? project.stage : undefined;
 }
 
-/** Build only nodes reached by visible projects and only edges whose two ends are visible. */
+/**
+ * Build only nodes reached by visible projects and only edges whose two ends are visible. With the
+ * people option a node and an edge are drawn for each person of a project's team, its lead and its
+ * collaborators, except the person the workspace setting `self` names (board/team.ts).
+ */
 export function buildGraph(
     snapshot: Snapshot,
     config: Record<string, unknown>,
@@ -125,6 +131,7 @@ export function buildGraph(
     const edges: GraphEdge[] = [];
     const lineIds = new Set<string>();
     const collaboratorIds = new Set<string>();
+    const self = selfIds(snapshot);
 
     for (const project of visible) {
         for (const line of project.pillarIds) {
@@ -139,7 +146,7 @@ export function buildGraph(
             });
         }
         if (options.collaborators === true) {
-            for (const person of project.collaborators) {
+            for (const person of shownTeam(project, self)) {
                 collaboratorIds.add(person);
                 edges.push({
                     id: `collaborator::${project.id}::${person}`,
@@ -245,8 +252,8 @@ function joining(edges: GraphEdge[], kept: Set<string>): GraphEdge[] {
 /**
  * The part of a graph one Map instance draws, as a pure function over the whole of it. The three
  * rules run in order: the stages and the lines take their own nodes out, `connected` then takes out
- * a project left with no membership edge, and a line or a collaborator whose projects have all gone
- * leaves with them, since such a node is in the graph only to carry a project's edge.
+ * a project left with no membership edge, and a line or a person of a team whose projects have all
+ * gone leaves with them, since such a node is in the graph only to carry a project's edge.
  */
 export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
     const stages = new Set(filter.stages ?? []);
@@ -424,7 +431,7 @@ export function layoutSeed(nodes: GraphNode[]): number {
  * What one Map instance holds of its own: which nodes it shows and whether links are being drawn.
  */
 export type MapState = GraphFilter & {
-    /** Whether collaboration nodes join the graph. */
+    /** Whether the people of each project's team, the user left out, join the graph as nodes. */
     collaborators: boolean;
     /** The archive stages whose projects are shown, by their own stage word. */
     enabled: string[];

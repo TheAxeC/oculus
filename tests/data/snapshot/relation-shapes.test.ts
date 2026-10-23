@@ -36,6 +36,7 @@ const ROWS = [
     { row: 'a bare pillar', written: 'pillar:', field: 'pillar', wanted: 'list', got: NULL },
     { row: 'a bare datasets', written: 'datasets:', field: 'datasets', wanted: 'list', got: NULL },
     { row: 'a bare related', written: 'related:', field: 'related', wanted: 'list', got: NULL },
+    { row: 'a bare lead', written: 'lead:', field: 'lead', wanted: 'list', got: NULL },
     {
         row: 'a bare collaborators',
         written: 'collaborators:',
@@ -109,6 +110,28 @@ describe('the relation fields of a manifest', () => {
             found.filter((one) => one.file.endsWith(`/${name}/project.yml`));
         expect(of('alpha').map((one) => [one.key, one.message])).toEqual([
             ['waiting-on', typeSentence('waiting-on', 'list', TEXT)]
+        ]);
+        expect(of('beta')).toEqual([]);
+    });
+
+    it('gives one finding for a lead written as one text when the people file reads, and none for a list of person keys', () => {
+        const hub = plantScratch(
+            'oculus-relation-shapes-',
+            {
+                '.oculus/data/people/people.yml':
+                    'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
+                'projects/active/alpha/project.yml':
+                    'id: alpha\ntier: projects\nstage: active\ntitle: alpha\nlead: Faes\n',
+                'projects/active/beta/project.yml':
+                    'id: beta\ntier: projects\nstage: active\ntitle: beta\nlead: [ada]\n'
+            },
+            ['.oculus/data/people']
+        );
+        const found = buildOneHub(hub, CONFIG).snapshot.findings;
+        const of = (name: string) =>
+            found.filter((one) => one.file.endsWith(`/${name}/project.yml`));
+        expect(of('alpha').map((one) => [one.key, one.message])).toEqual([
+            ['lead', typeSentence('lead', 'list', TEXT)]
         ]);
         expect(of('beta')).toEqual([]);
     });

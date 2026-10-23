@@ -73,7 +73,7 @@ apps_dir: .oculus/apps
 repository_scan_depth: 1
 
 
-# The user's own person: the key of their entry in the people registry of the primary hub. The Person page draws its this is me button pressed on that person, and the portfolio chat names them as the hub's owner. It is set in the open workspace file's `settings:`, from the Settings row or the Person page's button; empty marks nobody, and a key that names no person of the people registry is a finding.
+# The user's own person: the key of their entry in the people registry of the primary hub. The Person page draws its this is me button pressed on that person, and the portfolio chat names them as its user. It is set in the open workspace file's `settings:`, from the Settings row or the Person page's button; empty marks nobody, and a key that names no person of the people registry is a finding.
 self: ''
 
 

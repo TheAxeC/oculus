@@ -3,8 +3,7 @@ stage: exploring
 tier: projects
 short: Sketched tensor decompositions for streaming data, online and out of core
 title: Sketched tensor decompositions for streaming data
-lead: A. Example
-authors: [A. Example]
+lead: [dana-example]
 focus: holding
 status:
   chips: []

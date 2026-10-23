@@ -71,8 +71,7 @@ function portfolio(): RawPortfolio {
                 {
                     title: 'Alpha',
                     short: 'a',
-                    lead: 'Faes',
-                    authors: ['Faes', 'Someone'],
+                    lead: ['someone'],
                     year: 2026,
                     status: { chips: ['lead'], line: 'submit-ready' },
                     focus: 'run',
@@ -120,7 +119,6 @@ function portfolio(): RawPortfolio {
             manifest(
                 {
                     title: 'Beta',
-                    authors: 'Faes and others',
                     venue_id: 'nowhere',
                     related: ['ghost'],
                     pin: false,
@@ -257,8 +255,7 @@ describe('normalise, the field mapping', () => {
             stage: 'active',
             title: 'Alpha',
             short: 'a',
-            lead: 'Faes',
-            authors: ['Faes', 'Someone'],
+            lead: ['someone'],
             year: 2026,
             chips: ['lead'],
             statusLine: 'submit-ready',

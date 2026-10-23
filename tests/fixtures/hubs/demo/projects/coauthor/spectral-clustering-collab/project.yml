@@ -10,8 +10,8 @@ eli5: A collaborator-led study on clustering graphs that change over time; this 
 year: 2025
 domain: graphs
 pillar: [graphs]
-lead: B. Colleague
-authors: [B. Colleague, A. Example]
+lead: [b-colleague]
+collaborators: [dana-example]
 venue_id: tmlr
 doi: "10.0000/example.2025.001"
 results:

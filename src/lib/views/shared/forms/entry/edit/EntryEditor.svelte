@@ -18,13 +18,19 @@
     //
     // While a source tab holds unsaved text of the entry's file, Save is disabled with the words
     // saying so, and a write sent from anywhere else is refused before it is sent.
+    //
+    // A person field's Add person writes the new person to the people registry of the entry's own
+    // hub, the primary's for an entry that names none (state/forms/new-entry.ts, `addPerson`); the
+    // person's key is then an edit of the field like any pick. A Revert while the write is out
+    // leaves the field as the Revert left it (`unlessReverted`).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from './EntryForm.svelte';
     import { blockedBy } from '../../entry-file';
     import { pagePayload, savePage } from '$lib/state/forms/entry-save';
-    import { pageFields, sampleOf, type PageEntry } from '$lib/state/forms/page-entry';
+    import { addPerson, unlessReverted, type PersonAdded } from '$lib/state/forms/new-entry';
+    import { PEOPLE, pageFields, sampleOf, type PageEntry } from '$lib/state/forms/page-entry';
     import { fieldDiffers, payloadOf, toEdit } from '$lib/state/forms/record-values';
     import type { IdentityFault } from '$lib/state/boards/collection';
     import type { FormField } from '$lib/state/forms/schema';
@@ -34,7 +40,8 @@
 
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
-        selectors: { fieldChoices },
+        fs: { primary },
+        selectors: { collectionsOfKey, fieldChoices },
         source: { unsavedFile },
         writes
     } = useState();
@@ -94,7 +101,11 @@
         refusals = rest;
     }
 
+    /** How many Reverts this editor has had, which an Add person compares across its write. */
+    let reverts = 0;
+
     function revert(): void {
+        reverts += 1;
         revertDraft(instance);
         refusals = {};
         result = [];
@@ -104,6 +115,18 @@
     function empty(field: FormField): boolean {
         return payloadOf(field, valueOf(field), page.values[field.field]) === null;
     }
+
+    /** Write a new person to the people registry of the entry's own hub. */
+    const newPerson: (name: string) => Promise<PersonAdded> = unlessReverted(
+        (name) =>
+            addPerson(
+                name,
+                collectionsOfKey(PEOPLE),
+                page.root === '' ? primary() : page.root,
+                writes.newEntry
+            ),
+        () => reverts
+    );
 
     /** How many saves of this editor are out, and the number of the newest one sent. */
     let sending = 0;
@@ -179,6 +202,7 @@
             fieldChoices(one, null, page.root === '' ? undefined : page.root)}
         {refusals}
         {empty}
+        addPerson={newPerson}
     />
     {#if result.length > 0}
         <p class="result">

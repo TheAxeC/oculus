@@ -38,7 +38,6 @@ function project(id: string, statusLine: string): Project {
         id,
         title: `The ${id} project`,
         statusLine,
-        authors: ['Faes'],
         pillarIds: [],
         domainIds: [],
         fundingIds: [],
@@ -47,6 +46,7 @@ function project(id: string, statusLine: string): Project {
         resourceIds: [],
         results: [],
         ideas: [],
+        lead: [],
         collaborators: [],
         waitingOn: [],
         followups: [],
@@ -138,7 +138,7 @@ describe('a revert', () => {
 
 describe('a reload', () => {
     it('reads the edits back out of the view states the page state keeps', () => {
-        drafts.editDraft('ed-1', 'project', 'alpha', 'authors', ['Faes', 'Another']);
+        drafts.editDraft('ed-1', 'project', 'alpha', 'lead', ['faes', 'another']);
 
         const next = createClientState();
         next.pageState.install({
@@ -150,18 +150,18 @@ describe('a reload', () => {
         });
         const again = build(next);
         expect(again.draftEdits('ed-1', 'project', 'alpha')).toEqual({
-            authors: ['Faes', 'Another']
+            lead: ['faes', 'another']
         });
         expect(again.draftDirty('ed-1')).toBe(true);
     });
 
     it('keeps the thing the edits were typed for as its hub and its name, and reads them back', () => {
-        drafts.editDraft('ed-1', 'project', 'lab:alpha', 'authors', ['Faes']);
+        drafts.editDraft('ed-1', 'project', 'lab:alpha', 'lead', ['faes']);
         expect(client.ui.instanceState('ed-1')).toEqual({
-            draft: { kind: 'project', hub: 'lab', name: 'alpha', edits: { authors: ['Faes'] } }
+            draft: { kind: 'project', hub: 'lab', name: 'alpha', edits: { lead: ['faes'] } }
         });
         expect(build(client).draftEdits('ed-1', 'project', 'lab:alpha')).toEqual({
-            authors: ['Faes']
+            lead: ['faes']
         });
     });
 });

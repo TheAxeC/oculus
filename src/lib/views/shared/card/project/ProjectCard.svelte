@@ -18,8 +18,9 @@
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
     // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included. The folder, the venue and the authors are names and
-    // stay words.
+    // project read from a repository included. The folder, the venue and the team line are names
+    // and stay words; the team line is the names of the project's lead and collaborators without
+    // the person the workspace setting `self` names (state/boards/board/team.ts).
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -388,10 +389,10 @@
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>
             {/if}
-            {#if item.authors !== ''}
-                <span class="authors">
+            {#if item.teamLine !== ''}
+                <span class="team">
                     <Glyph name={t('project.card.author_glyph')} />
-                    {item.authors}
+                    {item.teamLine}
                 </span>
             {/if}
         </div>
@@ -470,7 +471,7 @@
     }
 
     .venue,
-    .authors {
+    .team {
         display: inline-flex;
         align-items: center;
         gap: 4px;

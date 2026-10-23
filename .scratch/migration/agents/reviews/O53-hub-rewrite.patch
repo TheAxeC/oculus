@@ -1,0 +1,1090 @@
+--- a/.oculus/data/people/people.yml
++++ b/.oculus/data/people/people.yml
+@@ -110,3 +110,36 @@
+     name: "Axel Faes"
+     affiliations: ["university-of-twente"]
+     role: "postdoc"
++
++  - key: "do"
++    name: "Do"
++
++  - key: "jasper-van-leengoed"
++    name: "Jasper van Leengoed"
++
++  - key: "brent-berghmans"
++    name: "Brent Berghmans"
++
++  - key: "kashyap-todi"
++    name: "Kashyap Todi"
++
++  - key: "matija-pretnar"
++    name: "Matija Pretnar"
++
++  - key: "robin-marx"
++    name: "Robin Marx"
++
++  - key: "qiang-sun"
++    name: "Qiang Sun"
++
++  - key: "eva-calvo-merino"
++    name: "Eva Calvo Merino"
++
++  - key: "dries-cornelissen"
++    name: "Dries Cornelissen"
++
++  - key: "valentina-pergher"
++    name: "Valentina Pergher"
++
++  - key: "jakob-nolte"
++    name: "Jakob Nolte"
+--- a/projects/active/eeg-saad-challenge/project.yml
++++ b/projects/active/eeg-saad-challenge/project.yml
+@@ -4,9 +4,7 @@
+ domain: brain
+ short: EEG-sAAD
+ title: Cross-Dataset Selective Auditory Attention Decoding (ICASSP 2027 Grand Challenge)
+-lead: Axel Faes
+-authors:
+-- Axel Faes
++lead: [axel-faes]
+ pillar:
+ - tensor
+ - neurotech
+--- a/projects/active/linfoot-estimator/project.yml
++++ b/projects/active/linfoot-estimator/project.yml
+@@ -9,8 +9,7 @@
+ domain: method
+ pillar: ["evaluation"]
+ title: "Towards a pretrained deep learning estimator of the Linfoot informational correlation"
+-lead: van den Berg
+-authors: ["van den Berg", "Halekoh", "Möller", "Kryger Jensen", "von Bornemann Hjelmborg"]
++lead: [van-den-berg]
+ eli5: "Stephanie's pretrained estimator reads the Linfoot correlation, a bounded rescaling of mutual information, off a bivariate scatter. Hers is trained on two copula families with positive dependence. The work here makes it invariant to what the estimand is invariant to, and trains it on a generator of unlimited shapes with exact labels."
+ year: 2025
+ compute: [utwente]
+--- a/projects/active/loewner/project.yml
++++ b/projects/active/loewner/project.yml
+@@ -4,9 +4,7 @@
+ domain: method
+ short: Loewner
+ title: Trainable Loewner Layers for Signal and Image Processing
+-lead: Axel Faes
+-authors:
+-- Axel Faes
++lead: [axel-faes]
+ pillar:
+ - sciml
+ related:
+--- a/projects/active/novel-math-primitives/project.yml
++++ b/projects/active/novel-math-primitives/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: method
+ title: "Untapped Mathematical Primitives for ML: tensor algebra, category theory, graph theory"
+-lead: Axel Faes
+-authors: Axel Faes
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: backburner
+ status:
+--- a/projects/active/sandpile-operator/project.yml
++++ b/projects/active/sandpile-operator/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: method
+ title: "A Soft-Sandpile Progression Operator: differentiable threshold-cascade dynamics for spreading processes"
+-lead: Axel Faes
+-authors: Axel Faes
++lead: [axel-faes]
+ pillar: [hcc]
+ focus: run
+ code_availability: { status: none, url: "", doi: "" }
+--- a/projects/archive/disproved/ms-lipid-handshake/project.yml
++++ b/projects/archive/disproved/ms-lipid-handshake/project.yml
+@@ -11,6 +11,5 @@
+ outcome: "Disproved. On the powered Macnair 2024 cohort (632k nuclei, 156 samples, 65 paired donor-by-stage), the within-sample myeloid-export to oligo-rebuild coupling is slope -0.06, p=0.73, bootstrap CI [-0.75, 0.14] under donor and stage control; the only significant raw signal is negative (opposite the hypothesis) and a stage confound. Underpowering is excluded at this N. The tensor method machinery is sound (code/ is kept runnable), the biological claim is not. Do not re-attempt the transcriptomic handshake."
+ datasets: [absinta-gse180759, jakel-gse118257, macnair2024]
+ funding: [ZonMw-AI-HCC]
+-authors: ["Axel Faes", "Stéphanie M. van den Berg", "Maryam Amir Haeri"]
+ collaborators: [amir-haeri, van-den-berg]
+-lead: "Axel Faes"
++lead: [axel-faes]
+--- a/projects/archive/dropped/algebraic-subtyping/project.yml
++++ b/projects/archive/dropped/algebraic-subtyping/project.yml
+@@ -9,5 +9,4 @@
+ eli5: "Extends Dolan's algebraic subtyping with effect information, building a type-and-effect system for algebraic effects and handlers. This was Axel's KU Leuven Master's-thesis topic in programming languages and type theory."
+ outcome: "Dropped. The algebraic-subtyping work was not pursued into a standalone paper; the Master's thesis (KU Leuven 2018) and the CW708 compilation report are published separately, and this sits outside the current research line."
+ pillar: [student-research]
+-authors: ["Faes", "Schrijvers"]
+-lead: "Faes"
++lead: [axel-faes]
+--- a/projects/archive/dropped/connectivity-motor-imagery/project.yml
++++ b/projects/archive/dropped/connectivity-motor-imagery/project.yml
+@@ -11,6 +11,5 @@
+ eli5: "Aimed to model directed (causal) functional connectivity between reconstructed EEG sources (targeting motor-imagery analysis), combining a Temporal Causal Discovery Framework with Causal Graph Processes. Only a simulation validation was drafted; the full journal paper was never completed."
+ outcome: "Dropped. The full journal paper of the causal-graphical-connectivity work was never finished; only the abstract was presented (8th International BCI Meeting 2021). The connectivity idea later resurfaced via neural-network estimators (connectivity-iris)."
+ funding: [FWO-PhD]
+-authors: ["Faes", "Fahimi Hnazaee", "Van Hulle"]
+-lead: "Faes"
++lead: [axel-faes]
+ collaborators: [van-hulle]
+--- a/projects/archive/nogo/faithful-block-term-layer/project.yml
++++ b/projects/archive/nogo/faithful-block-term-layer/project.yml
+@@ -9,5 +9,4 @@
+ title: Faithful Block-Term Layer
+ eli5: "Tried to give block-term tensor networks (BTTN) a built-in faithfulness / no-leakage guarantee: an interpretability claim with a formal bound, pursued as a standalone methods contribution. The aim was a layer whose attributions provably reflect the computation."
+ outcome: "No-go. The faithfulness frontier was already owned by prior work, an opposite-direction landmine made the guarantee fragile, and only a partial bound was reachable. Don't re-attempt."
+-authors: ["Faes"]
+-lead: "Faes"
++lead: [axel-faes]
+--- a/projects/archive/nogo/fed-faithful-ecg/project.yml
++++ b/projects/archive/nogo/fed-faithful-ecg/project.yml
+@@ -4,8 +4,7 @@
+ domain: heart
+ short: "Fed-Faithful ECG"
+ title: Faithfulness-Preserving Federated Learning for Interpretable ECG
+-lead: Axel Faes
+-authors: Axel Faes
++lead: [axel-faes]
+ pillar: [tensor, federated]
+ related: [ecg-readable-substrate]
+ status:
+--- a/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
++++ b/projects/archive/nogo/jacobian-coupled-blockterm-dp/project.yml
+@@ -9,5 +9,4 @@
+ title: Jacobian-coupled block-term model with a structure-revealing DP floor
+ eli5: "Tried to make a block-term model's differential-privacy floor depend on the inter-block spectral gap, a structure-revealing privacy advantage the parent COVERT model could not give. The mechanism: release whitened block scores (S = T G^{-1/2}) so the coupling Jacobian stops being block-diagonal and the gap enters the floor."
+ outcome: "NO-GO. The matched-rho test showed the whitening advantage is generic R-block-Gram preconditioning, shared by flat/P3LS linear models: block-term L=2 tracks FLAT, with no multilinearity scaling (same trap as COVERT). The within-block multiway structure never enters the coupling. Don't re-attempt without a genuinely different mechanism"
+-authors: ["Faes"]
+-lead: "Faes"
++lead: [axel-faes]
+--- a/projects/archive/phd/phd-thesis/project.yml
++++ b/projects/archive/phd/phd-thesis/project.yml
+@@ -14,5 +14,4 @@
+ year: 2023
+ outcome: "PhD Thesis, KU Leuven, February 2023 (Faes; promotor Marc Van Hulle). A compilation thesis of four journal papers: Sparse eLORETA source localisation (J. Neural Eng. 2021) and neural-network directed connectivity (Applied Sciences 2022), then the block-term tensor-regression finger decoders BTTR (IEEE TNNLS 2022) and eBTTR (J. Neural Eng. 2022). The BTTR/eBTTR chapters seeded the later Go-BTTR line."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes"]
++lead: [axel-faes]
+--- a/projects/archive/published/2016/bachelor-network-ids/project.yml
++++ b/projects/archive/published/2016/bachelor-network-ids/project.yml
+@@ -13,6 +13,5 @@
+ results:
+   - "Supervised learning outperformed unsupervised on the tested traffic, with K-Nearest Neighbours the strongest supervised method; adding TCP-flag features improved detection notably."
+ outcome: "Bachelor's thesis, KU Leuven 2016 (Faes)."
+-lead: "Faes"
+-authors: ["Faes"]
++lead: [axel-faes]
+ venue_id: uhasselt-thesis
+--- a/projects/archive/published/2017/icfp-src-abstract/project.yml
++++ b/projects/archive/published/2017/icfp-src-abstract/project.yml
+@@ -11,6 +11,5 @@
+ eli5: "Student Research Competition abstract proposing a core language with row-based effects as an intermediate representation for optimising the compilation of algebraic effect handlers."
+ year: 2017
+ outcome: "Extended abstract, ICFP 2017 Student Research Competition (Faes, Schrijvers)."
+-lead: "Faes"
+-authors: ["Faes", "Schrijvers"]
++lead: [axel-faes]
+ venue_id: icfp-src
+--- a/projects/archive/published/2017/icfp-src-poster/project.yml
++++ b/projects/archive/published/2017/icfp-src-poster/project.yml
+@@ -12,6 +12,5 @@
+ eli5: "Student Research Competition poster for the row-based-effects core language, a compilation-oriented intermediate representation for algebraic effect handlers."
+ year: 2017
+ outcome: "Poster, ICFP 2017 Student Research Competition (Faes, Schrijvers). Companion to the SRC abstract (icfp-src-abstract)."
+-lead: "Faes"
+-authors: ["Faes", "Schrijvers"]
++lead: [axel-faes]
+ venue_id: icfp-src
+--- a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
++++ b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
+@@ -12,6 +12,5 @@
+ eli5: "Master's thesis extending Stephen Dolan's algebraic-subtyping type system with effect information, giving a type-and-effect system for algebraic effects and handlers that keeps Dolan's algebraic and meta-theoretical properties (type soundness, principal types). Implemented as a proof-of-concept in the Eff language."
+ year: 2018
+ outcome: "Master's thesis, KU Leuven 2018 (Faes). Distinct from the dropped journal-paper attempt (archive/dropped/algebraic-subtyping) and the later compiler report (algebraic-effects-compilation)."
+-lead: "Faes"
+-authors: ["Faes"]
++lead: [axel-faes]
+ venue_id: kuleuven-thesis
+--- a/projects/archive/published/2018/masters-eeg-infotheory/project.yml
++++ b/projects/archive/published/2018/masters-eeg-infotheory/project.yml
+@@ -12,6 +12,5 @@
+ eli5: "Master's thesis building an information-theoretic framework (mutual information, conditional MI, interaction information) to estimate functional connectivity between source-reconstructed EEG signals, sidestepping the spurious links scalp volume conduction introduces. Applied to a high-density EEG dataset from a semantic word-processing experiment."
+ year: 2018
+ outcome: "Advanced Master's thesis, KU Leuven 2018 (Faes). A model-free, probability-based connectivity framework in Python for source-reconstructed activity; a precursor to the later neural-network directed-connectivity work (connectivity-iris)."
+-lead: "Faes"
+-authors: ["Faes"]
++lead: [axel-faes]
+ venue_id: kuleuven-thesis
+--- a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
++++ b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
+@@ -15,7 +15,6 @@
+   - "Proof-of-concept on a simulated 3-source autoregressive network (500 noise sources, SNR 0.9, New York Head Model forward model): the causal-graph method recovers the ground-truth directed connectivity pattern."
+ outcome: "Published abstract, 8th International BCI Meeting 2021 (Faes, Fahimi Hnazaee, Van Hulle). The journal follow-up (connectivity-motor-imagery) was not pursued."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Fahimi Hnazaee", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: intl-bci-meeting
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2021/source-localization/project.yml
++++ b/projects/archive/published/2021/source-localization/project.yml
+@@ -14,8 +14,7 @@
+   - "On a simulated 3-dipole / 500-noise benchmark plus two real EEG sets (Cuban Brain Mapping, Berlin connectivity challenge), gives a far sparser source solution than eLORETA at its tuned sparsity, with only a slight fidelity drop."
+ outcome: "Published in J. Neural Eng. 18(6) 066014, 2021 (Faes, de Borman, Van Hulle). Useful for data-driven analyses where regions of interest are hard to pre-specify, or as a front-end to source-space connectivity analysis."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "de Borman", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: jne
+ doi: "10.1088/1741-2552/ac2bb6"
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2021/volga-finger-trajectories/project.yml
++++ b/projects/archive/published/2021/volga-finger-trajectories/project.yml
+@@ -12,7 +12,6 @@
+ eli5: "Extended abstract reconstructing single-finger movement trajectories from intracranial (ECoG) recordings with multiway tensor regression, an early presentation of the block-term decoding line."
+ year: 2021
+ outcome: "Extended abstract, III International Conference Volga Neuroscience Meeting 2021 (Faes, Wittevrongel, Van Hulle)."
+-lead: "Faes"
+-authors: ["Faes", "Wittevrongel", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: volga-neuroscience
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2022/block-term-tensor-regression/project.yml
++++ b/projects/archive/published/2022/block-term-tensor-regression/project.yml
+@@ -15,7 +15,6 @@
+   - "Single-finger decoding (BCI Competition IV, 3 subjects): avg Pearson r 0.64 / 0.46 / 0.67, matching HOPLS (0.63 / 0.44 / 0.64) and above amplitude-modulation (0.42 / 0.36 / 0.46), Random Forests, CNN and LSTM, with automatic rank selection."
+ outcome: "Published in IEEE Trans. Neural Networks and Learning Systems, 2022 (Faes, Camarrone, Van Hulle). The foundational BTTR method that the later eBTTR and Go-BTTR work builds on."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Camarrone", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: tnnls
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2022/connectivity-iris/project.yml
++++ b/projects/archive/published/2022/connectivity-iris/project.yml
+@@ -14,8 +14,7 @@
+   - "Across ground-truth simulations, a model-free LSTM with non-uniform embedding estimates directed source connectivity most robustly to dipole location and competes with established estimators (Granger causality, partial directed coherence)."
+ outcome: "Published in Applied Sciences 2022, 12, 2889 (Faes, Vantieghem, Van Hulle; 'IRIS' = co-author Iris Vantieghem, equal contribution). Shows neural networks can be a model-free alternative for EEG source-connectivity analysis."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Vantieghem", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: appliedsci
+ doi: "10.3390/app12062889"
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2022/extended-bttr-note/project.yml
++++ b/projects/archive/published/2022/extended-bttr-note/project.yml
+@@ -15,8 +15,7 @@
+   - "Single-finger decoding (BCI Competition IV): avg Pearson r 0.66 (subj 1) / 0.48 (subj 2), on par with BTTR (0.64 / 0.46) and HOPLS (0.63 / 0.44); the gain is on coactivated joint finger movements (significant for the middle finger)."
+ outcome: "Published in J. Neural Eng. 19 (2022) 066011 (Faes, Van Hulle). The recursive-Tucker eBTTR extension of BTTR, which the decoder Go-BTTR later graph-regularizes."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: jne
+ doi: "10.1088/1741-2552/ac9a75"
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2025/fbttr-strategies/project.yml
++++ b/projects/archive/published/2025/fbttr-strategies/project.yml
+@@ -14,7 +14,6 @@
+   - "On BCI Competition IV, FBTTR with FedAvg matches or beats centralized BTTR (subject-3 thumb 0.76 +/- 0.05 vs 0.71 +/- 0.05) and is most stable across subjects; FedYogi is slightly worse, so plain FedAvg suffices for intra-subject federation."
+ outcome: "Published at the Int. Conf. on Foundation and Large Language Models (FLLM 2025), FLICS symposium (Faes, Peeters). Open-source; shows federated tensor decomposition can preserve or improve model quality vs centralized training."
+ funding: [FAIR]
+-lead: "Faes"
+-authors: ["Faes", "Peeters"]
++lead: [axel-faes]
+ venue_id: fllm
+ collaborators: [peeters]
+--- a/projects/archive/published/2025/fermat/project.yml
++++ b/projects/archive/published/2025/fermat/project.yml
+@@ -14,8 +14,7 @@
+   - "ECoG finger decoding (BCI Comp IV): subj-3 thumb r 0.76 vs 0.71 centralized. Heart (Fed-Heart-Disease): AUC 0.872, acc 0.772; beats standard FL and the FL4E centralized baseline (0.812), on par with centralized BTTR (0.874)."
+ outcome: "Published at the IEEE Conf. on Federated Learning Technologies and Applications (FLTA 2025) (Faes, Pirmani, Moreau, Peeters). The naive FBTTR line; the extended version is arXiv preprint 2412.06815 ('Federated Block-Term Tensor Regression for decentralised data analysis in healthcare'), applying block-term tensor regression to federated clinical and BCI data."
+ funding: [FAIR]
+-lead: "Faes"
+-authors: ["Faes", "Pirmani", "Moreau", "Peeters"]
++lead: [axel-faes]
+ venue_id: flta
+ doi: "10.1109/FLTA67013.2025.11336663"
+ collaborators: [moreau, peeters, pirmani]
+--- a/projects/archive/published/2025/go-bttr/project.yml
++++ b/projects/archive/published/2025/go-bttr/project.yml
+@@ -14,8 +14,7 @@
+   - "Avg finger-trajectory correlation: ASL alphabet (Utrecht, 5 pts) 0.73 Go-BTTR / 0.719 eBTTR / 0.70 BTTR; Flemish SL (Leuven, 2 pts) 0.37 / 0.34 / 0.33. Best on coactivated fingers, on par on single fingers."
+ outcome: "Published in J. Neural Eng. 22(2) 026065, 2025 (Faes, Calvo Merino, Branco, Van Hoylandt, Keirse, Theys, Ramsey, Van Hulle). First graph-regularized block-term decoder for coactivated finger movements; efficient enough for acute pre-surgical ECoG."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Calvo Merino", "Branco", "Van Hoylandt", "Keirse", "Theys", "Ramsey", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: jne
+ doi: "10.1088/1741-2552/adcd9e"
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2026/abduction/project.yml
++++ b/projects/archive/published/2026/abduction/project.yml
+@@ -14,7 +14,6 @@
+   - "Finger-abduction trajectories decoded with precision comparable to single-finger flexion, including within sign-language alphabet gestures that combine flexion and abduction (2-patient HD-ECoG case study)."
+ outcome: "Published at the 10th Graz BCI Conference, Graz, 14-18 Sep 2026 (Faes, Calvo Merino, Van Hoylandt, Keirse, Theys, Van Hulle). First demonstration that finger abduction is ECoG-decodable, extending finger-flexion BCIs toward fuller sign-language gestures."
+ funding: [FWO-PhD]
+-lead: "Faes"
+-authors: ["Faes", "Calvo Merino", "Van Hoylandt", "Keirse", "Theys", "Van Hulle"]
++lead: [axel-faes]
+ venue_id: graz-bci
+ collaborators: [van-hulle]
+--- a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
++++ b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
+@@ -5,8 +5,7 @@
+ tier: archive
+ domain: method
+ title: "Transparent and Robust: Interpretable Inputs Improve Foundation Models in Mission-Critical Decision Pipelines"
+-lead: Axel Faes
+-authors: Axel Faes
++lead: [axel-faes]
+ year: 2026
+ pillar: [evaluation]
+ related: [ecg-readable-substrate]
+--- a/projects/archive/published/2026/hcc-modality-poster/project.yml
++++ b/projects/archive/published/2026/hcc-modality-poster/project.yml
+@@ -12,7 +12,6 @@
+ eli5: "Poster on early hepatocellular-carcinoma prediction from multi-modal liver MRI using modality-specific encoders over a shared backbone."
+ year: 2026
+ outcome: "Poster, XAI-NL Meet-up 2026 (Faes, Guichelaar, Bouman, van den Berg, Amir Haeri)."
+-lead: "Faes"
+-authors: ["Faes", "Guichelaar", "Bouman", "van den Berg", "Amir Haeri"]
++lead: [axel-faes]
+ venue_id: xai-nl
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
+--- a/projects/archive/published/2026/hccnet-fl/project.yml
++++ b/projects/archive/published/2026/hccnet-fl/project.yml
+@@ -5,8 +5,7 @@
+ tier: archive
+ domain: liver
+ title: "Federate What Transfers: Component-Aware Federation of Self-Supervised Backbones for Longitudinal 3D MRI"
+-lead: Axel Faes
+-authors: ["Axel Faes", "Maureen M. J. Guichelaar", "Donald E. Bouman", "Stephanie M. van den Berg", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ pillar: [hcc, federated]
+ related: [hccnet-revision, hccnet-fl-sweden]
+ funding: [ZonMw-AI-HCC]
+--- a/projects/coauthor/abandoned/individual-reference-intervals/project.yml
++++ b/projects/coauthor/abandoned/individual-reference-intervals/project.yml
+@@ -10,5 +10,4 @@
+ year: 2024
+ outcome: "Co-author. Abandoned (was targeted at IEEE JBHI, 2024; Do, Faes, et al.). Not pursued to a full paper."
+ pillar: [clinical-collab]
+-lead: "Do"
+-authors: "Do, Faes, et al."
++lead: [do]
+--- a/projects/coauthor/active/clinical-hccnet/project.yml
++++ b/projects/coauthor/active/clinical-hccnet/project.yml
+@@ -10,8 +10,7 @@
+ pillar: [hcc]
+ related: [hccnet-revision]
+ title: "Prediction of hepatocellular carcinoma by MRI: the development of MRI-HCC prediction model"
+-lead: "Jasper van Leengoed"
+-authors: ["Jasper van Leengoed", "Axel Faes", "Maryam Amir Haeri", "Donald Bouman", "Stephanie van den Berg", "Maureen Guichelaar"]
++lead: [jasper-van-leengoed]
+ eli5: "A student-led clinical application of HCCNet (Paper 3): the self-supervised longitudinal-MRI backbone put to a clinical hepatocellular-carcinoma risk setting. Jasper van Leengoed leads; I am a coauthor. The clinical manuscript is in preparation; analyses and figures are documented in README.md."
+ outcome: "Coauthor involvement; clinical manuscript in preparation. Clinical variant/application of HCCNet (see hccnet-revision, Paper 3) led by the student Jasper van Leengoed. Analyses and figures are available; the venue is unconfirmed. DATA CAVEAT: the inputs in code/data/ (the prediction files and label tables) are gitignored and NOT regenerable here; they come from the hccnet-revision project (the related: entry); restore by regenerating them there and copying them back. Resolve that project by its id, no path is recorded because the folder can move. Full detail in README.md."
+ venue_id:
+--- a/projects/coauthor/active/elixir-fl4e/project.yml
++++ b/projects/coauthor/active/elixir-fl4e/project.yml
+@@ -6,11 +6,10 @@
+   chips: [lead]
+ domain: method
+ title: "ELIXIR / FL4E: Federated Learning for Everyone (framework contribution)"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated]
+ related: [florank-personalization]
+ eli5: "A collaboration around FL4E ('Federated Learning for Everyone'), a privacy-preserving federated-learning infrastructure for health. My contribution was the guideline scripts (a Flower-based federated MLP plus a data-cleaning step on the Wisconsin breast-cancer dataset) and the MS/registry federated direction. An involvement record, not a publication of mine."
+ outcome: "Involvement/contribution to the FL4E federated-learning framework and the MS-RWD federated direction (same ELIXIR-Belgium / Moreau / MSBase network as the FLoRank idea). Code and notes preserved in this folder; the FL tutorial code was cleaned to runnable + documented (see code/README.md)."
+-authors: ["Faes", "Pirmani", "Peeters"]
+ datasets: [wisconsin-breast-cancer]
+ collaborators: [peeters, pirmani]
+--- a/projects/coauthor/active/flkit/project.yml
++++ b/projects/coauthor/active/flkit/project.yml
+@@ -11,7 +11,6 @@
+ eli5: "FLKit is a structured onboarding toolkit that lowers the entry barrier to federated learning for health and life-science researchers, bundling environment setup, client/server orchestration, and worked examples. It treats FL adoption as an onboarding and usability problem, not only an algorithmic one."
+ year: 2026
+ outcome: "Co-author. In preparation, submitted to JMIR (Pirmani, Vermeulen, ... Faes, ... Peeters)."
+-lead: "Pirmani"
+-authors: [Pirmani, Vermeulen, "... Faes", "... Peeters"]
++lead: [pirmani]
+ venue_id: jmir
+ collaborators: [peeters, pirmani]
+--- a/projects/coauthor/published/2016/chi-household-survival/project.yml
++++ b/projects/coauthor/published/2016/chi-household-survival/project.yml
+@@ -12,6 +12,5 @@
+ eli5: "Student-competition extended abstract on an immersive, room-sized game that repurposes everyday household objects as weapons."
+ year: 2016
+ outcome: "Extended abstract, CHI EA 2016 Student Game Competition (Berghmans, Faes, Kaminski, Todi; shared first authorship)."
+-lead: "Berghmans"
+-authors: ["Berghmans", "Faes", "Kaminski", "Todi"]
++lead: [brent-berghmans]
+ venue_id: chi-ea
+--- a/projects/coauthor/published/2016/chi-purpose-centric/project.yml
++++ b/projects/coauthor/published/2016/chi-purpose-centric/project.yml
+@@ -12,6 +12,5 @@
+ eli5: "Student-competition extended abstract exploring purpose-centric appropriation of everyday objects as game controllers."
+ year: 2016
+ outcome: "Extended abstract, CHI EA 2016 Student Game Competition (Todi, Degraen, Berghmans, Faes, Kaminski, Luyten)."
+-lead: "Todi"
+-authors: ["Todi", "Degraen", "Berghmans", "Faes", "Kaminski", "Luyten"]
++lead: [kashyap-todi]
+ venue_id: chi-ea
+--- a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
++++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
+@@ -13,6 +13,5 @@
+ outcome: "Co-author. KU Leuven Dept. of Computer Science technical report CW708, October 2017 (Pretnar, Saleh, Faes, Schrijvers). Programming-languages / type-theory work from Axel's KU Leuven period."
+ pillar: [student-research]
+ domain: cs
+-lead: "Pretnar"
+-authors: ["Pretnar", "Saleh", "Faes", "Schrijvers"]
++lead: [matija-pretnar]
+ venue_id: kuleuven-cw-techreport
+--- a/projects/coauthor/published/2017/http2-best-practices/project.yml
++++ b/projects/coauthor/published/2017/http2-best-practices/project.yml
+@@ -13,6 +13,5 @@
+ outcome: "Co-author. Published at WEBIST 2017 (Marx, Quax, Faes, Lamotte; UHasselt-tUL-imec). Introduces the Speeder web-performance testing framework. Early-career CS / web-networking work from Axel's Hasselt period."
+ pillar: [student-research]
+ domain: cs
+-lead: "Marx"
+-authors: ["Marx", "Quax", "Faes", "Lamotte"]
++lead: [robin-marx]
+ venue_id: webist
+--- a/projects/coauthor/published/2018/http2-web-performance/project.yml
++++ b/projects/coauthor/published/2018/http2-web-performance/project.yml
+@@ -13,6 +13,5 @@
+ outcome: "Co-author. Published at WEBIST 2018 (Marx, Wijnants, Quax, Faes, Lamotte; UHasselt-tUL-imec). Continues the Speeder-framework HTTP/2 measurement line. Early-career CS / web-networking work from Axel's Hasselt period."
+ pillar: [student-research]
+ domain: cs
+-lead: "Marx"
+-authors: ["Marx", "Wijnants", "Quax", "Faes", "Lamotte"]
++lead: [robin-marx]
+ venue_id: webist
+--- a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
++++ b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
+@@ -12,7 +12,6 @@
+ eli5: "Extended abstract decoding individual and coordinated finger movements from high-density EEG, aimed at hand-exoskeleton control."
+ year: 2023
+ outcome: "Extended abstract, European Congress of NeuroRehabilitation 2023 (Sun, Faes, Van Hulle)."
+-lead: "Sun"
+-authors: ["Sun", "Faes", "Van Hulle"]
++lead: [qiang-sun]
+ venue_id: ecnr
+ collaborators: [van-hulle]
+--- a/projects/coauthor/published/2023/ecog-frequency-features/project.yml
++++ b/projects/coauthor/published/2023/ecog-frequency-features/project.yml
+@@ -13,8 +13,7 @@
+ results:
+   - "On the Stanford ECoG dataset, a decoder using just high-gamma and local-motor-potential features lifts average trajectory correlation from 0.45 (whole spectrum) to 0.50 and cuts spurious movement predictions during rest."
+ outcome: "Co-author (2nd). Published in J. Neural Eng. 20 (2023) 066014 (Calvo Merino, Faes, Van Hulle). First to show the LMP upper-cutoff should track the finger movement rate; argues for feature analysis before decoder design."
+-lead: "Calvo Merino"
+-authors: ["Calvo Merino", "Faes", "Van Hulle"]
++lead: [eva-calvo-merino]
+ venue_id: jne
+ doi: "10.1088/1741-2552/ad0c5e"
+ collaborators: [van-hulle]
+--- a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
++++ b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
+@@ -11,7 +11,6 @@
+ eli5: "Extended abstract showing that modulating the local motor potential with gamma-band information increases the stability of ECoG-decoded finger trajectories."
+ year: 2023
+ outcome: "Extended abstract, BCI Society Meeting 2023 (Calvo Merino, Faes, Van Hulle)."
+-lead: "Calvo Merino"
+-authors: ["Calvo Merino", "Faes", "Van Hulle"]
++lead: [eva-calvo-merino]
+ venue_id: intl-bci-meeting
+ collaborators: [van-hulle]
+--- a/projects/coauthor/published/2024/highgamma-event-detection/project.yml
++++ b/projects/coauthor/published/2024/highgamma-event-detection/project.yml
+@@ -11,7 +11,6 @@
+ eli5: "Extended abstract showing that detecting movement events from the ECoG high-gamma band stabilises finger-trajectory predictions decoded from the local motor potential (LMP)."
+ year: 2024
+ outcome: "Extended abstract, International BCI Meeting 2024 (Calvo Merino, Faes, Van Hulle)."
+-lead: "Calvo Merino"
+-authors: ["Calvo Merino", "Faes", "Van Hulle"]
++lead: [eva-calvo-merino]
+ venue_id: intl-bci-meeting
+ collaborators: [van-hulle]
+--- a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
++++ b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
+@@ -12,8 +12,7 @@
+ outcome: "Published editorial in Frontiers in Immunology 16:1679482, 2025 (Peeters, Faes, Hartung), for the Research Topic 'Use of big data and artificial intelligence in multiple sclerosis'. Sets the agenda for the collection rather than reporting new results."
+ funding: [FAIR]
+ pillar: [clinical-collab]
+-lead: "Peeters"
+-authors: ["Peeters", "Faes", "Hartung"]
++lead: [peeters]
+ venue_id: frontimmunol
+ doi: "10.3389/fimmu.2025.1679482"
+ collaborators: [peeters]
+--- a/projects/coauthor/published/2025/pfl-ms-npj/project.yml
++++ b/projects/coauthor/published/2025/pfl-ms-npj/project.yml
+@@ -15,8 +15,7 @@
+   - "Personalized FL for 2-year MS progression (>26,000 patients): the top model, adaptive FedProx, reaches mean ROC-AUC 0.84, beating the centralized model (0.809) and local models (0.798); plain FL underperforms, so personalization is the key."
+ outcome: "Co-author (middle). Published in npj Digital Medicine 2025, 8:478 (Pirmani, De Brouwer, ... Faes, ... Peeters, Moreau). Large MSBase-consortium study establishing personalization as the key to scalable, privacy-aware clinical prediction."
+ funding: [FAIR]
+-lead: "Pirmani"
+-authors: "Pirmani, De Brouwer, ... Faes, ... Peeters, Moreau"
++lead: [pirmani]
+ venue_id: npjdm
+ doi: "10.1038/s41746-025-01788-8"
+ collaborators: [moreau, peeters, pirmani]
+--- a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
++++ b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
+@@ -13,7 +13,6 @@
+ results:
+   - "Across 25 subjects: assisted-movement vs rest reaches 0.80 +/- 0.07 (combined) / 0.72 +/- 0.10 (passive), but telling intended from passive movement is only 0.61 +/- 0.09, below intention-vs-rest without the exoskeleton (0.73 +/- 0.08)."
+ outcome: "Co-author. Published at IEEE Int. Conf. on Rehabilitation Robotics (ICORR) 2025 (Sun, Calvo Merino, Yang, Faes, Van Hulle). Motivates better decoders and control for continuous BCI-actuated hand exoskeletons."
+-lead: "Sun"
+-authors: ["Sun", "Calvo Merino", "Yang", "Faes", "Van Hulle"]
++lead: [qiang-sun]
+ venue_id: icorr
+ collaborators: [van-hulle]
+--- a/projects/ideas/adapter-format-theory/project.yml
++++ b/projects/ideas/adapter-format-theory/project.yml
+@@ -4,7 +4,7 @@
+ short: "Format Theory"
+ domain: method
+ title: A risk ordering and an adaptive format selector for structured-tensor adaptation of foundation models
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, sciml]
+ focus: derisk
+ related: [bt-operator-theory, btfno, florank-personalization]
+--- a/projects/ideas/asthma-geo-tensor/project.yml
++++ b/projects/ideas/asthma-geo-tensor/project.yml
+@@ -4,7 +4,7 @@
+ tier: projects
+ domain: method               # respiratory/environmental-health has no theme yet; filed under the Methods frontier
+ title: "Federated spatiotemporal tensor modeling of asthma exacerbation from geolocation + environmental exposure"
+-lead: "Faes"
++lead: [axel-faes]
+ funding:
+ pillar: [federated, tensor]
+ focus: holding
+--- a/projects/ideas/attention-scoped-instructions/project.yml
++++ b/projects/ideas/attention-scoped-instructions/project.yml
+@@ -4,7 +4,7 @@
+ short: "Scoped Instructions"
+ domain: method
+ title: Declared scope and precedence for instruction context in language-model agents
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: []
+ focus: scope
+ related: []
+--- a/projects/ideas/block-term-nca/project.yml
++++ b/projects/ideas/block-term-nca/project.yml
+@@ -4,7 +4,7 @@
+ short: "Block-term NCA"
+ domain: method
+ title: Neural cellular automata with a block-term update rule that separates growth mechanisms
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, sciml, hcc]
+ focus: holding
+ related: [btfno, bt-operator-theory]
+--- a/projects/ideas/brecht-fl-partitioning/project.yml
++++ b/projects/ideas/brecht-fl-partitioning/project.yml
+@@ -4,7 +4,7 @@
+ short: "FL Partitioning"
+ domain: heart
+ title: Brecht FL Partitioning
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated]
+ related: [clinical-ai-eval-artifacts]
+ focus: scope
+--- a/projects/ideas/btd-autoencoder/project.yml
++++ b/projects/ideas/btd-autoencoder/project.yml
+@@ -4,7 +4,7 @@
+ short: "BTD Autoencoder"
+ domain: method
+ title: BTD Autoencoder
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: holding
+ status:
+--- a/projects/ideas/clinical-ai-eval-artifacts/project.yml
++++ b/projects/ideas/clinical-ai-eval-artifacts/project.yml
+@@ -5,7 +5,7 @@
+ short: "Eval Artifacts"
+ domain: meta
+ title: Clinical-AI Eval Artifacts
+-lead: "Faes"
++lead: [axel-faes]
+ related: [brecht-fl-partitioning]
+ focus: holding
+ status:
+--- a/projects/ideas/concept-bottleneck-hcc/project.yml
++++ b/projects/ideas/concept-bottleneck-hcc/project.yml
+@@ -4,7 +4,7 @@
+ short: "Concept-Bottleneck HCC"
+ domain: liver
+ title: A Longitudinal Concept-Bottleneck Model for Future-HCC Risk from Serial Liver MRI
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [hcc]
+ related: [hccnet-revision]
+ focus: holding
+--- a/projects/ideas/conformal-tensor-factors/project.yml
++++ b/projects/ideas/conformal-tensor-factors/project.yml
+@@ -4,7 +4,7 @@
+ short: "Conformal Tensor"
+ domain: method
+ title: Gauge-Aware Conformal Prediction for Block-Term Tensor Factors
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: derisk
+ status:
+--- a/projects/ideas/ecg-af-fair/project.yml
++++ b/projects/ideas/ecg-af-fair/project.yml
+@@ -4,7 +4,7 @@
+ short: "ECG-AF (FAIR)"
+ domain: heart
+ title: ECG-AF (FAIR / Vandervoort)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ related: [bttn-incident-af]
+ funding: [FAIR]
+--- a/projects/ideas/engram/project.yml
++++ b/projects/ideas/engram/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: privacy
+ title: "Locating and excising a memorised patient record inside a clinical language model"
+-lead: "Faes"
+-authors: ["Axel Faes"]
++lead: [axel-faes]
+ funding:
+ pillar: [tensor, federated, evaluation, llmprivacy]
+ focus: run
+--- a/projects/ideas/faithful-interpretability-position/project.yml
++++ b/projects/ideas/faithful-interpretability-position/project.yml
+@@ -4,7 +4,7 @@
+ short: "Faithful-Interp Position"
+ domain: meta
+ title: "Measured, Not Asserted: A Position Paper on Faithful Interpretability for Structured-Tensor Clinical Models"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: holding
+ status:
+--- a/projects/ideas/fed-duplication-limits/project.yml
++++ b/projects/ideas/fed-duplication-limits/project.yml
+@@ -4,7 +4,7 @@
+ short: "FL Duplication"
+ domain: privacy
+ title: Identifiability and erasure limits under record duplication in federated clinical language models
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated, llmprivacy, evaluation]
+ focus: derisk
+ related: [engram]
+--- a/projects/ideas/fed-neural-operators/project.yml
++++ b/projects/ideas/fed-neural-operators/project.yml
+@@ -4,7 +4,7 @@
+ short: "Fed Neural Operators"
+ domain: method
+ title: "Federated Block-Term Neural Operators: Communication-Efficient Operator Learning across Heterogeneous-Resolution Silos"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, federated, sciml]
+ related: [btfno]
+ focus: holding
+--- a/projects/ideas/fedbtd/project.yml
++++ b/projects/ideas/fedbtd/project.yml
+@@ -4,7 +4,7 @@
+ short: "FedBTD"
+ domain: method
+ title: Federated Block-Term Decomposition (FedBTD)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, federated]
+ focus: holding
+ status:
+--- a/projects/ideas/fedlink/project.yml
++++ b/projects/ideas/fedlink/project.yml
+@@ -4,7 +4,7 @@
+ short: "FedLink"
+ domain: privacy
+ title: "FedLink: federated coupled block-term tensor for BGC-metabolite-bioactivity linking"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated, tensor]
+ focus: holding
+ status:
+--- a/projects/ideas/fl-privacy-auditing/project.yml
++++ b/projects/ideas/fl-privacy-auditing/project.yml
+@@ -4,7 +4,7 @@
+ short: "FL Privacy Audit"
+ domain: privacy
+ title: FL Privacy Auditing
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated]
+ focus: holding
+ status:
+--- a/projects/ideas/florank-personalization/project.yml
++++ b/projects/ideas/florank-personalization/project.yml
+@@ -4,7 +4,7 @@
+ short: "FLoRank Personalization"
+ domain: method
+ title: "FLoRank x HCCNet / Block-Term: structured personalization for federated clinical models"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated, tensor]
+ related: [elixir-fl4e, pfl-ms-npj, adapter-format-theory]
+ focus: scope
+--- a/projects/ideas/harmonop/project.yml
++++ b/projects/ideas/harmonop/project.yml
+@@ -4,7 +4,7 @@
+ short: "HarmonOp"
+ domain: method
+ title: Operator-Theoretic MRI Harmonization (HarmonOp)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, sciml]
+ focus: holding
+ status:
+--- a/projects/ideas/hccnet-fl-sweden/project.yml
++++ b/projects/ideas/hccnet-fl-sweden/project.yml
+@@ -4,7 +4,7 @@
+ short: "HCCNet FL Sweden"
+ domain: liverfl
+ title: HCCNet FL Network (Sweden)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [hcc, federated]
+ related: [hccnet-revision, hccnet-fl]
+ focus: holding
+--- a/projects/ideas/hccnet-pathology/project.yml
++++ b/projects/ideas/hccnet-pathology/project.yml
+@@ -4,7 +4,7 @@
+ short: "HCCNet Pathology"
+ domain: liver
+ title: HCCNet Pathology Networks
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [hcc]
+ related: [hccnet-revision]
+ focus: scope
+--- a/projects/ideas/modality-dropping-btf/project.yml
++++ b/projects/ideas/modality-dropping-btf/project.yml
+@@ -4,7 +4,7 @@
+ short: "Modality-Dropping BTF"
+ domain: method
+ title: Modality-Dropping Block-Term Fusion
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [hcc, tensor]
+ related: [hccnet-revision]
+ focus: holding
+--- a/projects/ideas/multiway-biosignal-fm/project.yml
++++ b/projects/ideas/multiway-biosignal-fm/project.yml
+@@ -4,7 +4,7 @@
+ short: "Multiway FM"
+ domain: method
+ title: A multiway biosignal foundation model with a self-supervised objective defined on the factorization
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: scope
+ related: [btfno, bt-operator-theory, ecg-readable-substrate, engram]
+--- a/projects/ideas/neurosde/project.yml
++++ b/projects/ideas/neurosde/project.yml
+@@ -4,7 +4,7 @@
+ short: "NeuroSDE"
+ domain: brainbci
+ title: Shared Latent SDE for Cross-Subject ECoG Decoding (NeuroSDE)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: []
+ related: [ward-bttr-crosssubject, xsub-ecog-framework]
+ focus: holding
+--- a/projects/ideas/paleogenomics-tensor/project.yml
++++ b/projects/ideas/paleogenomics-tensor/project.yml
+@@ -4,7 +4,7 @@
+ tier: projects
+ domain: method               # no `genomics` theme yet; filed under the Methods frontier
+ title: "Coupled block-term tensor decomposition for paleogenomic population structure"
+-lead: "Faes"
++lead: [axel-faes]
+ funding:
+ pillar: [tensor]
+ focus: holding
+--- a/projects/ideas/pathology-tensor-mil/project.yml
++++ b/projects/ideas/pathology-tensor-mil/project.yml
+@@ -4,7 +4,7 @@
+ short: "Pathology Tensor-MIL"
+ domain: method
+ title: Faithful Block-Term Tensor Multiple-Instance Learning for Whole-Slide Pathology
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, hcc]
+ focus: derisk
+ status:
+--- a/projects/ideas/physics-tensor-hcc/project.yml
++++ b/projects/ideas/physics-tensor-hcc/project.yml
+@@ -4,7 +4,7 @@
+ short: "Physics-Tensor HCC"
+ domain: liver
+ title: Physics-Informed Structured-Tensor Fusion of Longitudinal Multiparametric Liver MRI for HCC Risk
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor, hcc]
+ focus: holding
+ status:
+--- a/projects/ideas/quantum-tensor-fl/project.yml
++++ b/projects/ideas/quantum-tensor-fl/project.yml
+@@ -4,7 +4,7 @@
+ short: "Quantum Tensor/FL"
+ domain: method
+ title: Quantum Tensor / Quantum FL
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [federated, tensor]
+ focus: holding
+ status:
+--- a/projects/ideas/serial-ecg-af/project.yml
++++ b/projects/ideas/serial-ecg-af/project.yml
+@@ -4,7 +4,7 @@
+ short: "Serial-ECG AF"
+ domain: heart
+ title: Interpretable Atrial-Substrate Progression from Serial ECGs for Future-Onset AF
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: run
+ status:
+--- a/projects/ideas/ssm-longitudinal/project.yml
++++ b/projects/ideas/ssm-longitudinal/project.yml
+@@ -4,7 +4,7 @@
+ short: "SSM Longitudinal"
+ domain: liver
+ title: SSM Longitudinal Imaging
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [hcc]
+ related: [hccnet-revision]
+ focus: holding
+--- a/projects/ideas/strokeop/project.yml
++++ b/projects/ideas/strokeop/project.yml
+@@ -4,7 +4,7 @@
+ short: "StrokeOp"
+ domain: brain
+ title: Operator Learning for Ischemic Tissue-Fate (StrokeOp)
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: derisk
+ status:
+--- a/projects/ideas/tao-of-ecs/project.yml
++++ b/projects/ideas/tao-of-ecs/project.yml
+@@ -4,7 +4,7 @@
+ short: "TAO of ECS"
+ domain: cs
+ title: "The TAO of ECS: Trait-Actor Orientation as the Object-Orientation of Entity-Component Systems"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: []
+ focus: backburner
+ status:
+--- a/projects/ideas/xsub-ecog-framework/project.yml
++++ b/projects/ideas/xsub-ecog-framework/project.yml
+@@ -4,7 +4,7 @@
+ short: "XSub-ECoG"
+ domain: brainbci
+ title: "A Behavior-Aligned Transfer Framework for Cross-Subject Decoding across Non-Corresponding ECoG Grids"
+-lead: "Faes"
++lead: [axel-faes]
+ pillar: [tensor]
+ related: [ward-bttr-crosssubject]
+ focus: holding
+--- a/projects/manuscripts/bt-operator-theory/project.yml
++++ b/projects/manuscripts/bt-operator-theory/project.yml
+@@ -5,8 +5,7 @@
+ tier: projects
+ domain: method
+ title: "A Generalization Separation for Block-Term Spectral Operators"
+-lead: Axel Faes
+-authors: ["Axel Faes"]
++lead: [axel-faes]
+ pillar: [tensor, sciml]
+ focus: revise
+ related: [btfno]
+--- a/projects/manuscripts/btfno/project.yml
++++ b/projects/manuscripts/btfno/project.yml
+@@ -4,8 +4,8 @@
+ tier: projects
+ domain: method
+ title: "MoBTE: A Mixture of Block-Term Spectral Experts for Multi-PDE Operator Learning"
+-lead: Axel Faes
+-authors: ["Axel Faes", "Maryam Amir Haeri"]
++lead: [axel-faes]
++collaborators: [amir-haeri]
+ pillar: [tensor, sciml]
+ focus: revise
+ related: [bt-operator-theory, raw-pls]
+--- a/projects/manuscripts/bttd-source-eeg/project.yml
++++ b/projects/manuscripts/bttd-source-eeg/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: brain
+ title: "Jointly localized spatiotemporal components of evoked EEG via a lead-field-constrained block-term decomposition"
+-lead: Axel Faes
+-authors: ["Axel Faes", "Stephanie M. van den Berg", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ collaborators: [amir-haeri, van-den-berg]
+ pillar: [tensor]
+ related: [source-localization]
+--- a/projects/manuscripts/bttn-incident-af/project.yml
++++ b/projects/manuscripts/bttn-incident-af/project.yml
+@@ -4,8 +4,7 @@
+ domain: heart
+ title: An Interpretable Block-Term Tensor Network for Incident Atrial-Fibrillation Prediction from the Sinus-Rhythm 12-Lead ECG
+ short: BTTN
+-lead: Axel Faes
+-authors: ["Axel Faes", "Liesbet Peeters"]
++lead: [axel-faes]
+ pillar: [tensor]
+ focus: review
+ funding: [FAIR]
+--- a/projects/manuscripts/covert-applied/project.yml
++++ b/projects/manuscripts/covert-applied/project.yml
+@@ -4,8 +4,7 @@
+ domain: method
+ title: "When Masking Meets Sparsity: COVERT for Private, Communication-Efficient Vertical Federated Tensor Regression"
+ short: COVERT
+-lead: Axel Faes
+-authors: ["Axel Faes", "Maureen M. J. Guichelaar", "Donald E. Bouman", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ pillar: [tensor, federated]
+ funding: [ZonMw-AI-HCC]
+ focus: review
+--- a/projects/manuscripts/covert-theory/project.yml
++++ b/projects/manuscripts/covert-theory/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: method
+ title: "Private Coupled Descent: Dimension-Free Privacy for Vertical Federated Learning by Privatizing the Coupling Variable"
+-lead: Axel Faes
+-authors: ["Axel Faes", "Stephanie M. van den Berg", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ collaborators: [amir-haeri, van-den-berg]
+ pillar: [tensor, federated]
+ focus: push
+--- a/projects/manuscripts/dongho-ecg-clustering/project.yml
++++ b/projects/manuscripts/dongho-ecg-clustering/project.yml
+@@ -4,8 +4,7 @@
+ domain: heart
+ title: "Which representation clusters? A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure on PTB-XL"
+ short: ECG-Repr
+-lead: Dongho Chun
+-authors: [Dongho Chun, Axel Faes]
++lead: [dongho]
+ pillar: [evaluation]
+ focus: review
+ funding: [FAIR]
+--- a/projects/manuscripts/dries-bttr-ecg/project.yml
++++ b/projects/manuscripts/dries-bttr-ecg/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: heart
+ title: "An interpretable tensor model for identifying atrial fibrillation in sinus-rhythm ECG: block-term tensor regression on PTB-XL, benchmarked against deep and foundation models"
+-lead: Dries Cornelissen
+-authors: ["Dries Cornelissen", "Axel Faes"]
++lead: [dries-cornelissen]
+ pillar: [tensor]
+ focus: push
+ funding: [FAIR]
+--- a/projects/manuscripts/ecg-readable-substrate/project.yml
++++ b/projects/manuscripts/ecg-readable-substrate/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: heart
+ title: "You Don't Need the Black Box: Named ECG Features Rival Foundation Models for Mortality Prediction"
+-lead: Axel Faes
+-authors: Axel Faes
++lead: [axel-faes]
+ pillar: [tensor]
+ related: [fed-faithful-ecg]
+ focus: push
+--- a/projects/manuscripts/erp-signatures/project.yml
++++ b/projects/manuscripts/erp-signatures/project.yml
+@@ -17,7 +17,6 @@
+ latest: "Round-1 minor revision. Points 1-2 answered and both revised documents built, submittable as they stand (no placeholders, originals untouched)."
+ next: "Read the two revised documents and hand both to Valentina, who owns comments 3 and 4, and ask her agreement to an MIT licence for code/."
+ outcome: "Co-first author (Pergher and Faes contributed equally). Under review at Frontiers in Psychology, 2024 (Pergher, Faes, Li, Van Hulle)."
+-lead: "Pergher"
+-authors: ["Pergher", "Faes", "Li", "Van Hulle"]
++lead: [valentina-pergher]
+ venue_id: frontpsychol
+ collaborators: [van-hulle]
+--- a/projects/manuscripts/fed-multicellular-immune/project.yml
++++ b/projects/manuscripts/fed-multicellular-immune/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: method
+ title: "Privacy-preserving federated tensor decomposition of single-cell immune data: recovering multicellular programs across institutions"
+-lead: Axel Faes
+-authors: ["Axel Faes", "Stephanie M. van den Berg", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ collaborators: [amir-haeri, van-den-berg]
+ pillar: [tensor, federated]
+ related: [raw-pls]
+--- a/projects/manuscripts/hccnet-revision/project.yml
++++ b/projects/manuscripts/hccnet-revision/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: liver
+ title: "HCCNet: A Self-Supervised CNN-Transformer for Disease Prognosis from Longitudinal 3D MRI, with a Case Study on Hepatocellular Carcinoma"
+-lead: Axel Faes & Jakob Nolte (co-first)
+-authors: ["Axel Faes", "Jakob Nolte", "Maureen M. J. Guichelaar", "Donald E. Bouman", "Stephanie M. van den Berg", "Maryam Amir Haeri"]
++lead: [axel-faes, jakob-nolte]
+ pillar: [hcc]
+ focus: push
+ related: [hccnet-fl, hccnet-fl-sweden, hccnet-pathology, modality-dropping-btf, ssm-longitudinal]
+--- a/projects/manuscripts/meseret-cirrhosis/project.yml
++++ b/projects/manuscripts/meseret-cirrhosis/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: liver
+ title: "From Classification to Competing Risks: A Critical Re-Examination of a Widely-Used Cirrhosis Outcome Benchmark"
+-lead: Meseret Assefa Kerga
+-authors: ["Meseret Assefa Kerga", "Axel Faes"]
++lead: [kerga]
+ pillar: [evaluation]
+ focus: review
+ status:
+--- a/projects/manuscripts/raw-pls/project.yml
++++ b/projects/manuscripts/raw-pls/project.yml
+@@ -4,8 +4,7 @@
+ domain: brain
+ title: Registration-Free Supervised Tensor-PLS for Unaligned Multiparametric MRI
+ short: RAW-PLS
+-lead: Axel Faes
+-authors: ["Axel Faes", "Maryam Amir Haeri"]
++lead: [axel-faes]
+ collaborators: [amir-haeri]
+ pillar: [tensor]
+ related: [btfno, fed-multicellular-immune]
+--- a/projects/manuscripts/ward-bttr-crosssubject/project.yml
++++ b/projects/manuscripts/ward-bttr-crosssubject/project.yml
+@@ -4,8 +4,7 @@
+ tier: projects
+ domain: brain
+ title: "Behavior-Supervised Alignment for Cross-Subject Neural Decoding across Non-Corresponding Electrode Grids"
+-lead: Ward Ceyssens
+-authors: ["Ward Ceyssens", "Axel Faes"]
++lead: [ward]
+ pillar: [tensor]
+ focus: review
+ related: [xsub-ecog-framework]

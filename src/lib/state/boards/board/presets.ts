@@ -73,7 +73,7 @@ export type RelatedTag = BoardTag & { held: boolean };
  */
 export type LinkedItem = Pick<
     BoardItem,
-    'id' | 'pillars' | 'funding' | 'datasets' | 'collaborators' | 'software'
+    'id' | 'pillars' | 'funding' | 'datasets' | 'team' | 'software'
 > & {
     project?: Pick<BoardItem['project'], 'tier'>;
     /** The projects a project's `related:` names. */
@@ -93,15 +93,20 @@ export type BoardItem = {
     pillars: BoardTag[];
     funding: BoardTag[];
     datasets: BoardTag[];
-    collaborators: BoardTag[];
+    /**
+     * The project's team as the views show it, each person by their name: the people of its
+     * `lead:`, then those of its `collaborators:`, each once, without the person the workspace
+     * setting `self` names (team.ts beside this file, `shownTeam`).
+     */
+    team: BoardTag[];
     /**
      * The other end of this project's link with the software tier: on a project of any other tier,
      * the software projects whose `related:` names it; on a software project, the projects its own
      * `related:` names. One field, since the relation is one edge read from either side.
      */
     software: BoardTag[];
-    /** The authors as one line: the list joined, else the lead, else empty. */
-    authors: string;
+    /** The team as one line (`teamLine`), which the card's line and the Authors column draw. */
+    teamLine: string;
     /** The lifecycle bucket of the preset's rollup, or the empty string when none catches it. */
     bucket: string;
     /** The code deposit's status, or the empty string when the manifest names none. */
@@ -373,18 +378,12 @@ export function venueText(venue: Venue): string {
     return parts.filter((part) => part !== '').join(' | ');
 }
 
-/** The authors field: a line as written, or a list of one name or more joined by commas. */
-const authorsShape = z.union([
-    z.string(),
-    z
-        .array(z.unknown())
-        .min(1)
-        .transform((names) => names.join(', '))
-]);
-
-/** The authors as one line: the list joined, the line as written, or the lead on its own. */
-export function authorLine(project: Project): string {
-    return readAs(authorsShape, project.authors) ?? project.lead ?? '';
+/**
+ * The team line: the names of a project's team as the views show it (`BoardItem.team`), the lead
+ * first, joined by commas, and the empty text for a team that is only the user or nobody.
+ */
+export function teamLine(team: readonly BoardTag[]): string {
+    return team.map((tag) => tag.label).join(', ');
 }
 
 /**

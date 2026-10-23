@@ -106,7 +106,7 @@
         return one === undefined ? undefined : pageView('venues', one.id, one.name);
     });
 
-    /** One person as their own tab, the tab a collaborator tag on a project card opens. */
+    /** One person as their own tab, the tab a person of a project card's team opens. */
     function openPerson(key: string): void {
         const id = personId(key);
         openView('person', recordState(id, personName(portfolio(), id)));

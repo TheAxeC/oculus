@@ -108,6 +108,7 @@ const NOT_BARE: { field: string; list: boolean }[] = [
     { field: 'pillar', list: true },
     { field: 'datasets', list: true },
     { field: 'related', list: true },
+    { field: 'lead', list: true },
     { field: 'collaborators', list: true },
     { field: 'waiting-on', list: true }
 ];
@@ -383,9 +384,9 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
 
 /**
  * The workspace setting `self` names a person of the people registry, which is how the hub knows
- * who its owner is: a key no entry carries marks nobody, and is one finding on the people file. An
- * empty setting is no finding, and a people file that did not read gives none, since its own
- * finding names the cause.
+ * which person is the user: a key no entry carries marks nobody, and is one finding on the people
+ * file. An empty setting is no finding, and a people file that did not read gives none, since its
+ * own finding names the cause.
  */
 function checkSelf(
     raw: RawPortfolio,

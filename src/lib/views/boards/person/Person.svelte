@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. A person opens from a collaborator tag, a joint-work entry and
-    // the Map's node, and is not listed in the view catalogue: opened bare it can only report that
-    // it was opened for nobody.
+    // Layer 3, view registration. A person opens from a tag of a project card's team, a joint-work
+    // entry and the Map's node, and is not listed in the view catalogue: opened bare it can only
+    // report that it was opened for nobody.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'person',
@@ -16,10 +16,11 @@
 <script lang="ts">
     // Layer 3, view. One human as their own tab, drawn from the five joins state/boards/person.ts
     // makes: the registry entry, the organisations they are affiliated to, the joint work whose
-    // `person:` is this key, the projects whose `collaborators:` name them, the projects whose
-    // `waiting-on:` names them, and a student's supervision folder. Below the joins is the editor
-    // of the person's registry entry, built from the people file's own `schema:`, and Delete, which
-    // asks first and names every project and joint-work entry that refers to the person.
+    // `person:` is this key, the projects of whose team they are (whose `lead:` or `collaborators:`
+    // name them), the projects whose `waiting-on:` names them, and a student's supervision folder.
+    // Below the joins is the editor of the person's registry entry, built from the people file's
+    // own `schema:`, and Delete, which asks first and names every project and joint-work entry that
+    // refers to the person.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.

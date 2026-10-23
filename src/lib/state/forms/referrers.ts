@@ -1,8 +1,9 @@
 // Layer 2, client state. What refers to a record: the projects whose manifest names a pillar, a
 // domain, a venue, a dataset, a funding scheme or a resource; the people and funding schemes that
-// name an organisation; the projects and joint work that name a person; and the `slurm.resource`
-// setting that names a resource. A record's page lists them and the question that asks before a
-// delete names them, so both read this one answer.
+// name an organisation; the projects that name a person in their `lead:`, `collaborators:` or
+// `waiting-on:` and the joint work that names one; and the `slurm.resource` setting that names a
+// resource. A record's page lists them and the question that asks before a delete names them, so
+// both read this one answer.
 //
 // Pure over the snapshot and the merged configuration it is given. Every join goes through the ids
 // of the merged portfolio, each the record's hub and its key, so a reference names the record it
@@ -63,7 +64,10 @@ function settingOf(config: Record<string, unknown>, key: string, field: string):
     return typeof value === 'string' ? value : '';
 }
 
-/** The referrers a person has: their projects, their joint work and the projects waiting. */
+/**
+ * The referrers a person has: the projects of whose team they are (their `lead:` and their
+ * `collaborators:`), the projects waiting on them, and their joint work.
+ */
 function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
     const person = byKey(snapshot.entities.people, id);
     const joint = new Set(person?.jointWorkIds ?? []);
@@ -77,7 +81,10 @@ function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
         }));
     const projects = projectsWhere(
         snapshot,
-        (project) => project.collaborators.includes(id) || project.waitingOn.includes(id)
+        (project) =>
+            project.lead.includes(id) ||
+            project.collaborators.includes(id) ||
+            project.waitingOn.includes(id)
     );
     return [...projects, ...entries];
 }

@@ -5,7 +5,7 @@ text:
         all_lines_tip: Draw every pillar again
         all_stages_tip: Draw every project stage again
         archived: '+ archived:'
-        collaborators: + collaborators
+        collaborators: + team
         connected: connected only
         connected_tip: Leave out a project with no membership of a pillar still drawn
         count: '{0} ({1})'

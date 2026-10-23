@@ -231,9 +231,6 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
     return lag > 0 ? lag : 0;
 }
 
-/** The `authors:` of a manifest: one text, or the texts among a list. */
-const authorsShape = z.union([z.string(), z.array(z.unknown()).transform(strings)]);
-
 /**
  * A project. Every field comes from the manifest key of the same meaning, and nothing else does.
  */
@@ -253,8 +250,6 @@ function project(
         form: str(manifest.form),
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
-        lead: str(manifest.lead),
-        authors: authorsShape.safeParse(manifest.authors).data,
         year: num(manifest.year),
         pin: manifest.pin === true ? true : undefined,
         chips: strings(status.chips),
@@ -283,6 +278,7 @@ function project(
         datasetIds: strings(manifest.datasets),
         pillarIds: strings(manifest.pillar),
         domainIds: domain === undefined ? [] : [domain],
+        lead: strings(manifest.lead),
         collaborators: strings(manifest.collaborators),
         venue: str(manifest.venue),
         staleDays: lag > 0 ? lag : undefined,
@@ -364,11 +360,11 @@ export function selfKey(merged: Record<string, unknown>): string {
 }
 
 /**
- * One human. `self` is true on the person whose key `owner` is, the key the workspace setting
- * `self` names, and carried only then, so the wire says who the hub belongs to and says nothing at
- * all about everybody else.
+ * One human. `self` is true on the person whose key is `user`, the key the workspace setting `self`
+ * names, and carried only then, so the wire says which person is the user and says nothing at all
+ * about everybody else.
  */
-function person(entry: RawRegistryEntry, owner: string): Person {
+function person(entry: RawRegistryEntry, user: string): Person {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
@@ -378,7 +374,7 @@ function person(entry: RawRegistryEntry, owner: string): Person {
         email: str(entry.email),
         links: strings(entry.links),
         folder: str(entry.folder),
-        self: owner !== '' && entry.key === owner ? true : undefined,
+        self: user !== '' && entry.key === user ? true : undefined,
         projectIds: [],
         jointWorkIds: []
     });
@@ -602,8 +598,8 @@ export function normalise(
     const schemes = raw.registries.funding.entries
         .map(funding)
         .filter((scheme) => scheme.id.length > 0);
-    const owner = selfKey(merged);
-    const people = withId(raw.registries.people.entries).map((entry) => person(entry, owner));
+    const user = selfKey(merged);
+    const people = withId(raw.registries.people.entries).map((entry) => person(entry, user));
     const organisations = withId(raw.registries.organisations.entries).map(organisation);
     const resources = keptResources(raw.registries.resources.entries).map(resource);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));

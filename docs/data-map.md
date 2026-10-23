@@ -123,6 +123,7 @@ project.yml:
   funding: [funding key]
   datasets: [data key]
   compute: [resources key]
+  lead: [people key]
   collaborators: [people key]
   waiting-on: [people key, or a project]
   related: [a project]

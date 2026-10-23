@@ -66,6 +66,8 @@
         slots?: string[];
         /** A list whose items can only be removed. */
         removeOnly?: boolean;
+        /** How many Discards the draft has had, which a control's Add person compares. */
+        discards?: number;
         onedit: (edit: Edit) => void;
     };
 
@@ -82,6 +84,7 @@
         title = '',
         slots,
         removeOnly = false,
+        discards = 0,
         onedit
     }: Props = $props();
 
@@ -194,6 +197,7 @@
                                 {base}
                                 path={[...path, { index: at, field: name }]}
                                 scope={`${scope}${name} ${at + 1}, `}
+                                {discards}
                                 {onedit}
                             />
                         </div>
@@ -223,6 +227,7 @@
                                     )}
                                 onpick={(value: FieldValue | undefined) =>
                                     onedit(aimed({ do: 'set', index: at, field: name, value }))}
+                                {discards}
                             />
                         </span>
                     {/if}

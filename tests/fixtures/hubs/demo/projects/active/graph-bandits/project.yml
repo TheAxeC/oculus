@@ -3,8 +3,8 @@ stage: active
 tier: projects
 short: Graph-Bandits
 title: Bandit algorithms over evolving graphs
-lead: A. Example
-authors: [A. Example, B. Coauthor]
+lead: [dana-example]
+collaborators: [b-coauthor]
 focus: push
 status:
   chips: [results-positive]

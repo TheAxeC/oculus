@@ -10,6 +10,13 @@
     // gives it, and every change goes out whole. A record names the fields its schema declares,
     // and the keys it carries beyond them as label-value rows when the schema says it is `open`.
     // What a field's choices are is the caller's: the form knows the snapshot and the vocabulary.
+    //
+    // A field whose choices are the people alone (state/forms/schema.ts, `picksPeople`) offers Add
+    // person when the caller hands `onadd`: the typed name, when it is the name or the key of none
+    // of the field's people (state/forms/new-entry.ts, `personToAdd`), is a choice that hands the
+    // name to `onadd`, which writes the person and answers their key, and the key is picked into
+    // the field. While that write is out the choice is not offered again; a field gone before it
+    // answers picks nothing, and the person stays written.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import DateInput from '$lib/ui/forms/DateInput.svelte';
@@ -32,10 +39,13 @@
     import {
         asList,
         asText,
+        picksPeople,
         selectChoices,
+        withPicked,
         type Choice,
         type FormField
     } from '$lib/state/forms/schema';
+    import { personToAdd } from '$lib/state/forms/new-entry';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -46,9 +56,38 @@
         choices: (field: FormField) => Choice[];
         /** A field the form shows and never writes. */
         readonly?: boolean;
+        /** Write a new person of this name, answering their key, or the empty text for none. */
+        onadd?: (name: string) => Promise<string>;
     };
 
-    let { field, value, onchange, choices, readonly = false }: Props = $props();
+    let { field, value, onchange, choices, readonly = false, onadd }: Props = $props();
+
+    /** Whether this field's Add person write is out. */
+    let adding = $state(false);
+    /** Whether the field is still drawn, which a pick after an answer asks. */
+    let drawn = true;
+    $effect(() => () => {
+        drawn = false;
+    });
+
+    /** The Add person choice the typed text makes, or null when the field offers none. */
+    function addChoice(typed: string): { label: string; run: () => void } | null {
+        if (onadd === undefined || adding || !picksPeople(field)) return null;
+        const name = personToAdd(typed, choices(field));
+        if (name === '') return null;
+        return { label: t('editor.add_person', name), run: () => void addPerson(onadd, name) };
+    }
+
+    /** Write the person, then pick their key into the field while it is still drawn. */
+    async function addPerson(add: (name: string) => Promise<string>, name: string): Promise<void> {
+        adding = true;
+        try {
+            const key = await add(name);
+            if (key !== '' && drawn) onchange(withPicked(field, value, key));
+        } finally {
+            adding = false;
+        }
+    }
 
     /** How tall the prose boxes open. */
     const ROWS = 3;
@@ -108,6 +147,7 @@
                     value={edit.fields[sub.field]}
                     onchange={(held: unknown) => change(withField(edit, sub.field, held))}
                     {choices}
+                    {onadd}
                 />
             </Field>
         {/each}
@@ -137,6 +177,8 @@
         empty={t('editor.empty_choice')}
         choices={selectChoices(choices(field))}
         onchange={(held: string) => onchange(held)}
+        extra={onadd === undefined || !picksPeople(field) ? undefined : addChoice}
+        typing={t('editor.add_person_name')}
     />
 {:else if field.type === 'chips' || field.type === 'tags'}
     <MultiSelect
@@ -150,6 +192,7 @@
         free={field.type === 'tags'}
         none={t('editor.no_choices')}
         more={(count: number) => t('editor.more_choices', count)}
+        extra={addChoice}
     />
 {:else if field.type === 'textarea' || field.type === 'lines'}
     <TextArea

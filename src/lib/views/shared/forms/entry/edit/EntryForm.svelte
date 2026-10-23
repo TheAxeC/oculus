@@ -6,10 +6,14 @@
     // person and the career file draws one run for the whole schema.
     //
     // The form knows nothing of what it edits: the values, the edits over them, which fields are
-    // written and which are changed are functions the caller hands in.
+    // written and which are changed are functions the caller hands in. So is `addPerson`, the write
+    // of a new person to the people registry of the hub the edited record is in, which a person
+    // field's Add person runs; its refusal is said under the field, with the field's other notes,
+    // until the next Add of that field or an edit of it.
 
     import Field from '$lib/ui/forms/Field.svelte';
     import FieldControl from './FieldControl.svelte';
+    import type { PersonAdded } from '$lib/state/forms/new-entry';
     import type { Choice, FormField } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
 
@@ -29,6 +33,8 @@
         refusals?: Record<string, string>;
         /** Whether the field holds nothing, which a required field is reminded of. */
         empty?: (field: FormField) => boolean;
+        /** Write a new person of this name to the people registry of the record's hub. */
+        addPerson?: (name: string) => Promise<PersonAdded>;
     };
 
     let {
@@ -40,15 +46,43 @@
         choices,
         note,
         refusals = {},
-        empty
+        empty,
+        addPerson
     }: Props = $props();
 
-    /** The notes of one field, joined: the view's remark, the refusal, the required reminder. */
+    /** Why the last Add person of a field wrote no person, by field name. */
+    let unadded = $state<Record<string, string>>({});
+
+    /** The Add person of one field: the key written, or the empty text with the reason kept. */
+    async function add(
+        field: FormField,
+        write: (name: string) => Promise<PersonAdded>,
+        name: string
+    ): Promise<string> {
+        const { [field.field]: _gone, ...rest } = unadded;
+        unadded = rest;
+        const done = await write(name);
+        if (done.said !== '') unadded = { ...unadded, [field.field]: done.said };
+        return done.key;
+    }
+
+    /** An edit of a field, which takes its Add person reason away. */
+    function edited(field: FormField, held: unknown): void {
+        const { [field.field]: _gone, ...rest } = unadded;
+        unadded = rest;
+        onedit(field, held);
+    }
+
+    /**
+     * The notes of one field, joined: the view's remark, the refusal, the reason its last Add
+     * person wrote nobody, the required reminder.
+     */
     function notesOf(field: FormField): string {
         const reminder = field.required === true && empty?.(field) === true;
         return [
             note?.(field),
             refusals[field.field],
+            unadded[field.field],
             reminder ? t('entry_form.required') : undefined
         ]
             .filter((one): one is string => one !== undefined && one !== '')
@@ -63,7 +97,10 @@
             value={valueOf(field)}
             readonly={!writable(field.field)}
             {choices}
-            onchange={(held: unknown) => onedit(field, held)}
+            onchange={(held: unknown) => edited(field, held)}
+            onadd={addPerson === undefined
+                ? undefined
+                : (name: string) => add(field, addPerson, name)}
         />
     </Field>
 {/each}

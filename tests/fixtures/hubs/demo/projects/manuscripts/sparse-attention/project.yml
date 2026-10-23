@@ -3,8 +3,8 @@ stage: active
 tier: projects
 short: Sparse-Attn
 title: Sparse attention with learned routing
-lead: A. Example
-authors: [A. Example, C. Senior]
+lead: [dana-example]
+collaborators: [c-senior]
 focus: blocked
 status:
   chips: [blocked]

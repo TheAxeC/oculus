@@ -144,6 +144,7 @@ function projectOf(one: Project, own: string, resolve: Resolve): Project {
         datasetIds: idsOf(one.datasetIds, at('datasets', 'datasets')),
         pillarIds: idsOf(one.pillarIds, at('pillars', 'pillar')),
         domainIds: idsOf(one.domainIds, at('domains', 'domain')),
+        lead: idsOf(one.lead, at('people', 'lead')),
         collaborators: idsOf(one.collaborators, at('people', 'collaborators')),
         resourceIds: idsOf(one.resourceIds, at('resources', 'compute')),
         // A name of `waiting-on` is a person's key, a project's or the words of someone the hub

@@ -3,8 +3,7 @@ stage: exploring
 tier: projects
 short: Online-Cluster
 title: Drift-aware clustering for non-stationary streams
-lead: A. Example
-authors: [A. Example]
+lead: [dana-example]
 focus: scope
 status:
   chips: []

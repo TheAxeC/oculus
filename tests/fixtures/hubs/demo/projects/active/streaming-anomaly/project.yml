@@ -3,8 +3,7 @@ stage: active
 tier: projects
 short: Stream-Anomaly
 title: Low-rank streaming anomaly detection
-lead: A. Example
-authors: [A. Example]
+lead: [dana-example]
 focus: revise
 status:
   chips: [numbers-pending]

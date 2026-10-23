@@ -22,6 +22,14 @@
     // not in the list beside a single value, and the same words after a multi-pick's chip. While
     // the list the control draws from is still being read the held value is shown as the one item,
     // with the sentence that the list is loading; a list that could not be read says so.
+    //
+    // A choice whose `from` is the people alone (the setting `self`) offers Add person, as a person
+    // field of a form does (views/shared/forms/entry/edit/FieldControl.svelte): a typed name that
+    // is the name or the key of no person of the primary hub is written to the primary hub's people
+    // registry, whose people the setting names (state/forms/new-entry.ts, `addPerson`), and the new
+    // key is picked. Its refusal is said under the control; while its write is out the choice is
+    // not offered again, and a control gone before it answers, or a control of a draft discarded
+    // before it answers (`discards`), picks nothing.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';
@@ -52,7 +60,18 @@
         type FieldValue
     } from '$lib/state/system/config/editors/fields';
     import type { Lists } from '$lib/state/system/config/editors/sources';
+    import { addPerson, personToAdd, unlessReverted } from '$lib/state/forms/new-entry';
+    import { PEOPLE } from '$lib/state/forms/page-entry';
+    import { recordChoices } from '$lib/state/forms/schema';
+    import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
+
+    const {
+        entities: { portfolio },
+        fs: { primary },
+        selectors: { collectionsOfKey },
+        writes: { newEntry }
+    } = useState();
 
     type Props = {
         spec: CatalogEntry;
@@ -75,6 +94,8 @@
         onsettle?: (text: string) => void;
         /** A pick, a toggle or a new list of items. */
         onpick: (value: FieldValue | undefined) => void;
+        /** How many Discards the draft this control edits has had; none for a row with no draft. */
+        discards?: number;
     };
 
     let {
@@ -88,10 +109,54 @@
         text,
         ontext,
         onsettle,
-        onpick
+        onpick,
+        discards = 0
     }: Props = $props();
 
     const control = $derived(controlOf(spec));
+
+    /** Whether the choices are the people alone, so the pick offers Add person. */
+    const picksPeople = $derived(
+        control === 'choice' &&
+            Array.isArray(spec.from) &&
+            spec.from.length === 1 &&
+            spec.from[0] === PEOPLE
+    );
+    /** Whether an Add person write of this control is out. */
+    let adding = $state(false);
+    /** Why the last Add person wrote nobody, or the empty text. */
+    let unadded = $state('');
+    /** Whether the control is still drawn, which a pick after an answer asks. */
+    let drawn = true;
+    $effect(() => () => {
+        drawn = false;
+    });
+
+    /** The Add person choice the typed text makes, or null when the control offers none. */
+    function addChoice(typed: string): { label: string; run: () => void } | null {
+        if (adding) return null;
+        const hub = primary() ?? '';
+        const name = personToAdd(typed, recordChoices(portfolio()?.entities.people, ['name'], hub));
+        if (name === '') return null;
+        return { label: t('editor.add_person', name), run: () => void add(name) };
+    }
+
+    /** Write the person to the primary hub's people registry, then pick their key. */
+    async function add(name: string): Promise<void> {
+        adding = true;
+        unadded = '';
+        try {
+            const write = unlessReverted(
+                (one) => addPerson(one, collectionsOfKey(PEOPLE), primary(), newEntry),
+                () => discards
+            );
+            const done = await write(name);
+            if (done.said !== '') unadded = done.said;
+            else if (done.key !== '' && drawn) onpick(fromPick(spec, done.key, lists));
+        } finally {
+            adding = false;
+        }
+    }
 
     /** The text a box shows. */
     const boxText = $derived(text ?? textOf(value));
@@ -221,6 +286,8 @@
             empty={emptyWords}
             {choices}
             onchange={(next: string) => onpick(fromPick(spec, next, lists))}
+            extra={picksPeople ? addChoice : undefined}
+            typing={t('editor.add_person_name')}
         />
         {#if stray === true}
             <Tag label={t('settings.not_in_list')} tone="amber" />
@@ -335,6 +402,9 @@
     {/if}
     {#if listNote !== ''}
         <p class="note">{listNote}</p>
+    {/if}
+    {#if unadded !== ''}
+        <p class="note">{unadded}</p>
     {/if}
 </div>
 

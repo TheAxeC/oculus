@@ -27,7 +27,8 @@ const projects = [
         pillarIds: ['tensor', 'federated'],
         resourceIds: ['utwente'],
         waitingOn: ['wim']
-    })
+    }),
+    fixtureProject({ id: 'sketch', title: 'Sketch', lead: ['lena'] })
 ];
 
 const jointWork: Collection = {
@@ -85,6 +86,7 @@ describe('referrersOf', () => {
         ['a venue', 'venues', 'media', ['project:raw-pls']],
         ['a dataset', 'data', 'ptb', ['project:raw-pls']],
         ['a funding scheme', 'funding', 'veni', ['project:raw-pls']],
+        ['a person a project names only as its lead', 'people', 'lena', ['project:sketch']],
         ['a record nothing names', 'pillars', 'unused', []],
         ['a collection whose entries nothing refers to', 'statements', 'any', []]
     ])('%s', (_name, collection, id, expected) => {

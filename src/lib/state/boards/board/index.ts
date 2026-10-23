@@ -9,7 +9,6 @@ export {
     SESSIONS_LIVE,
     SESSIONS_NONE,
     SESSIONS_RECENT,
-    authorLine,
     bucketOf,
     daysUntil,
     firstSentence,

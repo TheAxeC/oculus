@@ -3,8 +3,7 @@ stage: submitted
 tier: projects
 short: Robust-Emb
 title: Robust representation learning under distribution shift
-lead: A. Example
-authors: [A. Example]
+lead: [dana-example]
 focus: review
 status:
   chips: []

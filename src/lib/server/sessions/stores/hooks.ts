@@ -147,11 +147,11 @@ export function entities(
 }
 
 /**
- * The name of the person the workspace setting `self` names, which the last published `portfolio`
- * payload marks `self: true`: the hub's owner, or null when none is marked, the name is empty or
- * no payload was published.
+ * The name of the person the workspace setting `self` names, the user, whom the last published
+ * `portfolio` payload marks `self: true`, or null when none is marked, the name is empty or no
+ * payload was published.
  */
-export function ownerName(hub: HubLike): string | null {
+export function selfName(hub: HubLike): string | null {
     const people = entityMap(hub, 'people');
     if (people === null) return null;
     for (const person of Object.values(people)) {

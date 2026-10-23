@@ -1,21 +1,24 @@
 // Layer 2, client state. Board item construction and sorting live here because project joins change
-// independently of filters, facets and statistics.
+// independently of filters, facets and statistics. A project's people are read as its team, its
+// lead then its collaborators (team.ts beside this file): the card's team tags and its team line
+// leave out the person the workspace setting `self` names, and the search reads the whole team.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
+import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
     SESSIONS_NONE,
-    authorLine,
     bucketOf,
     venueText,
     type BoardItem,
     type BoardPreset,
     type BoardTag,
     type RelatedTag,
-    type SessionsOf
+    type SessionsOf,
+    teamLine
 } from './presets.ts';
 
 /**
@@ -67,15 +70,12 @@ function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
     });
 }
 
-/** Everything the search reads, from the project and from what it was joined with. */
-function haystack(project: Project, item: Omit<BoardItem, 'haystack'>): string {
-    const tags = [
-        ...item.pillars,
-        ...item.funding,
-        ...item.datasets,
-        ...item.collaborators,
-        ...item.software
-    ];
+/**
+ * Everything the search reads, from the project and from what it was joined with. `team` is the
+ * whole team, the user included, since a search finds a project by any of its people.
+ */
+function haystack(project: Project, item: Omit<BoardItem, 'haystack'>, team: BoardTag[]): string {
+    const tags = [...item.pillars, ...item.funding, ...item.datasets, ...team, ...item.software];
     const parts = [
         project.title,
         project.short ?? '',
@@ -93,12 +93,15 @@ function haystack(project: Project, item: Omit<BoardItem, 'haystack'>): string {
     return parts.join(' ').toLowerCase();
 }
 
+/** The names of the people a board draws, and the ids of the person who is the user. */
+type People = { names: Record<Id, string>; self: Set<Id> };
+
 /** One project with its joins, ready for a card, a row, a facet and a filter. */
 function itemOf(
     project: Project,
     snapshot: Snapshot,
     preset: BoardPreset,
-    names: Record<Id, string>,
+    people: People,
     sessionsOf: SessionsOf
 ): BoardItem {
     const entities = snapshot.entities;
@@ -108,6 +111,8 @@ function itemOf(
     const tag = (id: Id, label: string): BoardTag => ({ id, label });
     // A tag named by its id shows the record's key, never its internal id.
     const own = (id: Id): string => keyOf(id);
+    const person = (id: Id): BoardTag => tag(id, people.names[id] ?? own(id));
+    const team = shownTeam(project, people.self).map(person);
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
@@ -131,9 +136,9 @@ function itemOf(
         ),
         funding: project.fundingIds.map((id) => tag(id, own(id))),
         datasets: project.datasetIds.map((id) => tag(id, own(id))),
-        collaborators: project.collaborators.map((id) => tag(id, names[id] ?? own(id))),
+        team,
         software: softwareTags(project, snapshot, preset.softwareTiers),
-        authors: authorLine(project),
+        teamLine: teamLine(team),
         bucket: bucketOf(project, preset.rollup),
         code: project.codeAvailability?.status ?? '',
         compute: project.resourceIds.flatMap((id) => {
@@ -148,7 +153,12 @@ function itemOf(
         chips: project.form === undefined ? project.chips : [project.form, ...project.chips],
         related: relatedTags(project, snapshot)
     };
-    return { ...item, haystack: haystack(project, item) };
+    return { ...item, haystack: haystack(project, item, teamOf(project).map(person)) };
+}
+
+/** The names and the user of a snapshot, read once for every item of a board. */
+function peopleOf(snapshot: Snapshot): People {
+    return { names: personNames(snapshot), self: selfIds(snapshot) };
 }
 
 /** Pinned first, then the config's stage order, then the title. */
@@ -175,7 +185,7 @@ export function boardItemFor(
     preset: BoardPreset,
     sessionsOf: SessionsOf = () => SESSIONS_NONE
 ): BoardItem {
-    return itemOf(project, snapshot, preset, personNames(snapshot), sessionsOf);
+    return itemOf(project, snapshot, preset, peopleOf(snapshot), sessionsOf);
 }
 
 /**
@@ -187,10 +197,10 @@ export function boardItems(
     preset: BoardPreset,
     sessionsOf: SessionsOf = () => SESSIONS_NONE
 ): BoardItem[] {
-    const names = personNames(snapshot);
+    const people = peopleOf(snapshot);
     const items = Object.values(snapshot.entities.projects)
         .filter((project) => project.tier !== undefined && preset.tiers.includes(project.tier))
-        .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));
+        .map((project) => itemOf(project, snapshot, preset, people, sessionsOf));
     return items.sort((left, right) => compare(left, right, preset.stageOrder));
 }
 

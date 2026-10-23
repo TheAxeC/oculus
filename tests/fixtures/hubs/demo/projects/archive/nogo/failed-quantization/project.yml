@@ -5,8 +5,7 @@ short: Quant-NoGo
 status:
   chips: [lead]
 title: Extreme quantization of tensor factors
-lead: A. Example
-authors: [A. Example]
+lead: [dana-example]
 domain: method
 pillar: [tensors]
 eli5: We tried squeezing tensor factors to 2 bits; accuracy collapsed below any useful threshold.

@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
-- O53 (a project's people by person keys). State: reviewed over repair round 1, waiting to land.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state). Waits: after O53.
+- O55 (the project boards by kind, role and state). Waits: nothing in the plan (O53 has landed); not started until Axel says go.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O39 (oculus in its own repository). Waits: the desktop look C8 after `npm run app:package`, then the tick.
@@ -11,6 +11,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
+- O53 (a project's people by person keys), 2026-10-23, PENDING; the hub's people rewrite waits for Axel's word (open item 267).
 - O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; the hub's data rewrite waits for Axel's word (open item 265).
 - O56 (a new record asks which hub takes it), 2026-10-23, a06c1bf6.
 - O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.

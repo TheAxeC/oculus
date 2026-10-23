@@ -114,7 +114,11 @@
         setInstanceState(id, withSavedDraft(state, row.file, row.key, changed, base));
     }
 
+    /** How many Discards this editor has had, which a control's Add person compares. */
+    let discards = $state(0);
+
     function discard(): void {
+        discards += 1;
         editors.clear(row);
         setInstanceState(id, withSavedDraft(instanceState(id), row.file, row.key, null));
     }
@@ -158,6 +162,7 @@
                 title={row.title}
                 slots={row.entry.slots}
                 removeOnly={row.control === 'parked'}
+                {discards}
                 onedit={edit}
             />
         </Fold>

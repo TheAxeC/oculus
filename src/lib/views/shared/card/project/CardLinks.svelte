@@ -6,6 +6,10 @@
     // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
     // draws the rest in place.
     //
+    // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
+    // first, then those of its `collaborators:`, without the person the workspace setting `self`
+    // names, each opening the Person view for its own key.
+    //
     // The software kind is the one link between two projects, so its entries open a project tab
     // rather than a registered view, and its label says which end of the link the card is on: a
     // paper lists the software that implements it, and a software project lists the papers it
@@ -33,7 +37,7 @@
     const RELATED = 'related';
 
     /** The kind whose entries are people, each opening the Person view for its own key. */
-    const COLLABORATORS = 'collaborators';
+    const TEAM = 'team';
 
     type Props = {
         /** The joined board item whose cross-links are shown. */
@@ -69,10 +73,10 @@
             tags: item.datasets
         },
         {
-            key: COLLABORATORS,
-            label: t('project.card.collaborators'),
-            glyph: t('project.card.collaborator_glyph'),
-            tags: item.collaborators
+            key: TEAM,
+            label: t('project.card.team'),
+            glyph: t('project.card.team_glyph'),
+            tags: item.team
         },
         {
             key: SOFTWARE,
@@ -109,8 +113,7 @@
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
         if (kind.key === SOFTWARE || kind.key === RELATED)
             return () => openView('project', recordState(tag.id, tag.label));
-        if (kind.key === COLLABORATORS)
-            return () => openView('person', recordState(tag.id, tag.label));
+        if (kind.key === TEAM) return () => openView('person', recordState(tag.id, tag.label));
         if (linkView(kind.key) === '') return null;
         return () => goto(client, linkView(kind.key), tag.label);
     }

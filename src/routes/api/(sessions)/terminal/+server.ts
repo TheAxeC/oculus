@@ -4,7 +4,7 @@
 
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
-import { ownerName, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
+import { project, selfName, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
@@ -18,7 +18,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         recordFor: (id) => sessionRecord(server.hub, id),
         openFor: () => server.workspace.open(),
         projectFor: (id) => project(server.hub, id),
-        ownerFor: () => ownerName(server.hub),
+        userFor: () => selfName(server.hub),
         // The one read `locals.config` keeps for the request, for the actions that read the config
         // at the request: the chat launcher, the LaTeX words, the hub task seeds and the glyph
         // catalog.

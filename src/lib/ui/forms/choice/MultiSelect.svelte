@@ -4,8 +4,11 @@
     // relation fields need, where the list is a registry of a hundred keys and nobody scrolls it.
     //
     // `free` is what tells a field of names from a field of keys: with it, what is typed is a
-    // choice of its own, which is how `authors` and `waiting-on` take a person the registries do
-    // not hold.
+    // choice of its own, which is how `waiting-on` takes a person the registries do not hold.
+    //
+    // `extra` is one more choice the caller makes of what is typed, drawn after the matches and
+    // taken with Enter when no match is at the cursor: a person picker's Add person. What it does
+    // is the caller's; the box is emptied before it runs.
     //
     // A choice with a `glyph` draws it before its words, on its button and on its chip, so a field
     // whose choices have a kind (the resources of a project) shows the kind on both. A choice with
@@ -29,6 +32,9 @@
 
     type Choice = { id: string; label: string; glyph?: string; hub?: string };
 
+    /** A choice the caller makes of the typed text: its words and what pressing it does. */
+    type Extra = { label: string; run: () => void };
+
     type Props = {
         values: string[];
         /** The control's accessible name, already translated by the view. */
@@ -47,6 +53,8 @@
         none: string;
         /** The words of the control that draws the `count` choices past LIMIT. Translated. */
         more: (count: number) => string;
+        /** The choice the caller makes of the typed text, or null for none. */
+        extra?: (typed: string) => Extra | null;
     };
 
     let {
@@ -59,7 +67,8 @@
         removeGlyph,
         free = false,
         none,
-        more
+        more,
+        extra
     }: Props = $props();
 
     /** How many choices are drawn at once until the reader asks for the rest. */
@@ -77,6 +86,8 @@
     const shown = $derived(whole ? matches : matches.slice(0, LIMIT));
     /** How many matches are not drawn. */
     const past = $derived(matches.length - shown.length);
+    /** The caller's choice for what is typed now. */
+    const offered = $derived(extra?.(typed) ?? null);
 
     function filtered(term: string): Choice[] {
         const needle = term.trim().toLowerCase();
@@ -95,6 +106,14 @@
         at = 0;
         whole = false;
         onchange([...values, id]);
+    }
+
+    /** Run the caller's choice with the box emptied. */
+    function take(choice: Extra): void {
+        typed = '';
+        at = 0;
+        whole = false;
+        choice.run();
     }
 
     function drop(id: string): void {
@@ -128,6 +147,7 @@
             event.preventDefault();
             const choice = shown.at(at);
             if (choice !== undefined) add(choice.id);
+            else if (offered !== null) take(offered);
             else if (free) add(typed.trim());
             return;
         }
@@ -223,7 +243,14 @@
         {#if past > 0}
             <ToolButton label={more(past)} onclick={() => (whole = true)} />
         {/if}
-        {#if shown.length === 0}
+        {#if offered !== null}
+            <ToolButton
+                label={offered.label}
+                active={focused && shown.length === 0}
+                onclick={() => take(offered)}
+            />
+        {/if}
+        {#if shown.length === 0 && offered === null}
             {#if free && typed.trim() !== ''}
                 <ToolButton
                     label={typed.trim()}

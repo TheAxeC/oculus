@@ -1,7 +1,7 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
-// entry, the organisations they are affiliated to, the joint work that names them, the projects
-// whose `collaborators:` name them, the projects whose `waiting-on:` names them, and a student's
-// supervision folder.
+// entry, the organisations they are affiliated to, the joint work that names them, the projects of
+// whose team they are (whose `lead:` or `collaborators:` name them), the projects whose
+// `waiting-on:` names them, and a student's supervision folder.
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -22,7 +22,7 @@ export type PersonJoin = {
     organisations: Organisation[];
     /** The joint-work entries whose `person:` names this person, in the file's order. */
     jointWork: Entry[];
-    /** The projects whose `collaborators:` name this person, by project id. */
+    /** The projects whose `lead:` or `collaborators:` name this person, by project id. */
     projects: Project[];
     /** The projects whose `waiting-on:` names this person, by project id. */
     waitingOn: Project[];
@@ -32,9 +32,8 @@ export type PersonJoin = {
 
 /**
  * Every person's name by their id, the key their file gives them for a person with no name. It is
- * what a collaborator tag, the waiting line, a lane card and the Map's node all draw, so the four
- * of them read this one rule and a person renamed in the registry is renamed on every surface at
- * once.
+ * what a team tag, the team line, the waiting line, a lane card and the Map's node all draw, so
+ * they read this one rule and a person renamed in the registry is renamed on every surface at once.
  */
 export function personNames(snapshot: Snapshot | null): Record<Id, string> {
     const names: Record<Id, string> = {};

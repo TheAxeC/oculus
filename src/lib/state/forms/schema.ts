@@ -331,8 +331,6 @@ export function fieldValues(
         title: project.title,
         links: project.links,
         tags: project.tags,
-        lead: project.lead,
-        authors: project.authors,
         'status.chips': project.chips,
         'status.line': project.statusLine,
         focus: project.focus,
@@ -352,6 +350,7 @@ export function fieldValues(
         domain: project.domainIds.map(keyOf)[0],
         pillar: project.pillarIds.map(keyOf),
         funding: project.fundingIds.map(keyOf),
+        lead: project.lead.map(keyOf),
         collaborators: project.collaborators.map(keyOf),
         related: project.relatedIds.map(keyOf),
         datasets: project.datasetIds.map(keyOf),
@@ -383,6 +382,26 @@ const listShape = z.union([
         .min(1)
         .transform((one) => [one])
 ]);
+
+/**
+ * Whether a field's choices are the people of the people registry and nothing else: its `from` is
+ * `people` alone and it lists no options. The picker of such a field offers Add person
+ * (state/forms/new-entry.ts, `personToAdd`); a field that also takes projects, such as
+ * `waiting-on`, keeps its free text instead.
+ */
+export function picksPeople(field: Pick<FormField, 'from' | 'options'>): boolean {
+    const from = Array.isArray(field.from) ? field.from : [field.from];
+    return from.length === 1 && from[0] === 'people' && (field.options ?? []).length === 0;
+}
+
+/**
+ * The value of a field with the person `key` picked into it: the key itself for a pick of one, and
+ * the list with the key after the others for a field of several, the key held once.
+ */
+export function withPicked(field: Pick<FormField, 'type'>, value: unknown, key: string): unknown {
+    if (field.type === 'select') return key;
+    return [...asList(value).filter((one) => one !== key), key];
+}
 
 /** One value as the widget's own kind: a list for a list widget, text for the rest. */
 export function asList(value: unknown): string[] {
