@@ -41,7 +41,18 @@ dispatch:         # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: with O54 and O64: docs/HELP.md (O54 line 529, O64 lines 305-310 and 485, O65 lines 90-96, 115-130 and 160-176): disjoint ranges, simple to merge; docs/diagrams/ and docs/palette.md regenerated at each landing (npm run diagrams, npm run docs:palette)
 - step: O61
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: ac3718e2ed885f054
+  model: claude-opus-5-5
+  launched: 2026-10-23
+  base: 282f3c2a
+  worktree: .agents/worktrees/migration-O61
+  brief_check: agents/reviews/O61-brief-check.md (adc42eb23995ab62d, claude-opus-5-5, 259489 tokens, 97 tool uses, 11 min 56 s)
+  report: agents/reviews/O61-report.md
+  round: 0
+  landing: not-started
+  shared_paths: with O65: docs/HELP.md (O65 lines 115-124 and 160-169, O61 the lines naming the type, the chips and the statuses, near 509 and 541): disjoint ranges, simple to merge; docs/diagrams/ regenerated at each landing (npm run diagrams)
 ```
 
 ## The standing demands (from Axel, in force)
