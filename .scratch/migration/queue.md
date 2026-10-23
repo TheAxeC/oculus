@@ -2,7 +2,7 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277 and 285). Waits: Axel's go.
+- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285 and 287). Waits: Axel's go.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
@@ -11,7 +11,7 @@ Owed looks:
 - O67 on TEST, after the hub rewrite of open item 286 is applied.
 
 Landed, newest first:
-- O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23; the hub and workspace rewrite waits for Axel's word (open item 286).
+- O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
 - O39 (oculus in its own repository), 2026-10-23, closed by the desktop look C8.
 - O53 (a project's people by person keys), 2026-10-23, 952bd2f2; the hub's people rewrite committed in the hub (c34433e40).
 - O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; the hub's data rewrite committed in the hub (02e22205a), the workspace repositories' manifests in their own repositories.
