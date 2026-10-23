@@ -11,7 +11,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O61 (one home for each vocabulary word), 2026-10-23, PENDING; the hub's data rewrite waits for Axel's word (open item 265).
+- O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; the hub's data rewrite waits for Axel's word (open item 265).
 - O56 (a new record asks which hub takes it), 2026-10-23, a06c1bf6.
 - O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.
 - O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.
