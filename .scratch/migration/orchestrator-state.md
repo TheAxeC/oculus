@@ -51,8 +51,8 @@ dispatch:         # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O53
   brief_check: agents/reviews/O53-brief-check.md (a778b73d30beb0302, claude-opus-5-5, 254814 tokens, 101 tool uses, 11 min 49 s)
   report: agents/reviews/O53-report.md
-  builder_usage: before the pause: no completion notice (stopped); after the resume: 238668 tokens, 87 tool uses, 20 min 1 s
-  reviewer_report: agents/reviews/O53-refuter.md (a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s)
+  builder_usage: before the pause: no completion notice (stopped); after the resume: 238668 tokens, 87 tool uses, 20 min 1 s; round 1: 321050 tokens, 77 tool uses, 21 min 35 s
+  reviewer_report: agents/reviews/O53-refuter.md (a9541a55695dc8e97, claude-opus-5-5, 289165 tokens, 82 tool uses, 30 min 18 s); over round 1: running: abd3f8a34131d6aca, claude-opus-5-5
   round: 1
   landing: not-started
   shared_paths: with O61: config/schemas/manifest-schema.yml, normalise.ts, validate.ts, src/lib/data/model/, presets.ts, items.ts, collection.ts, graph.ts, forms/schema.ts, new-entry.ts, card.ts, ProjectCard.svelte, Projects.svelte, map Controls.svelte, config/text/, docs/HELP.md, data-map.md, templates.md, apps.md, the demo hub's project.yml files (O53 the lead, authors, collaborators and self lines; O61 the type, stage, status and vocabulary lines): different lines of each file, simple to merge, any adjacent-line conflict resolved by the orchestrator at the later landing; with O56: new-entry.ts (O53 takes taskFields's key loop out into a key maker, O56 changes the collection taskFields and addTask take), config/text/, docs/HELP.md, apps.md, data-map.md: different lines, new-entry.ts merged by hand at the later landing; docs/diagrams/ regenerated at each landing (npm run diagrams)
