@@ -1,13 +1,14 @@
-In flight (3 of 6 slots in use):
+In flight (4 of 6 slots in use):
 - O61 (one home for each vocabulary word; the stage and the form as fields, rulings 252 (a) and 253 (a)). State: building (builder ac3718e2ed885f054, base 282f3c2a).
 - O53 (a project's people by person keys: `lead:` and `collaborators:`, `authors:` removed, Add person in the picker; rulings 251 (a2) and 254 (a)). State: building (builder ac515994c74d874b8, base 74020bf0).
 - O56 (new project, entry and Save to Literature ask which hub). State: building (builder a449c7dbd8ad9a6ed, base 892189d7).
+- O39 part F (the first HTML paints the start theme's ground under the dev server too, the white first frame booked at part E's look). State: brief written (`agents/briefs/O39-partF.md`), its brief check running.
 
 Queued, in order (4 steps):
 - O55 (the project boards by kind, role and state). Waits: after O53, O56 and O61.
 - O60 (each part of `config/` overridden where ruling 214 puts it; with no primary, each hub's records take their own hub's settings file, folded in at O54's landing). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
-- O39 (oculus in its own repository): part E landed 2026-10-23; left: the first paint under the dev server (a reload's first frame is white for every theme, found at part E's look, booked under O39 in `plan.md`), then the desktop look C8 after `npm run app:package`, then the tick.
+- O39 (oculus in its own repository): part F in flight; then the desktop look C8 after `npm run app:package`, then the tick.
 
 Owed looks:
 - none (O64's taken 2026-10-22; the parts that write or fetch the calendar are under "Cannot be taken on this hub" in `agents/reviews/owed-looks.md`).
