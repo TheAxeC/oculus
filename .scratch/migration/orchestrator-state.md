@@ -33,8 +33,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a3f1cbcf242aaddd8
   launched: 2026-10-24
   report: .scratch/migration/agents/reviews/O68-report.md
-  builder_usage: "257007 tokens, 281 tool uses, 44 min 13 s"
-  reviewer_report: ".scratch/migration/agents/reviews/O68-refuter.md (a7eeb12398f1acb96, claude-opus-5-5, 294870 tokens, 70 tool uses, 15 min 22 s)"
+  builder_usage: "257007 tokens, 281 tool uses, 44 min 13 s; round 1: 361399 tokens, 168 tool uses, 17 min 25 s"
+  reviewer_report: ".scratch/migration/agents/reviews/O68-refuter.md (a7eeb12398f1acb96, claude-opus-5-5, 294870 tokens, 70 tool uses, 15 min 22 s); over round 1: running: ae2fda2f81136a0ae, claude-opus-5-5"
   round: 1
   landing: not-started
 - step: O63
@@ -46,6 +46,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: ac5dee728ec212f4c
   launched: 2026-10-24
   report: .scratch/migration/agents/reviews/O63-report.md
+  builder_usage: "249734 tokens, 347 tool uses, 61 min 22 s"
+  reviewer_report: "running: a28e0780c4c2b69e1, claude-opus-5-5"
   round: 0
   shared_paths: "with O68 (this plan): config/catalogs/vocab.yml, config/defaults/sources.yml, config/options/sources.yml, config/text/server.yml, docs/HELP.md, docs/data-map.md, docs/templates.md, docs/diagrams, src/lib/data/helpers/hub-names.ts, src/lib/data/shapes/catalog-files/vocab.ts, tests/checks/config/config-folder.test.ts; simple: each step changes other keys, rows and lines of each file (O68 the career keys, the obtained flag and the host texts; O63 the standard flag, publication_kinds, publications_file and the audit rows), and the diagrams are regenerated at landing"
   landing: not-started
