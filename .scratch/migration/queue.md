@@ -3,7 +3,7 @@ In flight (2 of 6 slots in use):
 - O63 (the audit's hub conventions as hub settings), builder launched 2026-10-24.
 
 Queued, in order (1 step):
-- O60 (each part of `config/` overridden where it belongs). Waits: its /spec, open item 309 ruled.
+- O60 (each part of `config/` overridden where it belongs). Waits: O68's landing, then its /spec from main's head; open item 309 is ruled.
 
 Owed looks:
 - none.
