@@ -4,6 +4,41 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z989 (2026-10-24, O60's /spec, the orchestrator, automode): how a hub removes a category
+
+- Chosen: A hub removes a row of `categories:` with the row `{ key: <key>, removed: true }`, the form a keyed list already uses in the workspace layer; a row naming oculus's key replaces it in place, a new key comes after oculus's rows.
+- Not chosen: A list item `{ <key>: null }`, the words of ruling 304 (3), which is a row with no `key` and a second removal form for a keyed list.
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
+## Z985 (2026-10-24, O60's /spec, the orchestrator, automode): how a workspace's catalog values merge
+
+- Chosen: A map catalog a workspace sets merges by key, `<key>: null` removing one (`glyphs`, `icons`, `agents` by agent, `patterns`, `latex_editing` by section with each section whole); `latex_unimath` merges by `command`, a new command after oculus's rows.
+- Not chosen: Each catalog replaced whole, which makes a reader copy 280 glyphs to change one (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
+## Z986 (2026-10-24, O60's /spec, the orchestrator, automode): an agents value from the workspace
+
+- Chosen: A workspace's agents value never removes a `confirm: true` oculus ships, and a value it adds or whose flag or passed value it changes is asked about first, so a committed workspace file cannot start an agent in bypass mode without a question.
+- Not chosen: The value applied as written (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
+## Z987 (2026-10-24, O60's /spec, the orchestrator, automode): the row of `manifest_fields:`
+
+- Chosen: A `manifest_fields:` row names its key with `field:` beside the entry of a `manifest_schema` field, as the hub's collection schemas name theirs.
+- Not chosen: A map written as `manifest_schema` writes it, which is not the list ruling 298 gives.
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
+## Z988 (2026-10-24, O60's /spec, the orchestrator, automode): the guarded entry of O60's tests
+
+- Chosen: A new guarded entry G126 holds the hub and workspace merge, the per-hub reading and the display-language catalog, so O60's tests stand under an entry.
+- Not chosen: No entry, leaving the merge untested (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
 ## Z984 (2026-10-24, O63's refutation, the orchestrator, automode): a skipped-tier project's paper on the website feed
 
 - Chosen: a project of a tier `research_audit.skip_tiers` names claims the feed paper it matches, and gives no finding; the hub's untracked finding does not report that paper. A row of the audit test asserts it.
