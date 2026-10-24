@@ -33,6 +33,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aaf9969093ea82a29
   launched: 2026-10-24
   report: .scratch/migration/agents/reviews/O60-report.md
+  builder_usage: "first run, stopped on three cases: 287511 tokens, 49 tool uses, 6 min 38 s"
+  round: 0
   landing: not-started
 ```
 
