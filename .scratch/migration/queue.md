@@ -1,10 +1,9 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (1 of 6 slots in use):
+- O66 (the Gallery shows every word; the no-venue finding names the project's stage). At: its builder, launched 2026-10-24.
 
-Queued, in order (4 steps):
-- O60 (each part of `config/` overridden where it belongs). Waits: Axel's ruling on open item 309, the display languages' contribution point.
+Queued, in order (3 steps):
+- O60 (each part of `config/` overridden where it belongs). Waits: Axel's ruling on open item 309, the display languages' contribution point and the setting's name.
 - O63 (the audit's hub conventions as hub settings). Waits: Axel's ruling on open item 318 (3), the findings the hub's rewrite would add.
-- O66 (the Gallery shows every word; the no-venue finding's text). Waits: its /spec, open item 317 ruled.
 - O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: Axel's ruling on open item 319, the milestone the career editor creates.
 
 Owed looks:
