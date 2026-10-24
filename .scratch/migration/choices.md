@@ -4836,3 +4836,17 @@ Where it applies: O39, part A. Booked in `plan.md` Rulings.
 - Not chosen: one clause of the instruction saying the head files are the primary's, which still leaves a relative path the chat resolves against `{0}`; leaving the brief's heading as dictated, the lazy option.
 
 Where it applies: O57, repair round 1 item 5. Booked in `plan.md` Rulings.
+
+## Z973 (2026-10-24, O55's /spec, the Archival band, the orchestrator, automode): how the Archival band reads the rows of `categories:`
+
+- Chosen: a row of `categories:` may carry `archival: true`, shipped on `dead-ends` alone. The Pillars view's Archival band holds the projects in such rows, grouped by stage in the order of the `dead` numbers of `stages`; `realProjects` (the venue counts, the Orphans card, the pillar lines) is every project in no such row. Ruling 303 has the band read the rows of `categories:`, and the flag follows `record: true` and `rail: true`.
+- Not chosen: band membership inferred from the rows whose `stages:` block names only dead stages, which drops a hub row naming a dead stage among others out of the band without a word; the band naming the row `dead-ends` by key, which breaks when a hub renames or removes it.
+
+Where it applies: O55. Booked in `plan.md` Rulings.
+
+## Z974 (2026-10-24, O55's /spec, the brief check's finding on cases and entries, the orchestrator, automode): the guarded entry O55's tests stand under
+
+- Chosen: a new entry G124, "A project is on every board whose keys it meets and in the category of the first row of `categories:` that holds it; its role is the first row of `roles:` whose field holds `self`, and Mine only keeps what names `self` or names no one; a project no board takes, a manifest naming no lead and a terminal project on a chip lane are findings", added to `agents/guarded.md` at O55's landing; the config findings under G116, the manifest parse under G32, the reload under G29. A project hidden from every board, or shown on the wrong one, is work the user does not see.
+- Not chosen: no entry, which leaves the board rule with no test; one entry per board key, which splits one guarantee into several.
+
+Where it applies: O55. Booked in `plan.md` Rulings.

@@ -1,8 +1,7 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (1 of 6 slots in use):
+- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band). Preparing: brief written, brief check running.
 
-Queued, in order (5 steps):
-- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285, 287, 288, 289 and 291). Waits: Axel's word for /spec O55.
+Queued, in order (4 steps):
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
