@@ -1,0 +1,31 @@
+# O68, repair round 1
+
+The refutation of your build is `agents/reviews/O68-refuter.md`: items 1, 2, 4 and 6 hold, every case is met, and it raises the points below. Work in `.agents/worktrees/migration-O68` only, under `agents/briefs/O68.md`, this file and `agents/spec.md`. Run no git command but `git status`, `git diff` and `git show`, read only: no `git log`, and nothing that changes the index. Never open, print, grep or hash `config/local.yml`; every grep over `config/` carries `--exclude=local.yml`. Never curl ports 8787 or 8790, and run no browser. No breakage testing of any kind. Rewrite the report `agents/reviews/O68-report.md` whole for the state after this round, with each item below DONE or handed back with its reason.
+
+A shortcut is a finding: a narrower reading of an item, or work inside the round called outside it, is done or handed back with the reason before the report.
+
+The path list of the brief widens by one file for item 1: `src/lib/server/edit/writes/hubs.ts`.
+
+## Items
+
+1. **The comment of `homeOf` names the writes that reach it (refutation Standards 1).** `src/lib/server/edit/writes/hubs.ts:183-186` lists "a host status" among the writes that name no record and need a hub; that write is gone. The comment names the writes that call `homeOf` now, the career write among them, found by `grep -rn "homeOf(" src`, which the report quotes. Grep `src` and `docs` for every other sentence that still names a host write, a host status or the host pipeline as something oculus does (`grep -rniE "host status|host write|host pipeline|career host" src docs --exclude=local.yml`), quote the output in the report, and rewrite each sentence it shows false; a hit that means something else is named with the reason.
+2. **The two edited comments are rewrapped at 100 columns (refutation Standards 2).** `src/lib/server/edit/writes.ts:23` (102 columns) and `src/lib/views/boards/focus/lanes/LaneCard.svelte:7` (101 columns): each paragraph is rewrapped as a whole. The report quotes `awk 'length($0) > 100 { print FILENAME":"FNR }'` over every file the step changes, printing nothing for a comment line.
+3. **HELP says when the funding line is drawn (refutation Standards 5).** `docs/HELP.md`'s Focus note says the funding line of the track record is drawn only when at least one funding entry you lead is obtained, as `CareerPanel.svelte` draws it (`{#if record.funding > 0}`).
+4. **Each added or changed test row has its run on the unchanged tree (refutation Proof 1).** For every row the step adds or changes (in `tests/data/sources/career.test.ts`: 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip', the six rows of 'reads $name', 'reads none of the sections the banner does not draw into the model', 'keeps every section as the file holds it, with the schema left out'; in `tests/server/edit/writes.test.ts` the three rewritten rows of 'writing career sections'; the renamed rows of `tests/server/core/changes.test.ts` and `tests/routes/edit/undo/undo.test.ts`; the icon row of `tests/checks/config/config-folder.test.ts`), run the new test text against the unchanged source in your scratch replica of the base (`$S/base-tree`, the copy you already made in your scratch folder; never `.agents/worktrees/O68-base`), and quote for each row its failing line, or its passing line where the row checks behaviour the step keeps. The case-run approval of ruling 262 covers this run: it only prints results, writes nothing into the step's diff, and its command and output are quoted.
+5. **The report holds the greps the rules file asks for (refutation Spec 3 and Standards 4).**
+   - The grep of each removed text key and refusal for another reader before its removal: `server.career.not_a_status`, `server.edit.host_no_field`, `server.edit.host_no_status`, `server.edit.no_host`, `server.edit.no_hosts`, `server.write_route.no_host`, the `REFUSALS` keys `hostNoField`, `hostNoStatus`, `noHost`, `noHosts`, and the focus and history keys the step removed, each with its command and output on the tree as it is now.
+   - The grep over `src` and `tests` for the name and key call of each helper, type or schema the step adds (`laneMarks`, `foldedLine`, `daysLeft`, `trackRecord`, `RecordLine`, `RoleRecord`, `TrackRecord`, `milestoneDate`, and the exports of `entryPeople` and `isSelfByKey`), quoted.
+   - Every head comment, doc comment and document paragraph that describes the changed behaviour, each listed with its path and line as "still true" or "rewritten".
+
+## Not sent
+
+- Spec 1: the `obtained` comment and shape help say "career banner's track record" where the brief dictated "career card's". The step renames the surface to the banner throughout, so "banner" is the tree's word and the brief's "card" was its error. The builder's words stay.
+- Spec 2: the icon row of `config-folder.test.ts` reads the icons of `stages`, `forms`, `chips` and `statuses`. With the host statuses gone, oculus's `statuses` rows carry no `icon`, so a row kept to statuses would assert over an empty list. A shipped glyph name that no glyph holds is a wrong configuration accepted. The file is held under G12 and G13 (`agents/guarded.md`). The widened row stays; its run on the unchanged tree is item 4's.
+- Spec 4: the `guarded.md` lines are the orchestrator's, written at landing.
+- Proof 2: the stopped first run of `test:quick` cost time only.
+- Standards 3: the three deletions staged in the worktree's index came from the orchestrator's command after your report, not from you. Your `git log -L` is outside the three read-only commands; run none in this round.
+- The red row of `tests/checks/source/history.test.ts` on `src/desktop/app.ts:161`, red on the base too, is fixed at landing.
+
+## Verify before you report
+
+From the worktree's root, after the last change: `npm run diagrams && npm run test:quick`, every line `ok` except `vitest checks`, whose only failure is the history row at `src/desktop/app.ts:161`; the character-set check of the brief over the changed files and the report (prints nothing, exit 0); the brief's grep 3 (no new hit read by code); `sh utils/unused-exports.sh` against `.agents/worktrees/O68-base/unused-exports.txt` (differs only by removals). The plan's whole verify list runs once, at landing on main.

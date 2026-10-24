@@ -33,7 +33,9 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a3f1cbcf242aaddd8
   launched: 2026-10-24
   report: .scratch/migration/agents/reviews/O68-report.md
-  round: 0
+  builder_usage: "257007 tokens, 281 tool uses, 44 min 13 s"
+  reviewer_report: ".scratch/migration/agents/reviews/O68-refuter.md (a7eeb12398f1acb96, claude-opus-5-5, 294870 tokens, 70 tool uses, 15 min 22 s)"
+  round: 1
   landing: not-started
 - step: O63
   brief_check: .scratch/migration/agents/reviews/O63-brief-check.md (a036b1012be622036, claude-opus-5-5, 255390 tokens, 83 tool uses, 10 min 40 s)

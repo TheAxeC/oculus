@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), builder launched 2026-10-24.
+- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), builder reported 2026-10-24; under review.
 - O63 (the audit's hub conventions as hub settings), builder launched 2026-10-24.
 
 Queued, in order (1 step):
