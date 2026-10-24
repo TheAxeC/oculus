@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band). Building: brief checked, preparation commit 00bebb58, builder launched 2026-10-24.
+- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band). Repair round 1: built, refuted (every item and case holds or is met, four behaviour findings), round 1 sent 2026-10-24 under ruling Z975.
 
 Queued, in order (4 steps):
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.

@@ -4850,3 +4850,10 @@ Where it applies: O55. Booked in `plan.md` Rulings.
 - Not chosen: no entry, which leaves the board rule with no test; one entry per board key, which splits one guarantee into several.
 
 Where it applies: O55. Booked in `plan.md` Rulings.
+
+## Z975 (2026-10-24, O55's refutation, decisions 11 and 12 on Archive and on boards naming no `role:`, the orchestrator, automode): where New project is offered, and whom it names
+
+- Chosen: a board offers New project only when its own rule, held with `boardTakes`, takes the project the write makes, so with the shipped config Archive draws none; on a board naming no `role:` (Personal, Software) the write names the user in the field of the first row of `roles:` that has one, as Lit Watch's New project does; a change made while the reload's workspace is presumed is written when the answer confirms that workspace. The button then always makes a project that appears on the board where it was pressed, and no new project starts with a no-lead finding.
+- Not chosen: New project kept on Archive with the project landing on Projects, the lazy option, since the button would make something the board does not show; a terminal stage written from Archive, which makes a new project that is already done; Personal and Software projects written without a lead, which gives each one an Audit finding the user did not cause.
+
+Where it applies: O55. Booked in `plan.md` Rulings.
