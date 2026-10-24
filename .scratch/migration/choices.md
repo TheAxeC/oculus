@@ -4,6 +4,34 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z983 (2026-10-24, O68's /spec, the orchestrator, automode): the funding a career track record counts
+
+- Chosen: a new flag `obtained` of `statuses:`, on `awarded` and `granted`; the track record counts the funding entries led by `self` whose status carries it.
+- Not chosen: the flag `acknowledged`, which leaves out `granted` and means something else; the two words written in code (the lazy option).
+
+Where it applies: O68's brief, What to build 3. Booked in `plan.md` Rulings.
+
+## Z982 (2026-10-24, O68's /spec, the orchestrator, automode): the career file's goal and dated milestone
+
+- Chosen: `goal:`, one text, and `milestone: { title, date }`; the card draws the milestone's title, its date and the days left; the hub's `Target` row moves into `goal`, and the milestone reads `{ title: FWO Senior, date: 2026-11-17 }`.
+- Not chosen: the milestone as the id of a funding or applications entry, whose date would have one home but which cannot name a milestone that is no entry; the milestone kept a text and the goal read from the `Target` row (the lazy option).
+
+Where it applies: O68's brief, What to build 2. Booked in `plan.md` Rulings.
+
+## Z981 (2026-10-24, O63's /spec, the orchestrator, automode): a guarded entry for the audit's hub setting
+
+- Chosen: a new entry G125, the audit holds a hub to the conventions its own `audit:` names and to none it does not; its test `tests/routes/docs/audit.test.ts`, one table per key; added at landing.
+- Not chosen: the audit test deleted with no entry, the setting's reader unheld (the lazy option).
+
+Where it applies: O63's brief, What to build 5. Booked in `plan.md` Rulings.
+
+## Z980 (2026-10-24, O63's /spec, the orchestrator, automode): the published check as a hub setting
+
+- Chosen: `audit.stage_folders`, rows `{ stages, folder }`: a hub project whose stage meets the block and that does not lie under the folder is a finding; the hub writes `{ stages: { words: [published] }, folder: projects/archive/published }`.
+- Not chosen: the check gone with no setting, against ruling 288 (3)'s word that it comes back (the lazy option).
+
+Where it applies: O63's brief, What to build 1. Booked in `plan.md` Rulings.
+
 ## Z979 (2026-10-24, O60's /spec, the orchestrator, automode): the display languages' lookup written by hand
 
 - Chosen: the chosen language's word for a key, and the English word where it has none, looked up in oculus's own catalog code.
