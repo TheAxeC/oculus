@@ -159,3 +159,186 @@ Cases of the brief's "Cases":
 - The `PEOPLE` map in `src/lib/data/shapes/boards/takes.ts` reads a project's role only from `lead`, `collaborators` and `supervisors`, so a `roles:` row naming another field would read nothing on a project with no finding; no hub can override `roles:` before O60 (brief item 4), so it has no effect in this step; for O60's brief.
 
 Reviewer usage: aa96d29100a7ec667, claude-opus-5-5, 234310 tokens, 102 tool uses, 15 min 11 s.
+
+## Repair round 1, refuted
+
+```
+All commands ran from /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O55.
+
+$ npm run test:quick -- --base 00bebb58
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.1 s)
+ok      eslint (2.1 s)
+ok      svelte-check (7.8 s): 1792818043377 COMPLETED 538 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (93.8 s): Duration  85.97s (...)
+ok      vitest (99.1 s): Duration  91.88s (...)
+ok      vitest slow (151.7 s): Duration  144.38s (...)
+test:quick: 154.0 s; every command passed
+exit 0
+(tests/state/sessions/source/source-unserved.test.ts was not red in this run, so it was not rerun alone.)
+
+$ git diff 00bebb58 --stat | tail -1
+ 159 files changed, 6717 insertions(+), 3503 deletions(-)
+$ LC_ALL=C perl -ne '<the spec.md ASCII gate>' $(the 160 paths of git status --short, minus local.yml: the 159 changed files, the report and the round brief)
+(nothing printed)
+exit 0
+
+$ grep -rnE "<the brief's verify 3 pattern>" src config tests docs utils --exclude=local.yml | wc -l
+390
+exit 0
+(the per-file hit counts are identical to the builder's $S/r1-grep3.txt: a diff of `sort | uniq -c` over the file names printed nothing)
+
+$ sh utils/unused-exports.sh > ue.txt; diff ../O55-base/unused-exports.txt ue.txt
+126c126  (bucketOf removed from src/lib/state/boards/board/index.ts)
+284c284  (RollupBucket removed)
+(343 lines each; no line added)
+
+Commands the round's report quotes, rerun:
+$ npx vitest run tests/state/boards/board/ tests/state/workbench/layout/saved/layout-workspaces.test.ts
+ Test Files  4 passed (4)
+      Tests  109 passed (109)          (report: 109; agrees)
+$ npx vitest run tests/state/workbench/layout
+ Test Files  5 passed (5)
+      Tests  61 passed (61)            (report: 61; agrees)
+$ npx vitest run tests/state/boards/board/
+ Test Files  3 passed (3)
+      Tests  85 passed (85)            (report: 85; agrees)
+$ npx vitest run tests/state/workbench/layout/saved/layout-workspaces.test.ts tests/state/boards/board/board-rules.test.ts --reporter=verbose
+ <check mark> ... New project on a board > is offered on the boards that take the project it writes, 'with self named'
+ <check mark> ... New project on a board > is offered on the boards that take the project it writes, 'with no self'
+ <check mark> ... names the user, for a board naming 'no role: key, every row in order'   (and the 4 other rows)
+ <check mark> ... names the user on 'personal' | 'software' | 'supervision' from the shipped board row
+ <check mark> ... the workspace answer > saves a change made before it came once it names the workspace the reload drew
+ <check mark> ... the workspace answer > saves nothing of the workspace the reload drew when it names another
+ <check mark> ... the workspace answer > reads no arrangement and sends nothing before it came in a tab that loaded none
+      Tests  105 passed (105)
+$ npx vitest run --config $S/cases.config.mjs --silent=false --reporter=verbose after
+case22: quickadd=["qp","qs"]
+case23: venue attention=[{"kind":"venue","id":"v1","count":1,"label":"V1"}]
+case23 vp alone: [...count 1...]
+case23 vr alone: []
+case24 supervision: offered=true person={"role_field":"supervisors","self":"axel-faes"} {...supervisors:\n  - axel-faes...,"boards":["supervision"]}
+case24 software: offered=true person={"role_field":"lead","self":"axel-faes"} {...tier: software...lead:\n  - axel-faes...line: New project...,"boards":["software"]}
+case24 personal: offered=true person={"role_field":"lead",...} {...tier: personal...lead:\n  - axel-faes...,"boards":["personal"]}
+case24 projects: offered=true person={"role_field":"lead",...} {...,"boards":["projects"]}
+case24 no tier: {...tier: research...lead:\n  - axel-faes...,"boards":["projects"]}
+case25: [["in-flight",["xb"]],["done",["xp","xr"]],["ideas",["xn"]]]
+      Tests  1 passed (1)
+(the case lines are byte-identical to $S/r1-case24.txt: diff printed nothing)
+$ npx vitest run <the 7 whole-tree checks of r1-tree-checks.log> --testTimeout 0 --hookTimeout 0
+ FAIL tests/checks/tree/duplication.test.ts   (Data.svelte:64 and Venues.svelte:76)
+ FAIL tests/checks/source/comment-width.test.ts   (writes.svelte.ts:640, card-tree.ts:4, SaveToLiterature.svelte:89, +page.server.ts:18, reference-hub.ts:4, app-theme-start.test.ts:309, comment-rules.test.ts:166)
+ FAIL tests/checks/source/history.test.ts   (src/desktop/app.ts:161)
+ Test Files  3 failed | 4 passed (7)
+      Tests  3 failed | 68 passed (71)
+(same three, same lines as the report; no line in a file the step changes)
+$ hub read, from ~/workspace/research-hub: grep -rL "^lead:" --include=project.yml <the 7 scan folders> | wc -l
+20   (17 personal, 3 software by their tier: lines)
+$ grep -q "^lead:" over the .oculus/project.yml of cathedra, game-engine, ordo, oculus, scotoma, officium, youtube-downloader
+7 with no lead, all tier: personal
+(20 + 7 = 27, 24 personal and 3 software, as the report's Hub rewrite lists; 114 project.yml files under projects and side-projects, 94 with a lead line, as reported)
+
+Runs made on the unchanged tree, read from their saved output and not rebuilt:
+$S/r1-g124-first.txt: "TypeError: offersNewProject is not a function" (2 rows), "keys is not iterable" (3 rows), "Tests  5 failed | 76 passed (81)"
+$S/r1-g29-first.txt: "x saves a change made before it came once it names the workspace the reload drew", "AssertionError: expected '{"version":7,...' to contain 'Before the answer'", "Tests  1 failed | 23 passed (24)"
+$S/r1-g29-base.txt: "<check mark> ... reads no arrangement and sends nothing before it came in a tab that loaded none", "Tests  2 failed | 22 passed (24)"
+```
+
+### Verdicts
+
+Items of the brief's "What to build", in its numbering:
+- 1: holds. `config/catalogs/vocab.yml:200-203` holds the three tiers with `label` only. `research_audit: { skip_tiers: [personal] }` is at `:207`. Grep 3 finds no code reading a removed flag or name (390 hits, the same files and counts the builder judged). `idea_status_software` writes "New project." (case 24 rerun). Every board offers New project (decision 11) as amended by Z975 (1): `offersNewProject` in `new-project.ts`, read at `Projects.svelte:156`.
+- 2: holds. `roles:` is at `vocab.yml:211-215`. `supervisors` is in the schema (`manifest-schema.yml:58`) and placed last by `teamOf`. The person New project names now covers a board naming no `role:` (`newProjectPerson` with `keys` null; the G124 rows pass).
+- 3: holds. The six boards are at `config/defaults/layout.yml:228-290` with the keys of the brief. `boardTakes` applies every key (`takes.ts`). Z975 settles decisions 11 and 12: Archive draws no New project (G124 row "is offered on the boards that take the project it writes", with and without `self`), and every other board's write is on its own board (case 24 rerun: supervision, software, personal, projects).
+- 4: violated, in one clause: "nothing else is named `category` on a project". `Project.category`, the scan's segment computation and the G32 rows are gone (`git diff 00bebb58 -- src/lib/data/sources/manifests.ts` removes `const category = segments.length > 1 ? segments[0] : undefined`). Two help texts the step edited still call the first folder a project's category. See finding 1. The rows `vocab.yml:224-230`, `categoryOf`, the rail and the Archival band hold.
+- 5: holds. `cards:` is described at `config/options/layout.yml:239-240`. The team line, the Lead badge, the Role facet, Mine only and the templates are as the first refutation found. No line of the round touches them.
+- 6: holds. The Idea lane is at `vocab.yml:181` with `IDEA` at `focus.ts:43`. The keys `xlink_in_flight` and `xlink_done` are at `config/text/views/boards/project.yml:127-130`, and the type `'in-flight' | 'ideas' | 'done'` is at `collection.ts:729`.
+- 7: holds. `msg_no_lead`, `msg_no_board` and `msg_terminal_lane_chip` are at `config/text/views/system/audit.yml:59-61`; `categories_block`, `categories_row` and `categories_colour` are at `config/text/findings.yml:164-166`. Grep 3 finds no hit for any removed check.
+- 8: holds. The G29 rows pass (24 of 24). The round adds the write at the confirming answer (`storage.ts` `select`) and the row for an empty tab memory. See findings 3 and 4 for the held pages.
+
+Cases of the brief's "Cases":
+- 1 to 16: met, by the G124 rows of `tests/state/boards/board/board-rules.test.ts` (85 of 85 in my rerun of the folder), and the G32 rows for 10 and 11 (in the test:quick run).
+- 17, 18, 19: met, by the G116 rows of `tests/data/sources/config/boards.test.ts` (in the test:quick run; 26 rows per the first refutation).
+- 20, 21, 21a: met, by the G124 rows "the roles of a collection".
+- 22, 23: met, by the case-run program rerun (identical output).
+- 24: met, by the rerun. Supervision writes `supervisors: [axel-faes]` and is on supervision. Software writes `lead: [axel-faes]` and "New project." and is on software. A write with no tier gives `research`.
+- 25: met, by the rerun. The singular heading for one idea stays by the round brief's "Not sent".
+- 26, 28 to 32: met, by the G124 rows.
+- 27: met for the store: the G29 row "draws the arrangement of the workspace the browser tab last loaded in its first draw" fails on the base copy ($S/r1-g29-base.txt) and passes now. Not verifiable here for the drawn first frame, which the landing look on TEST settles.
+
+### Findings
+
+1. **`config/defaults/sources.yml:9` and `config/options/sources.yml:15`.**
+   - Quoted: "When a project lies deeper than one level, the first folder under the `dir` is its category." (`:15` has the same sentence without backticks.)
+   - What is wrong: the step removes the scan's category (`manifests.ts` diff: `- const category = segments.length > 1 ? segments[0] : undefined;`, `- category?: string;` in the model) and decision 14 says the word category then means only a row of `categories:`. Both files are on the write list and the step edited them, yet each still names the filing folder a project's category. The step made the sentence false.
+   - Heading: standards.
+   - Failure scenario: a hub author reads the scan help in the settings editor, files projects under `projects/<folder>/`, and expects the folder to show as the category. The boards file the project under a row of `categories:` instead.
+   - Verdict: item 4 violated (a one-sentence cut in each file at landing).
+2. **`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o55/r1-assemble.py`** (06:56, the round), with `presets_edit.py` (04:50) and `rewrap.py` (05:28) from the main build.
+   - Quoted: `R = '.scratch/migration/agents/reviews/O55-report.md' ... def rep(a, b, count=1): ... s = s.replace(a, b)`; `p='src/lib/state/boards/board/presets.ts' ... s=s.replace(a,b,1)`; `lines[a-1:b] = [prefix + n for n in new]; open(p, 'w').write(...)`.
+   - What is wrong: the brief says "No script is written for this step, by the builder ... other than a script the step builds under 'What to build'. Any other script needs the user's approval". These three Python programs rewrite the report, `presets.ts` and comment paragraphs. None is a case-run program, and the report names none of them.
+   - Heading: spec (a script the brief does not build).
+   - Failure scenario: the orchestrator reads the report as hand edits under the brief, and does not learn that edits to source and report were made by unapproved scripts.
+   - Verdict: none.
+3. **`src/lib/state/workbench/layout/saved/storage.ts:239-241` with `load.ts` `takeSaved`/`adopt`.**
+   - Quoted:
+     ```
+     if (presumed) held = { next, call };
+     ...
+     const confirmed = presumed && selected === identity ? held : null;
+     ...
+     if (confirmed !== null) writeFor(identity, confirmed.next, confirmed.call);
+     ```
+   - What is wrong: `held` is a snapshot of the pages at the last local change. `follow(takeSaved)` keeps running while presumed (`follow` filters on `identity === selected`, which is the presumed identity). When another page saves the same workspace in that window, `adopt` replaces the store's pages and writes nothing back, so `held` goes stale. At the confirming answer, `select` writes the stale snapshot from the newly adopted envelope's stamp. The page-state rule "another page's save heard while this page is idle is taken as it is" (`page-state.svelte.ts:12`) treats the page as idle, so the save is admitted.
+   - Heading: behaviour.
+   - Failure scenario: window Y and reloaded tab X are both on workspace A. In the presumed window, the user moves a tab in X and Y saves a change. X adopts Y's arrangement on screen; at the answer, X writes its pre-adopt pages. Y's change is lost on the server, and X's screen no longer matches what the server holds.
+   - Found by reading, not by a run; the window is the time to the workspace answer.
+   - Verdict: none. Item 8 and round item 3 hold for the case the brief names. Writing `access.held()`, or dropping `held` on adopt, would close it.
+4. **`src/lib/state/workbench/layout/saved/storage.ts:222-224`.**
+   - Quoted: `carried: () => { const held = memory.read(WORKSPACE_KEY); return held === null || held === '' ? null : held; },`
+   - What is wrong: the round adds an outer `let held` in the same factory (`:195`), so `carried`'s local `held` now shadows it. One name means two things within 30 lines.
+   - Heading: standards (code a reader can maintain).
+   - Failure scenario: a later edit inside `carried` that means the held pages reads the identity string instead, and type-checks only by chance.
+   - Verdict: none.
+5. **`src/lib/state/workbench/layout/saved/storage.ts:9-10`** (head comment).
+   - Quoted: "An answer naming the presumed identity writes the pages a change made before it once, and an answer naming another identity replaces the arrangement and writes nothing of the presumed one."
+   - What is wrong: "writes the pages a change made before it once" does not parse as a sentence a reader can follow ("writes, once, the pages of a change made before it").
+   - Heading: standards (spec "Prose: plain").
+   - Failure scenario: a reader cannot tell from the head comment whether the change is written once or the answer comes once.
+   - Verdict: none.
+6. **`src/lib/server/edit/writes/manifest.ts:603`** (86 columns) and **`src/lib/state/boards/board/new-project.ts:6`** (91 columns).
+   - Quoted: " * made on. A bad id, an id a project already holds, a tier that is no word of `tiers`" followed by " * or has no words, ..."; and "// no `role:`. A board offers New project only when the project that write makes is one the" followed by "// board's rule takes ...".
+   - What is wrong: the round edited these paragraphs and left a line short inside a sentence where the next word fits by column 100. The spec says "A comment edited by the step is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short". The awk over the edited comment blocks prints `manifest.ts:603: 86 next=or` and `new-project.ts:6: 91 next=board's`.
+   - Heading: standards.
+   - Failure scenario: the next reader sees a ragged paragraph and takes it for a hand-wrapped break.
+   - Verdict: none.
+7. **The report, DONE / NOT DONE row "No history words in new comments and titles".**
+   - Quoted: "read; `tests/checks/source/history.test.ts` names only `src/desktop/app.ts:161`".
+   - What is wrong: the spec asks that "the report quotes the grep with each hit judged". The round's added titles and comments hold the listed word "before" in 6 places, by `diff` of the round's files piped through `grep -i -E "\bbefore\b|..."`:
+     - `layout-workspaces.test.ts`: the titles "saves a change made before it came ..." and "... sends nothing before it came in a tab that loaded none";
+     - `storage.ts:9-11`;
+     - `load.ts:38`.
+     Each is temporal within the run, not history, but no grep is quoted.
+   - Heading: proof.
+   - Failure scenario: the orchestrator cannot see that the titles were checked against the history rule.
+   - Verdict: none.
+8. **The report, "Host- and user-visible changes", the entry "New project on a board", with judgment call 12.**
+   - Quoted: "a board draws `+ new idea` only when its rule takes the project the write makes (its first tier, the user in the field below, the first stage carrying `new_idea`, no chip, no form)".
+   - What is wrong: the synthetic project in `offersNewProject` has no `root` and no other field. So a workspace board naming `hub:` (`takes.ts`: `if (rule.hub !== null && project.root !== rule.hub) return false`), or `match:` on any field New project does not set, now draws no New project. Before the change every board drew it. The change is stated only as a judgment call, with no before and after, in the visible-changes section.
+   - My judgment of the call: it is a faithful reading of Z975 (1)'s list, since the hub and the domain are chosen in the form after the press, and it keeps the button from making a project that leaves the board. Keeping New project on such boards would need the form's hub fixed to the board's, which Z975 does not ask for.
+   - Heading: behaviour.
+   - Failure scenario: a user with a workspace board `hub: <second hub>` finds its New project gone after the landing and is not told by the report the look reads against.
+   - Verdict: none.
+
+The builder's second judgment call holds. The held pages are written under the call name of the last operation, `openPage` in the G29 row, which asserts `['openPage']`, one write. Earlier operations in the presumed window get no record line of their own, and since the record of layout writes names the operation that made the pages written, that is consistent.
+
+Round items: 1 holds, 2 holds, 3 holds (finding 3 is a race outside the asked case), 4 holds (the row keeps the base row's assertions `envelope` not called, `sent()` `[]` and `loaded()` false, and passes on the base copy per $S/r1-g29-base.txt), and 5 holds (27 manifests reproduced). No finding was closed by removing a check, and no round change reaches beyond its item: the round's paths are the 16 listed by `cmp` against the snapshot, all on New project, the reload, their tests, `docs/HELP.md` and the regenerated diagrams.
+
+### Declined to judge
+
+- Whether finding 3's lost update happens in a real browser within the time to the workspace answer. It would be settled by a G29 row with a second page saving A between `loadLayout` and the confirming answer; I write no file under this review's rules.
+- The drawn first frame of a reload, the absent `+ new idea` on Archive, the Mine only chip, the Role facet and the sections. They need a running page and are settled by the landing look on TEST.
+- `tests/state/sessions/source/source-unserved.test.ts`: it was not red in my test:quick run, so I have no red of my own to report on it.
+
+Reviewer usage: ab4a4e18a17c03122, claude-opus-5-5, 227015 tokens, 61 tool uses, 11 min 16 s.

@@ -1,6 +1,6 @@
-Not done: decision 12 on the Archive board, where New project writes a project that lands on Projects, not on Archive (item 1 of "Anything in the brief that was wrong or impossible"); everything else in the brief is done.
+Nothing is left undone: every item of the brief and of repair round 1 is done. Decision 12 on the Archive board is settled by ruling Z975: Archive draws no New project, since it takes no project the write makes.
 
-Two more departures from the brief's wording are named in that section: the roles module is in `src/lib/data/shapes/boards/`, not `src/lib/state/boards/board/`, and `docs/palette.md` is written by `npm run docs:palette`, not by `npm run diagrams`.
+Two departures from the brief's wording are named under "Anything in the brief that was wrong or impossible": the roles module is in `src/lib/data/shapes/boards/`, not `src/lib/state/boards/board/`, and `docs/palette.md` is written by `npm run docs:palette`, not by `npm run diagrams`.
 
 # O55 report: the project boards choose their projects by kind, role and state
 
@@ -13,6 +13,123 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ```
 
 The list holds no entry. This step adds none.
+
+## Repair round 1 (brief `agents/briefs/O55-round1.md`, ruling Z975)
+
+Every item of the round is DONE. `S` below is the scratch folder named under "The cases' first run". In the quoted runs `v` stands for the check mark vitest prints for a passing test, `x` for its multiplication sign, `...` for its ellipsis and `->` for its arrow.
+
+### Item 1: New project only on a board that takes the project it writes: DONE
+
+`offersNewProject(rule, context)` in `src/lib/state/boards/board/new-project.ts` builds the project the board's write would make and holds it to the board's rule with `boardTakes` of `src/lib/data/shapes/boards/takes.ts`: the tier is the first word of the board's `tier:` (`rule.tiers?.at(0)`), else the first word of `tiers:`; the user's id sits in the field `newProjectPerson` gives (item 2); the stage is `wordsWith(config, 'stages', 'new_idea').at(0)`; it has no chip, no form, no other field and no hub. The selector `offersNewProject(preset)` of `src/lib/state/client/selectors.svelte.ts` hands it the board's take context with the user's ids, and `src/lib/views/boards/projects/Projects.svelte` draws `+ new idea` and the form only when it answers true (`const offersNew = $derived(offersNewProject(preset))`, `{#if offersNew}` around the tool button, `{#if adding && offersNew}` around the form). No board id is written in code.
+
+The comments and the help note now say this: `takes.ts:6-8` (a board's offer of New project reads this module), `NewIdeaForm.svelte` head comment (used by the project boards and Lit Watch; a board draws the form only when its rule takes the project the write makes), the `Projects.svelte` head comment (Archive, which takes done work, offers none with the shipped boards), the `createIdea` comment of `src/lib/server/edit/writes/manifest.ts` (where `role_field` comes from, and that the board offers the write only when its rule takes the project), and `docs/HELP.md:288` (`+ new idea` shows on a project board that takes the project it writes; with the shipped boards every board but Archive). `grep -rn -i -e "new project" -e "new idea" src docs | wc -l` prints 50; each was read, and no other line says every board offers New project or that the new project is on the board it was made on.
+
+G124 rows (`tests/state/boards/board/board-rules.test.ts`, describe `New project on a board`): over `boardIds(CONFIG)`, the boards for which `offersNewProject(presetFor(id, CONFIG).rule, takeContext(CONFIG, self))` is true are `['projects', 'supervision', 'coauthor', 'personal', 'software']`, once with `self` named and once with no `self`. First run, on the tree before the item's code change (`npx vitest run tests/state/boards/board/board-rules.test.ts --reporter=verbose`, `$S/r1-g124-first.txt`):
+
+```
+ FAIL  |unit| tests/state/boards/board/board-rules.test.ts > New project on a board > is offered on the boards that take the project it writes, 'with self named'
+ FAIL  |unit| tests/state/boards/board/board-rules.test.ts > New project on a board > is offered on the boards that take the project it writes, 'with no self'
+TypeError: offersNewProject is not a function
+      Tests  5 failed | 76 passed (81)
+```
+
+After the change: `npx vitest run tests/state/boards/board/ tests/state/workbench/layout/saved/layout-workspaces.test.ts` printed `Test Files  4 passed (4)`, `Tests  109 passed (109)` (`$S/r1-board-g29.txt`).
+
+### Item 2: a board naming no `role:` names the user as lead: DONE
+
+`newProjectPerson(roles, keys, self)` takes `keys: readonly string[] | null`; null, a board naming no `role:`, reads every row of `roles:` in order, so the user is named in `lead`. A list reads only the roles it names, so a board whose roles have no field names no one. With no `self`, it answers null and no person is written.
+
+```ts
+const user = [...self].at(0);
+const field = selfField(roles, keys ?? roles.map((role) => role.key));
+return user === undefined || field === undefined ? null : { role_field: field, self: keyOf(user) };
+```
+
+`Projects.svelte` passes `roles={preset.rule.roles}` (null or a list) to `NewIdea.svelte`, whose prop is `readonly string[] | null`. `NewIdeaForm.svelte` calls `newProjectPerson(roles ?? null)`, so Lit Watch's form, which passes no roles, names the user as lead.
+
+G124 rows: `newProjectPerson(rolesOf(CONFIG), keys, MINE)` gives `lead` for `['lead']`, `supervisors` for `['supervisor']`, `collaborators` for `['collaborator', 'other']`, `lead` for `null`, null for `['other']`, and null for each with no `self`. With the shipped rows, Personal and Software give `lead` and Supervision gives `supervisors`. The first run is the one quoted under item 1, which also printed:
+
+```
+ x |unit| tests/state/boards/board/board-rules.test.ts > New project on a board > names the user, for a board naming 'no role: key, every row in order' 0ms
+   -> keys is not iterable
+ x |unit| tests/state/boards/board/board-rules.test.ts > New project on a board > names the user on 'personal' from the shipped board row 0ms
+   -> keys is not iterable
+ x |unit| tests/state/boards/board/board-rules.test.ts > New project on a board > names the user on 'software' from the shipped board row 0ms
+   -> keys is not iterable
+```
+
+Case 24 rerun, its program changed to take each board's person from `newProjectPerson(rolesOf(config), presetFor(board, config).rule.roles, new Set(['axel-faes']))` and its offer from `offersNewProject`, and to write through `createIdea` (`npx vitest run --config $S/cases.config.mjs --silent=false --reporter=verbose after`, `$S/r1-case24.txt`):
+
+```
+case24 supervision: offered=true person={"role_field":"supervisors","self":"axel-faes"} {"text":"id: n1\ntier: research\nstage: nascent\nsupervisors:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: \"New idea: scope and novelty check open.\"\neli5: N\nnext: Scope the idea; cited-novelty lit check; decide go/no-go.\n","boards":["supervision"]}
+case24 software: offered=true person={"role_field":"lead","self":"axel-faes"} {"text":"id: n2\ntier: software\nstage: nascent\nlead:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: New project.\neli5: N\n","boards":["software"]}
+case24 personal: offered=true person={"role_field":"lead","self":"axel-faes"} {"text":"id: n4\ntier: personal\nstage: nascent\nlead:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: New project.\neli5: N\n","boards":["personal"]}
+case24 projects: offered=true person={"role_field":"lead","self":"axel-faes"} {"text":"id: n5\ntier: research\nstage: nascent\nlead:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: \"New idea: scope and novelty check open.\"\neli5: N\nnext: Scope the idea; cited-novelty lit check; decide go/no-go.\n","boards":["projects"]}
+case24 no tier: {"text":"id: n3\ntier: research\nstage: nascent\nlead:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: \"New idea: scope and novelty check open.\"\neli5: N\nnext: Scope the idea; cited-novelty lit check; decide go/no-go.\n","boards":["projects"]}
+```
+
+The Software write holds `lead:` with the user and is on Software; the Personal write likewise on Personal.
+
+### Item 3: a change made while the reload's workspace is presumed is saved when the answer confirms it: DONE
+
+`createStorage` in `src/lib/state/workbench/layout/saved/storage.ts` holds the pages of the last change made while the workspace is presumed (`held`), instead of dropping them. `select(identity)` writes them once when it names the presumed identity, and drops them when it names another; `presume` clears them.
+
+```ts
+select: (identity) => {
+    const confirmed = presumed && selected === identity ? held : null;
+    held = null;
+    selected = identity;
+    presumed = false;
+    memory.write(WORKSPACE_KEY, identity);
+    if (confirmed !== null) writeFor(identity, confirmed.next, confirmed.call);
+},
+write: (next, call = '') => {
+    if (selected === null) return;
+    if (presumed) held = { next, call };
+    else writeFor(selected, next, call);
+},
+```
+
+`workspaceOpened` in `load.ts` reaches it through `storage.select(identity)` on the branch where the answer names the workspace already named; its doc comment and `loadLayout`'s now say a change made while presumed is saved then. When the answer names another workspace, `workspaceOpened` writes nothing of the presumed one, as before.
+
+New G29 rows in `tests/state/workbench/layout/saved/layout-workspaces.test.ts`, describe `the workspace answer`:
+
+- "saves a change made before it came once it names the workspace the reload drew": the tab memory carries A, A is seeded, the reloaded page opens a page before the answer, nothing is sent before it, the answer names A, and with no later change the server holds `Before the answer` for A, the record of layout writes for A being `['openPage']`, one write.
+- "saves nothing of the workspace the reload drew when it names another": the same change, the answer names B; nothing is sent, A does not hold the change and B holds nothing.
+
+First run, on the tree before the item's code change (`npx vitest run tests/state/workbench/layout/saved/layout-workspaces.test.ts`, `$S/r1-g29-first.txt`):
+
+```
+     x saves a change made before it came once it names the workspace the reload drew 16ms
+AssertionError: expected '{"version":7,"pages":[{"id":"main","l...' to contain 'Before the answer'
+      Tests  1 failed | 23 passed (24)
+```
+
+After the change: `npx vitest run tests/state/workbench/layout` printed `Test Files  5 passed (5)`, `Tests  61 passed (61)` (`$S/r1-g29-after.txt`).
+
+### Item 4: G29 keeps a row for a tab that has loaded no workspace: DONE
+
+New G29 row "reads no arrangement and sends nothing before it came in a tab that loaded none": the page gets a tab memory of its own that holds nothing and A is seeded; the page runs `loadLayout()`, gets the answer `{ loading: true }` and opens a page; `envelope` of the page state was not called, `server.sent()` is `[]` and `loaded()` is false. These are the steps and assertions of the base row "reads no arrangement and saves none before it has come", with the empty tab memory and the seeded workspace added.
+
+Passing run after the change (`npx vitest run tests/state/workbench/layout/saved/layout-workspaces.test.ts --reporter=verbose`, `$S/r1-g29-final.txt`):
+
+```
+ v |unit| tests/state/workbench/layout/saved/layout-workspaces.test.ts > the workspace answer > reads no arrangement and sends nothing before it came in a tab that loaded none 7ms
+      Tests  24 passed (24)
+```
+
+Passing run on the base copy: the worktree's test file copied into `$S/basetree` and run there (`npx vitest run tests/state/workbench/layout/saved/layout-workspaces.test.ts --reporter=verbose`, `$S/r1-g29-base.txt`), then the base file copied back (`diff -r` of `$S/basetree/tests` against `.agents/worktrees/O55-base/tests` equal):
+
+```
+ v |unit| tests/state/workbench/layout/saved/layout-workspaces.test.ts > the workspace answer > reads no arrangement and sends nothing before it came in a tab that loaded none 6ms
+      Tests  2 failed | 22 passed (24)
+```
+
+The two rows that fail on the base copy are the reload rows the base cannot pass: "draws the arrangement of the workspace the browser tab last loaded in its first draw" (the base draws the default first) and the item 3 row.
+
+### Item 5: the report states what it left out: DONE
+
+"Hub rewrite" item 2 now says every manifest of every tier names a lead and lists the 27 personal and software manifests with no `lead:`; "Host- and user-visible changes" has the four entries with their before and after.
 
 ## The cases' first run, on the unchanged tree
 
@@ -80,38 +197,40 @@ No case was one the brief's own rules got wrong, so the builder did not stop.
 
 ## The cases after the change
 
-- Cases 1 to 16, 20 to 21a, 26 and 28 to 32: the new file `tests/state/boards/board/board-rules.test.ts` (G124). On the unchanged copy: `Error: Cannot find module '../../../../src/lib/data/shapes/boards/categories.ts'`, `Test Files  1 failed (1)`, `Tests  no tests` (`$S/g124-base.txt`). In the worktree, `npx vitest run tests/state/boards/board/ --reporter=verbose`: `Test Files  3 passed (3)`, `Tests  75 passed (75)`, 71 of them in board-rules.test.ts, titled by case: the boards a project is on (1 to 15), its category (1, 2, 3, 4, 5, 7, 14, 16), the user's role (1, 2, 7, 8, 9, 12), a board's items with Mine only and the Role facet (1, 2, 7, 8, 15), the card sections (14, 31, 26 with `cards: grid` and with no `cards` key), the rail count (1, 28), the Archival band, the real projects and the Orphans card (3, 4, 6, 7, 16), the Focus lanes (5, 6, 13), the audit's placement findings (10, 11, 12, 13, 1, and the mute signature of case 10's no-board finding), a board's keys (29, 30), a saved category filter (32), the roles of a collection (20, 21, 15, 21a).
+- Cases 1 to 16, 20 to 21a, 26 and 28 to 32: the new file `tests/state/boards/board/board-rules.test.ts` (G124). On the unchanged copy: `Error: Cannot find module '../../../../src/lib/data/shapes/boards/categories.ts'`, `Test Files  1 failed (1)`, `Tests  no tests` (`$S/g124-base.txt`). In the worktree, `npx vitest run tests/state/boards/board/ --reporter=verbose`: `Test Files  3 passed (3)`, `Tests  85 passed (85)` (`$S/r1-board-dir.txt`), 81 of them in board-rules.test.ts, titled by case: the boards a project is on (1 to 15), its category (1, 2, 3, 4, 5, 7, 14, 16), the user's role (1, 2, 7, 8, 9, 12), a board's items with Mine only and the Role facet (1, 2, 7, 8, 15), the card sections (14, 31, 26 with `cards: grid` and with no `cards` key), the rail count (1, 28), the Archival band, the real projects and the Orphans card (3, 4, 6, 7, 16), the Focus lanes (5, 6, 13), the audit's placement findings (10, 11, 12, 13, 1, and the mute signature of case 10's no-board finding), a board's keys (29, 30), a saved category filter (32), the roles of a collection (20, 21, 15, 21a), and New project on a board (24: the boards that offer it, the person each sends).
 - Cases 17 to 19: `tests/data/sources/config/boards.test.ts` (G116). On the unchanged copy it does not load (`categoriesFindings` is no export: `Test Files 1 failed`, 0 tests); in the worktree `Tests  26 passed (26)`.
 - Cases 10 and 11: the two new rows of `tests/data/sources/manifests/manifests.test.ts` (G32). On the unchanged copy 2 failed of 36 (`$S/changed-tests-base.log`); in the worktree they pass in every `npm run test:quick` run after the change.
-- Case 27: `tests/state/workbench/layout/saved/layout-workspaces.test.ts` (G29): `Tests  21 passed (21)` in the worktree.
-- Cases 22 to 25, by quoted run on the worktree: `npx vitest run --config $S/cases.config.mjs --silent=false --reporter=verbose after` (program `$S/after.cases.ts`, output `$S/after-run.txt`):
+- Case 27: `tests/state/workbench/layout/saved/layout-workspaces.test.ts` (G29): `Tests  24 passed (24)` in the worktree (`$S/r1-g29-final.txt`).
+- Cases 22 to 25, by quoted run on the worktree: `npx vitest run --config $S/cases.config.mjs --silent=false --reporter=verbose after` (program `$S/after.cases.ts`, output `$S/r1-case24.txt`); case 24's lines are quoted whole under item 2 of the round, and the rest are:
 
 ```
 case22: quickadd=["qp","qs"]
 case23: venue attention=[{"kind":"venue","id":"v1","count":1,"label":"V1"}]
 case23 vp alone: [{"kind":"venue","id":"v1","count":1,"label":"V1"}]
 case23 vr alone: []
-case24 supervision: {"text":"id: n1\ntier: research\nstage: nascent\nsupervisors:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: \"New idea: scope and novelty check open.\"\neli5: N\nnext: Scope the idea; cited-novelty lit check; decide go/no-go.\n","boards":["supervision"]}
-case24 software: {"text":"id: n2\ntier: software\nstage: nascent\ntitle: N\nstatus:\n  chips: []\n  line: New project.\neli5: N\n","boards":["software"]}
-case24 no tier: {"text":"id: n3\ntier: research\nstage: nascent\nlead:\n  - axel-faes\ntitle: N\nstatus:\n  chips: []\n  line: \"New idea: scope and novelty check open.\"\neli5: N\nnext: Scope the idea; cited-novelty lit check; decide go/no-go.\n","boards":["projects"]}
 case25: [["in-flight",["xb"]],["done",["xp","xr"]],["ideas",["xn"]]]
 ```
 
-22: the `nascent` personal and the `building` software project, no `published` one. 23: the `submitted` personal project with a venue is counted (alone: count 1); the `published` research one is not (alone: no row). 24: Supervision writes `tier: research` and `supervisors: [axel-faes]` and the project is on Supervision; Software writes `tier: software` with `New project.` and is not refused; a form with no tier gives `research`. 25: `building` under in-flight, `published` and `released` under done, `nascent` under ideas, `failed` left out. The heading of the ideas group is "idea" for one project and "ideas" for more (`src/lib/views/shared/links/CrossLinks.svelte:46-49`, keys `xlink_idea` and `xlink_ideas`).
+22: the `nascent` personal and the `building` software project, no `published` one. 23: the `submitted` personal project with a venue is counted (alone: count 1); the `published` research one is not (alone: no row). 24: Supervision writes `tier: research` and `supervisors: [axel-faes]` and the project is on Supervision; Software writes `tier: software`, `lead: [axel-faes]` and `New project.`, is not refused and is on Software; Personal writes `tier: personal` and `lead: [axel-faes]` and is on Personal; Projects writes `tier: research` and `lead: [axel-faes]` and is on Projects; a form with no tier gives `research`. 25: `building` under in-flight, `published` and `released` under done, `nascent` under ideas, `failed` left out. The heading of the ideas group is "idea" for one project and "ideas" for more (`src/lib/views/shared/links/CrossLinks.svelte:46-49`, keys `xlink_idea` and `xlink_ideas`).
 
 ## DONE / NOT DONE
 
 | Item | State | Command and output |
 | --- | --- | --- |
 | Items 1 to 8 of "What to build" | DONE | the cases above; `npm run test:quick` below |
-| Decision 12 on the Archive board | NOT DONE | New project on Archive writes `stage: nascent`, which Archive (`stages: { flags: [terminal] }`) does not take; the project lands on Projects |
-| Verify 1: `npm run test:quick` once after the last change | DONE | last run `$S/test-quick-4.log`: every line `ok` (ASCII gate, prettier, svelte-kit sync, svelte-check `0 ERRORS 0 WARNINGS`, eslint, vitest checks, vitest, vitest slow), `exit 0` |
-| Verify 2: character-set check over every changed file | DONE | `LC_ALL=C perl -ne '...' $(cat $S/changed-final.txt)` (the rules file's command over the 158 changed files) printed nothing, `exit 0` |
-| Verify 3: the brief's grep | DONE | 389 hits, `exit 0`, each quoted and judged under "Verify 3" below; none is a tier word, a flag, a chip or a removed name |
-| Verify 4: unused exports | DONE | `sh utils/unused-exports.sh` against `.agents/worktrees/O55-base/unused-exports.txt`: two lines differ, both removals (`bucketOf` and `RollupBucket` gone from `src/lib/state/boards/board/index.ts`); the step adds no line |
+| Decision 12 on the Archive board, ruling Z975 (1) | DONE | Archive draws no New project; the G124 row "is offered on the boards that take the project it writes" passes with `self` and without (`$S/r1-board-dir.txt`) |
+| Round item 1: New project only where the board takes the project | DONE | G124 rows; first failing run `$S/r1-g124-first.txt`, after `$S/r1-board-dir.txt` |
+| Round item 2: a board naming no `role:` names the user as lead | DONE | G124 rows; case 24 rerun `$S/r1-case24.txt` |
+| Round item 3: a change made while presumed is saved at the confirming answer | DONE | G29 row; first failing run `$S/r1-g29-first.txt`, after `$S/r1-g29-final.txt` |
+| Round item 4: G29 row for a tab that loaded no workspace | DONE | passes in the worktree (`$S/r1-g29-final.txt`) and on the base copy (`$S/r1-g29-base.txt`) |
+| Round item 5: what the report left out | DONE | "Hub rewrite" item 2 and "Host- and user-visible changes" |
+| Verify 1: `npm run test:quick -- --base 00bebb58` once after the last change | DONE | last run `$S/r1-test-quick-3.log`: every line `ok` (ASCII gate, prettier, svelte-kit sync, svelte-check `0 ERRORS 0 WARNINGS`, eslint, vitest checks, vitest, vitest slow), `exit 0` |
+| Verify 2: character-set check over every changed file and the report | DONE | `LC_ALL=C perl -ne '...' $(cat $S/r1-changed.txt)` (the spec's command over the 158 changed files, the round brief and this report) printed nothing, `exit 0` |
+| Verify 3: the brief's grep | DONE | 390 hits, `exit 0` (`$S/r1-grep3.txt`), each quoted and judged under "Verify 3" below; none is a tier word, a flag, a chip or a removed name read by code |
+| Verify 4: unused exports | DONE | `sh utils/unused-exports.sh` against `.agents/worktrees/O55-base/unused-exports.txt` (`$S/r1-unused.txt`): two lines differ, both removals (`bucketOf` and `RollupBucket` gone from `src/lib/state/boards/board/index.ts`); the step adds no line |
 | Verify 5: each new or changed test on the unchanged tree and after | DONE | "Changed tests" below |
 | Verify 6: new comments and document sentences read against the rules | DONE | read; no departure found (judgment); comment width checked by `tests/checks/source/comment-width.test.ts` (see "Checks outside the quick list") |
-| `npm run diagrams` | DONE | 14 files under `docs/diagrams/` changed; `tests/checks/diagrams/diagrams.test.ts` passes in the quick runs |
+| `npm run diagrams` | DONE | rerun after the round (`$S/r1-diagrams.log`); 14 files under `docs/diagrams/` changed; `npx vitest run tests/checks/diagrams/ --testTimeout 0`: `Tests  48 passed (48)` (`$S/r1-diagram-checks.txt`) |
 | `npm run docs:palette` | DONE | `docs/palette.md` gains `| Supervision | supervision |`; `tests/checks/diagrams/palette.test.ts` passes (`Tests 1 passed (1)`, and in `$S/test-quick-4.log`) |
 | File size and folder rules | DONE | no changed `.ts` file over 880 lines, no component over 520 (awk over the counts below printed nothing); the folders with new files hold 3, 4, 4 and 6 items |
 | No history words in new comments and titles | DONE | read; `tests/checks/source/history.test.ts` names only `src/desktop/app.ts:161`, which the step does not change |
@@ -125,11 +244,17 @@ case25: [["in-flight",["xb"]],["done",["xp","xr"]],["ideas",["xn"]]]
 3. `$S/test-quick-3.log`: every line `ok`, `exit 0`.
 4. `$S/test-quick-4.log`, after the fixes found by the checks outside the quick list (next section): every line `ok`, `exit 0`.
 
+After repair round 1, `npm run test:quick -- --base 00bebb58` ran three times:
+
+1. `$S/r1-test-quick-1.log`: `vitest checks` red in `tests/checks/diagrams/diagrams.test.ts` (2 tests), the committed diagrams no longer what the source gives, since `new-project.ts` now imports `takes.ts` and `vocab-keys.ts`. `npm run diagrams` rewrote them, and `npx vitest run tests/checks/diagrams/ --testTimeout 0` printed `Tests  48 passed (48)`.
+2. `$S/r1-test-quick-2.log`: every check `ok` but `vitest`, red in `tests/state/sessions/source/source-unserved.test.ts` (2 of 5 rows, `expected [ [ '/api/state', ...(3) ], 'unserved' ] to deeply equal [ [], 'unserved' ]`). The step changes neither that test nor anything under `src/lib/state/sessions/`; `npx vitest run tests/state/sessions/source/source-unserved.test.ts` run alone three times printed `Tests  5 passed (5)` each time.
+3. `$S/r1-test-quick-3.log`, after the last change: every line `ok` (ASCII gate, prettier, svelte-kit sync, svelte-check `0 ERRORS 0 WARNINGS`, eslint, vitest checks, vitest, vitest slow), `test:quick: 171.2 s; every command passed`, `exit 0`.
+
 No whole-suite command ran (`npm test`, `npm run test:checks` and `npm run test:slow` were not run).
 
 ### Checks outside the quick list
 
-The quick runner names `tests/checks` files that import no changed file as not covered. Eight such tree checks read the whole tree, so they were run once by name: `npx vitest run tests/checks/diagrams/palette.test.ts tests/checks/imports/augments.test.ts tests/checks/imports/cycles.test.ts tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/source/html-sites.test.ts tests/checks/tree/duplication.test.ts tests/checks/tree/size.test.ts --testTimeout 0 --hookTimeout 0` (`$S/tree-checks.log`): 5 passed, 3 failed. The same 3 fail on the unchanged copy (`cd $S/basetree && npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/tree/duplication.test.ts --testTimeout 0`: `Tests 3 failed | 23 passed`), with the same lines:
+The quick runner names `tests/checks` files that import no changed file as not covered. Eight such tree checks read the whole tree, so they were run once by name: `npx vitest run tests/checks/diagrams/palette.test.ts tests/checks/imports/augments.test.ts tests/checks/imports/cycles.test.ts tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/source/html-sites.test.ts tests/checks/tree/duplication.test.ts tests/checks/tree/size.test.ts --testTimeout 0 --hookTimeout 0` (`$S/tree-checks.log`): 5 passed, 3 failed. After the round the seven other than the palette check, which ran with the diagram checks, ran again (`$S/r1-tree-checks.log`): 4 passed, 3 failed, the same three naming the same lines. The same 3 fail on the unchanged copy (`cd $S/basetree && npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/tree/duplication.test.ts --testTimeout 0`: `Tests 3 failed | 23 passed`), with the same lines:
 
 - `tests/checks/source/comment-width.test.ts`: nine over-wide comment lines on the unchanged tree. Two are in files the step changes, `src/lib/views/shared/forms/NewIdeaForm.svelte` and `tests/data/snapshot/references.test.ts`; they are rewrapped. The other seven are in files the step does not change and stay red: `src/lib/state/client/writes.svelte.ts:640`, `src/lib/state/sources/explorer/view/card-tree.ts:4`, `src/lib/views/shared/card/feed/SaveToLiterature.svelte:89`, `src/routes/+page.server.ts:18`, `tests/data/snapshot/reference-hub.ts:4`, `tests/server/desktop/app-theme-start.test.ts:309`, `tests/ui/controls/editor/kit/comment-rules.test.ts:166`.
 - `tests/checks/source/history.test.ts`: `src/desktop/app.ts:161`, not a file the step changes.
@@ -165,7 +290,7 @@ Edits beyond the word:
 - `tests/state/boards/board/hub-facets.test.ts`: the item field `bucket: ''` to `category: ''`.
 - `tests/state/boards/board/items.test.ts`: each row names its board (`board: 'projects'`, `board: 'personal'`) and `presetFor(row.tier, config)` becomes `presetFor(row.board, config)`, since a board id is no tier now.
 - `tests/state/forms/form-draft.test.ts`: the fixture project gains `supervisors: []`.
-- `tests/state/workbench/layout/saved/layout-workspaces.test.ts` (G29): one row renamed and changed, "reads no arrangement of another workspace and saves none before it has come" (the tab memory carries A, A and B are seeded, the saved arrangement is read only for A, nothing is sent before the answer, the answer B gives `['other']`, A's arrangement lacks `Early`); one new row, "draws the arrangement of the workspace the browser tab last loaded in its first draw". `tests/fixtures/state-server.ts` lets `page(memory?)` hand a tab memory to `createClientState`.
+- `tests/state/workbench/layout/saved/layout-workspaces.test.ts` (G29): one row renamed and changed, "reads no arrangement of another workspace and saves none before it has come" (the tab memory carries A, A and B are seeded, the saved arrangement is read only for A, nothing is sent before the answer, the answer B gives `['other']`, A's arrangement lacks `Early`); four new rows, "draws the arrangement of the workspace the browser tab last loaded in its first draw", "saves a change made before it came once it names the workspace the reload drew", "saves nothing of the workspace the reload drew when it names another" and "reads no arrangement and sends nothing before it came in a tab that loaded none" (the base row's steps and assertions with an empty tab memory). `tests/fixtures/state-server.ts` lets `page(memory?)` hand a tab memory to `createClientState`.
 
 Runs on the unchanged tree: the changed tests copied into `$S/basetree` and run there (`$S/changed-tests-base.log`): `Test Files  19 failed | 13 passed (32)`, `Tests  54 failed | 356 passed (410)`; restored afterwards (`diff -r` equal). The tests changed after that run, on the unchanged copy with their new text: `config-folder.test.ts` and `boundaries.test.ts` (`$S/base-config-folder-boundaries.txt`) `Tests 7 failed | 33 passed`, of which 2 (`matches the hub's own files of a scratch hub to a schema each` and `reads a key of .oculus/config.yml outside the hub list`) also fail with the unchanged text on the copy (`Tests 2 failed | 38 passed`) and pass in the worktree; `references.test.ts`, `form-draft.test.ts`, `undo.test.ts` (`$S/base-late-tests.txt`): `Tests 1 failed | 109 passed`, the failure being the references row. After the change every one of them passes in the worktree (`$S/test-quick-4.log`).
 
@@ -211,7 +336,7 @@ All 158 files the step changes or adds, with `wc -l`:
 - src/lib/data/model/model-entities.ts 736
 - src/lib/data/shapes/boards/categories.ts 126 (new)
 - src/lib/data/shapes/boards/roles.ts 208 (new)
-- src/lib/data/shapes/boards/takes.ts 153 (new)
+- src/lib/data/shapes/boards/takes.ts 154 (new)
 - src/lib/data/shapes/boards/words.ts 98 (new)
 - src/lib/data/shapes/catalog-files/vocab.ts 422
 - src/lib/data/shapes/catalog-words.ts 96
@@ -233,13 +358,13 @@ All 158 files the step changes or adds, with `wc -l`:
 - src/lib/server/content/audit/projects.ts 540
 - src/lib/server/content/audit/rules.ts 359
 - src/lib/server/content/audit/scan.ts 66
-- src/lib/server/edit/writes/manifest.ts 733
+- src/lib/server/edit/writes/manifest.ts 735
 - src/lib/server/root/watch/portfolio.ts 880
 - src/lib/state/boards/board/facets.ts 174
 - src/lib/state/boards/board/filter-menu.ts 130
 - src/lib/state/boards/board/index.ts 55
 - src/lib/state/boards/board/items.ts 231
-- src/lib/state/boards/board/new-project.ts 50
+- src/lib/state/boards/board/new-project.ts 95
 - src/lib/state/boards/board/presets.ts 380
 - src/lib/state/boards/board/state.ts 126
 - src/lib/state/boards/board/team.ts 33
@@ -250,7 +375,7 @@ All 158 files the step changes or adds, with `wc -l`:
 - src/lib/state/boards/structure/lines.ts 229
 - src/lib/state/boards/ticker.ts 604
 - src/lib/state/client/context.ts 878
-- src/lib/state/client/selectors.svelte.ts 775
+- src/lib/state/client/selectors.svelte.ts 778
 - src/lib/state/feeds/feeds.ts 136
 - src/lib/state/forms/referrers.ts 138
 - src/lib/state/forms/schema.ts 474
@@ -259,7 +384,7 @@ All 158 files the step changes or adds, with `wc -l`:
 - src/lib/state/workbench/layout.svelte.ts 867
 - src/lib/state/workbench/layout/index.ts 148
 - src/lib/state/workbench/layout/saved/load.ts 185
-- src/lib/state/workbench/layout/saved/storage.ts 237
+- src/lib/state/workbench/layout/saved/storage.ts 250
 - src/lib/state/workbench/navigation/registry.ts 294
 - src/lib/state/workbench/rail-badges/rail-badges.svelte.ts 392
 - src/lib/state/workbench/rail-badges/rail-badges.ts 88
@@ -269,12 +394,12 @@ All 158 files the step changes or adds, with `wc -l`:
 - src/lib/views/boards/focus/Focus.svelte 273
 - src/lib/views/boards/focus/lanes/Lanes.svelte 366
 - src/lib/views/boards/person/Person.svelte 420
-- src/lib/views/boards/projects/NewIdea.svelte 22
-- src/lib/views/boards/projects/Projects.svelte 485
+- src/lib/views/boards/projects/NewIdea.svelte 25
+- src/lib/views/boards/projects/Projects.svelte 499
 - src/lib/views/shared/card/project/CardLinks.svelte 184
 - src/lib/views/shared/card/project/ProjectCard.svelte 500
 - src/lib/views/shared/forms/entry/card/EntryCard.svelte 356
-- src/lib/views/shared/forms/NewIdeaForm.svelte 192
+- src/lib/views/shared/forms/NewIdeaForm.svelte 193
 - src/lib/views/shared/links/CrossLinks.svelte 171
 - src/lib/views/structure/map/Controls.svelte 164
 - src/lib/views/system/audit/Audit.svelte 352
@@ -326,15 +451,15 @@ All 158 files the step changes or adds, with `wc -l`:
 - tests/server/git/deposit-compare.test.ts 267
 - tests/server/git/deposit.test.ts 198
 - tests/server/root/served-roots.test.ts 145
-- tests/state/boards/board/board-rules.test.ts 561 (new)
+- tests/state/boards/board/board-rules.test.ts 604 (new)
 - tests/state/boards/board/hub-facets.test.ts 52
 - tests/state/boards/board/items.test.ts 36
 - tests/state/forms/form-draft.test.ts 314
-- tests/state/workbench/layout/saved/layout-workspaces.test.ts 350
+- tests/state/workbench/layout/saved/layout-workspaces.test.ts 398
 
 ## Judgment calls the brief left open
 
-1. The reload fix carries the identity of the workspace the tab last loaded in the tab's session storage, key `oculus.layout.workspace` (`src/lib/state/workbench/layout/saved/storage.ts`: `TabMemory { read, write }`, `sessionMemory()`). `loadLayout` ends with `presumeCarried()` (`load.ts`): when the carried identity has a saved arrangement that parses, the store takes it at once and the first draw shows it. While the identity is presumed, nothing is written: a change made before the answer is saved with the next change after it. When the answer names the same workspace, `storage.select(identity)` confirms it and nothing is redrawn; when it names another, that workspace's arrangement replaces it and the presumed one is left unsaved. Session storage was chosen over local storage because two tabs on two workspaces each keep their own.
+1. The reload fix carries the identity of the workspace the tab last loaded in the tab's session storage, key `oculus.layout.workspace` (`src/lib/state/workbench/layout/saved/storage.ts`: `TabMemory { read, write }`, `sessionMemory()`). `loadLayout` ends with `presumeCarried()` (`load.ts`): when the carried identity has a saved arrangement that parses, the store takes it at once and the first draw shows it. While the identity is presumed, nothing is written: the pages of the last change are held. When the answer names the same workspace, `storage.select(identity)` confirms it, nothing is redrawn and the held pages are written once; when it names another, that workspace's arrangement replaces it and nothing of the presumed one is written. Session storage was chosen over local storage because two tabs on two workspaces each keep their own.
 2. The roles module, the category function and the board-takes rule live in `src/lib/data/shapes/boards/` (`words.ts`, `categories.ts`, `roles.ts`, `takes.ts`), with views reaching them through `state/boards/board/index.ts`. The reason is under "Anything in the brief that was wrong".
 3. The cross-link groups come in the order in-flight, done, ideas, the order the old groups `work`, `published`, `ideas` had.
 4. The ideas group is headed "idea" when it holds one project and "ideas" for more, with the existing keys `xlink_idea` and `xlink_ideas`; the brief's case 25 says "ideas".
@@ -345,6 +470,8 @@ All 158 files the step changes or adds, with `wc -l`:
 9. A section heading takes the category's colour through `toneOf` of the row's colour, the colour of its first stage when the row names none.
 10. The reference index follows a board's `stages`, `chips` and `forms` blocks, whose values take their list from the block's key (`src/lib/data/sources/config/catalog/schemas/references.ts` reads a nested family as a family; `src/lib/data/snapshot/references/scan.ts` `valueAt` picks the source by the pair's key), so renaming a stage, chip or form also renames it in a board. The editor's schema of the same blocks holds each list to its source (`pickedByKey` in `src/lib/data/sources/config/catalog/schemas/options.ts`): `boards.projects.stages.words[0] is nonsense, which is not one of nascent, ...` and `stages.flags[0] is submitted, which is not one of idea, on_map, ...` from a run of `checkDocument` on `defaults/layout.yml` (`$S/schema.cases.ts`).
 11. The no-funding card of the Funding collection is its own component, `src/lib/views/boards/collection/NoFundingCard.svelte`, which keeps `Collection.svelte` under the component size limit.
+12. The project New project's offer is held to has no hub and no field beyond the brief's list, so a board naming `hub:` or `match:` (none of the shipped boards does; a workspace may add one) draws no New project, since the form's hub and the manifest's other fields are chosen in the form after the button is pressed.
+13. The pages held while the workspace is presumed are written under the name of the operation that made the last change (`openPage` in the G29 row), since that operation made the pages written.
 
 ## Host- and user-visible changes, before and after
 
@@ -365,23 +492,37 @@ All 158 files the step changes or adds, with `wc -l`:
 - The Archival band. Before: the projects of a tier carrying `finished` (coauthor, archive) at a stage with a `dead` number, grouped by that number; `realProjects` was every other project. After: every project in an `archival: true` row (`dead-ends`), grouped by its stage's `dead` number; `realProjects` is every project in no such row (the venue counts read it).
 - New findings: the audit's `msg_no_lead` ("names no lead: add `lead:` ..."), `msg_no_board` ("on no board: tier {0}, role {1}, stage {2}"), `msg_terminal_lane_chip`; the config check's `categories_block`, `categories_row`, `categories_colour` and the board block findings (a word or flag a block's list does not hold, a key no block takes); the New project write's `idea_role`; an unknown tier word is a manifest finding.
 - Removed findings: `msg_stage_not_folder`, `msg_no_author_chip`, `msg_projects_published`; the `boards_record` text no longer names "its words".
-- New project on every board: before, every board but Software offered it (a tier carrying `software` offered none) and a write of `tier: software` was refused. After: every board offers it, writing the board's first tier and, on a board with `role:`, `self` into the field of the board's first role that has one; Software writes `New project.` and no next line.
-- The reload: before, the first draw showed the default arrangement until the workspace answer arrived; after, it shows the arrangement of the workspace the tab last loaded.
+- New project on a board. Before: every board but Software drew `+ new idea` (a tier carrying `software` offered none), each writing the board's tier and no person; a write of `tier: software` was refused. After: a board draws `+ new idea` only when its rule takes the project the write makes (its first tier, the user in the field below, the first stage carrying `new_idea`, no chip, no form); with the shipped boards that is Projects, Supervision, Coauthor, Personal and Software, with `self` named and without. Software writes `New project.` and no next line.
+- Archive and New project. Before: Archive drew `+ new idea`, and its form sent `tier: archive` and no person. After: Archive draws no `+ new idea`, with `self` named and without, since it takes only `terminal` stages and a new project starts at `nascent`.
+- The person New project names on Projects, Supervision and Coauthor. Before: New project named no person on any board (there was no Supervision board). After, with `self` named: `lead: [<self>]` on Projects, `supervisors: [<self>]` on Supervision, `collaborators: [<self>]` on Coauthor (the field of the first of the board's `role:` keys that has one); with no `self`, none.
+- New project on Personal and Software. Before: Personal's New project wrote no `lead:`, and Software drew none. After: both write `lead: [<self>]` when `self` is named (a board naming no `role:` reads every row of `roles:` in order, the first with a field being `lead`), and no person with no `self`.
+- Lit Watch's New project (the radar card's form). Before: it wrote no `lead:`. After: it writes `lead: [<self>]` when `self` is named, and no person with no `self`.
+- The reload. Before: the first draw showed the default arrangement until the workspace answer arrived, and a change made before the answer was not saved at the answer. After: the first draw shows the arrangement of the workspace the tab last loaded; a change made before the answer is saved once when the answer names that workspace, and not at all when it names another.
 - The editor of `config/defaults/layout.yml` and a workspace file's `boards` settings: the values of a board's `stages`, `chips` and `forms` blocks are held to the list their key names, so a word the list does not hold is marked in the editor.
 
 ## Anything in the brief that was wrong or impossible
 
-1. Decision 12 with Archive: "New project on a board with `role:` writes `self` into the field of the board's first role that has one, so the new project is on the board it was made on". Archive takes only `terminal` stages and a new project is written at `nascent`, so New project on Archive writes `lead: [self]`, `tier: research`, `stage: nascent` and the project lands on Projects. Making it land on Archive would mean writing a done stage for a new project. Evidence: Archive's row in `config/defaults/layout.yml` (`tier: research`, `role: lead`, `stages: { flags: [terminal] }`), so its New project sends `tier: research` with the field `lead`; that is the write of case 24's "no tier" row above, which prints `tier: research`, `stage: nascent`, `lead: [axel-faes]` and `"boards":["projects"]`.
-2. The brief's "Code" line names `src/lib/state/boards/board/` for "the roles module". The audit and the New project write on the server read the same roles, categories and board rule, and `tests/checks/tree/boundaries.test.ts` forbids `server/` from importing `state/`. The modules are in `src/lib/data/shapes/boards/`, which both sides may import, with the allow-list row `'data/shapes/boards/**'` for the state layer.
-3. The brief's paths say `docs/palette.md` is "regenerated by `npm run diagrams`". `npm run diagrams` leaves it unchanged; it is written by `npm run docs:palette` (`package.json` line 24, `utils/diagrams/palette.mjs`), which gained the Supervision row.
-4. Case 25 heads a group of one `nascent` member "ideas"; the existing key `xlink_idea` heads a single idea "idea" (judgment call 4).
+1. The brief's "Code" line names `src/lib/state/boards/board/` for "the roles module". The audit and the New project write on the server read the same roles, categories and board rule, and `tests/checks/tree/boundaries.test.ts` forbids `server/` from importing `state/`. The modules are in `src/lib/data/shapes/boards/`, which both sides may import, with the allow-list row `'data/shapes/boards/**'` for the state layer.
+2. The brief's paths say `docs/palette.md` is "regenerated by `npm run diagrams`". `npm run diagrams` leaves it unchanged; it is written by `npm run docs:palette` (`package.json` line 24, `utils/diagrams/palette.mjs`), which gained the Supervision row.
+3. Case 25 heads a group of one `nascent` member "ideas"; the existing key `xlink_idea` heads a single idea "idea" (judgment call 4).
 
 ## Hub rewrite
 
 What the hub needs for this step's code to read it without a finding, for the orchestrator's rewrite at landing:
 
 1. Tiers in every manifest (`projects/**/project.yml`, `side-projects/*/project.yml`, each workspace repository's `.oculus/project.yml`): `tier: projects`, `tier: coauthor` and `tier: archive` become `tier: research`; `personal` and `software` stay. A manifest left with an old word reads as no tier, with the unknown-tier finding and the no-board finding.
-2. Leads: every research project names `lead:`. A project Axel leads gets `lead: [axel-faes]` (on Projects, or Archive when its stage is terminal). A former coauthor project gets the first author as `lead:` and `axel-faes` in `collaborators:` (Coauthor). A student project Axel supervises gets the student as `lead:` and `supervisors: [axel-faes]` (Supervision). A manifest naming no lead raises `msg_no_lead` and is on no board with a `role:`. Known: FL4E becomes `tier: software`, `lead: [pirmani]`, `collaborators: [peeters, axel-faes]`; the workspace repositories' `.oculus/project.yml` get their lead.
+2. Leads: every manifest of every tier names `lead:`, since `msg_no_lead` is raised on every tier (`placement` in `src/lib/server/content/audit/projects.ts`, "The placement of a project on every tier: a manifest naming no lead", `if (project.lead.length === 0)`). A project Axel leads gets `lead: [axel-faes]` (on Projects, or Archive when its stage is terminal; on Personal or Software by its tier). A former coauthor project gets the first author as `lead:` and `axel-faes` in `collaborators:` (Coauthor). A student project Axel supervises gets the student as `lead:` and `supervisors: [axel-faes]` (Supervision). A manifest naming no lead raises `msg_no_lead` and is on no board with a `role:`. Known: FL4E becomes `tier: software`, `lead: [pirmani]`, `collaborators: [peeters, axel-faes]`.
+
+   The personal and software manifests that name no `lead:` today, found read-only by `grep -rL "^lead:" --include=project.yml projects/ideas side-projects projects/active projects/manuscripts projects/software projects/coauthor projects/archive` in `~/workspace/research-hub` (the hub's `scan:` folders) and `grep -L "^lead:"` over the `.oculus/project.yml` of each workspace repository in `.oculus/workspaces/research-hub.yml` (`$S/r1-nolead-tiers.txt`). The grep found 27 files with no `lead:` line, all of tier `personal` (24) or `software` (3); every other manifest has a `lead:` line (114 `project.yml` files under the scan folders, 94 with a `lead:` line, by `find ... -name project.yml | wc -l` and `grep -rl "^lead:" --include=project.yml projects side-projects | wc -l`):
+
+   - personal: `~/workspace/cathedra/.oculus/project.yml`, `~/workspace/game-engine/.oculus/project.yml`, `~/workspace/oculus/.oculus/project.yml`, `~/workspace/officium/.oculus/project.yml`, `~/workspace/ordo/.oculus/project.yml`, `~/workspace/scotoma/.oculus/project.yml`, `~/workspace/youtube-downloader/.oculus/project.yml`
+   - personal: `side-projects/finished/axeski`, `side-projects/finished/cardinal-revamped`, `side-projects/finished/cardinal`, `side-projects/finished/cv-autogenerator`, `side-projects/finished/ical-kuleuven`, `side-projects/finished/theaxec-profile-readme`
+   - personal: `side-projects/ideas/gpu-game-boy`, `side-projects/ideas/residual`, `side-projects/ideas/scripted-os`, `side-projects/research-hub`
+   - personal: `side-projects/school/algebraic-subtyping-for-algebraic-effects-handlers`, `side-projects/school/eeg-source-reconstructed-connectivity-information-theoretical`, `side-projects/school/effect-handler-optimization-honours-project`, `side-projects/school/ml-for-flow-based-network-intrusion-detection`, `side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles`, `side-projects/school/row-based-effects-honours-project`
+   - personal: `side-projects/theaxec.github.io/.oculus/project.yml`
+   - software: `projects/software/bttr-block-term-tensor-regression`, `projects/software/federated-learning-tutorial`, `projects/software/fl-kit-elixir-federated-learning-kit`
+
+   Each `side-projects/...` and `projects/software/...` entry is that folder's `project.yml`. The rewrite gives each of the 27 its lead, `axel-faes` where Axel leads it.
 3. Chips: `lead` and `coauthor` are no chips; every `status.chips` holding them drops them (an unknown chip is a finding).
 4. A project at a terminal stage drops any Focus lane chip (`parked`, `blocked`, ...); known: FedBTD loses `parked`.
 5. `self`: the workspace file or the hub's config names `self: axel-faes`; without it no board applies `role:`, so Projects shows every research project not at a terminal stage and Supervision and Coauthor every research project.
@@ -394,7 +535,7 @@ What the hub needs for this step's code to read it without a finding, for the or
 
 ## Verify 3: every hit of the brief's grep, quoted and judged
 
-`grep -rnE "<the brief's pattern>" src config tests docs utils --exclude=local.yml`: 389 hits, `exit 0`. Each hit was read. They fall in seven groups, by the first word of the pattern the line holds; the judgment of each group follows its heading and holds for every line under it.
+`grep -rnE "<the brief's pattern>" src config tests docs utils --exclude=local.yml`: 390 hits, `exit 0` (`$S/r1-grep3.txt`). Each hit was read. They fall in seven groups, by the first word of the pattern the line holds; the judgment of each group follows its heading and holds for every line under it.
 
 ### A: 1 hits
 
@@ -429,20 +570,20 @@ src/lib/views/sessions/session-list/session-list.ts:54:            id: 'archive'
 src/lib/views/sessions/session-list/SessionList.svelte:333:        else if (id === 'archive') void mark(row, 'hidden', !archived(row));
 src/lib/views/boards/projects/Projects.svelte:24:        boardRegistration('coauthor', 3),
 src/lib/views/boards/projects/Projects.svelte:25:        boardRegistration('archive', 4),
-tests/state/boards/board/board-rules.test.ts:136:        { name: 'case 2, role other', id: 'c2', self: MINE, boards: ['coauthor'] },
-tests/state/boards/board/board-rules.test.ts:137:        { name: 'case 3, a published thesis', id: 'c3', self: MINE, boards: ['archive'] },
-tests/state/boards/board/board-rules.test.ts:138:        { name: 'case 4, stopped', id: 'c4', self: MINE, boards: ['archive'] },
-tests/state/boards/board/board-rules.test.ts:147:        { name: 'case 13, stopped and parked', id: 'c13', self: MINE, boards: ['archive'] },
-tests/state/boards/board/board-rules.test.ts:148:        { name: 'case 14, published, no form', id: 'c14', self: MINE, boards: ['archive'] },
-tests/state/boards/board/board-rules.test.ts:153:            boards: ['projects', 'supervision', 'coauthor']
-tests/state/boards/board/board-rules.test.ts:159:            boards: ['supervision', 'coauthor', 'archive']
-tests/state/boards/board/board-rules.test.ts:165:            boards: ['projects', 'supervision', 'coauthor']
-tests/state/boards/board/board-rules.test.ts:221:        { name: 'case 2 on Coauthor', board: 'coauthor', id: 'c2', category: 'in-review' },
-tests/state/boards/board/board-rules.test.ts:237:        const items = boardItems(snapshotOf(ALL), presetFor('coauthor', CONFIG));
-tests/state/boards/board/board-rules.test.ts:277:            board: 'archive',
+tests/state/boards/board/board-rules.test.ts:141:        { name: 'case 2, role other', id: 'c2', self: MINE, boards: ['coauthor'] },
+tests/state/boards/board/board-rules.test.ts:142:        { name: 'case 3, a published thesis', id: 'c3', self: MINE, boards: ['archive'] },
+tests/state/boards/board/board-rules.test.ts:143:        { name: 'case 4, stopped', id: 'c4', self: MINE, boards: ['archive'] },
+tests/state/boards/board/board-rules.test.ts:152:        { name: 'case 13, stopped and parked', id: 'c13', self: MINE, boards: ['archive'] },
+tests/state/boards/board/board-rules.test.ts:153:        { name: 'case 14, published, no form', id: 'c14', self: MINE, boards: ['archive'] },
+tests/state/boards/board/board-rules.test.ts:158:            boards: ['projects', 'supervision', 'coauthor']
+tests/state/boards/board/board-rules.test.ts:164:            boards: ['supervision', 'coauthor', 'archive']
+tests/state/boards/board/board-rules.test.ts:170:            boards: ['projects', 'supervision', 'coauthor']
+tests/state/boards/board/board-rules.test.ts:226:        { name: 'case 2 on Coauthor', board: 'coauthor', id: 'c2', category: 'in-review' },
+tests/state/boards/board/board-rules.test.ts:242:        const items = boardItems(snapshotOf(ALL), presetFor('coauthor', CONFIG));
+tests/state/boards/board/board-rules.test.ts:282:            board: 'archive',
 ```
 
-### D: 96 hits
+### D: 97 hits
 
 `'projects'`: the entity and registry source `projects`, the folder `projects/` in test paths, the view id and the view-catalogue group id `projects`, the `projects` key of `ticker_sources`, the Claude account's `projects` store folder and the Status view's count. None is a tier. Stay.
 
@@ -500,18 +641,19 @@ tests/state/system/apps/methods.test.ts:199:            ['dir', 'hub', 'projects
 tests/state/system/apps/methods.test.ts:200:            FS('.dir', 'projects')
 tests/state/workbench/layout/layout-fixture.ts:25:export function instance(id: string, view = 'projects'): Instance {
 tests/state/boards/board/items.test.ts:18:    { name: 'the tier research', tier: 'research', board: 'projects', folder: 'projects/ideas' },
-tests/state/boards/board/board-rules.test.ts:135:        { name: 'case 1, a lead at revision', id: 'c1', self: MINE, boards: ['projects'] },
-tests/state/boards/board/board-rules.test.ts:143:        { name: 'case 9, lead and supervisor', id: 'c9', self: MINE, boards: ['projects'] },
-tests/state/boards/board/board-rules.test.ts:220:        { name: 'case 1 on Projects', board: 'projects', id: 'c1', category: 'in-flight' },
-tests/state/boards/board/board-rules.test.ts:256:        const preset = presetFor('projects', CONFIG);
-tests/state/boards/board/board-rules.test.ts:286:            board: 'projects',
-tests/state/boards/board/board-rules.test.ts:450:        { name: 'another hub', over: { root: 'look-hub2' }, boards: ['projects', 'hubbed'] },
-tests/state/boards/board/board-rules.test.ts:451:        { name: 'the primary hub', over: {}, boards: ['projects'] },
-tests/state/boards/board/board-rules.test.ts:452:        { name: 'the domain ecg', over: { domainIds: ['ecg'] }, boards: ['projects', 'matched'] },
-tests/state/boards/board/board-rules.test.ts:456:            boards: ['projects', 'blocked']
-tests/state/boards/board/board-rules.test.ts:461:            boards: ['projects']
-tests/state/boards/board/board-rules.test.ts:476:        expect(boardsTaking(one, takeContext(second, MINE)).at(0)).toBe('projects');
-tests/state/boards/board/board-rules.test.ts:482:        const preset = presetFor('projects', CONFIG);
+tests/state/boards/board/board-rules.test.ts:140:        { name: 'case 1, a lead at revision', id: 'c1', self: MINE, boards: ['projects'] },
+tests/state/boards/board/board-rules.test.ts:148:        { name: 'case 9, lead and supervisor', id: 'c9', self: MINE, boards: ['projects'] },
+tests/state/boards/board/board-rules.test.ts:225:        { name: 'case 1 on Projects', board: 'projects', id: 'c1', category: 'in-flight' },
+tests/state/boards/board/board-rules.test.ts:261:        const preset = presetFor('projects', CONFIG);
+tests/state/boards/board/board-rules.test.ts:291:            board: 'projects',
+tests/state/boards/board/board-rules.test.ts:455:        { name: 'another hub', over: { root: 'look-hub2' }, boards: ['projects', 'hubbed'] },
+tests/state/boards/board/board-rules.test.ts:456:        { name: 'the primary hub', over: {}, boards: ['projects'] },
+tests/state/boards/board/board-rules.test.ts:457:        { name: 'the domain ecg', over: { domainIds: ['ecg'] }, boards: ['projects', 'matched'] },
+tests/state/boards/board/board-rules.test.ts:461:            boards: ['projects', 'blocked']
+tests/state/boards/board/board-rules.test.ts:466:            boards: ['projects']
+tests/state/boards/board/board-rules.test.ts:481:        expect(boardsTaking(one, takeContext(second, MINE)).at(0)).toBe('projects');
+tests/state/boards/board/board-rules.test.ts:487:        const preset = presetFor('projects', CONFIG);
+tests/state/boards/board/board-rules.test.ts:504:        expect(offered).toEqual(['projects', 'supervision', 'coauthor', 'personal', 'software']);
 tests/state/client/terminal/terminal-close.test.ts:149:        const side = client.layout.openView('projects', undefined, page);
 tests/data/hubs/hub-portfolio.test.ts:31:    'projects',
 tests/data/hubs/hub-portfolio.test.ts:167:            const manifest = join(from.lab, 'projects', 'active', 'graph-bandits', 'project.yml');
