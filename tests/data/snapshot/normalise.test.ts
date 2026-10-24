@@ -34,7 +34,7 @@ function manifest(data: Record<string, unknown>, id: string): RawManifest {
         file: `/hub/projects/active/${id}/project.yml`,
         folder: `projects/active/${id}`,
         id,
-        tier: 'projects',
+        tier: 'research',
         stage: 'in-prep',
         ...data
     };
@@ -73,7 +73,7 @@ function portfolio(): RawPortfolio {
                     short: 'a',
                     lead: ['someone'],
                     year: 2026,
-                    status: { chips: ['lead'], line: 'submit-ready' },
+                    status: { chips: ['parked'], line: 'submit-ready' },
                     stage: 'exploring',
                     eli5: 'about alpha',
                     next: 'run it',
@@ -238,7 +238,8 @@ function portfolio(): RawPortfolio {
     };
 }
 
-const snapshot = normalise(portfolio(), [], {});
+/** The one tier the fixture's manifests name, the vocabulary `tierOf` reads a tier against. */
+const snapshot = normalise(portfolio(), [], { tiers: { research: { label: 'Research' } } });
 const alpha = snapshot.entities.projects.alpha;
 
 describe('normalise, the field mapping', () => {
@@ -250,13 +251,13 @@ describe('normalise, the field mapping', () => {
     it('fills a project from the manifest keys of the same meaning', () => {
         expect(alpha).toEqual({
             id: 'alpha',
-            tier: 'projects',
+            tier: 'research',
             stage: 'exploring',
             title: 'Alpha',
             short: 'a',
             lead: ['someone'],
             year: 2026,
-            chips: ['lead'],
+            chips: ['parked'],
             statusLine: 'submit-ready',
             priority: 'high',
             eli5: 'about alpha',
@@ -294,6 +295,7 @@ describe('normalise, the field mapping', () => {
             pillarIds: ['federated'],
             domainIds: ['heart'],
             collaborators: ['someone'],
+            supervisors: [],
             docs: [
                 { name: 'README.md', label: 'README', present: true, human: false },
                 { name: 'code/README.md', label: 'CODE', present: false, human: false }

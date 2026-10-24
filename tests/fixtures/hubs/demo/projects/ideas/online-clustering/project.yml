@@ -1,6 +1,6 @@
 id: online-clustering
 stage: scoping
-tier: projects
+tier: research
 short: Online-Cluster
 title: Drift-aware clustering for non-stationary streams
 lead: [dana-example]

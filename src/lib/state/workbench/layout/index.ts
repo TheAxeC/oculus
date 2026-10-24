@@ -108,7 +108,7 @@ export { focusedPane, maximise, restore, settleFocus, splitWith } from './workbe
 export { checkLayout, checkPages, checkWorkbench, serialiseLayout } from './saved/saved.ts';
 export type { LayoutAccess } from './access.ts';
 export { createStorage } from './saved/storage.ts';
-export type { LayoutStorage } from './saved/storage.ts';
+export type { LayoutStorage, TabMemory } from './saved/storage.ts';
 export { createLoad } from './saved/load.ts';
 export type { DocSource } from './saved/docs.ts';
 export { createAttention } from './open/attention.ts';

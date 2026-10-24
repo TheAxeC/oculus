@@ -26,6 +26,7 @@ Every registered view is listed by its words.
 | Person | person |
 | Project | project |
 | Projects | projects |
+| Supervision | supervision |
 | Coauthor | coauthor |
 | Archive | archive |
 | Personal | personal |

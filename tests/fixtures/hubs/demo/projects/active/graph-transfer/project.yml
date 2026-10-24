@@ -1,6 +1,6 @@
 id: graph-transfer
 stage: submit-ready
-tier: projects
+tier: research
 short: Graph-Transfer
 title: Transfer learning across graph domains
 lead: [dana-example]

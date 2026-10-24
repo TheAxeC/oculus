@@ -61,7 +61,7 @@ function write(root: string, name: string, body: string): void {
 function manifest(id: string, url = ''): string {
     return [
         `id: ${id}`,
-        'tier: projects',
+        'tier: research',
         'stage: exploring',
         `title: "The title of ${id}"`,
         'status:',

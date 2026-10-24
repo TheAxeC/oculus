@@ -15,7 +15,7 @@
     // Layer 3, view. The landing board, one page, top to bottom: the career banner, the command
     // center of everything with a date, the tasks section of the open work that carries none, the
     // quick add, the box of what is out for an answer, the band of durable work that is not a
-    // project, the lanes each project's stage and chips put it on, and the backlog lane.
+    // project, the lanes each project's stage and chips put it on, and the Idea lane.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
     // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six
@@ -90,7 +90,7 @@
      */
     const week = $derived(snapshot === null ? null : ticker(snapshot, config, now));
 
-    /** The projects quick add may write to: those of the research board's tier. */
+    /** The projects quick add may write to: every project not at a `terminal` stage. */
     const live = $derived(liveProjects(projects, config));
 
     const strip = $derived(

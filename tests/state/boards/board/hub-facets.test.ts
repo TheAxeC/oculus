@@ -19,7 +19,7 @@ function item(id: string, root?: string): BoardItem {
     return {
         id: key(id),
         project: root === undefined ? { id } : { id: key(id), root },
-        bucket: '',
+        category: '',
         year: '',
         domain: { id: key('methods'), label: 'Methods', tone: '' },
         pillars: [],
@@ -35,7 +35,7 @@ function item(id: string, root?: string): BoardItem {
 }
 
 const ITEMS = [item('one'), item('two', 'look-hub2')];
-const PRESET = { rollup: [] } as unknown as BoardPreset;
+const PRESET = { categories: [], roles: [] } as unknown as BoardPreset;
 
 describe('the filter menu on a workspace of two hubs', () => {
     it('lists a value both hubs name once, counted over both', () => {

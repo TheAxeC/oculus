@@ -92,15 +92,16 @@ export function labelModeOf(config: Record<string, unknown>): string {
     return wordShape.parse(config.map_label_mode);
 }
 
-/** The stage of a project of a tier carrying `finished`, which a Map toggle shows; else none. */
+/** The stage of a project at a stage carrying `terminal`, which a Map toggle shows; else none. */
 function archived(project: Project, config: Record<string, unknown>): string | undefined {
-    return hasWord(config, 'tiers', 'finished', project.tier) ? project.stage : undefined;
+    return hasWord(config, 'stages', 'terminal', project.stage) ? project.stage : undefined;
 }
 
 /**
  * Build only nodes reached by visible projects and only edges whose two ends are visible. With the
- * people option a node and an edge are drawn for each person of a project's team, its lead and its
- * collaborators, except the person the workspace setting `self` names (board/team.ts).
+ * people option a node and an edge are drawn for each person of a project's team, its lead, its
+ * collaborators and its supervisors, except the person the workspace setting `self` names
+ * (board/team.ts).
  */
 export function buildGraph(
     snapshot: Snapshot,
@@ -335,9 +336,9 @@ export function lineCounts(graph: Graph): Record<string, number> {
 }
 
 /**
- * The archive statuses the Map offers a toggle for: every stage of a project of a tier carrying
- * `finished` (the archived and coauthor projects), each with the tone the `color` of its row of
- * `stages` gives, the tone its board card and its node are drawn in.
+ * The archive statuses the Map offers a toggle for: every stage carrying `terminal` that a project
+ * is at (the done work of every tier), each with the tone the `color` of its row of `stages`
+ * gives, the tone its board card and its node are drawn in.
  */
 export function archiveStatuses(
     snapshot: Snapshot | null,

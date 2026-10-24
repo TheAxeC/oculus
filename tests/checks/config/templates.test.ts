@@ -31,7 +31,7 @@ describe('the keys of a template', () => {
     it('are the leaves of a block, commented or not, with its examples left out', () => {
         const block = [
             '# A sentence: with a colon in it.',
-            'tier: projects          # set',
+            'tier: research          # set',
             '# scan:',
             '#   - { dir: projects }',
             '# slurm:',

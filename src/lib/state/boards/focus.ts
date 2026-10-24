@@ -37,10 +37,10 @@ import { waitingLabel } from './waiting.ts';
 export const CLUSTERS = ['now', 'parked', 'incubate'];
 
 /**
- * The cluster of the backlog: a lane of it is drawn full width under the three clusters and takes
- * only a project of a tier carrying `backlog`.
+ * The cluster of the Idea lane: a lane of it is drawn full width under the three clusters and takes
+ * a project of any tier at a stage it lists.
  */
-export const BACKLOG = 'backlog';
+export const IDEA = 'idea';
 
 /**
  * One lane of the board: its key, its words, its hue and its cluster, and what puts a project on
@@ -212,40 +212,32 @@ function laneOrder(a: Project, b: Project): number {
     return titleOrder(a, b);
 }
 
-/** A project of the backlog sorts by its title alone. */
+/** A project of the Idea lane sorts by its title alone. */
 function titleOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
 /**
- * Whether a project is of a tier whose projects may sit in the backlog: a tier of `tiers`
- * (config/catalogs/vocab.yml) carrying `backlog`, which are Projects and Personal.
- */
-function backlogTier(project: Pick<Project, 'tier'>, config: Record<string, unknown>): boolean {
-    return hasWord(config, 'tiers', 'backlog', project.tier);
-}
-
-/**
- * Whether a lane may hold a project at all: a lane of the cluster `backlog` holds only a project of
- * a backlog tier, so an idea of another tier is never drawn there; every other lane holds any.
+ * Whether a lane may hold a project at all: a lane with `chips` (Blocked, Backburner) holds only a
+ * project whose stage does not carry `terminal` in `stages`, since done work waits on nothing;
+ * every other lane holds any.
  */
 function holds(
     lane: Lane,
-    project: Pick<Project, 'tier'>,
+    project: Pick<Project, 'stage'>,
     config: Record<string, unknown>
 ): boolean {
-    return lane.cluster !== BACKLOG || backlogTier(project, config);
+    return lane.chips.length === 0 || !hasWord(config, 'stages', 'terminal', project.stage);
 }
 
 /**
  * The lane a project sits on: the first lane, in the order of `focus_lanes`, whose `chips` holds
  * one of the project's chips; else the first whose `stages` holds its stage; else none. Chips and
  * stage are compared as written. A lane that may not hold the project (`holds`) is passed over, so
- * a project of a tier without `backlog` is on no backlog lane and on whatever lane its chips or its
- * stage give otherwise.
+ * a project at a `terminal` stage is on no chip lane, and on whatever lane its stage gives.
  */
 export function laneOf(
-    project: Pick<Project, 'tier' | 'stage' | 'chips'>,
+    project: Pick<Project, 'stage' | 'chips'>,
     all: Lane[],
     config: Record<string, unknown>
 ): Lane | undefined {
@@ -259,8 +251,8 @@ export function laneOf(
 
 /**
  * What sits on each lane, by lane key: each project on the lane `laneOf` gives it, and on none
- * when it gives none. A lane of the cluster `backlog` is sorted by title, every other lane by
- * deadline first and then title.
+ * when it gives none. A lane of the cluster `idea` is sorted by title, every other lane by deadline
+ * first and then title.
  */
 export function laneItems(
     projects: Project[],
@@ -274,7 +266,7 @@ export function laneItems(
         if (lane !== undefined) byKey(out, lane.key)?.push(project);
     }
     for (const lane of all)
-        byKey(out, lane.key)?.sort(lane.cluster === BACKLOG ? titleOrder : laneOrder);
+        byKey(out, lane.key)?.sort(lane.cluster === IDEA ? titleOrder : laneOrder);
     return out;
 }
 
@@ -282,8 +274,8 @@ export function laneItems(
  * Whether the board may move a project onto a lane: the lane may hold it (`holds`), and the word a
  * move writes is a word of the vocabulary, the lane's first chip a word of `chips` for a lane with
  * `chips`, its first stage a word of `stages` otherwise. A lane that names neither takes no move.
- * So a move's write is never refused in part, and a project of a tier without `backlog` is never
- * sent to a backlog lane, which would leave it off the board.
+ * So a move's write is never refused in part, and a project at a `terminal` stage is never sent to
+ * a chip lane, which would leave it off the board.
  */
 export function movable(project: Project, lane: Lane, config: Record<string, unknown>): boolean {
     if (!holds(lane, project, config)) return false;
@@ -332,15 +324,15 @@ export function moveOnto(
 }
 
 /**
- * The projects of a backlog tier whose stage carries `live` (work in flight) or `idea` in `stages`
- * and that no lane of `focus_lanes` takes, so the board is not showing them: with the shipped lanes
- * none, and a hub whose lanes leave out a stage or the backlog row lists them.
+ * The projects of any tier whose stage carries `live` (work in flight) or `idea` in `stages` and
+ * that no lane of `focus_lanes` takes, so the board is not showing them: with the shipped lanes,
+ * which give every such stage a lane, none, and a hub whose lanes leave out a stage or the Idea row
+ * lists them.
  */
 export function unplaced(projects: Project[], config: Record<string, unknown>): Project[] {
     const all = lanes(config);
     return projects.filter(
         (project) =>
-            backlogTier(project, config) &&
             (hasWord(config, 'stages', 'live', project.stage) ||
                 hasWord(config, 'stages', 'idea', project.stage)) &&
             laneOf(project, all, config) === undefined
@@ -363,7 +355,7 @@ export function venueLabel(venue: Venue | undefined): string {
 
 /**
  * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of the
- * three clusters of `CLUSTERS`, so a project on no lane or on a backlog lane is in none. For each,
+ * three clusters of `CLUSTERS`, so a project on no lane or on the Idea lane is in none. For each,
  * the people named in `waiting-on:` first, then the venue holding it when its stage carries
  * `pauses_countdown` in `stages` (submitted). The blocked tally counts the projects on a lane that
  * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
@@ -442,11 +434,11 @@ export function focusLabel(project: Pick<Project, 'title' | 'short'>, mode: unkn
 }
 
 /**
- * The projects quick add may write to: those of the research board's tier (the tier of `tiers`
- * carrying `main`, Projects), in the order given.
+ * The projects quick add may write to: every project of any tier whose stage does not carry
+ * `terminal` in `stages`, in the order given.
  */
 export function liveProjects(projects: Project[], config: Record<string, unknown>): Project[] {
-    return projects.filter((one) => hasWord(config, 'tiers', 'main', one.tier));
+    return projects.filter((one) => !hasWord(config, 'stages', 'terminal', one.stage));
 }
 
 /**

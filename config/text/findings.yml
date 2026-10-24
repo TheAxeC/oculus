@@ -160,7 +160,10 @@ text:
             boards_row: "{0} must be a map of the board's fields; the board is not read"
             boards_field: '{0} is not a field a board takes; it is not read'
             boards_value: '{0} must be {1}; it is not read'
-            boards_record: '{0} must be a map holding its cell or its words; it is not read'
+            boards_record: '{0} must be a map holding its cell; it is not read'
+            categories_block: 'categories must be a list of maps; no category is read'
+            categories_row: '{0} must be a map with a key no earlier row holds; the row is not read'
+            categories_colour: '{0} names neither stages nor color, so it is drawn in no colour'
             local_row: '{0} must be {1}; the row is not read'
             local_repeat: '{0} repeats the value of an earlier row; the row is not read'
             local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"

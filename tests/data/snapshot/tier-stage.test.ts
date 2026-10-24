@@ -17,7 +17,7 @@ type Row = {
     manifest: string;
     /** The key the finding sits on. */
     key: 'tier' | 'stage';
-    /** The tier the project is read with: absent when the manifest names none of the five. */
+    /** The tier the project is read with: absent when the manifest names no word of `tiers`. */
     tier: string | undefined;
 };
 
@@ -35,12 +35,12 @@ const ROWS: Row[] = [
         key: 'tier',
         tier: undefined
     },
-    { name: 'no stage', manifest: 'tier: projects\n', key: 'stage', tier: 'projects' },
+    { name: 'no stage', manifest: 'tier: research\n', key: 'stage', tier: 'research' },
     {
         name: 'the stage manuscript',
-        manifest: 'tier: projects\nstage: manuscript\n',
+        manifest: 'tier: research\nstage: manuscript\n',
         key: 'stage',
-        tier: 'projects'
+        tier: 'research'
     }
 ];
 

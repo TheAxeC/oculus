@@ -1,0 +1,8 @@
+# Oculus text owned by the role controls the project boards and the collections share: the Mine only toggle, the Lead badge and the Role facet.
+text:
+    roles:
+        facet: Role
+        lead: Lead
+        lead_glyph: author
+        mine: mine only
+        mine_tip: only what names you in a role, and what names no one

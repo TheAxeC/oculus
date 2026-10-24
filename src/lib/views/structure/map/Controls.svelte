@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, Map partial. The bar under the pane header: the filters over the graph and the
     // independent people and archived-status visibility controls. The people control draws the
-    // people of each project's team, its lead and its collaborators, the user left out, and is kept
-    // in the instance state as `collaborators`. The link and re-tune actions are icons in the
-    // header (Map.svelte), and the relationship legend is Legend.svelte.
+    // people of each project's team, its lead, its collaborators and its supervisors, the user left
+    // out, and is kept in the instance state as `collaborators`. The link and re-tune actions are
+    // icons in the header (Map.svelte), and the relationship legend is Legend.svelte.
     //
     // A filter carries how many projects of it the graph holds now, so a reader sees what a press
     // costs before pressing it. A project stage is a pressable chip in its tone, and the connected

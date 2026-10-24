@@ -1,6 +1,7 @@
 title: 'Oculus'
 stage: building
 tier: personal
+lead: [axel-faes]
 status:
     chips: [parked]
 eli5: 'Oculus is the research workbench that reads a research hub (its projects, manuscripts, grants, data and code) and shows it in one VS Code-like app. It runs on your own machine and keeps the hub private.'

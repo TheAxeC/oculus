@@ -120,16 +120,107 @@ options:
     boards:
         heading: boards
         section: Boards
-        help: "The project boards, by view id. A project opened from anywhere lands on the first board whose tier is its own, and on the first board when none is. A key that is no board view is never shown. A workspace file's settings: overrides a board by its view id, adds a board, and takes one of oculus's out with <view id>: null."
+        help: "The project boards, by view id. A project is on every board whose keys it meets, a board meeting a key only when every list it names holds; a project opened from anywhere opens on the first board that takes it, and on the first board when none does. A key that is no board view is never shown. A workspace file's settings: overrides a board by its view id, adds a board, and takes one of oculus's out with <view id>: null."
         fields:
             key:
-                help: the view id of the board, projects, coauthor, archive, personal or software
+                help: the view id of the board, projects, supervision, coauthor, archive, personal or software
                 control: choice
-                options: [projects, coauthor, archive, personal, software]
+                options: [projects, supervision, coauthor, archive, personal, software]
             tier:
-                help: the tier whose projects the board shows
-                control: choice
+                help: the tier, or the list of tiers, whose projects the board takes
+                control: multi
                 from: tiers
+            role:
+                help: the role, or the list of roles, the user has on the projects the board takes, the first row of roles whose field holds the person self names; not applied when the workspace names no self
+                control: multi
+                from: roles
+            stages:
+                help: the stages the board takes, held against a project's stage
+                fields:
+                    key:
+                        help: which list, words (one of the project's words is listed), not_words (none is), flags (one of its words carries one of these flags), not_flags (none does)
+                        control: choice
+                        options: [words, not_words, flags, not_flags]
+                    value:
+                        help: the words or flags of the list
+                        control: multi
+                        from:
+                            {
+                                field: key,
+                                sources:
+                                    {
+                                        words: project_stages,
+                                        not_words: project_stages,
+                                        flags: stage_flags,
+                                        not_flags: stage_flags
+                                    }
+                            }
+            chips:
+                help: the chips the board takes, held against a project's chips
+                fields:
+                    key:
+                        help: which list, words (one of the project's words is listed), not_words (none is), flags (one of its words carries one of these flags), not_flags (none does)
+                        control: choice
+                        options: [words, not_words, flags, not_flags]
+                    value:
+                        help: the words or flags of the list
+                        control: multi
+                        from:
+                            {
+                                field: key,
+                                sources:
+                                    {
+                                        words: status_chips,
+                                        not_words: status_chips,
+                                        flags: chip_flags,
+                                        not_flags: chip_flags
+                                    }
+                            }
+            forms:
+                help: the forms the board takes, held against a project's form
+                fields:
+                    key:
+                        help: which list, words (one of the project's words is listed), not_words (none is)
+                        control: choice
+                        options: [words, not_words]
+                    value:
+                        help: the forms of the list
+                        control: multi
+                        from:
+                            {
+                                field: key,
+                                sources: { words: project_forms, not_words: project_forms }
+                            }
+            hub:
+                help: the root of the one hub of the workspace whose projects alone the board takes
+            match:
+                help: manifest fields with the values one of which each must hold, a record by its key
+                fields:
+                    key:
+                        help: the manifest field
+                        control: choice
+                        options:
+                            [
+                                tier,
+                                stage,
+                                form,
+                                chips,
+                                domain,
+                                pillars,
+                                funding,
+                                datasets,
+                                venue,
+                                compute,
+                                related,
+                                lead,
+                                collaborators,
+                                supervisors,
+                                tags,
+                                year
+                            ]
+                    value:
+                        help: the values one of which the field must hold
+                        control: list
             columns:
                 help: the columns of the board's list mode, in order
                 control: records
@@ -145,22 +236,14 @@ options:
                 help: how the board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title; any other value counts as short. The board's Aa toggle overrides it for the viewer
                 control: choice
                 options: [short, full]
-            groups:
-                help: the board's groups of cards, used by its filter (the category facet, its dot in the group's colour), a card's group and its tab count. A card lands in the first group whose keys hold its stage, its form or one of its chips
-                control: records
-                fields:
-                    label: the words of the group, which also give its id
-                    keys:
-                        help: the project stages, forms and chips the group catches
-                        control: multi
-                        from: [project_stages, project_forms, status_chips]
-                    color:
-                        help: the colour of the group's count and of its dot in the filter
-                        control: colour
+            cards:
+                help: how the card mode lays the cards out. sections, the default, draws one section per category of categories in vocab.yml that holds a card, in that list's order, headed by the category's label and count in its colour, with the cards in no category last; grid draws one grid of every card
+                control: choice
+                options: [sections, grid]
     counts:
         heading: boards
         section: Tab badges
-        help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts by its groups and gives the rail its first group's count; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
+        help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of vocab.yml and gives the rail the count of its projects in the categories whose rail flag is set, in the colour of the first such category; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
         fields:
             key:
                 help: the view id of a view that draws a count

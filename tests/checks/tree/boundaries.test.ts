@@ -131,6 +131,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/hub-names` also holds which folders a project scan enters and whether a folder lies
 // in a scan folder: the scan reader, the server's check of a new project's folder and the page's
 // new-project form ask the same question, so they cannot disagree.
+// `data/shapes/boards/**` holds which projects a board of `boards:` takes, a project's category of
+// `categories:` and the user's role on a project or a collection entry of `roles:`: the boards, the
+// rail, the Pillars view and the collections on the page, and the audit and the New project write
+// on the server, read them through it, so a board, a category and a role are one rule on both
+// sides.
 //
 // `data/prose/markdown/**` is in the primitives' row, the one folder of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -294,6 +299,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/hub-names',
         'data/snapshot/place',
         'data/shapes/vocab-keys',
+        'data/shapes/boards/**',
         'data/accounts/leads',
         'data/helpers/worktrees',
         'data/helpers/files/text-kind',

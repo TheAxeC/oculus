@@ -25,7 +25,7 @@ export type FilterChoice = {
     active: boolean;
     /** The glyph a ticked choice is drawn with, and nothing for one that is not in force. */
     glyph?: string;
-    /** The hue of a lifecycle bucket, which only the category facet's values carry. */
+    /** The hue of a category, which only the category facet's values carry. */
     tone?: string;
 };
 
@@ -38,6 +38,7 @@ export type FilterGroup = { id: string; heading: string; items: FilterChoice[] }
  */
 export function facetHeading(facet: string): string {
     if (facet === 'category') return t('board.facet_category');
+    if (facet === 'role') return t('roles.facet');
     if (facet === 'year') return t('board.facet_year');
     if (facet === 'domain') return t('board.facet_domain');
     if (facet === 'pillar') return t('board.facet_pillar');
@@ -76,17 +77,17 @@ export function valueLabel(facet: string, value: FacetValue): string {
     return value.label;
 }
 
-/** The hue of one group of cards, through the palette, and nothing when it has none. */
-function bucketTone(preset: BoardPreset, id: string): string | undefined {
-    const colour = preset.rollup.find((bucket) => bucket.id === id)?.color ?? '';
+/** The hue of one category, through the palette, and nothing when it has none. */
+function categoryTone(preset: BoardPreset, key: string): string | undefined {
+    const colour = preset.categories.find((one) => one.key === key)?.color ?? '';
     return colour === '' ? undefined : toneOf(colour);
 }
 
 /**
  * Every facet of the board as a group of the one filter control. The category facet carries its
- * bucket's own hue as a dot, which is the one facet whose values the config gives a colour to
- * (the board's `groups` in `boards`), and no other facet is given one. A facet with no values
- * draws no group.
+ * category's own hue as a dot, which is the one facet whose values the config gives a colour to
+ * (`categories` in vocab.yml), and no other facet is given one. A facet with no values draws no
+ * group.
  */
 export function filterGroups(
     groups: Facet[],
@@ -109,7 +110,7 @@ export function filterGroups(
                     };
                     if (active) choice.glyph = t('board.filter_tick_glyph');
                     const tone =
-                        group.key === 'category' ? bucketTone(preset, value.value) : undefined;
+                        group.key === 'category' ? categoryTone(preset, value.value) : undefined;
                     if (tone !== undefined) choice.tone = tone;
                     return choice;
                 })

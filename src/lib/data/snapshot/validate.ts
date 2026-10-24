@@ -110,6 +110,7 @@ const NOT_BARE: { field: string; list: boolean }[] = [
     { field: 'related', list: true },
     { field: 'lead', list: true },
     { field: 'collaborators', list: true },
+    { field: 'supervisors', list: true },
     { field: 'waiting-on', list: true }
 ];
 

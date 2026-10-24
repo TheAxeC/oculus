@@ -71,6 +71,7 @@ arrangements:
       kind: pane
       view:
         - { view: projects, pinned: true }
+        - { view: supervision, pinned: true }
         - { view: coauthor, pinned: true }
         - { view: archive, pinned: true }
         - { view: personal, pinned: true }
@@ -222,10 +223,12 @@ floats:
   - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
-# The project boards, by view id, in the order a project's tier is looked up in: a project opened from anywhere lands on the first board whose `tier` is its own, and on the first board when none is. Each board shows the projects of its `tier`, a word of `tiers` in config/catalogs/vocab.yml. `columns` are the columns of its list mode, each the `cell` it draws (title, authors, venue, status, focus, next, domain, pillar or funding) under the heading `label`, the cell's name when it has none. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the board's Aa toggle overrides it for the viewer; the full title is always on hover. `groups` are the board's groups of cards, used by the board's filter (the category facet, its dot in the group's colour), a card's group and the board's tab count, which draws each group's count in the group's colour beside the board's card count; a card lands in the first group whose `keys` hold its `stage:` (a word of `stages`), its `form:` (a word of `forms`) or one of its `status.chips` (words of `chips`), and a card no group catches is in none. A key here that is no board view is never shown.
+# The project boards, by view id, in the order a project opened from anywhere is placed by: it opens on the first board that takes it, and on the first board when none does. A project is on every board whose keys it meets, and a board meets a key only when every list it names holds. `tier` is a word of `tiers` in config/catalogs/vocab.yml, or a list of them. `role` is a key of `roles` there, or a list: the user's role on the project, the first row whose field holds the person the workspace setting `self` names; with no `self` the key is not applied. `stages`, `chips` and `forms` are blocks held against the project's `stage:`, its `status.chips` and its `form:`, each with the lists `words` (one of its words is listed), `not_words` (none is), `flags` (one of its words carries one of these flags of the vocabulary) and `not_flags` (none does); `forms` takes no flags. `hub` is the root of one hub of the workspace, whose projects alone the board takes. `match` maps a manifest field (domain, pillars, funding, datasets, venue, compute, related, lead, collaborators, supervisors, tags, year, tier, stage, form, chips) to the values one of which the field must hold, a record by its key. `columns` are the columns of its list mode, each the `cell` it draws (title, authors, venue, status, focus, next, domain, pillar or funding) under the heading `label`, the cell's name when it has none. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the board's Aa toggle overrides it for the viewer; the full title is always on hover. `cards` is how the card mode lays the cards out: `sections` (the default) one section per category of `categories` in vocab.yml that holds a card, in that list's order, headed by the category's label and count in its colour, with the cards in no category last; `grid` one grid of every card. A board draws the categories its projects are in, on its category facet and its tab's counts, and names none of its own. A key here that is no board view is never shown.
 boards:
   projects:
-    tier: projects
+    tier: research
+    role: lead
+    stages: { not_flags: [terminal] }
     columns:
       - { cell: title,   label: Project }
       - { cell: authors, label: Authors }
@@ -235,11 +238,21 @@ boards:
       - { cell: next,    label: Next }
     search: "Search title | eli5 | results | ideas | doc text ..."
     label_mode: short
-    groups:
-      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision], color: "#16a34a" }
-      - { label: idea,          keys: [nascent, scoping], color: "#7c5cff" }
+  supervision:
+    tier: research
+    role: supervisor
+    columns:
+      - { cell: title,   label: Paper }
+      - { cell: authors, label: Authors }
+      - { cell: venue,   label: Venue }
+      - { cell: domain,  label: Domain }
+      - { cell: pillar,  label: Pillar }
+      - { cell: funding, label: Funding }
+    search: "Search supervision | title | eli5 | outcome | doc text ..."
+    label_mode: short
   coauthor:
-    tier: coauthor
+    tier: research
+    role: [collaborator, other]
     columns:
       - { cell: title,   label: Paper }
       - { cell: authors, label: Authors }
@@ -249,13 +262,10 @@ boards:
       - { cell: funding, label: Funding }
     search: "Search coauthor | title | eli5 | outcome | doc text ..."
     label_mode: short
-    groups:
-      - { label: "in progress", keys: [de-risking, exploring, in-prep, building, submit-ready, submitted, revision], color: "#16a34a" }
-      - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-      - { label: outputs,       keys: [abstract, poster, tech-report],                   color: "#0ea5e9" }
-      - { label: dead-ends,     keys: [failed, stopped],                                 color: "#9ca3af" }
   archive:
-    tier: archive
+    tier: research
+    role: lead
+    stages: { flags: [terminal] }
     columns:
       - { cell: title,   label: Paper }
       - { cell: authors, label: Authors }
@@ -265,10 +275,6 @@ boards:
       - { cell: funding, label: Funding }
     search: "Search archive | title | eli5 | outcome | doc text ..."
     label_mode: short
-    groups:
-      - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-      - { label: outputs,       keys: [thesis, abstract, poster, tech-report],           color: "#0ea5e9" }
-      - { label: dead-ends,     keys: [failed, stopped],                                 color: "#9ca3af" }
   personal:
     tier: personal
     columns:
@@ -280,10 +286,6 @@ boards:
       - { cell: next,    label: Next }
     search: "Search personal | title | eli5 | next | doc text ..."
     label_mode: short
-    groups:
-      - { label: building,      keys: [building],                                color: "#d4a017" }
-      - { label: released,      keys: [released],                                color: "#0ea5e9" }
-      - { label: idea,          keys: [nascent, scoping, de-risking, exploring], color: "#7c5cff" }
   software:
     tier: software
     columns:
@@ -295,12 +297,12 @@ boards:
       - { cell: funding, label: Funding }
     search: "Search software | title | eli5 | tags | doc text ..."
     label_mode: short
-    groups: []
 
 
-# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts by its `groups` in `boards` above, and gives the rail the count of its first group in that group's colour, or its cards when it has no groups. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
+# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour of the first such row, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
 counts:
   projects:     { tab: true, rail: true }
+  supervision:  { tab: true, rail: true }
   coauthor:     { tab: true, rail: true }
   personal:     { tab: true, rail: true }
   archive:      { tab: true, rail: false }

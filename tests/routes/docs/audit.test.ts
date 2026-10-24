@@ -1,6 +1,6 @@
 // Layer 2, route tests. The audit's research rules (the open markers of a README, the length of
 // a manifest's glance fields, the website's publication list) run over a project of the tier
-// `projects` and skip a project of the tier `personal`, which the research rules do not cover.
+// `research` and skip a project of the tier `personal`, which the research rules do not cover.
 
 import { describe, expect } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -30,7 +30,7 @@ function hubWith(projects: Project[]): string {
 }
 
 /** The project of a tier, with an open marker, a long `eli5` and the stage of a published paper. */
-function projectOf(tier: 'projects' | 'personal'): Project {
+function projectOf(tier: 'research' | 'personal'): Project {
     return fixtureProject({
         id: `hub:${tier}`,
         root: 'hub',
@@ -44,11 +44,11 @@ function projectOf(tier: 'projects' | 'personal'): Project {
 }
 
 describe('the research rules of the audit', () => {
-    const projects = [projectOf('projects'), projectOf('personal')];
+    const projects = [projectOf('research'), projectOf('personal')];
     const hub = hubWith(projects);
     const rules = { ...auditRules(config), publicationsFile: 'publications.yml' };
     const held = holdersOf(projects);
-    const own = { hub, root: 'hub', primary: true, held };
+    const own = { hub, root: 'hub', primary: true, held, self: new Set<string>() };
     const found = auditFindings({ ...own, projects, collections: [], rules, catalog });
     const kinds = (scope: string): string[] =>
         found
@@ -56,8 +56,8 @@ describe('the research rules of the audit', () => {
             .map((one) => one.kind)
             .sort();
 
-    it('raise a marker, a readability and a publication row for a project of the tier projects', () => {
-        const kindsOfProjects = kinds('projects/projects');
+    it('raise a marker, a readability and a publication row for a project of the tier research', () => {
+        const kindsOfProjects = kinds('projects/research');
         expect(kindsOfProjects).toContain('todo');
         expect(kindsOfProjects).toContain('readability');
         expect(kindsOfProjects).toContain('publink');
@@ -79,7 +79,7 @@ describe('the Deposit rules of the audit', () => {
         const project = fixtureProject({
             id: 'hub:inside',
             root: 'hub',
-            tier: 'projects',
+            tier: 'research',
             stage: 'exploring',
             title: 'Inside',
             folder: '',
@@ -94,6 +94,7 @@ describe('the Deposit rules of the audit', () => {
             root: 'hub',
             primary: true,
             held: holdersOf([project]),
+            self: new Set<string>(),
             projects: [project],
             collections: [],
             rules,

@@ -66,7 +66,7 @@ import { createSchedule } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox } from '../feeds/inbox.svelte.ts';
 import { instanceMap, isInstanceOf, stateId, tabsOf } from '../workbench/layout/instance.ts';
 import { fileOfTab } from '../workbench/navigation/pages.ts';
-import { paneAt } from '../workbench/layout/index.ts';
+import { paneAt, type TabMemory } from '../workbench/layout/index.ts';
 import { pageOpen } from '../workbench/layout/saved/storage.ts';
 import { createLatexActions } from '../sessions/latex/actions.ts';
 import { createLatex, type LatexStore } from '../sessions/latex/latex.svelte.ts';
@@ -149,14 +149,17 @@ export type { ClientState, TabScopeStore };
 /**
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
  * handed those instances here. Nothing else wires one store to another. `transport` is the page
- * state's way to the server, the HTTP route unless a test hands a server of its own.
+ * state's way to the server, the HTTP route unless a test hands a server of its own, and `memory`
+ * where the browser tab keeps the workspace it last loaded, its session storage unless a test
+ * hands its own.
  */
 export function createClientState(
     desktop?: Desktop,
     float: string | null = desktop?.float ?? null,
     pageId = 'main',
     owner: string | null = desktop?.owner ?? null,
-    transport?: StateTransport
+    transport?: StateTransport,
+    memory?: TabMemory
 ): ClientState {
     // Every store that fetches an answer holds it in this one query client, and a store handed
     // `queries` is recorded where it is made, so a tab's copy replaces it (queries/tab-scope.ts).
@@ -233,7 +236,8 @@ export function createClientState(
             }
         },
         pageState,
-        () => entities.config()?.hubs ?? null
+        () => entities.config()?.hubs ?? null,
+        memory
     );
     const drag = createDrag(layout, desktop);
     const openTabs = () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root));

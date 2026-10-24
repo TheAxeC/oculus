@@ -134,8 +134,8 @@ describe('the clones of a project', () => {
     /** The snapshot of that hub with the clones of its projects placed from these folders. */
     function clonesOf(dirs: readonly string[]): Snapshot {
         const hub = plantScratch('oculus-clones-hub-', {
-            'projects/ideas/x/project.yml': `title: X\ntier: projects\nstage: nascent\nrepository:\n  url: ${X}\n`,
-            'projects/ideas/y/project.yml': 'title: Y\ntier: projects\nstage: nascent\n'
+            'projects/ideas/x/project.yml': `title: X\ntier: research\nstage: nascent\nrepository:\n  url: ${X}\n`,
+            'projects/ideas/y/project.yml': 'title: Y\ntier: research\nstage: nascent\n'
         });
         plantHub(hub);
         const { snapshot } = buildOneHub(hub, portfolioConfigFrom(MERGED), 0, []);

@@ -22,14 +22,8 @@ import { needsInput, sessionRows } from '../../sessions/folds.ts';
 import { findingsCount as listedFindings } from '../navigation/status.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusTone, toneOf } from '../../shared/words/tones.ts';
-import {
-    countRow,
-    countText,
-    leadsDue,
-    linkedinOverdue,
-    matchedEntries,
-    rollup
-} from './rail-badges.ts';
+import { countRow, countText, leadsDue, linkedinOverdue, matchedEntries } from './rail-badges.ts';
+import { railCount } from '../../../data/shapes/boards/categories.ts';
 import type { BoardItem, BoardPreset } from '../../boards/board/index.ts';
 import { focusWords } from '../../boards/focus.ts';
 import type { Collection, GitState } from '../../../data/model/index.ts';
@@ -80,10 +74,10 @@ export type RailBadgesStore = {
     countFlags: (view: string) => CountFlags;
     boardBadge: (view: string) => string;
     /**
-     * The count of a board's first group with the group's tone, or its cards when it has no
-     * groups.
+     * The count a board gives the rail: its projects in the rows of `categories` carrying
+     * `rail: true`, in the tone of the first such row, and 0 when it has none there.
      */
-    boardPart: (view: string) => RailPart;
+    boardRail: (view: string) => RailPart;
     collectionCount: (key: string) => number;
     inboxCount: () => number;
     applicationsCount: () => number;
@@ -158,14 +152,17 @@ export function createRailBadges(
     }
 
     /**
-     * The count of a board's first group, in the group's tone, which is the cards in work on the
-     * boards that have them; the board's cards, toneless, for a board with no groups.
+     * The count a board gives the rail: its projects in the rows of `categories` in vocab.yml
+     * carrying `rail: true` (`railCount`), in the tone of the first such row; 0, drawn as no
+     * count, when none of its projects is in such a row.
      */
-    function boardPart(view: string): RailPart {
-        const first = boardCells(view).at(0);
-        return first === undefined
-            ? { count: boardCount(view) }
-            : { count: first.count, tone: first.color };
+    function boardRail(view: string): RailPart {
+        const preset = selectors.boardPreset(view);
+        const projects = selectors.board(preset).map((item) => item.project);
+        const rail = railCount(projects, preset.categories, preset.config);
+        return rail.color === ''
+            ? { count: rail.count }
+            : { count: rail.count, tone: toneOf(rail.color) };
     }
 
     /** The number of entries of one collection whose status is one of its `counts` row's match. */
@@ -301,14 +298,19 @@ export function createRailBadges(
         return total;
     }
 
-    /** The cells of a board's tab: the count of each of its `groups`, in the group's tone. */
+    /**
+     * The cells of a board's tab: the count of each row of `categories` that holds at least one of
+     * its cards, in the list's order, in the row's tone.
+     */
     function boardCells(view: string): BadgeCell[] {
         const preset = selectors.boardPreset(view);
-        const projects = selectors.board(preset).map((item) => item.project);
-        return rollup(projects, preset.rollup).map((cell) => ({
-            ...cell,
-            color: toneOf(cell.color)
-        }));
+        const items = selectors.board(preset);
+        return preset.categories.flatMap((category) => {
+            const count = items.filter((item) => item.category === category.key).length;
+            return count === 0
+                ? []
+                : [{ count, label: category.label, color: toneOf(category.color) }];
+        });
     }
 
     /** The running and pending queue cells, using the matching vocabulary status colours. */
@@ -357,7 +359,7 @@ export function createRailBadges(
     return {
         countFlags,
         boardBadge: (view) => String(boardCount(view)),
-        boardPart,
+        boardRail,
         collectionCount,
         inboxCount: () => inbox.actionable(),
         applicationsCount,

@@ -342,3 +342,16 @@ Round items: 1 holds, 2 holds, 3 holds (finding 3 is a race outside the asked ca
 - `tests/state/sessions/source/source-unserved.test.ts`: it was not red in my test:quick run, so I have no red of my own to report on it.
 
 Reviewer usage: ab4a4e18a17c03122, claude-opus-5-5, 227015 tokens, 61 tool uses, 11 min 16 s.
+
+## Closed
+
+The findings of the review over round 1, each with its disposition at landing (2026-10-24):
+
+1. The category sentence in `config/defaults/sources.yml` and `config/options/sources.yml`: fixed at landing, the sentence cut from both, and from the hub's `.oculus/config.yml` in the hub rewrite.
+2. The builder's three edit programs: raised as open item 308; Axel ruled (a), the programs accepted after the fact and O55 landed as built.
+3. The held change going stale when another page saves the presumed workspace: fixed at landing in `follow` of `layout/saved/storage.ts`, which drops the held change and runs it again on the arrangement that save made; the G29 row 'keeps the change of another page saved to the workspace the reload drew, and its own' failed on the unchanged code and passes after.
+4. The shadowing name `held` in `carried`: fixed at landing, renamed `kept`.
+5. The head comment of `storage.ts`: fixed at landing, "writes, once, the pages of a change made before it".
+6. The short lines at `manifest.ts:603` and `new-project.ts:6`: fixed at landing, both paragraphs rewrapped at 100 columns.
+7. The history-word grep: stated in the landing report with each hit judged.
+8. New project on a board naming `hub:` or `match:`: stated in the landing report with its before and after.

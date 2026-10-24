@@ -12,7 +12,7 @@ options:
     scan:
         heading: sources
         section: Project scan
-        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and stage are the manifest's own tier and stage lines, not the folder's. When a project lies deeper than one level, the first folder under the rule's dir is its category. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
+        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and stage are the manifest's own tier and stage lines, not the folder's. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
         fields:
             dir:
                 help: the folder scanned, relative to the hub
@@ -27,9 +27,9 @@ options:
         help: The folder a new project is made in, for each tier. The New project form of a board offers it in its Folder field, and an app's new-project write with no folder uses it. A folder must be a scan folder or lie under one, so the project is read once made; an entry for a word that is not a tier, or one that names a folder outside the scan, is a finding. A tier with no entry has no folder to offer and its form asks for one. This is a setting of the hub kept in the hub's .oculus/config.yml; the engine's map is empty.
         fields:
             key:
-                help: the tier the folder is for, projects, coauthor, archive or personal
+                help: the tier the folder is for, a word of tiers in vocab.yml
                 control: choice
-                options: [projects, coauthor, archive, personal]
+                from: tiers
             value:
                 help: the folder new projects of the tier are made in, relative to the hub
                 control: folder

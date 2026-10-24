@@ -1,6 +1,6 @@
 id: streaming-anomaly
 stage: revision
-tier: projects
+tier: research
 short: Stream-Anomaly
 title: Low-rank streaming anomaly detection
 lead: [dana-example]

@@ -23,12 +23,6 @@ export type Finding = {
     line?: number;
 };
 
-/**
- * The five tiers a manifest's `tier` names. A tier says which board a project is on: Projects,
- * Coauthor, Archive, Personal or Software.
- */
-export type Tier = 'projects' | 'coauthor' | 'archive' | 'personal' | 'software';
-
 /** The eight registries, one per file readRegistries is given. */
 export type RegistryName =
     | 'venues'
@@ -106,11 +100,6 @@ export type RawManifest = {
     folder: string;
     /** The folder's basename, which is the project's id; for a repository, its root's key. */
     id: Id;
-    /**
-     * The first folder under the scan folder when the project lies deeper than one level, and
-     * absent otherwise: `published`, `failed`.
-     */
-    category?: string;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
     manifestId?: unknown;
     /**
@@ -336,17 +325,16 @@ export type Subtask = {
 
 /**
  * A project. The relation fields hold ids; data/snapshot/normalise.ts fills them from the
- * manifest's `venue`, `funding`, `datasets`, `pillars`, `domain`, `lead` and `collaborators`
- * keys, and leaves them empty when it has none.
+ * manifest's `venue`, `funding`, `datasets`, `pillars`, `domain`, `lead`, `collaborators` and
+ * `supervisors` keys, and leaves them empty when it has none.
  */
 export type Project = Rooted & {
     id: Id;
     /**
-     * The manifest's `tier`; absent when it names none of the five, and the project is then on no
-     * board.
+     * The manifest's `tier`, the kind of project, a word of the vocabulary's `tiers`; absent when
+     * it names none, and the project is then on no board that names a tier.
      */
-    tier?: Tier;
-    category?: string;
+    tier?: string;
     /** The manifest's `stage`, a key of the vocabulary's `stages`. */
     stage?: string;
     /** The manifest's `form`, the form of the output, a key of the vocabulary's `forms`. */
@@ -416,9 +404,15 @@ export type Project = Rooted & {
     lead: Id[];
     /**
      * Ids of the people registry, the manifest's `collaborators:`; the `projectPerson` table holds
-     * the same pairs from the other side. With `lead` they are the project's team.
+     * the same pairs from the other side. With `lead` and `supervisors` they are the project's
+     * team.
      */
     collaborators: Id[];
+    /**
+     * Ids of the people registry, the manifest's `supervisors:`, the people who supervise the
+     * work; the `projectPerson` table holds the same pairs from the other side.
+     */
+    supervisors: Id[];
     /**
      * The four fixed project documents, in the order sources/documents/docs.ts lists them, presence
      * only.
@@ -629,9 +623,9 @@ export type Domain = Rooted & {
 };
 
 /**
- * One human, from the people registry. It is the entity a manifest's `lead:` and `collaborators:`,
- * a joint work's `person:` and a `waiting-on:` value name, so a person's name is written once and
- * every surface that draws one reads it here.
+ * One human, from the people registry. It is the entity a manifest's `lead:`, `collaborators:` and
+ * `supervisors:`, a joint work's `person:` and a `waiting-on:` value name, so a person's name is
+ * written once and every surface that draws one reads it here.
  *
  * `affiliations` are keys of the organisation registry rather than the organisations themselves,
  * which is what keeps the pair JSON-safe: a person points at organisations and an organisation
@@ -661,8 +655,8 @@ export type Person = Rooted & {
      */
     file?: string;
     /**
-     * Projects whose `lead:` or `collaborators:` name this person, the projects of whose team the
-     * person is; filled from the other side of the relation.
+     * Projects whose `lead:`, `collaborators:` or `supervisors:` name this person, the projects of
+     * whose team the person is; filled from the other side of the relation.
      */
     projectIds: Id[];
     /** Entries of the joint-work collection whose `person:` is this key, by entry id. */

@@ -55,7 +55,7 @@ function build(registry: string | null, computes: Record<string, string>): Snaps
     if (registry !== null) files['.oculus/data/research/resources.yml'] = registry;
     for (const [id, compute] of Object.entries(computes)) {
         files[join('projects/active', id, 'project.yml')] =
-            `id: ${id}\ntier: projects\nstage: exploring\ntitle: ${id}\n${compute}`;
+            `id: ${id}\ntier: research\nstage: exploring\ntitle: ${id}\n${compute}`;
     }
     return buildOneHub(plantScratch('oculus-resources-hub-', files, ['projects/active']), CONFIG)
         .snapshot;

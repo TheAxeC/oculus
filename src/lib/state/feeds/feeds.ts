@@ -87,7 +87,7 @@ export function attention(
 
     const warn = venueWarn(config);
     const projects = Object.values(snapshot.entities.projects).filter((project) =>
-        hasWord(config, 'tiers', 'main', project.tier)
+        hasWord(config, 'stages', 'live', project.stage)
     );
     for (const one of venueLoad(projects, snapshot.entities.venues, warn)) {
         out.push({ kind: 'venue', id: one.id, count: one.count, label: one.label });

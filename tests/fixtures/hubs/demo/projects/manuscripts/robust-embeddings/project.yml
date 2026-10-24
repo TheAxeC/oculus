@@ -1,6 +1,6 @@
 id: robust-embeddings
 stage: submitted
-tier: projects
+tier: research
 short: Robust-Emb
 title: Robust representation learning under distribution shift
 lead: [dana-example]

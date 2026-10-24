@@ -117,6 +117,10 @@ export type CollectionState = {
     picked: Record<string, string[]>;
     /** The bounds typed in each range filter of the bar, by field, either one empty for none. */
     range: Record<string, Bounds>;
+    /** Mine only, on by default; read only where the collection declares a field of a role. */
+    mine: boolean;
+    /** The keys of `roles` picked in the Role facet; none picked lets every entry through. */
+    roles: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -126,7 +130,16 @@ export type Bounds = { from: string; to: string };
 
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [], hidden: [], more: [], picked: {}, range: {} };
+    return {
+        search: '',
+        statuses: [],
+        hidden: [],
+        more: [],
+        picked: {},
+        range: {},
+        mine: true,
+        roles: []
+    };
 }
 
 /** The two bounds of a range, each the empty text unless it is text. */
@@ -138,23 +151,17 @@ const collectionStateShape = searchRevealShape.extend({
     hidden: fieldItemsShape,
     more: recordItemsShape,
     picked: z.record(z.string(), fieldItemsShape).catch({}),
-    range: z.record(z.string(), boundsShape).catch({})
+    range: z.record(z.string(), boundsShape).catch({}),
+    mine: z.boolean().catch(true),
+    roles: fieldItemsShape
 });
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
 export function parseCollectionState(raw: unknown): CollectionState {
     const held = readAs(collectionStateShape, raw);
     if (held === null) return emptyCollectionState();
-    const state: CollectionState = {
-        search: held.search,
-        statuses: held.statuses,
-        hidden: held.hidden,
-        more: held.more,
-        picked: held.picked,
-        range: held.range
-    };
-    if (held.reveal !== undefined) state.reveal = held.reveal;
-    return state;
+    const { reveal, ...state } = held;
+    return reveal === undefined ? state : { ...state, reveal };
 }
 
 /** A string and nothing else, for a value the data layer types as unknown. */
@@ -719,31 +726,28 @@ export type CrossMember = { id: string; label: string; stage: string };
 
 /** One of the three cross-link groups the portfolio uses everywhere. */
 export type CrossGroup = {
-    type: 'work' | 'published' | 'ideas';
+    type: 'in-flight' | 'ideas' | 'done';
     count: number;
     members: CrossMember[];
     warn: boolean;
 };
 
-/**
- * The word a cross-link member is filed under: the project's own `stage:`, its tier without one,
- * and an empty word for a project that names neither, which is left out of every group.
- */
+/** The word a cross-link member is filed under: the project's own `stage:`, else the empty word. */
 function stageOf(project: Project): string {
-    return project.stage ?? project.tier ?? '';
+    return project.stage ?? '';
 }
 
 /**
  * The projects that name one entry, grouped by stage with a count each.
  *
  * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, a joint work is the projects whose team (`lead:` and
- * `collaborators:`, state/boards/board/team.ts) holds its person, and every other collection has no
- * project-side inverse, so it is the entry's own `related:` list of keys. A key of the entry's file
- * names the record its hub resolves it to, the entry's own hub first, then the one other hub that
- * holds it (`resolvedId`); `people` are the people of the snapshot, which a joint work's person is
- * resolved among. A related key no project of the snapshot resolves is left out rather than drawn
- * as a dead link.
+ * manifests' `funding:` tags, a joint work is the projects whose team (`lead:`, `collaborators:`
+ * and `supervisors:`, state/boards/board/team.ts) holds its person, and every other collection has
+ * no project-side inverse, so it is the entry's own `related:` list of keys. A key of the entry's
+ * file names the record its hub resolves it to, the entry's own hub first, then the one other hub
+ * that holds it (`resolvedId`); `people` are the people of the snapshot, which a joint work's
+ * person is resolved among. A related key no project of the snapshot resolves is left out rather
+ * than drawn as a dead link.
  */
 export function crossLinks(
     entry: Entry,
@@ -770,29 +774,31 @@ export function crossLinks(
     return groupProjects(named, config);
 }
 
+/** The cross-link group of a stage, read from its flags in `stages`; null for a stage in none. */
+function groupOf(stage: string, config: Record<string, unknown>): CrossGroup['type'] | null {
+    if (wordNumber(config, 'stages', 'dead', stage) !== null) return null;
+    if (hasWord(config, 'stages', 'live', stage)) return 'in-flight';
+    if (hasWord(config, 'stages', 'idea', stage)) return 'ideas';
+    if (hasWord(config, 'stages', 'terminal', stage)) return 'done';
+    return null;
+}
+
 /**
- * Projects in work, published and ideas groups, in that order and by project id within each. A
- * project of a tier carrying `finished` is published work, left out when its stage carries a `dead`
- * number in `stages`; a project whose stage carries `idea` is an idea; any other project with a
- * stage is work, flagged when one of its chips carries `blocked` in `chips`.
+ * Projects in the in-flight, done and ideas groups, in that order and by project id within each,
+ * read from the stage's flags in `stages` on every tier: a stage carrying `live` is in flight,
+ * flagged when one of the group's projects carries a chip carrying `blocked` in `chips`; one
+ * carrying `idea` is an idea; one carrying `terminal` is done. A project at a stage carrying a
+ * `dead` number, or at a stage in none of the three, is left out.
  */
 export function groupProjects(projects: Project[], config: Record<string, unknown>): CrossGroup[] {
     const grouped: Record<CrossGroup['type'], CrossMember[]> = {
-        work: [],
-        published: [],
+        'in-flight': [],
+        done: [],
         ideas: []
     };
     for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
         const stage = stageOf(project);
-        const finished = hasWord(config, 'tiers', 'finished', project.tier);
-        if (finished && wordNumber(config, 'stages', 'dead', stage) !== null) continue;
-        const group = finished
-            ? 'published'
-            : hasWord(config, 'stages', 'idea', stage)
-              ? 'ideas'
-              : stage === ''
-                ? null
-                : 'work';
+        const group = groupOf(stage, config);
         if (group === null) continue;
         const short = project.short?.trim() ?? '';
         grouped[group].push({
@@ -801,17 +807,17 @@ export function groupProjects(projects: Project[], config: Record<string, unknow
             stage
         });
     }
-    return (['work', 'published', 'ideas'] as const)
+    return (['in-flight', 'done', 'ideas'] as const)
         .filter((type) => grouped[type].length > 0)
         .map((type) => ({
             type,
             count: grouped[type].length,
             members: grouped[type],
             warn:
-                type === 'work' &&
+                type === 'in-flight' &&
                 projects.some(
                     (project) =>
-                        grouped.work.some((member) => member.id === project.id) &&
+                        grouped['in-flight'].some((member) => member.id === project.id) &&
                         anyWord(config, 'chips', 'blocked', project.chips)
                 )
         }));

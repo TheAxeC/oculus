@@ -26,12 +26,14 @@
     // a Files tab rooted at it and offers Open Workbench, the workbench of that folder. The
     // subtasks block is drawn only for an entry that has subtasks, and the follow-up block only for
     // one that has follow-up notes, adding the first of each being one of the controls. The card
-    // may draw past its own edge, so the More menu is not cut off at its foot.
+    // may draw past its own edge, so the More menu is not cut off at its foot. An entry whose lead
+    // is the user carries the Lead badge where the collection draws the roles (`lead`).
 
     import { answerWords } from '../../answer-words';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
+    import Tag from '$lib/ui/controls/Tag.svelte';
     import CardActions from '../../../card/CardActions.svelte';
     import type { CardAction } from '../../../card/card';
     import { entryActions, showActions } from '../entry-actions';
@@ -58,6 +60,7 @@
     import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { statusTone } from '$lib/state/shared/words/tones';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -104,6 +107,8 @@
         onpage?: () => void;
         /** Controls the collection adds to the card's own, after them. */
         extra?: CardAction[];
+        /** Whether the card carries the Lead badge: the entry's lead is the user. */
+        lead?: boolean;
     };
 
     let {
@@ -121,7 +126,8 @@
         more,
         onmore,
         onpage,
-        extra = []
+        extra = [],
+        lead = false
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -271,6 +277,9 @@
                 <Grip {blocked} onpress={() => (armed = true)} />
             {/if}
             <RootChip record={entry} />
+            {#if lead}
+                <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} />
+            {/if}
             {#if status !== undefined && statusPick}
                 <InPlace field="status" {collection} {entry} {schema} {blocked} {onsaid} />
             {:else if status !== undefined}

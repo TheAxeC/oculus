@@ -1,14 +1,19 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
-// configuration changes independently of items, filters and statistics. What each board is (its
-// tier, its list columns, its search words, its label mode and its groups of cards) is its row of
-// `boards` in config/defaults/layout.yml; this module holds no table of boards.
+// configuration changes independently of items, filters and statistics. What each board is (the
+// keys that say which projects it takes, its list columns, its search words, its label mode and
+// how its cards are laid out) is its row of `boards` in config/defaults/layout.yml; the categories
+// its cards are filed under and the roles are config/catalogs/vocab.yml's, read through
+// data/shapes/boards/. This module holds no table of boards.
 
 import { z } from 'zod';
 import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { fields, focusSetting, isMap, slugOf, text as str } from '../../../data/helpers/guards.ts';
-import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
-import { vocabKeys, wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
+import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
+import { vocabKeys } from '../../../data/shapes/vocab-keys.ts';
+import { categoriesOf, type Category } from '../../../data/shapes/boards/categories.ts';
+import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
+import { boardRows, boardRuleOf, type BoardRule } from '../../../data/shapes/boards/takes.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -19,34 +24,35 @@ export type BoardMode = 'cards' | 'list';
 /** A short handle where a manifest has one, or always the full title. */
 export type LabelMode = 'short' | 'full';
 
+/** How the card mode lays the cards out: one section per category, or one grid. */
+type CardsMode = 'sections' | 'grid';
+
 /** One column of the list mode: the key its cell is read from a row by, and its heading. */
 export type BoardColumn = { key: string; label: string };
-
-/**
- * One group of cards of a board's `groups`: its id, its words, the stages, forms and chips it
- * catches, and the hue the config gives it, which the category facet draws its dot in.
- */
-export type RollupBucket = { id: string; label: string; keys: string[]; color: string };
 
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
     /** The view id this preset belongs to, a key of `boards`. */
     id: string;
-    /** The tiers whose projects the board shows: the one its row names, or none. */
-    tiers: string[];
+    /** Which projects the board takes: its row's `tier`, `role`, blocks, `hub` and `match`. */
+    rule: BoardRule;
     /** The list mode's columns in order, with the words config/defaults/layout.yml gives them. */
     columns: BoardColumn[];
-    /** The groups of cards of this board, in the config's order. */
-    rollup: RollupBucket[];
+    /** The rows of `categories` in vocab.yml, in their order, which every board files cards by. */
+    categories: Category[];
+    /** The rows of `roles` in vocab.yml, highest first. */
+    roles: Role[];
     /**
      * The order stages sort in, the keys of `stages`; a stage the list does not name sorts after
      * every stage it does.
      */
     stageOrder: string[];
-    /** The tiers of `tiers` carrying `software`, whose projects are software. */
-    softwareTiers: string[];
     /** The label mode the board starts in, from its row's `label_mode`. */
     labels: LabelMode;
+    /** How the card mode lays the cards out, from its row's `cards`, `sections` by default. */
+    cards: CardsMode;
+    /** The merged config, whose `stages`, `chips` and `forms` the board's blocks are held to. */
+    config: Record<string, unknown>;
     /**
      * The search box's placeholder from config/defaults/layout.yml, or the empty string when it has
      * none.
@@ -64,19 +70,12 @@ export type SessionsOf = (project: Project) => string;
 /** A tag on a card: the id a filter names it by, and the words the chip carries. */
 export type BoardTag = { id: Id; label: string };
 
-/** A tag for a project a personal project names: `held` is false when no project has the id. */
+/** A tag for a related project, either way: `held` is false when no project has the id. */
 export type RelatedTag = BoardTag & { held: boolean };
 
-/**
- * What a card's cross-link lines read: a project's board item, and the related projects a
- * personal project names.
- */
-export type LinkedItem = Pick<
-    BoardItem,
-    'id' | 'pillars' | 'funding' | 'datasets' | 'team' | 'software'
-> & {
-    project?: Pick<BoardItem['project'], 'tier'>;
-    /** The projects a project's `related:` names. */
+/** What a card's cross-link lines read: a project's board item and its related projects. */
+export type LinkedItem = Pick<BoardItem, 'id' | 'pillars' | 'funding' | 'datasets' | 'team'> & {
+    /** The projects a project's `related:` names, and those whose `related:` names it. */
     related?: RelatedTag[];
 };
 
@@ -95,20 +94,33 @@ export type BoardItem = {
     datasets: BoardTag[];
     /**
      * The project's team as the views show it, each person by their name: the people of its
-     * `lead:`, then those of its `collaborators:`, each once, without the person the workspace
-     * setting `self` names (team.ts beside this file, `shownTeam`).
+     * `lead:`, then those of its `collaborators:`, then those of its `supervisors:`, each once,
+     * without the person the workspace setting `self` names (team.ts beside this file,
+     * `shownTeam`).
      */
     team: BoardTag[];
-    /**
-     * The other end of this project's link with the software tier: on a project of any other tier,
-     * the software projects whose `related:` names it; on a software project, the projects its own
-     * `related:` names. One field, since the relation is one edge read from either side.
-     */
-    software: BoardTag[];
-    /** The team as one line (`teamLine`), which the card's line and the Authors column draw. */
+    /** The team as one line (`teamLine`), which the Authors column draws. */
     teamLine: string;
-    /** The lifecycle bucket of the preset's rollup, or the empty string when none catches it. */
-    bucket: string;
+    /**
+     * The key of the project's category, the first row of `categories` that holds it, or the empty
+     * string when none does.
+     */
+    category: string;
+    /**
+     * The key of the user's role on the project (`roles` of vocab.yml), or the empty string when
+     * it has none or the workspace names no `self`.
+     */
+    role: string;
+    /**
+     * Whether the field of the highest role with a field, the project's `lead:`, names the person
+     * `self` names, which draws the Lead badge.
+     */
+    lead: boolean;
+    /**
+     * Whether Mine only keeps the project: its role fields name the user, or it names no one; true
+     * for every project when the workspace names no `self`.
+     */
+    mine: boolean;
     /** The code deposit's status, or the empty string when the manifest names none. */
     code: string;
     /**
@@ -128,7 +140,7 @@ export type BoardItem = {
     chips: string[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
-    /** The projects a project's `related:` names. */
+    /** The projects a project's `related:` names, and those whose `related:` names it. */
     related?: RelatedTag[];
 };
 
@@ -153,6 +165,11 @@ export type BoardState = {
     stale: boolean;
     /** The quick filter: only the projects that carry a deadline. */
     dated: boolean;
+    /**
+     * Mine only: only the projects whose role fields name the user and those naming no one. On
+     * until the reader switches it off; not applied while the workspace names no `self`.
+     */
+    mine: boolean;
     /**
      * The stages switched OFF, which is what the stage toggles hold. Every stage is on until one is
      * clicked, so a stage the hub grows later is on the day it appears rather than hidden by a
@@ -199,6 +216,8 @@ export type StageCount = { stage: string; count: number };
 export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
+    /** Mine only: only the items whose `mine` is true. */
+    mine?: boolean;
     hiddenStages?: string[];
     /**
      * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind counts as
@@ -210,6 +229,7 @@ export type QuickFilters = {
 /** The facets, in the order the toolbar offers them. */
 export const FACETS = [
     'category',
+    'role',
     'year',
     'domain',
     'pillar',
@@ -279,25 +299,6 @@ export function daysUntil(date: string, now: number): number | null {
     return Math.round((at - today(now)) / DAY);
 }
 
-/**
- * One group of a board's `groups`: a row with words, its id the slug of them, its keys the strings
- * of the list, or the one key written alone, as the options catalog's rule for a multi takes it.
- */
-const bucketShape = z
-    .object({
-        label: z.string().min(1),
-        keys: z.union([z.string().transform((key) => [key]), fieldItemsShape]),
-        color: wordShape
-    })
-    .transform((row) => ({
-        id: slugOf(row.label),
-        label: row.label,
-        keys: row.keys,
-        color: row.color
-    })) satisfies z.ZodType<RollupBucket>;
-
-const bucketsShape = rowsShape(bucketShape);
-
 /** One column of a board's `columns`: the cell it draws, headed by its words or the cell's name. */
 const columnShape = z
     .object({ cell: z.string().min(1), label: wordShape })
@@ -305,65 +306,37 @@ const columnShape = z
 
 const columnsShape = rowsShape(columnShape) satisfies z.ZodType<BoardColumn[]>;
 
-/**
- * The boards of `boards` of config/defaults/layout.yml, each id with its row, in the file's order.
- * A row that is not a map is no board.
- */
-function boardRows(config: Record<string, unknown>): [string, Record<string, unknown>][] {
-    return Object.entries(fields(config.boards)).flatMap(([id, row]) =>
-        isMap(row) ? [[id, row] as [string, Record<string, unknown>]] : []
-    );
-}
-
 /** The board view ids `boards` of the merged config names, in its order. */
 export function boardIds(config: Record<string, unknown>): string[] {
     return boardRows(config).map(([id]) => id);
 }
 
-/** The tier a board shows, as a list of the one word, or none for a row naming none. */
-function boardTiers(row: Record<string, unknown>): string[] {
-    const tier = str(row.tier).trim();
-    return tier === '' ? [] : [tier];
-}
-
-/** The tiers of `tiers` in the merged config that carry `software`. */
-export function softwareTiers(config: Record<string, unknown>): string[] {
-    return wordsWith(config, 'tiers', 'software');
+/** A board row's `cards`: `grid` when it says so, else `sections`. */
+function cardsOf(row: Record<string, unknown>): CardsMode {
+    return str(row.cards) === 'grid' ? 'grid' : 'sections';
 }
 
 /**
  * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
- * map does not hold is its first board. A config that holds no board gives a board with no tier,
- * no columns to name, no groups and no stage order, which still renders: it holds no card, and the
- * category facet is not offered. A label mode other than `full` is the short handle.
+ * map does not hold is its first board. A config that holds no board gives a board that names no
+ * key and so takes every project, with no columns to name. A label mode other than `full` is the
+ * short handle.
  */
 export function presetFor(view: string, config: Record<string, unknown> = {}): BoardPreset {
     const rows = boardRows(config);
     const [id, row] = rows.find(([one]) => one === view) ?? rows.at(0) ?? [view, {}];
     return {
         id,
-        tiers: boardTiers(row),
+        rule: boardRuleOf(row),
         columns: readAs(columnsShape, row.columns) ?? [],
-        rollup: readAs(bucketsShape, row.groups) ?? [],
+        categories: categoriesOf(config),
+        roles: rolesOf(config),
         stageOrder: vocabKeys(config.stages),
-        softwareTiers: softwareTiers(config),
         labels: str(row.label_mode) === 'full' ? 'full' : 'short',
+        cards: cardsOf(row),
+        config,
         search: str(row.search)
     };
-}
-
-/**
- * The lifecycle bucket of one project: the first bucket of the rollup whose keys name the project's
- * stage, its form or one of its chips. A project no bucket catches has none, which is the empty
- * string.
- */
-export function bucketOf(project: Project, rollup: RollupBucket[]): string {
-    const words = [project.stage, project.form, ...project.chips];
-    for (const bucket of rollup) {
-        if (words.some((word) => word !== undefined && bucket.keys.includes(word)))
-            return bucket.id;
-    }
-    return '';
 }
 
 /**

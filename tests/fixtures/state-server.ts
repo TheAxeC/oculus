@@ -24,6 +24,7 @@ import {
 import { applyStateWrite } from '../../src/lib/server/files/workspace/page-state/writes.ts';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import type { StateTransport } from '../../src/lib/state/shared/stores/page-state.svelte.ts';
+import type { TabMemory } from '../../src/lib/state/workbench/layout/index.ts';
 import { scratchDir } from './scratch.ts';
 
 /** One write sent and not yet applied, with the call that answers its page. */
@@ -32,8 +33,11 @@ type Pending = { write: PageStateWrite; answer: (answer: PageStateAnswer) => voi
 export type StateServer = {
     /** The state folder the files are in. */
     folder: string;
-    /** A new page of the server, its page state read from the files as a page's load reads it. */
-    page: () => ClientState;
+    /**
+     * A new page of the server, its page state read from the files as a page's load reads it, and
+     * `memory` the browser tab's session storage, none unless the case hands its own.
+     */
+    page: (memory?: TabMemory) => ClientState;
     /** The page state as GET /api/state answers it. */
     read: () => PageStateRead;
     /** The top map of one file of the state folder. */
@@ -103,8 +107,8 @@ export function stateServer(): StateServer {
 
     return {
         folder,
-        page: () => {
-            const client = createClientState(undefined, null, 'main', null, transport);
+        page: (memory) => {
+            const client = createClientState(undefined, null, 'main', null, transport, memory);
             client.pageState.install(read());
             pages.push(client);
             return client;

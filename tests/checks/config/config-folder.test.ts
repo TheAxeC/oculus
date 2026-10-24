@@ -222,8 +222,10 @@ describe("oculus's own config directory", () => {
             'fund_stages',
             'focus_lane_tones',
             'tiers',
+            'research_audit',
+            'roles',
+            'categories',
             'publication_kinds',
-            'lifecycle',
             'data_access',
             'venue_categories',
             'venue_tiers',
@@ -290,6 +292,7 @@ describe("oculus's own config directory", () => {
         'views/shared/entry-form.yml',
         'views/shared/folder-files.yml',
         'views/shared/hubs.yml',
+        'views/shared/roles.yml',
         'views/sources/data.yml',
         'views/sources/doc.yml',
         'views/sources/document.yml',
@@ -649,7 +652,7 @@ describe("oculus's own config directory", () => {
         expect(problems).toEqual([]);
     });
 
-    it('describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of publication_kinds in the schema of vocab.yml', () => {
+    it('describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles, categories and publication_kinds row in the schema of vocab.yml', () => {
         const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const portfolio = portfolioConfigFrom(config);
         const dir = join(engineDir(), 'config');
@@ -675,6 +678,8 @@ describe("oculus's own config directory", () => {
             ['statuses', vocab.statuses?.additionalProperties],
             ['lead_statuses', vocab.lead_statuses?.additionalProperties],
             ['tiers', vocab.tiers?.additionalProperties],
+            ['roles', vocab.roles?.items],
+            ['categories', vocab.categories?.items],
             ['publication_kinds', vocab.publication_kinds?.items]
         ];
         /** The words a row is drawn with, which are no flags. */
@@ -684,9 +689,10 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 16 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, 7 tier
-        // flags and the 3 keys of a publication_kinds row.
-        expect(keys).toHaveLength(38);
+        // 14 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, no tier
+        // flag, the 2 keys of a roles row, the 6 keys of a categories row and the 3 keys of a
+        // publication_kinds row.
+        expect(keys).toHaveLength(37);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

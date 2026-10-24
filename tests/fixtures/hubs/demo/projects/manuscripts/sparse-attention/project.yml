@@ -1,6 +1,6 @@
 id: sparse-attention
 stage: in-prep
-tier: projects
+tier: research
 short: Sparse-Attn
 title: Sparse attention with learned routing
 lead: [dana-example]

@@ -3,7 +3,8 @@
 // (state/forms/schema.ts) and the code that decides by a word's flag all read them: a list gives
 // one key for each entry that has one, and a map gives its own keys. A field narrows either to the
 // rows that carry it as `true`, so `chips` with `blocked` is the chip words that carry
-// `blocked: true`. A word a list does not hold is answered with the list's closest word.
+// `blocked: true`. A word a list does not hold is answered with the list's closest word. The tiers
+// the research audit skips are read here too, as the audit and the Orphans card read them.
 
 import { z } from 'zod';
 import { mapShape, readAs, readOr, rowsShape } from './shapes.ts';
@@ -72,7 +73,7 @@ export function wordsWith(config: Record<string, unknown>, key: string, flag: st
 
 /**
  * Whether a word, compared as written, carries a flag of a vocabulary map: a project's stage of
- * `stages`, its tier of `tiers`. A record that holds no word carries none.
+ * `stages`. A record that holds no word carries none.
  */
 export function hasWord(
     config: Record<string, unknown>,
@@ -141,6 +142,16 @@ export function wordFlag(
     flag: string
 ): boolean {
     return wordsWith(config, key, flag).includes(word.trim().toLowerCase());
+}
+
+/**
+ * The tiers `research_audit.skip_tiers` of the merged config names: the kinds of project the
+ * audit's research rules leave alone and the Pillars view's Orphans card leaves out. A list that
+ * is not a list of texts names none.
+ */
+export function skippedTiers(config: Record<string, unknown>): string[] {
+    const block = readAs(mapShape, config.research_audit);
+    return readOr(z.array(z.string()), block?.skip_tiers, []);
 }
 
 /**

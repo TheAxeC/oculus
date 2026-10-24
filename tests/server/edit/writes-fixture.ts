@@ -16,22 +16,22 @@ import type { PlantedPersonal } from '../../routes/edit/write-fixture.ts';
 
 export const MANIFEST = [
     'id: alpha',
-    'tier: projects',
+    'tier: research',
     'stage: submitted',
     'title: "A title"',
     'pin: true',
     'year: 2026',
     'status:',
-    '  chips: [lead]',
+    '  chips: []',
     '  line: "the line"',
     'pillars: [tensor]',
     ''
 ].join('\n');
 
 /**
- * The real schema and vocabulary over a scan of the research folder, the folders a new project of
- * the tiers `projects` and `archive` is made in, and the folder of personal projects, with the
- * hub's `new_project_dir` for the tiers `projects` and `personal`.
+ * The real schema and vocabulary over a scan of the research folder, the folders a new research
+ * project is made in, and the folder of personal projects, with the hub's `new_project_dir` for
+ * the tiers `research` and `personal`.
  */
 export function configFor(): PortfolioConfig {
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
@@ -43,7 +43,7 @@ export function configFor(): PortfolioConfig {
             { dir: 'projects/archive', optional: true },
             { ...PERSONAL_SCAN, optional: true }
         ],
-        newProjectDir: { projects: 'projects/ideas', personal: 'side-projects' }
+        newProjectDir: { research: 'projects/ideas', personal: 'side-projects' }
     };
 }
 

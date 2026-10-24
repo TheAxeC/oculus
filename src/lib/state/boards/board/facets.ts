@@ -5,7 +5,8 @@
 // resource) is that record's key, its internal id with the hub's name off: on a workspace of two
 // hubs one key of both is one row of the filter menu, its count the sum of both hubs' projects,
 // and one filter picks the projects of both. The words are the ones a project card draws for the
-// record, which items.ts gives by the key.
+// record, which items.ts gives by the key. The card view's sections, one per category, are cut
+// here too, since a section is the category facet's value laid out.
 
 import { keyOf } from '../../../data/helpers/hub-names.ts';
 import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
@@ -24,7 +25,9 @@ export function facetValues(item: BoardItem, facet: string): string[] {
     const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
     switch (facet) {
         case 'category':
-            return item.bucket === '' ? [] : [item.bucket];
+            return item.category === '' ? [] : [item.category];
+        case 'role':
+            return item.role === '' ? [] : [item.role];
         case 'year':
             return [item.year === '' ? NONE : item.year];
         case 'domain':
@@ -69,8 +72,9 @@ function facetLabel(facet: string, value: string, preset: BoardPreset, recorded:
     if (value === NONE) return value;
     if (facet === 'compute') return recorded.get(value)?.label ?? value;
     if (facet === 'category') {
-        return preset.rollup.find((bucket) => bucket.id === value)?.label ?? value;
+        return preset.categories.find((one) => one.key === value)?.label ?? value;
     }
+    if (facet === 'role') return preset.roles.find((one) => one.key === value)?.label ?? value;
     if (facet === 'domain') return domainLabel(value);
     if (facet === 'status') return chipLabel(value);
     return value;
@@ -95,7 +99,9 @@ function orderValues(
     recorded: Recorded
 ): string[] {
     const has = (value: string): boolean => (counts.get(value) ?? 0) > 0;
-    if (facet === 'category') return preset.rollup.map((bucket) => bucket.id).filter(has);
+    if (facet === 'category') return preset.categories.map((one) => one.key).filter(has);
+    // Every role is listed, with none at it too, so the facet names each role a project may hold.
+    if (facet === 'role') return preset.roles.map((one) => one.key);
     if (facet === 'status') return chipKeys().filter(has);
     if (facet === 'compute') {
         // The resources by name, then by registry position, and the value for none last.
@@ -124,12 +130,14 @@ function orderValues(
 /**
  * Every facet the board can be split on, with its counts. A facet with one value is offered as
  * that one value: a filter that selects everything is still the board saying what its one value
- * is, and the reader can read it.
+ * is, and the reader can read it. The role facet is offered only while the workspace names a
+ * `self` (`named`), since without one no project has a role.
  */
-export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
+export function facets(items: BoardItem[], preset: BoardPreset, named = false): Facet[] {
     const found: Facet[] = [];
     const recorded = recordResources(items);
     for (const facet of FACETS) {
+        if (facet === 'role' && !named) continue;
         const counts = countValues(items, facet);
         const values = orderValues(facet, counts, preset, recorded).map((value) => ({
             value,
@@ -139,4 +147,28 @@ export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
         if (values.length > 0) found.push({ key: facet, values });
     }
     return found;
+}
+
+/**
+ * One section of the card view: a row of `categories` with the cards it holds, or, with the empty
+ * key, the cards in no row.
+ */
+type CardSection = { key: string; label: string; color: string; items: BoardItem[] };
+
+/**
+ * The sections of the card view: one per row of `categories` holding a card, in the list's order,
+ * then one with the empty key for the cards in no row, each section's cards in the order given.
+ */
+export function cardSections(items: BoardItem[], preset: BoardPreset): CardSection[] {
+    const sections = preset.categories.map((one) => ({
+        key: one.key,
+        label: one.label,
+        color: one.color,
+        items: items.filter((item) => item.category === one.key)
+    }));
+    const known = new Set(preset.categories.map((one) => one.key));
+    const other = items.filter((item) => !known.has(item.category));
+    return [...sections, { key: '', label: '', color: '', items: other }].filter(
+        (section) => section.items.length > 0
+    );
 }

@@ -268,13 +268,13 @@ describe('the rules of a hub schema', () => {
         {
             name: "a manifest's program",
             file: 'projects/active/alpha/project.yml',
-            text: 'id: alpha\ntier: projects\nstage: exploring\ntitle: Alpha\nprogram: y\n',
+            text: 'id: alpha\ntier: research\nstage: exploring\ntitle: Alpha\nprogram: y\n',
             key: 'program'
         },
         {
             name: "a manifest's authors",
             file: 'projects/active/alpha/project.yml',
-            text: 'id: alpha\ntier: projects\nstage: exploring\ntitle: Alpha\nauthors: [A. Example]\n',
+            text: 'id: alpha\ntier: research\nstage: exploring\ntitle: Alpha\nauthors: [A. Example]\n',
             key: 'authors'
         }
     ])('gives the one finding of a key no schema declares for $name', (row) => {
@@ -311,7 +311,7 @@ describe('the rules of a hub schema', () => {
         const file = 'projects/active/alpha/project.yml';
         const text = [
             'id: alpha',
-            'tier: projects',
+            'tier: research',
             'stage: exploring',
             'title: Alpha',
             'status: { chips: [submitted, journal, blocked] }',

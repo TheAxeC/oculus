@@ -15,7 +15,7 @@ import { schemaFindings } from '../catalog/schema-findings.ts';
 import { keyFile, type ConfigWhere } from '../merge/merge.ts';
 import { textCatalog } from '../merge/text.ts';
 import { railFindings } from '../rail.ts';
-import { boardsFindings } from './boards.ts';
+import { boardsFindings, categoriesFindings } from './boards.ts';
 import { countsFindings } from './counts.ts';
 import { languageFindings } from './languages.ts';
 import { themeFindings } from './themes.ts';
@@ -42,5 +42,6 @@ export const READER_FINDINGS: readonly ReaderFindings[] = [
     themeFindings,
     (where, config) => railFindings(config, filesOf(where), textCatalog(config)),
     (where, config) => boardsFindings(config, filesOf(where), textCatalog(config)),
+    (where, config) => categoriesFindings(config, filesOf(where), textCatalog(config)),
     (where, config) => countsFindings(config, keyFile(where, 'counts'), textCatalog(config))
 ];

@@ -1,9 +1,9 @@
 <script module lang="ts">
-    // Layer 3, view registration. One board component owns the five portfolio board registrations,
-    // the Projects page's group. A board's tab counts its cards and each of its `groups` in
-    // `boards` of config/defaults/layout.yml, and its count, the count of its first group (the
-    // cards in work) in that group's tone, or its cards when it has no groups, goes to the rail
-    // where the board's row of `counts` says `rail: true`.
+    // Layer 3, view registration. One board component owns the six portfolio board registrations,
+    // the Projects page's group. A board's tab counts its cards and, in the row's tone, its cards
+    // in each row of `categories` in config/catalogs/vocab.yml that holds one; the rail, where the
+    // board's row of `counts` says `rail: true`, gets the count of its cards in the rows carrying
+    // `rail: true`, in the tone of the first such row, and 0 when none is in such a row.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const boardRegistration = (id: string, order: number): ViewRegistration => ({
@@ -15,25 +15,33 @@
         badge: (client) => client.railBadges.boardBadge(id),
         badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
         badgeCells: (client) => client.railBadges.boardCells(id),
-        countPart: (client) => client.railBadges.boardPart(id)
+        countPart: (client) => client.railBadges.boardRail(id)
     });
 
     export const registration: ViewRegistration[] = [
         boardRegistration('projects', 1),
-        boardRegistration('coauthor', 2),
-        boardRegistration('archive', 3),
-        boardRegistration('personal', 4),
-        boardRegistration('software', 5)
+        boardRegistration('supervision', 2),
+        boardRegistration('coauthor', 3),
+        boardRegistration('archive', 4),
+        boardRegistration('personal', 5),
+        boardRegistration('software', 6)
     ];
 </script>
 
 <script lang="ts">
     // Layer 3, view. The project board: cards or a table, a search, quick filters, stage toggles,
     // one filter menu headed by every way the board can be split, a stats strip and a short or full
-    // title. It is registered five times, as `projects`, `coauthor`, `archive`, `personal` and
-    // `software`, and reads which board it is from the instance it was mounted as, so the five
-    // board tabs over separate tiers are one component here. The Software board has no New project,
-    // since a software project is a manifest filed under its scan folder.
+    // title. It is registered six times, as `projects`, `supervision`, `coauthor`, `archive`,
+    // `personal` and `software`, and reads which board it is from the instance it was mounted as,
+    // so the six board tabs are one component here. A board holds every project its keys in
+    // `boards:` meet, so one project may be on several. The cards are laid out in sections, one per
+    // row of `categories` holding a card, in the list's order, and an "other" section last for the
+    // cards in no row, or as one flat grid where the board's `cards:` says `grid`. A board offers
+    // New project, written with its tier and its `role:` keys, only when its rule takes the project
+    // that write makes (state/boards/board/new-project.ts), so Archive, which takes done work,
+    // offers none with the shipped boards. While the workspace names a `self`, the board draws the
+    // Mine only toggle, on by default, and the Role facet, and a card whose lead is the user
+    // carries the Lead badge; without one it draws none of them.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
@@ -64,6 +72,7 @@
     import Stats from './Stats.svelte';
     import {
         applyFilters,
+        cardSections,
         facets,
         filterGroups,
         filterLabel,
@@ -81,13 +90,22 @@
         chipGlyphName,
         chipLabel,
         statusMarkTone,
-        projectStatusWords
+        projectStatusWords,
+        toneOf
     } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
-        selectors: { board, boardPreset, boardStats, configMap, staleLag },
+        selectors: {
+            board,
+            boardPreset,
+            boardStats,
+            configMap,
+            offersNewProject,
+            selfNamed,
+            staleLag
+        },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -99,8 +117,17 @@
     const preset = $derived(boardPreset(instance.view));
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    const offered = $derived(facets(items, preset));
-    const held = $derived(parseBoardState(instanceState(instance.id), preset.labels, offered));
+    /** Whether the workspace names a `self`, which the Mine only toggle and the Role facet need. */
+    const named = $derived(selfNamed());
+    const offered = $derived(facets(items, preset, named));
+    const held = $derived(
+        parseBoardState(
+            instanceState(instance.id),
+            preset.labels,
+            offered,
+            preset.categories.map((one) => one.key)
+        )
+    );
     const groups = $derived(filterGroups(offered, held.filters, preset));
     const stages = $derived(stageCounts(items, preset.stageOrder));
     const lag = $derived(staleLag());
@@ -108,11 +135,13 @@
         applyFilters(items, held.filters, held.search, {
             stale: held.stale,
             dated: held.dated,
+            mine: named && held.mine,
             hiddenStages: held.hiddenStages,
             staleLag: lag
         })
     );
     const rows = $derived(shown.map(row));
+    const sections = $derived(cardSections(shown, preset));
     const strip = $derived(boardStats(items));
     const config = $derived(configMap());
     /** The Focus board's lanes, for the List's Focus cell: the label of the lane a card sits on. */
@@ -123,11 +152,8 @@
 
     /** True while the new-project form is open under the toolbar. */
     let adding = $state(false);
-    /**
-     * A board of a tier carrying `software` makes no project: the form only offers the tiers a
-     * person fills in.
-     */
-    const offersNew = $derived(!preset.tiers.some((tier) => preset.softwareTiers.includes(tier)));
+    /** Whether the board takes the project its New project writes, so it draws the button. */
+    const offersNew = $derived(offersNewProject(preset));
 
     /**
      * Today, for the deadline badge. It is read when the board is opened and not again, so a page
@@ -223,8 +249,9 @@
     }
 
     /**
-     * One row of the list mode. Every column key of both presets is filled here; the Authors cell
-     * is the team line, the names of the lead and the collaborators without the user.
+     * One row of the list mode. Every column key of the boards' columns is filled here; the Authors
+     * cell is the team line, the names of the lead, the collaborators and the supervisors without
+     * the user.
      */
     function row(item: BoardItem): Record<string, unknown> {
         const next = item.project.next;
@@ -259,6 +286,23 @@
     {:else}
         <LinkedText text={cellText(row[column.key])} />
     {/if}
+{/snippet}
+
+{#snippet card(item: BoardItem)}
+    <Card
+        {item}
+        {now}
+        cursor={cursor === item.id}
+        open={held.expanded.includes(item.id)}
+        more={held.more.includes(item.id)}
+        onmore={() => toggleMore(item.id)}
+        label={label(item)}
+        tab={tabLabel(item)}
+        staleLag={lag}
+        {focusLanes}
+        ontoggle={() => toggleCard(item.id)}
+        onsaid={(answer: string) => (said = answer)}
+    />
 {/snippet}
 
 {#snippet tools()}
@@ -320,6 +364,14 @@
             pressed={held.dated}
             onclick={() => write({ dated: !held.dated })}
         />
+        {#if named}
+            <Chip
+                label={t('roles.mine')}
+                title={t('roles.mine_tip')}
+                pressed={held.mine}
+                onclick={() => write({ mine: !held.mine })}
+            />
+        {/if}
         {#each stages as one (one.stage)}
             <Chip
                 label={`${one.stage} ${one.count}`}
@@ -342,7 +394,8 @@
     <div class="board" data-instance={instance.id} data-board={preset.id}>
         {#if adding && offersNew}
             <NewIdea
-                tier={preset.tiers[0]}
+                tier={preset.rule.tiers?.at(0)}
+                roles={preset.rule.roles}
                 onclose={() => (adding = false)}
                 onsaid={(answer: string) => (said = answer)}
             />
@@ -361,25 +414,33 @@
                     <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
                 </div>
             </Surface>
-        {:else}
+        {:else if preset.cards === 'grid'}
             <div class="cards">
                 {#each shown as item (item.id)}
-                    <Card
-                        {item}
-                        {now}
-                        cursor={cursor === item.id}
-                        open={held.expanded.includes(item.id)}
-                        more={held.more.includes(item.id)}
-                        onmore={() => toggleMore(item.id)}
-                        label={label(item)}
-                        tab={tabLabel(item)}
-                        staleLag={lag}
-                        {focusLanes}
-                        ontoggle={() => toggleCard(item.id)}
-                        onsaid={(answer: string) => (said = answer)}
-                    />
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render card(item)}
                 {/each}
             </div>
+        {:else}
+            {#each sections as section (section.key)}
+                <section class="section" data-category={section.key}>
+                    <h3
+                        class="heading"
+                        style={section.color === ''
+                            ? undefined
+                            : `--section: var(--c-${toneOf(section.color)}-txt)`}
+                    >
+                        {section.key === '' ? t('board.section_other') : section.label}
+                        <span class="count">{section.items.length}</span>
+                    </h3>
+                    <div class="cards">
+                        {#each section.items as item (item.id)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render card(item)}
+                        {/each}
+                    </div>
+                </section>
+            {/each}
         {/if}
     </div>
 </Pane>
@@ -394,6 +455,25 @@
     .table {
         min-width: 0;
         overflow-x: auto;
+    }
+
+    /* A section of the card view: the cards of one category under a heading in the category's
+       colour, which carries the count. */
+    .section + .section {
+        margin-top: 14px;
+    }
+
+    .heading {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin: 0 0 8px;
+        font-size: var(--fs-md);
+        color: var(--section, var(--muted-txt));
+    }
+
+    .count {
+        font-size: var(--fs-sm);
     }
 
     /* The cards of one row stretch to the row's height, in file order, so no empty cell is left

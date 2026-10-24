@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import type { Domain, Pillar, Project, Snapshot, Venue } from '../../../data/model/index.ts';
+import { categoriesOf, isArchival } from '../../../data/shapes/boards/categories.ts';
 import {
     optionalTextShape,
     readAs,
@@ -11,7 +12,7 @@ import {
     searchRevealShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { hasWord, wordsNumbered } from '../../../data/shapes/vocab-keys.ts';
+import { hasWord, skippedTiers, wordsNumbered } from '../../../data/shapes/vocab-keys.ts';
 import { realProjects } from '../../sources/registries/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
@@ -84,25 +85,31 @@ export function tierStrip(
         .filter((tier) => tier.count > 0);
 }
 
-/** Real projects whose pillar tags name no entry in the registry. */
+/**
+ * Real projects whose pillar tags name no entry in the registry, leaving out the projects of the
+ * tiers `research_audit.skip_tiers` names, which need no pillar.
+ */
 export function orphans(
     lines: Pillar[],
     projects: Project[],
     config: Record<string, unknown>
 ): Project[] {
     const known = new Set(lines.map((line) => line.id));
+    const skipped = skippedTiers(config);
     return realProjects(projects, config).filter(
-        (project) => !project.pillarIds.some((id) => known.has(id))
+        (project) =>
+            !skipped.includes(project.tier ?? '') && !project.pillarIds.some((id) => known.has(id))
     );
 }
 
 /**
- * Non-real projects grouped by stage, in the order of the numbers the words of `stages` carry as
- * `dead` (failed, then stopped, in oculus's own vocab.yml).
+ * The projects of the Archival band: those whose category, the first row of `categories:` holding
+ * them, carries `archival: true`, grouped by stage in the order of the numbers the words of
+ * `stages` carry as `dead` (failed, then stopped, in oculus's own vocab.yml).
  */
 export function archival(projects: Project[], config: Record<string, unknown>): ArchiveGroup[] {
-    const real = new Set(realProjects(projects, config));
-    const unreal = projects.filter((project) => !real.has(project));
+    const categories = categoriesOf(config);
+    const unreal = projects.filter((project) => isArchival(project, categories, config));
     return wordsNumbered(config, 'stages', 'dead')
         .map((stage) => {
             const grouped = unreal.filter((project) => project.stage === stage);

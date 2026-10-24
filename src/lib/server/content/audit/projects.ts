@@ -1,9 +1,11 @@
 // Layer 2, server. The audit's sections over the projects and collections: the open markers left in
 // a document, a manifest field a live project has not filled in, a folder that is not the one the
-// tier standard names, a project of a finished tier with no author chip or of an unfinished tier at
-// a stage that carries `published`, a field long enough to stop being a glance, and a collection
-// entry whose date or link wants doing. A stage word or a form written as a chip is the manifest
-// check's finding (data/snapshot/validate.ts), drawn in the Findings view, and is not scanned here.
+// tier standard names, a manifest naming no lead, a project no board takes, a project at a terminal
+// stage carrying the chip of a Focus chip lane, a field long enough to stop being a glance, and a
+// collection entry whose date or link wants doing. A stage word or a form written as a chip, and a
+// tier that is missing or no word of `tiers`, are the manifest check's findings
+// (data/snapshot/validate.ts and the manifest schema), drawn in the Findings view, and are not
+// scanned here.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -18,9 +20,9 @@ import { folderOnDisk } from '../../../data/places/folder-on-disk.ts';
 import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
+import { projectRole } from '../../../data/shapes/boards/takes.ts';
 import {
     type AuditInput,
-    type AuditRules,
     sentence,
     type Raised,
     scopeOf,
@@ -34,6 +36,7 @@ import {
     scalarShape
 } from './rules.ts';
 import { below } from '../../core/paths.ts';
+import { words } from '../../core/words.ts';
 
 /** The markers a document is scanned for, as whole words where they are ordinary English. */
 const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
@@ -287,22 +290,6 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     }
 }
 
-/**
- * The stage a project's filing folder says it has, and none when the folder says nothing: for a
- * tier carrying `outcome_folders` (the archive), a folder named by a stage carrying
- * `archive_outcome`; for a tier listing `stage_folders` (the coauthor tier lists `stopped`), a
- * folder that list holds.
- */
-function folderStage(project: Project, rules: AuditRules): string | undefined {
-    const tier = project.tier;
-    const folder = project.category;
-    if (tier === undefined || folder === undefined) return undefined;
-    if (rules.outcomeTiers.has(tier)) {
-        return rules.archiveOutcomes.has(folder) ? folder : undefined;
-    }
-    return (rules.stageFolders.get(tier) ?? []).includes(folder) ? folder : undefined;
-}
-
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
 export function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
@@ -351,56 +338,63 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_code_no_readme')
             });
         }
-        const expected = folderStage(project, input.rules);
-        const written = project.stage;
-        if (expected !== undefined && written !== undefined && written !== expected) {
-            add({
-                scope,
-                where: 'project.yml',
-                kind: 'conform',
-                ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_stage_not_folder', written, expected)
-            });
-        }
     }
 }
 
 /**
- * The status guardrails: the author chip a project of a finished tier carries, the stage a project
- * of an unfinished tier cannot be at, and the one field a live project must fill in. They are soft:
- * drift to clear, never a bad value.
+ * The placement of a project on every tier: a manifest naming no lead; a project no board of
+ * `boards:` takes, named by its tier, the user's role on it and its stage, each read as "no tier",
+ * "no role" or "no stage" where it has none; and a project at a stage carrying `terminal` that
+ * carries a chip of a Focus chip lane, which the lane does not hold.
+ */
+function placement(input: AuditInput, project: Project, add: (f: Raised) => void): void {
+    const { rules, catalog } = input;
+    const scope = scopeOf(project);
+    const file = fileIn(input.hub, project, project.file);
+    if (project.lead.length === 0) {
+        add({ scope, where: 'lead', kind: 'manifest', ...file, ...sentence('audit.msg_no_lead') });
+    }
+    if (rules.boardsOf(project, input.self).length === 0) {
+        const role = projectRole(project, rules.roles, input.self)?.key;
+        add({
+            scope,
+            where: 'tier',
+            kind: 'manifest',
+            ...file,
+            ...sentence(
+                'audit.msg_no_board',
+                project.tier ?? words(catalog, 'audit.no_tier'),
+                role ?? words(catalog, 'audit.no_role'),
+                project.stage ?? words(catalog, 'audit.no_stage')
+            ),
+            signed: [project.tier ?? '', role ?? '', project.stage ?? '']
+        });
+    }
+    if (project.stage === undefined || !rules.terminalStages.has(project.stage)) return;
+    for (const chip of project.chips.filter((one) => rules.laneChips.has(one))) {
+        add({
+            scope,
+            where: 'status.chips',
+            kind: 'manifest',
+            ...file,
+            ...sentence('audit.msg_terminal_lane_chip', project.stage, chip)
+        });
+    }
+}
+
+/**
+ * The status guardrails: the placement of every project (`placement`), and the one field a live
+ * project of a tier the research rules cover must fill in. They are soft: drift to clear, never a
+ * bad value.
  */
 export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
-    const { rules } = input;
     for (const project of input.projects) {
+        placement(input, project, add);
         if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
-        const chips = new Set(project.chips);
-        const finished = project.tier !== undefined && rules.finishedTiers.has(project.tier);
-        const named = rules.authorChips.some((chip) => chips.has(chip));
-        if (finished && rules.authorChips.length > 0 && !named) {
-            add({
-                scope,
-                where: 'status.chips',
-                kind: 'manifest',
-                ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_no_author_chip')
-            });
-        }
-        // A project on a board of unfinished work whose stage carries `published` belongs under
-        // archive/published/ rather than on the board it was written on.
-        if (!finished && project.stage !== undefined && rules.publishedStages.has(project.stage)) {
-            add({
-                scope,
-                where: 'stage',
-                kind: 'manifest',
-                ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_projects_published', project.stage)
-            });
-        }
         if (
             project.stage !== undefined &&
-            rules.liveStages.has(project.stage) &&
+            input.rules.liveStages.has(project.stage) &&
             (project.eli5 ?? '') === ''
         ) {
             add({

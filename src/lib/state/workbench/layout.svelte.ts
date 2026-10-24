@@ -97,6 +97,7 @@ import {
     type Opening,
     type ShowDeck,
     type ShowInFiles,
+    type TabMemory,
     type Page,
     type Pages,
     type Touched,
@@ -298,12 +299,14 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
  * The layout store. `state` is the page's copy of the page state the server keeps, which the
  * arrangement is read from and saved to. `hubs` answers the collections the hubs of the workspace
  * list, which decide the tabs a pane draws and so which tab is the active one
- * (layout/tabs/left-out.ts).
+ * (layout/tabs/left-out.ts). `memory` keeps the workspace the browser tab last loaded, its session
+ * storage unless a test hands its own (layout/saved/storage.ts).
  */
 export function createLayout(
     ui: UiStore,
     state: PageStateStore,
-    hubs?: () => HubVocabs | null
+    hubs?: () => HubVocabs | null,
+    memory?: TabMemory
 ): LayoutStore {
     /**
      * The pages, and which of them is on screen. The label of the page this starts on is empty
@@ -327,7 +330,7 @@ export function createLayout(
     let loaded = $state(false);
 
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
-    const storage = createStorage(state);
+    const storage = createStorage(state, memory);
 
     // Everything below stays in the factory, which owns the arrangement as a whole: the page list
     // and what is on screen, the write path every change goes through, and the operations that

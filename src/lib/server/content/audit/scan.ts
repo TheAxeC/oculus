@@ -1,7 +1,8 @@
 // Layer 2, server. The deterministic scan of what the hub is missing: open markers left in a
 // document, a manifest field a live project has not filled in, a folder that is not the one the
-// tier standard names or whose project's manifest `stage` is not the folder's, a field long enough
-// to stop being a glance, and the public website's publication list against the portfolio.
+// tier standard names, a project with no lead, on no board or on a chip lane it is done with, a
+// field long enough to stop being a glance, and the public website's publication list against the
+// portfolio.
 //
 // It is not the Findings view's list and does not repeat it. Findings is what
 // data/snapshot/validate.ts found wrong in the files themselves, a bad id or an unknown chip; this
@@ -17,8 +18,9 @@
 //
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
-// path, the hub's projects and collections of the merged snapshot, the rules read out of the
-// configuration, and the text catalog the messages are written in. Each hub is scanned with its
+// path, the hub's projects and collections of the merged snapshot, the people the workspace
+// setting `self` names, the rules read out of the configuration, and the text catalog the messages
+// are written in. Each hub is scanned with its
 // name as `root`, which marks its findings and, for a hub other than the primary, prefixes the
 // scope its signatures read; the publication list is the primary hub's alone.
 

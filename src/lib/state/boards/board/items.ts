@@ -1,17 +1,26 @@
 // Layer 2, client state. Board item construction and sorting live here because project joins change
 // independently of filters, facets and statistics. A project's people are read as its team, its
-// lead then its collaborators (team.ts beside this file): the card's team tags and its team line
-// leave out the person the workspace setting `self` names, and the search reads the whole team.
+// lead, its collaborators, then its supervisors (team.ts beside this file): the card's team tags
+// and the Authors column leave out the person the workspace setting `self` names, and the search
+// reads the whole team. Which projects a board holds, a card's category and the user's role on a
+// project are read by data/shapes/boards/, the rules the audit reads too.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
+import { categoryOf } from '../../../data/shapes/boards/categories.ts';
+import { isLead, isMine } from '../../../data/shapes/boards/roles.ts';
+import {
+    boardTakes,
+    projectPeople,
+    projectRole,
+    type TakeContext
+} from '../../../data/shapes/boards/takes.ts';
 import { personNames } from '../person.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
     SESSIONS_NONE,
-    bucketOf,
     venueText,
     type BoardItem,
     type BoardPreset,
@@ -30,38 +39,21 @@ function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
 }
 
 /**
- * The other end of one project's link with the software tier, as tags sorted by their label.
- *
- * Every project is read backwards, over the snapshot's related pairs, for the software whose
- * `related:` names it, so a paper carries no key of its own for the software that implements it;
- * a software project is read forwards as well, through its own `related:`, since that is where the
- * link is written. A project never links to itself, and one named from both sides is one tag. The
- * software tier is any tier of `tiers` carrying `software`.
+ * The projects a project is related to, by their short name or title: those its own `related:`
+ * names, in the manifest's order, then those whose `related:` names it, read over the snapshot's
+ * related pairs, each project once and never the project itself. A key its `related:` names that
+ * no project holds is kept as a tag that names no project (`held` false).
  */
-function softwareTags(project: Project, snapshot: Snapshot, software: string[]): BoardTag[] {
+function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
     const projects = snapshot.entities.projects;
-    const isSoftware = (one: Project | undefined): boolean =>
-        one?.tier !== undefined && software.includes(one.tier);
     const backwards = snapshot.relations.projectRelated
         .filter((pair) => pair[1] === project.id)
-        .map((pair) => pair[0])
-        .filter((id) => isSoftware(byKey(projects, id)));
-    const forwards = isSoftware(project) ? project.relatedIds : [];
-    const ids = [...new Set([...forwards, ...backwards])];
-    const tags: BoardTag[] = [];
-    for (const id of ids) {
-        if (id === project.id) continue;
-        const found = byKey(projects, id);
-        if (found === undefined) continue;
-        tags.push({ id, label: tagLabel(found) });
-    }
-    return tags.sort((left, right) => left.label.localeCompare(right.label));
-}
-
-/** The projects a project's `related:` names, by their short name or title. */
-function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
-    return project.relatedIds.map((id: Id): RelatedTag => {
-        const held = byKey(snapshot.entities.projects, id);
+        .map((pair) => pair[0]);
+    const ids = [...new Set([...project.relatedIds, ...backwards])].filter(
+        (id) => id !== project.id
+    );
+    return ids.map((id: Id): RelatedTag => {
+        const held = byKey(projects, id);
         return {
             id,
             label: held === undefined ? keyOf(id) : tagLabel(held),
@@ -75,7 +67,13 @@ function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
  * whole team, the user included, since a search finds a project by any of its people.
  */
 function haystack(project: Project, item: Omit<BoardItem, 'haystack'>, team: BoardTag[]): string {
-    const tags = [...item.pillars, ...item.funding, ...item.datasets, ...team, ...item.software];
+    const tags = [
+        ...item.pillars,
+        ...item.funding,
+        ...item.datasets,
+        ...team,
+        ...(item.related ?? [])
+    ];
     const parts = [
         project.title,
         project.short ?? '',
@@ -113,6 +111,8 @@ function itemOf(
     const own = (id: Id): string => keyOf(id);
     const person = (id: Id): BoardTag => tag(id, people.names[id] ?? own(id));
     const team = shownTeam(project, people.self).map(person);
+    const isSelf = (id: Id): boolean => people.self.has(id);
+    const named = people.self.size > 0;
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
@@ -137,9 +137,11 @@ function itemOf(
         funding: project.fundingIds.map((id) => tag(id, own(id))),
         datasets: project.datasetIds.map((id) => tag(id, own(id))),
         team,
-        software: softwareTags(project, snapshot, preset.softwareTiers),
         teamLine: teamLine(team),
-        bucket: bucketOf(project, preset.rollup),
+        category: categoryOf(project, preset.categories, preset.config)?.key ?? '',
+        role: named ? (projectRole(project, preset.roles, people.self)?.key ?? '') : '',
+        lead: isLead(projectPeople(project), preset.roles, isSelf),
+        mine: !named || isMine(projectPeople(project), preset.roles, isSelf),
         code: project.codeAvailability?.status ?? '',
         compute: project.resourceIds.flatMap((id) => {
             const one = byKey(entities.resources, id);
@@ -175,9 +177,9 @@ function compare(left: BoardItem, right: BoardItem, order: string[]): number {
 }
 
 /**
- * One project joined, whatever tier it is on. A board reaches it through boardItems below; a tab
- * opened for a project of a tier no board shows reaches it here, since the join itself reads the
- * preset for its rollup and its stage order alone and never for which tier the project is on.
+ * One project joined, whichever boards take it. A board reaches it through boardItems below; a tab
+ * opened for a project no board takes reaches it here, since the join reads the preset for its
+ * categories, its roles and its stage order alone and never for which projects the board takes.
  */
 export function boardItemFor(
     snapshot: Snapshot,
@@ -188,9 +190,14 @@ export function boardItemFor(
     return itemOf(project, snapshot, preset, peopleOf(snapshot), sessionsOf);
 }
 
+/** What a board's rule is read with, from its preset and the user of a snapshot. */
+export function takeContextOf(preset: BoardPreset, self: ReadonlySet<Id>): TakeContext {
+    return { config: preset.config, roles: preset.roles, self };
+}
+
 /**
- * The projects of a board, joined and sorted. A project of another tier is not here, and nothing
- * is filtered: a facet counts what this returns, and a filter is applied to it afterwards.
+ * The projects of a board, every project whose keys meet the board's rule, joined and sorted.
+ * Nothing is filtered: a facet counts what this returns, and a filter is applied to it afterwards.
  */
 export function boardItems(
     snapshot: Snapshot,
@@ -198,8 +205,9 @@ export function boardItems(
     sessionsOf: SessionsOf = () => SESSIONS_NONE
 ): BoardItem[] {
     const people = peopleOf(snapshot);
+    const context = takeContextOf(preset, people.self);
     const items = Object.values(snapshot.entities.projects)
-        .filter((project) => project.tier !== undefined && preset.tiers.includes(project.tier))
+        .filter((project) => boardTakes(preset.rule, project, context))
         .map((project) => itemOf(project, snapshot, preset, people, sessionsOf));
     return items.sort((left, right) => compare(left, right, preset.stageOrder));
 }

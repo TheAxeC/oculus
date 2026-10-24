@@ -20,7 +20,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { PortfolioConfig, Project, Tier } from '../../../src/lib/data/model/index.ts';
+import type { PortfolioConfig, Project } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -34,7 +34,7 @@ import { plantHub, plantSaved, workspaceWith } from '../../fixtures/hubs/workspa
 import { hubTargets, primaryConfig } from '../../../src/lib/server/files/roots.ts';
 
 export const MANIFEST =
-    'id: alpha\ntier: projects\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+    'id: alpha\ntier: research\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 /** A collection file and a career file, at the hub paths config/defaults/sources.yml names. */
 const TASKS =
@@ -123,7 +123,7 @@ export function warmConfig(): void {
 /**
  * The write target over a synthetic hub whose overrides file, bookmarks and change log were
  * checked to be inside it, over the engine's own configuration with two scanned folders and the
- * folder a new project of the tier `projects` is made in.
+ * folder a new project of the tier `research` is made in.
  */
 export function targetOver(
     dir: string,
@@ -138,7 +138,7 @@ export function targetOver(
         config: {
             ...real,
             scan: [{ dir: 'projects/manuscripts' }, { dir: 'projects/ideas', optional: true }],
-            newProjectDir: { projects: 'projects/ideas' }
+            newProjectDir: { research: 'projects/ideas' }
         },
         engine: engineDir(),
         engineConfig: () => loadConfig(engineDir()).config,
@@ -238,7 +238,7 @@ export const DECK = `deck:
 groups:
     # the pillars
     pillars:
-        find: { folders: projects/*/*/present, tiers: [projects] }
+        find: { folders: projects/*/*/present, tiers: [research] }
         slides:
             - alpha
     # the rest
@@ -246,7 +246,7 @@ groups:
         find: { folders: projects/*/*/present }
         slides: []
     ideas:
-        find: { folders: projects/*/*/present, tiers: [archive] }
+        find: { folders: projects/*/*/present, tiers: [personal] }
         slides:
             - gamma
 
@@ -265,12 +265,12 @@ export const DECK_ORDER = ['intro.md', 'slides:pillars', 'slides:more'];
 const DECK_FOLDER = 'deck';
 
 /** One project of the hub `hub` that holds a deck of one slide, at the tier it is found by. */
-function deckProject(id: string, tier: Tier): Project {
+function deckProject(id: string, tier: string): Project {
     return fixtureProject({
         id: `hub:${id}`,
         root: 'hub',
         tier,
-        stage: tier === 'projects' ? 'exploring' : 'published',
+        stage: tier === 'research' ? 'exploring' : 'published',
         title: id,
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`
@@ -280,8 +280,8 @@ function deckProject(id: string, tier: Tier): Project {
 /**
  * A target over a hub in a temporary directory that holds the portfolio deck and the decks of three
  * projects: `alpha` is named by the group `pillars`, `beta` is found by it and waits as a
- * candidate, and `gamma` is archived, so the group `pillars`, whose `tiers:` do not find it, offers
- * it no place; the group `more` finds every project and `ideas` the archived ones.
+ * candidate, and `gamma` is a personal project, so the group `pillars`, whose `tiers:` do not find
+ * it, offers it no place; the group `more` finds every project and `ideas` the personal ones.
  */
 export function deckTarget(): PrimaryTarget {
     const dir = scratchDir('oculus-deck-');
@@ -291,9 +291,9 @@ export function deckTarget(): PrimaryTarget {
     writeFileSync(file, DECK);
     writeFileSync(join(dir, DECK_FOLDER, 'intro.md'), '# Intro\n');
     const projects = [
-        deckProject('alpha', 'projects'),
-        deckProject('beta', 'projects'),
-        deckProject('gamma', 'archive')
+        deckProject('alpha', 'research'),
+        deckProject('beta', 'research'),
+        deckProject('gamma', 'personal')
     ];
     for (const project of projects) {
         const folder = join(dir, project.folder, 'present');

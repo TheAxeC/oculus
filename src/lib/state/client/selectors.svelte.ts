@@ -21,8 +21,12 @@ import {
     boardItems,
     disseminated,
     presetFor,
-    stats
+    stats,
+    takeContextOf
 } from '../boards/board/index.ts';
+import { selfIds } from '../boards/board/team.ts';
+import { boardTakes } from '../../data/shapes/boards/takes.ts';
+import { rolesOf } from '../../data/shapes/boards/roles.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey, focusSetting } from '../../data/helpers/guards.ts';
@@ -49,7 +53,12 @@ import {
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
-import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
+import {
+    newProjectFolder as folderOfNewProjects,
+    newProjectPerson as personOfNewProjects,
+    offersNewProject as offersOfNewProjects,
+    type NewProjectPerson
+} from '../boards/board/new-project.ts';
 import { followedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import { isEngineDoc, type DocPlace } from '../workbench/navigation/pages.ts';
@@ -163,11 +172,26 @@ export type SelectorsStore = {
     appSourceCount: () => number;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
+    /**
+     * Whether the workspace names a `self` (a person with `self: true`): only then is a Mine only
+     * toggle, a Lead badge or a Role facet drawn, on a board or a collection.
+     */
+    selfNamed: () => boolean;
+    /** The ids of the people the workspace setting `self` names. */
+    selfPeople: () => Set<Id>;
     boardStats: (items: BoardItem[]) => BoardStats;
     staleLag: () => number;
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: (hub: string) => Choice[];
     newProjectFolder: (tier: string) => string;
+    /**
+     * The user and the field a new project names them in, read from the role keys given (a
+     * board's `role:`), or from every row of `roles:` when the keys are null (a board naming no
+     * `role:`, and Lit Watch).
+     */
+    newProjectPerson: (keys: readonly string[] | null) => NewProjectPerson | null;
+    /** Whether a board offers New project: its rule takes the project the board's write makes. */
+    offersNewProject: (preset: BoardPreset) => boolean;
     hubRoot: () => string | null;
     docPlaceFor: (tab: { view: string; state: unknown }) => DocPlace;
     /**
@@ -294,6 +318,11 @@ export function createSelectors(
         return snapshot === null ? [] : boardItems(snapshot, preset, sessionsOf);
     }
 
+    /** The ids of the people the workspace setting `self` names, none before the first snapshot. */
+    function selfPeople(): Set<Id> {
+        return selfIds(entities.portfolio());
+    }
+
     /**
      * The strip above one board, over the board's own projects and the venue registry they aim at.
      * Before the first snapshot the venues are empty, which is a strip of zeroes and no venue
@@ -402,12 +431,12 @@ export function createSelectors(
     }
 
     /**
-     * One project as a board card shows it, whichever board holds its tier. The project view draws
-     * the same card as the board does and has no board of its own, so the preset is found by the
-     * project's tier rather than by a view id; a project of a tier no board claims (a manifest with
-     * a missing or unknown `tier`) falls back to the first board, exactly as presetFor does with a
-     * view id it does not know, and its project is still joined, so it opens as a card in its own
-     * tab although no board lists it.
+     * One project as a board card shows it, on the first board of `boards` that takes it. The
+     * project view draws the same card as the board does and has no board of its own, so the
+     * preset is found by the boards' rules rather than by a view id; a project no board takes (a
+     * manifest with a missing or unknown `tier`, or one no board's keys meet) falls back to the
+     * first board, exactly as presetFor does with a view id it does not know, and its project is
+     * still joined, so it opens as a card in its own tab although no board lists it.
      */
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
@@ -415,10 +444,11 @@ export function createSelectors(
         const project = byKey(snapshot.entities.projects, id);
         if (project === undefined) return null;
         const merged = configMap();
-        const tier = project.tier;
-        const view = boardIds(merged).find(
-            (name) => tier !== undefined && presetFor(name, merged).tiers.includes(tier)
-        );
+        const self = selfIds(snapshot);
+        const view = boardIds(merged).find((name) => {
+            const preset = presetFor(name, merged);
+            return boardTakes(preset.rule, project, takeContextOf(preset, self));
+        });
         const preset = presetFor(view ?? '', merged);
         return boardItemFor(snapshot, project, preset, sessionsOf);
     }
@@ -704,11 +734,17 @@ export function createSelectors(
             ),
         boardPreset,
         board,
+        selfNamed: () => selfPeople().size > 0,
+        selfPeople,
         boardStats,
         staleLag,
         disseminatedFor,
         domainChoices,
         newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
+        newProjectPerson: (keys) =>
+            personOfNewProjects(rolesOf(configMap()), keys, selfIds(entities.portfolio())),
+        offersNewProject: (preset) =>
+            offersOfNewProjects(preset.rule, takeContextOf(preset, selfIds(entities.portfolio()))),
         hubRoot,
         docPlaceFor,
         engineAtSettled,

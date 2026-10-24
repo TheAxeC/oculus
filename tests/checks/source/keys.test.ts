@@ -33,7 +33,9 @@ import { descriptionKey } from '../../../src/lib/state/system/config/config-file
 import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
 import { PAGE_FEEDS } from '../../../src/lib/state/forms/page-entry.ts';
 import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus/palette-table.ts';
-import { HUB_FILE, TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
+import { vocabKeys } from '../../../src/lib/data/shapes/vocab-keys.ts';
+import { boardIds } from '../../../src/lib/state/boards/board/presets.ts';
 import { REFUSALS } from '../../../src/lib/server/edit/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
@@ -234,16 +236,16 @@ const COMPUTED_PREFIXES = [
     {
         file: 'lib/views/boards/projects/Projects.svelte',
         start: 'lookup(`views.${preset.id}`',
-        keys: () =>
-            ['projects', 'coauthor', 'archive', 'personal', 'software'].map((id) => `views.${id}`)
+        keys: () => boardIds(loadConfig(engineDir()).config).map((id) => `views.${id}`)
     },
     {
         // The words a new project of each tier gets are keyed by the tier itself, so a tier added
-        // to hub-names.ts with words in config/text/server.yml is read here without a second list.
+        // to `tiers` of vocab.yml with words in config/text/server.yml is read here without a
+        // second list.
         file: 'lib/server/edit/writes/manifest.ts',
         start: 'idea_',
         keys: () =>
-            TIERS.flatMap((tier) => [
+            vocabKeys(loadConfig(engineDir()).config.tiers).flatMap((tier) => [
                 `server.manifest_write.idea_status_${tier}`,
                 `server.manifest_write.idea_next_${tier}`
             ])

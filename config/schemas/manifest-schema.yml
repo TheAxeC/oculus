@@ -12,7 +12,7 @@
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.stages, vocab.forms, vocab.chips, vocab.priority_levels), or
+# `vocab.<key>` (vocab.tiers, vocab.stages, vocab.forms, vocab.chips, vocab.priority_levels), or
 # `vocab.<key>.<field>` for the keys of a map whose row carries that field as true
 # (vocab.statuses.acknowledged, the funding statuses a manuscript acknowledges). A list of sources
 # offers their keys together (`waiting-on` takes people and projects). Each value of a `from` field
@@ -32,12 +32,12 @@ manifest_schema:
     "Overrides (rare)": "Overrides (rare)"
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
-    tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive, personal or software. The project is shown with a finding when the key is missing or is not one of these five." }
-    stage:         { label: "Stage", type: select, from: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the board group, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
+    tier:          { label: "Tier", type: select, from: vocab.tiers, required: true, section: Core, help: "The kind of project, one word of the tiers list: research, personal or software. A board takes projects by their tier and, on the research boards, by your role and the stage. The project is shown with a finding when the key is missing or is not a word of the list." }
+    stage:         { label: "Stage", type: select, from: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the category on the board, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
     form:          { label: "Form", type: select, from: vocab.forms, section: Core, help: "The form of the output, one word of the forms list: journal, conference, thesis, abstract, poster or tech-report. Leave it empty for a project with no such output; a software project is its tier." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
-    "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run, or the role on the paper. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
+    "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
     priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
@@ -53,8 +53,9 @@ manifest_schema:
     domain:        { label: "Domain", type: select, from: domains, section: Connections, help: "The research domain the project belongs to, picked from the domains list." }
     pillars:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
-    lead:          { label: "Lead", type: chips, from: people, section: Connections, help: "The person or people who lead the project, several for co-first authors, picked from the people list; pick as many as apply." }
-    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply." }
+    lead:          { label: "Lead", type: chips, from: people, section: Connections, help: "The person or people who lead the project, several for co-first authors, picked from the people list; pick as many as apply. A project naming you here is on your lead boards (Projects, Archive); one naming no lead is a finding." }
+    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply. A project naming you here, and not as lead or supervisor, is on the Coauthor board." }
+    supervisors:   { label: "Supervisors", type: chips, from: people, section: Connections, help: "The people who supervise the work, listed last among the authors, picked from the people list; pick as many as apply. A project naming you here, and not as lead, is on the Supervision board." }
     "waiting-on":  { label: "Waiting on", type: tags, from: [people, projects], section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }

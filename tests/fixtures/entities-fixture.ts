@@ -19,7 +19,7 @@ export const NO_FEEDS: Feeds = {
 export function fixtureProject(over: Partial<Project> = {}): Project {
     return {
         id: 'one',
-        tier: 'projects',
+        tier: 'research',
         title: 'One',
         chips: [],
         results: [],
@@ -35,6 +35,7 @@ export function fixtureProject(over: Partial<Project> = {}): Project {
         domainIds: [],
         lead: [],
         collaborators: [],
+        supervisors: [],
         docs: [],
         folder: '',
         file: '',

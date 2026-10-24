@@ -61,7 +61,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 |---|---|---|
 | Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career panel |
 | Live HPC | the float at the right edge | the cluster `slurm.resource` names |
-| Projects, Coauthor, Archive, Personal | Projects | the projects of that `tier` |
+| Projects, Supervision, Coauthor, Archive, Personal, Software | Projects | the projects whose `tier`, `stage` and your role (the field of `roles` that names you: `lead`, `supervisors`, `collaborators`) the board's keys in `boards` take |
 | Project, Editor | opened from a card | one project, and its form |
 | Position Leads | Incoming | the `leads` feed |
 | Literature search, Lit Watch, Literature | Literature | the search over the literature sources, the `radar` feed, and the `literature` file |
@@ -125,6 +125,8 @@ project.yml:
   compute: [resources key]
   lead: [people key]
   collaborators: [people key]
+  supervisors: [people key]
+  tier: vocab tiers
   waiting-on: [people key, or a project]
   related: [a project]
   stage: vocab stages
@@ -139,6 +141,8 @@ joint-work:
   person: people key
 events, education, applications:
   related: [a project]
+funding, events, education, applications, tasks:
+  lead, collaborators, supervisors: [people key]
 venues:
   category: vocab venue_categories
   tier: vocab venue_tiers
@@ -159,7 +163,7 @@ deck present.yml:
   groups.<name>.slides: [a project]
 ```
 
-The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`. A status that is no word of its list is a finding naming the closest word of the list, and a stage word or a form written as a chip is a finding naming the field it belongs in.
+The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`; a project's `tier:` is a word of `tiers`, and its category on the boards is the first row of `categories` whose `stages` and `forms` blocks hold it. A status that is no word of its list is a finding naming the closest word of the list, and a stage word or a form written as a chip is a finding naming the field it belongs in.
 
 One key of `config.yml` names a primary key and is not checked by the Findings view: `slurm.resource` is a `resources` key of an entry with `kind: cluster` and a `host`; Live HPC says which condition fails.
 
@@ -173,7 +177,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `people`: the workspace setting `self` names the key of one entry, the user's own; a key no entry carries is a finding.
 - `resources`: `host` is needed for `slurm.resource` to poll the cluster.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
-- `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date. The Focus lane is no key: a project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`, and the backlog lane holds `nascent` projects of the tiers `projects` and `personal` only.
+- `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date. The Focus lane is no key: a project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`, and the Idea lane holds `nascent` projects of any tier. A project at a stage carrying `terminal` sits on no chip lane.
 
 In a schema, `when:` allows a field only while the condition holds, and `required: { when: ... }` requires it only then.
 

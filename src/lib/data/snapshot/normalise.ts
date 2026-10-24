@@ -52,6 +52,7 @@ import type {
 import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 import { tierOf } from '../helpers/hub-names.ts';
+import { vocabKeys } from '../shapes/vocab-keys.ts';
 import {
     followups,
     mapShape,
@@ -237,15 +238,15 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
 function project(
     manifest: RawManifest,
     found: DocPresence[] | undefined,
-    deck: RawDeck | undefined
+    deck: RawDeck | undefined,
+    tiers: readonly string[]
 ): Project {
     const status = readOr(mapShape, manifest.status, {});
     const domain = str(manifest.domain);
     const lag = staleDays(found, manifest.fileMtime);
     return compact({
         id: manifest.id,
-        tier: tierOf(manifest.tier),
-        category: str(manifest.category),
+        tier: tierOf(manifest.tier, tiers),
         stage: str(manifest.stage),
         form: str(manifest.form),
         title: str(manifest.title) ?? '',
@@ -279,6 +280,7 @@ function project(
         domainIds: domain === undefined ? [] : [domain],
         lead: strings(manifest.lead),
         collaborators: strings(manifest.collaborators),
+        supervisors: strings(manifest.supervisors),
         staleDays: lag > 0 ? lag : undefined,
         docs: docFlags(found),
         deck: deck?.path,
@@ -586,8 +588,9 @@ export function normalise(
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 
+    const tiers = vocabKeys(merged.tiers);
     const projects = raw.manifests.map((manifest) =>
-        project(manifest, raw.docs[manifest.id], raw.decks[manifest.id])
+        project(manifest, raw.docs[manifest.id], raw.decks[manifest.id], tiers)
     );
     const venues = withId(raw.registries.venues.entries).map(venue);
     const datasets = withId(raw.registries.datasets.entries).map(dataset);

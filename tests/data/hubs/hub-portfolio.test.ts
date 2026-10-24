@@ -326,7 +326,7 @@ function plantProject(hub: string, id: string, lines = ''): string {
     const folder = join(hub, 'projects', 'ideas', id);
     mkdirSync(folder, { recursive: true });
     const file = join(folder, 'project.yml');
-    writeFileSync(file, `title: Project ${id}\ntier: projects\nstage: nascent\n${lines}`);
+    writeFileSync(file, `title: Project ${id}\ntier: research\nstage: nascent\n${lines}`);
     return file;
 }
 
@@ -387,7 +387,7 @@ describe('a workspace of several hubs, every record under its hub and its key', 
             plantProject(a, 'alpha');
             plantProject(b, 'alpha');
             const c = plantScratch('oculus-hubs-folder-', {
-                'project.yml': 'title: Alpha\ntier: projects\nstage: nascent\n'
+                'project.yml': 'title: Alpha\ntier: research\nstage: nascent\n'
             });
             const { snapshot } = published([
                 { name: 'a', dir: a },

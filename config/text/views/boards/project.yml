@@ -36,7 +36,6 @@ text:
             subtasks: Subtasks
             unsnooze: un-snooze
         card:
-            author_glyph: author
             clipboard_blocked: clipboard blocked
             clone: Clone
             clone_glyph: clone
@@ -89,18 +88,16 @@ text:
             present_tip: open this project's own deck in the Present view
             pillar_glyph: pillar
             related: related
+            related_glyph: code
             repro_glyph: check
             reproduced: Reproduced
             show_less: Show less
             show_more: Show more
             results: Results
-            software: Software
             status: Status
             storage_glyph: data
             team: Team
             team_glyph: collab
-            software_glyph: code
-            software_papers: Papers
             stale_behind: '{0}d behind'
             stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
             toggle_tip: Expand / Collapse
@@ -127,10 +124,10 @@ text:
             under_review_at: under review at {0}
             under_review_unset: under review (venue unset)
             waiting_on: waiting on {0}
-            xlink_active: active
+            xlink_done: done
             xlink_idea: idea
             xlink_ideas: ideas
-            xlink_published: published
+            xlink_in_flight: in flight
         latex:
             heading: LaTeX
             open_view: TeX view

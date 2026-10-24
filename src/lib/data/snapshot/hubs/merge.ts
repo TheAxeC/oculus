@@ -146,6 +146,7 @@ function projectOf(one: Project, own: string, resolve: Resolve): Project {
         domainIds: idsOf(one.domainIds, at('domains', 'domain')),
         lead: idsOf(one.lead, at('people', 'lead')),
         collaborators: idsOf(one.collaborators, at('people', 'collaborators')),
+        supervisors: idsOf(one.supervisors, at('people', 'supervisors')),
         resourceIds: idsOf(one.resourceIds, at('resources', 'compute')),
         // A name of `waiting-on` is a person's key, a project's or the words of someone the hub
         // keeps no record of, which stay as they are.

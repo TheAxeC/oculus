@@ -1,6 +1,6 @@
 id: tensor-sketch
 stage: nascent
-tier: projects
+tier: research
 short: Sketched tensor decompositions for streaming data, online and out of core
 title: Sketched tensor decompositions for streaming data
 lead: [dana-example]

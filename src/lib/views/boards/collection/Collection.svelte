@@ -51,10 +51,15 @@
     //
     // A schema field marked `filter: true` is a filter in the bar (FieldFilters.svelte), its picks
     // and ranges the tab's instance state beside the search.
+    //
+    // A collection whose `schema:` declares a field a row of `roles:` is read from (`lead`,
+    // `collaborators`, `supervisors`) draws, while the workspace names a `self`, the Mine only
+    // toggle, on by default, keeping the entries that name the user in one of those fields and
+    // those that name no one; the Role facet, every row of `roles:` with its count; and the Lead
+    // badge on an entry whose lead is the user. The rule is data/shapes/boards/roles.ts's, the one
+    // the project boards read.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
@@ -65,6 +70,7 @@
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import FieldFilters from './FieldFilters.svelte';
+    import NoFundingCard from './NoFundingCard.svelte';
     import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { collectionAsk, literatureAsk, type Ask } from '../../shared/forms/entry/entry-add';
@@ -93,9 +99,9 @@
         type Entry
     } from '$lib/state/boards/collection';
     import { LITERATURE } from '$lib/state/feeds/literature/saved';
+    import { entryRoles } from '$lib/state/boards/board';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
-    import { recordState } from '$lib/state/shared/page/records';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
@@ -109,7 +115,7 @@
         layout: { openView },
         terminals: { composeAt },
         fs: { primary, roots },
-        selectors: { collectionOf, collectionsOfKey, configMap, projects },
+        selectors: { collectionOf, collectionsOfKey, configMap, projects, selfPeople },
         source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
         writes: { reorderEntries, writeToken }
@@ -144,12 +150,21 @@
         }))
     );
     const entries = $derived(pinnedFirst(parts.flatMap((part) => part.collection.entries)));
+    /** The Mine only toggle, the Role facet and the Lead badge, drawn where the file has roles. */
+    const roles = $derived(
+        entryRoles(
+            configMap(),
+            parts.map((part) => part.schema),
+            selfPeople(),
+            entries,
+            { mine: held.mine, picked: held.roles }
+        )
+    );
     const shown = $derived(
         parts.flatMap((part) =>
-            applyCollectionFilters(pinnedFirst(part.collection.entries), held).map((entry) => ({
-                entry,
-                part
-            }))
+            applyCollectionFilters(pinnedFirst(part.collection.entries), held)
+                .filter(roles.keeps)
+                .map((entry) => ({ entry, part }))
         )
     );
     const facets = $derived(statusFacets(entries));
@@ -201,6 +216,14 @@
             hidden: shownNow.includes(value)
                 ? shownNow.filter((other) => other !== value)
                 : [...shownNow, value]
+        });
+    }
+
+    /** Pick or release one role of the Role facet. */
+    function pickRole(role: string): void {
+        const picked = held.roles;
+        write({
+            roles: picked.includes(role) ? picked.filter((one) => one !== role) : [...picked, role]
         });
     }
 
@@ -362,6 +385,22 @@
                 />
             {/if}
         {/if}
+        {#if roles.drawn}
+            <Chip
+                label={t('roles.mine')}
+                title={t('roles.mine_tip')}
+                pressed={held.mine}
+                onclick={() => write({ mine: !held.mine })}
+            />
+            <span class="label">{t('roles.facet')}</span>
+            {#each roles.facet as role (role.key)}
+                <Chip
+                    label={`${role.label} ${role.count}`}
+                    pressed={held.roles.includes(role.key)}
+                    onclick={() => pickRole(role.key)}
+                />
+            {/each}
+        {/if}
         <FieldFilters
             {filters}
             picked={held.picked}
@@ -408,6 +447,7 @@
                             ondragfrom={(value: string) => (dragged = value)}
                             ondropon={drop}
                             onsaid={(words: string) => (said = words)}
+                            lead={roles.lead(entry)}
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
                             onpage={() => openPage(entry)}
@@ -420,34 +460,7 @@
                     </Reveal>
                 {/each}
                 {#if unfunded.length > 0 && !held.hidden.includes(NO_FUNDING)}
-                    <div class="slot" data-entry={NO_FUNDING} role="listitem">
-                        <Card
-                            id={NO_FUNDING}
-                            cursor={cursor === NO_FUNDING}
-                            title={t('collection.no_funding')}
-                        >
-                            {#snippet meta()}
-                                <Tag label={String(unfunded.length)} />
-                            {/snippet}
-                            <p class="sub">{t('collection.no_funding_sub')}</p>
-                            <div class="row">
-                                {#each unfunded as project (project.id)}
-                                    <ToolButton
-                                        small
-                                        label={project.short ?? project.title}
-                                        onclick={() =>
-                                            openView(
-                                                'project',
-                                                recordState(
-                                                    project.id,
-                                                    project.short ?? project.title
-                                                )
-                                            )}
-                                    />
-                                {/each}
-                            </div>
-                        </Card>
-                    </div>
+                    <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
                 {/if}
             </div>
         {/if}
@@ -455,14 +468,6 @@
 </Pane>
 
 <style>
-    .row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
     .label {
         font-size: var(--fs-xs);
         font-weight: 700;
@@ -474,12 +479,6 @@
     .said {
         margin: 0 0 6px;
         font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .sub {
-        margin: 0 0 6px;
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -499,15 +498,6 @@
     }
 
     .cards > :global([data-reveal] > .slot) {
-        flex: 1 1 auto;
-    }
-
-    .cards > .slot {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .cards > .slot > :global(.card) {
         flex: 1 1 auto;
     }
 </style>

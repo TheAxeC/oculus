@@ -46,6 +46,7 @@ text:
         repro_no: not reproduced
         repro_yes: reproduced
         search_default: Search
+        section_other: other
         sessions_live: working now
         sessions_none: no session
         sessions_recent: worked on recently
@@ -80,3 +81,5 @@ text:
         projects_glyph: focus
         software: Software
         software_glyph: code
+        supervision: Supervision
+        supervision_glyph: teaching

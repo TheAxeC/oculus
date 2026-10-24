@@ -29,7 +29,7 @@ type Row = {
 const ROWS: Row[] = [
     {
         name: 'a scan entry that carries a type and a tier, the folder still walked',
-        scan: [{ dir: 'projects/ideas', type: 'idea', tier: 'projects' }],
+        scan: [{ dir: 'projects/ideas', type: 'idea', tier: 'research' }],
         ids: ['a'],
         findings: [
             { key: 'scan', words: ['projects/ideas', 'type'] },
@@ -74,28 +74,28 @@ const ROWS: Row[] = [
     },
     {
         name: 'a new_project_dir entry for a word that is no tier',
-        newProjectDir: { bogus: 'projects/ideas', projects: 'projects/ideas' },
+        newProjectDir: { bogus: 'projects/ideas', research: 'projects/ideas' },
         ids: ['a'],
         findings: [{ key: 'new_project_dir', words: ['bogus'] }]
     },
     {
         name: 'a new_project_dir folder outside every scan folder',
-        newProjectDir: { projects: 'elsewhere' },
+        newProjectDir: { research: 'elsewhere' },
         ids: ['a'],
-        findings: [{ key: 'new_project_dir', words: ['projects', 'elsewhere'] }]
+        findings: [{ key: 'new_project_dir', words: ['research', 'elsewhere'] }]
     },
     {
         name: 'a new_project_dir entry with no folder',
-        newProjectDir: { archive: '' },
+        newProjectDir: { personal: '' },
         ids: ['a'],
-        findings: [{ key: 'new_project_dir', words: ['archive'] }]
+        findings: [{ key: 'new_project_dir', words: ['personal'] }]
     }
 ];
 
 describe('a wrong scan or new_project_dir value', () => {
     it.each(ROWS)('refuses $name with a finding naming the key', (row) => {
         const hub = plantScratch('oculus-scan-', {
-            'projects/ideas/a/project.yml': 'tier: projects\nstage: nascent\ntitle: A\n'
+            'projects/ideas/a/project.yml': 'tier: research\nstage: nascent\ntitle: A\n'
         });
         const merged = {
             ...MERGED,

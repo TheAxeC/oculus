@@ -111,7 +111,13 @@ export function sourcesFindings(
     const scan = scanRules(merged.scan);
     return [
         ...scanFindings(merged.scan, files.scan, text),
-        ...newProjectDirs(merged.new_project_dir, scan, files.newProjectDir, text).findings,
+        ...newProjectDirs(
+            merged.new_project_dir,
+            scan,
+            vocabKeys(merged.tiers),
+            files.newProjectDir,
+            text
+        ).findings,
         ...pictureFolderFindings(
             merged,
             hub,
@@ -191,7 +197,13 @@ export function portfolioConfigFrom(
         scan,
         repositories: [],
         ...(unnamed === undefined ? {} : { unnamed }),
-        newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
+        newProjectDir: newProjectDirs(
+            merged.new_project_dir,
+            scan,
+            vocabKeys(merged.tiers),
+            '',
+            text
+        ).dirs,
         registries,
         collections,
         feeds,
@@ -259,7 +271,7 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
 }
 
 /** What the deck reader needs to know of each project: where it is and what it is called. */
-function deckProjects(manifests: RawManifest[]): DeckProject[] {
+function deckProjects(manifests: RawManifest[], tiers: readonly string[]): DeckProject[] {
     return manifests.map((manifest) => {
         const status = isMap(manifest.status) ? manifest.status : {};
         const project: DeckProject = {
@@ -272,7 +284,7 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
         };
         if (manifest.workspaceFolder !== undefined)
             project.workspaceFolder = manifest.workspaceFolder;
-        const tier = tierOf(manifest.tier);
+        const tier = tierOf(manifest.tier, tiers);
         if (tier !== undefined) project.tier = tier;
         const stage = str(manifest.stage);
         if (stage !== undefined) project.stage = stage;
@@ -298,7 +310,7 @@ function decks(
     const root = { key: name, dir: hub };
     const reader = createReader({
         hub: root,
-        projects: deckProjects(manifests),
+        projects: deckProjects(manifests, vocabKeys(config.merged.tiers)),
         domains,
         tagTones: config.tagTones,
         catalog: config.text

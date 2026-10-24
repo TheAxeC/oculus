@@ -30,7 +30,7 @@ export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
     return days !== undefined && days >= lag;
 }
 
-/** Apply facet, text, stale, dated and hidden-stage controls to board items. */
+/** Apply facet, text, stale, dated, Mine only and hidden-stage controls to board items. */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
@@ -45,6 +45,7 @@ export function applyFilters(
         if (stage !== undefined && hidden.includes(stage)) return false;
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
+        if (quick.mine === true && !item.mine) return false;
         for (const facet of FACETS) {
             const selected = byKey(filters, facet);
             if (selected === undefined || selected.length === 0) continue;
@@ -66,6 +67,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         labels,
         stale: false,
         dated: false,
+        mine: true,
         hiddenStages: []
     };
 }
@@ -77,6 +79,7 @@ const boardStateShape = z.object({
     search: optionalTextShape,
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
+    mine: z.boolean().catch(true),
     hiddenStages: fieldItemsShape,
     expanded: recordItemsShape,
     more: recordItemsShape,
@@ -86,12 +89,14 @@ const boardStateShape = z.object({
 /**
  * Read a saved board state, falling back one field at a time when a value is invalid. Given the
  * facets the board offers, a compute value that none of them offers is dropped: it names a resource
- * the registry does not hold, such as `hpc`.
+ * the registry does not hold, such as `hpc`. Given the keys of `categories` (`categories`), a
+ * category value that names no row is dropped, so the board shows unfiltered on that facet.
  */
 export function parseBoardState(
     value: unknown,
     labels: LabelMode = 'short',
-    offered?: Facet[]
+    offered?: Facet[],
+    categories?: readonly string[]
 ): BoardState {
     const state = emptyBoardState(labels);
     const held = readAs(boardStateShape, value);
@@ -101,6 +106,7 @@ export function parseBoardState(
     if (held.search !== undefined) state.search = held.search;
     state.stale = held.stale;
     state.dated = held.dated;
+    state.mine = held.mine;
     state.hiddenStages = held.hiddenStages;
     state.expanded = held.expanded;
     state.more = held.more;
@@ -111,7 +117,9 @@ export function parseBoardState(
         const values =
             facet === 'compute' && offered !== undefined
                 ? read.filter((one) => known?.includes(one) === true)
-                : read;
+                : facet === 'category' && categories !== undefined
+                  ? read.filter((one) => categories.includes(one))
+                  : read;
         if (values.length > 0) state.filters[facet] = values;
     }
     return state;

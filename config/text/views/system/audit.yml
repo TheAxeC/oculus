@@ -56,9 +56,12 @@ text:
         msg_retired_doc: 'retired doc: fold it into README.md'
         msg_bad_folder: 'non-canonical folder: rename to {0}'
         msg_code_no_readme: code/ has no README.md (the deposit root)
-        msg_stage_not_folder: "stage {0} is not the folder's {1}"
-        msg_no_author_chip: 'archive/coauthor entry has no author-role chip (lead / coauthor)'
-        msg_projects_published: 'the stage is `{0}` on a board of unfinished work: it got accepted; move the folder to archive/published/'
+        msg_no_lead: 'names no lead: add `lead:` with the person who leads the work'
+        msg_no_board: 'on no board: tier {0}, role {1}, stage {2}'
+        msg_terminal_lane_chip: 'the stage `{0}` is done but the chip `{1}` puts it on a Focus lane: remove the chip'
+        no_tier: no tier
+        no_role: no role
+        no_stage: no stage
         msg_missing: missing
         msg_too_long: '{0} chars (>{1}): trim to a glance; detail belongs in the prose docs'
         msg_result_too_long: '{0} chars (>{1}): headline only'

@@ -32,7 +32,7 @@ import {
 } from '../../routes/edit/write-fixture.ts';
 
 const MANIFEST =
-    'id: alpha\ntier: projects\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+    'id: alpha\ntier: research\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 const TASKS =
     'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';

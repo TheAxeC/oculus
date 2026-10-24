@@ -18,13 +18,12 @@
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
     // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included. The folder, the venue and the team line are names
-    // and stay words; the team line is the names of the project's lead and collaborators without
-    // the person the workspace setting `self` names (state/boards/board/team.ts).
+    // project read from a repository included. The folder and the venue are names and stay words.
+    // The team is the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names
+    // the person the workspace setting `self` names carries the Lead badge.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import CardActions, { type CardAction } from '../CardActions.svelte';
     import CardBrief from './CardBrief.svelte';
     import { answerWords } from '../../forms/answer-words';
@@ -379,6 +378,9 @@
 
         <div class="folder">{item.project.workspaceFolder?.root ?? item.project.folder}</div>
         <div class="row">
+            {#if item.lead}
+                <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} />
+            {/if}
             {#if lane}
                 <Tag label={lane.label} />
             {/if}
@@ -394,12 +396,6 @@
             {/each}
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>
-            {/if}
-            {#if item.teamLine !== ''}
-                <span class="team">
-                    <Glyph name={t('project.card.author_glyph')} />
-                    {item.teamLine}
-                </span>
             {/if}
         </div>
         {#if wait !== null}
@@ -476,8 +472,7 @@
         margin-top: 6px;
     }
 
-    .venue,
-    .team {
+    .venue {
         display: inline-flex;
         align-items: center;
         gap: 4px;

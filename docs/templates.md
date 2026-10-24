@@ -50,10 +50,10 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #   - { dir: projects/coauthor }
 #   - { dir: projects/archive }
 
-# The folder a new project is made in, per tier (projects, coauthor, archive, personal).
+# The folder a new project is made in, per tier (research, personal, software).
 # Each folder is a scan folder or lies under one.
 # new_project_dir: {}
-#   example: { projects: projects/ideas, personal: side-projects }
+#   example: { research: projects/ideas, personal: side-projects }
 
 # The folder of the hub's own deck, opened by the Present view when no deck is named.
 # portfolio_deck: deck
@@ -489,11 +489,12 @@ End with the days since the last post against the target, and the path of any fi
 
 ## project.yml
 
-One project. `tier` and `stage` are required. Every other key is optional.
+One project. `tier` and `stage` are required, and a project naming no `lead` is an Audit finding. Every other key is optional.
 
 ```yaml
 # --- Core
-tier: projects          # projects, coauthor, archive, personal or software: the board it is on
+tier: research          # research, personal or software: the kind of project, which with your
+                        # role and the stage puts it on its boards
 stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, building, submit-ready,
                         # submitted, revision, published, released, failed or stopped; the stage
                         # puts the project on its Focus lane
@@ -524,6 +525,7 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 # funding: []           # funding registry
 # lead: []             # people registry: who leads the project, several for co-first authors
 # collaborators: []     # people registry
+# supervisors: []       # people registry: who supervises the work, listed last among the authors
 # waiting-on: []        # people or projects
 # related: []           # other projects
 # datasets: []          # data registry
@@ -958,6 +960,9 @@ schema:
   - { field: link,      type: text,     help: "A path in the hub." }
   - { field: url,       type: text,     help: "The call's address." }
   - { field: followup,  type: text,     help: "A standing reminder." }
+  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
@@ -975,6 +980,9 @@ entries:
 #    link: funding/2026-my-call   # a path in the hub
 #    url: https://example.org/call
 #    followup: ""
+#    lead: [my-key]               # required; people keys
+#    collaborators: []            # people keys
+#    supervisors: []              # people keys
 ```
 
 ### .oculus/data/academic/events.yml
@@ -995,6 +1003,9 @@ schema:
   - { field: link,     type: text,     required: { when: { role: present } }, help: "Slides of a talk you give." }
   - { field: related,  type: tags,     from: projects, help: "Project ids." }
   - { field: followup, type: text,     help: "A standing reminder." }
+  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
 entries:
 #  - key: my-talk                 # required
 #    title: "My talk"             # required
@@ -1010,6 +1021,9 @@ entries:
 #    link: network/my-talk        # required when role is present
 #    related: []                  # project ids
 #    followup: ""
+#    lead: [my-key]               # required; people keys
+#    collaborators: []            # people keys
+#    supervisors: []              # people keys
 ```
 
 ### .oculus/data/academic/joint-work.yml
@@ -1055,6 +1069,9 @@ schema:
   - { field: link,     type: text,     help: "A path in the hub." }
   - { field: related,  type: tags,     from: projects, help: "Project ids." }
   - { field: followup, type: text,     help: "A standing reminder." }
+  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
 entries:
 #  - key: ml-course               # required
 #    title: "Machine learning"    # required
@@ -1068,6 +1085,9 @@ entries:
 #    link: education/courses/ml   # a path in the hub
 #    related: []                  # project ids
 #    followup: ""
+#    lead: [my-key]               # required; people keys
+#    collaborators: []            # people keys
+#    supervisors: []              # people keys
 ```
 
 ### .oculus/data/academic/applications.yml
@@ -1088,6 +1108,9 @@ schema:
   - { field: related,  type: tags,     from: projects, help: "Project ids." }
   - { field: deadline, type: date,     help: "The deadline, if any." }
   - { field: followup, type: text,     help: "A standing reminder." }
+  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
 entries:
 #  - key: my-postdoc              # required
 #    title: "Postdoc position"    # required
@@ -1103,6 +1126,9 @@ entries:
 #    related: []                  # project ids
 #    deadline: YYYY-MM-DD
 #    followup: ""
+#    lead: [my-key]               # required; people keys
+#    collaborators: []            # people keys
+#    supervisors: []              # people keys
 ```
 
 ### .oculus/data/academic/tasks.yml
@@ -1118,6 +1144,9 @@ schema:
   - { field: note,     type: textarea, help: "Notes." }
   - { field: tags,     type: tags,     help: "Filter words." }
   - { field: followup, type: text,     help: "A standing reminder." }
+  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
 entries:
 #  - key: review-paper            # required
 #    title: "Review a paper"      # required
@@ -1127,6 +1156,9 @@ entries:
 #    note: ""
 #    tags: []
 #    followup: ""
+#    lead: [my-key]               # required; people keys
+#    collaborators: []            # people keys
+#    supervisors: []              # people keys
 ```
 
 ### .oculus/data/literature/literature.yml
@@ -1319,7 +1351,7 @@ deck:
 
 # groups:
 #   active:
-#     find: { folders: projects/*/*/present, tiers: [projects], stages: [in-prep] }
+#     find: { folders: projects/*/*/present, tiers: [research], stages: [in-prep] }
 #     sort: folder           # folder or title
 #     discover: true         # also take decks found beyond `slides`
 #     slides: []             # project ids, in order

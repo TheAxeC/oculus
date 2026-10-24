@@ -35,14 +35,15 @@ import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
-import { wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { vocabKeys, wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { roleFields, rolesOf } from '../../../data/shapes/boards/roles.ts';
 import { setFields } from '../yaml/yaml-edit.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { insertRemoved } from './restore.ts';
 import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type { PortfolioConfig, RawManifest, SchemaField, Tier } from '../../../data/model/index.ts';
+import type { PortfolioConfig, RawManifest, SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 
@@ -516,7 +517,9 @@ const ideaFormShape = z.object({
     eli5: trimmedShape,
     short: trimmedShape,
     domain: trimmedShape,
-    tier: trimmedShape
+    tier: trimmedShape,
+    role_field: trimmedShape,
+    self: trimmedShape
 });
 
 /** One refused field of a new project, with the sentence of the text catalog that says why. */
@@ -586,16 +589,22 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 /**
  * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
  * the project's `id`, its `tier`, as its `stage` the first word of `stages` carrying `new_idea` (no
- * `stage` line when no word carries it) and no chip, so a project of a tier carrying `backlog`
- * starts on the Focus board's backlog lane when that lane holds the stage, as the shipped lanes
- * do. Its status line, its `next` and its README are the words of config/text/server.yml for that
- * tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no `next` word gets no `next`).
+ * `stage` line when no word carries it) and no chip, so a project of any tier starts on the Focus
+ * board's Idea lane when that lane holds the stage, as the shipped lanes do. Its status line, its
+ * `next` and its README are the words of config/text/server.yml for that tier
+ * (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no `next` word gets no `next`).
  * `fields.tier` is the tier of the board that sent the form and `fields.folder` the folder it was
- * made in; a write that names neither is made in the first tier carrying `main` under that tier's
- * `new_project_dir`. A bad id, an id a project already holds, a tier with no words, a hub that
- * names no folder for the tier, an empty folder, a folder outside every scan folder, a folder
- * inside a project and a folder that is already there are all refused, so nothing existing is
- * ever written over. The outcome's `id` is the new project's id.
+ * made in; a write that names neither is made in the first word of `tiers` under that tier's
+ * `new_project_dir`. `fields.role_field` is the field of the first of the board's `role:` keys
+ * that has one, or of the first row of `roles:` that has one for a board naming no `role:` and for
+ * Lit Watch, and `fields.self` the key of the person the workspace setting `self` names: the
+ * manifest names that person in that field (`lead: [<self>]` on a lead board). A board offers the
+ * write only when its rule takes the project it makes, so the new project is on the board it was
+ * made on. A bad id, an id a project already holds, a tier that is no word of `tiers` or has no
+ * words, a role field that is no field of `roles`, a hub that names no folder for the tier, an
+ * empty folder, a folder outside every scan folder, a folder inside a project and a folder that is
+ * already there are all refused, so nothing existing is ever written over. The outcome's `id` is
+ * the new project's id.
  */
 export function createIdea(
     hub: string,
@@ -612,14 +621,18 @@ export function createIdea(
         return ideaRefusal('id', words(catalog, 'server.manifest_write.idea_id_taken', id));
     }
     const vocab = config.merged;
-    const main = wordsWith(vocab, 'tiers', 'main')[0] ?? '';
-    const tier: Tier | undefined = tierOf(fields.tier === undefined ? main : form.tier);
+    const tiers = vocabKeys(vocab.tiers);
+    const tier = tierOf(fields.tier === undefined ? tiers.at(0) : form.tier, tiers);
     const statusText =
         tier === undefined
             ? undefined
             : byKey(catalog, `server.manifest_write.idea_status_${tier}`);
     if (tier === undefined || statusText === undefined) {
         return ideaRefusal('tier', words(catalog, 'server.manifest_write.idea_tier', form.tier));
+    }
+    const { role_field: roleField, self } = form;
+    if (roleField !== '' && (!roleFields(rolesOf(vocab)).includes(roleField) || self === '')) {
+        return ideaRefusal('role', words(catalog, 'server.manifest_write.idea_role', roleField));
     }
     const named =
         fields.folder === undefined
@@ -673,6 +686,7 @@ export function createIdea(
     const { short, domain } = form;
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
+    if (roleField !== '') lines.push(`${roleField}:`, `  - ${renderScalar(self)}`);
     lines.push(`title: ${renderScalar(title)}`);
     lines.push(
         'status:',

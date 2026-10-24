@@ -43,6 +43,7 @@ import {
 } from '../../../shapes/catalog-words.ts';
 import { mapShape, readOr } from '../../../shapes/shapes.ts';
 import { coloredWords, vocabKeys } from '../../../shapes/vocab-keys.ts';
+import { flagsOf } from '../../../shapes/boards/words.ts';
 import { catalogueGroupIds } from '../../../helpers/keys/oculus/rail-letters.ts';
 
 export { CONTROLS, HEADINGS };
@@ -483,7 +484,10 @@ const FROM_CONFIG: readonly Source[] = [
     'project_stages',
     'project_forms',
     'tiers',
+    'roles',
+    'stage_flags',
     'status_chips',
+    'chip_flags',
     'entry_statuses',
     'bundle_ids'
 ];
@@ -545,8 +549,14 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return vocabKeys(config.forms);
         case 'tiers':
             return vocabKeys(config.tiers);
+        case 'roles':
+            return vocabKeys(config.roles);
+        case 'stage_flags':
+            return flagsOf(config.stages);
         case 'status_chips':
             return vocabKeys(config.chips);
+        case 'chip_flags':
+            return flagsOf(config.chips);
         case 'entry_statuses':
             return coloredWords(config.statuses);
         default: {

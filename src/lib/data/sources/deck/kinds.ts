@@ -31,7 +31,7 @@ export type DeckProject = {
     folder: string;
     /** The root and folder of the repository the project is read from, when it is in one. */
     workspaceFolder?: { root: string; dir: string };
-    /** The manifest's `tier`, absent when it names none of the five. */
+    /** The manifest's `tier`, absent when it names no word of `tiers:` in vocab.yml. */
     tier?: string;
     /** The manifest's `status.chips`, which a `find:` with `status:` keeps a deck by. */
     chips: string[];

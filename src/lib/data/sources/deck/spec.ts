@@ -14,7 +14,7 @@ export type Raise = (key: string, id: string, ...args: (string | number)[]) => v
 export type FindSpec = {
     /** Globs of folders, relative to the root the deck was found in. */
     folders: string[];
-    /** The manifest tiers a deck's project must be in; absent keeps every tier. */
+    /** The words of `tiers:` a deck's project must be in; absent keeps every tier. */
     tiers?: string[];
     /** The stages of `stages:` a deck's project must be at; absent keeps every stage. */
     stages?: string[];

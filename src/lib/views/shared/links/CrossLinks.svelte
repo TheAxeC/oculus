@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, each
+    // Layer 3, shared view partial. Project cross-links grouped as in flight, done and ideas, each
     // group nesting its members under their own project stage, and each member opening its tab.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -43,16 +43,16 @@
 
     /** The catalogued group label, singular for one idea and plural otherwise. */
     function label(group: CrossGroup): string {
-        if (group.type === 'work') return t('project.helper.xlink_active');
-        if (group.type === 'published') return t('project.helper.xlink_published');
+        if (group.type === 'in-flight') return t('project.helper.xlink_in_flight');
+        if (group.type === 'done') return t('project.helper.xlink_done');
         if (group.count === 1) return t('project.helper.xlink_idea');
         return t('project.helper.xlink_ideas');
     }
 
     /** The glyph vocabulary name for one group. */
     function glyph(group: CrossGroup): string {
-        if (group.type === 'work') return 'active';
-        if (group.type === 'published') return 'published';
+        if (group.type === 'in-flight') return 'active';
+        if (group.type === 'done') return 'published';
         return 'idea';
     }
 </script>

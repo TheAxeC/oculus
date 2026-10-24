@@ -24,7 +24,6 @@ import type {
     Resource,
     Rooted,
     ScanRule,
-    Tier,
     Venue
 } from './model-entities.ts';
 import type {
@@ -86,7 +85,7 @@ export type PortfolioConfig = {
      */
     repositories: RepositoryRoot[];
     /** The folder a new project of each tier is made in, `new_project_dir:` of sources.yml. */
-    newProjectDir: Partial<Record<Tier, string>>;
+    newProjectDir: Partial<Record<string, string>>;
     registries: RegistryFiles;
     collections: CollectionFile[];
     /** The four generated feed files, hub-relative. */
@@ -163,7 +162,10 @@ export type Relations = {
     projectDomain: [Id, Id][];
     projectRelated: [Id, Id][];
     fundingPillar: [Id, Id][];
-    /** A project and a person its `lead:` or its `collaborators:` names, a person of its team. */
+    /**
+     * A project and a person its `lead:`, its `collaborators:` or its `supervisors:` names, a
+     * person of its team.
+     */
     projectPerson: [Id, Id][];
     /** An entry of the joint-work collection and the person its `person:` names. */
     jointWorkPerson: [Id, Id][];
@@ -352,9 +354,9 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 
 /**
  * Which section of the audit a finding belongs to: an open marker left in a document, a manifest
- * field a live project has not filled in, a folder the tier standard does not name, a project of a
- * finished tier with no author chip or of an unfinished tier at a stage that carries `published`, a
- * field that has stopped being a glance, and the public website's list against the portfolio.
+ * field a live project has not filled in, a folder the research standard does not name, a manifest
+ * naming no lead, a project no board takes or a done project carrying a Focus lane's chip, a field
+ * that has stopped being a glance, and the public website's list against the portfolio.
  */
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
@@ -482,7 +484,6 @@ export type {
     Rooted,
     ScanRule,
     Subtask,
-    Tier,
     Venue,
     DepositChange,
     DepositFinding,

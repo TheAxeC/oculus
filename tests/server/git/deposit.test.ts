@@ -59,7 +59,7 @@ function codeOf(id: string): string {
 function manifest(id: string, repo: string, url = ''): string {
     return [
         `id: ${id}`,
-        'tier: projects',
+        'tier: research',
         'stage: exploring',
         `title: "The title of ${id}"`,
         'status:',

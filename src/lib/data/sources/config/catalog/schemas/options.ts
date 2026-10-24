@@ -191,6 +191,25 @@ export function isPairs(fields: Record<string, FieldSpec>): boolean {
     return names.length === 2 && names.includes('key') && names.includes('value');
 }
 
+/**
+ * The value schema of each key of a map from a key to a value whose source the key picks (a
+ * board's `stages: { words: [...] }`), or null when the value picks by no key: a map names its key
+ * by the pair's key and holds no `key` field the rules of a record could read.
+ */
+function pickedByKey(
+    fields: Record<string, FieldSpec>,
+    lists: OptionLists
+): Record<string, JsonSchema> | null {
+    const picked = pickedSources(fields.value);
+    if (picked?.field !== 'key') return null;
+    return Object.fromEntries(
+        Object.entries(picked.sources).map(([word, source]) => [
+            word,
+            fieldSchema({ ...fields.value, from: [source] }, lists)
+        ])
+    );
+}
+
 /** The schema of a family: a list of its records, or a map from a key to a record or a value. */
 function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): JsonSchema {
     const fields = entry.fields ?? {};
@@ -209,6 +228,8 @@ function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): J
               : value;
     const schema: JsonSchema = { type: keyed ? ['array', 'object'] : 'array', items: rows };
     if (keyed) schema.additionalProperties = member;
+    const byKey = value === null || wrapped ? null : pickedByKey(fields, lists);
+    if (byKey !== null) schema.properties = byKey;
     return schema;
 }
 

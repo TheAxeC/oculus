@@ -120,7 +120,7 @@ function subdirs(dir: string): string[] {
  * Every folder under `base` that is a project, at any depth, as its path segments from `base`. The
  * walk stops at a project: nothing inside one is a project of its own, which keeps a
  * `code/project.yml` out. A folder that is no project (a filing folder, or a hub) is walked
- * through; the first of its segments above a project is the project's category.
+ * through.
  */
 function nestedProjects(base: string, segments: string[] = []): string[][] {
     const found: string[][] = [];
@@ -187,7 +187,6 @@ function readManifestFile(file: string, catalog: TextCatalog, findings: Finding[
 function record(
     place: { file: string; folder: string; id: string; dir: string },
     data: Record<string, unknown>,
-    category: string | undefined,
     catalog: TextCatalog,
     findings: Finding[]
 ): RawManifest {
@@ -209,7 +208,6 @@ function record(
     const built: RawManifest = { ...data, file, folder, id };
     const changed = mtimeOf(file);
     if (changed !== undefined) built.fileMtime = changed;
-    if (category !== undefined) built.category = category;
     if (data.id !== undefined) built.manifestId = data.id;
     if (isDir(join(place.dir, CODE_FOLDER))) built.codeFolder = true;
     return built;
@@ -259,7 +257,6 @@ type Found = {
     folder: string;
     id: string;
     dir: string;
-    category?: string;
     root?: RepositoryRoot;
     data: Record<string, unknown> | null;
     findings: Finding[];
@@ -268,7 +265,7 @@ type Found = {
 /** The folder at `dir` read as a project: its manifest, and the findings that reading raised. */
 function foundAt(
     placed: ProjectFile,
-    place: { folder: string; id: string; dir: string; category?: string; root?: RepositoryRoot },
+    place: { folder: string; id: string; dir: string; root?: RepositoryRoot },
     catalog: TextCatalog
 ): Found {
     const findings: Finding[] = [];
@@ -321,7 +318,7 @@ function settle(
         findings.push(...one.findings);
         if (one.data === null || !claim(one.id, one.file)) return;
         const place = { file: one.file, folder: one.folder, id: one.id, dir: one.dir };
-        const project = record(place, one.data, one.category, catalog, findings);
+        const project = record(place, one.data, catalog, findings);
         manifests.push(
             one.root === undefined
                 ? project
@@ -331,8 +328,8 @@ function settle(
     return manifests;
 }
 
-/** A project folder the scan rules reach: where it lies, its path in the scan folder, its file. */
-type Reached = { dir: string; segments: string[]; placed: ProjectFile };
+/** A project folder the scan rules reach: where it lies and its file. */
+type Reached = { dir: string; placed: ProjectFile };
 
 /**
  * The project folders the scan rules reach, in the order the walk meets them, each folder once
@@ -357,7 +354,7 @@ function reachedBy(hub: string, scan: ScanRule[], missing: (base: string) => voi
             if (reached.has(place)) continue;
             reached.add(place);
             const placed = projectFileIn(dir);
-            if (placed !== null) found.push({ dir, segments, placed });
+            if (placed !== null) found.push({ dir, placed });
         }
     }
     return found;
@@ -377,9 +374,8 @@ function scanned(
             message: findingText(catalog, 'findings.manifests.scan_missing')
         });
     };
-    return reachedBy(hub, scan, missing).map(({ dir, segments, placed }) => {
-        const category = segments.length > 1 ? segments[0] : undefined;
-        const place = { folder: hubPath(hub, dir), id: basename(dir), dir, category };
+    return reachedBy(hub, scan, missing).map(({ dir, placed }) => {
+        const place = { folder: hubPath(hub, dir), id: basename(dir), dir };
         return foundAt(placed, place, catalog);
     });
 }
@@ -399,14 +395,13 @@ export function scannedFiles(hub: string, scan: ScanRule[]): Set<string> {
  *
  * Each rule's `dir` is walked to any depth. A folder that is a project (it holds `project.yml` at
  * its top or `.oculus/project.yml`, and is no hub) is not walked further, the scan folder itself
- * included; a folder that is none is a filing folder, so no record is made for it. The first folder
- * under the scan folder is the project's `category` when the project lies deeper than one level. A
- * manifest reached by two rules is read once. A manifest that does not parse, or parses to
- * something other than a map, is a finding and no record. A missing scan directory is a finding
- * unless the rule is `optional`. A project whose id an earlier one holds is a finding and is not
- * read; the scan folders count in the order listed and the folders of one in name order. A folder
- * that is a clone of another project is no project (see `settle`). Records come back sorted by
- * `folder`, so two runs on one tree agree byte for byte.
+ * included; a folder that is none is a filing folder, so no record is made for it. A manifest
+ * reached by two rules is read once. A manifest that does not parse, or parses to something other
+ * than a map, is a finding and no record. A missing scan directory is a finding unless the rule is
+ * `optional`. A project whose id an earlier one holds is a finding and is not read; the scan
+ * folders count in the order listed and the folders of one in name order. A folder that is a clone
+ * of another project is no project (see `settle`). Records come back sorted by `folder`, so two
+ * runs on one tree agree byte for byte.
  */
 export function readManifests(
     hub: string,

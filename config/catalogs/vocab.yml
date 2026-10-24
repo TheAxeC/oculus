@@ -1,6 +1,6 @@
 # ===========================================================================
 # vocab.yml
-# oculus's own configuration: the words of its vocabularies, their colours, and the flags that say what each word decides: the palette every hex maps onto, the project stages, forms and chips, the statuses of collection entries and of Position Leads, the project tiers, and the lane and bucket words the surfaces group by. A decision the code makes on a stage, a chip, a status or a tier is a flag on its word here or a list here or under `focus:` of behavior.yml, never a word written in the code. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
+# oculus's own configuration: the words of its vocabularies, their colours, and the flags that say what each word decides: the palette every hex maps onto, the project stages, forms and chips, the statuses of collection entries and of Position Leads, the project tiers, the user's roles, the categories a project is filed under, and the lane and bucket words the surfaces group by. A decision the code makes on a stage, a chip, a status, a role or a category is a flag on its word here or a list here or under `focus:` of behavior.yml, never a word written in the code. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
 # ===========================================================================
 
 
@@ -37,6 +37,7 @@ palette:
   "#6366f1": c-indigo
   "#7c5cff": c-violet
   "#7c3aed": c-purple
+  "#9333ea": c-purple
   "#a21caf": c-magenta
   "#ec4899": c-pink
   "#db2777": c-rose
@@ -48,11 +49,10 @@ palette:
   "#475569": c-slate
 
 # The stages a project's work is at, keyed by the manifest's `stage`, in the order every board splits its stage buttons by and the board statistics, the Map and the project form list stages in: the idea group (nascent, scoping), the in-flight group (de-risking to revision) and the done group (published to stopped). `label` is the words the stage is drawn with on a card, the Present view's idea cards and the form, `icon` the glyph name a chip of the stage carries (a key of glyphs.yml), and `color` the colour of a project at the stage wherever it is drawn (its board card, the Map, the Present view's project chip). The flags say what a stage decides, each compared with the manifest's `stage` as written (`hasWord`), and a stage without a flag is not one of them:
-# - `idea`: the idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list an idea of a tier carrying `backlog` that neither the backlog lane nor another lane takes.
+# - `idea`: the idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`.
 # - `live`: the in-flight group: the audit's rules over in-flight work (results, datasets, the ELI5), the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work.
-# - `terminal`: the done group, a done or closed outcome; no rule of oculus reads it.
-# - `dead`: a dead outcome, the only kind that is not real work, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order; a project at the stage on a tier carrying `finished` is left out of a pillar's and a domain's members, a venue's use counts and the cross-link groups. A stage with no number is real work, so a new in-flight stage never falls into Archival.
-# - `archive_outcome`: a stage a project is archived with, and the name of its archive/<outcome>/ filing folder (the folder decides no tier or stage, only the project's category; the audit lists an archived project whose `stage:` differs from its folder).
+# - `terminal`: the done group, a done or closed outcome: the cross-link group of done projects, the boards that take or leave out done work by it (`stages: { flags: [terminal] }` in layout.yml), quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.
+# - `dead`: a dead outcome, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order. The `dead-ends` row of `categories:` below takes these stages, and the cross-link groups leave a project at such a stage out.
 # - `on_map`: a stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.
 # - `placed`: a stage that has a venue, so the audit asks for one.
 # - `standard`: the stages the audit holds to the one-README standard.
@@ -61,7 +61,6 @@ palette:
 # - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue.
 # - `deadline_met`: a stage that ends a project's own deadline, which then leaves the deadline radar.
 # - `new_idea`: the stage a new idea is made with; the first such stage is written, and with none the new manifest names no stage.
-# - `published`: the stage the audit expects only on a tier carrying `finished`.
 stages:
   nascent:      { label: "nascent (concept)", icon: white, color: "#7c5cff", idea: true, on_map: true, standard: true, new_idea: true }
   scoping:      { label: "scoping (lit-check and framing)", icon: yellow, color: "#0891b2", idea: true, on_map: true, standard: true }
@@ -72,13 +71,13 @@ stages:
   submit-ready: { label: "submit-ready", icon: green, color: "#ea580c", live: true, on_map: true, standard: true, placed: true, public: true, submit_ready: true }
   submitted:    { label: "submitted / under review", icon: brown, color: "#0ea5e9", live: true, on_map: true, standard: true, placed: true, public: true, pauses_countdown: true, deadline_met: true }
   revision:     { label: "major revision (back with the authors)", icon: orange_square, color: "#b45309", live: true, on_map: true, standard: true, placed: true, public: true }
-  published:    { label: published, icon: done, color: "#16a34a", terminal: true, archive_outcome: true, placed: true, public: true, published: true }
+  published:    { label: published, icon: done, color: "#16a34a", terminal: true, placed: true, public: true }
   released:     { label: released, icon: done, color: "#0d9488", terminal: true }
-  failed:       { label: "failed (no-go or disproved)", icon: cross_box, color: "#dc2626", dead: 1, terminal: true, archive_outcome: true, negative: true }
-  stopped:      { label: "stopped (dropped or abandoned)", icon: trash, color: "#9ca3af", dead: 2, terminal: true, archive_outcome: true, dead_end: true }
+  failed:       { label: "failed (no-go or disproved)", icon: cross_box, color: "#dc2626", dead: 1, terminal: true, negative: true }
+  stopped:      { label: "stopped (dropped or abandoned)", icon: trash, color: "#9ca3af", dead: 2, terminal: true, dead_end: true }
 
 
-# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board group may name it, and `publication_kinds` below reads it. A software project has no form: its tier says what it is.
+# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board's `forms:` in layout.yml and a row of `categories:` below may name it, and `publication_kinds` below reads it. A software project has no form: its tier says what it is.
 forms:
   journal:     { label: "journal article", icon: journals }
   conference:  { label: "conference paper", icon: conference }
@@ -88,7 +87,7 @@ forms:
   tech-report: { label: "tech report (not peer-reviewed)", icon: paper }
 
 
-# The chips a project's manifest picks for its `status.chips`, the situation of the work and the author role, in the order the project form offers them. A chip is drawn on a card after the stage and the form, with its `label` and its `icon` (a key of glyphs.yml); a chip carries no colour. A stage word or a form written as a chip is a finding of the hub check, since each has its own field. The one flag, and a chip without it is not one:
+# The chips a project's manifest picks for its `status.chips`, the situation of the work, in the order the project form offers them. A chip is drawn on a card after the stage and the form, with its `label` and its `icon` (a key of glyphs.yml); a chip carries no colour. A stage word or a form written as a chip is a finding of the hub check, since each has its own field. The one flag, and a chip without it is not one:
 # - `blocked`: a chip the Focus board's awaiting box counts as blocked and a board's statistics strip counts in its blocked number, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written (`anyWord`).
 chips:
   blocked:          { label: "blocked (external)", icon: purple, blocked: true }
@@ -97,8 +96,6 @@ chips:
   admin-prep:       { label: "admin/prep", icon: yellow }
   numbers-to-run:   { label: "numbers still to run", icon: blue }
   ai-tells:         { label: "AI-writing tells", icon: red }
-  lead:             { label: "first author", icon: author }
-  coauthor:         { label: "co-author", icon: collab }
 
 
 # The statuses a collection entry's `status` takes, each with the `color` it is drawn in, and the flags that say what a status decides; a status the list does not hold is a finding naming the closest word. Each line says how the code compares a status with the flag: `wordFlag` trims an entry's status and puts it in lower case:
@@ -170,7 +167,7 @@ lead_statuses:
   open:      { default_lead: true }
 
 
-# Focus lanes form one lifecycle, grouped into current, parked and incubating work, with the backlog under them. A project sits on the first lane, in this order, whose `chips` holds one of the project's `status.chips`, else on the first lane whose `stages` holds its `stage`, else on none; a row names `stages` or `chips` and never both, and a stage word is held by one row only. A move onto a lane with `stages` keeps the project's stage when the lane holds it and writes the lane's first stage otherwise, and takes off the chips of every lane with `chips`; a move onto a lane with `chips` adds the lane's first chip and takes off the chips of the other lanes with `chips`, leaving the stage as it is. The lanes of the cluster `backlog` are drawn full width under the three clusters and take only a project of a tier carrying `backlog`. With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width backlog lane. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the backlog lane in mocha and everforest.
+# Focus lanes form one lifecycle, grouped into current, parked and incubating work, with the Idea lane under them. A project sits on the first lane, in this order, whose `chips` holds one of the project's `status.chips` while its stage does not carry `terminal`, else on the first lane whose `stages` holds its `stage`, else on none; a row names `stages` or `chips` and never both, and a stage word is held by one row only. A move onto a lane with `stages` keeps the project's stage when the lane holds it and writes the lane's first stage otherwise, and takes off the chips of every lane with `chips`; a move onto a lane with `chips` adds the lane's first chip and takes off the chips of the other lanes with `chips`, leaving the stage as it is. The lanes of the cluster `idea` are drawn full width under the three clusters and take a project of any tier at a stage they list. With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Idea lane. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the Idea lane in mocha and everforest.
 focus_lanes:
   - { key: run,        label: Run,        sub: "experiments / getting the numbers", color: "#16a34a", cluster: now,      stages: [exploring] }
   - { key: push,       label: Push,       sub: "drafting toward first submission",  color: "#2563eb", cluster: now,      stages: [in-prep, submit-ready] }
@@ -181,7 +178,7 @@ focus_lanes:
   - { key: scope,      label: Scope,      sub: "shaping + novelty check",            color: "#0e7490", cluster: incubate, stages: [scoping] }
   - { key: derisk,     label: De-risk,    sub: "Tier-0 go / no-go pilot",            color: "#f59e0b", cluster: incubate, stages: [de-risking] }
   - { key: build,      label: Build,      sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate, stages: [building] }
-  - { key: backlog,    label: Backlog,    sub: "ideas not started yet: drag onto a lane to start, or drop here to make it an idea again", color: "#b5638a", cluster: backlog, stages: [nascent] }
+  - { key: idea,       label: Idea,       sub: "ideas not started yet: drag onto a lane to start, or drop here to make it an idea again", color: "#b5638a", cluster: idea,     stages: [nascent] }
 
 
 # Per-card priority controls the count badge; an unset priority draws none and does not change order.
@@ -197,24 +194,41 @@ fund_stages:
   - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review] }
   - { label: "Planned",   color: "#0891b2", statuses: [planned] }
 
-# Collection lane bars are independent of the stage colours inside Funding. The three hues follow the backlog lane above them and each other under the same distance rule as `focus_lanes`.
+# Collection lane bars are independent of the stage colours inside Funding. The three hues follow the Idea lane above them and each other under the same distance rule as `focus_lanes`.
 focus_lane_tones: { funding: gold, jobs: grey-d, teaching: teal }
 
 
-# The project tiers whose decisions are flags, each read with the tier as the manifest writes it, and a tier without a flag is not one of them:
-# - `finished`: finished or contributed work: the audit's rules over finished work, the cross-link group of finished projects, a venue's past papers, the Map's finished members.
-# - `software`: software projects: a card's and a board's software line, and a board that offers no New project.
-# - `main`: the research board's tier: the venue load of the Command Center and the Inbox, the manifests behind, the projects quick add writes to, and the tier a new project is made in when none is named.
-# - `backlog`: a tier whose `nascent` projects sit in the Focus board's backlog lane, the lane of the cluster `backlog`, which is where a new project of the tier starts.
-# - `personal`: projects the audit's research rules leave alone.
-# - `outcome_folders`: a tier whose category folder is its project's outcome: the audit expects a project filed under a folder named by a stage carrying `archive_outcome` to be at that stage.
-# - `stage_folders`: the category folders of a tier that name its project's stage, which the audit expects the project to be at.
+# The kinds of project a manifest's `tier` names, each with the words it is drawn with, in the order the project form offers them; a tier carries no flag. A board takes projects by their tier (its `tier:` in layout.yml), and a new project whose form names no tier gets the first word.
 tiers:
-  projects: { main: true, backlog: true }
-  personal: { backlog: true, personal: true }
-  coauthor: { finished: true, stage_folders: [stopped] }
-  archive:  { finished: true, outcome_folders: true }
-  software: { software: true }
+  research: { label: Research }
+  personal: { label: Personal }
+  software: { label: Software }
+
+
+# The tiers the audit's research rules leave alone (the one-README standard, the results, datasets and ELI5 of work in flight, the venue and the website's publications), and whose projects the Pillars view's Orphans card leaves out: `skip_tiers`.
+research_audit: { skip_tiers: [personal] }
+
+
+# The user's roles on a project or a collection entry, highest first. A row's `field` is a field of the record that lists people by their key: the user's role is the first row whose field holds the person the workspace setting `self` names, else the row without a field (`other`) when the record names people in any of these fields, and a record naming no one has no role. A board's `role:` in layout.yml names the roles it takes; a board, and a collection whose `schema:` declares one of the fields, draws a Role facet of every row, a Lead badge on a record whose `lead` holds the user and a Mine only toggle, which keeps a record whose fields hold the user or that names no one. With no `self`, no role is read.
+roles:
+  - { key: lead,         label: Lead,         field: lead }
+  - { key: supervisor,   label: Supervisor,   field: supervisors }
+  - { key: collaborator, label: Collaborator, field: collaborators }
+  - { key: other,        label: Other }
+
+
+# The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its card sections, its category facet and the counts of its tab. A row without `color` is drawn in the colour of the first stage of `stages:` its `stages:` block takes, and a row with neither is a finding. The flags:
+# - `record`: the row is a record of the work's output.
+# - `rail`: a board gives the rail the count of its projects in such rows, in the colour of the first such row.
+# - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card and a pillar's and a domain's members leave it out.
+categories:
+  - { key: in-review,     label: "in review",     stages: { words: [submitted] }, record: true }
+  - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, record: true, rail: true }
+  - { key: idea,          label: idea,            stages: { words: [nascent, scoping] } }
+  - { key: publications,  label: publications,    stages: { words: [published] }, forms: { words: [journal, conference] }, color: "#db2777", record: true }
+  - { key: other-outputs, label: "other outputs", stages: { words: [published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea", record: true }
+  - { key: released,      label: released,        stages: { words: [released] } }
+  - { key: dead-ends,     label: dead-ends,       stages: { flags: [dead] }, color: "#9ca3af", archival: true }
 
 
 # The section of the website's publication feed a project is expected in, for the audit of that feed: the first row whose `stages` holds the project's stage and whose `forms` holds its form gives its `kind`, the sections it may sit in; a row without `stages` or without `forms` places no condition on that side, so the last row catches every project.
@@ -228,11 +242,6 @@ publication_kinds:
   - { kind: [conference],            forms: [conference] }
   - { kind: [journal, other-publications], forms: [journal] }
   - { kind: [abstracts, conference, journal, other-publications, posters, thesis] }
-
-
-# The chip words the audit's status guardrails read: `author_chips`, one of which marks the author role on finished or contributed work.
-lifecycle:
-  author_chips: [lead, coauthor]
 
 
 # Dataset access -> chip colour.

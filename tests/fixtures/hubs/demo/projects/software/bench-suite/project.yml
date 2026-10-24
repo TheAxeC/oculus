@@ -1,6 +1,7 @@
 title: "bench-suite"
 tier: software
 stage: released
+lead: [dana-example]
 eli5: "Reproducible benchmark harness (finished, archived after the paper shipped)"
 tags: [benchmark, reproducibility, python]
 related: [early-benchmark]

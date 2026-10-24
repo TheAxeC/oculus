@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { isMap } from '../../../helpers/guards.ts';
 import { hubFolderIn } from '../../../helpers/files/paths.ts';
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
-import { TIERS, folderOf, inScan } from '../../../helpers/hub-names.ts';
+import { folderOf, inScan } from '../../../helpers/hub-names.ts';
 import { readOr, rowsShape } from '../../../shapes/shapes.ts';
-import type { Finding, ScanRule, Tier } from '../../../model/index.ts';
+import type { Finding, ScanRule } from '../../../model/index.ts';
 
 /** The keys a `scan:` entry takes. */
 const SCAN_KEYS = ['dir', 'optional'];
@@ -94,15 +94,17 @@ export function pictureFolderFindings(
 /**
  * The `new_project_dir:` value read as the folder a new project of each tier is made in, with a
  * finding naming the key of every entry that is not used: a value that is no map, a key that is not
- * one of the five tiers, a value that is no folder text, and a folder outside every scan folder.
+ * a word of `tiers` (`tiers`, the words of vocab.yml's `tiers:`), a value that is no folder text,
+ * and a folder outside every scan folder.
  */
 export function newProjectDirs(
     value: unknown,
     scan: ScanRule[],
+    tiers: readonly string[],
     file: string,
     text: TextCatalog
-): { dirs: Partial<Record<Tier, string>>; findings: Finding[] } {
-    const dirs: Partial<Record<Tier, string>> = {};
+): { dirs: Partial<Record<string, string>>; findings: Finding[] } {
+    const dirs: Partial<Record<string, string>> = {};
     const findings: Finding[] = [];
     const raise = (id: string, ...args: (string | number)[]): void => {
         findings.push({ file, key: 'new_project_dir', message: findingText(text, id, ...args) });
@@ -113,9 +115,9 @@ export function newProjectDirs(
         return { dirs, findings };
     }
     for (const [key, folder] of Object.entries(value)) {
-        const tier = TIERS.find((one) => one === key);
+        const tier = tiers.find((one) => one === key);
         if (tier === undefined) {
-            raise('findings.manifests.new_project_dir_tier', key, TIERS.join(', '));
+            raise('findings.manifests.new_project_dir_tier', key, tiers.join(', '));
         } else if (typeof folder !== 'string' || folderOf(folder) === '') {
             raise('findings.manifests.new_project_dir_folder', key);
         } else if (

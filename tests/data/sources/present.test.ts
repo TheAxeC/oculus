@@ -142,7 +142,7 @@ describe('the deck reader', () => {
                 'deck: { title: Portfolio }',
                 'groups:',
                 '    pillars:',
-                '        find: { folders: projects/*/*/present, tiers: [projects] }',
+                '        find: { folders: projects/*/*/present, tiers: [research] }',
                 '        slides:',
                 '            - alpha',
                 '            - beta',
@@ -167,8 +167,8 @@ describe('the deck reader', () => {
         const reader = createReader({
             hub: { key: 'hub', dir },
             projects: [
-                project('alpha', 'projects', { domain: 'heart', short: 'Alpha' }),
-                project('beta', 'projects', { domain: 'heart', short: 'Beta' })
+                project('alpha', 'research', { domain: 'heart', short: 'Alpha' }),
+                project('beta', 'research', { domain: 'heart', short: 'Beta' })
             ],
             domains: ['heart'],
             tagTones: { measured: 'green' },

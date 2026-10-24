@@ -1,9 +1,9 @@
 id: failed-quantization
 stage: failed
-tier: archive
+tier: research
 short: Quant-NoGo
 status:
-  chips: [lead]
+  chips: []
 title: Extreme quantization of tensor factors
 lead: [dana-example]
 domain: method

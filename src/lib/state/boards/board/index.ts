@@ -9,12 +9,10 @@ export {
     SESSIONS_LIVE,
     SESSIONS_NONE,
     SESSIONS_RECENT,
-    bucketOf,
     daysUntil,
     firstSentence,
     presetFor,
     setting,
-    softwareTiers,
     venueText
 } from './presets.ts';
 export type {
@@ -30,13 +28,19 @@ export type {
     FacetValue,
     LabelMode,
     QuickFilters,
-    RollupBucket,
     SessionsOf,
     StageCount,
     VenueCount
 } from './presets.ts';
-export { absentDocs, boardItemFor, boardItems, markdownDocNames, newestDocDate } from './items.ts';
-export { facetValues, facets } from './facets.ts';
+export {
+    absentDocs,
+    boardItemFor,
+    boardItems,
+    markdownDocNames,
+    newestDocDate,
+    takeContextOf
+} from './items.ts';
+export { cardSections, facetValues, facets } from './facets.ts';
 export {
     facetHeading,
     filterGroups,
@@ -48,3 +52,4 @@ export type { FilterChoice, FilterGroup } from './filter-menu.ts';
 export { VENUE_WARN, disseminated, humanSize, stageCounts, stats, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';
 export { STALE_LAG, applyFilters, emptyBoardState, isStale, parseBoardState } from './state.ts';
+export { entryRoles } from '../../../data/shapes/boards/roles.ts';

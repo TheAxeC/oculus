@@ -1,6 +1,6 @@
 id: graph-bandits
 stage: in-prep
-tier: projects
+tier: research
 short: Graph-Bandits
 title: Bandit algorithms over evolving graphs
 lead: [dana-example]

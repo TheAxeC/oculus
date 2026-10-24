@@ -7,18 +7,18 @@
     // draws the rest in place.
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
-    // first, then those of its `collaborators:`, without the person the workspace setting `self`
-    // names, each opening the Person view for its own key.
+    // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
+    // person the workspace setting `self` names, each opening the Person view for its own key.
     //
-    // The software kind is the one link between two projects, so its entries open a project tab
-    // rather than a registered view, and its label says which end of the link the card is on: a
-    // paper lists the software that implements it, and a software project lists the papers it
-    // names. The related kind, which every project's card carries, opens a project tab
-    // too, except for an id that no project holds, which is drawn as its tag with no press.
+    // The related kind is the link between two projects, read both ways: the projects a project's
+    // `related:` names and those whose `related:` names it, so a paper lists the software that
+    // implements it and a software project the papers it names. Its entries open a project tab
+    // rather than a registered view, except for an id that no project holds, which is drawn as its
+    // tag with no press.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { softwareTiers, type BoardTag, type LinkedItem } from '$lib/state/boards/board';
+    import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
@@ -26,14 +26,10 @@
 
     const client = useState();
     const {
-        layout: { openView },
-        selectors: { configMap }
+        layout: { openView }
     } = client;
 
-    /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
-    const SOFTWARE = 'software';
-
-    /** The kind of a project's `related:`, whose entries are projects. */
+    /** The kind of a project's `related:` read both ways, whose entries are projects. */
     const RELATED = 'related';
 
     /** The kind whose entries are people, each opening the Person view for its own key. */
@@ -79,19 +75,9 @@
             tags: item.team
         },
         {
-            key: SOFTWARE,
-            label:
-                item.project?.tier !== undefined &&
-                softwareTiers(configMap()).includes(item.project.tier)
-                    ? t('project.card.software_papers')
-                    : t('project.card.software'),
-            glyph: t('project.card.software_glyph'),
-            tags: item.software
-        },
-        {
             key: RELATED,
             label: t('project.card.related'),
-            glyph: t('project.card.software_glyph'),
+            glyph: t('project.card.related_glyph'),
             tags: item.related ?? []
         }
     ]);
@@ -111,8 +97,7 @@
     /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
-        if (kind.key === SOFTWARE || kind.key === RELATED)
-            return () => openView('project', recordState(tag.id, tag.label));
+        if (kind.key === RELATED) return () => openView('project', recordState(tag.id, tag.label));
         if (kind.key === TEAM) return () => openView('person', recordState(tag.id, tag.label));
         if (linkView(kind.key) === '') return null;
         return () => goto(client, linkView(kind.key), tag.label);

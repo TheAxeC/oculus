@@ -48,6 +48,7 @@ function project(id: string, statusLine: string): Project {
         ideas: [],
         lead: [],
         collaborators: [],
+        supervisors: [],
         waitingOn: [],
         followups: [],
         subtasks: []

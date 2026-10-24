@@ -28,7 +28,7 @@ const manifest = (title: string, tier: string): string =>
 
 /** The hub's own files: one project in a scan folder and one in `side-projects`. */
 const HUB_FILES: Record<string, string> = {
-    'projects/ideas/spark/project.yml': manifest('Spark', 'projects'),
+    'projects/ideas/spark/project.yml': manifest('Spark', 'research'),
     'side-projects/site/.oculus/project.yml': manifest('Site', 'personal')
 };
 

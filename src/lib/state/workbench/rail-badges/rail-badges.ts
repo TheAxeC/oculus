@@ -43,15 +43,6 @@ export function countRow(config: Record<string, unknown>, view: string): CountRo
     };
 }
 
-/** The project fields a board's groups read. */
-export type BadgeProject = { stage?: string; form?: string; chips: string[] };
-
-/** One group of a board's `groups`, before its colour is resolved to a theme tone. */
-export type BadgeBucket = { label: string; keys: string[]; color: string };
-
-/** One count of a board's groups, carrying the group's words and its configured colour. */
-export type RollupCount = { count: number; label: string; color: string };
-
 /**
  * Count the collection entries whose `fields.status`, trimmed and in lower case, is one of the
  * statuses of `match` (its `counts` row's, already in that form).
@@ -89,23 +80,6 @@ export function linkedinOverdue(
     if (cadenceDays === null) return false;
     const days = daysSince(lastPost, now);
     return days !== null && days > cadenceDays;
-}
-
-/**
- * Count each project in the first group whose keys hold its stage, its form or one of its chips.
- */
-export function rollup(projects: BadgeProject[], buckets: BadgeBucket[]): RollupCount[] {
-    const counts = buckets.map(() => 0);
-    for (const project of projects) {
-        const values = new Set([project.stage, project.form, ...project.chips]);
-        const at = buckets.findIndex((bucket) => bucket.keys.some((key) => values.has(key)));
-        if (at >= 0) counts[at] += 1;
-    }
-    return buckets.map((bucket, at) => ({
-        label: bucket.label,
-        count: counts[at],
-        color: bucket.color
-    }));
 }
 
 /** Badge text, with zero represented by the empty string no badge draws. */

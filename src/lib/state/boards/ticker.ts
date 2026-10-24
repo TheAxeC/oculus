@@ -156,7 +156,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const warn = venueWarn(config);
     const labelMode = config.focus_label_mode;
     const projects = Object.values(snapshot.entities.projects);
-    const boardProjects = projects.filter((one) => hasWord(config, 'tiers', 'main', one.tier));
+    const liveProjects = projects.filter((one) => hasWord(config, 'stages', 'live', one.stage));
     const collections = snapshot.entities.collections;
     const sources = tickerSources(config);
     const categories = tickerCategories(config);
@@ -464,9 +464,9 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         followups,
         subtasks: subtasks.filter((one) => one.days !== null),
         tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
-        venueLoad: venueLoad(boardProjects, snapshot.entities.venues, warn),
+        venueLoad: venueLoad(liveProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
-        behind: manifestsBehind(boardProjects, config),
+        behind: manifestsBehind(liveProjects, config),
         unplaced: unplacedRow(unplaced(projects, config))
     };
 }

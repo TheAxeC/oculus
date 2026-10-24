@@ -265,7 +265,8 @@ export type NoticeSink = {
 
 /**
  * The fields of a new project as the new-project form sends them: its id, the words it starts
- * with, and the tier and the folder of the board that sent it.
+ * with, the tier and the folder of the board that sent it, and the field the manifest names the
+ * user in with the user's key (state/boards/board/new-project.ts).
  */
 export type NewIdeaFields = {
     id: string;
@@ -275,6 +276,8 @@ export type NewIdeaFields = {
     eli5?: string;
     tier?: string;
     folder?: string;
+    role_field?: string;
+    self?: string;
 };
 
 /** The page's end of the write endpoint, one per client. */

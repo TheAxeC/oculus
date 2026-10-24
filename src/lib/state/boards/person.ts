@@ -1,7 +1,7 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
 // entry, the organisations they are affiliated to, the joint work that names them, the projects of
-// whose team they are (whose `lead:` or `collaborators:` name them), the projects whose
-// `waiting-on:` names them, and a student's supervision folder.
+// whose team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
+// whose `waiting-on:` names them, and a student's supervision folder.
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -22,7 +22,7 @@ export type PersonJoin = {
     organisations: Organisation[];
     /** The joint-work entries whose `person:` names this person, in the file's order. */
     jointWork: Entry[];
-    /** The projects whose `lead:` or `collaborators:` name this person, by project id. */
+    /** The projects whose `lead:`, `collaborators:` or `supervisors:` name this person. */
     projects: Project[];
     /** The projects whose `waiting-on:` names this person, by project id. */
     waitingOn: Project[];

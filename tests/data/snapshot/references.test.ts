@@ -270,15 +270,14 @@ const ROWS: Row[] = [
             'defaults/layout.yml': [
                 'boards:',
                 '  projects:',
-                '    groups:',
-                '      - { label: in progress, keys: [manuscript], color: "#16a34a" }',
+                '    stages: { words: [manuscript] }',
                 ''
             ].join('\n')
         },
         kind: 'definition',
         key: 'manuscript',
         targets: ['engine:catalogs/vocab.yml:5'],
-        references: ['engine:defaults/layout.yml:3:37']
+        references: ['engine:defaults/layout.yml:2:22']
     },
     {
         name: "a deck group's slide, a project id",
@@ -541,7 +540,9 @@ type Where = 'unsaved' | 'primary' | 'other folder' | 'no folder';
 /** The workspace file's place under its hub. */
 const WORKSPACE = '.oculus/workspaces/team.yml';
 
-/** The workspace of a row: the hub folders `hub` (the primary) and `lab`, its file where it says. */
+/**
+ * The workspace of a row: the hub folders `hub` (the primary) and `lab`, its file where it says.
+ */
 function workspaceAt(where: Where): Workspace {
     const base = scratchDir('oculus-workspace-index-');
     const hub = plantHubFolder(join(base, 'hub'));

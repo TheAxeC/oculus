@@ -8,9 +8,11 @@ import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
 import { focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
-import { wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { skippedTiers, wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
+import { boardsTaking, takeContext } from '../../../data/shapes/boards/takes.ts';
 import type { Holders } from '../../../data/helpers/hub-names.ts';
-import type { AuditFinding, Collection, Domain, Project } from '../../../data/model/index.ts';
+import type { AuditFinding, Collection, Domain, Id, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
@@ -31,8 +33,6 @@ export type AuditRules = {
     waitingStatus: Set<string>;
     /** The website's publication feed, hub-relative; the empty string means there is none. */
     publicationsFile: string;
-    /** The stages an archived project is filed under, the stages carrying `archive_outcome`. */
-    archiveOutcomes: Set<string>;
     /**
      * The stages of work in flight, asked for results and a dataset: the stages carrying `live`.
      */
@@ -41,21 +41,22 @@ export type AuditRules = {
     placedStages: Set<string>;
     /** The stages the one-README standard covers, the stages carrying `standard`. */
     standardStages: Set<string>;
-    /** The tiers of finished or contributed work, the tiers carrying `finished`. */
-    finishedTiers: Set<string>;
-    /** The tiers the research rules leave alone, the tiers carrying `personal`. */
-    personalTiers: Set<string>;
+    /** The tiers the research rules leave alone, `research_audit.skip_tiers`. */
+    skipTiers: Set<string>;
+    /** The stages of done or closed work, the stages carrying `terminal`. */
+    terminalStages: Set<string>;
     /**
-     * The tiers whose category folder is the project's outcome, the tiers carrying
-     * `outcome_folders`: a folder named by a stage carrying `archive_outcome` gives that stage.
+     * The chips that put a project on a chip lane of the Focus board, the `chips` of the rows of
+     * `focus_lanes`, which a project at a terminal stage does not carry.
      */
-    outcomeTiers: Set<string>;
+    laneChips: Set<string>;
+    /** The rows of `roles:`, highest first, which a project's role is read by. */
+    roles: Role[];
     /**
-     * The category folders that name a project's stage, by tier: the `stage_folders` of `tiers`.
+     * The ids of the boards of `boards:` that take a project, in the file's order, with the ids
+     * of the people the workspace setting `self` names.
      */
-    stageFolders: Map<string, string[]>;
-    /** The stages that say a project is published, the stages carrying `published`. */
-    publishedStages: Set<string>;
+    boardsOf: (project: Project, self: ReadonlySet<Id>) => string[];
     /** The stages that should have a public entry on the website, the stages carrying `public`. */
     publicStages: Set<string>;
     /** The stages of private negative results, the stages carrying `negative`. */
@@ -64,8 +65,6 @@ export type AuditRules = {
     deadEndStages: Set<string>;
     /** The rows of `publication_kinds`, in the config's order. */
     publicationKinds: PublicationKind[];
-    /** The chips one of which marks the author role, `lifecycle.author_chips`. */
-    authorChips: string[];
 };
 
 /**
@@ -103,11 +102,6 @@ export const namesShape = z
     .union([wordListShape, wordShape.transform((one) => [one])])
     .catch(() => []);
 
-/** The part of the configuration that names the chips a project's lifecycle reads. */
-const lifecycleShape = z.object({
-    author_chips: wordListShape.catch(() => [])
-});
-
 /** A map of any content, answered as it came; `read_limits` is read from its own keys. */
 const readLimitsShape = z.custom<Record<string, unknown>>(isMap);
 
@@ -136,19 +130,13 @@ const publicationKindShape = z
 /** The rows of `publication_kinds` a shape accepts, in the order the file writes them. */
 const publicationKindsShape = keeping(publicationKindShape).catch(() => []);
 
-/** One row of `tiers`, for the folders its `stage_folders` lists; any other row lists none. */
-const stageFoldersRowShape = z
-    .object({ stage_folders: wordListShape.catch(() => []) })
-    .catch({ stage_folders: [] });
+/** One row of `focus_lanes`, for the chips it lists; a row listing none, or no row, lists none. */
+const laneChipsShape = z.object({ chips: wordListShape.catch(() => []) }).catch({ chips: [] });
 
-/** The `stage_folders` of each tier of `tiers`, the tiers that list none left out. */
-function stageFoldersOf(tiers: unknown): Map<string, string[]> {
-    const out = new Map<string, string[]>();
-    for (const [tier, row] of Object.entries(isMap(tiers) ? tiers : {})) {
-        const folders = stageFoldersRowShape.parse(row).stage_folders;
-        if (folders.length > 0) out.set(tier, folders);
-    }
-    return out;
+/** The chips the rows of `focus_lanes` list, each once. */
+function laneChipsOf(lanes: unknown): Set<string> {
+    const rows: unknown[] = Array.isArray(lanes) ? lanes : [];
+    return new Set(rows.flatMap((row) => laneChipsShape.parse(row).chips));
 }
 
 /** `publications_file`: text. */
@@ -168,8 +156,6 @@ export function auditRules(
         const limit = readLimitShape.safeParse(value);
         if (limit.success) readLimits[key] = limit.data;
     }
-    const lifecycle = lifecycleShape.safeParse(config.lifecycle);
-    const chips = lifecycle.success ? lifecycle.data : lifecycleShape.parse({});
     const publications = publicationsFileShape.safeParse(config.publications_file);
     const flagged = (key: string, flag: string): Set<string> =>
         new Set(wordsWith(config, key, flag));
@@ -181,20 +167,18 @@ export function auditRules(
         ),
         waitingStatus: flagged('statuses', 'waiting'),
         publicationsFile: publications.success ? publications.data : '',
-        archiveOutcomes: flagged('stages', 'archive_outcome'),
         liveStages: flagged('stages', 'live'),
         placedStages: flagged('stages', 'placed'),
         standardStages: flagged('stages', 'standard'),
-        finishedTiers: flagged('tiers', 'finished'),
-        personalTiers: flagged('tiers', 'personal'),
-        outcomeTiers: flagged('tiers', 'outcome_folders'),
-        stageFolders: stageFoldersOf(config.tiers),
-        publishedStages: flagged('stages', 'published'),
+        skipTiers: new Set(skippedTiers(config)),
+        terminalStages: flagged('stages', 'terminal'),
+        laneChips: laneChipsOf(config.focus_lanes),
+        roles: rolesOf(config),
+        boardsOf: (project, self) => boardsTaking(project, takeContext(config, self)),
         publicStages: flagged('stages', 'public'),
         negativeStages: flagged('stages', 'negative'),
         deadEndStages: flagged('stages', 'dead_end'),
-        publicationKinds: publicationKindsShape.parse(config.publication_kinds),
-        authorChips: chips.author_chips
+        publicationKinds: publicationKindsShape.parse(config.publication_kinds)
     };
 }
 
@@ -232,8 +216,9 @@ export function signatureOf(
  * What the scan is run over: the hub on disk, its name `root` and whether it is the workspace's
  * primary, its records of the merged snapshot, whose references are resolved across the hubs, the
  * hubs that hold each project key (`held`), which an entry's `related` key resolves against, the
- * rules and the words. The website's publication list belongs to the primary hub and is run over
- * it alone.
+ * ids of the people the workspace setting `self` names, which a project's role and its boards are
+ * read with, the rules and the words. The website's publication list belongs to the primary hub
+ * and is run over it alone.
  */
 export type AuditInput = {
     hub: string;
@@ -242,6 +227,7 @@ export type AuditInput = {
     projects: Project[];
     collections: Collection[];
     held: Holders;
+    self: ReadonlySet<Id>;
     rules: AuditRules;
     catalog: Record<string, string>;
 };
@@ -254,8 +240,13 @@ export function sentence(key: string, ...args: (string | number)[]): Sentence {
     return { key, args };
 }
 
-/** What a rule hands the collector: where the finding is and which catalog sentence says it. */
-export type Raised = Omit<AuditFinding, 'signature' | 'message' | 'hub'> & Sentence;
+/**
+ * What a rule hands the collector: where the finding is and which catalog sentence says it.
+ * `signed` are the arguments the signature reads when they differ from the sentence's, as when a
+ * word of the catalog stands in for a value the record lacks, so rewording that word keeps a mute.
+ */
+export type Raised = Omit<AuditFinding, 'signature' | 'message' | 'hub'> &
+    Sentence & { signed?: readonly (string | number)[] };
 
 /**
  * A collector, so a rule adds a finding without knowing how one is keyed or worded. Every finding
@@ -275,14 +266,14 @@ export function collector(
     const found: AuditFinding[] = [];
     return {
         found,
-        add({ key, args, ...finding }) {
-            const signed = primary ? finding.scope : `${root}:${finding.scope}`;
+        add({ key, args, signed, ...finding }) {
+            const scope = primary ? finding.scope : `${root}:${finding.scope}`;
             found.push({
                 ...finding,
                 hub: root,
                 root: finding.root ?? root,
                 message: findingText(catalog, key, ...args),
-                signature: signatureOf(signed, finding.where, finding.kind, key, args)
+                signature: signatureOf(scope, finding.where, finding.kind, key, signed ?? args)
             });
         }
     };
@@ -303,11 +294,11 @@ export function scopeOf(project: Pick<Project, 'folder' | 'workspaceFolder'>): s
 }
 
 /**
- * Whether a project is of a tier carrying `personal` (the Personal board), which the research
- * rules do not cover.
+ * Whether a project is of a tier `research_audit.skip_tiers` names (with oculus's own vocab.yml,
+ * a personal project), which the research rules do not cover.
  */
 export function isPersonal(project: Pick<Project, 'tier'>, rules: AuditRules): boolean {
-    return project.tier !== undefined && rules.personalTiers.has(project.tier);
+    return project.tier !== undefined && rules.skipTiers.has(project.tier);
 }
 
 /**

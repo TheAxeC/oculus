@@ -1,7 +1,6 @@
 // Layer 2, server. The `portfolio`, `config`, `feeds` and `audit` channels: build once at start,
-// then rebuild and publish whenever a source file changes. This is the kind of hot
-// reload that is identical in development and in production, and the reason the page
-// never polls.
+// then rebuild and publish whenever a source file changes. This is the kind of hot reload that is
+// identical in development and in production, and the reason the page never polls.
 //
 // The whole snapshot is rebuilt on every burst rather than the part that changed. The build of
 // the real hub was measured at 58 to 109 ms over three runs, so a partial rebuild would buy tens
@@ -32,6 +31,7 @@ import {
 } from '../../../data/index.ts';
 import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
 import { holdersOf, rootOf } from '../../../data/helpers/hub-names.ts';
+import { selfOf } from '../../../data/shapes/boards/roles.ts';
 import { buildHubs, withOwnSchemas } from './build.ts';
 import { createChecker } from '../../../data/snapshot/schema/check.ts';
 import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
@@ -781,6 +781,7 @@ export function watchPortfolio(
                             (one) => rootOf(one) === key
                         ),
                         held: holders,
+                        self: selfOf(Object.values(entities.people)),
                         rules: auditRules(settings, domains),
                         catalog: textCatalog(settings)
                     });

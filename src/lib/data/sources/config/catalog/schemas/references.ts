@@ -1,11 +1,11 @@
 // Layer 1, data. The options catalog as the places that name a hub key, for the reference index
 // (data/snapshot/references/): an option or a field of an options family whose `from` names a list
 // of the hub (`domains`, `clusters`, `people`) or a vocabulary list the catalog reads from
-// vocab.yml (`project_stages`, `project_forms`, `tiers`, `status_chips`, `entry_statuses`) is a
-// place a key is written. A defaults file of oculus (config/defaults/) that has such an option is
-// read as a record of those places; a file with none is not read. The open workspace file's
-// `settings:` is read with the places of every such file together, since it keys its settings as
-// they do.
+// vocab.yml (`project_stages`, `project_forms`, `tiers`, `roles`, `status_chips`,
+// `entry_statuses`) is a place a key is written. A defaults file of oculus (config/defaults/) that
+// has such an option is read as a record of those places; a file with none is not read. The open
+// workspace file's `settings:` is read with the places of every such file together, since it keys
+// its settings as they do.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -21,8 +21,9 @@ import { isPairs, withoutKey } from './options.ts';
 
 /**
  * The options catalog's words for a list, as the sources the index follows. A word outside this
- * table (`models`, `rail_pages`, `slide_tags`, which has no list of keys) names no source the index
- * holds, so the places that use it are no references. `entry_statuses`, the words of `statuses`
+ * table (`models`, `rail_pages`, `slide_tags`, which has no list of keys, `stage_flags` and
+ * `chip_flags`, the flags of a vocabulary, which are no keys) names no source the index holds, so
+ * the places that use it are no references. `entry_statuses`, the words of `statuses`
  * with a colour, is followed as every word of `statuses`, since a field after the dot names a flag
  * and a colour is none; the check holds its values to the coloured words.
  */
@@ -33,6 +34,7 @@ const OPTION_SOURCES: Record<string, string | undefined> = {
     project_stages: `${VOCAB_SOURCE}stages`,
     project_forms: `${VOCAB_SOURCE}forms`,
     tiers: `${VOCAB_SOURCE}tiers`,
+    roles: `${VOCAB_SOURCE}roles`,
     status_chips: `${VOCAB_SOURCE}chips`,
     entry_statuses: `${VOCAB_SOURCE}statuses`
 };
@@ -55,23 +57,18 @@ function optionLeaf(spec: Pick<FieldSpec, 'from'>): FieldNode | null {
         : { kind: 'leaf', sources: [], picked: { field: from.field, sources: picked } };
 }
 
-/** The record node of the fields of an options family, a nested family as a list of records. */
+/** The record node of the fields of an options family, a nested family read as a family. */
 function optionRecord(fields: Record<string, FieldSpec>): FieldNode | null {
     const held: Record<string, FieldNode> = {};
     for (const [name, spec] of Object.entries(fields)) {
-        if (spec.fields !== undefined) {
-            const inner = optionRecord(spec.fields);
-            if (inner !== null) held[name] = { kind: 'records', record: inner };
-            continue;
-        }
-        const leaf = optionLeaf(spec);
-        if (leaf !== null) held[name] = leaf;
+        const node = spec.fields === undefined ? optionLeaf(spec) : familyNode(spec);
+        if (node !== null) held[name] = node;
     }
     return recordOf(held);
 }
 
 /** The node of an options family: a list of records, or a map from its `key` to a record. */
-function familyNode(entry: CatalogEntry): FieldNode | null {
+function familyNode(entry: Pick<CatalogEntry, 'fields'>): FieldNode | null {
     const fields = entry.fields ?? {};
     if (!('key' in fields)) {
         const record = optionRecord(fields);

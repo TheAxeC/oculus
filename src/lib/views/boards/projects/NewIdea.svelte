@@ -8,12 +8,18 @@
     type Props = {
         onclose: () => void;
         onsaid: (said: string) => void;
-        tier: string;
+        /** The board's tier, the first word of its `tier:`; none for a board naming no tier. */
+        tier?: string;
+        /**
+         * The board's `role:` keys, which the user is named by in the new manifest; null for a
+         * board naming no `role:`, which names the user in the field of the first row of `roles:`.
+         */
+        roles: readonly string[] | null;
         seed?: { id: string; eli5: string; title?: string };
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, tier, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tier, roles, seed, oncreated }: Props = $props();
 </script>
 
-<NewIdeaForm {onclose} {onsaid} {tier} {seed} {oncreated} />
+<NewIdeaForm {onclose} {onsaid} {tier} {roles} {seed} {oncreated} />

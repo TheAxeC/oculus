@@ -1,7 +1,8 @@
 // Layer 2, client-state tests. The arrangement belongs to the open workspace: it is read once the
-// workspace answer has named the workspace, saved per workspace in the server's `layouts.json`,
-// shown again when the workspace is opened again, carried to the file a Save As makes, and followed
-// through the `state` channel for the open workspace only. Two pages that change it within a second
+// workspace answer has named the workspace, or at once for the workspace the browser tab last
+// loaded, saved per workspace in the server's `layouts.json`, shown again when the workspace is
+// opened again, carried to the file a Save As makes, and followed through the `state` channel for
+// the open workspace only. Two pages that change it within a second
 // keep both changes, the server being the one save turn.
 //
 // Every page is a client over the page state stand-in (tests/fixtures/state-server.ts), which
@@ -11,7 +12,7 @@ import { describe, expect, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import type { ClientState } from '../../../../../src/lib/state/client/context.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
-import type { Pages } from '../../../../../src/lib/state/workbench/layout/index.ts';
+import type { Pages, TabMemory } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { serialiseLayout } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { it } from '../../../../fixtures/scratch.ts';
 import { stateServer, type StateServer } from '../../../../fixtures/state-server.ts';
@@ -36,6 +37,17 @@ function envelopeOf(pages: Pages): unknown {
 function heldText(server: StateServer, identity: string): string | null {
     const held = server.file('layouts')[identity] as { envelope?: unknown } | undefined;
     return held?.envelope === undefined ? null : JSON.stringify(held.envelope);
+}
+
+/** A browser tab's session storage of the case's own, which outlives the tab's reloads. */
+function tabMemory(): TabMemory {
+    const held = new Map<string, string>();
+    return {
+        read: (key) => held.get(key) ?? null,
+        write: (key, value) => {
+            held.set(key, value);
+        }
+    };
 }
 
 /** Let the answers and messages of the writes sent land. */
@@ -114,9 +126,102 @@ describe('the arrangement of each workspace', () => {
 });
 
 describe('the workspace answer', () => {
-    it('reads no arrangement and saves none before it has come', async () => {
+    it('reads no arrangement of another workspace and saves none before it has come', async () => {
         const server = stateServer();
-        const client = server.page();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        server.seed(B, { envelope: envelopeOf(heldPages([pageAround('other', pane(['b']))])) });
+        const memory = tabMemory();
+        const before = server.page(memory);
+        openLayout(before.layout, A);
+        const client = server.page(memory);
+        const envelope = vi.spyOn(client.pageState, 'envelope');
+        client.layout.loadLayout();
+        client.layout.workspaceAnswered({ loading: true, error: '', open: null });
+        client.layout.openPage('Early');
+        await settle();
+        expect(envelope.mock.calls.every(([identity]) => identity === A)).toBe(true);
+        expect(server.sent()).toEqual([]);
+        client.layout.workspaceAnswered({ loading: false, error: '', open: { real: B } });
+        expect(client.layout.pages().map((page) => page.id)).toEqual(['other']);
+        await settle();
+        expect(heldText(server, A)).not.toContain('Early');
+    });
+
+    it('draws the arrangement of the workspace the browser tab last loaded in its first draw', async () => {
+        const server = stateServer();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        const memory = tabMemory();
+        const before = server.page(memory);
+        openLayout(before.layout, A);
+        const client = server.page(memory);
+        client.layout.loadLayout();
+        expect(client.layout.pages().map((page) => page.id)).toEqual(['main']);
+        expect(client.layout.loaded()).toBe(true);
+        client.layout.workspaceAnswered({ loading: false, error: '', open: { real: A } });
+        expect(client.layout.pages().map((page) => page.id)).toEqual(['main']);
+        client.layout.openPage('After the answer');
+        await settle();
+        expect(heldText(server, A)).toContain('After the answer');
+    });
+
+    it('saves a change made before it came once it names the workspace the reload drew', async () => {
+        const server = stateServer();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        const memory = tabMemory();
+        const before = server.page(memory);
+        openLayout(before.layout, A);
+        const client = server.page(memory);
+        client.layout.loadLayout();
+        client.layout.openPage('Before the answer');
+        await settle();
+        expect(server.sent()).toEqual([]);
+        client.layout.workspaceAnswered({ loading: false, error: '', open: { real: A } });
+        await settle();
+        expect(heldText(server, A)).toContain('Before the answer');
+        const record = server.file('writes')[A] as { call: string }[];
+        expect(record.map((entry) => entry.call)).toEqual(['openPage']);
+    });
+
+    it('saves nothing of the workspace the reload drew when it names another', async () => {
+        const server = stateServer();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        const memory = tabMemory();
+        const before = server.page(memory);
+        openLayout(before.layout, A);
+        const client = server.page(memory);
+        client.layout.loadLayout();
+        client.layout.openPage('Before the answer');
+        client.layout.workspaceAnswered({ loading: false, error: '', open: { real: B } });
+        await settle();
+        expect(server.sent()).toEqual([]);
+        expect(heldText(server, A)).not.toContain('Before the answer');
+        expect(heldText(server, B)).toBeNull();
+    });
+
+    it('keeps the change of another page saved to the workspace the reload drew, and its own', async () => {
+        const server = stateServer();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        const memory = tabMemory();
+        const other = server.page(memory);
+        openLayout(other.layout, A);
+        const client = server.page(memory);
+        client.layout.loadLayout();
+        client.layout.openPage('From the reloaded tab');
+        other.layout.openPage('From the other page');
+        await settle();
+        client.layout.workspaceAnswered({ loading: false, error: '', open: { real: A } });
+        await settle();
+        expect(heldText(server, A)).toContain('From the other page');
+        expect(heldText(server, A)).toContain('From the reloaded tab');
+        expect([...labels(client)].sort()).toEqual(
+            ['From the other page', 'From the reloaded tab', 'main'].sort()
+        );
+    });
+
+    it('reads no arrangement and sends nothing before it came in a tab that loaded none', async () => {
+        const server = stateServer();
+        server.seed(A, { envelope: envelopeOf(heldPages([pageAround('main', pane(['a']))])) });
+        const client = server.page(tabMemory());
         const envelope = vi.spyOn(client.pageState, 'envelope');
         client.layout.loadLayout();
         client.layout.workspaceAnswered({ loading: true, error: '', open: null });

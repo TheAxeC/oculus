@@ -30,6 +30,9 @@ import type {
 import { vocabSource } from '../../shapes/vocab-keys.ts';
 import { VOCAB_SOURCE } from './specs.ts';
 
+/** The field of an options family a record of it is named by, and a map holds as its keys. */
+const FAMILY_KEY = 'key';
+
 /** What one scan collects while it walks a document. */
 type Walk = {
     doc: Document;
@@ -175,6 +178,18 @@ function familyFields(spec: Extract<FieldNode, { kind: 'family' }>): Record<stri
     return fields;
 }
 
+/**
+ * The node of the value a map family holds at one key: a leaf whose sources the family's `key`
+ * field picks among takes the source of this key, as a map names its key by the pair's key and
+ * holds no `key` field to read.
+ */
+function valueAt(spec: FieldNode, key: Scalar): FieldNode {
+    if (spec.kind !== 'leaf' || spec.picked?.field !== FAMILY_KEY) return spec;
+    const word = scalar(key.value);
+    const sources = spec.picked.sources;
+    return { kind: 'leaf', sources: Object.hasOwn(sources, word) ? [sources[word]] : [] };
+}
+
 /** An options family: a list of records, or a map from the key to a record or a value. */
 function visitFamily(walk: Walk, node: Node, spec: Extract<FieldNode, { kind: 'family' }>): void {
     if (isSeq(node)) {
@@ -189,7 +204,7 @@ function visitFamily(walk: Walk, node: Node, spec: Extract<FieldNode, { kind: 'f
     for (const pair of pairsOf(node)) {
         if (spec.key?.kind === 'leaf') take(walk, pair.key, spec.key.sources);
         if (spec.value !== undefined) {
-            visit(walk, pair.value, spec.value, node);
+            visit(walk, pair.value, valueAt(spec.value, pair.key), node);
             continue;
         }
         if (spec.record === null) continue;

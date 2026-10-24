@@ -169,13 +169,13 @@ describe('what a folder offers', () => {
         },
         {
             name: 'a folder holding .oculus/project.yml offers neither',
-            files: { 'f/.oculus/project.yml': 'tier: projects\n' },
+            files: { 'f/.oculus/project.yml': 'tier: research\n' },
             folders: [],
             offer: { hub: false, project: false }
         },
         {
             name: 'a folder holding project.yml offers neither',
-            files: { 'f/project.yml': 'tier: projects\n' },
+            files: { 'f/project.yml': 'tier: research\n' },
             folders: [],
             offer: { hub: false, project: false }
         }
@@ -346,7 +346,7 @@ describe('a make', () => {
     });
 
     it('refuses a make the folder does not offer as not-offered, and writes nothing', async () => {
-        const w = world({ 'f/project.yml': 'tier: projects\n', '.oculus/config.yml': '' }, ['g']);
+        const w = world({ 'f/project.yml': 'tier: research\n', '.oculus/config.yml': '' }, ['g']);
         const before = tree(w.ws);
         for (const [action, path] of [
             ['hub', 'f'],
@@ -511,8 +511,8 @@ describe('what the Files view holds of a folder before its menu opens', () => {
     it('carries the marks of each folder in its listing and of each folder of the workspace in the workspaces answer, and the offer they give each folder is the route offer (G32)', async () => {
         const free = planted(
             {
-                'p/project.yml': 'tier: projects\n',
-                'q/.oculus/project.yml': 'tier: projects\n',
+                'p/project.yml': 'tier: research\n',
+                'q/.oculus/project.yml': 'tier: research\n',
                 'h/.oculus/config.yml': ''
             },
             ['a/b', 'h/in']

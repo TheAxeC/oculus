@@ -36,7 +36,7 @@ export type BadgeClient = {
         RailBadgesStore,
         | 'countFlags'
         | 'boardBadge'
-        | 'boardPart'
+        | 'boardRail'
         | 'collectionCount'
         | 'inboxCount'
         | 'applicationsCount'

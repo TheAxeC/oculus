@@ -3,8 +3,9 @@
 
 import { z } from 'zod';
 import type { Project, Venue } from '../../../data/model/index.ts';
+import { categoriesOf, isArchival } from '../../../data/shapes/boards/categories.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
-import { hasWord, wordNumber } from '../../../data/shapes/vocab-keys.ts';
+import { hasWord } from '../../../data/shapes/vocab-keys.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
@@ -28,15 +29,13 @@ export type VenuesState = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /**
- * The projects included in venue use and concentration counts: every project but one of a tier
- * carrying `finished` whose stage carries a `dead` number in `stages`.
+ * The real projects, which the venue use and concentration counts, the Orphans card and the pillar
+ * and domain members read: every project whose category, the first row of `categories:` holding
+ * it, does not carry `archival: true`. A project in no category is real.
  */
 export function realProjects(projects: Project[], config: Record<string, unknown>): Project[] {
-    return projects.filter(
-        (project) =>
-            !hasWord(config, 'tiers', 'finished', project.tier) ||
-            wordNumber(config, 'stages', 'dead', project.stage) === null
-    );
+    const categories = categoriesOf(config);
+    return projects.filter((project) => !isArchival(project, categories, config));
 }
 
 /**

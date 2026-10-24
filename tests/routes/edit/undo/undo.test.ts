@@ -274,7 +274,7 @@ describe('taking a change back', () => {
         {
             name: `${id}: a tier written`,
             id,
-            body: { kind: 'manifest', id: `hub:${id}`, fields: { tier: 'coauthor' } }
+            body: { kind: 'manifest', id: `hub:${id}`, fields: { tier: 'software' } }
         },
         {
             name: `${id}: a stage written`,

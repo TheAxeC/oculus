@@ -351,6 +351,7 @@ export function fieldValues(
         funding: project.fundingIds.map(keyOf),
         lead: project.lead.map(keyOf),
         collaborators: project.collaborators.map(keyOf),
+        supervisors: project.supervisors.map(keyOf),
         related: project.relatedIds.map(keyOf),
         datasets: project.datasetIds.map(keyOf),
         deadline: project.deadline,

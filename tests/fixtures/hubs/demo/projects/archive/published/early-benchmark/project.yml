@@ -1,10 +1,10 @@
 id: early-benchmark
 stage: published
 form: conference
-tier: archive
+tier: research
 short: Early-Bench
 status:
-  chips: [lead]
+  chips: []
 title: An early benchmark for graph representations
 lead: [dana-example]
 collaborators: [c-senior]

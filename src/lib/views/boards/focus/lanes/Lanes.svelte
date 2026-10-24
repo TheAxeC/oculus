@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
-    // the cards on them, and the backlog lane under them, drawn full width. A card is
+    // the cards on them, and the Idea lane under them, drawn full width. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its deadline, what it
     // waits on, its flames and its move menu. Which lane a card sits on and what a move writes are
     // state/boards/focus.ts's laneOf and moveOnto, so a drop and the menu write the same fields.
@@ -21,8 +21,8 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
     import {
-        BACKLOG,
         CLUSTERS,
+        IDEA,
         flamesOf,
         focusLabel,
         laneItems,
@@ -183,9 +183,9 @@
     }
 
     /**
-     * A lane that may not take the dragged project (`movable`), a backlog lane for a project of a
-     * tier without `backlog` among them, leaves the event alone, so the browser refuses the drop
-     * and the lane does not light.
+     * A lane that may not take the dragged project (`movable`), a chip lane for a project at a
+     * `terminal` stage among them, leaves the event alone, so the browser refuses the drop and the
+     * lane does not light.
      */
     function draggedOver(lane: Lane, event: DragEvent): void {
         if (dragging === null || !movable(dragging.project, lane, config)) return;
@@ -269,7 +269,7 @@
     {/if}
 {/each}
 
-{#each lanesIn(board, BACKLOG) as one (one.key)}
+{#each lanesIn(board, IDEA) as one (one.key)}
     <details class="cluster muted" open>
         <summary>
             <Surface inline>

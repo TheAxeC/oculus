@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z976 (2026-10-24, O55's landing, the orchestrator, automode): the people the hub rewrite names where no ruling named them
+
+- Chosen: axel-faes leads every personal and software manifest, every application, every funding entry but ZonMw AI-HCC, every education entry and every event. ZonMw AI-HCC: lead guichelaar, collaborator axel-faes. Graz BCI: lead axel-faes, collaborator van-hulle. axel-faes supervises the four student papers (BTTR-AF, BSA-ECoG, Cirrhosis-CR, ECG-Repr) and is collaborator on every project that carried the `coauthor` chip. ERP Signatures: lead valentina-pergher and axel-faes. linfoot-estimator's collaborators become axel-faes. The Role rows of funding and education are removed, each title or subtitle already naming the role.
+- Not chosen: a course coordinator or a student as lead, who is no person of the registry; leaving a field out, which raises the required-lead finding (the lazy option).
+
+Where it applies: O55's hub rewrite, hub commit f4ef3afb5. Booked in `plan.md` Rulings.
+
 ## Z934 (2026-10-19, O38's /spec, the orchestrator, automode): where Recover keeps a file check
 
 - Chosen: `~/.oculus/recover/<hub>/<key>.checks.json`, one row per file with its size, mtime and the checksum it matched; a row whose size or mtime differs from the file is stale, and the file reads present.

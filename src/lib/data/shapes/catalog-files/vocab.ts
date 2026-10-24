@@ -38,7 +38,7 @@ const laneRow = z
         cluster: text
             .optional()
             .describe(
-                'The group the lane belongs to on the board: now, parked or incubate, drawn as three clusters, or backlog, a lane drawn full width under them that takes only a project of a tier carrying `backlog`.'
+                'The group the lane belongs to on the board: now, parked or incubate, drawn as three clusters, or idea, a lane drawn full width under them that takes a project of any tier at a stage it lists.'
             ),
         stages: z
             .array(text)
@@ -50,7 +50,7 @@ const laneRow = z
             .array(text)
             .optional()
             .describe(
-                "The chips of `chips` that put a project on the lane whatever its stage, compared with its chips as written, which decide before any lane's `stages` do; a move onto the lane adds its first chip."
+                "The chips of `chips` that put a project on the lane whatever its stage, unless its stage carries `terminal`, compared with its chips as written, which decide before any lane's `stages` do; a move onto the lane adds its first chip."
             )
     })
     .refine((row) => {
@@ -82,23 +82,22 @@ const stageWord = z.strictObject({
             "The colour of a project at the stage wherever it is drawn: its board card, the Map, the Present view's project chip."
         ),
     idea: flag(
-        "The idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list an idea of a tier carrying `backlog` that neither the backlog lane nor another lane takes."
+        "The idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`."
     ),
     live: flag(
         "The in-flight group: the audit's rules over in-flight work, the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work."
     ),
-    terminal: flag('The done group, a done or closed outcome; no rule of oculus reads it.'),
+    terminal: flag(
+        'The done group, a done or closed outcome: the cross-link group of done projects, the boards that take or leave out done work by it, quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.'
+    ),
     dead: z
         .number()
         .int()
         .min(1)
         .optional()
         .describe(
-            "A dead outcome, the only kind that is not real work, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order, and a project at the stage on a tier carrying `finished` is left out of a pillar's and a domain's members, a venue's use counts and the cross-link groups. A stage with no number is real work."
+            "A dead outcome, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order. The `dead-ends` row of `categories` takes these stages, and the cross-link groups leave a project at such a stage out."
         ),
-    archive_outcome: flag(
-        'A `stage:` a project is archived with, and the name of its archive/<outcome>/ filing folder; the audit lists an archived project whose `stage:` differs from its folder.'
-    ),
     on_map: flag(
         'A stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.'
     ),
@@ -122,8 +121,7 @@ const stageWord = z.strictObject({
     ),
     new_idea: flag(
         'The stage a new idea is made with: the first stage carrying it is written, and with none the new manifest names no stage.'
-    ),
-    published: flag('The stage the audit expects only on a tier carrying `finished`.')
+    )
 });
 
 /** One form of `forms`: the words and the glyph it is drawn with. */
@@ -191,30 +189,64 @@ const leadStatusWord = z.strictObject({
     )
 });
 
-/** One word of `tiers`: the flags the code reads, each compared with the tier as written. */
+/** One word of `tiers`, a kind of project: the words it is drawn with. */
 const tierWord = z.strictObject({
-    finished: flag(
-        "Finished or contributed work: the audit's rules over finished work, the cross-link group of finished projects, a venue's past papers, the Map's finished members."
-    ),
-    software: flag(
-        "Software projects: a card's and a board's software line, and a board that offers no New project."
-    ),
-    main: flag(
-        "The research board's tier: the venue load of the Command Center and the Inbox, the manifests behind, the projects quick add writes to, and the tier a new project is made in when none is named."
-    ),
-    backlog: flag(
-        "A tier whose `nascent` projects sit in the Focus board's backlog lane, the lane of the cluster `backlog`, which is where a new project of the tier starts."
-    ),
-    personal: flag("Projects the audit's research rules leave alone."),
-    outcome_folders: flag(
-        "A tier whose category folder is its project's outcome: the audit expects a project filed under a folder named by a stage carrying `archive_outcome` to be at that stage."
-    ),
-    stage_folders: z
+    label: text.optional().describe('The words the tier is drawn with in the project form.')
+});
+
+/** The tiers the audit's research rules leave alone. */
+const researchAudit = z.strictObject({
+    skip_tiers: z
         .array(text)
         .optional()
         .describe(
-            "The category folders of a tier that name its project's stage, which the audit expects the project to be at."
+            "The tiers of `tiers` the audit's research rules leave alone and whose projects the Pillars view's Orphans card leaves out."
         )
+});
+
+/** One row of `roles`: its key, its words and the field of a record it is read from. */
+const roleRow = z.strictObject({
+    key: text.describe("The word the role is named by, which a board's `role:` names."),
+    label: text.optional().describe('The words the role is drawn with in the Role facet.'),
+    field: text
+        .optional()
+        .describe(
+            'The field of a project or a collection entry that lists people for this role; the user holds the role when the field holds the person `self` names. A row without a field is the role of a record that names people but not the user.'
+        )
+});
+
+/** A list of the words of a vocabulary map, in a word block. */
+const blockList = (help: string) => z.array(text).optional().describe(help);
+
+/**
+ * A word block of a category: the lists a project's word of one vocabulary map is held against,
+ * each list named holding.
+ */
+const wordBlock = z.strictObject({
+    words: blockList("Words of the map, one of which is the project's."),
+    not_words: blockList("Words of the map none of which is the project's."),
+    flags: blockList("Flags of the map's rows, one of which the project's word carries."),
+    not_flags: blockList("Flags of the map's rows none of which the project's word carries.")
+});
+
+/** One row of `categories`: a category of the boards, the stages and forms it holds, its flags. */
+const categoryRow = z.strictObject({
+    key: text.describe('The word the category is named by, which a board filter stores.'),
+    label: text.optional().describe('The words the category is drawn with.'),
+    color: colour
+        .optional()
+        .describe(
+            'The colour the category is drawn in; absent, the colour of the first stage its `stages` block takes.'
+        ),
+    stages: wordBlock.optional().describe("The block a project's `stage` is held against."),
+    forms: wordBlock.optional().describe("The block a project's `form` is held against."),
+    record: flag("The row is a record of the work's output."),
+    rail: flag(
+        'A board gives the rail the count of its projects in such rows, in the colour of the first.'
+    ),
+    archival: flag(
+        "The Pillars view's Archival band: such a project is no real work, left out of a venue's use counts, the Orphans card and a pillar's and a domain's members."
+    )
 });
 
 /** One row of `publication_kinds`: the sections it gives and the stages and forms it holds to. */
@@ -266,14 +298,6 @@ const scoreDim = z.strictObject({
     field: text.describe('The key of a host of the career file that holds the score.'),
     badge: text.optional().describe("The letters of the score's chip."),
     label: text.optional().describe('The words the chip shows on hover.')
-});
-
-/** The lists of words the audit's lifecycle guardrails read. */
-const lifecycle = z.strictObject({
-    author_chips: z
-        .array(text)
-        .optional()
-        .describe('The chips that mark the author role on finished or contributed work.')
 });
 
 /** config/catalogs/vocab.yml: the controlled vocabularies the boards and the schemas draw from. */
@@ -351,7 +375,24 @@ export const vocabFileShape = z.strictObject({
     tiers: z
         .record(z.string(), tierWord)
         .optional()
-        .describe('The project tiers, each with the flags that say what it decides.'),
+        .describe(
+            "The kinds of project a manifest's `tier` names, each with its words; the first is the tier of a new project whose form names none."
+        ),
+    research_audit: researchAudit
+        .optional()
+        .describe("The tiers the audit's research rules and the Orphans card leave alone."),
+    roles: z
+        .array(roleRow)
+        .optional()
+        .describe(
+            "The user's roles on a project or a collection entry, highest first, each read from a field of the record."
+        ),
+    categories: z
+        .array(categoryRow)
+        .optional()
+        .describe(
+            'The categories a project is filed under on every board: the first row whose blocks it meets.'
+        ),
     publication_kinds: z
         .array(publicationKind)
         .optional()
@@ -359,7 +400,6 @@ export const vocabFileShape = z.strictObject({
             "The sections of the website's publication feed a project is expected in: the first row whose stages and forms match the project gives them."
         ),
     leads_fit: textMap.optional().describe("The colour of a Position Lead's fit chip, by its fit."),
-    lifecycle: lifecycle.optional().describe("The chip words the audit's status guardrails read."),
     data_access: textMap
         .optional()
         .describe("The colour of a dataset's access chip, by its access word."),

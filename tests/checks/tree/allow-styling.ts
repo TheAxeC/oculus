@@ -17,10 +17,6 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/shell/keys/PaletteRow.svelte:90 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/boards/collection/Collection.svelte styles .card of ui/frame/Card.svelte through .cards > .slot > :global(.card)',
-        why: 'the rule at src/lib/views/boards/collection/Collection.svelte:405 reaches into the primitive rather than asking it for the difference'
-    },
-    {
         line: 'views/shared/card/CardDocs.svelte styles .tool of ui/controls/ToolButton.svelte through .doc.human :global(.tool)',
         why: 'the rule at src/lib/views/shared/card/CardDocs.svelte:162 reaches into the primitive rather than asking it for the difference'
     },

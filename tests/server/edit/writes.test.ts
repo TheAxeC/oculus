@@ -667,9 +667,9 @@ const FORM = { id: 'new-idea', title: 'A new idea', eli5: 'what it is' };
 const IDEA_ROWS = [
     {
         name: 'the Projects board, in the hub folder of the tier',
-        fields: { ...FORM, tier: 'projects' },
+        fields: { ...FORM, tier: 'research' },
         parent: 'projects/ideas',
-        manifest: ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('research', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     },
     {
@@ -681,16 +681,16 @@ const IDEA_ROWS = [
     },
     {
         name: 'the Archive board, in a folder the reader typed',
-        fields: { ...FORM, tier: 'archive', folder: 'projects/archive/old' },
+        fields: { ...FORM, tier: 'research', folder: 'projects/archive/old' },
         parent: 'projects/archive/old',
-        manifest: ideaManifest('archive', RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('research', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     },
     {
         name: 'a write that names no tier and no folder, as Lit Watch makes it',
         fields: FORM,
         parent: 'projects/ideas',
-        manifest: ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT),
+        manifest: ideaManifest('research', RESEARCH_STATUS, RESEARCH_NEXT),
         readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
     }
 ];
@@ -727,11 +727,11 @@ describe('adding an idea', () => {
         'writes as the stage of a new idea the one stages: flags new_idea, here $name',
         (row) => {
             const root = wider();
-            const out = createIdea(root, newIdeaOn(row.on), { ...FORM, tier: 'projects' });
+            const out = createIdea(root, newIdeaOn(row.on), { ...FORM, tier: 'research' });
             expect(out.refused).toEqual([]);
             const file = join(root, 'projects/ideas/new-idea/project.yml');
             expect(readFileSync(file, 'utf8')).toBe(
-                ideaManifest('projects', RESEARCH_STATUS, RESEARCH_NEXT, row.stage)
+                ideaManifest('research', RESEARCH_STATUS, RESEARCH_NEXT, row.stage)
             );
         }
     );
@@ -740,17 +740,17 @@ describe('adding an idea', () => {
 
     const REFUSALS = [
         {
-            name: 'an archive project sent with no folder, since the hub names none for the tier',
-            fields: { ...FORM, tier: 'archive' },
+            name: 'a software project sent with no folder, since the hub names none for the tier',
+            fields: { ...FORM, tier: 'software' },
             field: 'folder',
-            reason: 'the hub names no folder for new projects of the tier archive'
+            reason: 'the hub names no folder for new projects of the tier software'
         },
         {
-            name: 'a write with no tier and no folder over a hub that names none for projects',
+            name: 'a write with no tier and no folder over a hub that names none for research',
             fields: FORM,
             config: NONE,
             field: 'folder',
-            reason: 'the hub names no folder for new projects of the tier projects'
+            reason: 'the hub names no folder for new projects of the tier research'
         },
         {
             name: 'an empty folder',
@@ -760,27 +760,27 @@ describe('adding an idea', () => {
         },
         {
             name: 'a folder outside every scan folder',
-            fields: { ...FORM, tier: 'projects', folder: 'elsewhere' },
+            fields: { ...FORM, tier: 'research', folder: 'elsewhere' },
             field: 'folder',
             reason: 'the folder elsewhere is not inside a folder the hub scans for projects'
         },
         {
             name: 'a folder inside an existing project',
-            fields: { ...FORM, tier: 'projects', folder: 'projects/manuscripts/alpha/sub' },
+            fields: { ...FORM, tier: 'research', folder: 'projects/manuscripts/alpha/sub' },
             field: 'folder',
             reason: 'the folder projects/manuscripts/alpha/sub lies inside the project in projects/manuscripts/alpha'
         },
         {
             name: 'a folder that is already there',
-            fields: { ...FORM, id: 'taken', tier: 'projects', folder: 'projects/ideas' },
+            fields: { ...FORM, id: 'taken', tier: 'research', folder: 'projects/ideas' },
             field: 'id',
             reason: 'projects/ideas/taken is already there'
         },
         {
-            name: 'a tier that cannot be made',
-            fields: { ...FORM, tier: 'software' },
+            name: 'a tier that is no word of tiers',
+            fields: { ...FORM, tier: 'nonsense' },
             field: 'tier',
-            reason: 'a new project cannot have the tier software'
+            reason: 'a new project cannot have the tier nonsense'
         }
     ];
 

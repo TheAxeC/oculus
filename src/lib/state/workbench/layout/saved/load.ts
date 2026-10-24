@@ -1,7 +1,8 @@
 // Layer 2, client state. Reading the saved arrangement and following it: the arrangement of the
-// workspace a page is in, read once the workspace answer has named it and again whenever the page
-// moves to another workspace, the arrangement another page or app window saved, and the arrangement
-// the server answered a refused save of this page with. The layout factory holds the reactive
+// workspace a page is in, read by a reload for the workspace the browser tab last loaded, read once
+// the workspace answer has named the workspace and again whenever the page moves to another
+// workspace, the arrangement another page or app window saved, and the arrangement the server
+// answered a refused save of this page with. The layout factory holds the reactive
 // pages and the write path; this part is built beside it, is handed the access object as the parts
 // under open/ are, and reaches what only the factory can set (the pages, and the flags a load
 // changes) through the functions it is given.
@@ -32,18 +33,22 @@ export type LoadSetters = {
 export type Load = {
     /**
      * Let saves through, and start following the arrangement the other pages of the server save
-     * for the open workspace and the saves of this page the server refuses. Nothing is read: the
-     * arrangement is read by `workspaceOpened`, once the page knows which workspace it is in.
+     * for the open workspace and the saves of this page the server refuses. A browser tab that
+     * loaded a workspace before, whose saved arrangement reads, is shown that arrangement at once,
+     * and nothing is saved until the workspace answer names the workspace (`workspaceOpened`), when
+     * a change made before it is saved once; otherwise nothing is read until the answer has come.
      */
     loadLayout: () => void;
     /**
      * The workspace the page is in is `identity` (the real path of the open workspace file, or
-     * `unsaved`). The first call reads that workspace's arrangement and makes it current. A call
-     * that names another workspace saves the pages as they are under the one left, then reads the
-     * arrangement saved for the one opened and makes it current; a workspace that was never opened
-     * gets the default arrangement. A value that fails parseLayout, or an envelope of a version
-     * other than LAYOUT_VERSION, is first kept as the workspace's `unread` copy, since the next
-     * change writes the default over it. A call that names the workspace already open changes
+     * `unsaved`). The first call reads that workspace's arrangement and makes it current; when it
+     * names the workspace a reload presumed, the arrangement shown stays and a change made while it
+     * was presumed is saved then (`select` of storage.ts). A call that names another workspace
+     * saves the pages as they are under the one left, unless that one was only presumed, then reads
+     * the arrangement saved for the one opened and makes it current; a workspace that was never
+     * opened gets the default arrangement. A value that fails parseLayout, or an envelope of a
+     * version other than LAYOUT_VERSION, is first kept as the workspace's `unread` copy, since the
+     * next change writes the default over it. A call that names the workspace already open changes
      * nothing. Returns whether a saved arrangement was restored, which is how a page knows whether
      * it is looking at the default.
      */
@@ -51,8 +56,9 @@ export type Load = {
     /**
      * The workspace answer as the page reads it: `loading` while it is on its way, `error` the
      * words of a failed read, `open` the open workspace file with `real` its path with every link
-     * resolved. Nothing is read before it has come. A first answer that failed names `unsaved`; a
-     * later answer that failed names nothing, so the workspace the page is in stays.
+     * resolved. Nothing is read before it has come but the arrangement a reload presumed. A first
+     * answer that failed names `unsaved`; a later answer that failed names nothing, so the
+     * workspace the page is in stays.
      */
     workspaceAnswered: (answer: {
         loading: boolean;
@@ -100,16 +106,40 @@ export function createLoad(access: LayoutAccess, storage: LayoutStorage, set: Lo
         if (again) set.again();
     }
 
+    /**
+     * Show the saved arrangement of the workspace this browser tab last loaded, when it has one
+     * that reads and no workspace is named yet. One that does not read is left for the workspace
+     * answer, which keeps it as the workspace's `unread` copy.
+     */
+    function presumeCarried(): void {
+        const carried = storage.carried();
+        if (carried === null || storage.identity() !== null) return;
+        const raw = storage.readFor(carried);
+        const parsed = raw === null ? null : parseLayout(raw);
+        if (parsed === null) return;
+        storage.presume(carried);
+        set.clearAttention();
+        set.replace(parsed);
+        set.setFresh(false);
+        set.setLoaded();
+    }
+
     function loadLayout(): void {
         storage.attach();
         unfollow();
         unfollow = storage.follow(takeSaved);
+        presumeCarried();
     }
 
     function workspaceOpened(identity: string): boolean {
         const left = storage.identity();
-        if (left === identity) return !set.fresh();
-        if (left !== null && !set.fresh()) storage.writeFor(left, access.held(), 'workspaceOpened');
+        if (left === identity) {
+            storage.select(identity);
+            return !set.fresh();
+        }
+        if (left !== null && !storage.presumed() && !set.fresh()) {
+            storage.writeFor(left, access.held(), 'workspaceOpened');
+        }
         storage.select(identity);
         const raw = storage.readSaved();
         const parsed = raw === null ? null : parseLayout(raw);
@@ -126,14 +156,17 @@ export function createLoad(access: LayoutAccess, storage: LayoutStorage, set: Lo
         error: string;
         open: { real: string } | null;
     }): void {
-        if (answer.loading || (answer.error !== '' && storage.identity() !== null)) return;
+        const named = storage.identity() !== null && !storage.presumed();
+        if (answer.loading || (answer.error !== '' && named)) return;
         workspaceOpened(answer.open?.real ?? UNSAVED);
     }
 
     function workspaceCarried(identity: string): void {
         const left = storage.identity();
         if (left === identity) return;
-        if (left !== null) storage.writeFor(left, access.held(), 'workspaceCarried');
+        if (left !== null && !storage.presumed()) {
+            storage.writeFor(left, access.held(), 'workspaceCarried');
+        }
         storage.writeFor(identity, access.held(), 'workspaceCarried');
         storage.select(identity);
         set.setFresh(false);

@@ -96,8 +96,8 @@ describe('the write endpoint', () => {
             },
             {
                 field: 'tier',
-                value: 'coauthor',
-                line: (text: string) => text.replace(/^tier: .*$/m, 'tier: coauthor')
+                value: 'personal',
+                line: (text: string) => text.replace(/^tier: .*$/m, 'tier: personal')
             },
             {
                 field: 'stage',

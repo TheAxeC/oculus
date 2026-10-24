@@ -53,10 +53,10 @@ const HUB_FILES: Record<string, string> = {
         'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
     '.oculus/data/people/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
     'projects/ideas/tensor-spark/project.yml':
-        'title: Tensor spark\ntier: projects\nstage: nascent\n',
-    'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\nstage: nascent\n',
+        'title: Tensor spark\ntier: research\nstage: nascent\n',
+    'projects/ideas/beta/project.yml': 'title: Beta\ntier: research\nstage: nascent\n',
     'projects/active/loewner/project.yml':
-        'title: Loewner layers\ntier: projects\nstage: exploring\n'
+        'title: Loewner layers\ntier: research\nstage: exploring\n'
 };
 
 /** A workspace folder's manifest: a personal project with a venue, a collaborator and a link. */
@@ -134,11 +134,11 @@ function plain(...files: [string, string][]): Record<string, string> {
 
 const ROWS: Row[] = [
     {
-        name: 'a scan of the folder above the stages, each manifest with its own tier and stage, a category and no personal map',
+        name: 'a scan of the folder above the stages, each manifest with its own tier and stage and no personal map',
         scan: [{ dir: 'projects' }, { dir: 'side-projects', optional: true }],
         hub: plain(
-            ['projects/x/a/project.yml', 'tier: projects\nstage: nascent\ntitle: A\n'],
-            ['projects/b/project.yml', 'tier: archive\nstage: published\ntitle: B\n'],
+            ['projects/x/a/project.yml', 'tier: research\nstage: nascent\ntitle: A\n'],
+            ['projects/b/project.yml', 'tier: research\nstage: published\ntitle: B\n'],
             [
                 'side-projects/c/project.yml',
                 'tier: personal\nstage: building\ntitle: C\nstatus:\n  chips: []\n'
@@ -148,14 +148,12 @@ const ROWS: Row[] = [
             const { projects } = read.snapshot.entities;
             expect(idsOf(read)).toEqual(withHub('a', 'b', 'c'));
             expect(projects['hub:a']).toMatchObject({
-                tier: 'projects',
+                tier: 'research',
                 stage: 'nascent',
-                category: 'x',
                 folder: 'projects/x/a',
                 file: join(read.at.hub, 'projects/x/a/project.yml')
             });
-            expect(projects['hub:b']).toMatchObject({ tier: 'archive', stage: 'published' });
-            expect(projects['hub:b'].category).toBeUndefined();
+            expect(projects['hub:b']).toMatchObject({ tier: 'research', stage: 'published' });
             expect(projects['hub:c']).toMatchObject({
                 tier: 'personal',
                 stage: 'building',
@@ -165,19 +163,19 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a folder with no manifest as a filing folder with no record of its own, and a project below it',
-        hub: plain(['projects/ideas/d/e/project.yml', 'tier: projects\nstage: nascent\n']),
+        name: 'a folder with no manifest as a folder with no record of its own, and a project below it',
+        hub: plain(['projects/ideas/d/e/project.yml', 'tier: research\nstage: nascent\n']),
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub('e'));
-            expect(read.snapshot.entities.projects['hub:e'].category).toBe('d');
+            expect(read.snapshot.entities.projects['hub:e'].folder).toBe('projects/ideas/d/e');
         }
     },
     {
         name: 'a manifest inside a project as no project, and a link to a project folder not entered',
         hub: plain(
-            ['projects/active/f/project.yml', 'tier: projects\nstage: exploring\n'],
-            ['projects/active/f/code/project.yml', 'tier: projects\nstage: exploring\n'],
-            ['projects/active/f/sub/project.yml', 'tier: projects\nstage: exploring\n']
+            ['projects/active/f/project.yml', 'tier: research\nstage: exploring\n'],
+            ['projects/active/f/code/project.yml', 'tier: research\nstage: exploring\n'],
+            ['projects/active/f/sub/project.yml', 'tier: research\nstage: exploring\n']
         ),
         setup: (at) => {
             symlinkSync(join(at.hub, 'projects/ideas/beta'), join(at.hub, 'projects/ideas/linked'));
@@ -189,8 +187,8 @@ const ROWS: Row[] = [
     {
         name: 'a dot folder and node_modules as folders the walk does not enter',
         hub: plain(
-            ['projects/ideas/.hidden/project.yml', 'tier: projects\nstage: nascent\n'],
-            ['projects/ideas/node_modules/pkg/project.yml', 'tier: projects\nstage: nascent\n']
+            ['projects/ideas/.hidden/project.yml', 'tier: research\nstage: nascent\n'],
+            ['projects/ideas/node_modules/pkg/project.yml', 'tier: research\nstage: nascent\n']
         ),
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub());
@@ -199,8 +197,11 @@ const ROWS: Row[] = [
     {
         name: 'two folders of one name as one project, the first in folder order, and one finding naming both files',
         hub: plain(
-            ['projects/ideas/z/project.yml', 'tier: projects\nstage: nascent\ntitle: First\n'],
-            ['projects/archive/old/z/project.yml', 'tier: archive\nstage: stopped\ntitle: Second\n']
+            ['projects/ideas/z/project.yml', 'tier: research\nstage: nascent\ntitle: First\n'],
+            [
+                'projects/archive/old/z/project.yml',
+                'tier: research\nstage: stopped\ntitle: Second\n'
+            ]
         ),
         check: (read) => {
             const first = join(read.at.hub, 'projects/ideas/z/project.yml');
@@ -215,12 +216,11 @@ const ROWS: Row[] = [
         name: 'a scan entry on a project folder as that one project, its subfolders not read',
         scan: [{ dir: 'projects/x' }],
         hub: plain(
-            ['projects/x/project.yml', 'tier: projects\nstage: exploring\ntitle: X\n'],
-            ['projects/x/sub/project.yml', 'tier: projects\nstage: exploring\n']
+            ['projects/x/project.yml', 'tier: research\nstage: exploring\ntitle: X\n'],
+            ['projects/x/sub/project.yml', 'tier: research\nstage: exploring\n']
         ),
         check: (read) => {
             expect(idsOf(read)).toEqual(['hub:x']);
-            expect(read.snapshot.entities.projects['hub:x'].category).toBeUndefined();
         }
     },
     {
@@ -229,6 +229,24 @@ const ROWS: Row[] = [
         check: (read) => {
             expect(idsOf(read)).toEqual(withHub());
             expect(findingsOn(read, 'id')).toEqual([]);
+        }
+    },
+    {
+        name: 'a manifest whose tier is no word of tiers as a project with no tier and a finding naming the word',
+        hub: plain(['projects/ideas/u/project.yml', 'tier: projects\nstage: nascent\ntitle: U\n']),
+        check: (read) => {
+            expect(read.snapshot.entities.projects['hub:u'].tier).toBeUndefined();
+            const found = findingsOn(read, 'tier', 'projects/ideas/u/project.yml');
+            expect(found).toHaveLength(1);
+            expect(found[0]).toContain('projects');
+        }
+    },
+    {
+        name: 'a manifest with no tier as a project with no tier and a finding on the key',
+        hub: plain(['projects/ideas/n/project.yml', 'stage: nascent\ntitle: N\n']),
+        check: (read) => {
+            expect(read.snapshot.entities.projects['hub:n'].tier).toBeUndefined();
+            expect(findingsOn(read, 'tier', 'projects/ideas/n/project.yml')).toHaveLength(1);
         }
     },
     {
@@ -266,12 +284,12 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a repository whose manifest says coauthor as a project of the coauthor board',
+        name: 'a repository whose manifest says software as a software project',
         entries: entry,
-        manifest: 'title: Alpha\ntier: coauthor\nstage: in-prep\n',
+        manifest: 'title: Alpha\ntier: software\nstage: in-prep\n',
         check: (read) => {
             expect(read.snapshot.entities.projects['hub:alpha']).toMatchObject({
-                tier: 'coauthor',
+                tier: 'software',
                 stage: 'in-prep',
                 workspaceFolder: { root: 'alpha', dir: read.at.repo }
             });
@@ -329,7 +347,7 @@ const ROWS: Row[] = [
     {
         name: 'a hub that scans its own folder as no project of its own, with the projects below it read',
         scan: [{ dir: '.' }],
-        hub: plain(['.oculus/project.yml', 'title: The hub\ntier: projects\nstage: nascent\n']),
+        hub: plain(['.oculus/project.yml', 'title: The hub\ntier: research\nstage: nascent\n']),
         check: (read) => {
             const ids = idsOf(read);
             expect(ids).toEqual(expect.arrayContaining(HUB_IDS));
@@ -380,7 +398,7 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         hub: plain([
             'projects/ideas/alpha/project.yml',
-            'tier: projects\nstage: nascent\ntitle: Hub alpha\n'
+            'tier: research\nstage: nascent\ntitle: Hub alpha\n'
         ]),
         check: (read) => {
             const alpha = read.snapshot.entities.projects['hub:alpha'];
@@ -413,7 +431,7 @@ const ROWS: Row[] = [
         manifest: PERSONAL,
         hub: plain([
             'projects/active/loewner/project.yml',
-            'title: Loewner layers\ntier: projects\nstage: exploring\nrelated: [alpha]\nwaiting-on: [alpha]\n'
+            'title: Loewner layers\ntier: research\nstage: exploring\nrelated: [alpha]\nwaiting-on: [alpha]\n'
         ]),
         check: (read) => {
             expect(findingsOn(read, 'related')).toEqual([]);

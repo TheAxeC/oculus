@@ -17,7 +17,7 @@
 // record by its hub and its key apart, and a page shows the key with the hub chip.
 
 import { isMap } from './guards.ts';
-import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
+import type { Collection, Id, RegistryName, Rooted } from '../model/index.ts';
 
 /** The name of the hub a record was read from: the `root` it carries, the empty name for none. */
 export function rootOf(record: Rooted): string {
@@ -237,12 +237,12 @@ export const DATA_FOLDER = '.oculus/data';
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
 
-/** The five tiers a manifest's `tier` may name, in the order the tier select offers them. */
-export const TIERS: readonly Tier[] = ['projects', 'coauthor', 'archive', 'personal', 'software'];
-
-/** The tier a manifest's `tier` value names, and undefined when it names none of the five. */
-export function tierOf(value: unknown): Tier | undefined {
-    return TIERS.find((one) => one === value);
+/**
+ * The tier a manifest's `tier` value names, one of `tiers` (the words of vocab.yml's `tiers:` in
+ * the merged config), and undefined when it names none of them.
+ */
+export function tierOf(value: unknown, tiers: readonly string[]): string | undefined {
+    return tiers.find((one) => one === value);
 }
 
 /** The folder of a repository that holds its project manifest. */
