@@ -2,7 +2,7 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order (4 steps):
-- O60 (each part of `config/` overridden where it belongs). Waits: its /spec, with O63.
+- O60 (each part of `config/` overridden where it belongs). Waits: Axel's ruling on the display languages' contribution point.
 - O63 (the audit's hub conventions as hub settings). Waits: its /spec, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: its /spec.
 - O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: its /spec.
@@ -11,7 +11,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, the landing commit; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
+- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
 - O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
 - O39 (oculus in its own repository), 2026-10-23, closed by the desktop look C8.
 - O53 (a project's people by person keys), 2026-10-23, 952bd2f2; the hub's people rewrite committed in the hub (c34433e40).

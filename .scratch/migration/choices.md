@@ -4,6 +4,27 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z979 (2026-10-24, O60's /spec, the orchestrator, automode): the display languages' lookup written by hand
+
+- Chosen: the chosen language's word for a key, and the English word where it has none, looked up in oculus's own catalog code.
+- Not chosen: i18next 26.5.8 or svelte-i18n 4.0.1 under oculus's `t()`, a dependency and a second placeholder syntax for a few lines; the cheaper one to write now.
+
+Where it applies: O60's brief, Libraries checked. Booked in `plan.md` Rulings.
+
+## Z978 (2026-10-24, O60's /spec, the orchestrator, automode): how the vocab keys no ruling names merge
+
+- Chosen: the rule of ruling 299 by shape: the maps `palette`, `focus_lane_tones`, `research_audit`, `data_access`, `career_host_status`, `career_score_tones` and `leads_fit` merge by word, `<word>: null` removing one; the lists `publication_kinds`, `venue_categories`, `venue_tiers`, `radar_buckets` and `career_score_dims` are replaced whole.
+- Not chosen: all of them replaced whole, so a hub that changes one colour of `palette` copies 40 rows (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
+## Z977 (2026-10-24, O60's /spec, the orchestrator, automode): the lists of a workspace of several hubs
+
+- Chosen: a record is read under its own hub's values (its stage, form, chips, category, lane and status words); a list drawn over the records of several hubs holds every hub's words, the primary first, each word once with the row of the first hub that holds it; a form for one record offers its own hub's list.
+- Not chosen: the primary's lists alone, a hub's own words drawn as unknown on every shared view (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
 ## Z976 (2026-10-24, O55's landing, the orchestrator, automode): the people the hub rewrite names where no ruling named them
 
 - Chosen: axel-faes leads every personal and software manifest, every application, every funding entry but ZonMw AI-HCC, every education entry and every event. ZonMw AI-HCC: lead guichelaar, collaborator axel-faes. Graz BCI: lead axel-faes, collaborator van-hulle. axel-faes supervises the four student papers (BTTR-AF, BSA-ECoG, Cirrhosis-CR, ECG-Repr) and is collaborator on every project that carried the `coauthor` chip. ERP Signatures: lead valentina-pergher and axel-faes. linfoot-estimator's collaborators become axel-faes. The Role rows of funding and education are removed, each title or subtitle already naming the role.
