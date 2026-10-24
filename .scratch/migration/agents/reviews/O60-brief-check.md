@@ -185,3 +185,31 @@ Usage: a27b945b801bfc89b, claude-opus-5-5, 277337 tokens, 97 tool uses, 12 min 5
 ## Closed
 
 - O60 waits until O63 lands (spec Steps 5, the merge judged not simple on Names 11: O63 changes `workspace-layer.ts`, `rows.ts`, the options shape and catalog reader, `config-value.ts`, `+page.server.ts`, `config/options/appearance.yml`, the `HUB_LIST` comment and the hub-key documents, and adds the `words` control the `categories` options need). Every finding of this report is closed in the brief its next /spec writes from main's head after O63 lands, from the draft kept beside the ledger records; this check is not run again (spec "The brief check" 4).
+- O63 landed (commit 9c42ab10). The brief was written again from main at 9c42ab10, and each finding is closed in it as follows.
+- Names 1: `config-place.ts` is on the write list, and item 7 says it places an option of an options file in a subfolder, `local.yml` still refused; case 17 checks the placement at the unit level.
+- Names 2: `config-value.ts` is on the write list; item 7 says it writes a hub vocab key, and a workspace catalog key, as the inverse of the merge, with no reorder offered for a map merged in oculus's place (Decision 10); its head comment is in item 7's comment list; case 19 checks the write.
+- Names 3: item 4 says the composer and the start read the merged `agents` value through the catalog's parser given a value; `compose.ts`, `pty/routes.ts` and the api agents route are on the write list.
+- Names 4: `+page.server.ts` is on the write list, and item 2 and item 5 name `:62` and `:64`; case 21 checks the first load.
+- Names 5: the reader list is rebuilt on main at 9c42ab10 from four greps plus the three readers no grep reaches, 68 files, inlined under "What is on the tree" and on the write list; item 2 names the installers, the pure helpers called with the record's hub's values, and `feeds.ts:454` with the hub's own bucket accepted; verify item 5 reads each of the 68 and runs the greps again.
+- Names 6: `NewIdeaForm.svelte` is on the write list (inside the 68), with its head comment rewritten (items 2 and 8).
+- Names 7: the six type readers of `HubVocab` and `HubVocabs` outside the 68 are on the write list.
+- Names 8: `config-value.ts:13` is in item 7's comment list; the other places were on the list already.
+- Names 9: holds, nothing to close.
+- Names 10: the localization reader goes in `src/lib/server/machine/apps/routes/` (Decision 15); `merge/` takes at most two new files.
+- Names 11: O63 landed first; the brief reads main after it (`portfolio/portfolio.ts`, 855 lines, no growth; the `words` control; the `HUB_LIST` comment and the hub-key documents as O63 left them).
+- Premises 3, 8, 10, 13, 16 and 18: corrected under "What is on the tree" (the editor schema already validates by the whole-file shape and item 1 makes it accept the removal forms; 68 readers; `fillPlaceholders` imported from `finding-text.ts`; the five `confirm: true` lines and `dontAsk` without one; the O63 bullet gone; case 18 says the hub sets `leads_fit` among the vocab keys).
+- Cases and checks 1, 2 and 3: Z990 splits G126 into G126 to G130, one guarantee each, each Code line naming files and each Test line one file per unit; the rows of cases 8, 9, 11 and 14 go to G124, G8, G64, G39 and G49, and item 9 names them; the brief's "What is on the tree" names G8, G14, G32, G49, G61, G64, G77 and G96.
+- Cases and checks 4: cases 17 and 18 say which part is a unit-level run the report quotes and which is the look on landing.
+- Cases and checks 5: the Report section says the report in the worktree's copy of the ledger is the one file under `.scratch/` the builder writes, as `plan-orchestration` Steps 4 "The builder" gives it.
+- Cases and checks 6: G126 to G130 rest on Z990 (automode), as G124 and G125 did; the entries are added at landing.
+- Cases and checks 7: item 2 says the helpers of `vocab-keys.ts` stay pure and each caller passes the record's hub's values.
+- The question 1 and 2: item 2 has the server ship every hub's values with no primary as with one, and the board lists built from the union; cases 6, 7 and 20 are rows of G127 over the shipped values.
+- The question 3 and 8: closed with Names 3; case 11 asserts the start reads the merged value (a new picker value asked about first).
+- The question 4: case 16 stays as G12's guard over the shipped files.
+- The question 5 and 9: closed with Names 1 and 2; case 19 names the write.
+- The question 6: verify item 5 is the read of the 68 files and every lookup, with the greps run again.
+- The question 7: closed with Names 5.
+- The question 10: closed with Implied 5.
+- The question 11: the verify list now holds verify item 5 over the 68 readers, and every case is a test row or a quoted run.
+- Implied 1: Decision 10 and case 19. Implied 2: Decision 11 and case 19. Implied 3: item 1's last bullet and case 17. Implied 4: Decision 12 and case 20. Implied 5: item 5's last bullet, Decision 13 and case 21. Implied 6: item 5's last bullet names `watch/apps.ts`, on the write list. Implied 7: item 4 and Decision 14, case 22. Implied 8: closed with Names 11.
+- Dictated text 1, 2 and 3: the entries are G126 to G130, one guarantee each; G126 no longer says the workspace's keyed lists come after oculus's; every Code line names files; titles with an apostrophe are double-quoted.

@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z990 (2026-10-24, O60's /spec, the orchestrator, automode): the guarded entries of O60's tests
+
+- Chosen: Five guarded entries in place of Z988's one, G126 the merge by shape, G127 the per-hub words, G128 the added form fields, G129 the workspace agents value, G130 the display language, each with its own files and test file.
+- Not chosen: One entry holding five guarantees, against the list's rule of one entry per guarantee (the lazy option).
+
+Where it applies: O60's brief. Booked in `plan.md` Rulings.
+
 ## Z989 (2026-10-24, O60's /spec, the orchestrator, automode): how a hub removes a category
 
 - Chosen: A hub removes a row of `categories:` with the row `{ key: <key>, removed: true }`, the form a keyed list already uses in the workspace layer; a row naming oculus's key replaces it in place, a new key comes after oculus's rows.
