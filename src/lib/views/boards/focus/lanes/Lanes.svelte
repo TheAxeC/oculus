@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
     // the cards on them, and the Idea lane under them, drawn full width. A card is
-    // lanes/LaneCard.svelte, drawn from what this module works out for it: its deadline, what it
-    // waits on, its flames and its move menu. Which lane a card sits on and what a move writes are
-    // state/boards/focus.ts's laneOf and moveOnto, so a drop and the menu write the same fields.
+    // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
+    // deadline, what it waits on, its flames and its move menu. Which lane a card sits on, which
+    // marks it draws there and what a move writes are state/boards/focus.ts's laneOf, laneMarks and
+    // moveOnto, so a drop and the menu write the same fields.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -26,6 +27,7 @@
         flamesOf,
         focusLabel,
         laneItems,
+        laneMarks,
         laneOf,
         isBlocked,
         lanes,
@@ -224,6 +226,7 @@
             {#each held as project (project.id)}
                 <LaneCard
                     {project}
+                    marks={laneMarks(project, one)}
                     label={focusLabel(project, config.focus_label_mode)}
                     current={cursor === project.id}
                     due={deadline(project)}

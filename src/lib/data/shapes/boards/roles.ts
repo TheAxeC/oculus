@@ -3,8 +3,8 @@
 // workspace setting `self` names, else the first row without a field when the record names people
 // in any role's field, else none. Mine only keeps a record whose role fields hold the user, and a
 // record that names no one. The project boards, the collection views (whose entries name people
-// by key, read with `entryPeople` and `isSelfByKey`), the audit and the New project write read the
-// roles through this module, so a role is decided by one rule.
+// by key, read with `entryPeople` and `isSelfByKey`), the career banner's track record, the audit
+// and the New project write read the roles through this module, so a role is decided by one rule.
 
 import { z } from 'zod';
 import type { Id, Person } from '../../model/index.ts';
@@ -107,12 +107,12 @@ export function selfField(roles: readonly Role[], keys: readonly string[]): stri
 }
 
 /** The people a collection entry names in a field: the keys of its list, or of its one text. */
-function entryPeople(fields: Record<string, unknown>): PeopleOf {
+export function entryPeople(fields: Record<string, unknown>): PeopleOf {
     return (field) => readAs(wordsShape, fields[field]) ?? [];
 }
 
 /** Whether a person a collection entry names, by key, is one of the user's ids. */
-function isSelfByKey(self: ReadonlySet<Id>): (person: string) => boolean {
+export function isSelfByKey(self: ReadonlySet<Id>): (person: string) => boolean {
     const keys = new Set([...self].map(keyOf));
     return (person) => keys.has(keyOf(person));
 }

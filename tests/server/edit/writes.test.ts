@@ -1,5 +1,5 @@
-// What writeManifest does over a hub of its own: the subtask, career host, entry and idea writes
-// beside it. The collection entry writes are writes-collection.test.ts, beside this.
+// What writeManifest does over a hub of its own: the subtask, career, entry and idea writes beside
+// it. The collection entry writes are writes-collection.test.ts, beside this.
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
@@ -17,7 +17,6 @@ import { describe, expect } from 'vitest';
 import {
     createEntry,
     createIdea,
-    writeHost,
     writeFollowup,
     writeManifest,
     writeSubtask,
@@ -39,7 +38,6 @@ import {
     type PersonalWorld,
     tasksPath,
     TASKS,
-    CAREER,
     KEYED,
     plant,
     VENUES,
@@ -302,77 +300,27 @@ describe('writing the follow-up notes of a manifest', () => {
     );
 });
 
-describe('writing one career host', () => {
-    it('sets a status of the vocabulary and refuses one outside it', () => {
-        const root = wider();
-        const out = writeHost(
-            root,
-            'Naesens',
-            'candidate',
-            careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
-            configFor().text
-        );
-        expect(out).toEqual({
-            found: true,
-            changed: ['status'],
-            refused: [],
-            records: [
-                record(
-                    join(root, '.oculus/data/academic/career.yml'),
-                    'Naesens',
-                    'status',
-                    'warm',
-                    'candidate'
-                )
-            ]
-        });
-        expect(readFileSync(join(root, '.oculus/data/academic/career.yml'), 'utf8')).toBe(
-            CAREER.replace('status: "warm"', 'status: "candidate"')
-        );
-        const bad = writeHost(
-            root,
-            'Naesens',
-            'promoted',
-            careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
-            configFor().text
-        );
-        expect(bad.changed).toEqual([]);
-        expect(bad.refused).toEqual([
-            {
-                field: 'status',
-                reason: words(configFor().text, 'server.career.not_a_status', 'promoted')
-            }
-        ]);
-    });
-});
-
 const CAREER_SECTIONS = [
     '# the strategy',
     'title: Career strategy',
     'milestone: Veni 2026',
+    'milestone_date: 2026-09-01',
     'schema:',
     '  - { field: title, type: text }',
     '  - { field: milestone, type: text }',
+    '  - { field: milestone_date, type: date }',
     '  - { field: situation, type: records, open: true, fields: [] }',
-    '  - field: hosts',
-    '    type: records',
-    '    open: true',
-    '    fields:',
-    '      - { field: name, type: text }',
-    '      - { field: status, type: select, options: [warm, candidate] }',
-    '  - field: eligibility',
+    '  - field: order',
     '    type: records',
     '    fields:',
-    '      - { field: caveat, type: text }',
+    '      - { field: task, type: text }',
+    '      - { field: when, type: text }',
     'situation:',
     '  PhD: "May 2023"   # the defence',
     '  Now: "Postdoc"',
-    'hosts:',
-    '  - { name: "Naesens", status: "warm", proposal: "Strong" }',
-    '  - { name: "Moreau", status: "warm", proposal: "Good" }',
-    'eligibility:',
-    '  rule: ["a", "b"]',
-    '  caveat: "once"',
+    'order:',
+    '  - { task: "Veni pre-proposal", when: "1 Sep" }',
+    '  - { task: "ENW-XS", when: "15 Sep" }',
     ''
 ].join('\n');
 
@@ -413,44 +361,44 @@ describe('writing career sections', () => {
         expect(text).toContain('PhD: "May 2023"   # the defence');
         expect(text).toContain('Postdoc since: "Sep 2024"');
         expect(text).not.toContain('Now:');
-        expect(text).toContain('hosts:\n  - { name: "Naesens"');
+        expect(text).toContain('order:\n  - { task: "Veni pre-proposal"');
     });
 
-    it('changes a score column of a host and keeps the other hosts and columns', () => {
+    it('changes the day of one task of the order of work and keeps the other tasks', () => {
         const { root, file } = careerHub();
         const out = writeCareer(
             root,
             {
-                hosts: [
-                    { name: 'Naesens', status: 'warm', proposal: 'Weak' },
-                    { name: 'Moreau', status: 'warm', proposal: 'Good' }
+                order: [
+                    { task: 'Veni pre-proposal', when: '1 Oct' },
+                    { task: 'ENW-XS', when: '15 Sep' }
                 ]
             },
             rules,
             catalog
         );
-        expect(out.changed).toEqual(['hosts']);
+        expect(out.changed).toEqual(['order']);
         expect(readFileSync(file, 'utf8')).toBe(
-            CAREER_SECTIONS.replace('proposal: "Strong"', 'proposal: "Weak"')
+            CAREER_SECTIONS.replace('when: "1 Sep"', 'when: "1 Oct"')
         );
     });
 
-    it('changes the caveat of the eligibility map and keeps its rule', () => {
+    it('changes one fact of the situation and keeps the other with its comment', () => {
         const { root, file } = careerHub();
-        writeCareer(root, { eligibility: { rule: ['a', 'b'], caveat: 'twice' } }, rules, catalog);
+        writeCareer(
+            root,
+            { situation: { PhD: 'May 2023', Now: 'Assistant professor' } },
+            rules,
+            catalog
+        );
         expect(readFileSync(file, 'utf8')).toBe(
-            CAREER_SECTIONS.replace('caveat: "once"', 'caveat: "twice"')
+            CAREER_SECTIONS.replace('Now: "Postdoc"', 'Now: "Assistant professor"')
         );
     });
 
     it('refuses a value of the wrong type for a section and writes nothing', () => {
         const { root, file } = careerHub();
-        const out = writeCareer(
-            root,
-            { hosts: [{ name: 'Naesens', status: 'promoted' }] },
-            rules,
-            catalog
-        );
+        const out = writeCareer(root, { milestone_date: 'soon' }, rules, catalog);
         expect(out.changed).toEqual([]);
         expect(out.refused).toHaveLength(1);
         expect(readFileSync(file, 'utf8')).toBe(CAREER_SECTIONS);

@@ -106,6 +106,7 @@ chips:
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `default_application`: the status of the Applications entry a Position Lead's apply control makes; the first such word is written, and nothing is compared with it.
 # - `default_task`: the status of a task added from the palette; the first such word is written, and nothing is compared with it.
+# - `obtained`: the status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case (`wordFlag`).
 statuses:
   submitted:     { color: "#b45309", deadline_met: true, waiting: true }
   revision:      { color: "#b45309" }
@@ -136,8 +137,8 @@ statuses:
   ongoing:       { color: "#16a34a", closes_deadline: true, live_subtasks: true }
   completed:     { color: "#0ea5e9", closes_deadline: true }
   done:          { color: "#0ea5e9", closes_deadline: true }
-  awarded:       { color: "#16a34a", closes_deadline: true, acknowledged: true }
-  granted:       { color: "#16a34a", closes_deadline: true }
+  awarded:       { color: "#16a34a", closes_deadline: true, acknowledged: true, obtained: true }
+  granted:       { color: "#16a34a", closes_deadline: true, obtained: true }
   contributing:  { color: "#0891b2", closes_deadline: true, acknowledged: true }
   rejected:      { color: "#dc2626", closes_deadline: true }
   "not funded":  { color: "#dc2626", closes_deadline: true }

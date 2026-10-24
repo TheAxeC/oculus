@@ -1,5 +1,5 @@
 // Layer 2, server. Collection entry field edits, insertion, reordering and deletion live here
-// because entry-list changes do not affect subtask or host-status edits.
+// because entry-list changes do not affect subtask edits.
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
 // node test is imported as `isYamlMap`.

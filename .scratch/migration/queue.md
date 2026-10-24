@@ -1,14 +1,14 @@
-In flight (2 of 6 slots in use):
-- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), repair round 1 reviewed with no finding; landing.
+In flight (1 of 6 slots in use):
 - O63 (the audit's hub conventions as hub settings), reviewed 2026-10-24; repair round 1 running.
 
 Queued, in order (1 step):
-- O60 (each part of `config/` overridden where it belongs). Waits: O68's landing, then its /spec from main's head; open item 309 is ruled.
+- O60 (each part of `config/` overridden where it belongs). Next: its /spec from main's head.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O68 (the Focus lane card marks without the two-mark cap, the career banner as ruling 301 says), 2026-10-24, e6512c9a; the hub rewrite on disk, waiting for Axel's word.
 - O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.
 - O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
 - O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.

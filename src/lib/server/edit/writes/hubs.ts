@@ -181,8 +181,9 @@ export function rootedHome(
 }
 
 /**
- * The target for a write that names no record and needs a hub (a new project, a new entry, a feed
- * entry, a host status): the primary's, else, for the page, the first hub of the workspace, and
+ * The target for a write that names no record and needs a hub (the career file, a new project or a
+ * new entry with no root, a lead, a Lit Watch paper and a LinkedIn idea, and `homeNaming` when no
+ * hub holds the collection): the primary's, else, for the page, the first hub of the workspace, and
  * null when the workspace lists no hub, or for an app when it has no primary.
  */
 export function homeOf(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {

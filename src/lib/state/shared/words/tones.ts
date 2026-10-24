@@ -261,10 +261,11 @@ export function chipLabel(chip: string): string {
 }
 
 /**
- * The words a project's status marks draw on a lane card and in the board's list, in order: its
- * stage when the stage's word of `stages` has a glyph, then its form and its chips. Every stage of
- * oculus's own vocab.yml has a glyph; a stage without one, in a hub that names such a stage, gives
- * no mark. A board card draws every stage as its filled chip.
+ * The words of a project's status marks, in order: its stage when the stage's word of `stages` has
+ * a glyph, then its form and its chips. The board's list names them all, and a lane card those its
+ * lane does not say (state/boards/focus.ts `laneMarks`). Every stage of oculus's own vocab.yml has
+ * a glyph; a stage without one, in a hub that names such a stage, gives no mark. A board card draws
+ * every stage as its filled chip.
  */
 export function projectStatusWords(
     stage: string | undefined,

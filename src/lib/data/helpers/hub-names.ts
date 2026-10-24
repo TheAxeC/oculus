@@ -359,9 +359,8 @@ export function offerAlong(
  * reader's bookmarks, the schedules and the machine's apps are kept, the cluster its jobs run on,
  * the files its writing rules skip or let draw arrows, the values its apps' settings hold, the
  * counts its tabs draw, its entry statuses, project chips and Position Lead statuses, and its own
- * words, which oculus ships none of: the career card's host statuses, score axes and score hues,
- * and the fit colours of its Position Leads. Its domains and theme words are its own registry
- * files'.
+ * words, which oculus ships none of: the fit colours of its Position Leads. Its domains and theme
+ * words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -383,9 +382,6 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'statuses', file: 'catalogs/vocab.yml' },
     { key: 'chips', file: 'catalogs/vocab.yml' },
     { key: 'lead_statuses', file: 'catalogs/vocab.yml' },
-    { key: 'career_host_status', file: 'catalogs/vocab.yml' },
-    { key: 'career_score_dims', file: 'catalogs/vocab.yml' },
-    { key: 'career_score_tones', file: 'catalogs/vocab.yml' },
     { key: 'leads_fit', file: 'catalogs/vocab.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },

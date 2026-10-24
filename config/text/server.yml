@@ -48,7 +48,6 @@ text:
             no_map: The career file is no map
             no_parse: The career file does not parse
             no_schema: The career file has no schema, so no section can be written
-            not_a_status: '{0} is not a career host status'
             not_field: "{0} is not a field of the career file's schema"
             schema_key: The key schema is the file's own description of its sections and is not a section
         chat:
@@ -253,8 +252,6 @@ text:
             followup_needs_do: a follow-up note needs a do line
             followup_no_do: a follow-up note with no do line is not a note
             followup_not_flow: the follow-up note is not a one-line flow map
-            host_no_field: the host line has no field to write after
-            host_no_status: the host has no status value
             identity_field: the identity field is what the entry is found by
             key_already_there: '{0} is already a key of the manifest'
             key_no_place: the key has no place in the file
@@ -266,8 +263,6 @@ text:
             map_no_place: the map has no place in the file
             no_entries_to_reorder: the file has no entries to reorder
             no_followup: 'there is no follow-up note {0}'
-            no_host: 'no host named {0}'
-            no_hosts: the file has no hosts list
             no_last_key: the file has no last key to write after
             no_subtask: 'there is no subtask {0}'
             not_a_block_list: '{0} is not a block list'
@@ -523,7 +518,6 @@ text:
             no_collection: 'no collection {0}'
             no_collection_in_hub: 'the hub {0} lists no collection {1}'
             no_entry: 'no entry {0} in {1}'
-            no_host: 'no host named {0}'
             no_hub_part: '{0} names no hub: a write names a record by its hub and its key'
             no_idea_file: The LinkedIn idea file is not on this hub.
             no_leads_feed: The leads feed is not on this hub.

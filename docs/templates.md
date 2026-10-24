@@ -92,7 +92,7 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
 
-# The career file, drawn by Focus's Career strategy panel.
+# The career file, drawn by Focus's Career strategy banner.
 # career_file: .oculus/data/academic/career.yml
 
 # The photo wall's folder, inside the hub.
@@ -157,30 +157,6 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
 # config/defaults/layout.yml. Set here, it replaces oculus's whole map for this hub.
 # counts: {}
-
-# The host pipeline of the Focus board's career card: each status a host of the career file takes,
-# with its glyph name, its words and its colour, in the order the card offers them. `in_flight`
-# marks outreach in progress, `waiting` a status listed in the Awaiting box, and `default` the
-# status of a host the career file gives none. oculus ships none, so a hub without it draws no
-# host status.
-# career_host_status: {}
-#   example:
-#   career_host_status:
-#     awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2", in_flight: true, waiting: true }
-#     candidate: { icon: white, label: candidate, color: "#64748b", default: true }
-
-# The scored axes of a career host: the host key scored, the chip's letters and its hover words.
-# oculus ships none, so a hub without it draws no score chip.
-# career_score_dims: []
-#   example:
-#   career_score_dims:
-#     - { field: proposal, badge: "P", label: proposal }
-
-# The hue of a host's score chip by the tier its score falls in (strong, good, mid or weak); a tier
-# with no hue draws muted.
-# career_score_tones: {}
-#   example:
-#   career_score_tones: { strong: green, good: cyan, weak: red }
 
 # The colour of a Position Lead's fit chip, by its fit.
 # leads_fit: {}
@@ -1272,12 +1248,14 @@ entries:
 
 ### .oculus/data/academic/career.yml
 
-One record of sections, drawn by Focus's Career strategy panel.
+One record of sections, drawn by Focus's Career strategy banner: the title, the goal, the next milestone with its day and the days left to it, the situation and the order of work.
 
 ```yaml
 schema:
-  - { field: title, type: text, help: "Panel title." }
-  - { field: milestone, type: text, help: "One-line milestone." }
+  - { field: title, type: text, help: "Banner title." }
+  - { field: goal, type: text, help: "The position the plan works toward." }
+  - { field: milestone, type: text, help: "The next milestone." }
+  - { field: milestone_date, type: date, help: "The day of the next milestone." }
   - { field: situation, type: records, open: true, help: "Facts, one label and sentence each.", fields: [] }
   - { field: order_note, type: textarea, help: "A note over the order of work." }
   - field: order
@@ -1287,55 +1265,16 @@ schema:
       - { field: task, type: text, required: true, help: "What to do." }
       - { field: when, type: text, help: "When." }
       - { field: note, type: text, help: "A remark." }
-  - field: hosts
-    type: records
-    open: true
-    help: "Host candidates, best first."
-    fields:
-      - { field: name, type: text, required: true, help: "Name." }
-      - { field: inst, type: text, help: "Institution." }
-      - { field: tag, type: text, help: "Field." }
-      - { field: status, type: select, from: vocab.career_host_status, help: "awaiting, warm, candidate, drafted or dropped." }
-      - { field: note, type: textarea, help: "A remark." }
-  - { field: host_criteria, type: tags, help: "What a host has to be." }
-  - field: not_hosts
-    type: records
-    help: "Not hosts, with the reason."
-    fields:
-      - { field: who, type: text, required: true, help: "Who." }
-      - { field: why, type: text, help: "Why not." }
-  - field: eligibility
-    type: records
-    help: "The rule, the shots left, the caveat."
-    fields:
-      - { field: rule, type: tags, help: "Conditions." }
-      - { field: shots, type: tags, help: "Calls left." }
-      - { field: caveat, type: textarea, help: "What to keep in mind." }
-  - field: dropped
-    type: records
-    help: "Dropped options, with the reason."
-    fields:
-      - { field: what, type: text, required: true, help: "The option." }
-      - { field: why, type: text, help: "Why." }
 
 title: Career strategy
+# goal: ""
 # milestone: ""
+# milestone_date: YYYY-MM-DD
 # situation:
 #   Position: "Postdoc until 2027"
 # order_note: ""
 # order:
 #   - { task: "Apply for the fellowship", when: "2026-11", note: "" }
-# hosts:
-#   - { name: "A host", inst: "University", tag: "imaging", status: candidate, note: "" }
-# host_criteria: ["Works on federated learning"]
-# not_hosts:
-#   - { who: "Someone", why: "No overlap" }
-# eligibility:
-#   rule: ["Within 10 years of the PhD"]
-#   shots: ["2026 call"]
-#   caveat: ""
-# dropped:
-#   - { what: "An option", why: "Why it was dropped" }
 ```
 
 ## present.yml

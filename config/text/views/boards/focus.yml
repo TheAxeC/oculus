@@ -5,13 +5,14 @@ text:
         add_followup: + follow-up
         awaiting_response: Awaiting a response
         cards_group: Funding | positions | teaching
-        career_caveat: Caveat
+        career_funding: 'funding obtained: {0}'
         career_glyph: focus
+        career_goal: Goal
         career_heading: Career strategy
+        career_milestone: '{0} ({1})'
         career_next: 'Next: {0}'
-        career_rules: Rules
-        career_score_tip: '{0}: {1}'
-        career_shots: Shots left
+        career_record: Track record
+        career_record_line: '{0}: {1}'
         career_situation: Situation
         cluster_incubate: 'Incubation: idea to project'
         cluster_now: 'Now: do these'
@@ -84,26 +85,20 @@ text:
             word_task: task
             word_teaching: teaching
         days_ago: '{0}d ago'
-        dropped: Dropped
-        eligibility: FWO Senior eligibility
         empty_glyph: circle_empty
         fire_glyph: fire
         fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding
         funding_sub: grant applications
-        host: 'host: {0}'
-        host_pipeline: Host pipeline
         ideas_glyph: idea
         in_days: in {0}d
-        in_flight: '{0} in flight'
         jobs_glyph: scout
         jobs_lane: Job applications
         jobs_sub: positions awaiting outcome
         move_to: Move to
         next: Next
         none: '- none -'
-        not_hosts: Not hosts
         now_glyph: now
         order_of_work: Order of work
         priority_none: No priority
@@ -121,13 +116,13 @@ text:
         teaching_glyph: teaching
         teaching_lane: Teaching & supervision
         teaching_sub: this academic year
+        today: today
         unfold: Unfold {0}
         venue_unset: (venue unset)
         wait_apps: Applications
         wait_blocked: Blocked
         wait_count: '{0} ({1})'
         wait_grants: Grants
-        wait_hosts: Host outreach
         wait_people: Waiting on
         wait_review: Under review
         warn_glyph: warn

@@ -134,7 +134,6 @@ const OPEN_WRITES = [
     'subtask-add',
     'followup',
     'followup-add',
-    'host',
     'new-entry',
     'reorder',
     'delete-entry',

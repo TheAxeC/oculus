@@ -110,10 +110,12 @@ export const VENUES = [
     ''
 ].join('\n');
 
-export const CAREER = [
+/** A career file in the shape the career banner reads. */
+const CAREER = [
     'title: Career',
-    'hosts:',
-    '  - { name: "Naesens", inst: "KU Leuven", status: "warm" }',
+    'goal: "Assistant professor"',
+    'milestone: "FWO Senior"',
+    'milestone_date: "2026-11-17"',
     ''
 ].join('\n');
 

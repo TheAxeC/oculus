@@ -138,7 +138,6 @@
                       label: t('focus.wait_grants'),
                       names: countedNames(strip.grants)
                   },
-                  { key: 'hosts', label: t('focus.wait_hosts'), names: countedNames(strip.hosts) },
                   {
                       key: 'blocked',
                       label: t('focus.wait_blocked'),
@@ -167,7 +166,7 @@
 
 <Pane title={t('views.focus')}>
     <div class="focus" data-instance={instance.id}>
-        <CareerPanel instance={instance.id} onsaid={(text: string) => (said = text)} />
+        <CareerPanel instance={instance.id} {now} />
 
         <CommandCenter
             {week}

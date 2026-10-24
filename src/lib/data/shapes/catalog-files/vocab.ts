@@ -1,7 +1,7 @@
 // Layer 1, data. The whole-file shape of config/catalogs/vocab.yml, the controlled vocabularies
 // the boards and the schemas draw from, with a description on every key at every level. The
-// descriptions say what the file's head comments and readers say each key holds. The career and
-// lead keys are a hub's own, set in its `.oculus/config.yml` and checked by this shape.
+// descriptions say what the file's head comments and readers say each key holds. The lead key
+// `leads_fit` is a hub's own, set in its `.oculus/config.yml` and checked by this shape.
 
 import { z } from 'zod';
 import { colour, flag, text, textMap } from './common.ts';
@@ -168,6 +168,9 @@ const statusWord = z.strictObject({
     ),
     default_task: flag(
         'The status of a task added from the palette: the first word carrying it is written.'
+    ),
+    obtained: flag(
+        "The status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case."
     )
 });
 
@@ -270,19 +273,6 @@ const publicationKind = z.strictObject({
         )
 });
 
-/**
- * One status of the career card's host pipeline: drawn, whether it is outreach in flight, whether
- * the awaiting-a-response box lists it, and whether a host row with no status is at it.
- */
-const hostStatus = z.strictObject({
-    icon: text.optional().describe('The glyph name the status is drawn with.'),
-    label: text.optional().describe('The words the status is drawn with.'),
-    color: colour.optional().describe('The colour the status is drawn in.'),
-    in_flight: flag('Outreach in flight.'),
-    waiting: flag("A status the career card's awaiting-a-response box lists."),
-    default: flag('The status a host row with no `status:` is at.')
-});
-
 /** One stage of the funding pipeline. */
 const fundStage = z.strictObject({
     label: text.describe('The words the stage is drawn with in the Focus Funding column.'),
@@ -291,13 +281,6 @@ const fundStage = z.strictObject({
         .array(text)
         .optional()
         .describe('The statuses of a funding entry that place it in this stage.')
-});
-
-/** One column the career board scores a host by. */
-const scoreDim = z.strictObject({
-    field: text.describe('The key of a host of the career file that holds the score.'),
-    badge: text.optional().describe("The letters of the score's chip."),
-    label: text.optional().describe('The words the chip shows on hover.')
 });
 
 /** config/catalogs/vocab.yml: the controlled vocabularies the boards and the schemas draw from. */
@@ -356,21 +339,6 @@ export const vocabFileShape = z.strictObject({
         .optional()
         .describe(
             'The hue name of the bar of each collection lane of the Focus board: funding, jobs and teaching.'
-        ),
-    career_host_status: z
-        .record(z.string(), hostStatus)
-        .optional()
-        .describe(
-            'The host pipeline of the career card: each status a host of the career file takes, with its glyph, words and colour, in the order the card offers them.'
-        ),
-    career_score_dims: z
-        .array(scoreDim)
-        .optional()
-        .describe('The scored axes of a career host, each drawn as a chip.'),
-    career_score_tones: textMap
-        .optional()
-        .describe(
-            "The hue of a host's score chip by the tier its score falls in (strong, good, mid or weak); a tier with no hue draws muted."
         ),
     tiers: z
         .record(z.string(), tierWord)

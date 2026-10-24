@@ -2,9 +2,10 @@
     // Layer 3, view partial of views/boards/focus/lanes/Lanes.svelte. One card on a lane: the
     // priority flames at its leading edge, its status marks, its name, its deadline, the move menu,
     // and the lines saying what it waits on and what is next. It draws what the lanes hand it and
-    // reads no store: the deadline, the waiting line, the flame count and the menu are the lanes'
-    // rules, and every press is handed back. A project of a hub but the primary carries the hub's
-    // chip after its name, as the Command center's rows and the Projects board's cards do.
+    // reads no store: the marks, the deadline, the waiting line, the flame count and the menu are
+    // the lanes' rules, and every press is handed back. A project of a hub but the primary carries
+    // the hub's chip after its name, as the Command center's rows and the Projects board's cards
+    // do.
     //
     // A card is its own markup rather than ui/frame/Card.svelte: it is a drag handle with a
     // click-to-cycle badge at its leading edge, which is a different thing from the card a board of
@@ -26,15 +27,15 @@
     import { firstSentence } from '$lib/state/boards/board';
     import type { Project } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
-    import {
-        chipGlyphName,
-        chipLabel,
-        statusMarkTone,
-        projectStatusWords
-    } from '$lib/state/shared/words/tones';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
 
     type Props = {
         project: Project;
+        /**
+         * The status marks the card draws, every one in order: the words the lanes work out for the
+         * lane the card is on (state/boards/focus.ts `laneMarks`), each word once.
+         */
+        marks: string[];
         /** The name the card draws, which the lanes work out from `focus_label_mode`. */
         label: string;
         /** Whether the instance's keyboard cursor is on this card. */
@@ -57,6 +58,7 @@
 
     let {
         project,
+        marks,
         label,
         current,
         due,
@@ -73,12 +75,6 @@
 
     /** How much of `next` a card shows. */
     const CARD_NEXT = 130;
-
-    /** How many status marks a card carries; the rest are on the project's own tab. */
-    const CARD_CHIPS = 2;
-
-    /** The status marks: the stage when its word has a glyph, then the form and the chips. */
-    const marks = $derived(projectStatusWords(project.stage, project.form, project.chips));
 </script>
 
 <div
@@ -104,7 +100,7 @@
                 {/each}
             </ToolButton>
         </span>
-        {#each marks.slice(0, CARD_CHIPS) as chip (chip)}
+        {#each marks as chip (chip)}
             <span class="mark">
                 <Tag
                     label={chipLabel(chip)}

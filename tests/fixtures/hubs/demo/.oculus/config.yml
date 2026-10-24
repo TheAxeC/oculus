@@ -35,23 +35,5 @@ slurm:
   resource: utwente
 
 
-# The host pipeline of the Focus board's career card: each status a host of the career file takes, with its glyph name, its words and its colour, in the order the card offers them. `in_flight: true` marks a status counted as outreach in progress, the count of the card's summary; `waiting: true` marks a status listed in the Focus board's awaiting-a-response box; `default: true` marks the status of a host the career file gives no status.
-career_host_status:
-  awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2", in_flight: true, waiting: true }
-  warm:      { icon: fire, label: "warm",            color: "#ea580c", in_flight: true }
-  candidate: { icon: white, label: "candidate",      color: "#64748b", default: true }
-  drafted:   { icon: writing, label: "drafted",      color: "#b45309" }
-  dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
-
-# The scored axes of a host on the career card: `field` is the career file's host key scored, `badge` the chip's letters and `label` its hover words.
-career_score_dims:
-  - { field: proposal,     badge: "P",  label: "proposal" }
-  - { field: ai_fl_clinic, badge: "AF", label: "AI+FL+clinic" }
-  - { field: backing,      badge: "B",  label: "backing" }
-  - { field: after,        badge: "Z",  label: "after / ZAP" }
-
-# The hue a host's score chip is drawn in, by the tier its score falls in (strong, good, mid or weak); a tier with no hue here draws muted.
-career_score_tones: { strong: green, good: cyan, weak: red }
-
 # The colour of a Position Lead's fit chip, by its fit.
 leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }

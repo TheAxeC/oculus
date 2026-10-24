@@ -48,11 +48,6 @@ const CAREER: Career = {
     title: 'Career strategy',
     situation: [],
     order: [],
-    hosts: [],
-    hostCriteria: [],
-    notHosts: [],
-    eligibility: null,
-    dropped: [],
     sections: { milestone: 'Veni' },
     schema: [{ field: 'milestone', type: 'text' }]
 };

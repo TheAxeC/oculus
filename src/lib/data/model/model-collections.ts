@@ -195,34 +195,24 @@ export type FeedData = {
 export type RawFeeds = Feeds;
 
 /**
- * One host of the career file's pipeline. `scores` holds the file's own scoring keys,
- * every key of the host that is not one of the five named above it, so that `career_score_dims`
- * decides which of them a chip is drawn for and this model names none of them.
+ * The career strategy of the career file (`career_file`), which the Focus board's career banner
+ * reads: its title, the goal it works toward, the next milestone with its day, the situation, the
+ * order of work and its note.
  */
-export type Host = {
-    name: string;
-    inst?: string;
-    tag?: string;
-    status: string;
-    scores: Record<string, string | undefined>;
-    /**
-     * The prose under the row, with the `[proposal: ...]` prefix the chips already show removed.
-     */
-    note?: string;
-};
-
-/** The career strategy of the career file (`career_file`), which the Focus board's foot reads. */
 export type Career = {
     title: string;
+    /** The one text of `goal:`, absent when the file gives none or an empty one. */
+    goal?: string;
+    /** The next milestone, the text of `milestone:`, absent when the file gives none. */
     milestone?: string;
+    /**
+     * The day of the next milestone, `milestone_date:` when it is a day written YYYY-MM-DD; absent
+     * when it is not, and whenever the milestone is.
+     */
+    milestoneDate?: string;
     situation: { label: string; value: string }[];
     order: { task: string; when?: string; note?: string }[];
     orderNote?: string;
-    hosts: Host[];
-    hostCriteria: string[];
-    notHosts: { who: string; why?: string }[];
-    eligibility: { rule: string[]; shots: string[]; caveat?: string } | null;
-    dropped: { what: string; why?: string }[];
     /** Every section of the file as it holds it, its `schema:` left out: what the editor edits. */
     sections: Record<string, unknown>;
     /** The file's own `schema:`, one field per section, absent when the file has none. */

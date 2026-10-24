@@ -7,6 +7,8 @@
 // local.yml the route reads, made once per file from the fixture's test.beforeAll.
 //
 // Every case runs in npm test.
+// @module-tag slow: the chat cases write a workspace's index for each hub, which runs past the
+// default timeout when the quick suite runs many files at once.
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';

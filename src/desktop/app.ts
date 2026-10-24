@@ -158,9 +158,9 @@ async function run(
     const pick = createPicker(windows, t, (message) => server?.send(message));
 
     const ses = session.defaultSession;
-    // Every window of the app loads its pages on this session, so the mark rides every request
-    // they make, a reload's included, and tells the server the page is in the app's window, which
-    // starts on `app_theme`; a browser's request never carries it.
+    // Every window of the app loads its pages on the default session, so the mark rides every
+    // request they make, a reload's included, and tells the server the page is in the app's window,
+    // which starts on `app_theme`; a browser's request never carries it.
     ses.setUserAgent(`${ses.getUserAgent()} ${DESKTOP_MARK}`);
     const originOf = (url: string): string => {
         try {

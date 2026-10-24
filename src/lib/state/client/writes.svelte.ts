@@ -380,14 +380,6 @@ export function createWrites(
     }
 
     /**
-     * Move one host of the career file along the pipeline. A status outside the vocabulary is
-     * refused.
-     */
-    async function writeHost(name: string, status: string): Promise<WriteAnswer> {
-        return send({ kind: 'host', name, status });
-    }
-
-    /**
      * Set the changed sections of the career file: each key of `fields` is a section of the
      * file, and a section set to null is removed. A value that does not fit the section's type in
      * the file's own `schema:` is refused with its reason and the other sections are written.
@@ -836,7 +828,6 @@ export function createWrites(
         addSubtask,
         writeFollowup,
         addFollowup,
-        writeHost,
         writeCareer,
         newEntry,
         deleteEntry,

@@ -1,7 +1,8 @@
-# Career strategy (FAKE example data) - surfaces on the Focus "Career strategy" panel. Host pipeline (ranked,
-# with status), the next milestone, order of work, eligibility windows, and dropped options.
+# Career strategy (FAKE example data), drawn by the Focus board's "Career strategy" banner: the goal, the next milestone with its day, the situation and the order of work.
 title: Career strategy
-milestone: "Fellowship application - next window Oct 2026 (draft the concept note by August)."
+goal: "An independent research line at a host university"
+milestone: "Fellowship application"
+milestone_date: "2027-10-15"
 
 situation:
   Stage: "final-year postdoc, building toward an independent line"
@@ -11,24 +12,3 @@ order:
   - { task: "Ship the streaming-anomaly paper", when: "Q3 2026" }
   - { task: "Draft the fellowship concept note", when: "Aug 2026", note: "align with a host lab" }
   - { task: "Line up two reference letters", when: "Sep 2026" }
-
-hosts:
-  - { name: "Rivera Lab", inst: "Northwood University", tag: "streaming systems", status: "warm", proposal: "Strong", ai_fl_clinic: "Strong", backing: "High", after: "Strong", note: "Existing collaboration; would host the fellowship. Strong fit on systems + ML." }
-  - { name: "Meridian Institute", inst: "Meridian", tag: "graph learning", status: "awaiting", proposal: "Good", ai_fl_clinic: "Strong", backing: "Med-high", after: "Good", note: "Emailed about the graph-transfer line; awaiting reply." }
-  - { name: "Coastal AI Center", inst: "Coastal", tag: "robust representations", status: "candidate", proposal: "Good", ai_fl_clinic: "Good", backing: "High", after: "Strong", note: "Second-wave option; strong on robustness." }
-
-host_criteria:
-  - "A lab with no in-house lead on my methods (I fill a gap, not compete)"
-  - "Multi-site or streaming data that my methods fit naturally"
-  - "A PI who backs an independent line after the fellowship"
-
-not_hosts:
-  - { who: "BigCorp Research", why: "no academic track; fellowship needs a host university" }
-
-eligibility:
-  shots: ["Oct 2026", "Oct 2027"]
-  rule: ["within 8 years of the PhD", "at a host institution abroad"]
-  caveat: "the second shot depends on the first outcome - plan for one strong submission"
-
-dropped:
-  - { what: "Industry residency", why: "does not build the independent academic line" }

@@ -43,7 +43,6 @@ text:
         kind_subtask_add: subtask added
         kind_followup: follow-up
         kind_followup_add: follow-up added
-        kind_host: career host
         kind_career: career section
         kind_new_entry: entry added
         kind_reorder: order

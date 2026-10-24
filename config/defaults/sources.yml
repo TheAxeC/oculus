@@ -49,7 +49,7 @@ collections:
 chat_context: [funding, events, education, applications, joint-work, tasks]
 
 
-# Career strategy: the order of work, hosts, eligibility and dropped options live in the career file and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
+# Career strategy: the title, the goal, the next milestone and its day, the situation and the order of work live in the career file and are drawn by the Focus board's Career strategy banner. A funding entry's `statement:` shows on the Funding view.
 career_file: .oculus/data/academic/career.yml
 
 

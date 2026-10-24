@@ -43,7 +43,7 @@ const VENUES =
 const LITERATURE =
     'title: Literature\nschema:\n  - { field: key, type: text, required: true }\n  - { field: title, type: text, required: true }\n  - { field: authors, type: tags }\n  - { field: year, type: text }\n  - { field: doi, type: text }\n  - { field: url, type: text }\n  - { field: source, type: select, options: [search, lit-watch, hand] }\n  - { field: added, type: date }\nentries: []\n';
 
-const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
+const CAREER = 'title: Career\ngoal: "Assistant professor"\n';
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
 const LEADS = `meta: {}
 schema:
@@ -363,17 +363,8 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         }
     );
 
-    it('records a career host, a session override and a feed field', async () => {
+    it('records a session override and a feed field', async () => {
         const into = target();
-        const host = await written(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
-        expect(host[0]).toMatchObject({
-            kind: 'host',
-            file: join(into.hub, '.oculus', 'data', 'academic', 'career.yml'),
-            key: 'Naesens',
-            field: 'status',
-            before: 'warm',
-            after: 'candidate'
-        });
         const session = await written(into, { kind: 'session', id: 'sess-1', hidden: true });
         expect(session[0]).toMatchObject({
             kind: 'session',

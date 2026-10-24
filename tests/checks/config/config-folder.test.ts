@@ -427,19 +427,12 @@ describe("oculus's own config directory", () => {
     it('uses glyph names for every configured icon', () => {
         const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const glyphs = glyphCatalog(config);
-        const hosts = config.career_host_status as Record<string, { icon: string }>;
-        const statuses = config.statuses as Record<string, { icon?: string }>;
-        const icons = [
-            ...Object.values(hosts).map((entry) => entry.icon),
-            ...Object.values(statuses).flatMap((entry) =>
-                entry.icon === undefined ? [] : [entry.icon]
+        const icons = ['stages', 'forms', 'chips', 'statuses'].flatMap((list) =>
+            Object.values((config[list] ?? {}) as Record<string, { icon?: string }>).flatMap(
+                (entry) => (entry.icon === undefined ? [] : [entry.icon])
             )
-        ];
-        expect(
-            Object.entries(hosts)
-                .filter(([, entry]) => !(entry.icon in glyphs))
-                .map(([key]) => key)
-        ).toEqual([]);
+        );
+        expect(icons.length).toBeGreaterThan(0);
         expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });
 
@@ -689,10 +682,10 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 14 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, no tier
+        // 14 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, no tier
         // flag, the 2 keys of a roles row, the 6 keys of a categories row and the 3 keys of a
         // publication_kinds row.
-        expect(keys).toHaveLength(37);
+        expect(keys).toHaveLength(38);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

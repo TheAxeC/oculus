@@ -2,11 +2,13 @@
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The career banner at the top of the
     // board. Its heading is the row the command center and the tasks section draw theirs with
     // (FoldHead.svelte): the fold control, named "Fold Career strategy" or "Unfold Career
-    // strategy", then the career file's title, its next milestone and how many hosts are in flight,
-    // one line cut with an ellipsis. Unfolded, it is the whole panel: the situation, one fact a
-    // row, the next milestone, the order of work, the host pipeline with its status buttons
-    // (CareerHosts.svelte), the criteria, the eligibility rules and what was dropped. A web address
-    // written in a fact, the milestone, a task, a note, a criterion or the caveat is a link
+    // strategy", then the career file's title and its next milestone with its day, one line cut
+    // with an ellipsis (state/boards/career.ts `foldedLine`). Unfolded, it is the whole panel: the
+    // situation, one fact a row, the goal, the next milestone with its day and the days left to it,
+    // the order of work with its note, and the track record, the user's projects counted by each
+    // record row of `categories:` for each role and the funding the user leads that was obtained
+    // (`trackRecord`). Each section is drawn only when it has something. A web address written in
+    // a fact, the goal, the milestone, a task or a note is a link
     // (ui/display/text/LinkedText.svelte).
     //
     // Its Edit control opens the editor of the career file's sections, built from the file's own
@@ -27,11 +29,10 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import CareerHosts from './CareerHosts.svelte';
     import FoldHead from '../FoldHead.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
-    import { hostStatuses, inFlight, scoreDims, summaryOf } from '$lib/state/boards/career';
+    import { daysLeft, foldedLine, trackRecord } from '$lib/state/boards/career';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -47,17 +48,23 @@
     type Props = {
         /** The view instance that keeps the career editor's unsaved edits. */
         instance: string;
-        /** What a write answered, for the one outcome line the board holds. */
-        onsaid: (said: string) => void;
+        /** The moment the board counts from, which the milestone's days left are counted to. */
+        now: number;
     };
 
-    let { instance, onsaid }: Props = $props();
+    let { instance, now }: Props = $props();
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
     const career = $derived(snapshot?.entities.career ?? null);
-    const statuses = $derived(hostStatuses(config));
-    const dims = $derived(scoreDims(config));
+
+    /** The track record, null when no `self` is set or it holds nothing to draw. */
+    const record = $derived(trackRecord(snapshot, config));
+
+    /** The days left to the milestone's day, the empty text when it has none. */
+    const left = $derived(
+        career?.milestoneDate === undefined ? '' : daysLeft(career.milestoneDate, now)
+    );
 
     /** The career file as the editor sees it, null while the file has no schema. */
     const page = $derived(pageNamed(CAREER));
@@ -85,23 +92,6 @@
 
     /** Whether the banner is unfolded; it starts folded. */
     let unfolded = $state(false);
-
-    /**
-     * The one line of the folded banner: the title, the next milestone and how many hosts are in
-     * flight, each part left out when the file gives it nothing.
-     */
-    const summary = $derived.by(() => {
-        if (career === null) return '';
-        const flight = inFlight(career.hosts, config);
-        const milestone = summaryOf(career);
-        return [
-            career.title,
-            milestone === '' ? '' : t('focus.career_next', milestone),
-            flight > 0 ? t('focus.in_flight', flight) : ''
-        ]
-            .filter((part) => part !== '')
-            .join(' | ');
-    });
 </script>
 
 {#snippet section(label: string)}
@@ -112,7 +102,7 @@
     <section class="career" data-surface>
         <FoldHead
             glyph={t('focus.career_glyph')}
-            title={summary}
+            title={foldedLine(career)}
             name={t('focus.career_heading')}
             open={unfolded}
             ontoggle={() => (unfolded = !unfolded)}
@@ -145,11 +135,24 @@
                     </div>
                 {/if}
 
+                {#if career.goal !== undefined}
+                    <p class="goal">
+                        <b>{t('focus.career_goal')}</b>
+                        <LinkedText text={career.goal} />
+                    </p>
+                {/if}
+
                 {#if career.milestone !== undefined}
                     <p class="milestone">
                         <Glyph name={t('project.card.deadline_glyph')} />
                         <b>{t('focus.next')}</b>
                         <LinkedText text={career.milestone} />
+                        {#if career.milestoneDate !== undefined}
+                            <span class="when">{career.milestoneDate}</span>
+                        {/if}
+                        {#if left !== ''}
+                            <Tag label={left} />
+                        {/if}
                     </p>
                 {/if}
 
@@ -174,76 +177,24 @@
                     {/if}
                 {/if}
 
-                {#if career.hosts.length > 0}
+                {#if record !== null}
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.host_pipeline'))}
-                    <CareerHosts {career} {statuses} {dims} {onsaid} />
-                    {#if career.hostCriteria.length > 0}
-                        <ul class="crit">
-                            {#each career.hostCriteria as one, at (`${at}:${one}`)}
-                                <li><LinkedText text={one} /></li>
-                            {/each}
-                        </ul>
-                    {/if}
-                    {#if career.notHosts.length > 0}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render section(t('focus.not_hosts'))}
-                        <div class="chips">
-                            {#each career.notHosts as one (one.who)}
-                                <Tag
-                                    label={one.why === undefined
-                                        ? one.who
-                                        : `${one.who} (${one.why})`}
-                                />
-                            {/each}
-                        </div>
-                    {/if}
-                {/if}
-
-                {#if career.eligibility !== null}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.eligibility'))}
-                    {#if career.eligibility.shots.length > 0}
-                        <p class="sub">{t('focus.career_shots')}</p>
-                        <div class="chips">
-                            {#each career.eligibility.shots as shot, at (`${at}:${shot}`)}
-                                <Tag
-                                    label={shot}
-                                    glyph={t('project.card.deadline_glyph')}
-                                    tone="orange"
-                                />
-                            {/each}
-                        </div>
-                    {/if}
-                    {#if career.eligibility.rule.length > 0}
-                        <p class="sub">{t('focus.career_rules')}</p>
-                        <div class="chips">
-                            {#each career.eligibility.rule as rule, at (`${at}:${rule}`)}
-                                <Tag label={rule} />
-                            {/each}
-                        </div>
-                    {/if}
-                    {#if career.eligibility.caveat !== undefined}
-                        <p class="caveat">
-                            <Glyph name={t('focus.warn_glyph')} />
-                            <b>{t('focus.career_caveat')}</b>
-                            <LinkedText text={career.eligibility.caveat} />
-                        </p>
-                    {/if}
-                {/if}
-
-                {#if career.dropped.length > 0}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.dropped'))}
-                    <div class="chips">
-                        {#each career.dropped as one (one.what)}
-                            <Tag
-                                label={one.why === undefined
-                                    ? one.what
-                                    : `${one.what} (${one.why})`}
-                            />
+                    {@render section(t('focus.career_record'))}
+                    <div class="facts">
+                        {#each record.roles as role (role.key)}
+                            <b>{role.label}</b>
+                            <span>
+                                {#each role.lines as line (line.key)}
+                                    <span class="line">
+                                        {t('focus.career_record_line', line.label, line.count)}
+                                    </span>
+                                {/each}
+                            </span>
                         {/each}
                     </div>
+                    {#if record.funding > 0}
+                        <p class="note">{t('focus.career_funding', record.funding)}</p>
+                    {/if}
                 {/if}
             {/if}
         </div>
@@ -300,24 +251,11 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .sub {
-        margin: 4px 0 0;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-        overflow-wrap: anywhere;
-    }
-
     .note {
         margin: 4px 0 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
         overflow-wrap: anywhere;
-    }
-
-    .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
     }
 
     /* One fact a row: the labels in a column as wide as the widest of them, since a grid column is
@@ -336,17 +274,40 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    /* A fact, a task of the order of work and a criterion are rows of the board, drawn at the
-       ticker row's size and line (ui/display/ticker/Ticker.svelte), with every word in them. */
+    /* A fact, a line of the track record and a task of the order of work are rows of the board,
+       drawn at the ticker row's size and line (ui/display/ticker/Ticker.svelte), with every word in
+       them. */
     .facts span {
         font-size: var(--fs-xs);
         line-height: calc(14px * var(--text-scale, 1));
         overflow-wrap: anywhere;
     }
 
-    .milestone,
-    .caveat {
+    /* Each line of a role's track record stands on its own line in the value column. */
+    .facts .line {
+        display: block;
+    }
+
+    .goal {
         display: flex;
+        align-items: baseline;
+        gap: 5px;
+        margin: 6px 0 0;
+        font-size: var(--fs-md);
+        overflow-wrap: anywhere;
+    }
+
+    .goal b {
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--accent-txt, var(--accent));
+    }
+
+    /* The milestone, its day and the days left wrap onto a further line in a narrow pane. */
+    .milestone {
+        display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         gap: 5px;
         margin: 6px 0 0;
@@ -355,19 +316,11 @@
         border-left: 3px solid var(--c-orange);
         border-radius: var(--input-radius);
         background: var(--chip);
+        font-size: var(--fs-md);
     }
 
-    :global(body.wall) .milestone,
-    :global(body.wall) .caveat {
+    :global(body.wall) .milestone {
         background: transparent;
-    }
-
-    .milestone {
-        font-size: var(--fs-md);
-    }
-
-    .caveat {
-        font-size: var(--fs-md);
     }
 
     .order {
@@ -397,16 +350,5 @@
 
     :global(body.wall) .when {
         background: transparent;
-    }
-
-    .crit {
-        margin: 5px 0 0;
-        padding-left: 16px;
-    }
-
-    .crit li {
-        margin: 2px 0;
-        font-size: var(--fs-xs);
-        line-height: calc(14px * var(--text-scale, 1));
     }
 </style>

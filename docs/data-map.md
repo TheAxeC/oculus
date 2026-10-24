@@ -51,7 +51,7 @@ Each data file is named by its entry in `collections:` of `.oculus/config.yml`, 
 | `leads` | `.oculus/data/academic/leads.yml` | an opening the scout found | `title` | Position Leads |
 | `radar` | `.oculus/data/literature/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
 
-Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
+Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus's career banner, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
 
 A duplicate or empty primary key is a finding. A venue is written by its `name` and linked to by its `id`. The `leads` and `radar` keys name the two feed files. The `domains` file gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates, follow-ups and subtasks of every file of `collections:` and the open leads, and every entry has a page with an editor built from its schema.
 
@@ -59,7 +59,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 | View | Page | Draws |
 |---|---|---|
-| Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career panel |
+| Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career banner |
 | Live HPC | the float at the right edge | the cluster `slurm.resource` names |
 | Projects, Supervision, Coauthor, Archive, Personal, Software | Projects | the projects whose `tier`, `stage` and your role (the field of `roles` that names you: `lead`, `supervisors`, `collaborators`) the board's keys in `boards` take |
 | Project, Editor | opened from a card | one project, and its form |
@@ -99,9 +99,6 @@ counts:               # the counts the tabs draw
 statuses:             # the statuses of collection entries, with their colours and roles
 chips:                # the chips of projects, with their labels and glyphs
 lead_statuses:        # the statuses of Position Leads, with their roles
-career_host_status:   # the career card's host statuses
-career_score_dims:    # the career card's score axes
-career_score_tones:   # the career card's score hues
 leads_fit:            # the fit colours of the Position Leads
 slurm.resource:       # the cluster Live HPC polls
 lint.writing_skip:    # the files the writing rules skip
@@ -150,8 +147,6 @@ venues:
 data:
   access: vocab data_access
   themes: [an option of the themes field]
-career_file:
-  hosts.status: vocab career_host_status
 literature:
   projects: [a project]
   source: search, lit-watch or hand

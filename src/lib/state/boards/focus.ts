@@ -27,7 +27,7 @@ import {
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 export { setting } from './board/index.ts';
-import { toneOf } from '../shared/words/tones.ts';
+import { projectStatusWords, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
 /**
@@ -78,8 +78,6 @@ export type Waiting = {
     grants: string[];
     /** Job applications out for a decision. */
     applications: string[];
-    /** Career hosts emailed and not yet answered. */
-    hosts: string[];
 };
 
 /** One flag of a word of `statuses`, over the status as the data writes it. */
@@ -250,6 +248,23 @@ export function laneOf(
 }
 
 /**
+ * The status marks a project's card draws on a lane: the words of `projectStatusWords`, each word
+ * once in its first place, without the stage when the lane's `stages` is that one stage alone, and
+ * without each chip the lane's `chips` holds, since the lane's head already says those. A lane that
+ * lists two stages (Push) keeps the stage, which tells its cards apart.
+ */
+export function laneMarks(
+    project: Pick<Project, 'stage' | 'form' | 'chips'>,
+    lane: Pick<Lane, 'stages' | 'chips'>
+): string[] {
+    const said = new Set(lane.chips);
+    const stage = project.stage ?? '';
+    if (stage !== '' && lane.stages.length === 1 && lane.stages[0] === stage) said.add(stage);
+    const words = new Set(projectStatusWords(project.stage, project.form, project.chips));
+    return [...words].filter((word) => !said.has(word));
+}
+
+/**
  * What sits on each lane, by lane key: each project on the lane `laneOf` gives it, and on none
  * when it gives none. A lane of the cluster `idea` is sorted by title, every other lane by deadline
  * first and then title.
@@ -361,8 +376,7 @@ export function venueLabel(venue: Venue | undefined): string {
  * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
  * `waiting-on:` value is a people key or another project's id, drawn by waiting.ts. The
  * applications are the entries whose status is in `applications_sent` under `focus:` of
- * config/defaults/behavior.yml, and the hosts those whose status carries `waiting` in the hub's
- * `career_host_status`.
+ * config/defaults/behavior.yml.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -408,10 +422,7 @@ export function waiting(
         .filter((entry) => sent.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => entry.title)
         .sort();
-    const hosts = (snapshot.entities.career?.hosts ?? [])
-        .filter((host) => wordFlag(config, 'career_host_status', host.status, 'waiting'))
-        .map((host) => host.name);
-    return { people: tallies(people), venues: tallies(held), blocked, grants, applications, hosts };
+    return { people: tallies(people), venues: tallies(held), blocked, grants, applications };
 }
 
 /** The entries of one collection of the snapshot, and none when it holds no such file. */

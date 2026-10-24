@@ -517,7 +517,6 @@ export type {
     Entry,
     Feeds,
     FromPicked,
-    Host,
     Lead,
     RawFeeds,
     SchemaField,

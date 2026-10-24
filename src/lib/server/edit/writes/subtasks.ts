@@ -1,7 +1,7 @@
-// Layer 2, server. The line half of the write path, and the two career writes beside it: a subtask
-// line ticked, reopened, snoozed, changed or taken out, a follow-up note changed or taken out, a
-// line of either block added to a host that may have no block yet, one host of the career file
-// moved along its pipeline, and the sections of that file set from the career editor.
+// Layer 2, server. The line half of the write path, and the career write beside it: a subtask line
+// ticked, reopened, snoozed, changed or taken out, a follow-up note changed or taken out, a line of
+// either block added to a host that may have no block yet, and the sections of the career file set
+// from the career editor.
 //
 // The subtask and the follow-up writes run the same line editor (entry-edit/subtasks.ts) over
 // their own block, `subtasks:` or `followup:`, and differ in the actions they take.
@@ -27,7 +27,6 @@ import {
     addSubtask,
     deleteSubtask,
     entryRange,
-    setHostStatus,
     setSections,
     setSubtask,
     subtaskValues
@@ -35,7 +34,6 @@ import {
 import { plain } from '../../core/changes.ts';
 import { words } from '../../core/words.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
-import { mapShape } from '../../../data/shapes/shapes.ts';
 import { manifestSource } from './manifest.ts';
 import { identityOf, readCollection } from '../../files/fs/collections.ts';
 import { saved, typeRefusals } from './entries.ts';
@@ -212,43 +210,20 @@ export function writeSubtaskAdd(
     return { ...out, records: subtaskRecord(host, edit, '', target, block) };
 }
 
-/** Where the career hosts are, and the statuses one may hold. */
-export type CareerRules = { file: string; statuses: string[] };
+/** Where the career file is. */
+export type CareerRules = { file: string };
 
 /**
- * The career file and the host statuses of the merged config. A `career_file` that is not text is
- * oculus's own path of config/defaults/sources.yml, and the statuses are the own keys of a
- * `career_host_status` map in the order written, none for anything else.
+ * The career file of the merged config. A `career_file` that is not text is oculus's own path of
+ * config/defaults/sources.yml.
  */
 const careerRulesShape = z
-    .object({
-        career_file: z.string().catch(() => engineDefaults().career ?? ''),
-        career_host_status: z
-            .pipe(
-                mapShape,
-                z.transform((held) => Object.keys(held))
-            )
-            .catch([])
-    })
-    .transform((held) => ({
-        file: held.career_file,
-        statuses: held.career_host_status
-    })) satisfies z.ZodType<CareerRules>;
+    .object({ career_file: z.string().catch(() => engineDefaults().career ?? '') })
+    .transform((held) => ({ file: held.career_file })) satisfies z.ZodType<CareerRules>;
 
-/** The career file and the host statuses, out of the request's merged config. */
+/** The career file, out of the request's merged config. */
 export function careerRules(merged: Record<string, unknown>): CareerRules {
     return careerRulesShape.parse(merged);
-}
-
-/** The hosts of the career file that are maps, and none for a file that holds no list. */
-const careerHostsShape = z
-    .looseObject({ hosts: z.array(z.unknown()).transform((all) => all.filter(isMap)) })
-    .transform((file) => file.hosts)
-    .catch([]);
-
-/** The host the file names, as the file holds it, or undefined. */
-function careerHost(data: unknown, name: string): Record<string, unknown> | undefined {
-    return careerHostsShape.parse(data).find((one) => one.name === name);
 }
 
 /**
@@ -265,82 +240,6 @@ export function subtaskValue(
     if (host === null) return { found: false, value: null };
     const values = subtaskValues(host.source, host.range, block);
     return { found: true, value: key in values ? values[key] : null };
-}
-
-/** The status one career host holds now, or nothing when the career file names it no more. */
-export function hostStatus(
-    hub: string,
-    name: string,
-    rules: CareerRules
-): { found: boolean; value: unknown } {
-    const file = resolve(join(hub, rules.file));
-    if (!below(file, hub)) return { found: false, value: null };
-    let data: unknown;
-    try {
-        data = parse(readFileSync(file, 'utf8'));
-    } catch {
-        return { found: false, value: null };
-    }
-    const host = careerHost(data, name);
-    if (host === undefined) return { found: false, value: null };
-    return { found: true, value: plain(host.status) };
-}
-
-/**
- * Set one host's status in the career file. A status outside the vocabulary is refused,
- * never written.
- */
-export function writeHost(
-    hub: string,
-    name: string,
-    status: string,
-    rules: CareerRules,
-    text: Record<string, string>
-): WriteOutcome {
-    const file = resolve(join(hub, rules.file));
-    if (!below(file, hub)) return { found: false, changed: [], refused: [] };
-    let source: string;
-    try {
-        source = readFileSync(file, 'utf8');
-    } catch {
-        return { found: false, changed: [], refused: [] };
-    }
-    let data: unknown;
-    try {
-        data = parse(source);
-    } catch {
-        return {
-            found: true,
-            changed: [],
-            refused: [{ field: '', reason: words(text, 'server.career.no_parse') }]
-        };
-    }
-    const host = careerHost(data, name);
-    if (host === undefined) return { found: false, changed: [], refused: [] };
-    if (!rules.statuses.includes(status)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                { field: 'status', reason: words(text, 'server.career.not_a_status', status) }
-            ]
-        };
-    }
-    const out = saved(file, source, setHostStatus(source, name, status, text));
-    if (out.changed.length === 0) return out;
-    return {
-        ...out,
-        records: [
-            {
-                file,
-                key: name,
-                field: 'status',
-                before: plain(host.status),
-                after: status,
-                undo: 'field'
-            }
-        ]
-    };
 }
 
 /** What a read answers for an address that is not there. */

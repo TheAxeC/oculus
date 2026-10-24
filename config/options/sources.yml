@@ -78,7 +78,7 @@ options:
     career_file:
         heading: sources
         section: Registry and feed files
-        help: The career strategy file, whose order of work, hosts, eligibility and dropped routes surface on the Focus board's Career strategy panel. The per-scheme statements surface on the Funding tab.
+        help: The career strategy file, whose title, goal, next milestone with its day, situation and order of work surface on the Focus board's Career strategy banner. The per-scheme statements surface on the Funding tab.
         control: file
     memories_dir:
         heading: sources

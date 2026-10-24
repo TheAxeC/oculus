@@ -1,96 +1,114 @@
-// Layer 2, client state. The career panel's arithmetic: the host statuses and their tones, the
-// score dimensions a host row draws a chip for, which tier a score value falls in, how many hosts
-// are in flight, and the short milestone the folded banner carries.
+// Layer 2, client state. The career banner's arithmetic: the one line of the folded banner, the
+// days left to the next milestone, and the track record, the user's projects counted by the record
+// rows of `categories:` for each role, and the funding the user leads that was obtained.
 //
-// Pure over the merged config and the career entity. No words live here: a status carries its own
-// label and glyph name out of config/catalogs/vocab.yml, and every other panel string comes from
-// the catalog.
+// Pure over the snapshot, the merged config and the day the caller passes. A project's category
+// and role are read with the boards' own rule (data/shapes/boards/categories.ts `categoryOf`,
+// takes.ts `projectRole`), so the track record counts a project where every board files it. The
+// words come from the catalog through `t`, and a category's and a role's words from their rows.
 
-import type { Career, Host } from '../../data/model/index.ts';
-import { z } from 'zod';
-import { scalar } from '../../data/helpers/guards.ts';
-import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
+import type { Career, Id, Snapshot } from '../../data/model/index.ts';
+import { categoriesOf, categoryOf } from '../../data/shapes/boards/categories.ts';
+import { entryPeople, isLead, isSelfByKey, rolesOf } from '../../data/shapes/boards/roles.ts';
+import { projectRole } from '../../data/shapes/boards/takes.ts';
+import { joinedEntries } from '../../data/helpers/hub-names.ts';
+import { str } from '../../data/helpers/guards.ts';
 import { wordFlag } from '../../data/shapes/vocab-keys.ts';
+import { daysUntil } from './board/index.ts';
+import { selfIds } from './board/team.ts';
+import { t } from '../shared/words/text.ts';
 
-// The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
-// the career panel names reach it from here.
-export type { Career, Host } from '../../data/model/index.ts';
-import { statusRows, type StatusRow } from '../shared/words/status-rows.ts';
-
-/** One status of `career_host_status`: the value a host carries, its words and its hue. */
-export type HostStatus = StatusRow;
-
-/** One scored axis of `career_score_dims`: the host key it reads, its chip letter and its words. */
-export type ScoreDim = {
-    field: string;
-    badge: string;
-    label: string;
-};
+// The boundary table lets `views/` import `state/` and nothing of `data/`, so the model type the
+// career banner names reaches it from here.
+export type { Career } from '../../data/model/index.ts';
 
 /**
- * The host statuses of `career_host_status`, in the config's order, each icon kept as a glyph name
- * and each hue already resolved to a tone.
+ * The one line of the folded banner: the title and the next milestone with its day, each part left
+ * out when the file gives none.
  */
-export function hostStatuses(config: Record<string, unknown>): HostStatus[] {
-    return statusRows(config, 'career_host_status');
+export function foldedLine(career: Career | null): string {
+    if (career === null) return '';
+    const { milestone, milestoneDate } = career;
+    const next =
+        milestone === undefined
+            ? ''
+            : t(
+                  'focus.career_next',
+                  milestoneDate === undefined
+                      ? milestone
+                      : t('focus.career_milestone', milestone, milestoneDate)
+              );
+    return [career.title, next].filter((part) => part !== '').join(' | ');
 }
 
-/** One row of `career_score_dims`: a map with a field; the badge is the field's first letter. */
-const scoreDimShape = z
-    .object({
-        field: wordShape.refine((field) => field !== ''),
-        badge: wordShape,
-        label: wordShape
-    })
-    .transform((row): ScoreDim => ({
-        field: row.field,
-        badge: row.badge === '' ? row.field.slice(0, 1).toUpperCase() : row.badge,
-        label: row.label === '' ? row.field : row.label
+/**
+ * The days left to a day written YYYY-MM-DD, as the banner words them: `in {0}d` before the day,
+ * `today` on it and `{0}d ago` after it, counted from `now` with `daysUntil`; the empty text for a
+ * value that is no day.
+ */
+export function daysLeft(date: string, now: number): string {
+    const days = daysUntil(date, now);
+    if (days === null) return '';
+    if (days > 0) return t('focus.in_days', days);
+    if (days === 0) return t('focus.today');
+    return t('focus.days_ago', -days);
+}
+
+/** One line of a role's track record: a record row of `categories:` and its count. */
+type RecordLine = { key: string; label: string; count: number };
+
+/** The track record of one role: the role's words and one line per record row, in order. */
+type RoleRecord = { key: string; label: string; lines: RecordLine[] };
+
+/**
+ * The track record: the roles that have a project in a record row, each with its lines, and how
+ * many funding entries the user leads whose status carries `obtained`.
+ */
+export type TrackRecord = { roles: RoleRecord[]; funding: number };
+
+/**
+ * The track record of the user the workspace setting `self` names, over every project and every
+ * funding entry of the snapshot, which holds every hub of the workspace. For each role of `roles:`
+ * that has a field, in the roles' order, one line per row of `categories:` carrying `record: true`,
+ * in the list's order, each with the number of projects whose category (`categoryOf`) is that row
+ * and whose role (`projectRole`) is that role; a role with no project in any record row gives no
+ * lines, and the counts are never summed. The funding count is the funding entries whose highest
+ * role field (`lead` in oculus's own vocab.yml) names the user (`isLead`, by key) and whose status
+ * carries `obtained` in `statuses`, compared trimmed and in lower case (`wordFlag`). Null when no
+ * `self` is set, and when no role has a line and no funding is obtained.
+ */
+export function trackRecord(
+    snapshot: Snapshot | null,
+    config: Record<string, unknown>
+): TrackRecord | null {
+    if (snapshot === null) return null;
+    const self: ReadonlySet<Id> = selfIds(snapshot);
+    if (self.size === 0) return null;
+    const categories = categoriesOf(config);
+    const rows = categories.filter((category) => category.record);
+    const roles = rolesOf(config);
+    const filed = Object.values(snapshot.entities.projects).map((project) => ({
+        category: categoryOf(project, categories, config)?.key,
+        role: projectRole(project, roles, self)?.key
     }));
-
-const scoreDimsShape = rowsShape(scoreDimShape);
-
-/** The scored axes of `career_score_dims`, in the config's order. */
-export function scoreDims(config: Record<string, unknown>): ScoreDim[] {
-    return readAs(scoreDimsShape, config.career_score_dims) ?? [];
-}
-
-/**
- * Which tier a score value falls in. The values are the file's own words ("Strong", "Med-high",
- * "Weak clinic"), so the rule reads them rather than enumerating every string the file may write.
- */
-function scoreTier(value: unknown): string {
-    const text = scalar(value).trim().toLowerCase();
-    if (['strong', 'high'].includes(text)) return 'strong';
-    if (['good', 'med-high', 'high clout'].includes(text)) return 'good';
-    if (text.startsWith('weak')) return 'weak';
-    return 'mid';
-}
-
-/**
- * The tone a score value is drawn in: the one the hub's `career_score_tones` gives the tier the
- * value falls in, and none for a tier it gives no tone (a middling score is muted).
- */
-export function scoreTone(config: Record<string, unknown>, value: unknown): string | undefined {
-    const tone = readAs(mapShape, config.career_score_tones)?.[scoreTier(value)];
-    return typeof tone === 'string' && tone !== '' ? tone : undefined;
-}
-
-/**
- * How many hosts are out for an answer or in dialogue, which is the summary's count: the hosts
- * whose status carries `in_flight` in the hub's `career_host_status`.
- */
-export function inFlight(hosts: Host[], config: Record<string, unknown>): number {
-    return hosts.filter((host) => wordFlag(config, 'career_host_status', host.status, 'in_flight'))
-        .length;
-}
-
-/**
- * The milestone as the folded banner carries it: its name, everything before the first spaced
- * hyphen or parenthesis, so a milestone that spells out its details after the name still fits on
- * the one line of the banner. The unfolded panel shows the whole milestone.
- */
-export function summaryOf(career: Career | null): string {
-    const milestone = career?.milestone ?? '';
-    return milestone.split(' (')[0].split(' - ')[0].trim();
+    const held = roles
+        .filter((role) => role.field !== undefined)
+        .map((role): RoleRecord => ({
+            key: role.key,
+            label: role.label,
+            lines: rows.map((row) => ({
+                key: row.key,
+                label: row.label,
+                count: filed.filter((one) => one.role === role.key && one.category === row.key)
+                    .length
+            }))
+        }))
+        .filter((role) => role.lines.some((line) => line.count > 0));
+    const isSelf = isSelfByKey(self);
+    const funding = joinedEntries(snapshot.entities.collections, 'funding').filter(
+        (entry) =>
+            isLead(entryPeople(entry.fields), roles, isSelf) &&
+            wordFlag(config, 'statuses', str(entry.fields.status) ?? '', 'obtained')
+    ).length;
+    return held.length === 0 && funding === 0 ? null : { roles: held, funding };
 }

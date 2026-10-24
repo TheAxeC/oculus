@@ -20,15 +20,15 @@
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
 // new idea, edit/feeds/feed-route.ts for the feed writes and Save to Literature
 // (edit/feeds/feeds.ts and edit/feeds/literature.ts write them), writes/entries.ts for a collection
-// file, writes/subtasks.ts for a subtask line, a follow-up note and a career host, writes/bodies.ts
-// for the body parsers (one per kind of write), writes/file-undo.ts for taking back a file
-// operation, and the writers of configuration files, in writes/config/: deck.ts for a deck group's
-// slides, audit-mute.ts for the audit's mute list, rail.ts for the rail list, folders.ts for the
-// open workspace's folders, config-key.ts for one option of oculus's defaults files,
-// config-value.ts for one list or family of one and config-reset.ts for taking one out again, each
-// written in the open workspace file or the primary hub's settings file (config-place.ts). What an
-// importer of this module needs of them is re-exported here, so an importer may name this module or
-// the one that holds the function.
+// file, writes/subtasks.ts for a subtask line, a follow-up note and the career file,
+// writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts for taking
+// back a file operation, and the writers of configuration files, in writes/config/: deck.ts for a
+// deck group's slides, audit-mute.ts for the audit's mute list, rail.ts for the rail list,
+// folders.ts for the open workspace's folders, config-key.ts for one option of oculus's defaults
+// files, config-value.ts for one list or family of one and config-reset.ts for taking one out
+// again, each written in the open workspace file or the primary hub's settings file
+// (config-place.ts). What an importer of this module needs of them is re-exported here, so an
+// importer may name this module or the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';
@@ -72,7 +72,6 @@ import {
     careerRules,
     writeCareer,
     writeFollowup,
-    writeHost,
     writeSubtask,
     writeSubtaskAdd
 } from './writes/subtasks.ts';
@@ -85,7 +84,6 @@ import {
     careerWrite,
     followupAdd,
     followupWrite,
-    hostWrite,
     manifestWrite,
     newEntry,
     newIdea,
@@ -124,7 +122,7 @@ export type WriteTarget = {
      * lists a write reads from the engine alone (the Lit Watch buckets, the Literature path).
      */
     engineConfig: () => Record<string, unknown>;
-    /** The career file and its host statuses, out of the request's configuration. */
+    /** The career file, out of the request's configuration. */
     career: CareerRules;
     overrides?: string;
     /**
@@ -218,7 +216,7 @@ export { coerce, createIdea, fieldTypes, writeManifest } from './writes/manifest
 export { writeDeckSlides } from './writes/config/lists/deck/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 export { collectionFile, identityField } from '../files/fs/collections.ts';
-export { writeFollowup, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
+export { writeFollowup, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/config/lists/audit-mute.ts';
 export { writeRail } from './writes/config/lists/rail.ts';
@@ -236,7 +234,6 @@ export {
     feedFieldWrite,
     followupAdd,
     followupWrite,
-    hostWrite,
     manifestWrite,
     leadAddWrite,
     radarAddWrite,
@@ -546,19 +543,6 @@ export async function handleWrite(
             return json({ error: notFound(into.config.text, note.target) }, { status: 404 });
         }
         return answer(outcome, 'followup-add', into, undefined, app ?? undefined);
-    }
-
-    const host = hostWrite(body);
-    if (host !== null) {
-        // A career-file write is no record, so an app's follows the page's rule for its hub.
-        const home = homeOf(into, null);
-        if (home === null) return noHub(into, null);
-        const outcome = writeHost(home.hub, host.name, host.status, into.career, into.config.text);
-        if (!outcome.found) {
-            const error = words(into.config.text, 'server.write_route.no_host', host.name);
-            return json({ error }, { status: 404 });
-        }
-        return answer(outcome, 'host', into, undefined, app ?? undefined);
     }
 
     const career = careerWrite(body);

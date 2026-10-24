@@ -73,9 +73,6 @@ export type FollowupAddWrite = {
     fields: Record<string, unknown>;
 };
 
-/** One host of the career file moved along the pipeline. */
-export type HostWrite = { kind: 'host'; name: string; status: string };
-
 /** Sections of the career file set from the career editor: the section and its new value. */
 export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
@@ -317,12 +314,6 @@ const followupAddShape = z.object({
     fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
 }) satisfies z.ZodType<FollowupAddWrite>;
 
-const hostShape = z.object({
-    kind: z.literal('host'),
-    name: wordShape,
-    status: wordShape
-}) satisfies z.ZodType<HostWrite>;
-
 const careerShape = z.object({
     kind: z.literal('career'),
     fields: mapShape
@@ -552,11 +543,6 @@ export function followupWrite(body: unknown): FollowupWrite | null {
 /** The body as a follow-up add, or null when it is not one. */
 export function followupAdd(body: unknown): FollowupAddWrite | null {
     return readAs(followupAddShape, body);
-}
-
-/** The body as a host write, or null when it is not one. */
-export function hostWrite(body: unknown): HostWrite | null {
-    return readAs(hostShape, body);
 }
 
 /** The body as a career write, or null when it is not one. */

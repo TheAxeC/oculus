@@ -413,7 +413,6 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, 
 | `subtask-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text | no |
 | `followup` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done` (takes the note out), `do` or `after`, the last two with the new text or date in `value` | no |
 | `followup-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text, `fields.after` the date it stays hidden until | no |
-| `host` | `{ kind, name, status }` for a career host | no |
 | `new-entry` | `{ kind, collection, fields, root? }`; `root` names the hub, which for an app is the primary hub alone | no |
 | `reorder` | `{ kind, collection, order }` | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |
@@ -425,7 +424,7 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, 
 | `linkedin-post` | `{ kind, id }`; `id` the idea's id | yes, no undo |
 | `new-idea` | `{ kind, fields, root? }`; `fields.id`, and `fields.tier` (the first word of `tiers` when absent), `fields.folder`, `fields.title`, `fields.short`, `fields.domain`, `fields.eli5`, and `fields.role_field` with `fields.self` (a field of `roles` and the person key written into it) optional; `root` names the hub, which for an app is the primary hub alone | yes, no undo |
 
-- An `id`, a `target.id` and each id of `order` is the record's id, `<hub>:<key>`, a feed entry's included: its key is the title of a lead or a Lit Watch paper and the file's name of a LinkedIn idea. An id with no hub part is refused with 400, and an id whose hub part no workspace folder carries with 404. For an app the hub of a write that makes a record is the primary hub alone, so with no primary hub such a write (`new-entry`, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) is refused with 409; a `host` write goes to the career file of the primary hub, else of the first hub, as the page's does.
+- An `id`, a `target.id` and each id of `order` is the record's id, `<hub>:<key>`, a feed entry's included: its key is the title of a lead or a Lit Watch paper and the file's name of a LinkedIn idea. An id with no hub part is refused with 400, and an id whose hub part no workspace folder carries with 404. For an app the hub of a write that makes a record is the primary hub alone, so with no primary hub such a write (`new-entry`, `lead-add`, `radar-add`, `linkedin-idea`, `new-idea`) is refused with 409.
 - A write that makes or renames a record answers with the record's id, `<hub>:<key>`, in `id`.
 - Every write is in the change log with the app's id, and History undoes it, except the three marked.
 - Every other kind is closed to apps (`write_closed` in a manifest): nothing that runs processes, writes arbitrary files, reaches a remote or acts on an account.
@@ -747,7 +746,6 @@ Reasons:
 | `no entry <key> in <collection>` | no such entry |
 | `no collection <name>` | no such collection |
 | `unknown feed <name>` | not `radar`, `leads` or `linkedin` |
-| `no host named <name>` | no such career host |
 | `the <feed> feed does not allow that field` | a field the feed's schema does not list |
 | `the <feed> feed does not allow deletion` | `linkedin` |
 | `two entries share the <field> <value>, so a write cannot address one of them` | a shared key |

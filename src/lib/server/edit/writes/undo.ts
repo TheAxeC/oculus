@@ -65,12 +65,10 @@ import { holding, primaryOf } from './hubs.ts';
 import { manifestValue, writeManifest } from './manifest.ts';
 import {
     careerSection,
-    hostStatus,
     restoreSubtask,
     subtaskValue,
     writeCareer,
     writeFollowup,
-    writeHost,
     writeSubtask,
     writeSubtaskAdd
 } from './subtasks.ts';
@@ -225,9 +223,9 @@ const ABSENT = { found: false, value: null } as const;
 
 /**
  * What the file holds now at the address the change names, and whether that address is still there
- * at all. A `found: false` means the project, the entry, the host or the file has gone, or that a
- * collection record names its entry by a value that is not the entry's identity, which is as good
- * a reason to refuse an undo as a value that has moved.
+ * at all. A `found: false` means the project, the entry or the file has gone, or that a collection
+ * record names its entry by a value that is not the entry's identity, which is as good a reason to
+ * refuse an undo as a value that has moved.
  */
 export function valueNow(into: WriteTarget, change: Change): { found: boolean; value: unknown } {
     const own = primaryOf(into);
@@ -238,9 +236,6 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const held = overrides(into.overrides);
         const entry = change.key in held ? held[change.key] : {};
         return { found: true, value: entry[change.field] ?? null };
-    }
-    if (change.kind === 'host') {
-        return own === null ? ABSENT : hostStatus(own.hub, change.key, into.career);
     }
     if (change.kind === 'career') {
         return own === null ? ABSENT : careerSection(own.hub, change.field, into.career);
@@ -370,7 +365,6 @@ const RECORD_KINDS: readonly string[] = [
     'subtask-add',
     'followup',
     'followup-add',
-    'host',
     'career',
     'feed-field',
     'feed-delete',
@@ -469,16 +463,6 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         }
         const value = textBeforeShape.parse(change.before);
         return outcomeOf(setOverride(change.key, { [change.field]: value }, into.overrides));
-    }
-    if (change.kind === 'host') {
-        if (own === null) return null;
-        return writeHost(
-            own.hub,
-            change.key,
-            textBeforeShape.parse(change.before),
-            into.career,
-            into.config.text
-        );
     }
     if (change.kind === 'career') {
         if (own === null) return null;

@@ -51,8 +51,7 @@ const CAREER = [
     'schema:',
     '  - { field: title, type: text }',
     '  - { field: milestone, type: text }',
-    'hosts:',
-    '  - { name: "Naesens", status: "warm" }',
+    'goal: "Assistant professor"',
     ''
 ].join('\n');
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';

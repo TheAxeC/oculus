@@ -95,7 +95,9 @@ for (const [kind, entities] of Object.entries(snapshot.entities)) {
     console.log(`  ${kind}: ${Object.keys(entities as object).length}`);
 }
 console.log(`feeds: ${JSON.stringify(snapshot.entities.feeds)}`);
-console.log(`career hosts: ${snapshot.entities.career?.hosts.length ?? 0}`);
+console.log(
+    `career milestone: ${snapshot.entities.career?.milestone ?? ''} ${snapshot.entities.career?.milestoneDate ?? ''}`
+);
 console.log('relations:');
 for (const [name, table] of Object.entries(snapshot.relations)) {
     console.log(`  ${name}: ${table.length}`);

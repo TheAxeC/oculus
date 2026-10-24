@@ -7,8 +7,8 @@
 //
 // A hub's own settings file, `.oculus/config.yml`, is governed in the hub: its keys are those of
 // the hub list (data/helpers/hub-names.ts), each as its option gives it, or, for a key of a catalog
-// file such as the career words of catalogs/vocab.yml, as that file's whole-file shape gives it;
-// any other key is not declared. A workspace file's `settings:` takes every option of the defaults
+// file such as `leads_fit` of catalogs/vocab.yml, as that file's whole-file shape gives it; any
+// other key is not declared. A workspace file's `settings:` takes every option of the defaults
 // files but the keys of the hub list, with the rows and keys that take oculus's entries out.
 //
 // A group of dotted options is described by its help line in the options file's `groups:`.

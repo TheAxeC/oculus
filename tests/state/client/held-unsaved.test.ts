@@ -408,11 +408,6 @@ describe('a write that adds a record and names no hub, in a workspace with no pr
             (w: Writes) => w.newEntry('tasks', { do: 'it' })
         ],
         [
-            'a host status',
-            { root: 'one', path: '.oculus/data/academic/career.yml' },
-            (w: Writes) => w.writeHost('Naesens', 'candidate')
-        ],
-        [
             'a Save to Literature, whose hub is the first that holds the collection',
             { root: 'two', path: 'literature.yml' },
             (w: Writes) => w.saveLiterature('hand', { title: 'P' })

@@ -573,7 +573,7 @@ function feeds(raw: Feeds): Feeds {
 /**
  * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
  * watcher on every rebuild; `findings` is what validate returned, carried as it stands; `merged`
- * is the hub's merged config, whose words the career's host rows take their unset status from.
+ * is the hub's merged config, whose `tiers` the projects and whose `self` the people are read with.
  * `others` holds the keys the other hubs of the workspace hold, by source: a reference to one of
  * them is kept beside the references to the hub's own records, so the merge of the hubs
  * (hubs/merge.ts) resolves it, and a reference no hub holds is left out.
@@ -639,7 +639,7 @@ export function normalise(
             resources: byId(resources),
             collections: byId(collections),
             feeds: feeds(raw.feeds),
-            career: career(raw.career, merged)
+            career: career(raw.career)
         },
         relations: tables,
         findings

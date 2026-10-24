@@ -184,7 +184,6 @@ export function writtenFile(
             if (text(target.collection) !== '') return holding(target.collection, target.id);
             return look.projectManifest(text(target.id));
         }
-        case 'host':
         case 'career':
             return inRoot(home(''), text(merged.career_file));
         case 'feed-field':

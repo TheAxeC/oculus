@@ -329,7 +329,6 @@ export type WritesStore = {
         target: SubtaskTarget,
         fields: { do: string; after?: string }
     ) => Promise<WriteAnswer>;
-    writeHost: (name: string, status: string) => Promise<WriteAnswer>;
     /** Set the changed sections of the career file, a section cleared by null. */
     writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /**

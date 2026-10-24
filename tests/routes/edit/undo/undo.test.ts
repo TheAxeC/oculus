@@ -709,17 +709,8 @@ describe('taking a change back', () => {
         expect(career()).toContain('title: Career\n');
     });
 
-    it('puts a career host and a subtask line back', async () => {
+    it('takes an added subtask line out again', async () => {
         const into = target();
-        const host = await made(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
-        const career = (): string =>
-            readFileSync(join(into.hub, '.oculus/data/academic/career.yml'), 'utf8');
-        expect(career()).toContain('status: "candidate"');
-        expect(
-            (await handleWrite(request({ kind: 'undo', at: host.at }), TOKEN, into)).status
-        ).toBe(200);
-        expect(career()).toContain('status: "warm"');
-
         const added = await made(into, {
             kind: 'subtask-add',
             target: { collection: 'tasks', id: 'hub:Review the draft' },

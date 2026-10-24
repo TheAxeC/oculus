@@ -725,32 +725,6 @@ describe('a write from an app', () => {
         expect(differing(before.first, filesOf(first))).toEqual([]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
-
-    it("writes an app's host status to the first hub's career file in a workspace with no primary", async () => {
-        const { into, first, lab } = twoHubs();
-        const apps = routeSetup({ machine: notesFiles(`${MANIFEST}writes: [host]\n`) });
-        const fromApp: WriteTarget = {
-            ...into,
-            hub: null,
-            primary: null,
-            hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])],
-            apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
-        };
-        const before = { lab: filesOf(lab) };
-        const response = await handleWrite(
-            request(
-                { kind: 'host', name: 'Naesens', status: 'candidate' },
-                { ...APP, [KIND_HEADER]: 'host' }
-            ),
-            TOKEN,
-            fromApp
-        );
-        expect(response.status).toBe(200);
-        expect(readFileSync(join(first, '.oculus/data/academic/career.yml'), 'utf8')).toContain(
-            'status: "candidate"'
-        );
-        expect(differing(before.lab, filesOf(lab))).toEqual([]);
-    });
 });
 
 /** Two deck hubs: each holds the portfolio deck and the decks of its three projects. */
