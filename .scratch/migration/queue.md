@@ -1,12 +1,12 @@
 In flight (0 of 6 slots in use):
 - none.
 
-Queued, in order (4 steps):
-- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285, 287, 288, 289 and 291). Waits: Axel's rulings on open items 306 and 307, then /spec O55 again.
+Queued, in order (5 steps):
+- O55 (the project boards by kind, role and state, with rulings 268, 269, 270, 274, 275, 277, 285, 287, 288, 289 and 291). Waits: Axel's word for /spec O55.
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
-- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: after O55; Axel's ruling on open item 306.
+- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: after O55.
 
 Owed looks:
 - none.
