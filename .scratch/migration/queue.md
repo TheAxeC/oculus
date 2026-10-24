@@ -6,7 +6,7 @@ Queued, in order (4 steps):
 - O60 (each part of `config/` overridden where it belongs). Waits: after O55, with O63.
 - O63 (the audit's hub conventions as hub settings). Waits: after O55, with O60.
 - O66 (the Gallery shows every word; the no-venue finding's text). Waits: after O55.
-- O68 (the Focus lane card marks without the two-mark cap, the summary card, the career card cut). Waits: after O55; Axel's ruling on open item 301.
+- O68 (the Focus lane card marks without the two-mark cap, the summary card, the career card cut). Waits: after O55.
 
 Owed looks:
 - none.
