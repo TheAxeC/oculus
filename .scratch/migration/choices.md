@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z991 (2026-10-25, O60's builder's report, the orchestrator, automode): a hub's removal of a word oculus's own values name
+
+- Chosen: The merge also takes a word a hub removed out of each word list of oculus's own values that names words of that key, so `stages: { nascent: null }` reads with no finding and the same removal in Settings is accepted; a list the hub set itself is left as written, and a word of it the hub removed stays a finding naming the hub's file.
+- Not chosen: Refusing such a removal at load with a finding on the hub's file; leaving the finding on oculus's own file, which the reader cannot act on (the lazy option).
+
+Where it applies: O60's repair round 1. Booked in `plan.md` Rulings.
+
 ## Z990 (2026-10-24, O60's /spec, the orchestrator, automode): the guarded entries of O60's tests
 
 - Chosen: Five guarded entries in place of Z988's one, G126 the merge by shape, G127 the per-hub words, G128 the added form fields, G129 the workspace agents value, G130 the display language, each with its own files and test file.
