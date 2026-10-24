@@ -1,5 +1,10 @@
-// Layer 2, server. The audit's publications section: the public website's publication feed against
-// the portfolio, matched by title. Every flag is soft, since a title match is never certain.
+// Layer 2, server. The audit's publications section: the website's publications feed the hub's
+// `audit.website` setting names (setting.ts) against the hub's projects, matched by title. The
+// setting says which file the feed is, which key of each section holds its entries, which key of an
+// entry holds its title, and which sections a project is expected in by its stage and form. Every
+// hub that sets it is checked against its own feed. A project of a tier `research_audit.skip_tiers`
+// names gets no finding, and the paper it matches counts as matched. Every flag is soft, since a
+// title match is never certain.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +16,6 @@ import {
     fileOf,
     printed,
     type AuditInput,
-    type PublicationKind,
     sentence,
     type Raised,
     scopeOf,
@@ -19,6 +23,7 @@ import {
     slurp,
     scalarShape
 } from './rules.ts';
+import type { PublicationKind, Website } from './setting.ts';
 
 /** Title words carrying no meaning for matching one paper to another. */
 const STOPWORDS = new Set([
@@ -71,30 +76,35 @@ export function jaccard(left: Set<string>, right: Set<string>): number {
     return shared / (left.size + right.size - shared);
 }
 
-/** One paper of the public website: its key, its section, its words. */
+/** One paper of the website's feed: its key, its section, its words. */
 type SitePaper = { key: string; section: string; title: string; words: Set<string> };
 
 /** The feed: a map of sections, read from its own keys. */
 const feedShape = z.custom<Record<string, unknown>>(isMap);
 
-/** One section of the feed: a map that holds a list of papers. */
-const sectionShape = z.object({ papers: z.array(z.unknown()) });
+/** A section of the feed: a map, whose list of entries is read from its own keys. */
+const sectionShape = z.custom<Record<string, unknown>>(isMap);
 
-/** One paper of a section: a map, whose title reads as the text it is written as. */
-const paperShape = z.object({ title: scalarShape });
+/** A list of entries of a section. */
+const entriesShape = z.array(z.unknown());
 
-/** The papers of the website's feed, one record each, in the order the file lists them. */
-function sitePapers(data: unknown): SitePaper[] {
+/**
+ * The papers of the website's feed, one record each, in the order the file lists them: each
+ * section's entries under the setting's `list` key, each entry's title under its `title` key, read
+ * as the text it is written as.
+ */
+function sitePapers(data: unknown, website: Website): SitePaper[] {
     const feed = feedShape.safeParse(data);
     if (!feed.success) return [];
     const found: SitePaper[] = [];
     for (const [section, block] of Object.entries(feed.data)) {
         const held = sectionShape.safeParse(block);
-        if (!held.success) continue;
-        for (const item of held.data.papers) {
-            const paper = paperShape.safeParse(item);
-            if (!paper.success) continue;
-            const title = paper.data.title.trim();
+        if (!held.success || !Object.hasOwn(held.data, website.list)) continue;
+        const entries = entriesShape.safeParse(held.data[website.list]);
+        if (!entries.success) continue;
+        for (const item of entries.data) {
+            if (!isMap(item) || !Object.hasOwn(item, website.title)) continue;
+            const title = scalarShape.parse(item[website.title]).trim();
             const key = normalTitle(title);
             if (key !== '') found.push({ key, section, title, words: titleWords(title) });
         }
@@ -104,7 +114,7 @@ function sitePapers(data: unknown): SitePaper[] {
 
 /**
  * The sections a hub project at this stage and of this form is expected to appear in: the `kind`
- * of the first row of `publication_kinds` whose `stages` holds the stage and whose `forms` holds
+ * of the first row of the setting's `kinds` whose `stages` holds the stage and whose `forms` holds
  * the form, a side the row leaves out holding to nothing; none when no row matches.
  */
 function expectedSections(project: Project, kinds: readonly PublicationKind[]): string[] {
@@ -140,14 +150,17 @@ function match(
 }
 
 /**
- * The website's publication feed against the portfolio. Every flag is soft: the matching is by
- * title and is never certain, so nothing here is an error, only something to look at. The check is
- * skipped without a word when the site repository is not checked out beside the hub.
+ * The website's publications feed against the hub's projects. Every flag is soft: the matching is
+ * by title and is never certain, so nothing here is an error, only something to look at. The check
+ * is skipped without a word when the hub names no feed in its `audit.website`, or the file is not
+ * there.
  */
 export function publications(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
-    if (rules.publicationsFile === '') return;
-    const path = join(input.hub, rules.publicationsFile);
+    const website = input.setting.website;
+    if (website === null) return;
+    const where = website.file;
+    const path = join(input.hub, where);
     if (!existsSync(path)) return;
     const file = fileOf(input.hub, path);
     let data: unknown;
@@ -157,14 +170,14 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         const reason = error instanceof Error ? error.message.split('\n')[0] : String(error);
         add({
             scope: 'website',
-            where: rules.publicationsFile,
+            where,
             kind: 'publink',
             file,
-            ...sentence('audit.msg_site_unreadable', reason)
+            ...sentence('audit.msg_site_unreadable', where, reason)
         });
         return;
     }
-    const site = sitePapers(data);
+    const site = sitePapers(data, website);
     /** Every section a normalised title appears in, since one paper can be listed twice. */
     const sections = new Map<string, Set<string>>();
     for (const paper of site) {
@@ -175,23 +188,31 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
 
     const claimed = new Set<string>();
     for (const project of input.projects) {
-        if (isPersonal(project, rules)) continue;
         const stage = project.stage ?? '';
         const key = normalTitle(project.title);
+        if (isPersonal(project, rules)) {
+            // A project of a skipped tier is held to nothing, and the paper it matches is not one
+            // that no project of the hub matches.
+            const found = match(key, titleWords(project.title), site);
+            if (key !== '' && found.hit !== null && found.score >= LOOSE) {
+                claimed.add(found.hit.key);
+            }
+            continue;
+        }
         if (key === '' || rules.negativeStages.has(stage) || rules.deadEndStages.has(stage))
             continue;
         const found = match(key, titleWords(project.title), site);
         const hit = found.hit;
         if (hit !== null && found.score >= SAME) {
             claimed.add(hit.key);
-            const wanted = expectedSections(project, rules.publicationKinds);
+            const wanted = expectedSections(project, website.kinds);
             if (
                 rules.publicStages.has(stage) &&
                 !sectionsOf(hit).some((one) => wanted.includes(one))
             ) {
                 add({
                     scope: scopeOf(project),
-                    where: 'publications.yml',
+                    where,
                     kind: 'publink',
                     file,
                     ...sentence(
@@ -207,7 +228,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             if (rules.publicStages.has(stage)) {
                 add({
                     scope: scopeOf(project),
-                    where: 'publications.yml',
+                    where,
                     kind: 'publink',
                     file,
                     ...sentence('audit.msg_site_title_differs', hit.title, printed(sectionsOf(hit)))
@@ -216,19 +237,21 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         } else if (rules.publicStages.has(stage)) {
             add({
                 scope: scopeOf(project),
-                where: 'publications.yml',
+                where,
                 kind: 'publink',
                 file,
                 ...sentence(
                     'audit.msg_site_missing',
                     stage,
-                    expectedSections(project, rules.publicationKinds).join('/')
+                    expectedSections(project, website.kinds).join('/')
                 )
             });
         }
     }
 
     const deadClaimed = new Set<string>();
+    /** The stages a publication takes, by their labels, which the dead-end finding offers. */
+    const published = [...rules.publicStages].map((one) => `"${rules.stageLabel(one)}"`).join(', ');
     for (const project of input.projects) {
         if (isPersonal(project, rules)) continue;
         const stage = project.stage ?? '';
@@ -240,14 +263,17 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         const hit = found.hit;
         if (hit === null || found.score < SAME) continue;
         deadClaimed.add(hit.key);
+        const shown = printed(sectionsOf(hit));
         add({
             scope: scopeOf(project),
-            where: 'publications.yml',
+            where,
             kind: 'publink',
             file,
             ...(rules.negativeStages.has(stage)
-                ? sentence('audit.msg_site_negative', stage, printed(sectionsOf(hit)))
-                : sentence('audit.msg_site_deadend', stage, printed(sectionsOf(hit))))
+                ? sentence('audit.msg_site_negative', rules.stageLabel(stage), shown)
+                : sentence('audit.msg_site_deadend', rules.stageLabel(stage), shown, published)),
+            // Signed by the stage word, so rewording a stage's label keeps a mute.
+            signed: [stage, shown]
         });
     }
 
@@ -265,7 +291,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     const listed = `${shown.map((title) => `"${title}"`).join('; ')}${more}`;
     add({
         scope: 'website',
-        where: 'publications.yml',
+        where,
         kind: 'publink',
         file,
         ...(untracked.length === 1

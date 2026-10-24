@@ -12,10 +12,10 @@
 // an entry with no identity; and the files read in place: every document of a file of several, and
 // the portfolio deck of `portfolio_deck`, absent when it is null.
 //
-// The last table builds through the portfolio watcher (server/root/watch/portfolio.ts), a server
-// module, which makes this file layer 4 as the other watcher tests are. The watcher names the open
-// workspace file for the index: the file is scanned for its `settings:` when it lies in a hub
-// folder of the workspace, under that folder's name, and says it names the primary hub's keys
+// The last table builds through the portfolio watcher (server/root/watch/portfolio/portfolio.ts), a
+// server module, which makes this file layer 4 as the other watcher tests are. The watcher names
+// the open workspace file for the index: the file is scanned for its `settings:` when it lies in a
+// hub folder of the workspace, under that folder's name, and says it names the primary hub's keys
 // (`of`) when that folder is another; an unsaved workspace and a file whose hub is no folder of the
 // workspace give no scan. Its hubs are empty hub folders and each workspace a state folder that
 // opens a planted workspace file, as the server opens one; a build takes about a second, so the

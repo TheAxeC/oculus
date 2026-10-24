@@ -62,13 +62,6 @@ options:
         help: The keys of the hub's collections list whose files the index of a portfolio chat and of a project chat holds for this hub, in this order, after the hub's project manifests. A word that names no key of the hub's collections list adds nothing.
         control: multi
         from: collections
-    publications_file:
-        heading: sources
-        section: Registry and feed files
-        help: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. Empty names no file, and the check is skipped, as it is when the file is not checked out. This is a setting of the hub, kept in the hub's .oculus/config.yml.
-        control: file
-        empty: true
-        allow_missing: true
     linkedin_dir:
         heading: sources
         section: Registry and feed files

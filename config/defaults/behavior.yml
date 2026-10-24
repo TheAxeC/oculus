@@ -1,6 +1,6 @@
 # ===========================================================================
 # behavior.yml
-# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/behavior.yml describe every key. Nothing writes this file.
+# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, the conventions it holds a hub's projects to (off until the hub sets them), how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, a hub's .oculus/config.yml sets the keys of the hub list (`slurm.resource`, `lint.writing_skip`, `lint.writing_glyphs`, `audit` and `app_settings`), and the options of config/options/behavior.yml describe every key. Nothing writes this file.
 # ===========================================================================
 
 
@@ -24,6 +24,13 @@ usage_refresh_model: "haiku"
 
 # Audit findings the reader has parked. Each entry is a finding's signature, the twelve hex characters the Audit view's mute control writes here; the finding stays true and is drawn in the muted section.
 audit_ignore: []
+
+# The conventions the audit holds a hub's projects to, each a setting of the hub kept in its .oculus/config.yml, and each off here: the files a project must hold (required_files), the headings a file must hold when a manifest key has a value (required_sections), the folders a project at a stage is kept under (stage_folders), and the website's publications feed checked against the projects (website: its file, the key of each section's list, the key of an entry's title, and the sections a project is expected in by its stage and form).
+audit:
+  required_files: []
+  required_sections: []
+  stage_folders: []
+  website: { file: '', list: '', title: '', kinds: [] }
 
 
 # === The Focus board =========================================================

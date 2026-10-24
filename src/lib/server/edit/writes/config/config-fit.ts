@@ -1,6 +1,7 @@
 // Layer 2, server. Whether a value fits the control the options catalog gives it, for both config
-// writes: config-key.ts sets one value, config-value.ts a list, a multi, a parked list or a family
-// of records, and each asks this module the one question, with the same sentences.
+// writes: config-key.ts sets one value, config-value.ts a list, a multi, a parked list, a word
+// block or a family of records, and each asks this module the one question, with the same
+// sentences.
 //
 // What is wrong with a value by the entry alone is the rule's (catalog/value-rule.ts), the rule the
 // Settings view refuses a value by before the write and the setting readers read a key by; this
@@ -23,6 +24,7 @@ import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { byKey, isMap } from '../../../../data/helpers/guards.ts';
 import {
+    blockFlags,
     listedSources,
     pickedSources,
     readsOther,
@@ -53,8 +55,11 @@ type Context = { fit: Fit; record: Plain | undefined; held: unknown[] };
 /** One record of a family as the checks read it, with the map key it sits under. */
 type Item = { key: string | undefined; record: Plain; label: string };
 
-/** The controls whose value is a list, which config-value.ts sets as a whole. */
-const COLLECTIONS = ['list', 'multi', 'parked'];
+/**
+ * The controls whose value is a list, or the map of lists a word block is, which config-value.ts
+ * sets as a whole.
+ */
+const COLLECTIONS = ['list', 'multi', 'parked', 'words'];
 
 /**
  * Whether an option is a family or a list-valued leaf, which config-value.ts sets, and not one
@@ -110,6 +115,10 @@ function sentenceOf(
             return words(text, 'server.config_value.not_strings');
         case 'records':
             return words(text, 'server.config_value.wants_records');
+        case 'block':
+            return words(text, 'server.config_value.wants_block');
+        case 'flag':
+            return words(text, 'server.config_value.not_flag', problem.sources.join(', '));
         case 'glyph':
             return words(text, 'server.config_key.not_glyph');
         case 'hue':
@@ -183,6 +192,8 @@ function listsFor(spec: CatalogEntry, ctx: Context, sources: Sources): RuleLists
     }
     return {
         sourced,
+        // The flags a word block takes are those of the lists it draws its words from.
+        flagged: blockFlags(spec, (source) => sources.items(source)),
         held: heldWords(spec, ctx.held),
         glyphs: glyphNames(sources.config) ?? [],
         config: sources.config

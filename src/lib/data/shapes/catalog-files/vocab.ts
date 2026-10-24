@@ -102,9 +102,8 @@ const stageWord = z.strictObject({
         'A stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.'
     ),
     placed: flag('A stage that has a venue, so the audit asks for one.'),
-    standard: flag('The stages the audit holds to the one-README standard.'),
     public: flag(
-        "A public outcome: the audit of the website's publications asks for its project on the site, in the sections `publication_kinds` gives."
+        "A public outcome: the audit of the website's publications asks for its project on the site, in the sections the hub's `audit.website.kinds` gives."
     ),
     negative: flag(
         "A negative result, which stays in the hub: the audit of the website's publications reports its project when the site shows it."
@@ -222,10 +221,11 @@ const roleRow = z.strictObject({
 const blockList = (help: string) => z.array(text).optional().describe(help);
 
 /**
- * A word block of a category: the lists a project's word of one vocabulary map is held against,
- * each list named holding.
+ * A word block: the lists a project's word of one vocabulary map is held against, each list named
+ * holding. A category's `stages:` and `forms:` are one, and so is the `stages` of a row of the
+ * hub's `audit:` setting (server/content/audit/setting.ts), the `words` control of an option.
  */
-const wordBlock = z.strictObject({
+export const wordBlock = z.strictObject({
     words: blockList("Words of the map, one of which is the project's."),
     not_words: blockList("Words of the map none of which is the project's."),
     flags: blockList("Flags of the map's rows, one of which the project's word carries."),
@@ -250,27 +250,6 @@ const categoryRow = z.strictObject({
     archival: flag(
         "The Pillars view's Archival band: such a project is no real work, left out of a venue's use counts, the Orphans card and a pillar's and a domain's members."
     )
-});
-
-/** One row of `publication_kinds`: the sections it gives and the stages and forms it holds to. */
-const publicationKind = z.strictObject({
-    kind: z
-        .array(text)
-        .describe(
-            "The sections of the website's publication feed a project this row matches may sit in."
-        ),
-    stages: z
-        .array(text)
-        .optional()
-        .describe(
-            "The stages of `stages` the row holds to, compared with a project's stage as written; absent, the row places no condition on the stage."
-        ),
-    forms: z
-        .array(text)
-        .optional()
-        .describe(
-            "The forms of `forms` the row holds to, compared with a project's form as written; absent, the row places no condition on the form."
-        )
 });
 
 /** One stage of the funding pipeline. */
@@ -360,12 +339,6 @@ export const vocabFileShape = z.strictObject({
         .optional()
         .describe(
             'The categories a project is filed under on every board: the first row whose blocks it meets.'
-        ),
-    publication_kinds: z
-        .array(publicationKind)
-        .optional()
-        .describe(
-            "The sections of the website's publication feed a project is expected in: the first row whose stages and forms match the project gives them."
         ),
     leads_fit: textMap.optional().describe("The colour of a Position Lead's fit chip, by its fit."),
     data_access: textMap

@@ -353,10 +353,14 @@ export type AppRow = {
 export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string[] };
 
 /**
- * Which section of the audit a finding belongs to: an open marker left in a document, a manifest
- * field a live project has not filled in, a folder the research standard does not name, a manifest
- * naming no lead, a project no board takes or a done project carrying a Focus lane's chip, a field
- * that has stopped being a glance, and the public website's list against the portfolio.
+ * Which section of the audit a finding belongs to: an open marker left in a document (`todo`); a
+ * manifest field a live project has not filled in, a gap in a collection's entries, or a heading a
+ * `required_sections` row of the hub's `audit:` asks for (`data`); a file a `required_files` row
+ * asks for, or a part of `audit:` that is not of its shape (`conform`); a manifest naming no lead,
+ * a project no board takes, a done project carrying a Focus lane's chip, or a project at a stage
+ * outside the folders a `stage_folders` row names (`manifest`); a field that has stopped being a
+ * glance (`readability`); and the hub's own website feed, which `audit.website` names, against its
+ * projects (`publink`).
  */
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 

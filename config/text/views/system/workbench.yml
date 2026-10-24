@@ -12,8 +12,8 @@ text:
     settings:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the theme in force, the text size, the icons, brackets and monospace font of the terminal themes, the wallpaper behind the panels and whether it shows, the CRT overlay, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
-        desc_behavior: "Thresholds, horizons and cadences: read limits, the `focus:` settings (the Focus horizons, the `refresh_stale_days` thresholds of the refresh strip, the Command Center's categories and sources, the statuses the Focus columns count as open), the context window, the Live HPC settings, the audit's mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash) and `files.file_icon_at_arrow` (true sets a file's icon where its sibling folders' arrows sit), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`), chat and the status bar's hidden items, Do Not Disturb and repository."
-        desc_config: "The settings of this hub, kept in its .oculus/config.yml: the scan folders, the files of its records, collections and feeds, the picture folders, where its bookmarks, schedules and apps live, the cluster its jobs run on and the values of its apps' settings. A value there replaces the engine's value of the same key whole. The domains and theme words are kept in the hub's registry files."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, the `focus:` settings (the Focus horizons, the `refresh_stale_days` thresholds of the refresh strip, the Command Center's categories and sources, the statuses the Focus columns count as open), the context window, the Live HPC settings, the audit's mute list, the audit's checks of the hub's conventions (`audit:`, the files and headings a project must hold, the folders a stage is kept under and the website's feed), the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash) and `files.file_icon_at_arrow` (true sets a file's icon where its sibling folders' arrows sit), the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`), chat and the status bar's hidden items, Do Not Disturb and repository."
+        desc_config: "The settings of this hub, kept in its .oculus/config.yml: the scan folders, the files of its records, collections and feeds, the picture folders, where its bookmarks, schedules and apps live, the cluster its jobs run on, the conventions its audit holds its projects to and the values of its apps' settings. A value there replaces the engine's value of the same key whole. The domains and theme words are kept in the hub's registry files."
         desc_cpp_schema: "The keys a repository's .oculus/cpp.yml may hold, each with its words and the values it takes, which the editor completes and checks."
         desc_deck_schema: "The keys a deck's present.yml may hold, each with its words, which the editor completes and checks."
         desc_file_nesting: 'The files the Files view draws under another file when File Nesting is on: per parent name, the names nested under it, as VS Code lists them by default.'
@@ -26,7 +26,7 @@ text:
         desc_present: 'What every deck the Present view draws starts from: the hue each tag class of a project slide wears.'
         desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, where the bookmarks, the schedules and the apps live, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
         desc_unimath: 'The Unicode math symbols the LaTeX completion offers after a backslash while latex.unimath_symbols is true: per command, its glyph (and the package that defines it) and its words.'
-        desc_vocab: "Words and their colours: the palette, the statuses, types and tiers with the flags that say what each word does, the publication kinds, the focus lanes, the venue tiers and the radar buckets. The research domains and the venue and dataset theme words are each hub's own, in its registry files."
+        desc_vocab: "Words and their colours: the palette, the statuses, types and tiers with the flags that say what each word does, the focus lanes, the venue tiers and the radar buckets. The research domains and the venue and dataset theme words are each hub's own, in its registry files."
         catalogs_about: The catalog files the configuration is merged from, in config/catalogs/.
         catalogs_title: Catalogs
         contents_hide: Hide the table of contents
@@ -53,6 +53,11 @@ text:
         fold_fields: '{0} fields'
         list_failed: 'The list could not be read: {0}'
         list_loading: The list is still being read.
+        block_words: 'one of these words'
+        block_not_words: 'none of these words'
+        block_flags: 'a word with one of these flags'
+        block_not_flags: 'no word with one of these flags'
+        block_list: '{0}, {1}'
         local_tag: This machine
         not_in_list: not in the list
         open_settings_file: Open Settings File
@@ -189,6 +194,7 @@ text:
         settings_list_loading: 'Reading the folder {0}...'
         settings_loading: 'Reading {0}...'
         settings_mismatch_list: 'The value in force is {0}, which is not a list.'
+        settings_mismatch_block: 'The value in force is {0}, which is not a map of the lists words, not_words, flags and not_flags.'
         settings_mismatch_number: 'The value in force is {0}, which is not a number.'
         settings_mismatch_text: 'The value in force is {0}, which is not text.'
         settings_mismatch_toggle: 'The value in force is {0}, which is not true or false.'

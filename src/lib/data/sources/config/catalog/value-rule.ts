@@ -6,10 +6,14 @@
 //
 // The rule answers what is wrong as a kind and its arguments and holds no sentence; each caller
 // words the kind from its own text catalog. What needs the disk or the value the file held stays
-// with its caller: a folder or file that is there, a parked list's items, a family's shape.
+// with its caller: a folder or file that is there, a parked list's items, a family's shape. A word
+// block (the control `words`) is checked against the list its `from` names for its words and
+// against that list's flags (`flagged`) for its flags.
 
+import { BLOCK_LISTS, type WordBlock } from '../../../shapes/boards/words.ts';
 import {
     classOfHex,
+    flagSources,
     hueNames,
     hueOfClass,
     listedSources,
@@ -31,6 +35,8 @@ export type ValueProblem =
     | { kind: 'numbers' }
     | { kind: 'strings' }
     | { kind: 'records' }
+    | { kind: 'block' }
+    | { kind: 'flag'; sources: string[] }
     | { kind: 'choice'; values: string[] }
     | { kind: 'source'; sources: string[] }
     | { kind: 'glyph' }
@@ -47,6 +53,11 @@ export type RuleLists = {
      * while one of them is not held, in which case a word is not checked against the list.
      */
     sourced?: string[] | null;
+    /**
+     * The flags of every source a word block names in `from` that carries flags, together; null
+     * while one of them is not held, in which case a flag is not checked against the list.
+     */
+    flagged?: string[] | null;
     /** Words a multi takes besides the list, because the file already holds them. */
     held?: readonly string[];
     /** The glyph names; the control is not checked without them. */
@@ -149,6 +160,28 @@ function multiProblem(spec: CatalogEntry, value: unknown, lists: RuleLists): Val
 }
 
 /**
+ * What is wrong with a word block: not a map of the four lists, each a list of texts, a word
+ * outside the list `from` names, or a flag outside that list's flags.
+ */
+function blockProblem(spec: CatalogEntry, value: unknown, lists: RuleLists): ValueProblem | null {
+    if (!isMap(value)) return { kind: 'block' };
+    const held = Object.entries(value);
+    if (held.some(([key, one]) => !BLOCK_LISTS.some((list) => list === key) || !stringList(one))) {
+        return { kind: 'block' };
+    }
+    const block = value as WordBlock;
+    const words = [...(block.words ?? []), ...(block.not_words ?? [])];
+    const flags = [...(block.flags ?? []), ...(block.not_flags ?? [])];
+    const items = itemsOf(spec, lists);
+    if (items !== null && words.some((word) => !items.includes(word))) return notListed(spec);
+    const flagged = lists.flagged;
+    if (flagged === undefined || flagged === null) return null;
+    return flags.every((flag) => flagged.includes(flag))
+        ? null
+        : { kind: 'flag', sources: flagSources(spec) };
+}
+
+/**
  * What is wrong with a path: the form of a hub path, or an absolute or `~/` path. The empty text is
  * the value of an entry that sets `empty`, such as a file the hub leaves out.
  */
@@ -223,6 +256,8 @@ export function valueProblem(
             return stringList(value) ? null : { kind: 'strings' };
         case 'records':
             return Array.isArray(value) && value.every(isMap) ? null : { kind: 'records' };
+        case 'words':
+            return blockProblem(spec, value, lists);
         case 'text':
         case 'long':
         case 'choice':

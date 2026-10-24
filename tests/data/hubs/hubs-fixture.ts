@@ -18,7 +18,10 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import type { PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
-import { watchPortfolio, type WatchOptions } from '../../../src/lib/server/root/watch/portfolio.ts';
+import {
+    watchPortfolio,
+    type WatchOptions
+} from '../../../src/lib/server/root/watch/portfolio/portfolio.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 

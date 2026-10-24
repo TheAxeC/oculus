@@ -43,7 +43,7 @@ import { defaultOverridesPath } from '../../sessions/overrides.ts';
 import type { ProjectFolder } from '../../sessions/group.ts';
 import type { HookStore } from '../../sessions/stores/hooks.ts';
 import { createStamps } from '../../sessions/stores/stamps.ts';
-import type { Watcher } from './portfolio.ts';
+import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
 export const DEBOUNCE = 500;

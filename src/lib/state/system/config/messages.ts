@@ -17,6 +17,7 @@ export const SETTINGS_MESSAGES = {
     mismatchNumber: 'workbench.settings_mismatch_number',
     mismatchText: 'workbench.settings_mismatch_text',
     mismatchList: 'workbench.settings_mismatch_list',
+    mismatchBlock: 'workbench.settings_mismatch_block',
     empty: 'workbench.settings_empty',
     notNumber: 'workbench.settings_not_number',
     notWhole: 'workbench.settings_not_whole',

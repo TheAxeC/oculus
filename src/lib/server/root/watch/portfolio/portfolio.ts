@@ -9,16 +9,18 @@
 // The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
 // them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
 // the portfolio on every write. An event counts only when its filename ends in .yml or .md, which
-// the later filter narrows to the Markdown slide files of a deck, and no segment of its path is
-// `code` or `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder
-// also accepts the post filenames read by server/edit/feeds/feeds.ts.
+// the later filter (reads.ts) narrows to the Markdown slide files of a deck, and no segment of its
+// path is `code` or `attic`, which also drops an editor's swap and lock files, or when it is a path
+// the audit reads, a required file inside `code/` included (audited.ts, built again at every
+// rebuild from the hubs' `audit:` settings). The flat LinkedIn folder also accepts the post
+// filenames read by server/edit/feeds/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
 // follows a write to the hub can publish version 1 and then version 2 with the same content. The
 // rebuild is idempotent and the page takes the newer version, so nothing is done about it.
 
-import { existsSync, watch } from 'node:fs';
+import { existsSync, statSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
@@ -28,21 +30,24 @@ import {
     readOtherHub,
     sourcesFindings,
     type HubSettings
-} from '../../../data/index.ts';
-import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
-import { holdersOf, rootOf } from '../../../data/helpers/hub-names.ts';
-import { selfOf } from '../../../data/shapes/boards/roles.ts';
-import { buildHubs, withOwnSchemas } from './build.ts';
-import { createChecker } from '../../../data/snapshot/schema/check.ts';
-import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
-import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
-import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
+} from '../../../../data/index.ts';
+import { mergedFeeds } from '../../../../data/snapshot/hubs/feeds.ts';
+import { holdersOf, rootOf } from '../../../../data/helpers/hub-names.ts';
+import { selfOf } from '../../../../data/shapes/boards/roles.ts';
+import { buildHubs, withOwnSchemas } from '../build.ts';
+import { createChecker } from '../../../../data/snapshot/schema/check.ts';
+import type { SettingsFile } from '../../../../data/snapshot/references/build.ts';
+import type { ReferenceIndex } from '../../../../data/snapshot/references/model.ts';
+import type { SchemaSet } from '../../../../data/snapshot/schema/set.ts';
 import {
-    AUDIT_PATHS,
     auditFindings,
     auditRules,
-    mutedSignatures
-} from '../../content/audit/scan.ts';
+    hubAuditSetting,
+    mutedSignatures,
+    type AuditSetting
+} from '../../../content/audit/scan.ts';
+import { auditFiles, auditPaths, relevantTo } from './audited.ts';
+import { namedByConfig, namedByRoots, roleDirectories, watchedDirectories } from './reads.ts';
 import {
     configDir,
     iconSet,
@@ -51,27 +56,26 @@ import {
     sourceFile,
     textCatalog,
     type IconMemory
-} from '../../../data/sources/config.ts';
+} from '../../../../data/sources/config.ts';
 import {
     HUB_FILE,
     MANIFEST,
     ROOT_FOLDER,
     WORKSPACES_FOLDER
-} from '../../../data/helpers/hub-names.ts';
-import { platformText } from '../../../data/places/platform.ts';
-import { vscodeRuleIds } from '../../../data/places/code-rules.ts';
-import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
-import { picturesOf } from '../../content/images.ts';
-import { wallpaperFindings } from '../../content/wallpaper.ts';
-import { placeClones } from '../../../data/sources/clones.ts';
-import { allHubs, primaryConfig } from '../../files/roots.ts';
-import { engineConfigIn } from '../../files/workspace/folders.ts';
-import { folderOfHub, hubOfFile, type OpenWorkspace } from '../../files/workspace/open.ts';
-import { configOptions } from '../../files/workspace/paths.ts';
-import { readerFindings } from '../process/context/findings.ts';
-import type { MachineProblem } from '../../../data/sources/config/machine.ts';
-import { workspaceFindings } from '../../files/workspace/words.ts';
-import { buildFeeds, isLinkedinFile } from '../../edit/feeds/feeds.ts';
+} from '../../../../data/helpers/hub-names.ts';
+import { platformText } from '../../../../data/places/platform.ts';
+import { vscodeRuleIds } from '../../../../data/places/code-rules.ts';
+import { picturesOf } from '../../../content/images.ts';
+import { wallpaperFindings } from '../../../content/wallpaper.ts';
+import { placeClones } from '../../../../data/sources/clones.ts';
+import { allHubs, primaryConfig } from '../../../files/roots.ts';
+import { engineConfigIn } from '../../../files/workspace/folders.ts';
+import { folderOfHub, hubOfFile, type OpenWorkspace } from '../../../files/workspace/open.ts';
+import { configOptions } from '../../../files/workspace/paths.ts';
+import { readerFindings } from '../../process/context/findings.ts';
+import type { MachineProblem } from '../../../../data/sources/config/machine.ts';
+import { workspaceFindings } from '../../../files/workspace/words.ts';
+import { buildFeeds, isLinkedinFile } from '../../../edit/feeds/feeds.ts';
 import type {
     AuditFinding,
     Finding,
@@ -80,8 +84,8 @@ import type {
     HostInfo,
     PortfolioConfig,
     RepositoryRoot
-} from '../../../data/model/index.ts';
-import type { Hub } from '../../core/channels.ts';
+} from '../../../../data/model/index.ts';
+import type { Hub } from '../../../core/channels.ts';
 
 export type WatchPaths = {
     /** Absolute path of the oculus engine directory, whose `config/` is watched with the hubs. */
@@ -147,6 +151,16 @@ export type Watcher = {
     close(): void;
 };
 
+/**
+ * A hub the audit scans: its name, its folder, its merged settings and its own `audit:` setting.
+ */
+type Audited = {
+    key: string;
+    dir: string;
+    merged: Record<string, unknown>;
+    setting: AuditSetting;
+};
+
 /** The portfolio watcher, which can also be asked to read the portfolio again. */
 export type PortfolioWatcher = Watcher & {
     /**
@@ -166,92 +180,6 @@ export const DEBOUNCE = 200;
  */
 export const MAX_WAIT = 2 * DEBOUNCE;
 
-/** Folders whose contents never change what the snapshot holds. */
-const NEVER = ['code', 'attic'];
-
-/**
- * Whether the path names something the audit scan reads: one of its documents, by the last segments
- * of the path, or one of the folders it reports, by any segment. The scan reads the disk, so an
- * event on one of these is the only way a marker added to a README or a `paper/` folder made by
- * hand reaches the open Audit view.
- */
-export function audited(parts: string[]): boolean {
-    return AUDIT_PATHS.some((wanted) => {
-        const want = wanted.split('/');
-        // A folder is named by any segment of the path, since both its own event and an event on a
-        // file inside it mean it is there; a document is the last segments and nothing else.
-        if (want.length === 1 && !want[0].includes('.')) return parts.includes(want[0]);
-        if (parts.length < want.length) return false;
-        return want.every((one, at) => parts[parts.length - want.length + at] === one);
-    });
-}
-
-/**
- * Whether a watch event is one of ours: a YAML file, a Markdown file, or one of the documents and
- * folders the audit scan reads, outside every `code/` and `attic/` folder. A Markdown file is here
- * because the slide files of a deck are read into the snapshot's findings, so a slide saved has to
- * reach the audit the way a changed manifest does; `named` below keeps only the ones of a deck.
- * `code/README.md` is the one path taken from inside a `code/` folder: the deposit holds thousands
- * of files and none of the others is read by anything.
- */
-export function relevant(filename: string | null): boolean {
-    if (filename === null || filename === '') return false;
-    const parts = filename.split(/[/\\]/).filter((part) => part !== '');
-    if (parts.length === 0) return false;
-    const name = parts[parts.length - 1];
-    const deposit = parts.length >= 2 && parts[parts.length - 2] === 'code' && name === 'README.md';
-    if (!deposit && parts.some((part) => NEVER.includes(part))) return false;
-    return name.endsWith('.yml') || name.endsWith('.md') || audited(parts);
-}
-
-/**
- * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
- * file, every `project.yml` and `present.yml` under a scan tier, the Markdown files inside a
- * project's `present/` folder, and the `.yml` and `.md` files of the portfolio deck's folder. A
- * `.yml` kept beside one of them (a note next to a registry, a draft, a second file in a project
- * folder) changes nothing the snapshot holds, so an event for it is not a rebuild. The set is
- * derived from the same config the build was made from, which is why the predicate is built again
- * at every rebuild rather than held as a constant.
- */
-export function namedByConfig(
-    hub: string,
-    config: PortfolioConfig,
-    roots: RepositoryRoot[] = []
-): (path: string) => boolean {
-    const files = new Set<string>();
-    for (const root of roots) {
-        files.add(join(root.dir, MANIFEST));
-        files.add(join(root.dir, ROOT_FOLDER, MANIFEST));
-    }
-    for (const file of Object.values(config.registries)) files.add(join(hub, file));
-    for (const file of config.collections) files.add(join(hub, file.file));
-    for (const file of [config.feeds.leads, config.feeds.radar]) {
-        files.add(join(hub, file));
-    }
-    if (config.career !== null) files.add(join(hub, config.career));
-    const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
-    const deck = config.portfolioDeck === null ? null : join(hub, config.portfolioDeck) + sep;
-    const perProject = [MANIFEST, DECK_FILE];
-    return (path: string): boolean => {
-        if (files.has(path)) return true;
-        if (deck !== null && path.startsWith(deck)) return /\.(yml|md)$/.test(path);
-        const tier = tiers.find((one) => path.startsWith(one));
-        if (tier === undefined) return false;
-        if (perProject.includes(basename(path))) return true;
-        const below = path.slice(tier.length).split(sep);
-        if (path.endsWith('.md') && below.slice(0, -1).includes(PROJECT_DECK)) return true;
-        // The audit reads a project's documents and folders off the disk, so an event on one of
-        // them under a tier is a rebuild like a changed manifest; the path is read tier-relative,
-        // so a folder of the hub above the tier never counts as one of a project's.
-        return audited(
-            path
-                .slice(tier.length)
-                .split(sep)
-                .filter((part) => part !== '')
-        );
-    };
-}
-
 /**
  * The open workspace file as the reference index names it, under the workspace folder of the hub
  * it lies in, so a rename of a key one of its settings names edits the file; null for the unsaved
@@ -264,58 +192,6 @@ function settingsFileOf(workspace: OpenWorkspace): SettingsFile | null {
     if (folder === undefined) return null;
     const path = [ROOT_FOLDER, WORKSPACES_FOLDER, basename(workspace.file)].join('/');
     return { file: workspace.file, root: folder.name, path };
-}
-
-/**
- * The files a build over project folders alone reads: the `project.yml` and `.oculus/project.yml`
- * of each folder. A workspace with no primary hub reads nothing else.
- */
-function namedByRoots(roots: RepositoryRoot[]): (path: string) => boolean {
-    const files = new Set(
-        roots.flatMap((root) => [join(root.dir, MANIFEST), join(root.dir, ROOT_FOLDER, MANIFEST)])
-    );
-    return (path: string): boolean => files.has(path);
-}
-
-/**
- * The hub directories the build reads: every scan tier, the folder of every registry file and
- * collection file, and the folder of every generated feed the command center counts. The feeds
- * are watched too, since the Focus board reads them and a refreshed feed has to reach the page the
- * way a changed manifest does.
- *
- * The career file is not here: it sits wherever `career_file` names it (by default
- * `.oculus/data/academic/career.yml`), and a name in the hub root would make a recursive watch
- * of its folder cover the whole hub a second time, so watchPortfolio watches that one file on its
- * own, through a flat watch of its folder filtered on its name (`watchFile`).
- */
-export function watchedDirectories(
-    hub: string,
-    config: PortfolioConfig,
-    roots: RepositoryRoot[] = []
-): string[] {
-    const dirs = new Set(roleDirectories(hub, config, roots));
-    if (config.feeds.linkedin !== '') dirs.add(join(hub, config.feeds.linkedin));
-    return [...dirs];
-}
-
-/**
- * The watched directories apart from the LinkedIn folder: the ones a recursive YAML watch serves.
- */
-export function roleDirectories(
-    hub: string,
-    config: PortfolioConfig,
-    roots: RepositoryRoot[] = []
-): string[] {
-    const dirs = new Set<string>();
-    for (const root of roots) dirs.add(join(root.dir, ROOT_FOLDER));
-    for (const rule of config.scan) dirs.add(join(hub, rule.dir));
-    for (const file of Object.values(config.registries)) dirs.add(dirname(join(hub, file)));
-    for (const file of config.collections) dirs.add(dirname(join(hub, file.file)));
-    for (const file of [config.feeds.leads, config.feeds.radar]) {
-        dirs.add(dirname(join(hub, file)));
-    }
-    if (config.portfolioDeck !== null) dirs.add(join(hub, config.portfolioDeck));
-    return [...dirs];
 }
 
 function reason(error: unknown): string {
@@ -364,6 +240,11 @@ export function watchPortfolio(
      * Whether a hub path is one the build reads; replaced by every rebuild from the config read.
      */
     let named: (path: string) => boolean = () => true;
+    /**
+     * Whether a watch event is one of ours, by its name (audited.ts); replaced by every rebuild
+     * from the hubs' `audit:` settings, and read at each event, so a handle opened before keeps up.
+     */
+    let relevant: (filename: string | null) => boolean = relevantTo(auditPaths([]));
     let configTouched = false;
     /** The hubs' vocabulary the config channel last carried, as its JSON text. */
     let publishedHubs = '';
@@ -382,7 +263,7 @@ export function watchPortfolio(
         isConfig: boolean,
         isFeed = false,
         recursive = true,
-        accepts: (filename: string | null) => boolean = relevant
+        accepts: (filename: string | null) => boolean = (filename) => relevant(filename)
     ): boolean => {
         if (handles.has(dir)) return false;
         try {
@@ -441,31 +322,117 @@ export function watchPortfolio(
     /**
      * One file watched on its own: the career file, which sits wherever `career_file` names it, and
      * a hub's settings file, `<hub>/.oculus/config.yml`, whose change is a config change
-     * (`isConfig`) for every hub, since each hub's settings ride on the `config` channel; a name
-     * in the hub root would make a recursive watch of its folder cover the whole hub a second time,
+     * (`isConfig`) for every hub, since each hub's settings ride on the `config` channel; a name in
+     * the hub root would make a recursive watch of its folder cover the whole hub a second time,
      * and where its folder is already watched recursively (the default career file, beside the
      * collections in `.oculus/data/academic/`), the debounce makes the two one rebuild. It is
      * watched through its folder (`watchFile`), so an atomic write over it keeps reaching the
-     * rebuild and a career file made after the server
-     * started is heard as it appears. A folder that is not there is not watched and not refused, so
-     * one made later is picked up at the next rebuild.
+     * rebuild and a career file made after the server started is heard as it appears. A folder that
+     * is not there is not watched and not refused, so one made later is picked up at the next
+     * rebuild.
      */
-    const openFile = (file: string, isConfig: () => boolean = () => false): void => {
-        if (handles.has(file) || !existsSync(dirname(file))) return;
+    const openFile = (
+        file: string,
+        isConfig: () => boolean = () => false,
+        key: string = file
+    ): void => {
+        if (handles.has(key) || !existsSync(dirname(file))) return;
         try {
             handles.set(
-                file,
+                key,
                 watchFile(file, () => {
                     queue(isConfig(), false);
                 })
             );
-            refused.delete(file);
+            refused.delete(key);
         } catch (error) {
-            if (!refused.has(file)) {
+            if (!refused.has(key)) {
                 console.error(`portfolio watch: cannot watch ${file}: ${reason(error)}`);
             }
-            refused.add(file);
+            refused.add(key);
         }
+    };
+
+    /** The keys of the handles the audit's files held open after the last rebuild. */
+    let auditKeys = new Set<string>();
+    /**
+     * The identity of the folder each of those handles watches, as it was when the handle opened:
+     * its device, inode and birth time, since a folder removed and made again can get its inode
+     * back.
+     */
+    const auditFolders = new Map<string, string>();
+
+    const closeHandle = (key: string): void => {
+        handles.get(key)?.close();
+        handles.delete(key);
+        parents.delete(key);
+        auditFolders.delete(key);
+    };
+
+    /**
+     * Open one handle of an audit file on a folder, closing first a handle on a folder that has
+     * gone or was made again since (another identity), which hears nothing of the folder there now.
+     */
+    const openOn = (key: string, dir: string, opener: () => void): void => {
+        let folder: string | null;
+        try {
+            const stat = statSync(dir);
+            folder = `${stat.dev}:${stat.ino}:${stat.birthtimeMs}`;
+        } catch {
+            folder = null;
+        }
+        if (handles.has(key) && auditFolders.get(key) !== folder) closeHandle(key);
+        if (folder === null || handles.has(key)) return;
+        opener();
+        if (handles.has(key)) auditFolders.set(key, folder);
+    };
+
+    /**
+     * One file the audit reads that no recursive watch serves (audited.ts, `auditFiles`): watched
+     * as a file is, under a key of its own, with its folder watched flat through the folder above
+     * it, so the folder removed or made again queues the rebuild that opens the file's watch anew.
+     * While its folder is not there it is waited for through its nearest folder that is. The keys
+     * opened are added to `keys`.
+     */
+    const openAuditFile = (file: string, keys: Set<string>): void => {
+        const folder = dirname(file);
+        const fileKey = `audit:${file}`;
+        const folderKey = `audit-folder:${folder}`;
+        if (!existsSync(folder)) {
+            closeHandle(fileKey);
+            openParent(folder, false);
+            keys.add(`parent:${folder}`);
+        } else {
+            openOn(fileKey, folder, () => openFile(file, () => false, fileKey));
+            keys.add(fileKey);
+        }
+        openOn(folderKey, dirname(folder), () => {
+            try {
+                handles.set(
+                    folderKey,
+                    watchFile(folder, () => queue(false, false))
+                );
+            } catch (error) {
+                if (!refused.has(folderKey)) {
+                    console.error(`portfolio watch: cannot watch ${folder}: ${reason(error)}`);
+                }
+                refused.add(folderKey);
+            }
+        });
+        if (handles.has(folderKey)) keys.add(folderKey);
+    };
+
+    /**
+     * Watch the files the audit reads now, and close every handle an earlier rebuild opened for a
+     * file no hub's `audit:` names any more (a feed renamed, a row dropped, a workspace repository
+     * gone). A shared folder handle another role still wants is opened again by that role later in
+     * the same rebuild.
+     */
+    const watchAuditFiles = (files: readonly string[]): void => {
+        const keys = new Set<string>();
+        for (const file of files) openAuditFile(file, keys);
+        for (const key of auditKeys) if (!keys.has(key)) closeHandle(key);
+        auditKeys = keys;
     };
 
     /**
@@ -619,7 +586,8 @@ export function watchPortfolio(
      * again from the config that was just read, so a path added to the `scan` option (the primary
      * hub's `.oculus/config.yml`, over oculus's sources.yml) is watched from the next rebuild on; a
      * path removed keeps its handle until the watcher is closed. Unopened directories are retried,
-     * and opening a feed directory republishes its current contents.
+     * and opening a feed directory republishes its current contents. The files the hubs' `audit:`
+     * settings name are watched and closed with the settings (`watchAuditFiles`).
      */
     const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
@@ -713,12 +681,30 @@ export function watchPortfolio(
             }
             const roots = portfolio.repositories;
             const held = engineConfigIn(workspace.folders, engineConfig);
+            // Each hub the audit scans, in the workspace's order, with its merged settings and its
+            // `audit:` setting, read from its own settings file: the scan below holds the hub to
+            // it, and the paths it names are what the filters take besides the build's own.
+            const audits: Audited[] = workspace.hubs
+                .flatMap((one) => {
+                    if (one.name === workspace.primary && primaryDir !== null) {
+                        return [{ key: one.name, dir: primaryDir, merged: config }];
+                    }
+                    const other = others.find((read) => read.key === one.name);
+                    return other === undefined
+                        ? []
+                        : [{ key: other.key, dir: other.dir, merged: other.portfolio.merged }];
+                })
+                .map((one) => ({ ...one, setting: hubAuditSetting(one.dir) }));
+            const auditing = auditPaths(audits.map((one) => one.setting));
+            relevant = relevantTo(auditing);
             const byHub =
                 primaryDir === null
                     ? [namedByRoots(roots)]
-                    : [namedByConfig(primaryDir, portfolio, roots)];
-            byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio)));
+                    : [namedByConfig(primaryDir, portfolio, auditing, roots)];
+            byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio, auditing)));
             named = (path) => byHub.some((one) => one(path));
+            // A workspace repository's project is audited with the primary hub alone.
+            watchAuditFiles(auditFiles(audits, primaryDir === null ? [] : roots, auditing));
             watchRootParents(roots);
             for (const root of roots) openFile(join(root.dir, MANIFEST));
             // The directories are opened before the snapshot is read, so a write that lands
@@ -765,11 +751,7 @@ export function watchPortfolio(
                 const { entities } = snapshot;
                 const domains = Object.values(entities.domains);
                 const holders = holdersOf(Object.values(entities.projects));
-                const scan = (
-                    key: string,
-                    dir: string,
-                    settings: Record<string, unknown>
-                ): AuditFinding[] =>
+                const scan = ({ key, dir, merged, setting }: Audited): AuditFinding[] =>
                     auditFindings({
                         hub: dir,
                         root: key,
@@ -782,19 +764,12 @@ export function watchPortfolio(
                         ),
                         held: holders,
                         self: selfOf(Object.values(entities.people)),
-                        rules: auditRules(settings, domains),
-                        catalog: textCatalog(settings)
+                        rules: auditRules(merged, domains),
+                        setting,
+                        catalog: textCatalog(merged)
                     });
                 const audit: AuditPayload = {
-                    findings: workspace.hubs.flatMap((one) => {
-                        if (one.name === workspace.primary && primaryDir !== null) {
-                            return scan(one.name, primaryDir, config);
-                        }
-                        const other = others.find((read) => read.key === one.name);
-                        return other === undefined
-                            ? []
-                            : scan(other.key, other.dir, other.portfolio.merged);
-                    }),
+                    findings: audits.flatMap(scan),
                     muted: mutedSignatures(config)
                 };
                 hub.publish('audit', audit);

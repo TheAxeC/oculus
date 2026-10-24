@@ -21,6 +21,86 @@ options:
         section: Audit checks
         help: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
         control: parked
+    audit.required_files:
+        heading: boards
+        section: Audit checks
+        help: The files the audit asks a project of the hub to hold, one row a file. A row requires its file of a project when every key it names holds; a row naming no stages, folder or folders requires it of every project. A missing required file is a finding of the Hub conventions section. A project of a workspace repository is held to the rows that name no folders, and a project of a tier research_audit.skip_tiers names to none. Empty asks for no file. This is a setting of the hub, kept in its .oculus/config.yml.
+        fields:
+            file:
+                help: the path of the file, relative to the project's folder
+                control: text
+            stages:
+                help: the stages whose projects the row holds, held against the project's stage; a project with no stage meets a block that names only not_words or not_flags
+                control: words
+                from: project_stages
+            folder:
+                help: a folder, relative to the project's folder, that the project must hold for the row to hold
+                control: text
+            folders:
+                help: the folders of the hub, relative to it, under one of which the project must lie for the row to hold
+                control: list
+    audit.required_sections:
+        heading: boards
+        section: Audit checks
+        help: The headings the audit asks a file of a project to hold while a manifest key has a value, one row a heading. The key is a dotted path of project.yml as written there; a list with an item, a text that is not empty, a number and true are a value, and false, a map and an empty value are none. A line of the file holds the heading when, trimmed, it is the heading or starts with the heading and a space, so `## Data + reproduction` holds `## Data` and `## Database` does not. A missing file or heading is a finding of the Missing data section. A project of a workspace repository is held to the rows that name no folders. Empty asks for no heading. This is a setting of the hub, kept in its .oculus/config.yml.
+        fields:
+            file:
+                help: the path of the file, relative to the project's folder
+                control: text
+            heading:
+                help: the heading line the file must hold, with its hashes
+                control: text
+            key:
+                help: the dotted key of project.yml whose value asks for the heading
+                control: text
+            folders:
+                help: the folders of the hub, relative to it, under one of which the project must lie for the row to hold
+                control: list
+    audit.stage_folders:
+        heading: boards
+        section: Audit checks
+        help: The folders a project of the hub at a stage is kept under, one row a set of stages. A project read from the hub's own folders whose stage meets the row's stages and that lies under none of its folders is a finding of the Manifest guardrails section; a folder is matched by whole path segments, so projects/archive/published-old is not under projects/archive/published. A project of a workspace repository is held to no row. Empty asks for no folder. This is a setting of the hub, kept in its .oculus/config.yml.
+        fields:
+            stages:
+                help: the stages the row holds, held against the project's stage
+                control: words
+                from: project_stages
+            folders:
+                help: the folders of the hub, relative to it, one of which a project at those stages lies under
+                control: list
+    audit.website.file:
+        heading: boards
+        section: Audit checks
+        help: "The website's publications feed the audit checks the hub's projects against, matched by title: a public project missing from it or in a section its stage and form do not expect, a negative result or a dead end it shows, and the papers no project matches. Its top-level keys are its sections. Empty checks no feed, and a file that is not there is skipped without a word. Every hub that sets it is checked against its own feed. This is a setting of the hub, kept in its .oculus/config.yml."
+        control: file
+        empty: true
+        allow_missing: true
+    audit.website.list:
+        heading: boards
+        section: Audit checks
+        help: "The key of each section of the website's feed that holds the section's entries, as papers in `journal: { papers: [...] }`. This is a setting of the hub, kept in its .oculus/config.yml."
+        control: text
+    audit.website.title:
+        heading: boards
+        section: Audit checks
+        help: The key of an entry of the website's feed that holds its title, which the audit matches against a project's title. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+    audit.website.kinds:
+        heading: boards
+        section: Audit checks
+        help: The sections of the website's feed a project is expected in. The first row whose stages hold the project's stage and whose forms hold its form gives its sections; a row without stages or without forms places no condition on that side, so a last row naming neither catches every project. This is a setting of the hub, kept in its .oculus/config.yml.
+        fields:
+            kind:
+                help: the sections of the feed a project the row matches may sit in
+                control: list
+            stages:
+                help: the stages the row holds, compared with the project's stage as written
+                control: multi
+                from: project_stages
+            forms:
+                help: the forms the row holds, compared with the project's form as written
+                control: multi
+                from: project_forms
     focus.stale_lag_days:
         heading: boards
         section: Audit checks
@@ -733,6 +813,8 @@ options:
         help: The repository the reader last chose in the status bar's repository item, by the root the git channel names it with. Empty is none chosen.
         control: text
 groups:
+    audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, the folders a project at a stage is kept under, and the website's publications feed."
+    audit.website: The website's publications feed the audit checks the hub's projects against, the keys it is read by and the sections a project is expected in.
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, which statuses count as open or sent, and where the dated lines come from.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.

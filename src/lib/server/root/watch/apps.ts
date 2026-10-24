@@ -53,7 +53,7 @@ import {
     workspaceKey
 } from '../../machine/apps/read/state.ts';
 import { defaultAppData, readStore } from '../../machine/apps/store/store.ts';
-import type { Watcher } from './portfolio.ts';
+import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds of quiet after the last event before one read. */
 const DEBOUNCE = 300;

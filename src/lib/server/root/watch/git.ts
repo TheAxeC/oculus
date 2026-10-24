@@ -110,7 +110,7 @@ import {
     type NestedFound
 } from './repos/nested.ts';
 import { mayChangeRepositories } from './repos/depth.ts';
-import type { Watcher } from './portfolio.ts';
+import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
 export const THROTTLE = 2000;

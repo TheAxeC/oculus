@@ -1,9 +1,9 @@
 // Layer 4, data test. Several hubs as one portfolio, as the watcher publishes it
-// (lib/server/root/watch/portfolio.ts through lib/data/snapshot/hubs/merge.ts): what each hub shows
-// is what its files say, every record of every hub, the primary's included, is present under the
-// internal id of its hub and its key, and a reference resolves in its own hub first, then in the
-// one other hub that holds its key, a key two other hubs hold being a finding. No joined id is
-// shown: a record is shown by its key.
+// (lib/server/root/watch/portfolio/portfolio.ts through lib/data/snapshot/hubs/merge.ts): what each
+// hub shows is what its files say, every record of every hub, the primary's included, is present
+// under the internal id of its hub and its key, and a reference resolves in its own hub first, then
+// in the one other hub that holds its key, a key two other hubs hold being a finding. No joined id
+// is shown: a record is shown by its key.
 //
 // The hubs are copies of tests/fixtures/hubs/demo/ under the system temporary directory
 // (hubs-fixture.ts), so every key of one hub is also a key of the other, and each row plants the

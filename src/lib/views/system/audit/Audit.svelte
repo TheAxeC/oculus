@@ -17,11 +17,14 @@
 
 <script lang="ts">
     // Layer 3, view. What the hub is missing, in the six sections the scan reports: an open marker
-    // left in a document, a manifest field a live project has not filled in, a folder the research
-    // standard does not name, a manifest naming no lead, a project no board takes or a done project
-    // carrying a Focus lane's chip, a field that has stopped being a glance, and the public
-    // website's list against the portfolio. A stage word or a form written as a chip is a
-    // finding of the manifest check, drawn in the Findings view rather than here.
+    // left in a document; a manifest field a live project has not filled in, a gap in a
+    // collection's entries, or a heading a `required_sections` row of the hub's `audit:` asks for;
+    // a file a `required_files` row asks for, or a part of `audit:` that is not of its shape; a
+    // manifest naming no lead, a project no board takes, a done project carrying a Focus lane's
+    // chip, or a project at a stage outside the folders a `stage_folders` row names; a field that
+    // has stopped being a glance; and the hub's own website feed, which `audit.website` names,
+    // against its projects. A stage word or a form written as a chip is a finding of the manifest
+    // check, drawn in the Findings view rather than here.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
     // control writes its signature into the `audit_ignore:` list of the open workspace file's

@@ -96,7 +96,7 @@ import type { GitWatcher } from './watch/git.ts';
 import { nestedFound, startAutofetch, startGit } from './watch/repos/git-start.ts';
 import { changedKeys, changedPaths, rebuiltBy, type ChangedKey } from './watch/local.ts';
 import { startPollers, usageStarters } from './watch/pollers.ts';
-import type { PortfolioWatcher, Watcher } from './watch/portfolio.ts';
+import type { PortfolioWatcher, Watcher } from './watch/portfolio/portfolio.ts';
 import type { SessionsWatcher } from './watch/sessions.ts';
 
 /** The machine the server runs on, and the address a page on it reaches the server at. */

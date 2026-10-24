@@ -1,26 +1,29 @@
 // Layer 2, server. The audit's sections over the projects and collections: the open markers left in
-// a document, a manifest field a live project has not filled in, a folder that is not the one the
-// tier standard names, a manifest naming no lead, a project no board takes, a project at a terminal
-// stage carrying the chip of a Focus chip lane, a field long enough to stop being a glance, and a
-// collection entry whose date or link wants doing. A stage word or a form written as a chip, and a
-// tier that is missing or no word of `tiers`, are the manifest check's findings
-// (data/snapshot/validate.ts and the manifest schema), drawn in the Findings view, and are not
-// scanned here.
+// a document, a manifest field a live project has not filled in, a manifest naming no lead, a
+// project no board takes, a project at a terminal stage carrying the chip of a Focus chip lane, a
+// field long enough to stop being a glance, a collection entry whose date or link wants doing, and
+// the conventions the hub's own `audit:` setting names (setting.ts): a file a project must hold, a
+// heading a file must hold while a manifest key has a value, the folders a project at a stage is
+// kept under, and every part of the setting that is not of its shape. A hub that sets no `audit:`
+// is held to none of those conventions. A stage word or a form written as a chip, and a tier that
+// is missing or no word of `tiers`, are the manifest check's findings (data/snapshot/validate.ts
+// and the manifest schema), drawn in the Findings view, and are not scanned here.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { stringify } from 'yaml';
+import { parse, stringify } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../../data/helpers/dates.ts';
-import { byKey } from '../../../data/helpers/guards.ts';
-import { bareId, resolvedId } from '../../../data/helpers/hub-names.ts';
+import { byKey, isMap } from '../../../data/helpers/guards.ts';
+import { bareId, HUB_FILE, resolvedId } from '../../../data/helpers/hub-names.ts';
 import { folderOnDisk } from '../../../data/places/folder-on-disk.ts';
 import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { projectRole } from '../../../data/shapes/boards/takes.ts';
+import { blockHolds, wordList, type WordBlock } from '../../../data/shapes/boards/words.ts';
 import {
     type AuditInput,
     sentence,
@@ -33,6 +36,7 @@ import {
     fileOf,
     NO_FILE,
     namesShape,
+    printed,
     scalarShape
 } from './rules.ts';
 import { below } from '../../core/paths.ts';
@@ -44,34 +48,13 @@ const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
 /** A result the author has tagged as not final. */
 const PROVISIONAL = /\[PROVISIONAL\]/i;
 
-/** The documents of a project folder the markers are read from. */
-const SCANNED = ['README.md', 'code/README.md'];
-
-/** The document a project may keep its data notes in, beside the README's own section. */
-const DATA_DOC = 'DATA.md';
-
-/** The documents the one-README standard retired; one still there is folded back in. */
-const RETIRED = ['IDEA.md', 'notes/METHOD_NOTES.md', 'notes/RELATED_WORK.md'];
-
-/** A folder name that is not the canonical one, and the folder it should be. */
-const FOLDERS: [string, string][] = [
-    ['paper', 'manuscript/'],
-    ['experiment', 'code/'],
-    ['pipeline', 'code/']
-];
-
 /**
- * Every folder-relative path and folder name the scan reads off the disk. The portfolio watcher
- * imports it so that an event on one of them under a scan tier rebuilds: a marker added to a
- * README, a retired document put back, a `paper/` folder made, all of which the scan reports and
- * none of which is a `.yml` the watcher would otherwise notice.
+ * The documents of a project folder the markers are read from, folder-relative. The portfolio
+ * watcher (server/root/watch/portfolio/audited.ts) rebuilds on an event on one of them, with the
+ * files and folders the hubs' `audit:` settings name, since a marker added to a README is no
+ * `.yml` it would otherwise notice.
  */
-export const AUDIT_PATHS: string[] = [
-    ...SCANNED,
-    DATA_DOC,
-    ...RETIRED,
-    ...FOLDERS.map(([bad]) => bad)
-];
+export const AUDIT_PATHS: readonly string[] = ['README.md', 'code/README.md'];
 
 /**
  * The Markdown slide files of a project's deck folder, as folder-relative names, which are scanned
@@ -136,19 +119,12 @@ function newestDoc(project: Project): string {
     return newest === 0 ? '' : localDate(newest);
 }
 
-/** Whether the project's README names a Data section, or the folder carries the retired DATA.md. */
-function hasDataSection(folder: string): boolean {
-    if (existsSync(join(folder, DATA_DOC))) return true;
-    const readme = join(folder, 'README.md');
-    return existsSync(readme) && slurp(readme).includes('## Data');
-}
-
 /** The open markers of one project's documents and of every collection entry. */
 export function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (isPersonal(project, input.rules)) continue;
         const folder = folderOnDisk(input.hub, project);
-        for (const name of [...SCANNED, ...deckDocuments(folder)]) {
+        for (const name of [...AUDIT_PATHS, ...deckDocuments(folder)]) {
             const path = join(folder, name);
             if (!existsSync(path)) continue;
             const text = slurp(path);
@@ -207,7 +183,6 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (isPersonal(project, input.rules)) continue;
         const scope = scopeOf(project);
-        const folder = folderOnDisk(input.hub, project);
         if (
             project.stage !== undefined &&
             rules.placedStages.has(project.stage) &&
@@ -250,15 +225,6 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                         : sentence('audit.msg_provisional', provisional.length))
                 });
             }
-            if (project.datasetIds.length > 0 && !hasDataSection(folder)) {
-                add({
-                    scope,
-                    where: 'project',
-                    kind: 'data',
-                    ...fileIn(input.hub, project, join(folder, 'README.md')),
-                    ...sentence('audit.msg_no_data_section')
-                });
-            }
             const lag = project.staleDays ?? 0;
             const when = newestDoc(project);
             if (lag >= rules.staleLagDays && lag > 0 && when !== '') {
@@ -292,54 +258,146 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     }
 }
 
-/** The tier-conformance rules: the one README, the retired documents and the folder names. */
-export function conformance(input: AuditInput, add: (f: Raised) => void): void {
+/**
+ * Whether a project lies under one of the hub's folders, by whole path segments: a project read
+ * from a repository lies under none of them.
+ */
+function underFolders(project: Project, folders: readonly string[]): boolean {
+    if (project.workspaceFolder !== undefined) return false;
+    return folders.some((one) => project.folder === one || project.folder.startsWith(`${one}/`));
+}
+
+/** Whether a project's stage meets a word block of the setting, no block placing no condition. */
+function stageMeets(input: AuditInput, project: Project, block: WordBlock | undefined): boolean {
+    return block === undefined || blockHolds(block, wordList(project.stage), input.rules.stages);
+}
+
+/**
+ * The files the hub's `required_files` rows require: a row requires its file of a project when
+ * every key it names holds, the stage meeting `stages`, the folder `folder` there in the project
+ * and the project lying under one of `folders`.
+ */
+export function requiredFiles(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (isPersonal(project, input.rules)) continue;
-        const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
-        if (
-            project.stage !== undefined &&
-            input.rules.standardStages.has(project.stage) &&
-            !existsSync(join(folder, 'README.md'))
-        ) {
+        for (const row of input.setting.requiredFiles) {
+            if (!stageMeets(input, project, row.stages)) continue;
+            if (row.folder !== undefined && !isFolder(join(folder, row.folder))) continue;
+            if (row.folders !== undefined && !underFolders(project, row.folders)) continue;
+            if (existsSync(join(folder, row.file))) continue;
             add({
-                scope,
-                where: 'README.md',
+                scope: scopeOf(project),
+                where: row.file,
                 kind: 'conform',
                 file: NO_FILE,
-                ...sentence('audit.msg_no_readme')
+                ...sentence('audit.msg_required_file', row.file)
             });
         }
-        for (const name of RETIRED) {
-            if (!existsSync(join(folder, name))) continue;
+    }
+}
+
+/**
+ * The value at a dotted key of a project's manifest as its `project.yml` writes it, undefined when
+ * the file does not parse or holds nothing there.
+ */
+function manifestValue(input: AuditInput, project: Project, key: string): unknown {
+    let node: unknown;
+    try {
+        node = parse(slurp(resolve(input.hub, project.file)));
+    } catch {
+        return undefined;
+    }
+    for (const step of key.split('.')) {
+        if (!isMap(node) || !Object.hasOwn(node, step)) return undefined;
+        node = node[step];
+    }
+    return node;
+}
+
+/** Whether a manifest value asks for a section: a list with an item, a text, a number or `true`. */
+function hasValue(value: unknown): boolean {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'string') return value !== '';
+    return typeof value === 'number' || value === true;
+}
+
+/**
+ * Whether a text holds a heading: a line of it, trimmed, is the heading or starts with the heading
+ * and a space, which keeps the level, so `## Data + reproduction` holds `## Data` and neither
+ * `## Database` nor `### Data notes` does.
+ */
+function holdsHeading(text: string, heading: string): boolean {
+    return text.split('\n').some((line) => {
+        const trimmed = line.trim();
+        return trimmed === heading || trimmed.startsWith(`${heading} `);
+    });
+}
+
+/**
+ * The headings the hub's `required_sections` rows require: a row whose manifest key holds a value
+ * for a project, the project under one of its `folders` when it names them, asks its file to hold
+ * its heading. A manifest that does not parse asks for none; the manifest check reports it.
+ */
+export function requiredSections(input: AuditInput, add: (f: Raised) => void): void {
+    for (const project of input.projects) {
+        if (isPersonal(project, input.rules)) continue;
+        const folder = folderOnDisk(input.hub, project);
+        for (const row of input.setting.requiredSections) {
+            if (row.folders !== undefined && !underFolders(project, row.folders)) continue;
+            if (!hasValue(manifestValue(input, project, row.key))) continue;
+            const path = join(folder, row.file);
+            if (existsSync(path) && holdsHeading(slurp(path), row.heading)) continue;
             add({
-                scope,
-                where: name,
-                kind: 'conform',
-                ...fileIn(input.hub, project, join(folder, name)),
-                ...sentence('audit.msg_retired_doc')
+                scope: scopeOf(project),
+                where: row.file,
+                kind: 'data',
+                ...fileIn(input.hub, project, path),
+                ...sentence('audit.msg_required_section', row.key, row.file, row.heading)
             });
         }
-        for (const [bad, good] of FOLDERS) {
-            if (!isFolder(join(folder, bad))) continue;
+    }
+}
+
+/**
+ * The folders the hub's `stage_folders` rows keep a project in: a project read from the hub's own
+ * folders whose stage meets a row's `stages` and that lies under none of its `folders`, a project
+ * with no stage meeting a block that names only `not_` lists. A project read from a repository is
+ * held to no row, whose folders are the hub's.
+ */
+export function stageFolders(input: AuditInput, add: (f: Raised) => void): void {
+    for (const project of input.projects) {
+        if (isPersonal(project, input.rules) || project.workspaceFolder !== undefined) continue;
+        const stage = project.stage ?? words(input.catalog, 'audit.no_stage');
+        for (const row of input.setting.stageFolders) {
+            if (!stageMeets(input, project, row.stages)) continue;
+            if (underFolders(project, row.folders)) continue;
             add({
-                scope,
-                where: `${bad}/`,
-                kind: 'conform',
-                file: NO_FILE,
-                ...sentence('audit.msg_bad_folder', good)
+                scope: scopeOf(project),
+                where: 'stage',
+                kind: 'manifest',
+                ...fileIn(input.hub, project, project.file),
+                ...sentence('audit.msg_stage_folder', stage, printed(row.folders)),
+                // A project with no stage is signed by none, so rewording "no stage" keeps a mute.
+                signed: [project.stage ?? '', printed(row.folders)]
             });
         }
-        if (isFolder(join(folder, 'code')) && !existsSync(join(folder, 'code', 'README.md'))) {
-            add({
-                scope,
-                where: 'code/',
-                kind: 'conform',
-                file: NO_FILE,
-                ...sentence('audit.msg_code_no_readme')
-            });
-        }
+    }
+}
+
+/**
+ * Every part of the hub's `audit:` setting that is not of its shape, named by its dotted key in the
+ * hub's settings file; that part is off, and the rest of the setting runs.
+ */
+export function settingProblems(input: AuditInput, add: (f: Raised) => void): void {
+    for (const key of input.setting.problems) {
+        add({
+            scope: HUB_FILE,
+            where: key,
+            kind: 'conform',
+            file: fileOf(input.hub, join(input.hub, HUB_FILE)),
+            ...sentence('audit.msg_setting_shape', HUB_FILE, key)
+        });
     }
 }
 

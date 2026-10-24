@@ -15,6 +15,7 @@ import { boardsTaking, takeContext } from '../../../data/shapes/boards/takes.ts'
 import type { Holders } from '../../../data/helpers/hub-names.ts';
 import type { AuditFinding, Collection, Domain, Id, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
+import type { AuditSetting } from './setting.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
 export type AuditRules = {
@@ -32,8 +33,6 @@ export type AuditRules = {
      * of `statuses` carrying `waiting`.
      */
     waitingStatus: Set<string>;
-    /** The website's publication feed, hub-relative; the empty string means there is none. */
-    publicationsFile: string;
     /**
      * The stages of work in flight, asked for results and a dataset: the stages carrying `live`.
      */
@@ -45,8 +44,11 @@ export type AuditRules = {
      * that is not empty, and the stage word itself otherwise.
      */
     stageLabel: (stage: string) => string;
-    /** The stages the one-README standard covers, the stages carrying `standard`. */
-    standardStages: Set<string>;
+    /**
+     * The merged config's `stages:` map, which a word block of the hub's `audit:` setting is held
+     * against (`blockHolds`).
+     */
+    stages: unknown;
     /** The tiers the research rules leave alone, `research_audit.skip_tiers`. */
     skipTiers: Set<string>;
     /** The stages of done or closed work, the stages carrying `terminal`. */
@@ -69,15 +71,7 @@ export type AuditRules = {
     negativeStages: Set<string>;
     /** The stages of dead ends, the stages carrying `dead_end`. */
     deadEndStages: Set<string>;
-    /** The rows of `publication_kinds`, in the config's order. */
-    publicationKinds: PublicationKind[];
 };
-
-/**
- * One row of `publication_kinds`: the sections of the website's feed a project is expected in,
- * and the stages and forms the row holds to; a side the row leaves out holds to nothing.
- */
-export type PublicationKind = { kind: string[]; stages?: string[]; forms?: string[] };
 
 /** A list written `['a', 'b']`, the form an audit message quotes a list in. */
 export function printed(items: string[]): string {
@@ -120,22 +114,6 @@ export const scalarShape = z
 /** A soft limit of `read_limits`: a number. */
 const readLimitShape = z.number();
 
-/** One row of `publication_kinds`; a row with no section in its `kind` is left out. */
-const publicationKindShape = z
-    .object({
-        kind: wordListShape.refine((kind) => kind.length > 0),
-        stages: wordListShape.optional(),
-        forms: wordListShape.optional()
-    })
-    .transform((row): PublicationKind => ({
-        kind: row.kind,
-        ...(row.stages === undefined ? {} : { stages: row.stages }),
-        ...(row.forms === undefined ? {} : { forms: row.forms })
-    }));
-
-/** The rows of `publication_kinds` a shape accepts, in the order the file writes them. */
-const publicationKindsShape = keeping(publicationKindShape).catch(() => []);
-
 /** One row of `focus_lanes`, for the chips it lists; a row listing none, or no row, lists none. */
 const laneChipsShape = z.object({ chips: wordListShape.catch(() => []) }).catch({ chips: [] });
 
@@ -155,9 +133,6 @@ function stageLabelOf(config: Record<string, unknown>): (stage: string) => strin
     };
 }
 
-/** `publications_file`: text. */
-const publicationsFileShape = z.string();
-
 /**
  * The rules the scan runs under, read out of the merged configuration, and the domains of the
  * portfolio, whose `expectsDatasets` say where a dataset is expected.
@@ -172,7 +147,6 @@ export function auditRules(
         const limit = readLimitShape.safeParse(value);
         if (limit.success) readLimits[key] = limit.data;
     }
-    const publications = publicationsFileShape.safeParse(config.publications_file);
     const flagged = (key: string, flag: string): Set<string> =>
         new Set(wordsWith(config, key, flag));
     return {
@@ -182,11 +156,10 @@ export function auditRules(
             domains.filter((one) => one.expectsDatasets === true).map((one) => one.id)
         ),
         waitingStatus: flagged('statuses', 'waiting'),
-        publicationsFile: publications.success ? publications.data : '',
         liveStages: flagged('stages', 'live'),
         placedStages: flagged('stages', 'placed'),
         stageLabel: stageLabelOf(config),
-        standardStages: flagged('stages', 'standard'),
+        stages: config.stages,
         skipTiers: new Set(skippedTiers(config)),
         terminalStages: flagged('stages', 'terminal'),
         laneChips: laneChipsOf(config.focus_lanes),
@@ -194,8 +167,7 @@ export function auditRules(
         boardsOf: (project, self) => boardsTaking(project, takeContext(config, self)),
         publicStages: flagged('stages', 'public'),
         negativeStages: flagged('stages', 'negative'),
-        deadEndStages: flagged('stages', 'dead_end'),
-        publicationKinds: publicationKindsShape.parse(config.publication_kinds)
+        deadEndStages: flagged('stages', 'dead_end')
     };
 }
 
@@ -234,8 +206,8 @@ export function signatureOf(
  * primary, its records of the merged snapshot, whose references are resolved across the hubs, the
  * hubs that hold each project key (`held`), which an entry's `related` key resolves against, the
  * ids of the people the workspace setting `self` names, which a project's role and its boards are
- * read with, the rules and the words. The website's publication list belongs to the primary hub
- * and is run over it alone.
+ * read with, the rules, the hub's own `audit:` setting (setting.ts) and the words. Each hub is
+ * held to its own setting, its website feed included.
  */
 export type AuditInput = {
     hub: string;
@@ -246,6 +218,7 @@ export type AuditInput = {
     held: Holders;
     self: ReadonlySet<Id>;
     rules: AuditRules;
+    setting: AuditSetting;
     catalog: Record<string, string>;
 };
 

@@ -86,9 +86,6 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The keys of the collections list whose files a chat's index holds for this hub, in this order.
 # chat_context: [funding, events, education, applications, joint-work, tasks]
 
-# A website's publication list, compared with the manifests by the Audit view. None by default.
-# publications_file: path/to/publications.yml
-
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
 
@@ -129,6 +126,47 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #   writing_glyphs: []
 #   example:
 #   writing_skip: ['**/vendor/**', '**/manuscript/**/*.tex']
+
+# The conventions the Audit view holds this hub's projects to, each off until it is set. A project
+# of a tier `research_audit.skip_tiers` names is held to none of them.
+# `required_files`: a file a project must hold, a row requiring its file when each key it names
+# is met: the project's stage meets `stages` (a word block of the stages: `words`, `not_words`,
+# `flags`, `not_flags`), the project holds the folder `folder`, and it lies under one of the hub
+# folders `folders` (a project of a workspace repository lies under none).
+# `required_sections`: a heading a file of a project must hold while the dotted manifest key `key`
+# has a value; a line holds it when it is the heading or starts with it and a space.
+# `stage_folders`: the hub folders a project at the stages `stages` is kept under, matched by whole
+# path segments; a project of a workspace repository is held to none.
+# `website`: the website's publications feed, its entries under the key `list` of each section and
+# an entry's title under `title`, and the sections `kinds` a project is expected in, the first row
+# whose `stages` hold the project's stage and whose `forms` hold its form giving them.
+# audit:
+#   required_files: []
+#   required_sections: []
+#   stage_folders: []
+#   website:
+#     file: ''
+#     list: ''
+#     title: ''
+#     kinds: []
+#   example:
+#   audit:
+#     required_files:
+#       - { file: README.md, stages: { not_flags: [terminal] } }
+#       - { file: code/README.md, folder: code }
+#     required_sections:
+#       - { file: README.md, heading: "## Data", key: datasets }
+#     stage_folders:
+#       - { stages: { words: [published] }, folders: [projects/archive/published] }
+#     website:
+#       file: site/_data/publications.yml
+#       list: papers
+#       title: title
+#       kinds:
+#         - { kind: [thesis], forms: [thesis] }
+#         - { kind: [papers-in-review], stages: [submitted, revision] }
+#         - { kind: [journal, other-publications], forms: [journal] }
+#         - { kind: [journal, conference, thesis, other-publications] }
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}

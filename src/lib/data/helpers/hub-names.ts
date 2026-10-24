@@ -357,10 +357,12 @@ export function offerAlong(
  * finding and is not applied. They are the keys that describe this hub rather than the engine: its
  * folders and the files of its records, which of its records a chat's index holds, where the
  * reader's bookmarks, the schedules and the machine's apps are kept, the cluster its jobs run on,
- * the files its writing rules skip or let draw arrows, the values its apps' settings hold, the
- * counts its tabs draw, its entry statuses, project chips and Position Lead statuses, and its own
- * words, which oculus ships none of: the fit colours of its Position Leads. Its domains and theme
- * words are its own registry files'.
+ * the files its writing rules skip or let draw arrows, the conventions its audit holds its projects
+ * to (`audit:`: the files and sections it requires, the folders a stage keeps a project in and its
+ * website's feed), the values its apps' settings hold, the counts its tabs draw, its entry
+ * statuses, project chips and Position Lead statuses, and its own words, which oculus ships none
+ * of: the fit colours of its Position Leads. Its domains and theme words are its own registry
+ * files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -368,7 +370,6 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'collections', file: 'sources.yml' },
     { key: 'chat_context', file: 'sources.yml' },
     { key: 'new_project_dir', file: 'sources.yml' },
-    { key: 'publications_file', file: 'sources.yml' },
     { key: 'linkedin_dir', file: 'sources.yml' },
     { key: 'career_file', file: 'sources.yml' },
     { key: 'memories_dir', file: 'sources.yml' },
@@ -386,6 +387,13 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'slurm.resource', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },
     { key: 'lint.writing_glyphs', file: 'behavior.yml' },
+    { key: 'audit.required_files', file: 'behavior.yml' },
+    { key: 'audit.required_sections', file: 'behavior.yml' },
+    { key: 'audit.stage_folders', file: 'behavior.yml' },
+    { key: 'audit.website.file', file: 'behavior.yml' },
+    { key: 'audit.website.list', file: 'behavior.yml' },
+    { key: 'audit.website.title', file: 'behavior.yml' },
+    { key: 'audit.website.kinds', file: 'behavior.yml' },
     { key: 'app_settings', file: 'behavior.yml' }
 ];
 

@@ -47,7 +47,7 @@ import {
 import { watchBookmarks, type BookmarksWatchOptions } from '../../watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from '../../watch/git.ts';
 import { watchLocal, type LocalWatcher } from '../../watch/local.ts';
-import { watchPortfolio, type Watcher } from '../../watch/portfolio.ts';
+import { watchPortfolio, type Watcher } from '../../watch/portfolio/portfolio.ts';
 import { watchSessions } from '../../watch/sessions.ts';
 
 /**

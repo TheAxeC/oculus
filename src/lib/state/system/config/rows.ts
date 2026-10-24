@@ -175,12 +175,16 @@ export function placeOf(row: ConfigRow): { root: string; file: string } | null {
 }
 
 /**
- * Whether a row's control writes its value whole, as a list, a multi, a parked list or a family
- * does through its editor, rather than one value at a time.
+ * Whether a row's control writes its value whole, as a list, a multi, a parked list, a word block
+ * or a family does through its editor, rather than one value at a time.
  */
 export function writtenWhole(control: ConfigRow['control']): boolean {
     return (
-        control === 'list' || control === 'multi' || control === 'parked' || control === 'family'
+        control === 'list' ||
+        control === 'multi' ||
+        control === 'parked' ||
+        control === 'words' ||
+        control === 'family'
     );
 }
 
@@ -446,5 +450,6 @@ export function mismatchMessage(row: ConfigRow): Message | null {
     if (lists || (row.control === 'multi' && row.entry.joined !== true)) {
         return message('mismatchList', text);
     }
+    if (row.control === 'words') return message('mismatchBlock', text);
     return message('mismatchText', text);
 }

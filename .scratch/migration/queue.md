@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
-- O63 (the audit's hub conventions as hub settings), repair round 1 built 2026-10-24; its review over the round running.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order:
-- O60 (each part of `config/` overridden where it belongs). Brief checked; held until O63 lands, since both change the config layers, the Settings rows and the hub-key documents.
+- O60 (each part of `config/` overridden where it belongs). Brief checked; its /spec is next, from main's head after O63.
 - O69 (the bar of a project board reworked, ruling 320). Held until O60 lands, since both change the board's facets.
 - O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). Held until O60 lands.
 - O71 (the priority removed, ruling 329). Held until O60 lands.
@@ -11,6 +11,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
+- O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, commit "Land O63"; the hub rewrite on disk, waiting for Axel's word.
 - O68 (the Focus lane card marks without the two-mark cap, the career banner as ruling 301 says), 2026-10-24, b0536bf5; the hub rewrite on disk, waiting for Axel's word.
 - O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.
 - O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.

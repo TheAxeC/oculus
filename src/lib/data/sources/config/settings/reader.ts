@@ -8,7 +8,7 @@
 
 import { byKey } from '../../../helpers/guards.ts';
 import { mapShape, readAs } from '../../../shapes/shapes.ts';
-import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
+import { catalogOf, flaggedItems, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem, type RuleLists, type ValueProblem } from '../catalog/value-rule.ts';
 
 /**
@@ -57,9 +57,12 @@ export function noRule(key: string, file: string = BEHAVIOR): Error {
     );
 }
 
-/** The items of the sources the entry names, together; null while one is not held. */
+/**
+ * The items of the sources the entry names, together, and the flags a word block drawn from them
+ * takes; each null while one of its sources is not held.
+ */
 function listsOf(entry: CatalogEntry, config: Record<string, unknown>): RuleLists {
-    return { sourced: sourcedItems(entry, config) };
+    return { sourced: sourcedItems(entry, config), flagged: flaggedItems(entry, config) };
 }
 
 /**

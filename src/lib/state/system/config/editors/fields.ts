@@ -6,10 +6,11 @@
 //
 // A field is held in a draft as its typed value (FieldValue): a boolean for a toggle, the box's
 // text for a number, a string for text, long, choice, glyph, hue, colour, folder, file and path, a
-// list of words for multi, list and parked, and a list of cards for a nested list of records. A
-// field the record does not hold is absent from the card, which is how a field is unset. A held
-// value its control cannot show (`tab_size: "4"`) is not read into the card's fields: it stays in
-// the card's `kept` as the file has it, and is sent back unchanged.
+// list of words for multi, list and parked, a word block (its lists `words`, `not_words`, `flags`
+// and `not_flags`, each held while it has a word) for words, and a list of cards for a nested list
+// of records. A field the record does not hold is absent from the card, which is how a field is
+// unset. A held value its control cannot show (`tab_size: "4"`) is not read into the card's fields:
+// it stays in the card's `kept` as the file has it, and is sent back unchanged.
 //
 // The sentences are messages (messages.ts) for the view to word; nothing here holds one. The page
 // refuses the number, form and path problems here, before the write, by the rule the server's write
@@ -19,7 +20,13 @@
 
 import { byKey, isMap } from '../../../../data/helpers/guards.ts';
 import {
+    BLOCK_LISTS,
+    type BlockList,
+    type WordBlock
+} from '../../../../data/shapes/boards/words.ts';
+import {
     classOfHex,
+    flagSources,
     hueHex,
     hueOfClass,
     listedSources,
@@ -39,10 +46,11 @@ import {
 import { message, type Message } from '../messages.ts';
 import type { Lists } from './sources.ts';
 
-export type { CatalogEntry, FieldSpec };
+export { BLOCK_LISTS };
+export type { BlockList, CatalogEntry, FieldSpec };
 
 /** What a field holds in a draft; see the head of this file. */
-export type FieldValue = boolean | string | string[] | Card[];
+export type FieldValue = boolean | string | string[] | Card[] | WordBlock;
 
 /**
  * One entry of an editor: the typed value of each field it holds, the fields of the record the
@@ -105,6 +113,24 @@ export function wordsOf(held: FieldValue | undefined): string[] {
 /** The cards of a nested list held in a draft; a field the card lacks holds none. */
 export function cardsOf(held: FieldValue | undefined): Card[] {
     return Array.isArray(held) ? held.filter((one): one is Card => typeof one === 'object') : [];
+}
+
+/** The word block held in a draft; a value that is no block holds no list. */
+export function blockIn(held: FieldValue | undefined): WordBlock {
+    return typeof held === 'object' && !Array.isArray(held) ? held : {};
+}
+
+/** Whether a value the file holds is a word block: a map of the four lists, each of texts. */
+function isBlock(held: unknown): held is WordBlock {
+    return (
+        isMap(held) &&
+        Object.entries(held).every(
+            ([name, list]) =>
+                BLOCK_LISTS.some((one) => one === name) &&
+                Array.isArray(list) &&
+                list.every((one) => typeof one === 'string')
+        )
+    );
 }
 
 /** The text a box shows for a field's held value; a value that is not text shows none. */
@@ -190,6 +216,10 @@ export function readField(spec: CatalogEntry, held: unknown): Read {
             const cards = cardsFrom(held, spec.fields ?? {});
             return cards === null ? { kind: 'broken' } : value(cards);
         }
+        case 'words':
+            return isBlock(held)
+                ? value(Object.fromEntries(Object.entries(held).map(([k, v]) => [k, [...v]])))
+                : STUCK;
         default:
             return typeof held === 'string' ? value(held) : STUCK;
     }
@@ -231,6 +261,22 @@ export function fromWords(
 ): FieldValue {
     if (typeof previous === 'string' && spec.joined !== true && words.length === 1) return words[0];
     return words;
+}
+
+/**
+ * The field's value for a new list of words of one list of a word block: a list left with no word
+ * is taken out of the block, and a block left with no list unsets the field.
+ */
+export function fromBlock(
+    held: FieldValue | undefined,
+    list: BlockList,
+    words: string[]
+): FieldValue | undefined {
+    const others = Object.entries(blockIn(held)).filter(([name]) => name !== list);
+    const block: WordBlock = Object.fromEntries(
+        words.length === 0 ? others : [...others, [list, words]]
+    );
+    return Object.keys(block).length === 0 ? undefined : block;
 }
 
 // ---- the lists a choice draws from ----------------------------------------------------------
@@ -282,6 +328,16 @@ export function poolOf(spec: CatalogEntry, record: Record<string, FieldValue>, l
     }
     pool.items = [...new Set(pool.items)];
     return pool;
+}
+
+/**
+ * The pool one list of a word block draws from: for `words` and `not_words` the list the spec's
+ * `from` names, for `flags` and `not_flags` the flags of that list (FLAG_SOURCES); a list with no
+ * flags gives none.
+ */
+export function blockPool(spec: CatalogEntry, list: BlockList, lists: Lists): Pool {
+    if (list === 'words' || list === 'not_words') return poolOf(spec, {}, lists);
+    return poolOf({ ...spec, options: [], from: flagSources(spec) }, {}, lists);
 }
 
 /** The hue a colour or hue field's held text stands for, or null when it stands for none. */
@@ -561,6 +617,10 @@ export function writtenField(
             return Array.isArray(held) ? done(wordsOf(held)) : failed({ is: 'type' });
         case 'records':
             return failed({ is: 'type' });
+        case 'words': {
+            if (typeof held !== 'object' || Array.isArray(held)) return failed({ is: 'type' });
+            return Object.keys(held).length === 0 ? OK_NOTHING : done(held);
+        }
         case 'folder':
         case 'file':
         case 'path': {

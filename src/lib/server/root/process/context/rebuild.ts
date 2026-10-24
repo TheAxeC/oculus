@@ -15,7 +15,7 @@ import {
     rebuiltBy,
     type WatcherName
 } from '../../watch/local.ts';
-import type { PortfolioWatcher, Watcher } from '../../watch/portfolio.ts';
+import type { PortfolioWatcher, Watcher } from '../../watch/portfolio/portfolio.ts';
 import type { SessionsWatcher } from '../../watch/sessions.ts';
 import type { SchedulesWatcher } from '../../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../../machine/usage/refresh.ts';

@@ -8,12 +8,14 @@
 //
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
 // marks what the Settings view refuses: a toggle holds a flag, a number its range, a choice the
-// words of its `options` and of the sources it names, a list its items and its slots. A source that
-// only the page holds (the views, the theme classes, the usage tiers, the file icon themes) offers
-// its words nowhere else, so a choice drawn from one is any text.
+// words of its `options` and of the sources it names, a list its items and its slots, a word block
+// its four lists of the words and the flags of the list it names. A source that only the page holds
+// (the views, the theme classes, the usage tiers, the file icon themes) offers its words nowhere
+// else, so a choice drawn from one is any text.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
-import { hueNames, listedSources, pickedSources } from '../options.ts';
+import { blockFlags, flagSources, hueNames, listedSources, pickedSources } from '../options.ts';
+import { BLOCK_LISTS } from '../../../../shapes/boards/words.ts';
 import { glyphNames } from '../../rail.ts';
 import { FORM_PATTERNS } from '../value-rule.ts';
 import type { JsonSchema } from '../../../../snapshot/schema/json.ts';
@@ -106,6 +108,27 @@ function listSchema(spec: FieldSpec): JsonSchema {
     return schema;
 }
 
+/**
+ * A word block: a map of the lists `words` and `not_words`, held to the words of the list the
+ * spec's `from` names, and `flags` and `not_flags`, held to that list's flags, each a list of texts
+ * while the list it is held to is not held.
+ */
+function blockSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
+    const words = wordsOf(spec, lists);
+    const flags = blockFlags(spec, (source) => lists.items(source));
+    const listOf = (held: string[] | null): JsonSchema => ({
+        type: 'array',
+        items: held === null || held.length === 0 ? { type: 'string' } : { enum: held }
+    });
+    // A block drawn from a list whose words carry no flags takes none.
+    const flagged = flagSources(spec).length === 0 ? { type: 'array', maxItems: 0 } : listOf(flags);
+    const properties: Record<string, JsonSchema> = {};
+    for (const list of BLOCK_LISTS) {
+        properties[list] = list.endsWith('words') ? listOf(words) : flagged;
+    }
+    return { type: 'object', properties, additionalProperties: false };
+}
+
 /** The schema of a value of one control. */
 function controlSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
     switch (spec.control) {
@@ -121,6 +144,8 @@ function controlSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
             return listSchema(spec);
         case 'parked':
             return { type: 'array', items: { type: 'string' } };
+        case 'words':
+            return blockSchema(spec, lists);
         case 'glyph': {
             const names = glyphNames(lists.merged) ?? [];
             return names.length > 0 ? { enum: names } : { type: 'string' };

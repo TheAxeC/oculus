@@ -10,12 +10,12 @@ text:
         title: Audit
         toolbar: Audit controls
         search: 'Search findings ...'
-        empty: 'Nothing open: no markers, no data gaps, no conformance gaps, no status chip out of place, no readability warnings and nothing to reconcile with the website.'
+        empty: 'Nothing open: no markers, no data gaps or missing sections, no missing required files, no status chip or project folder out of place, no readability warnings and nothing to reconcile with the website.'
         empty_glyph: circle_empty
         none_match: No finding matches the search.
         sec_todo: Open items (TODO / VERIFY)
         sec_data: Missing data
-        sec_conform: Tier conformance
+        sec_conform: Hub conventions
         sec_manifest: Manifest guardrails
         sec_readability: Readability
         sec_publink: Website publications sync
@@ -43,19 +43,18 @@ text:
         msg_missing_field: 'missing `{0}`'
         msg_provisional: '{0} provisional results: the numbers are not final'
         msg_provisional_one: 'one provisional result: the number is not final'
-        msg_no_data_section: 'has `datasets` but no Data section (README.md `## Data` or DATA.md)'
+        msg_required_section: 'has a value at `{0}` but {1} has no heading `{2}`'
         msg_docs_ahead: 'docs changed {0}, {1}d after the manifest; refresh project.yml'
-        msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1}: the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
+        msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1}: the reproduced code may not be what was deposited; deposit it again and bump `code_availability.date`'
         msg_collection_missing: collection file missing
         msg_entry_no_title: missing title
         msg_entry_no_status: missing status
         msg_entry_no_date: 'status "{0}" but no date tracked'
         msg_entry_related: 'related id `{0}` is not a known project'
         msg_entry_link: 'link path missing: {0}'
-        msg_no_readme: 'missing: the one private doc every project needs'
-        msg_retired_doc: 'retired doc: fold it into README.md'
-        msg_bad_folder: 'non-canonical folder: rename to {0}'
-        msg_code_no_readme: code/ has no README.md (the deposit root)
+        msg_required_file: 'missing {0}, a file the hub requires'
+        msg_stage_folder: 'at the stage `{0}` but under none of {1}'
+        msg_setting_shape: '{1} in {0} is not of the shape the audit setting takes, so that part is off'
         msg_no_lead: 'names no lead: add `lead:` with the person who leads the work'
         msg_no_board: 'on no board: tier {0}, role {1}, stage {2}'
         msg_terminal_lane_chip: 'the stage `{0}` is done but the chip `{1}` puts it on a Focus lane: remove the chip'
@@ -65,11 +64,11 @@ text:
         msg_missing: missing
         msg_too_long: '{0} chars (>{1}): trim to a glance; detail belongs in the prose docs'
         msg_result_too_long: '{0} chars (>{1}): headline only'
-        msg_site_unreadable: 'could not parse publications.yml: {0}'
+        msg_site_unreadable: 'could not parse {0}: {1}'
         msg_site_wrong_section: 'on the website under {0} but hub stage `{1}` expects {2}: wrong section?'
         msg_site_title_differs: 'likely on the website as "{0}" (section {1}) but the titles differ: reconcile them'
         msg_site_missing: 'public (`{0}`) but no website entry: add it (likely section {1})'
-        msg_site_negative: 'hub-private negative result (`{0}`) but appears on the PUBLIC website under {1}: remove it (null/negative results never leave the hub)'
-        msg_site_deadend: 'hub marks this `{0}` but it appears on the PUBLIC website under {1}; set the stage to `published` if it is a real publication, else remove it from the site (or mute if intentional)'
-        msg_site_untracked: '{0} website papers not matched to any hub project, expected for pre-hub work; verify none are stale or duplicated: {1}'
-        msg_site_untracked_one: 'one website paper not matched to any hub project, expected for pre-hub work; verify it is not stale or duplicated: {1}'
+        msg_site_negative: 'the stage {0} marks a negative result, but the website shows it under {1}'
+        msg_site_deadend: 'the stage {0} marks a dead end, but the website shows it under {1}: give it one of the stages {2} if it is a publication, else take it off the website (or mute if intentional)'
+        msg_site_untracked: '{0} website papers not matched to any project of the hub; verify none are stale or duplicated: {1}'
+        msg_site_untracked_one: 'one website paper not matched to any project of the hub; verify it is not stale or duplicated: {1}'

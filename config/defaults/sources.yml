@@ -53,8 +53,7 @@ chat_context: [funding, events, education, applications, joint-work, tasks]
 career_file: .oculus/data/academic/career.yml
 
 
-# The public website's publications feed the Audit view cross-checks, and the folder of the LinkedIn posts pipeline. oculus names neither: a hub sets them in its .oculus/config.yml, relative to the hub, and empty names no file or folder.
-publications_file: ''
+# The folder of the LinkedIn posts pipeline. oculus names none: a hub sets it in its .oculus/config.yml, relative to the hub, and empty names no folder.
 linkedin_dir: ''
 
 

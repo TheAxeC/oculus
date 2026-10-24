@@ -55,29 +55,28 @@ palette:
 # - `dead`: a dead outcome, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order. The `dead-ends` row of `categories:` below takes these stages, and the cross-link groups leave a project at such a stage out.
 # - `on_map`: a stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.
 # - `placed`: a stage that has a venue, so the audit asks for one.
-# - `standard`: the stages the audit holds to the one-README standard.
-# - `public`, `negative`, `dead_end`: the publication kind a stage gives in the audit of the website's publications (`publication_kinds` below reads the stages and forms).
+# - `public`, `negative`, `dead_end`: the publication kind a stage gives in the audit of the website's publications, whose sections are the rows of `audit.website.kinds` in the hub's .oculus/config.yml.
 # - `submit_ready`: a stage the board statistics count as ready to go out.
 # - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue.
 # - `deadline_met`: a stage that ends a project's own deadline, which then leaves the deadline radar.
 # - `new_idea`: the stage a new idea is made with; the first such stage is written, and with none the new manifest names no stage.
 stages:
-  nascent:      { label: "nascent (concept)", icon: white, color: "#7c5cff", idea: true, on_map: true, standard: true, new_idea: true }
-  scoping:      { label: "scoping (lit-check and framing)", icon: yellow, color: "#0891b2", idea: true, on_map: true, standard: true }
-  de-risking:   { label: "de-risking (feasibility experiment)", icon: blue, color: "#16a34a", live: true, on_map: true, standard: true }
-  exploring:    { label: exploring, icon: orange, color: "#f59e0b", live: true, on_map: true, standard: true }
-  in-prep:      { label: "in preparation", icon: writing, color: "#a16207", live: true, on_map: true, standard: true, placed: true, public: true }
-  building:     { label: building, icon: active, color: "#d4a017", live: true, on_map: true, standard: true }
-  submit-ready: { label: "submit-ready", icon: green, color: "#ea580c", live: true, on_map: true, standard: true, placed: true, public: true, submit_ready: true }
-  submitted:    { label: "submitted / under review", icon: brown, color: "#0ea5e9", live: true, on_map: true, standard: true, placed: true, public: true, pauses_countdown: true, deadline_met: true }
-  revision:     { label: "major revision (back with the authors)", icon: orange_square, color: "#b45309", live: true, on_map: true, standard: true, placed: true, public: true }
+  nascent:      { label: "nascent (concept)", icon: white, color: "#7c5cff", idea: true, on_map: true, new_idea: true }
+  scoping:      { label: "scoping (lit-check and framing)", icon: yellow, color: "#0891b2", idea: true, on_map: true }
+  de-risking:   { label: "de-risking (feasibility experiment)", icon: blue, color: "#16a34a", live: true, on_map: true }
+  exploring:    { label: exploring, icon: orange, color: "#f59e0b", live: true, on_map: true }
+  in-prep:      { label: "in preparation", icon: writing, color: "#a16207", live: true, on_map: true, placed: true, public: true }
+  building:     { label: building, icon: active, color: "#d4a017", live: true, on_map: true }
+  submit-ready: { label: "submit-ready", icon: green, color: "#ea580c", live: true, on_map: true, placed: true, public: true, submit_ready: true }
+  submitted:    { label: "submitted / under review", icon: brown, color: "#0ea5e9", live: true, on_map: true, placed: true, public: true, pauses_countdown: true, deadline_met: true }
+  revision:     { label: "major revision (back with the authors)", icon: orange_square, color: "#b45309", live: true, on_map: true, placed: true, public: true }
   published:    { label: published, icon: done, color: "#16a34a", terminal: true, placed: true, public: true }
   released:     { label: released, icon: done, color: "#0d9488", terminal: true }
   failed:       { label: "failed (no-go or disproved)", icon: cross_box, color: "#dc2626", dead: 1, terminal: true, negative: true }
   stopped:      { label: "stopped (dropped or abandoned)", icon: trash, color: "#9ca3af", dead: 2, terminal: true, dead_end: true }
 
 
-# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board's `forms:` in layout.yml and a row of `categories:` below may name it, and `publication_kinds` below reads it. A software project has no form: its tier says what it is.
+# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board's `forms:` in layout.yml and a row of `categories:` below may name it, and so may a row of `audit.website.kinds` in the hub's .oculus/config.yml. A software project has no form: its tier says what it is.
 forms:
   journal:     { label: "journal article", icon: journals }
   conference:  { label: "conference paper", icon: conference }
@@ -206,7 +205,7 @@ tiers:
   software: { label: Software }
 
 
-# The tiers the audit's research rules leave alone (the one-README standard, the results, datasets and ELI5 of work in flight, the venue and the website's publications), and whose projects the Pillars view's Orphans card leaves out: `skip_tiers`.
+# The tiers the audit's research rules leave alone (the results, datasets and ELI5 of work in flight, the venue, and every check the hub's `audit:` setting names: its required files and sections, its stage folders and the website's publications), and whose projects the Pillars view's Orphans card leaves out: `skip_tiers`.
 research_audit: { skip_tiers: [personal] }
 
 
@@ -230,19 +229,6 @@ categories:
   - { key: other-outputs, label: "other outputs", stages: { words: [published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea", record: true }
   - { key: released,      label: released,        stages: { words: [released] } }
   - { key: dead-ends,     label: dead-ends,       stages: { flags: [dead] }, color: "#9ca3af", archival: true }
-
-
-# The section of the website's publication feed a project is expected in, for the audit of that feed: the first row whose `stages` holds the project's stage and whose `forms` holds its form gives its `kind`, the sections it may sit in; a row without `stages` or without `forms` places no condition on that side, so the last row catches every project.
-publication_kinds:
-  - { kind: [thesis],                forms: [thesis] }
-  - { kind: [papers-in-review],      stages: [submitted, revision] }
-  - { kind: [papers-in-preparation], stages: [in-prep, submit-ready] }
-  - { kind: [abandoned-papers],      stages: [stopped] }
-  - { kind: [abstracts],             forms: [abstract] }
-  - { kind: [posters],               forms: [poster] }
-  - { kind: [conference],            forms: [conference] }
-  - { kind: [journal, other-publications], forms: [journal] }
-  - { kind: [abstracts, conference, journal, other-publications, posters, thesis] }
 
 
 # Dataset access -> chip colour.

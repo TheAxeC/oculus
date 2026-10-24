@@ -1,10 +1,11 @@
 // Layer 1, data. The readers of the merged configuration that return findings, in one list: the
-// server publishes their findings with the config (server/root/watch/portfolio.ts), says them at
-// start (server/root/process/context/findings.ts), and a config write compares each one's findings
-// before and after its edit (server/edit/writes/config/config-checks.ts). A finding about a value
-// names the file the value was read from (keyFile): the open workspace file for an option its
-// `settings:` sets, the hub's settings file for a key of the hub list it sets, else oculus's file.
-// The documents of `docs:` are checked against the disk by the server's own reader beside these.
+// server publishes their findings with the config (server/root/watch/portfolio/portfolio.ts), says
+// them at start (server/root/process/context/findings.ts), and a config write compares each one's
+// findings before and after its edit (server/edit/writes/config/config-checks.ts). A finding about
+// a value names the file the value was read from (keyFile): the open workspace file for an option
+// its `settings:` sets, the hub's settings file for a key of the hub list it sets, else oculus's
+// file. The documents of `docs:` are checked against the disk by the server's own reader beside
+// these.
 
 import type { Finding } from '../../../model/index.ts';
 import { behaviorFindings, iconFindings, settingFindings } from '../catalogs.ts';

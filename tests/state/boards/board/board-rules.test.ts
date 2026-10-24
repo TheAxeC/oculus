@@ -42,6 +42,7 @@ import {
     takeContext
 } from '../../../../src/lib/data/shapes/boards/takes.ts';
 import { guardrails } from '../../../../src/lib/server/content/audit/projects.ts';
+import { hubAuditSetting } from '../../../../src/lib/server/content/audit/setting.ts';
 import {
     auditRules,
     collector,
@@ -383,6 +384,8 @@ describe("the audit's placement findings", () => {
             held: new Map(),
             self: MINE,
             rules: auditRules(CONFIG),
+            // `/hub` holds no settings file, so its setting names none of the checks.
+            setting: hubAuditSetting('/hub'),
             catalog: CATALOG
         };
         guardrails(input, add);

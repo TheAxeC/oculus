@@ -189,7 +189,7 @@ text:
             control: control {0} is not one of the controls; the option is drawn as a text box
             control_missing: the option names no control; it is drawn as a text box
             source: the list {0} is not one the Settings view can draw; the option is drawn as a text box
-            no_values: a choice or multi with no options or from; the option is drawn as a text box
+            no_values: a choice or multi with no options or from, or a words control with no from; the option is drawn as a text box
             no_help: the entry or field has no help line; a field is drawn as a text box
             no_fields: a records field names no fields; it is drawn as a text box
             range: min is above max; the option is drawn as a text box
@@ -223,6 +223,8 @@ text:
             numbers: a list of numbers
             strings: a list of texts
             records: a list of maps
+            block: 'a map of the lists words, not_words, flags and not_flags, each a list of words'
+            flag: 'one of the flags of the list {0}'
             choice: 'one of {0}'
             source: 'one of the items of the list {0}'
             glyph: a glyph name of config/catalogs/glyphs.yml

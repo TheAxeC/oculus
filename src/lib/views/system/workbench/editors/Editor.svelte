@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, view partial. The editor of a list, a multi or a family of a config file, drawn in
-    // the item of its row: the entries as the draft's form draws them (Cards.svelte), each field
-    // with the control its catalog spec gives it, the problems of the draft named under them, the
+    // Layer 3, view partial. The editor of a list, a multi, a word block or a family of a config
+    // file, drawn in the item of its row: the entries as the draft's form draws them
+    // (Cards.svelte), each field with the control its catalog spec gives it (a word block's lists
+    // as the multi-picks of FieldControl.svelte), the problems of the draft named under them, the
     // sentence of a refusal, and Save and Discard while a draft is held.
     //
     // The draft is the tab's instance state under the file and key (state/system/config/editors/

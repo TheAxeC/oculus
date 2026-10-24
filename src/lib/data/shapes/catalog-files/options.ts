@@ -16,7 +16,9 @@ const optionWords = {
     control: z
         .enum(CONTROLS)
         .optional()
-        .describe('The control the value is set with, which decides what the value may be.'),
+        .describe(
+            'The control the value is set with, which decides what the value may be; words is a word block, a map of the lists words, not_words, flags and not_flags.'
+        ),
     options: z.array(text).optional().describe('The words a choice or a multi offers.'),
     from: z
         .union([
@@ -31,7 +33,7 @@ const optionWords = {
         ])
         .optional()
         .describe(
-            'The list a choice or a multi takes its words from, or a text box suggests from: one source, sources offered together, or the source another field of the record picks.'
+            'The list a choice or a multi takes its words from, a word block (the control words) its words and the flags of that list, or a text box suggests from: one source, sources offered together, or the source another field of the record picks.'
         ),
     empty: z
         .union([z.literal(true), text])

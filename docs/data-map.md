@@ -72,38 +72,43 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 | Person | opened from a person's name | one person, with their organisations, joint work and projects |
 | Entry | opened from a card's title | one entry, its editor and what refers to it |
 | Present | Present | a deck folder |
-| Audit | System | the rules over projects and files, and the website's publication list against the projects |
+| Audit | System | the rules over projects and files, and the conventions the hub's `audit:` sets: the files and headings a project must hold, the folders a stage is kept under, and the website's publications feed against the projects |
 | Findings | System | every finding, with its file and line |
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 27 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 33 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
-scan:                 # the folders projects are found in
-portfolio_deck:       # the hub's own deck
-collections:          # the data files and the two feeds (leads, radar), one { key, file } each
-chat_context:         # the collections whose files a chat's index holds for the hub
-new_project_dir:      # the folder a new project is made in, per tier
-publications_file:    # a website's publication list, for the Audit
-linkedin_dir:         # a website's LinkedIn folder
-career_file:          # the career strategy
-memories_dir:         # the photo wall's pictures
-wallpaper_dir:        # the backdrop's pictures
-bookmarks:            # where the reader's own bookmarks are kept
-schedules:            # where the schedules are kept
-apps_dir:             # where the machine's apps are kept
-wallpaper.image:      # the backdrop shown
-docs:                 # the hub's documents, each a tab of a page
-counts:               # the counts the tabs draw
-statuses:             # the statuses of collection entries, with their colours and roles
-chips:                # the chips of projects, with their labels and glyphs
-lead_statuses:        # the statuses of Position Leads, with their roles
-leads_fit:            # the fit colours of the Position Leads
-slurm.resource:       # the cluster Live HPC polls
-lint.writing_skip:    # the files the writing rules skip
-lint.writing_glyphs:  # the files the writing rules let draw arrows and glyphs
-app_settings:         # the values of the settings apps declare
+scan:                     # the folders projects are found in
+portfolio_deck:           # the hub's own deck
+collections:              # the data files and the two feeds (leads, radar), one { key, file } each
+chat_context:             # the collections whose files a chat's index holds for the hub
+new_project_dir:          # the folder a new project is made in, per tier
+linkedin_dir:             # a website's LinkedIn folder
+memories_dir:             # the photo wall's pictures
+wallpaper_dir:            # the backdrop's pictures
+bookmarks:                # where the reader's own bookmarks are kept
+schedules:                # where the schedules are kept
+apps_dir:                 # where the machine's apps are kept
+wallpaper.image:          # the backdrop shown
+docs:                     # the hub's documents, each a tab of a page
+counts:                   # the counts the tabs draw
+statuses:                 # the statuses of collection entries, with their colours and roles
+chips:                    # the chips of projects, with their labels and glyphs
+lead_statuses:            # the statuses of Position Leads, with their roles
+leads_fit:                # the fit colours of the Position Leads
+slurm.resource:           # the cluster Live HPC polls
+lint.writing_skip:        # the files the writing rules skip
+lint.writing_glyphs:      # the files the writing rules let draw arrows and glyphs
+audit.required_files:     # the files the Audit asks a project to hold
+audit.required_sections:  # the headings a project's file must hold while a manifest key has a value
+audit.stage_folders:      # the folders a project at a stage is kept under
+audit.website.file:       # the website's publications feed the Audit checks the projects against
+audit.website.list:       # the key of a feed section's entries
+audit.website.title:      # the key of a feed entry's title
+audit.website.kinds:      # the sections of the feed a project is expected in, by stage and form
+app_settings:             # the values of the settings apps declare
 ```
 
 ## Keys and links
@@ -213,7 +218,7 @@ The first field of the schema is the one a write finds the entry by. An empty va
 
 A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, and oculus merges it into the one portfolio.
 
-- Its `config.yml` paths are read from its own folder. Its `career_file`, `publications_file`, `linkedin_dir` and `portfolio_deck` are not read.
+- Its `config.yml` paths are read from its own folder. Its `career_file`, `linkedin_dir` and `portfolio_deck` are not read. Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.
 - Every record of every hub, the primary's included, has the id `<hub name>:<key>`. The files hold keys: a reference names the record of its key in its own hub, and else the record of the one other hub that holds the key; a key two other hubs hold and its own hub does not names no record, and the Audit reports it.
 - A change to a record goes to its own hub's file. A new record goes to a hub that could take it: a new project to any hub of the workspace, and a new entry (Add, Add Task, an application from a lead, Save to Literature) to a hub that holds its collection, named in its `collections:` or, for Literature, at the engine's path. When more than one hub could take it, the path asks which, the primary first in the list; when one could, the record goes there, primary or not.
 - A collection's view is shown when any hub of the workspace lists its key.

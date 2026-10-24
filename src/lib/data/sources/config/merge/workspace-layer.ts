@@ -20,7 +20,7 @@ import { parse } from 'yaml';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { hubKeys } from '../../../helpers/hub-names.ts';
-import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
+import { catalogOf, flaggedItems, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem } from '../catalog/value-rule.ts';
 import { mustBe } from '../catalog/value-words.ts';
 import { LOCAL_NAME } from '../local.ts';
@@ -166,7 +166,12 @@ function appliedValue(
         const kept = Object.keys(merged.value).filter((name) => !Object.hasOwn(value, name));
         return { value: merged.value, kept };
     }
-    const lists = { sourced: sourcedItems(entry, config), glyphs: glyphNames(config), config };
+    const lists = {
+        sourced: sourcedItems(entry, config),
+        flagged: flaggedItems(entry, config),
+        glyphs: glyphNames(config),
+        config
+    };
     const problem = valueProblem(entry, value, lists);
     if (problem === null) return { value };
     if (problem.kind === 'empty') {

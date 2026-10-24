@@ -21,7 +21,8 @@ export const CONTROLS = [
     'file',
     'path',
     'parked',
-    'records'
+    'records',
+    'words'
 ] as const;
 
 /** One of the words of CONTROLS. */
@@ -76,6 +77,16 @@ export const SOURCES = [
 
 /** One of the words of SOURCES. */
 export type Source = (typeof SOURCES)[number];
+
+/**
+ * The list of flags of each source whose words carry flags, from which a word block (the control
+ * `words`) drawn from the source takes its `flags` and `not_flags`. A block drawn from any other
+ * source takes no flag.
+ */
+export const FLAG_SOURCES: Partial<Record<Source, Source>> = {
+    project_stages: 'stage_flags',
+    status_chips: 'chip_flags'
+};
 
 /** The forms a text can be held to, which value-rule.ts says what each looks like. */
 export const FORMS = ['program', 'extension', 'bundle_id'] as const;

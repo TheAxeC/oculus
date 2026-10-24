@@ -1,7 +1,7 @@
 // Layer 2, server. The build of a workspace's portfolio that the portfolio watcher publishes
-// (server/root/watch/portfolio.ts): every hub read and built with its own settings by the steps of
-// data/index.ts and merged as one (`buildHubs`), and the schemas of the files whose readers live in
-// the server added to the set the build hands the YAML server (`withOwnSchemas`).
+// (server/root/watch/portfolio/portfolio.ts): every hub read and built with its own settings by the
+// steps of data/index.ts and merged as one (`buildHubs`), and the schemas of the files whose
+// readers live in the server added to the set the build hands the YAML server (`withOwnSchemas`).
 //
 // The server's own schemas are those of an app's `app.yml` and a repository's
 // `.oculus/commands.yml` and `.oculus/launch.yml`. Each is the JSON Schema of the whole-file zod

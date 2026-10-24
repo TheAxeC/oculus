@@ -28,7 +28,7 @@ import { dirname } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import type { FilesPayload } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
-import type { Watcher } from './portfolio.ts';
+import type { Watcher } from './portfolio/portfolio.ts';
 
 /**
  * Milliseconds of quiet after the last event before one message is published, the wait of

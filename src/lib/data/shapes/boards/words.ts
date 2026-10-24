@@ -5,16 +5,17 @@
 // `flags` when one of its words carries one of the flags in the vocabulary map, `not_flags` when
 // none does. A list left out places no condition. The boards, the categories, the audit and the
 // config check read blocks the one way through this module, so a board and a category cannot read
-// a block differently.
+// a block differently; the `words` control of an option (data/sources/config/catalog/value-rule.ts
+// and the Settings view's editor) takes its four lists from here.
 
 import { z } from 'zod';
 import { mapShape, readAs, stringItemsShape } from '../shapes.ts';
 
 /** The four lists of a block, in the order the options catalog describes them. */
-const BLOCK_LISTS = ['words', 'not_words', 'flags', 'not_flags'] as const;
+export const BLOCK_LISTS = ['words', 'not_words', 'flags', 'not_flags'] as const;
 
 /** One list of a block: its name. */
-type BlockList = (typeof BLOCK_LISTS)[number];
+export type BlockList = (typeof BLOCK_LISTS)[number];
 
 /** A word block as read: each list the block names, the words as written. */
 export type WordBlock = Partial<Record<BlockList, string[]>>;

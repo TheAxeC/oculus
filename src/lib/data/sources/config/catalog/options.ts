@@ -33,6 +33,7 @@ import { byKey, isMap, str, strings } from '../../../helpers/guards.ts';
 import { keyOf } from '../../../helpers/hub-names.ts';
 import {
     CONTROLS,
+    FLAG_SOURCES,
     FORMS,
     HEADINGS,
     SOURCES,
@@ -131,6 +132,33 @@ export type CatalogEntry = Omit<FieldSpec, 'control'> & {
 /** The sources a field's `from` lists, offered together; none when it picks by another field. */
 export function listedSources(spec: Pick<FieldSpec, 'from'>): Source[] {
     return Array.isArray(spec.from) ? spec.from : [];
+}
+
+/**
+ * The lists of flags of the sources a spec's `from` lists, each a source whose words carry flags
+ * (FLAG_SOURCES): the flags a word block drawn from them takes.
+ */
+export function flagSources(spec: Pick<FieldSpec, 'from'>): Source[] {
+    return listedSources(spec).flatMap((source) => {
+        const flags = FLAG_SOURCES[source];
+        return flags === undefined ? [] : [flags];
+    });
+}
+
+/**
+ * The flags a word block drawn from a spec's `from` takes: the items of every list of flags
+ * `flagSources` gives, together, each read with `items`. Null while one of them is not held.
+ */
+export function blockFlags(
+    spec: Pick<FieldSpec, 'from'>,
+    items: (source: Source) => string[] | null
+): string[] | null {
+    let flags: string[] | null = [];
+    for (const source of flagSources(spec)) {
+        const listed = items(source);
+        flags = listed === null || flags === null ? null : [...flags, ...listed];
+    }
+    return flags;
 }
 
 /** The `{ field, sources }` a field's `from` is, when the source is picked by another field. */
@@ -290,6 +318,9 @@ function readSpec(
     ) {
         flag('no_values');
     }
+    // A word block draws its words from the list `from` names and its flags from that list's flags,
+    // so it names one.
+    if (entry.control === 'words' && listedSources(entry).length === 0) flag('no_values');
 
     if (map.empty === true) entry.empty = true;
     else if (typeof map.empty === 'string' && map.empty !== '') entry.empty = map.empty;
@@ -581,6 +612,17 @@ export function sourcedItems(
         sourced = items === null || sourced === null ? null : [...sourced, ...items];
     }
     return sourced;
+}
+
+/**
+ * The flags of every source a spec's `from` lists that carries flags, together, from the merged
+ * config: the flags a word block takes. Null while one of them is not held.
+ */
+export function flaggedItems(
+    spec: Pick<FieldSpec, 'from'>,
+    config: Record<string, unknown>
+): string[] | null {
+    return blockFlags(spec, (source) => configItems(source, config));
 }
 
 /**

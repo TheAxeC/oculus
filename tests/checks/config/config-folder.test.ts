@@ -149,6 +149,7 @@ describe("oculus's own config directory", () => {
             'usage_refresh_min',
             'usage_refresh_model',
             'audit_ignore',
+            'audit',
             'calendar',
             'mail',
             'processes',
@@ -198,7 +199,6 @@ describe("oculus's own config directory", () => {
             'collections',
             'chat_context',
             'career_file',
-            'publications_file',
             'linkedin_dir',
             'portfolio_deck',
             'memories_dir',
@@ -225,7 +225,6 @@ describe("oculus's own config directory", () => {
             'research_audit',
             'roles',
             'categories',
-            'publication_kinds',
             'data_access',
             'venue_categories',
             'venue_tiers',
@@ -336,12 +335,6 @@ describe("oculus's own config directory", () => {
         ],
         ['catalogs/vocab.yml', 'stages: [exploring]\n', 'stages', 'stages must be a map'],
         ['catalogs/vocab.yml', 'tiers: 3\n', 'tiers', 'tiers must be a map'],
-        [
-            'catalogs/vocab.yml',
-            'publication_kinds: { kind: thesis }\n',
-            'publication_kinds',
-            'publication_kinds must be a list'
-        ],
         [
             'text/views/system/status.yml',
             'text: {}\nstray: x\n',
@@ -645,7 +638,7 @@ describe("oculus's own config directory", () => {
         expect(problems).toEqual([]);
     });
 
-    it('describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles, categories and publication_kinds row in the schema of vocab.yml', () => {
+    it('describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles and categories row in the schema of vocab.yml', () => {
         const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const portfolio = portfolioConfigFrom(config);
         const dir = join(engineDir(), 'config');
@@ -672,8 +665,7 @@ describe("oculus's own config directory", () => {
             ['lead_statuses', vocab.lead_statuses?.additionalProperties],
             ['tiers', vocab.tiers?.additionalProperties],
             ['roles', vocab.roles?.items],
-            ['categories', vocab.categories?.items],
-            ['publication_kinds', vocab.publication_kinds?.items]
+            ['categories', vocab.categories?.items]
         ];
         /** The words a row is drawn with, which are no flags. */
         const drawn = new Set(['label', 'icon', 'color']);
@@ -682,10 +674,9 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 14 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, no tier
-        // flag, the 2 keys of a roles row, the 6 keys of a categories row and the 3 keys of a
-        // publication_kinds row.
-        expect(keys).toHaveLength(38);
+        // 13 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, no tier
+        // flag, the 2 keys of a roles row and the 6 keys of a categories row.
+        expect(keys).toHaveLength(34);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

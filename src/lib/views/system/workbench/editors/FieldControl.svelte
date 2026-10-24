@@ -4,8 +4,10 @@
     // for a field a record may lack), a number box held to its range, a text box (with suggestions
     // when the spec names a source), a text area, a choice or a multi-pick over the list the spec
     // names, a glyph picker, a hue or colour picker drawing the palette, a folder, file or path
-    // box, and an inline list of items. The rules each control follows are
-    // state/system/config/editors/ fields.ts; this draws them.
+    // box, an inline list of items, and a word block as four multi-picks (one of these words, none
+    // of them, a word with one of these flags, none with one), the words from the list the spec
+    // names and the flags from that list's flags. The rules each control follows are
+    // state/system/config/editors/fields.ts; this draws them.
     //
     // The partial holds nothing: the value comes in as the field's typed value and every change
     // goes out as a call. A box hands on its text at each keystroke (`ontext`) and, when the caller
@@ -44,7 +46,11 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
+        BLOCK_LISTS,
+        blockIn,
+        blockPool,
         controlOf,
+        fromBlock,
         fromPick,
         fromWords,
         hueOf,
@@ -56,6 +62,7 @@
         textOf,
         toggleOf,
         wordsOf,
+        type BlockList,
         type CatalogEntry,
         type FieldValue
     } from '$lib/state/system/config/editors/fields';
@@ -221,6 +228,31 @@
     /** The hue a hue or colour control shows chosen: the held one, or the held text when stray. */
     const hueHeld = $derived(hueOf(spec, held, lists) ?? held);
 
+    /**
+     * The multi-picks of a word block, one per list: its words, the caption drawn above it, and its
+     * choices, the pool of the list and each held word the pool lacks, marked.
+     */
+    const blockLists = $derived.by(() => {
+        const block = blockIn(value);
+        const names: Record<BlockList, string> = {
+            words: t('settings.block_words'),
+            not_words: t('settings.block_not_words'),
+            flags: t('settings.block_flags'),
+            not_flags: t('settings.block_not_flags')
+        };
+        return BLOCK_LISTS.map((list: BlockList) => {
+            const held = block[list] ?? [];
+            const listPool = blockPool(spec, list, lists);
+            const ready = listPool.state === 'ready';
+            const marked = held
+                .filter((word) => !ready || !listPool.items.includes(word))
+                .map((id) => ({ id, label: ready ? `${id} (${t('settings.not_in_list')})` : id }));
+            const offered = ready ? listPool.items.map((id) => ({ id, label: id })) : [];
+            const named = t('settings.block_list', label, names[list]);
+            return { list, held, named, caption: names[list], choices: [...offered, ...marked] };
+        });
+    });
+
     /** The items of an inline list. */
     const items = $derived(wordsOf(value));
 
@@ -326,6 +358,23 @@
             more={(count: number) => t('editor.more_choices', count)}
             onchange={(next: string[]) => onpick(fromWords(spec, value, next))}
         />
+    {:else if control === 'words'}
+        <div class="items">
+            {#each blockLists as one (one.list)}
+                <span class="caption">{one.caption}</span>
+                <MultiSelect
+                    values={one.held}
+                    label={one.named}
+                    choices={one.choices}
+                    search={t('editor.search')}
+                    remove={t('editor.remove')}
+                    removeGlyph={t('editor.remove_glyph')}
+                    none={t('editor.no_choices')}
+                    more={(count: number) => t('editor.more_choices', count)}
+                    onchange={(next: string[]) => onpick(fromBlock(value, one.list, next))}
+                />
+            {/each}
+        </div>
     {:else if control === 'folder' || control === 'file'}
         <SuggestInput
             value={boxText}
@@ -438,6 +487,12 @@
         display: flex;
         align-items: center;
         gap: 2px;
+    }
+
+    .caption {
+        margin-top: 4px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .note {

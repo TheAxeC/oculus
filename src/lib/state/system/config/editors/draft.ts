@@ -1,19 +1,19 @@
 // Layer 2, client state, pure. The draft a list or family editor holds: the value the file holds at
 // a key read into typed fields, the edits a press makes to it, and the value it reads back as.
 //
-// Every list, multi and family the Settings view edits has one of four forms. A list or parked
-// option is `items`, one text per item. A multi option is `multi`, one card holding the picked
-// words. A family whose fields are `key` and `value` is `pairs`, a key and a value per entry. Any
-// other family is `records`: one card per record with a field per catalog field, the map's key
-// being the card's `key` field when the file holds a map, a nested list of records (a board's
-// `columns` and `groups` in `boards`) drawn as cards of its own.
+// Every list, multi, word block and family the Settings view edits has one of four forms. A list or
+// parked option is `items`, one text per item. A multi or a words option is `multi`, one card
+// holding the picked words or the word block. A family whose fields are `key` and `value` is
+// `pairs`, a key and a value per entry. Any other family is `records`: one card per record with a
+// field per catalog field, the map's key being the card's `key` field when the file holds a map, a
+// nested list of records (a board's `columns` and `groups` in `boards`) drawn as cards of its own.
 //
 // A field is held as its typed value (fields.ts): a toggle as a boolean, a number as the box's
-// text, a choice as its word, a multi as its words, a nested list of records as cards of its own.
-// A field the record does not hold is absent from its card and is left out on Save; a nested list
-// the record does not hold is an empty list of cards, and Save adds no key for it unless a card was
-// added. A field holding a value its control cannot show, and a field the catalog does not name,
-// are kept on the card as the file has them and sent back unchanged.
+// text, a choice as its word, a multi as its words, a word block as its lists, a nested list of
+// records as cards of its own. A field the record does not hold is absent from its card and is left
+// out on Save; a nested list the record does not hold is an empty list of cards, and Save adds no
+// key for it unless a card was added. A field holding a value its control cannot show, and a field
+// the catalog does not name, are kept on the card as the file has them and sent back unchanged.
 //
 // A draft that does not read back is not an error: `draftValue` answers the problems, each with the
 // message to word it, and Save waits until there are none. A draft the page held in the form that
@@ -115,7 +115,9 @@ export function specsOf(row: ConfigRow, form: Draft['form']): Record<string, Fie
         const own = row.entry.form === undefined ? {} : { form: row.entry.form };
         return { item: { help: '', control, ...own } };
     }
-    if (form === 'multi') return { value: { ...row.entry, control: 'multi' } };
+    if (form === 'multi') {
+        return { value: { ...row.entry, control: row.control === 'words' ? 'words' : 'multi' } };
+    }
     return row.fields;
 }
 
@@ -141,7 +143,7 @@ export function draftOf(row: ConfigRow): Draft | null {
         const cards = items.map((item) => single('item', item));
         return { form: 'items', keyed: false, fields: ['item'], cards };
     }
-    if (row.control === 'multi') {
+    if (row.control === 'multi' || row.control === 'words') {
         const read = readField(row.entry, value);
         if (read.kind !== 'value') return null;
         return {
@@ -552,7 +554,8 @@ const NOT_A_BOX = [
     'multi',
     'list',
     'parked',
-    'records'
+    'records',
+    'words'
 ];
 
 /** One field's text read into the card's typed value, or kept as typed text that did not read. */

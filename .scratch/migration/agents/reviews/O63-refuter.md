@@ -152,3 +152,100 @@ Usage: a28e0780c4c2b69e1, claude-opus-5-5, 333566 tokens, 94 tool uses, 23 min 5
 - Declined to judge 3 (the look of the `words` control): the orchestrator's look on TEST at landing.
 - Declined to judge 4: settled by Z984 and by round 1, item 2.
 - Declined to judge 5 (the builder's base replica): outside the diff; nothing to do.
+
+## Repair round 1, refuted
+
+Step O63, worktree `.agents/worktrees/migration-O63`, base 1fbe77b6, round snapshot `.agents/worktrees/migration-O63-round-1/`. The reviewer's own outputs are in the session's scratch folder, `r1/`.
+
+The brief asks for output "piped through the filter the rules file names". `grep -n -i "filter\|pipe" .scratch/migration/agents/spec.md` printed nothing, so the rules file names no filter. Each command below was run as written, and its summary lines are quoted.
+
+### Verification lines
+
+```
+$ npm run diagrams && npm run test:quick        (worktree root, once, foreground; exit 0)
+ok      ASCII gate (0.9 s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.5 s)
+ok      eslint (69.2 s)
+ok      svelte-check (105.7 s): 1792872176443 COMPLETED 538 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (200.7 s): Duration  191.74s (transform 122.84s, setup 0ms, import 334.08s, tests 323.69s, environment 3ms)
+ok      vitest (212.8 s): Duration  205.10s (transform 314.41s, setup 0ms, import 497.74s, tests 240.47s, environment 45.14s)
+ok      vitest slow (244.6 s): Duration  237.08s (transform 18.97s, setup 0ms, import 187.31s, tests 748.52s, environment 19ms)
+test:quick: 247.3 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+(git status --short before and after: the same; shasum of docs/diagrams/* before and after: the same)
+
+$ verify 2: the rules file's perl character-set check over every file git status lists, folders expanded, local.yml excluded (73 files)
+(no output)  ascii exit 0
+
+$ verify 3: grep -rnE "<the brief's pattern>" src config tests docs --exclude=local.yml
+44 lines, every one unrelated (APP_FOLDERS, PLAIN_FOLDERS, MOST_FOLDERS, LEFT_OUT_FOLDERS, READER_FOLDERS, FOLDERS_LOADING, RETIRED_KINDS, WORKSPACE FOLDERS, visibility 'PUBLIC', DOCTYPE PUBLIC, the local constants FOLDERS of pdfjs-assets.ts, lists/folders.ts, manifest.test.ts and opening-apps.test.ts, and 'deposit root\n' at tests/data/sources/docs.test.ts:46).
+
+$ verify 4: sh utils/unused-exports.sh | diff ../O63-base/unused-exports.txt -
+103c103
+< src/lib/server/root/watch/portfolio.ts: DEBOUNCE, MAX_WAIT, audited, relevant, namedByConfig, watchedDirectories, roleDirectories, watchFile
+---
+> src/lib/server/root/watch/portfolio/portfolio.ts: DEBOUNCE, MAX_WAIT, watchFile
+(no added line; noSetting is gone from the list)
+
+$ verify 5: sh utils/folder-check.sh        (no output, exit 0)
+$ ls src/lib/server/root/watch | wc -l      10
+$ wc -l over the changed src/tests files: largest git.ts 878, portfolio/portfolio.ts 850, model/index.ts 846, context.ts 820, config-folder.test.ts 805, fields.ts 751; components Audit.svelte 355, Editor.svelte 243, FieldControl.svelte 497
+
+$ verify 6, base replica: npx vitest run tests/routes/docs/audit.test.ts tests/checks/config/config-folder.test.ts tests/state/boards/board/board-rules.test.ts   (exit 1)
+  27 TypeError: hubAuditSetting is not a function   (the new row at tests/routes/docs/audit.test.ts:419:23 among them)
+   1 Error: Cannot find module '../../../../src/lib/server/content/audit/setting.ts' (board-rules.test.ts)
+   1 AssertionError: expected [ Array(100) ] to deeply equal [ Array(99) ]
+   1 AssertionError: expected [ { key: 'stages.idea', ...(1) }, ...(33) ] to have a length of 33 but got 34
+   1 AssertionError: expected [ 'apps', 'audit_ignore', ...(24) ] to deeply equal [ 'apps', 'audit', ...(25) ]
+   Test Files  3 failed (3) | Tests  30 failed | 25 passed | 2 skipped (57)
+$ the same three files on the worktree:  Test Files  3 passed (3) | Tests  136 passed | 2 skipped (138)
+
+$ round item 3 grep: 158 lines; sorted, they equal the report's quoted output; none of the four phrases other than "folder the"; the only hit in an audit file is projects.ts:52, another sense.
+
+$ case-runs (caserun.ts, caserun2.ts, caserun3.ts, hubrun.ts, identical to the report's): every output equals the report's lines on both trees (diff empty); the hub copy's audit: block equals the report's "Hub rewrite" YAML.
+$ git status --short after every rerun: equal to before (diff empty)
+```
+
+### Verdicts
+
+Items of the brief's "What to build": 1 holds (ruling Z984 settles the skipped-tier claim; `HUB_LIST` holds the seven `audit.*` rows, 33 rows, as `docs/data-map.md` says); 2 holds; 3 holds (Behaviour 1 is a risk on Linux, found by reading); 4 holds (`msg_site_deadend` names the labels of the public stages); 5 holds; 6 holds (27 rows; the `config-folder.test.ts` changes equal the report's table).
+
+Cases: 1 to 17 met (every case-run output reproduces byte for byte on both trees); 11 met (`audit.test.ts:412-423`); 18 met for what a run reaches, the drawing of the control being the look on TEST; 19 met (four rebuilds on the changed tree, three not on the base).
+
+Round items: 1 holds (fails on the base replica at `:419:23`, passes on the worktree; by reading the row fails without the claim); 2 holds; 3 holds; 4 holds (no comment line ends short); 5 holds; 6 holds (`blockFlags` at `catalog/options.ts:148-162`, callers `options.ts:625`, `schemas/options.ts:118`, `config-fit.ts:196`); 7 holds for the runs (Behaviour 1); 8 holds; 9 holds.
+
+### 1. Spec
+
+- S1. Report section "The case-run programs", `<scratchpad>/caserun/paragraphs.py` (report lines 1908-1945): `subprocess.run(['git', 'diff', '--name-only', '--diff-filter=AM'], ...)` and `subprocess.run(['git', 'ls-files', '--others', '--exclude-standard'], ...)`. A script outside "What to build" that runs no case (it lists comment paragraphs for round item 4's reading), so ruling 262 (a) does not cover it and no line of `plan.md` Rulings approves it; it runs `git ls-files`, which the rules file's "Where you work" names among the git commands a builder never runs. Failure scenario: the reading of verify 7 rests on a list from an unapproved script running a forbidden git command, with no record in the ledger. Round item 4 still holds, since the reading itself was checked by the reviewer.
+
+### 2. Proof
+
+none
+
+### 3. Standards
+
+- T1. The report carries no quoted grep for the history words, which the rules file's "What every package obeys" asks for over the comment lines and test titles added or changed. The reviewer's grep finds "still" at `src/lib/server/root/watch/portfolio/portfolio.ts:423-424` (present tense in meaning) and "before" in the head comment of `config/defaults/behavior.yml` and two write files (in-process timing). Failure scenario: the orchestrator cannot tell from the report whether those were judged.
+- T2. Report line 685: two earlier starts of `npm run test:quick` in this round were stopped, the first before the last change, against "Token discipline". Failure scenario: an extra full start slows every other step's runs. The report states it.
+
+### 4. Behaviour
+
+- B1. `src/lib/server/root/watch/portfolio/portfolio.ts:372-381`: `inode = statSync(dir).ino; ... if (handles.has(key) && auditInodes.get(key) !== inode) closeHandle(key);`. By reading (not run; this machine is macOS): a folder made again is told apart from the old one by its inode number alone. On Linux, which oculus ships for, ext4 commonly hands a just-freed inode number to the next directory made, so a removal and a remaking inside one debounce window (`DEBOUNCE = 200`) keep the handle on the deleted folder. The codebase pairs `ino` with `mtimeMs` or `dev` elsewhere (`src/lib/server/core/json.ts:273`, `src/lib/server/core/paths.ts:85`). Failure scenario: `git checkout` in the site repository recreates `_data/` and gets the same inode back; later edits of the feed no longer rebuild the audit until a restart.
+
+### Declined to judge
+
+- The old side of the "Hub rewrite" comparison: the orchestrator's at landing.
+- The look of the `words` control, the "Audit checks" rows and the Audit view's section title and empty text: the orchestrator's look on TEST at landing.
+- `paragraphs.py` was not run, since it runs `git diff` and `git ls-files`.
+- Item 7 on Linux: no Linux machine here.
+- The report's line counts and its 59-file count of verify 2 (it leaves out `docs/diagrams` and `.scratch`): no decision rests on them; the reviewer's run covered all 73 files.
+
+Usage: aef1a070e7f4b6279, claude-opus-5-5, 270060 tokens, 73 tool uses, 16 min 0 s.
+
+### Closed
+
+- S1 (the unapproved script `paragraphs.py`): raised to Axel as open item 330; nothing it produced is used as evidence, and round item 4's reading rests on the reviewer's own check of every comment line of the diff.
+- T1 (the history-word grep): fixed at landing; the orchestrator runs the grep over the added comment lines and test titles and judges each hit in the booking.
+- T2 (the extra test:quick start): stated in the booking; nothing to change in the code.
+- B1 (a folder made again told apart by its inode alone): fixed at landing inside round item 7: the audit watch records the folder's device, inode and birth time, so a folder made again with a reused inode number is opened again (a change time would also change on every file added to the folder).

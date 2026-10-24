@@ -5,7 +5,7 @@
 // read from the checkout the running code is in, which is the checkout whose editor the page is
 // served, so the server's list and the page's agree; the page is handed the keys with its first
 // load (state/shared/page/install.ts) and with every push of the `config` channel
-// (server/root/watch/portfolio.ts). A file that does not read gives no key.
+// (server/root/watch/portfolio/portfolio.ts). A file that does not read gives no key.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

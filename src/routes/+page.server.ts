@@ -14,10 +14,10 @@ import type { PageServerLoad } from './$types';
 
 // The catalog, the glyph vocabulary of names and ASCII stand-ins, and the tone vocabulary are read
 // per request and shipped as page data, which is what the first frame draws from; every later
-// change reaches the page on the `config` channel server/root/watch/portfolio.ts publishes. The
-// read is the request's one read, which hooks.server.ts holds on `locals.config` for whatever in the
-// request asks, and which says its findings once. The page's HTML, its title and the theme it
-// starts on, comes from a request of its own, which reads the config the same way.
+// change reaches the page on the `config` channel server/root/watch/portfolio/portfolio.ts
+// publishes. The read is the request's one read, which hooks.server.ts holds on `locals.config` for
+// whatever in the request asks, and which says its findings once. The page's HTML, its title and
+// the theme it starts on, comes from a request of its own, which reads the config the same way.
 //
 // The icon drawings are the exception: they are files rather than config keys, so the server reads
 // them once when its context is built and again on every config push, and this hands the page what

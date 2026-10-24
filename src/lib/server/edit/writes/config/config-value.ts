@@ -4,10 +4,11 @@
 //
 // The options files (config/options/) decide what may be written: the file must be one of their
 // defaults files, the key one of their entries, and the entry a list-valued control (`list`,
-// `multi`, `parked`) or a family (`fields`). A single value goes through config-key.ts, the rail
-// and the audit's mute list have a write of their own that checks the value by its own rule and
-// then comes here (`own`), the workbench layout is edited in the file, and the machine's own file,
-// a hub's `.oculus/local.yml` or a link to one, is refused before the file is read.
+// `multi`, `parked`), a word block (`words`) or a family (`fields`). A single value goes through
+// config-key.ts, the rail and the audit's mute list have a write of their own that checks the value
+// by its own rule and then comes here (`own`), the workbench layout is edited in the file, and the
+// machine's own file, a hub's `.oculus/local.yml` or a link to one, is refused before the file is
+// read.
 //
 // The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
 // settings file, as the whole value, and any other in the `settings:` map of the open workspace
