@@ -184,3 +184,246 @@ none. Each visible change (lane marks, banner sections and folded line, Awaiting
 Reviewer usage: <the session fills this from the completion notice: agent id, served model, tokens, tool uses, minutes>.
 
 Usage: a7eeb12398f1acb96, claude-opus-5-5, 294870 tokens, 70 tool uses, 15 min 22 s
+
+## Repair round 1, refuted
+
+The rules file (`agents/spec.md`) names no output filter, so each run below is shown through `grep` of its summary lines. S is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/O68-builder` and W is `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O68`.
+
+```
+$ cd .agents/worktrees && for p in <each path of migration-O68-round-1/files.txt>; do diff -u migration-O68-round-1/$p migration-O68/$p; done   # the round's delta, part 1
+docs/HELP.md:287 (the funding line sentence), src/lib/server/edit/writes.ts:20-31 (rewrap), src/lib/views/boards/focus/lanes/LaneCard.svelte:7-8 (rewrap); no other listed path differs
+$ cd W && git status --short   # paths not in files.txt
+ M src/lib/data/sources/config/catalog/schemas/engine.ts
+ M src/lib/server/edit/writes/hubs.ts
+ M src/lib/state/shared/words/tones.ts
+(each a comment hunk only: `git diff 048821f9 -- <path>`; plus the untracked ledger copies .scratch/migration/agents/briefs/O68-round1.md and reviews/O68-report.md, each equal under `cmp` to the main ledger's)
+
+$ cd W && git diff 048821f9 --stat | tail -1   # before and after the run below
+ 67 files changed, 2025 insertions(+), 2916 deletions(-)   (both times)
+
+$ cd W && (npm run diagrams && npm run test:quick)   # round Verify 1
+test:quick: 69 changed file(s), from git since HEAD
+test:quick: 295 test file(s)
+ok      ASCII gate (0.6 s)
+ok      prettier (1.0 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.3 s)
+ok      svelte-check (62.9 s): 1792869294733 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (111.8 s)
+FAILED  vitest checks (168.1 s)
+ FAIL  |unit| tests/checks/source/history.test.ts > no history in code > names no package id, date or session in any comment
++ src/desktop/app.ts:161: // Every window of the app loads its pages on this session, so the mark rides every request
+ Test Files  1 failed | 9 passed (10)
+      Tests  1 failed | 204 passed | 9 skipped (214)
+FAILED  vitest (214.2 s)
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O68/tests/ui/html.dom.test.ts.
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ Test Files  220 passed | 64 skipped (284)
+      Tests  2610 passed | 734 skipped (3344)
+     Errors  1 error
+ok      vitest slow (267.3 s): Duration  256.54s (transform 35.70s, setup 0ms, import 245.50s, tests 764.43s, environment 20ms)
+test:quick: 269.7 s; failed: vitest checks, vitest
+exit 1
+
+$ cd W && npx vitest run tests/ui/html.dom.test.ts   # the vitest tier's error, alone (file not changed by the step)
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+
+$ cd S/base-tree && npx vitest run --root S/base-tree tests/checks/source/history.test.ts   # report claim: red on the base too
+ FAIL  |unit| tests/checks/source/history.test.ts > no history in code > names no package id, date or session in any comment
++ src/desktop/app.ts:161: // Every window of the app loads its pages on this session, so the mark rides every request
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+$ diff -rq --exclude=node_modules --exclude=.svelte-kit .agents/worktrees/O68-base/src S/base-tree/src && echo base-tree-src-equal
+base-tree-src-equal
+$ diff O68-base/src/desktop/app.ts W/src/desktop/app.ts && echo app-ts-same; diff O68-base/tests/checks/source/history.test.ts W/tests/checks/source/history.test.ts && echo history-test-same
+app-ts-same
+history-test-same
+
+$ cd W && npx vitest run tests/routes/hubs/make.test.ts   # report claim: green alone
+ Test Files  1 passed (1)
+      Tests  35 passed (35)
+$ grep -E "^(ok|FAILED)| FAIL |timed out" S/quick2.txt   # the builder's run the report quotes
+FAILED  vitest (273.0 s)
+ FAIL  |unit| tests/routes/hubs/make.test.ts > the hub files, a git repository and the repository configuration > makes a folder with no .git a git repository by running git init there, ...
+Error: Test timed out in 5000ms.
+(my run above has no make.test.ts failure)
+
+$ cd W && git status --short | grep -v "^ *D" | awk '{print $NF}' | grep -v 'local.yml$' | xargs env LC_ALL=C perl -ne '<the rules file's ASCII gate>'   # round Verify 2, 66 files, the report and the round brief included
+(nothing printed)
+exit 0
+
+$ cd W && grep -rnE "CARD_CHIPS|setHostStatus|...|'host'|case 'host'" src config docs tests --exclude=local.yml | cut -d: -f1 | sort | uniq -c   # round Verify 3
+the same 19 files and counts the report quotes: 'host' for the request header, the status bar item, an app's host program, the recover refusal and test values; the workbench's writeHost; record-values.test.ts's eligibility; tests/data/sources/career.test.ts:36,38,40 (the UNDRAWN fixture). No hit read by code for a removed thing; none under docs/diagrams.
+
+$ cd W && sh utils/unused-exports.sh | diff .agents/worktrees/O68-base/unused-exports.txt -   # round Verify 4
+49c49
+< src/lib/server/edit/writes.ts: ..., writeFollowup, writeHost, writeSubtask, ...
+---
+> src/lib/server/edit/writes.ts: ..., writeFollowup, writeSubtask, ...
+(removals only)
+
+# Item 1
+$ cd W && grep -rn "homeOf(" src
+src/lib/server/edit/writes.ts:550:        const home = homeOf(into, null);
+src/lib/server/edit/writes.ts:563:        const home = rootedHome(into, fresh.root, app, () => homeOf(into, app));
+src/lib/server/edit/writes.ts:671:        const home = rootedHome(into, idea.root, app, () => homeOf(into, app));
+src/lib/server/edit/feeds/feed-route.ts:117:        const home = homeOf(into, app);
+src/lib/server/edit/feeds/feed-route.ts:126:        const home = homeOf(into, app);
+src/lib/server/edit/feeds/feed-route.ts:160:        const home = homeOf(into, app);
+src/lib/server/edit/writes/hubs.ts:189:export function homeOf(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
+src/lib/server/edit/writes/hubs.ts:231:    return one === undefined ? homeOf(into, null) : within(into, one);
+(plus the unrelated local homeOf of writes/manifest.ts:267 and tabs/reopen.svelte.ts:127; identical to the report but for hubs.ts at 189 and 231 where the report has 188 and 230; the comment block is 183-188 with the opening "/**" at 183)
+(read: :550 careerWrite, :563 newEntry, :671 newIdea, feed-route :117 lead-add, :126 radar-add, :160 linkedin-idea, hubs.ts:231 homeNaming's fallback; the comment at hubs.ts:184-187 names exactly these)
+$ cd W && grep -rniE "host status|host write|host pipeline|career host" src docs --exclude=local.yml
+src/lib/server/edit/writes/apps/host-store.ts:1:// Layer 2, server. The store of an app as its host writes it: one key at a time, as VS Code's
+src/lib/server/machine/apps/host/runner/host-runner.mjs:17:// Whatever the host writes to standard output goes to standard error, so the messages are the only
+src/lib/data/file-ops.ts:364: * `launch.yml`, and a file an app's host writes with `workspace.fs.writeFile`.
+$ cd W && grep -rniE "career.{0,60}host|host.{0,60}career|host candidate|hosts in flight|host outreach|score (chip|axes|column)" src docs config tests --exclude=local.yml --exclude-dir=diagrams
+src/lib/server/edit/writes/subtasks.ts:3:// either block added to a host that may have no block yet, and the sections of the career file set
+
+# Item 2
+$ cd W && git status --short | grep -v "^ *D" | awk '{print $NF}' | grep -E "\.(ts|svelte|js|mjs)$" | xargs awk 'length($0) > 100 { print FILENAME":"FNR": "$0 }' | grep -E "^[^:]+:[0-9]+: *(//|\*|/\*|<!--)"
+src/lib/state/client/writes.svelte.ts:632:      * names, else in the hub the server picks (the primary, else the first). `tier` and `folder` are
+src/lib/views/boards/focus/career/CareerPanel.svelte:128,160,181 and src/lib/views/boards/focus/lanes/Lanes.svelte:267,283: <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+$ git show 048821f9:src/lib/state/client/writes.svelte.ts | grep -nF "names, else in the hub the server picks (the primary, else the first). \`tier\` and \`folder\` are"
+640:     * names, else in the hub the server picks (the primary, else the first). `tier` and `folder` are
+$ git show 048821f9:<CareerPanel.svelte | Lanes.svelte> | grep -c "eslint-disable-next-line @typescript-eslint/no-confusing-void-expression"
+6
+2
+$ awk '{print FNR": "length($0)}' over LaneCard.svelte:2-8, writes.ts:20-31, tones.ts:264-268, engine.ts:8-12, hubs.ts:184-187
+no line over 100; each line plus the next word passes 100, so every rewrapped paragraph is a greedy fill (LaneCard.svelte:7 is 97 columns and " do." would make 101)
+
+# Item 4
+$ diff -rq --exclude=node_modules --exclude=.svelte-kit .agents/worktrees/O68-base/src S/base-newtests/src && echo newtests-src-equal-base
+newtests-src-equal-base
+$ for f in <the nine copied files>; do cmp -s W/$f S/base-newtests/$f && echo same $f || echo DIFF $f; done
+eight same; DIFF tests/data/sources/career.test.ts, whose five calls carry `, {}` (the report's sed), lines 68, 132, 139, 160, 179
+$ cd S/base-newtests && npx vitest run --root S/base-newtests --reporter=verbose tests/data/sources/career.test.ts tests/server/edit/writes.test.ts tests/server/core/changes.test.ts tests/routes/edit/undo/undo.test.ts tests/checks/config/config-folder.test.ts
+ FAIL  |unit| tests/data/sources/career.test.ts > normalising it > reads the title, the milestone and the situation strip
+AssertionError: expected undefined to be 'Assistant professor' // Object.is equality
+ FAIL  |unit| tests/data/sources/career.test.ts > normalising it > reads 'a goal and a milestone with its day'
+AssertionError: expected undefined to be 'Assistant professor' // Object.is equality
+ FAIL  |unit| tests/data/sources/career.test.ts > normalising it > reads 'an empty milestone, which is none wha<horizontal ellipsis>'
+AssertionError: expected '' to be undefined // Object.is equality
+ FAIL  |unit| tests/data/sources/career.test.ts > normalising it > reads none of the sections the banner does not draw into the model
+AssertionError: expected [ 'dropped', 'eligibility', <horizontal ellipsis>(9) ] to deeply equal [ 'goal', 'milestone', <horizontal ellipsis>(6) ]
+ FAIL  |unit| tests/checks/config/config-folder.test.ts > oculus's own config directory > describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles, categories and publication_kinds row in the schema of vocab.yml
+AssertionError: expected [ { key: 'stages.idea', <horizontal ellipsis>(1) }, <horizontal ellipsis>(36) ] to have a length of 38 but got 37
+(passing: 'parses it as the map it is, with no key renamed', the four 'reads $name' rows for no milestone_date, a milestone_date that is not a day, an empty goal and a map milestone, both rows of 'what the editor edits', every row of 'writing career sections', 'records a session override and a feed field', 'takes an added subtask line out again', 'uses glyph names for every configured icon'; the other three config-folder failures are ENOENT on S/base-newtests/docs/templates.md and S/base-newtests/config/options/local.yml, and 'writes one description for every config file' expected 16 to equal 15, as the report says)
+ Test Files  2 failed | 3 passed (5)
+      Tests  9 failed | 158 passed | 2 skipped (169)
+$ grep -E "TypeError|career.ts:122|career.test.ts:(68|160|179)" S/base-newtests-out.txt   # the unedited run the report quotes
+TypeError: Cannot convert undefined or null to object
+ <heavy right-pointing angle quotation mark> career src/lib/data/snapshot/normalise-parts/career.ts:122:19
+ <heavy right-pointing angle quotation mark> tests/data/sources/career.test.ts:68:16   (and :160:22, :179:22)
+$ sed -n 122p .agents/worktrees/O68-base/src/lib/data/snapshot/normalise-parts/career.ts
+    const unset = wordsWith(config, 'career_host_status', 'default').at(0) ?? '';
+
+# Item 5
+$ cd .agents/worktrees/O68-base && grep -rnE "career\.not_a_status|...|'(career_caveat|...|not_hosts)'" src tests --exclude=local.yml | grep -v "hpc/host.ts\|machine-defaults.ts" | wc -l
+      23   (the report's 23 lines)
+$ cd W && for k in not_a_status host_no_field ... kind_host; do printf '%s: ' "$k"; grep -rnE "$k" src config tests docs --exclude=local.yml --exclude-dir=diagrams | wc -l; done
+every key 0 but no_host 7, noHost 5, in_flight 4, not_hosts 1, as the report prints; the 17 lines are hpc/host.ts noHost and hpc.host_none, machine-defaults.ts, findings.apps.activation_no_host, source.submit_no_host, apps.tree_no_host, project.helper.xlink_in_flight, pillars.in_flight and tests/data/sources/career.test.ts:38
+$ cd .agents/worktrees/O68-base && grep -rnwE "laneMarks|foldedLine|daysLeft|trackRecord|RecordLine|RoleRecord|TrackRecord|milestoneDate" src tests; echo "exit $?"
+exit 1
+$ cd .agents/worktrees/O68-base && grep -rnE "function (entryPeople|isSelfByKey)|entryPeople\(|isSelfByKey\(" src tests; grep -rnE "focus\.(in_days|days_ago)" src; grep -rnE "export function daysUntil" src; grep -rnE "isLead\(" src; grep -rnE "record\b" src/lib/data/shapes/boards/categories.ts; grep -rnE "projectStatusWords\(" src
+the lines the report quotes, byte for byte (roles.ts:110,115,198,201; Band.svelte:97; presets.ts:296; items.ts:143, roles.ts:76,206; categories.ts:24,25,75; tones.ts:269, Projects.svelte:258, LaneCard.svelte:81)
+
+# The report's after-change case run, for the whole-diff verdicts
+$ cd W && npx vitest run --config S/vitest.cases.config.mts --root W S/after.cases.test.ts   # run twice
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+$ diff <the report's "The cases after the change" block> <the last 30 lines of S/after-out.txt>
+(no difference)
+(the program appends to S/after-out.txt, `appendFileSync(OUT, ...)` at its line 24; my two runs appended two blocks there; nothing else under S was changed by me)
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since 048821f9:
+
+- 1: holds. `laneMarks` (`src/lib/state/boards/focus.ts:256-265`), `Lanes.svelte:229` `marks={laneMarks(project, one)}`, `LaneCard.svelte:103` `{#each marks as chip (chip)}`; `CARD_CHIPS` gone (Verify 3); cases 1 to 6 rerun identical.
+- 2: holds. `career(raw)` (`normalise-parts/career.ts:61-86`) reads title, goal, milestone, milestone date, situation, order, order note, sections and schema; `normalise.ts:642` `career(raw.career)`; `status-rows.ts` and the host model gone; case 10 rerun.
+- 3: holds. `trackRecord` (`src/lib/state/boards/career.ts:80-114`), the `obtained` flag (`config/catalogs/vocab.yml:109`, `vocab.ts:173`); cases 11 to 14 rerun. The first run's Spec 1 ("career banner's" for the dictated "career card's") is settled by the round brief's "Not sent" list.
+- 4: holds. `daysLeft` (`career.ts:49-55`), `foldedLine` (`:29-42`), the panel's sections (`CareerPanel.svelte:127-198`), `CareerHosts.svelte` deleted, the texts (`config/text/views/boards/focus.yml:8-16,119`); cases 7 to 9 rerun.
+- 5: holds. The first run's Standards 1 is closed (`src/lib/server/edit/writes/hubs.ts:184-187` names the career file and the writes the `homeOf(` grep finds) and its Spec 3 is closed (item 5's greps reproduce); Verify 3 has no host-write hit; cases 15 to 17 rerun.
+- 6: holds. Docs, demo fixture and tests as the brief asks; `docs/HELP.md:287` states when the funding line is drawn; the first run's Spec 2 (the widened icon row) is settled by the round brief.
+
+Cases of the brief's "Cases":
+
+- 1: met, rerun `case 1` and `case 1 no form`.
+- 2: met, rerun `case 2`.
+- 3: met for the marks (rerun `case 3`); the wrap rests on `.card-h { flex-wrap: wrap }`, seen at the look on landing.
+- 4: met, rerun `case 4`.
+- 5: met, rerun `case 5`.
+- 6: met, rerun `case 6a` and `6b`.
+- 7: met, rerun `case 7`; the panel draws the goal, the milestone, its date and the days-left tag (`CareerPanel.svelte:138-157`).
+- 8: met, rerun `case 8`.
+- 9: met, rerun `case 9a` to `9e`, and the G32 'reads $name' rows pass on W (test:quick).
+- 10: met, rerun `case 10`.
+- 11: met, rerun `case 11`.
+- 12: met, rerun `case 12` (both null).
+- 13: met, rerun `case 13`.
+- 14: met, rerun `case 14` (funding 0) and `{#if record.funding > 0}` (`CareerPanel.svelte:195`).
+- 15: met, rerun `case 15`.
+- 16: met, rerun `case 16` (page 400, app 403, `write_unknown` finding, file unchanged).
+- 17: met, rerun `case 17` (404 `gone`, no throw, file unchanged).
+
+Items of the round brief:
+
+- 1: holds. The `homeOf` comment (`hubs.ts:184-187`) names each caller the grep finds, and each reading of the caller's write checked above; the wider grep's three hits mean an app's host program, the fourth (`subtasks.ts:3`) the entry that holds a subtask block.
+- 2: holds. `writes.ts:20-31` and `LaneCard.svelte:2-8` are greedy fills at 100 columns; the remaining over-long comment lines are unchanged from the base (the `git show` counts above).
+- 3: holds. `docs/HELP.md:287`: "A further line counts the funding entries you lead whose status is obtained (awarded, granted), drawn only when at least one is. With no `self`, or with no project in a record row and no obtained funding, the track record is not drawn." matches `CareerPanel.svelte:195` and `career.ts:113`.
+- 4: holds. The replica's source equals the base's; the failing lines for the goal, the empty milestone, the dropped sections and the 38 flags reproduce, as do the passing lines of the kept career-write, subtask, session and glyph rows.
+- 5: holds. The removed-key greps, the helper greps and the comment list are in the report and reproduce. The two files the list rewrote outside the path list are inside item 5's third bullet and the rules file's rule that a sentence the change makes false is a defect of the change: `tones.ts:264-268` (`projectStatusWords` said its words "draw on a lane card"; a lane card now draws `laneMarks`, a subset) and `engine.ts:9-11` (its example "the career words of catalogs/vocab.yml" named keys the step removed from `HUB_LIST`; `leads_fit` is in `HUB_LIST` at `hub-names.ts:385` with file `catalogs/vocab.yml`). Neither is item 1's work. The report names both with that reason.
+
+### Findings
+
+#### 1. Spec
+
+none.
+
+#### 2. Proof
+
+none.
+
+#### 3. Standards
+
+none. The round's added comment and HELP lines hold no history word (grep of the round's added lines for before, used to, no longer, still, always, as before, previously, a package id or a date prints nothing); ASCII clean; largest source file `writes.svelte.ts` 859 lines, largest component `Lanes.svelte` 369 lines.
+
+#### 4. Behaviour
+
+none. The round changes comments and one HELP paragraph only; the delta has no code line.
+
+### Declined to judge
+
+- The unedited run of the new `career.test.ts` on the base replica (the `beforeAll` TypeError) was read from the builder's saved output `S/base-newtests-out.txt`, not rerun: the replica's copy now holds the edited calls, and putting the unedited text back is a write. The base's `normalise-parts/career.ts:122` reads `config` as that output says.
+- Four 'reads $name' rows ('a milestone with no milestone_date', 'a milestone_date that is not a day', 'an empty goal', 'a milestone that is a map') pass on the base because the base has no `goal` or `milestoneDate` at all, so their `undefined` expectations for those fields cannot fail there; the report says so. Whether such rows meet the round bar ("its passing line where the row checks behaviour the step keeps") is the orchestrator's reading.
+- The vitest tier's red line in my run (a worker start timeout for `tests/ui/html.dom.test.ts`, which passes 8 of 8 alone) and the builder's `make.test.ts` timeout are in files the step does not change, and are not counted.
+- `src/lib/server/edit/writes/undo.ts:226` ("the project, the entry, the host or the file has gone") was read as the host of a subtask block (`subtasks.ts:9,230` use the word that way) and so still true; if it was written for the career host row, it names a case that no longer exists.
+- The drawn wrap of case 3, the days-left tag and the track record's layout need a page; the look on TEST at landing settles them.
+
+
+Usage: ae2fda2f81136a0ae, claude-opus-5-5, 262385 tokens, 71 tool uses, 12 min 57 s
+
+## Closed
+
+First run:
+- Spec 1 ("career banner" where the brief dictated "career card"): accepted. The step renames the surface to the banner throughout, so the brief's word was its own error; the builder's words stay.
+- Spec 2 (the icon row of `config-folder.test.ts` widened to `stages`, `forms`, `chips` and `statuses`): accepted. With the host statuses gone, a row over `statuses` alone asserts over an empty list, and a shipped glyph name that no glyph holds is a wrong configuration accepted. The file is held under G12 and G13 of `agents/guarded.md`. Its run on the unchanged tree is round 1 item 4, which holds.
+- Spec 3 (the greps of the removed keys): closed in round 1, item 5.
+- Spec 4 (the `guarded.md` lines): the orchestrator writes them at landing. G8's removed row was in describe 'a write from an app', so G8's fragment drops its parenthesis and keeps describe 'a write that makes a record'.
+- Proof 1 (no runs of the changed rows on the unchanged tree): closed in round 1, item 4.
+- Proof 2 (the stopped first run of `test:quick`): cost only; no change.
+- Standards 1 (the `homeOf` comment naming a host status): closed in round 1, item 1.
+- Standards 2 (two comment lines over 100 columns): closed in round 1, item 2.
+- Standards 3 (three deletions staged in the worktree's index): made by the orchestrator's own command after the report, not by the builder. The builder's `git log -L` broke the brief's three-command rule; noted, no change to the tree.
+- Standards 4 (the report's greps): closed in round 1, item 5.
+- Standards 5 (HELP said nothing of when the funding line is drawn): closed in round 1, item 3.
+- The red row of `tests/checks/source/history.test.ts` on `src/desktop/app.ts:161`, red on the base too: fixed at landing.
+
+Repair round 1:
+- No finding.
+- Declined point on `src/lib/server/edit/writes/undo.ts:226-229`: the base's `valueNow` had a `change.kind === 'host'` branch (`git show 048821f9:src/lib/server/edit/writes/undo.ts`, line 242), so "the host" in that comment named the career host row the step removes. The sentence is false after the step; fixed at landing by dropping "the host".
+- Declined point on the four 'reads $name' rows that pass on the base: accepted. Each checks a field the base does not have, and the round brief asked for the passing line in that case.
+- The vitest worker-start timeout on `tests/ui/html.dom.test.ts` and the builder's `make.test.ts` timeout: both files pass alone (8 of 8, 35 of 35) and are outside the step; the plan's whole verify list runs at landing on main.

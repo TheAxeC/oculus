@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z984 (2026-10-24, O63's refutation, the orchestrator, automode): a skipped-tier project's paper on the website feed
+
+- Chosen: a project of a tier `research_audit.skip_tiers` names claims the feed paper it matches, and gives no finding; the hub's untracked finding does not report that paper. A row of the audit test asserts it.
+- Not chosen: the project left out before matching, as today, which reports the hub's own side project's paper as "not matched to any project of the hub" (the lazy option).
+
+Where it applies: O63's round 1. Booked in `plan.md` Rulings.
+
 ## Z983 (2026-10-24, O68's /spec, the orchestrator, automode): the funding a career track record counts
 
 - Chosen: a new flag `obtained` of `statuses:`, on `awarded` and `granted`; the track record counts the funding entries led by `self` whose status carries it.

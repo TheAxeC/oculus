@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), reviewed 2026-10-24; repair round 1 reported, its review running.
-- O63 (the audit's hub conventions as hub settings), built 2026-10-24; under review.
+- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), repair round 1 reviewed with no finding; landing.
+- O63 (the audit's hub conventions as hub settings), reviewed 2026-10-24; repair round 1 running.
 
 Queued, in order (1 step):
 - O60 (each part of `config/` overridden where it belongs). Waits: O68's landing, then its /spec from main's head; open item 309 is ruled.
