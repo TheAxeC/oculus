@@ -198,4 +198,5 @@ The step stopped at this check on finding 8.3 (open item 317), and the brief was
 - 6.2: a case: a word in two lists appears in both groups with the later list's label and glyph, `chipKeys()` lists it once, and the table counts it once.
 - 6.4: a case: a row `legendRows` drops (`journal: true`) and `__proto__` are left out of their group.
 - 6.5: case 6 adds a project at `building` with no `venue`: no finding.
-- 8.3: open item 317 (the step's stop).
+- 8.3: open item 317, ruled (a) by Axel on 2026-10-24: the step's line in `plan.md` carries the ruled text and the tag `(ruling 317)`; the brief's item 4 dictates the ruled line, passes the stage's label from a new label of `AuditRules` with `signed: []`, and adds `rules.ts` and `projects.ts` to the paths; cases 10 and 11 check it.
+- 3.12: no step is in flight when the step is prepared again, so no `shared_paths` is written.
