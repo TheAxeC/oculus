@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O60 (each part of `config/` overridden where it belongs). Brief written and checked; worktree and builder next.
+- O60 (each part of `config/` overridden where it belongs). Builder running in `.agents/worktrees/migration-O60`, base 6912641f.
 
 Queued, in order:
 - O69 (the bar of a project board reworked, ruling 320). Held until O60 lands, since both change the board's facets.
