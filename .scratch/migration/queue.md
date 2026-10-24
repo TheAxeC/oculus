@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says), builder launched 2026-10-24.
+- O63 (the audit's hub conventions as hub settings), builder launched 2026-10-24.
 
-Queued, in order (2 steps):
+Queued, in order (1 step):
 - O60 (each part of `config/` overridden where it belongs). Waits: its /spec, open item 309 ruled.
-- O63 (the audit's hub conventions as hub settings). Waits: its /spec, open item 318 ruled.
 
 Owed looks:
 - none.

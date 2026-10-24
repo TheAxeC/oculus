@@ -36,7 +36,17 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O63
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O63-brief-check.md (a036b1012be622036, claude-opus-5-5, 255390 tokens, 83 tool uses, 10 min 40 s)
+  base: 1fbe77b6
+  worktree: .agents/worktrees/migration-O63
+  executor: agent
+  worker: claude:opus
+  session_id: ac5dee728ec212f4c
+  launched: 2026-10-24
+  report: .scratch/migration/agents/reviews/O63-report.md
+  round: 0
+  shared_paths: "with O68 (this plan): config/catalogs/vocab.yml, config/defaults/sources.yml, config/options/sources.yml, config/text/server.yml, docs/HELP.md, docs/data-map.md, docs/templates.md, docs/diagrams, src/lib/data/helpers/hub-names.ts, src/lib/data/shapes/catalog-files/vocab.ts, tests/checks/config/config-folder.test.ts; simple: each step changes other keys, rows and lines of each file (O68 the career keys, the obtained flag and the host texts; O63 the standard flag, publication_kinds, publications_file and the audit rows), and the diagrams are regenerated at landing"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
