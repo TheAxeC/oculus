@@ -31,11 +31,26 @@ const TONE = /^[a-z][a-z0-9-]*$/;
 /** One word of the legend, a stage, a form or a chip: the word, its glyph name and its words. */
 type Legend = { key: string; icon: string; label: string };
 
+/** The three lists of the words a project shows, in the order the legend reads them. */
+const LISTS = ['stages', 'forms', 'chips'] as const;
+
+/** One of the three lists of the words a project shows. */
+export type LegendList = (typeof LISTS)[number];
+
+/**
+ * The installed legend: every word of the three lists by its key, and each list that holds a word
+ * with its words in the config's order.
+ */
+type Installed = {
+    words: Record<string, Legend | undefined>;
+    lists: { list: LegendList; keys: string[] }[];
+};
+
 /** The palette hex is written in either case in the config, and matched in lower case here. */
 let palette: Record<string, string | undefined> = {};
 let statusPalette: Record<string, string | undefined> = {};
 let stageColor: Record<string, string | undefined> = {};
-let legend: Record<string, Legend | undefined> = {};
+let legend: Installed = { words: {}, lists: [] };
 let domainColor: Record<string, Record<string, string | undefined> | undefined> = {};
 let domainText: Record<string, Record<string, string | undefined> | undefined> = {};
 let dataAccess: Record<string, string | undefined> = {};
@@ -72,12 +87,13 @@ const legendRowShape = z.object({
 
 /**
  * The words of one of `stages`, `forms` and `chips`, in order, each drawn with its `label`, or the
- * word itself when the row holds no label as text, and its `icon`, none when it holds no text.
+ * word itself when the row holds no label as text, and its `icon`, none when it holds no text. A
+ * row that is not a map, and the key `__proto__`, are left out.
  */
 function legendRows(value: unknown): Legend[] {
     const map = readAs(mapShape, value) ?? {};
     return Object.entries(map).flatMap(([key, row]) => {
-        const held = readAs(legendRowShape, row);
+        const held = key === '__proto__' ? null : readAs(legendRowShape, row);
         return held === null ? [] : [{ key, icon: held.icon, label: held.label ?? key }];
     });
 }
@@ -86,10 +102,11 @@ function legendRows(value: unknown): Legend[] {
  * Install the vocabulary from the merged config: `palette` (hex to token name), the `color` of the
  * words of `statuses` and `stages`, the legend of the words a project shows (its stage of
  * `stages`, its form of `forms` and its chips of `chips`, a word of a later list taking the place
- * of one of an earlier list), and from `hubs` the research `domains` of every hub of the workspace,
- * read from each hub's domains registry, each under its hub's name; a domain with no colour wears
- * the neutral tone. A key the config does not hold installs as empty, so every lookup answers with
- * its unknown case rather than throwing: a half-read config still renders a page.
+ * of one of an earlier list among the words, and each list's words kept in the config's order),
+ * and from `hubs` the research `domains` of every hub of the workspace, read from each hub's
+ * domains registry, each under its hub's name; a domain with no colour wears the neutral tone. A
+ * key the config does not hold installs as empty, so every lookup answers with its unknown case
+ * rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
     palette = stringMap(config.palette, hexShape);
@@ -103,12 +120,13 @@ export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void
         domainText[name] = stringMap(vocab.domains, labelShape);
     }
     dataAccess = stringMap(config.data_access, hexShape);
-    legend = Object.fromEntries(
-        [config.stages, config.forms, config.chips]
-            .flatMap((list) => legendRows(list))
-            .filter((row) => row.key !== '__proto__')
-            .map((row) => [row.key, row])
-    );
+    const lists = LISTS.map((list) => ({ list, rows: legendRows(config[list]) }));
+    legend = {
+        words: Object.fromEntries(lists.flatMap((one) => one.rows).map((row) => [row.key, row])),
+        lists: lists
+            .filter((one) => one.rows.length > 0)
+            .map((one) => ({ list: one.list, keys: one.rows.map((row) => row.key) }))
+    };
 }
 
 /**
@@ -201,7 +219,7 @@ export function domainLabel(domain: unknown): string {
  */
 export function chipGlyphName(chip: string): string {
     configGeneration();
-    return byKey(legend, chip)?.icon ?? '';
+    return byKey(legend.words, chip)?.icon ?? '';
 }
 
 /**
@@ -230,7 +248,7 @@ const ICON_HUES: Record<string, string> = {
 export function statusMarkTone(word: string): string {
     configGeneration();
     if (byKey(stageColor, word.toLowerCase()) !== undefined) return stageTone(word);
-    return byKey(ICON_HUES, byKey(legend, word)?.icon ?? '') ?? UNKNOWN_TONE;
+    return byKey(ICON_HUES, byKey(legend.words, word)?.icon ?? '') ?? UNKNOWN_TONE;
 }
 
 /**
@@ -239,7 +257,7 @@ export function statusMarkTone(word: string): string {
  */
 export function chipLabel(chip: string): string {
     configGeneration();
-    return byKey(legend, chip)?.label ?? chip;
+    return byKey(legend.words, chip)?.label ?? chip;
 }
 
 /**
@@ -260,7 +278,16 @@ export function projectStatusWords(
 /** Every word the legend lists: the stages, the forms, then the chips, in the config's order. */
 export function chipKeys(): string[] {
     configGeneration();
-    return Object.keys(legend);
+    return Object.keys(legend.words);
+}
+
+/**
+ * The words of each of `stages`, `forms` and `chips`, in that order, each list with its words in
+ * the config's order, so a word of two lists is in both. A list that holds no word is left out.
+ */
+export function legendLists(): { list: LegendList; keys: string[] }[] {
+    configGeneration();
+    return legend.lists.map((one) => ({ list: one.list, keys: [...one.keys] }));
 }
 
 /**

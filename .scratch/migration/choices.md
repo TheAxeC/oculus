@@ -18,6 +18,8 @@ Where it applies: O68's brief, What to build 3. Booked in `plan.md` Rulings.
 
 Where it applies: O68's brief, What to build 2. Booked in `plan.md` Rulings.
 
+The milestone's map replaced by Axel's ruling 319 (`plan.md` Rulings): `milestone` a text and `milestone_date` a day; `goal:` stands.
+
 ## Z981 (2026-10-24, O63's /spec, the orchestrator, automode): a guarded entry for the audit's hub setting
 
 - Chosen: a new entry G125, the audit holds a hub to the conventions its own `audit:` names and to none it does not; its test `tests/routes/docs/audit.test.ts`, one table per key; added at landing.

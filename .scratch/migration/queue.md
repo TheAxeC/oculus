@@ -1,15 +1,16 @@
-In flight (1 of 6 slots in use):
-- O66 (the Gallery shows every word; the no-venue finding names the project's stage). At: its builder, launched 2026-10-24.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order (3 steps):
-- O60 (each part of `config/` overridden where it belongs). Waits: Axel's ruling on open item 309, the display languages' contribution point and the setting's name.
-- O63 (the audit's hub conventions as hub settings). Waits: Axel's ruling on open item 318 (3), the findings the hub's rewrite would add.
-- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: Axel's ruling on open item 319, the milestone the career editor creates.
+- O60 (each part of `config/` overridden where it belongs). Waits: its /spec, open item 309 ruled.
+- O63 (the audit's hub conventions as hub settings). Waits: its /spec, open item 318 ruled.
+- O68 (the Focus lane card marks without the two-mark cap, the career card as ruling 301 says). Waits: its /spec, open item 319 ruled.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24.
 - O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
 - O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
 - O39 (oculus in its own repository), 2026-10-23, closed by the desktop look C8.

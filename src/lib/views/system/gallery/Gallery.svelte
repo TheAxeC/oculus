@@ -8,6 +8,12 @@
         group: 'views',
         order: 8
     };
+
+    /**
+     * A word drawn as a sample: its key, its words, its glyph and its hue. It is declared in the
+     * module script so the snippets of the template can name it.
+     */
+    type Sample = { key: string; label: string; glyph: string; tone: string };
 </script>
 
 <script lang="ts">
@@ -15,9 +21,10 @@
     // opened under each theme to see what a card, a chip, a meter and a table actually look like
     // there, so a theme is checked against the components rather than against the token list.
     //
-    // The sample data is the config's own chip vocabulary rather than invented rows, so the gallery
-    // shows the hues the portfolio really uses and a chip added to config/catalogs/vocab.yml
-    // appears here without anything being written in this file.
+    // The sample data is the config's own vocabulary: the Chips and the Tags sections draw every
+    // word of `stages`, `forms` and `chips`, grouped by its list in the config's order, and the
+    // table draws one row per hue those words wear. A word added to any of the three lists of
+    // config/catalogs/vocab.yml appears here with nothing written in this file.
     //
     // Over a wallpaper each sample card is its own surface, and every other section is read off a
     // `Surface`. The table is drawn on none: its header row stays over its rows as the pane scrolls
@@ -46,34 +53,50 @@
         chipKeys,
         chipLabel,
         chipsByTone,
-        chipTone
+        chipTone,
+        legendLists,
+        type LegendList
     } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
     const cursor = $derived(cardCursor(instance.state));
 
-    /** How many chips the row shows, and how many rows the table gets. */
-    const CHIPS = 12;
-    const ROWS = 8;
+    /** A word as the chips and the tags draw it. */
+    function sample(key: string): Sample {
+        return { key, label: chipLabel(key), glyph: chipGlyphName(key), tone: chipTone(key) };
+    }
 
-    const chips = $derived(
-        chipKeys()
-            .slice(0, CHIPS)
-            .map((key) => ({
-                key,
-                label: chipLabel(key),
-                glyph: chipGlyphName(key),
-                tone: chipTone(key)
-            }))
+    /** The heading a list's group is drawn under. */
+    function heading(list: LegendList): string {
+        if (list === 'stages') return t('gallery.group_stages');
+        if (list === 'forms') return t('gallery.group_forms');
+        return t('gallery.group_chips');
+    }
+
+    /** One group per list that holds a word, in the legend's order, its words in the config's. */
+    const groups = $derived(
+        legendLists().map((row) => ({
+            list: row.list,
+            heading: heading(row.list),
+            words: row.keys.map(sample)
+        }))
     );
 
-    /** One row per hue the chips use: the hue, the first chip wearing it, and how many wear it. */
+    /** Every word once, in the legend's order: the first card's chips are its first two. */
+    const chips = $derived(chipKeys().map(sample));
+
+    /** One row per hue the words wear: the hue, the first word wearing it, and how many wear it. */
     const rows = $derived(
-        chipsByTone(chipKeys())
-            .slice(0, ROWS)
-            .map((row) => ({ tone: row.tone, chip: chipLabel(row.key), count: row.count }))
+        chipsByTone(chipKeys()).map((row) => ({
+            tone: row.tone,
+            chip: chipLabel(row.key),
+            count: row.count
+        }))
     );
+
+    /** The rows the Meters and the Ticker draw. */
+    const leading = $derived(rows.slice(0, 3));
 
     const columns: Column[] = [
         { key: 'tone', label: t('gallery.col_tone') },
@@ -99,7 +122,8 @@
         })
     );
 
-    const most = $derived(rows.reduce((top, row) => Math.max(top, row.count), 1));
+    /** The largest count among the rows the Meters draw, which a full meter stands for. */
+    const most = $derived(leading.reduce((top, row) => Math.max(top, row.count), 1));
 
     function reset(): void {
         form = 'both';
@@ -107,18 +131,18 @@
     }
 </script>
 
-{#snippet tagRow()}
+{#snippet tagRow(words: Sample[])}
     <div class="row">
-        {#each chips as chip (chip.key)}
-            <Tag label={chip.label} glyph={chip.glyph} />
+        {#each words as word (word.key)}
+            <Tag label={word.label} glyph={word.glyph} />
         {/each}
     </div>
 {/snippet}
 
-{#snippet chipRow(filled: boolean)}
+{#snippet chipRow(words: Sample[], filled: boolean)}
     <div class="row">
-        {#each chips as chip (chip.key)}
-            <Chip label={chip.label} tone={chip.tone} glyph={chip.glyph} {filled} />
+        {#each words as word (word.key)}
+            <Chip label={word.label} tone={word.tone} glyph={word.glyph} {filled} />
         {/each}
     </div>
 {/snippet}
@@ -199,14 +223,17 @@
         <Surface>
             <section>
                 <h3>{t('gallery.chips')}</h3>
-                {#if form !== 'filled'}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render chipRow(false)}
-                {/if}
-                {#if form !== 'outline'}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render chipRow(true)}
-                {/if}
+                {#each groups as group (group.list)}
+                    <h4>{group.heading}</h4>
+                    {#if form !== 'filled'}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render chipRow(group.words, false)}
+                    {/if}
+                    {#if form !== 'outline'}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render chipRow(group.words, true)}
+                    {/if}
+                {/each}
             </section>
         </Surface>
 
@@ -215,8 +242,11 @@
                 <h3>{t('gallery.tags')}</h3>
                 <!-- The same words without the capsule and without a hue, which is what everything
                      a surface lists that is not a status word is drawn as. -->
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render tagRow()}
+                {#each groups as group (group.list)}
+                    <h4>{group.heading}</h4>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render tagRow(group.words)}
+                {/each}
             </section>
         </Surface>
 
@@ -224,7 +254,7 @@
             <section>
                 <h3>{t('gallery.meters')}</h3>
                 <div class="meters">
-                    {#each rows.slice(0, 3) as row (row.tone)}
+                    {#each leading as row (row.tone)}
                         <Meter
                             value={row.count / most}
                             tone={row.tone}
@@ -264,7 +294,7 @@
             <section>
                 <h3>{t('gallery.ticker')}</h3>
                 <Ticker
-                    rows={rows.slice(0, 3).map((row) => ({
+                    rows={leading.map((row) => ({
                         id: row.tone,
                         glyph: t('gallery.empty_glyph'),
                         label: row.chip,
@@ -298,6 +328,16 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--accent-txt, var(--accent));
+    }
+
+    h4 {
+        margin: 12px 0 6px;
+        font-size: var(--fs-xs);
+        font-weight: 600;
+    }
+
+    h3 + h4 {
+        margin-top: 0;
     }
 
     .cards {

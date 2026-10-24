@@ -8,8 +8,8 @@ text:
         card_tone: Toned card
         cards: Cards
         chips: Chips
-        col_chip: Chip
-        col_count: Chips
+        col_chip: Word
+        col_count: Words
         col_tone: Tone
         confirm: Confirm dialog
         confirm_detail: The detail line names what is about to be acted on.
@@ -23,6 +23,9 @@ text:
         form_both: Both
         form_filled: Filled
         form_outline: Outline
+        group_chips: Chips
+        group_forms: Forms
+        group_stages: Stages
         meter: Share of {0}
         meters: Meters
         reset: Reset

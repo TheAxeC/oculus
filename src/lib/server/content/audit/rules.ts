@@ -7,7 +7,8 @@ import { readFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
-import { focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { byKey, focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { filledText } from '../../../data/shapes/shapes.ts';
 import { skippedTiers, wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
 import { boardsTaking, takeContext } from '../../../data/shapes/boards/takes.ts';
@@ -39,6 +40,11 @@ export type AuditRules = {
     liveStages: Set<string>;
     /** The stages that should carry a venue, the stages carrying `placed`. */
     placedStages: Set<string>;
+    /**
+     * The words a finding names a stage by: the `label` of its row of `stages:` when that is a text
+     * that is not empty, and the stage word itself otherwise.
+     */
+    stageLabel: (stage: string) => string;
     /** The stages the one-README standard covers, the stages carrying `standard`. */
     standardStages: Set<string>;
     /** The tiers the research rules leave alone, `research_audit.skip_tiers`. */
@@ -139,6 +145,16 @@ function laneChipsOf(lanes: unknown): Set<string> {
     return new Set(rows.flatMap((row) => laneChipsShape.parse(row).chips));
 }
 
+/** The words a stage is named by, read from the rows of the merged config's `stages:` map. */
+function stageLabelOf(config: Record<string, unknown>): (stage: string) => string {
+    const stages = byKey(config, 'stages');
+    const rows = isMap(stages) ? stages : {};
+    return (stage) => {
+        const row = byKey(rows, stage);
+        return (isMap(row) ? filledText(row.label) : undefined) ?? stage;
+    };
+}
+
 /** `publications_file`: text. */
 const publicationsFileShape = z.string();
 
@@ -169,6 +185,7 @@ export function auditRules(
         publicationsFile: publications.success ? publications.data : '',
         liveStages: flagged('stages', 'live'),
         placedStages: flagged('stages', 'placed'),
+        stageLabel: stageLabelOf(config),
         standardStages: flagged('stages', 'standard'),
         skipTiers: new Set(skippedTiers(config)),
         terminalStages: flagged('stages', 'terminal'),

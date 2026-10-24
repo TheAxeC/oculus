@@ -218,7 +218,9 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 where: 'venue',
                 kind: 'data',
                 ...fileIn(input.hub, project, project.file),
-                ...sentence('audit.msg_no_venue')
+                ...sentence('audit.msg_no_venue', rules.stageLabel(project.stage)),
+                // The signature reads no argument, so a stored mute holds when a label is reworded.
+                signed: []
             });
         }
         if (project.stage !== undefined && rules.liveStages.has(project.stage)) {
