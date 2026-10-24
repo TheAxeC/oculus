@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
 - step: O55
-  landing: preparing
-  brief_check: "running: ad41355696e11ab72"
+  brief_check: agents/reviews/O55-brief-check.md (ad41355696e11ab72, claude-opus-5-5, 262016 tokens, 93 tool uses, 13 min 18 s)
+  base: 00bebb58
+  worktree: .agents/worktrees/migration-O55
+  executor: agent
+  worker: claude:opus
+  launched: 2026-10-24
+  session_id: a0427a2b388f4e3d1 (claude-opus-5-5)
+  report: .scratch/migration/agents/reviews/O55-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -462,6 +470,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-24 (O55 launched). O55's brief `agents/briefs/O55.md` written and checked (`agents/reviews/O55-brief-check.md`, ad41355696e11ab72, claude-opus-5-5), every finding closed in the brief under its Closed heading; automode Z973 (the Archival band reads rows with `archival: true`) and Z974 (the new guarded entry G124, added at landing) booked; O60's and O63's Step 0 record what moves between them and O55. Preparation commit 00bebb58 is the base; worktree `.agents/worktrees/migration-O55` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O55-base` with `unused-exports.txt` (343 lines); the builder a0427a2b388f4e3d1 launched on claude-opus-5-5. In flight (1 of 6): O55 (building). Next: the builder's report, /refute, /land with the hub rewrite and G124; then O60, O63, O66 and O68. Open items: none.
 - 2026-10-24 (rulings 306 and 307). Axel ruled 306 (1) (a) with `in-flight` also on record, 306 (2) (b) and 307 (a), booked in plan.md Rulings and on O55's and O68's lines. In flight (0 of 6): none. Next: /spec O55 on Axel's word. Open items: none.
 - 2026-10-24 (ruling 305 (1); open items 306 and 307). Axel ruled 305 (1) (a): the record rows are `publications` and `other-outputs`, booked in plan.md Rulings and on O55's and O68's lines. He named `revision` in the in-review row a bug: 305 (2) raised again corrected as open item 306, with the website row that holds the same pair. He asked how the rail decides what it counts: open item 307 raised, since under ruling 304 a board's first category depends on its data. In flight (0 of 6): none. Next: Axel's rulings on 306 and 307, then /spec O55. Open items: 306, 307.
 - 2026-10-24 (ruling 304; open item 305). Axel ruled 304 (1) (a), (2) (a), (3) (a), booked in plan.md Rulings and on O55's line. He asked for better names than papers and outputs and for in progress split into in flight and in review: open item 305 raised, which O55 and O68 wait on. In flight (0 of 6): none. Next: Axel's ruling on 305, then /spec O55. Open items: 305.
