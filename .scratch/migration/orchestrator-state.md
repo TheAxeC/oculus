@@ -36,19 +36,6 @@ dispatch:          # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O75-report.md
   round: 0
   landing: not-started
-- step: O76
-  brief_check: .scratch/migration/agents/reviews/O76-brief-check.md (a3823758f5f3e72f3, claude-opus-5-5, 165169 tokens, 37 tool uses, 5 min 25 s)
-  base: 006e4f24
-  worktree: .agents/worktrees/migration-O76
-  executor: agent
-  worker: claude:opus
-  session_id: aa83b2c7c27f97437 (claude-opus-5-5)
-  launched: 2026-10-25
-  report: .scratch/migration/agents/reviews/O76-report.md
-  builder_usage: 174922 tokens, 44 tool uses, 8 min 2 s
-  reviewer_report: .scratch/migration/agents/reviews/O76-refuter.md (a55bd13713108565c, claude-opus-5-5, 188617 tokens, 54 tool uses, 8 min 33 s)
-  round: 0
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -570,6 +557,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-25 (O76 landed; O75 building; O74 stopped). O76 is on main (booked under O76 in `plan.md`, `agents/reviews/O76-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 51.0 s; `keys.test.ts` 10 passed) and on main (`cmp` of the staged diffs: SAME, 8 paths), with one fix at landing (the key `pillars.untagged` renamed `pillars.on_no_line`); looked at on TEST, where the hub's nine pillar colours show. Axel ruled 364 (2) (a); O75 prepared at e0687c50 and its builder a6cd05066857dc9c8 launched. O74's brief check returned; three findings widen its paths and are open items 371, 372 and 373; its brief is held in the session's scratch folder. In flight (1 of 6): O75 (building). Next: Axel's rulings on 371 to 373, then /spec O74 from the held brief; O75's report, /refute and /land; O77 after O75. Open items: 371, 372, 373.
 - 2026-10-25 (O73 landed). O73 is on main (booked under O73 in `plan.md`, `agents/reviews/O73-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 59.2 s) and on main (`cmp` of the staged diffs: SAME, 12 paths), with the review's three fixes at landing (two comment wordings, one rewrap, the builder's scratch folders removed) and G128 extended in `agents/guarded.md`. The O72 row of `queue.md` names its commit 5a47cae5. In flight (2 of 6): O75 (stopped on 364), O76 (stopped on 360); O74 stopped on 357. Next: on Axel's rulings, O75's dispatch (364), O76's dispatch (360), O74's /spec (357); O77 after O75. Open items: 364, 360, 357.
 - 2026-10-25 (O72 landed; O73 reviewed; O75 and O76 briefs checked). O72 is on main (booked under O72 in `plan.md`, `agents/reviews/O72-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed) and on main (`cmp` of the staged diffs: SAME, 9 paths), with one fix at landing (the comment of `StatusSaid`). O73's review found every item and case holding; its three wording and tidiness findings are fixed at its landing. O75's and O76's brief checks are saved and their findings closed in the briefs; O75 waits on open item 364 (its paths), O76 on open item 360 (the Off-pillar sentence), and both were closed items for automode choices Z998 to Z1006. In flight (3 of 6): O73 (landing next), O75 (stopped on 364), O76 (stopped on 360); O74 stopped on 357. Open items: 364, 360, 357.
 - 2026-10-25 (rulings 346 and 348; 347 withdrawn into 345). 346 (a) is the new step O74, the career banner built from the command center's parts; 348 (a) goes into the bar's step; 345 holds the bar as one design and adds the Form facet, since the Status facet lists the forms. Queued: O72, O73, O74, not yet started. Open items: 345.

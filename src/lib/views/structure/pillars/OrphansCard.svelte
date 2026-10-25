@@ -1,6 +1,7 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. The portfolio-fit callout: unmatched real projects, or the clean
-    // confirmation when every real project names a registry line.
+    // Layer 3, Pillars partial. The Orphans card: the real projects outside the tiers
+    // `research_audit.skip_tiers` names whose `pillars:` names no line of the pillars file, or the
+    // confirmation when there are none.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -27,7 +28,7 @@
         {#snippet meta()}
             <Glyph name={projects.length > 0 ? 'warn' : 'check'} />
             {#if projects.length > 0}
-                <Tag label={t('pillars.untagged', projects.length)} />
+                <Tag label={t('pillars.on_no_line', projects.length)} />
             {/if}
         {/snippet}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->

@@ -2,22 +2,23 @@
 text:
     pillars:
         archival: Archival
-        archival_blurb: Dead-ends (failed / stopped), kept for provenance and excluded from pillar membership.
+        archival_blurb: Dead-ends (failed or stopped), kept for provenance; they count toward no line.
+        counts_tip: 'in flight: projects at a live stage; venue tiers: the venues of those projects'
         in_flight: in flight
-        intro: "The research pillars, and any <b>provisional</b> line below them, from the file the <code>pillars</code> entry of the hub's collections list names. Each shows its <b>in-flight</b> projects against its total and the <b>venue-tier</b> spread of its in-flight work; <b>orphans</b> are projects that map to no pillar, provisional line or off-pillar line. A project joins a pillar through its <code>pillars:</code> method tag."
+        intro: "The research pillars and the projects on each, from the pillars file the <code>pillars</code> entry of the hub's collections list names; a project is on a line when its manifest's <code>pillars:</code> names it."
         no_orphans: No orphans
-        no_orphans_blurb: Every project maps to a pillar or an off-pillar line.
+        no_orphans_blurb: Every project but personal projects and dead-ends is on a line of the pillars file.
         not_active: '{0} not active'
         offpillar_h: Off-pillar / archival
-        offpillar_note: Deliberately outside the current programme, kept as an explicit marker so this work files here rather than reading as an orphan.
+        offpillar_note: Deliberately outside the current programme, kept as an explicit marker so this work files here rather than reading as an orphan. Off-pillar lines carry no in-flight or venue-tier counts.
+        on_no_line: '{0} on no line'
         orphans: Orphans
-        orphans_blurb: Real work with <b>no</b> <code>pillars:</code> tag yet; everything should map to a pillar or an off-pillar line. Tag it, or (for in-flight work) make the portfolio-fit call. (Off-pillar-by-design lines are below.)
+        orphans_blurb: Projects whose <code>pillars:</code> names no line of the pillars file. Personal projects and dead-ends are never orphans.
         project: project
         projects: projects
         provisional_h: Provisional line
-        provisional_note: 'A candidate pillar: a line that has not been promoted to a pillar yet, drawn apart so it is seen without counting as one. Its promotion trigger is in its entry of the pillars file.'
+        provisional_note: 'A candidate pillar: a line that has not been promoted to a pillar yet, drawn apart so it is seen without counting as one.'
         total: total
-        untagged: '{0} untagged'
     views:
         pillars: Pillars
         pillars_glyph: pillar

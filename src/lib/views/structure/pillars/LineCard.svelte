@@ -1,8 +1,10 @@
 <script lang="ts">
     // Layer 3, Pillars partial. One registry-line card (RegistryCard.svelte) with its portfolio
-    // metrics and registry prose.
+    // metrics and registry prose. The metrics row is one Tooltip that says what its counts count,
+    // in the tab order so the keyboard reaches the words as the pointer does.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -72,16 +74,18 @@
         {onsaid}
     >
         {#if !muted}
-            <div class="metrics">
-                <strong>{flight.length} {t('pillars.in_flight')}</strong>
-                <span class="total">{projects.length} {t('pillars.total')}</span>
-                {#each strip as tier (tier.key)}
-                    <Tag
-                        label={`${tier.count} ${tier.label}`}
-                        tone={tier.color === undefined ? undefined : toneOf(tier.color)}
-                    />
-                {/each}
-            </div>
+            <Tooltip text={t('pillars.counts_tip')} focusable>
+                <div class="metrics">
+                    <strong>{flight.length} {t('pillars.in_flight')}</strong>
+                    <span class="total">{projects.length} {t('pillars.total')}</span>
+                    {#each strip as tier (tier.key)}
+                        <Tag
+                            label={`${tier.count} ${tier.label}`}
+                            tone={tier.color === undefined ? undefined : toneOf(tier.color)}
+                        />
+                    {/each}
+                </div>
+            </Tooltip>
         {/if}
         {#if line.goal}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
@@ -102,9 +106,9 @@
 </div>
 
 <style>
-    /* An off-pillar line and a dormant line are archival, so they are faded; while the pointer is
-       over one or the keyboard focus is inside it the fade lifts, so the line being read is read
-       at full strength. */
+    /* An off-pillar line and a dormant line, one with no member at a stage on the map, are faded;
+       while the pointer is over one or the keyboard focus is inside it the fade lifts, so the line
+       being read is read at full strength. */
     .dormant,
     .muted {
         opacity: 0.62;

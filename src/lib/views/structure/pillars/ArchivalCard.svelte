@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, Pillars partial. Non-real work grouped by the words of `stages` that carry a `dead`
-    // number, in the order of those numbers, with one collapsible category at a time and project
+    // number, in the order of those numbers, with one stage's group open at a time and project
     // links inside it.
 
     import Card from '$lib/ui/frame/Card.svelte';
