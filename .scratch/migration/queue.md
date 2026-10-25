@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
-- O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 352, 354, 355, 364), building (base e0687c50).
+In flight (2 of 6 slots in use):
+- O75 (the bar of a project board, its section headings and the list view), building.
+- O74 (the career banner built from the command center's parts), building.
 
-Queued, in order:
-- O74 (the career banner built from the command center's parts; rulings 346, 357, 371, 372, 373), brief written again under rulings 371 (a), 372 (a) and 373 (a) (base a5387bdc), building.
-- O77 (the project card and the project page; rulings 352, 353, 356), not yet started; after O75, which changes `Projects.svelte` and `stats.ts` too.
+Queued, in order (1 step):
+- O77 (the project card and the project page), once O75 has landed.
 
 Owed looks:
 - none.
@@ -16,8 +16,8 @@ Landed, newest first:
 - O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
 - O71 (the priority removed: the manifest field, `priority_levels`, the flames and the menu section), 2026-10-25, e66c2a4e.
 - O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, aa79b883.
-- O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, commit 9c42ab10; the hub rewrite on disk, waiting for Axel's word.
-- O68 (the Focus lane card marks without the two-mark cap, the career banner as ruling 301 says), 2026-10-24, b0536bf5; the hub rewrite on disk, waiting for Axel's word.
+- O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, 9c42ab10; the hub rewrite committed in the hub (7ead4ba00).
+- O68 (the Focus lane card marks without the two-mark cap, the career banner redrawn), 2026-10-24, b0536bf5; the hub rewrite committed in the hub (bc98016fd).
 - O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.
 - O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
 - O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
