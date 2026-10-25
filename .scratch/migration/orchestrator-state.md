@@ -26,7 +26,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 dispatch:          # steps in flight, up to six (Z632)
 - step: O75
   brief_check: .scratch/migration/agents/reviews/O75-brief-check.md (a695ad7391dc25a0a, claude-opus-5-5, 263818 tokens, 80 tool uses, 11 min 11 s)
-  landing: preparing
+  base: e0687c50
+  worktree: .agents/worktrees/migration-O75
+  shared_paths: "src/lib/views/boards/focus/career/CareerPanel.svelte (O74 rewrites it; O75 changes its FoldHead import line only), docs/HELP.md (O75 lines 289-295 and 523, O74 line 287), docs/diagrams/ (generated); each merges simply"
+  executor: agent
+  worker: claude:opus
+  session_id: a6cd05066857dc9c8 (claude-opus-5-5)
+  launched: 2026-10-25
+  report: .scratch/migration/agents/reviews/O75-report.md
+  round: 0
+  landing: not-started
 - step: O76
   brief_check: .scratch/migration/agents/reviews/O76-brief-check.md (a3823758f5f3e72f3, claude-opus-5-5, 165169 tokens, 37 tool uses, 5 min 25 s)
   base: 006e4f24
