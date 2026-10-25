@@ -198,6 +198,7 @@ facet_tones:
   domain: teal
   form: pink
   funding: cyan
+  hub: grey-d
   pillar: cyan
   reproduced: cyan
   role: blue
@@ -207,9 +208,9 @@ facet_tones:
   year: slate
 
 
-# The kinds of project a manifest's `tier` names, each with the words it is drawn with, in the order the project form offers them; a tier carries no flag. A board takes projects by their tier (its `tier:` in layout.yml), and a new project whose form names no tier gets the first word.
+# The kinds of project a manifest's `tier` names, each with the words it is drawn with, in the order the project form offers them; `unmarked: true` leaves a tier off a Focus lane card's tags, on any number of tiers or none. A board takes projects by their tier (its `tier:` in layout.yml), and a new project whose form names no tier gets the first word.
 tiers:
-  research: { label: Research }
+  research: { label: Research, unmarked: true }
   personal: { label: Personal }
   software: { label: Software }
 
@@ -218,9 +219,9 @@ tiers:
 research_audit: { skip_tiers: [personal] }
 
 
-# The user's roles on a project or a collection entry, highest first. A row's `field` is a field of the record that lists people by their key: the user's role is the first row whose field holds the person the workspace setting `self` names, else the row without a field (`other`) when the record names people in any of these fields, and a record naming no one has no role. A board's `role:` in layout.yml names the roles it takes; a board, and a collection whose `schema:` declares one of the fields, draws a Role facet of every row, a Lead badge on a record whose `lead` holds the user and a Mine only toggle, which keeps a record whose fields hold the user or that names no one; a project board applies the toggle only where one of its projects is one the toggle does not keep, and draws it disabled elsewhere. With no `self`, no role is read.
+# The user's roles on a project or a collection entry, highest first. A row with `unmarked: true` is left off a Focus lane card's tags, on any number of rows or none. A row's `field` is a field of the record that lists people by their key: the user's role is the first row whose field holds the person the workspace setting `self` names, else the row without a field (`other`) when the record names people in any of these fields, and a record naming no one has no role. A board's `role:` in layout.yml names the roles it takes; a board, and a collection whose `schema:` declares one of the fields, draws a Role facet of every row, a Lead badge on a record whose `lead` holds the user and a Mine only toggle, which keeps a record whose fields hold the user or that names no one; a project board applies the toggle only where one of its projects is one the toggle does not keep, and draws it disabled elsewhere. With no `self`, no role is read.
 roles:
-  - { key: lead,         label: Lead,         field: lead }
+  - { key: lead,         label: Lead,         field: lead, unmarked: true }
   - { key: supervisor,   label: Supervisor,   field: supervisors }
   - { key: collaborator, label: Collaborator, field: collaborators }
   - { key: other,        label: Other }

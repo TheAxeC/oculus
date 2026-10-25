@@ -35,7 +35,7 @@ import {
     unplacedRow,
     type ManifestBehind,
     type Unplaced
-} from './focus-lanes.ts';
+} from './focus/focus-lanes.ts';
 import {
     closesDeadline,
     deadlineMet,

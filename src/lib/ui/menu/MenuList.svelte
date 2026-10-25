@@ -23,6 +23,9 @@
     // A choice carrying `rule` draws bits-ui's separator above it, the line VS Code draws between
     // its menu groups; a separator is no choice, so the arrow keys and the type-ahead pass over
     // it, and the list's first choice draws none (menu-items.ts, `ruleAbove`).
+    //
+    // A group draws its heading above its choices; a group whose heading is empty draws none, and
+    // after another group it draws the rule above it, so a run with no heading still reads apart.
 
     import { DropdownMenu } from 'bits-ui';
     import { clickOf, ruleAbove, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
@@ -221,14 +224,20 @@
 <FloatingList {label} {list} shape={groups === undefined ? 'menu' : 'grouped'}>
     {#if groups !== undefined}
         {#each groups as group, g (group.id)}
+            {#if g > 0 && group.heading === ''}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render separator()}
+            {/if}
             <DropdownMenu.Group>
                 {#snippet child({ props })}
                     <div {...props} class="group">
-                        <DropdownMenu.GroupHeading>
-                            {#snippet child({ props: heading })}
-                                <span {...heading} class="heading">{group.heading}</span>
-                            {/snippet}
-                        </DropdownMenu.GroupHeading>
+                        {#if group.heading !== ''}
+                            <DropdownMenu.GroupHeading>
+                                {#snippet child({ props: heading })}
+                                    <span {...heading} class="heading">{group.heading}</span>
+                                {/snippet}
+                            </DropdownMenu.GroupHeading>
+                        {/if}
                         {#each group.items as item, index (item.id)}
                             {#if ruleAbove(group.items, index)}
                                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->

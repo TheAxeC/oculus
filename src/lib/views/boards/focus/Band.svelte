@@ -7,6 +7,10 @@
     // entry scrolls into view and flashes after the view opens. A card of an entry of a hub but the
     // primary carries the hub's chip after its title, as the Command center's rows do. A web
     // address written in a card's note is a link (ui/display/text/LinkedText.svelte).
+    //
+    // The cards are the entries the Focus filter keeps, which the board hands it with how many
+    // each column hides; a column that had cards before the filter is drawn with its count and
+    // what it hides, even when the filter leaves it none.
 
     import LaneHead from './lanes/LaneHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
@@ -17,42 +21,33 @@
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
     import {
         bandHasCards,
-        collectionLanes,
         stageItemCount,
+        type Band as BandCards,
         type BandItem
-    } from '$lib/state/boards/focus-lanes';
+    } from '$lib/state/boards/focus/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
-    import { namedTone, toneOf, vocabOf } from '$lib/state/shared/words/tones';
+    import { namedTone, toneOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
-        selectors: { configMap },
-        entities: { portfolio },
         layout: { openView },
         ui: { instanceState, setInstanceState }
     } = useState();
 
-    type Props = { now: number };
+    type Props = {
+        now: number;
+        /** The band's cards the Focus filter keeps. */
+        cards: BandCards;
+        /** How many cards the Focus filter hides from each column. */
+        hidden: { funding: number; jobs: number; teaching: number };
+    };
 
-    let { now }: Props = $props();
+    let { now, cards, hidden }: Props = $props();
 
     /** How much of a card's note the band shows. */
     const NOTE = 110;
-
-    const config = $derived(configMap());
-    const snapshot = $derived(portfolio());
-    const cards = $derived(
-        snapshot === null
-            ? {
-                  funding: [],
-                  applications: [],
-                  education: [],
-                  tones: { funding: '', jobs: '', teaching: '' }
-              }
-            : collectionLanes(snapshot, config, vocabOf)
-    );
 
     /**
      * The three columns' hues as the palette holds them: a tone `focus_lane_tones` names that no
@@ -65,7 +60,9 @@
         teaching: namedTone(cards.tones.teaching)
     });
 
-    const anything = $derived(bandHasCards(cards));
+    const anything = $derived(
+        bandHasCards(cards) || hidden.funding + hidden.jobs + hidden.teaching > 0
+    );
 
     /** A card's countdown, and nothing for one with no date. */
     function remaining(item: BandItem): number | null {
@@ -107,10 +104,17 @@
     </div>
 {/snippet}
 
-{#snippet column(label: string, glyph: string, sub: string, tone: string, rows: BandItem[])}
-    {#if rows.length > 0}
+{#snippet column(
+    label: string,
+    glyph: string,
+    sub: string,
+    tone: string,
+    rows: BandItem[],
+    gone: number
+)}
+    {#if rows.length + gone > 0}
         <div class="lane" style={`--tone: var(--c-${tone})`} data-surface>
-            <LaneHead {label} {glyph} count={rows.length} {tone} />
+            <LaneHead {label} {glyph} count={rows.length} {tone} hidden={gone} />
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
                 {#each rows as item, at (`${at}:${item.title}`)}
@@ -128,13 +132,14 @@
             <Surface inline>{t('focus.cards_group')}</Surface>
         </summary>
         <div class="lanes">
-            {#if cards.funding.length > 0}
+            {#if cards.funding.length > 0 || hidden.funding > 0}
                 <div class="lane" style={`--tone: var(--c-${tones.funding})`} data-surface>
                     <LaneHead
                         label={t('focus.funding_lane')}
                         glyph={t('focus.funding_glyph')}
                         count={stageItemCount(cards.funding)}
                         tone={tones.funding}
+                        hidden={hidden.funding}
                     />
                     <p class="lane-sub">{t('focus.funding_sub')}</p>
                     <div class="lane-body">
@@ -159,7 +164,8 @@
                 t('focus.jobs_glyph'),
                 t('focus.jobs_sub'),
                 tones.jobs,
-                cards.applications
+                cards.applications,
+                hidden.jobs
             )}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render column(
@@ -167,7 +173,8 @@
                 t('focus.teaching_glyph'),
                 t('focus.teaching_sub'),
                 tones.teaching,
-                cards.education
+                cards.education,
+                hidden.teaching
             )}
         </div>
     </details>

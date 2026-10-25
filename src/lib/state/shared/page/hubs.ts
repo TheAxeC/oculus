@@ -7,7 +7,8 @@
 // It also holds the one rule for which hubs could take a new record, which every path that makes
 // one reads (a collection's Add, Literature's Add, Save to Literature, Add Task, the apply control
 // of a lead and New Project), so the hub is asked the same way everywhere: with more than one, the
-// path asks which, the primary first; with one, it writes there, primary or not.
+// path asks which, the primary first; with one, it writes there, primary or not. The hubs a Hub
+// list offers to filter by come in the same order (`hubList`).
 
 import { rootOf } from '../../../data/helpers/hub-names.ts';
 
@@ -37,4 +38,22 @@ export function hubsTaking(
     const unique = [...new Set(names.filter((name) => name !== ''))];
     const own = unique.filter((name) => name === primary);
     return [...own, ...unique.filter((name) => name !== primary)];
+}
+
+/**
+ * The hubs a Hub list names, the Focus filter's, a project board's group and a collection view's
+ * chips: the names of the workspace's folders that are hubs (`hub: true` of `roots`), the primary
+ * first and the others in the workspace's order, while there is more than one, and none while
+ * there is one or none, since a list of one hub could hide nothing worth asking for. A record's
+ * hub is its `root`.
+ */
+export function hubList(
+    roots: readonly { key: string; hub?: true }[],
+    primary: string | null
+): string[] {
+    const hubs = hubsTaking(
+        roots.filter((one) => one.hub === true).map((one) => one.key),
+        primary
+    );
+    return hubs.length > 1 ? hubs : [];
 }

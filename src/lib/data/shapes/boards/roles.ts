@@ -12,14 +12,22 @@ import { keyOf } from '../../helpers/hub-names.ts';
 import { readAs, rowsShape } from '../shapes.ts';
 import { wordsShape } from './words.ts';
 
-/** One row of `roles:`: its key, its words, and the field of a record it is read from. */
-export type Role = { key: string; label: string; field?: string };
+/**
+ * One row of `roles:`: its key, its words, the field of a record it is read from, and whether a
+ * Focus lane card leaves it off its tags (`unmarked: true`).
+ */
+export type Role = { key: string; label: string; field?: string; unmarked?: true };
 
-/** One row as written: a key, with an optional label and field. */
+/** One row as written: a key, with an optional label, field and `unmarked` flag. */
 const roleShape = z.looseObject({ key: z.string().min(1) }).transform((row): Role => {
     const label = typeof row.label === 'string' && row.label !== '' ? row.label : row.key;
     const field = typeof row.field === 'string' && row.field !== '' ? row.field : undefined;
-    return field === undefined ? { key: row.key, label } : { key: row.key, label, field };
+    return {
+        key: row.key,
+        label,
+        ...(field === undefined ? {} : { field }),
+        ...(row.unmarked === true ? { unmarked: true as const } : {})
+    };
 });
 
 /** The rows of `roles:` in the merged config, highest first, each key once. */

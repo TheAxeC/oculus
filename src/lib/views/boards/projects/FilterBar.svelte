@@ -3,11 +3,12 @@
     // bar: the search; the stale toggle; the deadline toggle with how many of the board's projects
     // carry a deadline ("deadline 3"); Mine only, drawn while the workspace names a `self` and
     // drawn disabled, its tip saying every project here is the user's, where it would change
-    // nothing; then one group button per facet that has values, Form, Situation, Role, Year, Domain
-    // and Venue, each reading its picks ("Form: journal article +1") and opening its values
-    // (PickMenu.svelte); then More, which holds the other facets as headed sections. The Situation
-    // button carries a red badge while projects are blocked, and the Venue button an amber mark
-    // while a venue reaches the warning, its tip naming the venue.
+    // nothing; then one group button per facet that has values, Form, Situation, Role, Year,
+    // Domain, Venue and Hub (while the workspace has more than one hub), each reading its picks
+    // ("Form: journal article +1") and opening its values (PickMenu.svelte); then More, which holds
+    // the other facets as headed sections. The Situation button carries a red badge while projects
+    // are blocked, and the Venue button an amber mark while a venue reaches the warning, its tip
+    // naming the venue.
     //
     // The line is one line at any pane width: the group buttons that do not fit beside the
     // controls before them go into More, last in, first out, the search keeping `SEARCH_MIN`;

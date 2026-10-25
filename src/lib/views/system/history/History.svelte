@@ -480,7 +480,7 @@
         background: transparent;
     }
 
-    /* The terminal shape: the log follows the folder line, as every list does. */
+    /* The terminal shape: the log follows the card's folder name, as every list does. */
     :global(body.rice:where(:not(.rice-sans))) .view {
         font-family: var(--font-mono);
     }

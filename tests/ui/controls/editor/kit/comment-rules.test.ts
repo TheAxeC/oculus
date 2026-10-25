@@ -163,8 +163,8 @@ describe("Julia's settings", () => {
         registerSettings(monaco);
         const vscode = monaco.given.get('julia');
         const { conf } = await import('monaco-editor/languages/definitions/julia/julia.js');
-        // Monaco gives its own settings last, as when it loads its Julia module once a Julia file is
-        // first opened.
+        // Monaco gives its own settings last, as when it loads its Julia module once a Julia file
+        // is first opened.
         monaco.languages.setLanguageConfiguration('julia', conf);
         const julia = monaco.registry.getLanguageConfiguration('julia')?.underlyingConfig;
         expect(conf.autoClosingPairs).not.toEqual(vscode?.autoClosingPairs);

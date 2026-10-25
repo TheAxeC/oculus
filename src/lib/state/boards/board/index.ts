@@ -58,8 +58,8 @@ export {
     venueWarning
 } from './filter-menu.ts';
 export type { FilterChoice, FilterGroup, ListCell } from './filter-menu.ts';
-export { VENUE_WARN, disseminated, humanSize, stats, waitingLine } from './stats.ts';
-export type { Dissemination, WaitingLine } from './stats.ts';
+export { VENUE_WARN, disseminated, humanSize, stats } from './stats.ts';
+export type { Dissemination } from './stats.ts';
 export {
     STALE_LAG,
     appliedFilters,

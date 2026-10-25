@@ -6,18 +6,18 @@
 // row of the grant's hub its status falls in; the band's columns are those of every hub's words.
 
 import { z } from 'zod';
-import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
-import { focusSetting, text as str } from '../../data/helpers/guards.ts';
-import { joinedEntries, rootOf } from '../../data/helpers/hub-names.ts';
-import { hasWord, type WordsOf } from '../../data/shapes/vocab-keys.ts';
+import type { Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
+import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
+import { joinedEntries, rootOf } from '../../../data/helpers/hub-names.ts';
+import { hasWord, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
     anyValueShape,
     fieldItemsShape,
     readAs,
     rowsShape,
     wordShape
-} from '../../data/shapes/shapes.ts';
-import { focusWords, labelOf } from './focus.ts';
+} from '../../../data/shapes/shapes.ts';
+import { closesDeadline, deadlineMet, focusWords, labelOf } from '../focus.ts';
 
 /** How many project links an attention row of projects draws before its "(+N more)". */
 const ROW_LINKS = 4;
@@ -150,14 +150,18 @@ function bandOrder(a: BandItem, b: BandItem): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-function bandItem(entry: Entry, key: string): BandItem {
+/**
+ * One entry's band card, read under `words`, the words of the entry's own hub: it counts down to
+ * its deadline unless its status carries `deadline_met` or `closes_deadline` there, the deadline
+ * then being met or closed, and a card with no deadline sorts as an undated one.
+ */
+function bandItem(entry: Entry, key: string, words: Record<string, unknown>): BandItem {
     const note = str(entry.fields.note) === '' ? str(entry.fields.sub) : str(entry.fields.note);
-    const card: BandItem = {
-        id: entry.id,
-        title: entry.title,
-        entry: key,
-        deadline: entryDeadline(entry)
-    };
+    const status = str(entry.fields.status);
+    const card: BandItem = { id: entry.id, title: entry.title, entry: key };
+    if (!deadlineMet(words, status) && !closesDeadline(words, status)) {
+        card.deadline = entryDeadline(entry);
+    }
     if (note !== '') card.note = note;
     if (entry.root !== undefined) card.root = entry.root;
     return card;
@@ -185,6 +189,8 @@ export function collectionLanes(
         return held;
     };
     const words = wordsOf?.() ?? config;
+    /** The words of an entry's own hub, the config where no `wordsOf` is given. */
+    const wordsAt = (entry: Entry): Record<string, unknown> => wordsOf?.(rootOf(entry)) ?? config;
     for (const stage of fundStages(words)) {
         const items = grants
             .filter((entry) => {
@@ -193,19 +199,19 @@ export function collectionLanes(
                     str(entry.fields.status).trim().toLowerCase()
                 );
             })
-            .map((entry) => bandItem(entry, 'funding'))
+            .map((entry) => bandItem(entry, 'funding', wordsAt(entry)))
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
     }
     const open = focusWords(config, 'applications_open');
     const applications = joinedEntries(collections, 'applications')
         .filter((entry) => open.includes(str(entry.fields.status).trim().toLowerCase()))
-        .map((entry) => bandItem(entry, 'applications'))
+        .map((entry) => bandItem(entry, 'applications', wordsAt(entry)))
         .sort(bandOrder);
     const running = focusWords(config, 'education_open');
     const education = joinedEntries(collections, 'education')
         .filter((entry) => running.includes(str(entry.fields.status).trim().toLowerCase()))
-        .map((entry) => bandItem(entry, 'education'))
+        .map((entry) => bandItem(entry, 'education', wordsAt(entry)))
         .sort(bandOrder);
     const tones = readAs(tonesShape, words.focus_lane_tones) ?? {
         funding: '',

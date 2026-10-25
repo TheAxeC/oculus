@@ -57,12 +57,13 @@
     // toggle, on by default, keeping the entries that name the user in one of those fields and
     // those that name no one; the Role facet, every row of `roles:` with its count; and the Lead
     // badge on an entry whose lead is the user. The rule is data/shapes/boards/roles.ts's, the one
-    // the project boards read.
+    // the project boards read. While the workspace has more than one hub, the Hub chips follow
+    // (HubChips.svelte), and an unpressed one hides that hub's entries (state/boards/collection.ts
+    // `keptByHub`). The line a write answered and the empty message are
+    // views/shared/writes/SaidBody.svelte's, as on the project boards.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -70,6 +71,7 @@
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import FieldFilters from './FieldFilters.svelte';
+    import HubChips from './HubChips.svelte';
     import NoFundingCard from './NoFundingCard.svelte';
     import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
@@ -77,6 +79,7 @@
     import { blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
+    import SaidBody from '../../shared/writes/SaidBody.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
@@ -88,6 +91,7 @@
         fileOrder,
         identityFaults,
         identityValue,
+        keptByHub,
         movedOrder,
         offeredStatuses,
         parseCollectionState,
@@ -105,7 +109,7 @@
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import { fileUnder, hubList, rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
@@ -160,11 +164,17 @@
             { mine: held.mine, picked: held.roles }
         )
     );
+    /** The hubs of the Hub chips, none while the workspace has one hub. */
+    const hubs = $derived(hubList(roots(), primary()));
     const shown = $derived(
         parts.flatMap((part) =>
-            applyCollectionFilters(pinnedFirst(part.collection.entries), held)
-                .filter(roles.keeps)
-                .map((entry) => ({ entry, part }))
+            keptByHub(
+                applyCollectionFilters(pinnedFirst(part.collection.entries), held).filter(
+                    roles.keeps
+                ),
+                held.hubs,
+                hubs
+            ).map((entry) => ({ entry, part }))
         )
     );
     const facets = $derived(statusFacets(entries));
@@ -403,6 +413,14 @@
                 />
             {/each}
         {/if}
+        {#if hubs.length > 0}
+            <HubChips
+                {hubs}
+                {entries}
+                off={held.hubs}
+                onchange={(off: string[]) => write({ hubs: off })}
+            />
+        {/if}
         <FieldFilters
             {filters}
             picked={held.picked}
@@ -421,15 +439,11 @@
             <Intro html={inlineMarkdown(collection.intro, cardMath(collection.intro))} />
         {/if}
 
-        {#if said !== ''}
-            <Surface>
-                <p class="said">{said}</p>
-            </Surface>
-        {/if}
-
-        {#if shown.length === 0 && unfunded.length === 0}
-            <Empty message={t('collection.empty')} />
-        {:else}
+        <SaidBody
+            {said}
+            empty={shown.length === 0 && unfunded.length === 0}
+            message={t('collection.empty')}
+        >
             <div class="cards" role="list">
                 {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
                     <Reveal
@@ -465,7 +479,7 @@
                     <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
                 {/if}
             </div>
-        {/if}
+        </SaidBody>
     </div>
 </Pane>
 
@@ -476,12 +490,6 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
-    }
-
-    .said {
-        margin: 0 0 6px;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
     }
 
     /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
@@ -499,7 +507,7 @@
         flex-direction: column;
     }
 
-    .cards > :global([data-reveal] > .slot) {
+    .cards > :global([data-reveal] > [data-entry]) {
         flex: 1 1 auto;
     }
 </style>

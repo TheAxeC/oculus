@@ -195,8 +195,6 @@ export type BoardState = {
     search: string;
     /** Selected values by facet key. Empty, or absent, is no filter on that facet. */
     filters: Record<string, string[]>;
-    /** The ids of the cards that are open. */
-    expanded: Id[];
     /** The ids of the cards whose long description is drawn whole rather than cut to its clamp. */
     more: Id[];
     labels: LabelMode;
@@ -266,6 +264,7 @@ export const FACETS = [
     'year',
     'domain',
     'venue',
+    'hub',
     'pillar',
     'funding',
     'dataset',

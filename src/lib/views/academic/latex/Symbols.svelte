@@ -19,7 +19,7 @@
     import type { SymbolGroup } from '$lib/state/sessions/latex/latex-state';
     import { t } from '$lib/state/shared/words/text';
     import { typeset } from '../../shared/latex/math';
-    import { toggled } from '../../shared/latex/opened';
+    import { toggled } from '$lib/state/shared/lists/lists';
 
     type Props = {
         groups: SymbolGroup[];

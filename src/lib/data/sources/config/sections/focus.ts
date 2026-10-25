@@ -2,8 +2,8 @@
 // file each value was read from: a block that is no map, a value its options-catalog entry refuses
 // (a horizon that is no number, a list of statuses that is no list of words), and a row of
 // `focus.ticker_sources` that the Command Center cannot read. The page reads the block itself
-// (state/boards/ticker.ts, focus.ts, focus-lanes.ts) and passes over what it cannot read, so each
-// finding says the value, the row or the field is not read. They are worded from the merged
+// (state/boards/ticker.ts, focus.ts, focus/focus-lanes.ts) and passes over what it cannot read, so
+// each finding says the value, the row or the field is not read. They are worded from the merged
 // catalog, as iconFindings' are.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';

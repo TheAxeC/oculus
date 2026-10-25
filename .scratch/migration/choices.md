@@ -5083,3 +5083,12 @@ Where it applies: O75. Booked in `plan.md` Rulings.
 - Not chosen: a later step for them, the lazy option.
 
 Where it applies: O77. Booked in `plan.md` Rulings.
+
+## Z1008 (2026-10-25, O77's landing, the orchestrator, automode): the gap under the outcome line of a collection view
+
+Z1007 called its change internal only. One effect is visible: the partial `views/shared/writes/SaidBody.svelte` that the collection view and the project boards now share draws the outcome line with an 8 px gap under it, the project boards' gap, where the collection view had 6 px (refutation over round 1, Spec R2).
+
+- Chosen: 8 px on both, so the line sits the same on every board that draws it.
+- Not chosen: a gap prop on the partial to keep 6 px on the collection view, which keeps two looks for one line; the lazy option is leaving the change unsaid.
+
+Where it applies: O77. Booked in `plan.md` Rulings.

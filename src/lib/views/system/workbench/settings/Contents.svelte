@@ -14,7 +14,8 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { keepInView } from '$lib/ui/tree/in-view';
     import { t } from '$lib/state/shared/words/text';
-    import { pressedGroups, toggledGroups, type TocEntry } from '$lib/state/system/config/groups';
+    import { pressedGroups, type TocEntry } from '$lib/state/system/config/groups';
+    import { toggled } from '$lib/state/shared/lists/lists';
 
     type Props = {
         entries: TocEntry[];
@@ -52,7 +53,7 @@
     );
 
     function toggle(id: string): void {
-        closed = toggledGroups(closed, id);
+        closed = toggled(closed, id);
     }
 
     function pressGroup(entry: TocEntry): void {

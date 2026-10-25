@@ -241,14 +241,18 @@ function without(filters: Record<string, string[]>, facet: string): Record<strin
  * not narrow its counts; given none, it is how many of the board's projects carry it. A facet with
  * one value is offered as that one value: a filter that selects everything is still the board
  * saying what its one value is, and the reader can read it. The role facet is offered only while
- * the workspace names a `self` (`named`), since without one no project has a role. A value with a
- * hue of its own carries it: a slice its slice's, a domain its domain's and a pillar its pillar's.
+ * the workspace names a `self` (`named`), since without one no project has a role. The hub facet
+ * is offered only while the workspace has more than one hub, and lists the hubs of `hubs` (their
+ * names, in the workspace's order, empty with one hub) whether or not a project of the board is of
+ * it, each named by itself. A value with a hue of its own carries it: a slice its slice's, a
+ * domain its domain's and a pillar its pillar's.
  */
 export function facets(
     items: BoardItem[],
     preset: BoardPreset,
     named = false,
-    inForce?: InForce
+    inForce?: InForce,
+    hubs: readonly string[] = []
 ): Facet[] {
     const found: Facet[] = [];
     const kept =
@@ -263,8 +267,18 @@ export function facets(
     const slices = sliceGroups(items, preset).flatMap((group) => group.slices);
     for (const facet of FACETS) {
         if (facet === 'role' && !named) continue;
+        if (facet === 'hub' && hubs.length === 0) continue;
         const whole = countValues(items, facet);
         const counts = inForce === undefined ? whole : countValues(left(facet), facet);
+        if (facet === 'hub') {
+            const values = hubs.map((hub) => ({
+                value: hub,
+                label: hub,
+                count: counts.get(hub) ?? 0
+            }));
+            found.push({ key: facet, values });
+            continue;
+        }
         if (facet === 'slice') {
             const values = slices.map((slice) => ({
                 value: slice.value,

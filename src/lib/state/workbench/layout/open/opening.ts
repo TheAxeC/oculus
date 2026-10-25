@@ -74,9 +74,15 @@ export type Opening = {
     /**
      * `asker` is the instance of the tool view the view is opened for: a view opened for something
      * lands outside that instance's pane (landing.ts), so the asked view opens beside the one that
-     * asked and never over it.
+     * asked and never over it. Of `options` it reads `preview` alone, as openView reads it.
      */
-    openBeside: (view: ViewId, state?: unknown, page?: string, asker?: string) => string;
+    openBeside: (
+        view: ViewId,
+        state?: unknown,
+        page?: string,
+        asker?: string,
+        options?: OpenOptions
+    ) => string;
     /**
      * Open a new instance of a view as a tab of the pane at a path of a page, whatever the page
      * already holds; answers its id, or the empty string for a page or pane that is not there.
@@ -183,9 +189,17 @@ export function createOpening(
      * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
      * one nobody can see. The pane being read never takes the view: a view opened for something
      * lands where landingFor puts a view the tab being read asked for, beside that tab's pane.
+     * `preview` is the one option of `options` it reads: with it, the view lands as the preview tab
+     * of the pane it lands in, as openView's preview does.
      */
-    function openBeside(view: ViewId, state?: unknown, page?: string, asker?: string): string {
-        return openInto(view, state, true, page, false, asker);
+    function openBeside(
+        view: ViewId,
+        state?: unknown,
+        page?: string,
+        asker?: string,
+        options?: OpenOptions
+    ): string {
+        return openInto(view, state, true, page, options?.preview === true, asker);
     }
 
     /**

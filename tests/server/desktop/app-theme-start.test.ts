@@ -306,9 +306,9 @@ describe('the theme a page is sent with', () => {
     });
 
     /**
-     * The body class the page sets for `config`, read through the page's own reader: the workbench's
-     * draw as shell/window/appearance.svelte.ts makes it, with the CRT overlay the config sets, and
-     * the draw of a page with no `apps` channel, which draws no overlay.
+     * The body class the page sets for `config`, read through the page's own reader: the
+     * workbench's draw as shell/window/appearance.svelte.ts makes it, with the CRT overlay the
+     * config sets, and the draw of a page with no `apps` channel, which draws no overlay.
      */
     async function pageClass(
         config: Record<string, unknown>,

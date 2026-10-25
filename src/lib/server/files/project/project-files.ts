@@ -1,4 +1,4 @@
-// Layer 2, server. The files of one project folder, for the finder on an expanded card.
+// Layer 2, server. The files of one project folder, for the finder of the project page's card.
 //
 // routes/api/(files)/project-files/+server.ts is the endpoint and holds nothing but its GET, since
 // a route module may export only its verbs. The walk is here, and it is bounded the way

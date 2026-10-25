@@ -196,7 +196,13 @@ const leadStatusWord = z.strictObject({
 
 /** One word of `tiers`, a kind of project: the words it is drawn with. */
 const tierWord = z.strictObject({
-    label: text.optional().describe('The words the tier is drawn with in the project form.')
+    label: text.optional().describe('The words the tier is drawn with in the project form.'),
+    unmarked: z
+        .boolean()
+        .optional()
+        .describe(
+            "true leaves the tier off a Focus lane card's tags; any number of tiers may carry it, or none."
+        )
 });
 
 /** The tiers the audit's research rules leave alone. */
@@ -217,6 +223,12 @@ const roleRow = z.strictObject({
         .optional()
         .describe(
             'The field of a project or a collection entry that lists people for this role; the user holds the role when the field holds the person `self` names. A row without a field is the role of a record that names people but not the user.'
+        ),
+    unmarked: z
+        .boolean()
+        .optional()
+        .describe(
+            "true leaves the role off a Focus lane card's tags; any number of roles may carry it, or none."
         )
 });
 

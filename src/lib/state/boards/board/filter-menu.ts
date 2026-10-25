@@ -46,7 +46,7 @@ export type FilterChoice = {
 export type FilterGroup = { id: string; heading: string; tone: string; items: FilterChoice[] };
 
 /** The facets whose group buttons line 1 of the bar draws, in its order; More holds the rest. */
-export const LINE_FACETS = ['form', 'status', 'role', 'year', 'domain', 'venue'];
+export const LINE_FACETS = ['form', 'status', 'role', 'year', 'domain', 'venue', 'hub'];
 
 /**
  * A facet's heading. The keys are literal so tests/checks/source/keys.test.ts can see every one of
@@ -59,6 +59,7 @@ export function facetHeading(facet: string): string {
     if (facet === 'year') return t('board.facet_year');
     if (facet === 'domain') return t('board.facet_domain');
     if (facet === 'venue') return t('board.facet_venue');
+    if (facet === 'hub') return t('board.facet_hub');
     if (facet === 'pillar') return t('board.facet_pillar');
     if (facet === 'funding') return t('board.facet_funding');
     if (facet === 'dataset') return t('board.facet_dataset');
@@ -132,8 +133,9 @@ function choicesOf(
 
 /**
  * Every facet of the bar's groups as a group of choices: the facets of `counted` in the order of
- * `FACETS`, the slices left to line 2 and the role facet left out while the workspace names no
- * `self` (`named`). A picked value the board's projects do not hold is listed at 0 after the
+ * `FACETS`, the slices left to line 2, the role facet left out while the workspace names no
+ * `self` (`named`) and the hub facet while the workspace has one hub (`hubs`, the hubs the group
+ * lists, empty then). A picked value the board's projects do not hold is listed at 0 after the
  * values they hold, by the words its facet gives it, which is the value itself where the config
  * names none, so every value that narrows the board can be taken out in its group's list; a facet
  * with such a value and no other draws its group with that value alone. A facet with no values
@@ -143,28 +145,29 @@ export function filterGroups(
     counted: Facet[],
     filters: Record<string, string[]>,
     preset: BoardPreset,
-    named: boolean
+    named: boolean,
+    hubs: readonly string[] = []
 ): FilterGroup[] {
-    return FACETS.filter((facet) => facet !== 'slice' && (named || facet !== 'role')).flatMap(
-        (facet) => {
-            const offered = counted.find((one) => one.key === facet)?.values ?? [];
-            const picked = byKey(filters, facet) ?? [];
-            const gone = picked
-                .filter((value) => !offered.some((one) => one.value === value))
-                .map((value) => ({ value, label: facetLabel(facet, value, preset), count: 0 }));
-            const values = [...offered, ...gone];
-            if (values.length === 0) return [];
-            const tone = facetTone(facet, preset);
-            return [
-                {
-                    id: facet,
-                    heading: facetHeading(facet),
-                    tone,
-                    items: choicesOf(facet, values, picked, tone)
-                }
-            ];
-        }
-    );
+    const shown = (facet: string): boolean =>
+        facet !== 'slice' && (named || facet !== 'role') && (hubs.length > 0 || facet !== 'hub');
+    return FACETS.filter(shown).flatMap((facet) => {
+        const offered = counted.find((one) => one.key === facet)?.values ?? [];
+        const picked = byKey(filters, facet) ?? [];
+        const gone = picked
+            .filter((value) => !offered.some((one) => one.value === value))
+            .map((value) => ({ value, label: facetLabel(facet, value, preset), count: 0 }));
+        const values = [...offered, ...gone];
+        if (values.length === 0) return [];
+        const tone = facetTone(facet, preset);
+        return [
+            {
+                id: facet,
+                heading: facetHeading(facet),
+                tone,
+                items: choicesOf(facet, values, picked, tone)
+            }
+        ];
+    });
 }
 
 /** How many of a group's values are picked. */

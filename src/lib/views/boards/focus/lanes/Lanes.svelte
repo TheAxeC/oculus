@@ -2,11 +2,13 @@
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
     // the cards on them, and the Idea lane under them, drawn full width. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
-    // deadline, what it waits on and its move menu. Which lane a card sits on, which marks it draws
-    // there and what a move writes are state/boards/focus.ts's projectLane, laneMarks and
-    // hubMoveOnto, so a drop and the menu write the same fields. The board's lanes are the lanes of
-    // every hub of the workspace; a card sits on, and moves to, the lane of its own hub's lanes
-    // with the same key, read under its own hub's words.
+    // facts (state/boards/focus.ts `laneFacts`), its deadline, the people it waits on or that it is
+    // blocked, and its move menu. The projects on each lane are the ones the Focus filter keeps,
+    // which the board hands it with how many each lane hides. Which lane a card sits on, which
+    // marks it draws there and what a move writes are state/boards/focus.ts's projectLane,
+    // laneMarks and hubMoveOnto, so a drop and the menu write the same fields. The board's lanes
+    // are the lanes of every hub of the workspace; a card sits on, and moves to, the lane of its
+    // own hub's lanes with the same key, read under its own hub's words.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -14,8 +16,7 @@
 
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
-    import { personNames } from '$lib/state/boards/person';
-    import { waitingLabel } from '$lib/state/boards/waiting';
+    import { waitedOn } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -27,7 +28,7 @@
         CLUSTERS,
         IDEA,
         focusLabel,
-        laneItems,
+        laneFacts,
         laneMarks,
         isBlocked,
         lanes,
@@ -35,7 +36,6 @@
         hubMovable,
         hubMoveOnto,
         pausesCountdown,
-        portfolioProjects,
         projectLane,
         type Id,
         type Lane,
@@ -50,7 +50,6 @@
     const client = useState();
     const {
         selectors: { configMap },
-        entities: { portfolio },
         writes: { writeManifest }
     } = client;
 
@@ -58,17 +57,29 @@
         now: number;
         /** The card id the instance's keyboard cursor holds, or null when it holds none. */
         cursor: string | null;
+        /** The projects on each lane that the Focus filter keeps, by lane key. */
+        items: Record<string, Project[]>;
+        /** How many cards the Focus filter hides from each lane, by lane key. */
+        hidden: Record<string, number>;
+        /**
+         * What a card is read against: the names of the people, every project of the portfolio and
+         * every venue, which name what it waits on and its venue, and the user's ids, which give
+         * its role.
+         */
+        known: {
+            names: Record<Id, string>;
+            projects: Record<Id, Project>;
+            venues: Record<Id, Venue>;
+            self: ReadonlySet<Id>;
+        };
         onproject: (id: Id) => void;
         onsaid: (said: string) => void;
     };
 
-    let { now, cursor, onproject, onsaid }: Props = $props();
+    let { now, cursor, items, hidden, known, onproject, onsaid }: Props = $props();
 
     const config = $derived(configMap());
-    const snapshot = $derived(portfolio());
-    const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(vocabOf()));
-    const items = $derived(laneItems(projects, board, config, vocabOf));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
     let over = $state<string | null>(null);
@@ -94,23 +105,13 @@
     }
 
     /**
-     * What a card says it is waiting on: the people it names, else the venue, else that it is
-     * blocked.
+     * What a card says it is waiting on: the people and projects it names, each once
+     * (waiting.ts `waitedOn`), else that it is blocked.
      */
     function waitLine(project: Project): string {
-        const names = personNames(snapshot);
-        if (project.waitingOn.length > 0) {
-            const held = snapshot?.entities.projects ?? {};
-            const who = project.waitingOn.map((key) => waitingLabel(key, names, held)).join(', ');
-            return `${t('focus.wait_people')} ${who}`;
-        }
-        if (pausesCountdown(project, wordsAt(project))) {
-            const venue: Venue | undefined =
-                project.venueId === undefined
-                    ? undefined
-                    : snapshot?.entities.venues[project.venueId];
-            const name = venue === undefined ? '' : (venue.short ?? venue.name);
-            return `${t('focus.wait_review')} ${name === '' ? t('focus.venue_unset') : name}`;
+        const waited = waitedOn(project.waitingOn, known.names, known.projects);
+        if (waited.length > 0) {
+            return `${t('focus.wait_people')} ${waited.map((one) => one.label).join(', ')}`;
         }
         if (isBlocked(project, wordsAt(project))) return t('focus.wait_blocked');
         return '';
@@ -190,7 +191,13 @@
         style={`--tone: var(--c-${one.tone})`}
         data-surface
     >
-        <LaneHead label={one.label} glyph={one.icon} count={held.length} tone={one.tone} />
+        <LaneHead
+            label={one.label}
+            glyph={one.icon}
+            count={held.length}
+            tone={one.tone}
+            hidden={hidden[one.key] ?? 0}
+        />
         <p class="lane-sub">{one.sub}</p>
         <div
             class="lane-body"
@@ -204,6 +211,7 @@
                 <LaneCard
                     {project}
                     marks={laneMarks(project, one)}
+                    facts={laneFacts(project, wordsAt(project), known.self, known.venues)}
                     label={focusLabel(project, config.focus_label_mode)}
                     current={cursor === project.id}
                     due={deadline(project)}

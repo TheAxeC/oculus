@@ -96,15 +96,23 @@ text:
             word_teaching: teaching
         days_ago: '{0}d ago'
         empty_glyph: circle_empty
+        filter: Filter
+        filter_check_glyph: check
+        filter_glyph: sliders
+        filter_hub: Hub
+        filter_tier: Tier
+        filter_tip: show only what the ticked roles, tiers and hubs hold
         fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding
         funding_sub: grant applications
+        hidden: '{0} hidden'
         ideas_glyph: idea
         in_days: in {0}d
         jobs_glyph: scout
         jobs_lane: Job applications
         jobs_sub: positions awaiting outcome
+        mine_all: Everything here is yours
         move_to: Move to
         next: Next
         none: '- none -'
@@ -124,6 +132,7 @@ text:
         teaching_lane: Teaching & supervision
         teaching_sub: this academic year
         today: today
+        toolbar: Focus controls
         unfold: Unfold {0}
         venue_unset: (venue unset)
         wait_apps: Applications

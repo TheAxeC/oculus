@@ -33,12 +33,7 @@
         parseDataState,
         type DataState
     } from '$lib/state/sources/registries/datasets';
-    import {
-        applyThemeFacets,
-        themeFacets,
-        themeLabeller,
-        toggledThemes
-    } from '$lib/state/shared/words/themes';
+    import { applyThemeFacets, themeFacets, themeLabeller } from '$lib/state/shared/words/themes';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -65,10 +60,6 @@
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
-    function toggleTheme(theme: string): void {
-        write({ off: toggledThemes(held.off, theme) });
-    }
-
     function users(ids: string[]) {
         return datasetUsers(ids, allProjects);
     }
@@ -90,7 +81,7 @@
             {facets}
             caption={t('data.modality_facet')}
             off={held.off}
-            ontoggle={toggleTheme}
+            onchange={(off: string[]) => write({ off })}
         />
     </Toolbar>
 {/snippet}

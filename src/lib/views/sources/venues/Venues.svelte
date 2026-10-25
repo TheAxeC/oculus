@@ -42,12 +42,7 @@
         type VenuesState
     } from '$lib/state/sources/registries/venues';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
-    import {
-        applyThemeFacets,
-        themeFacets,
-        themeLabeller,
-        toggledThemes
-    } from '$lib/state/shared/words/themes';
+    import { applyThemeFacets, themeFacets, themeLabeller } from '$lib/state/shared/words/themes';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -77,10 +72,6 @@
     function write(next: Partial<VenuesState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
-
-    function toggleTheme(theme: string): void {
-        write({ off: toggledThemes(held.off, theme) });
-    }
 </script>
 
 {#snippet tools()}
@@ -99,7 +90,7 @@
             {facets}
             caption={t('venues.themes_facet')}
             off={held.off}
-            ontoggle={toggleTheme}
+            onchange={(off: string[]) => write({ off })}
         >
             <Tooltip text={t('venues.conc_tip')} focusable>
                 <Tag label={t('venues.conc')} tone="violet" />

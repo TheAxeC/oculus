@@ -204,6 +204,9 @@ options:
         fields:
             key: the word a manifest's tier writes
             label: the words the tier is drawn with in the project form
+            unmarked:
+                help: on leaves the tier off a Focus lane card's tags
+                control: toggle
     research_audit:
         heading: boards
         section: Vocabulary
@@ -223,6 +226,9 @@ options:
             key: the word the role is named by, which a board's role names
             label: the words the role is drawn with in the Role facet
             field: the field of a project or an entry that lists people for this role; the user holds the role when it holds the person self names
+            unmarked:
+                help: on leaves the role off a Focus lane card's tags
+                control: toggle
     categories:
         heading: boards
         section: Vocabulary

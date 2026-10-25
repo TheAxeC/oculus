@@ -17,7 +17,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { LatexOutline } from '$lib/state/sessions/latex/latex-state';
     import { t } from '$lib/state/shared/words/text';
-    import { toggled } from '../../shared/latex/opened';
+    import { toggled } from '$lib/state/shared/lists/lists';
     import { floatWords } from '../../shared/latex/state-words';
 
     /** The deepest sectioning level listed: parts down to subsubsections. */

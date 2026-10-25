@@ -46,7 +46,12 @@
     // (views/boards/projects/SliceLine.svelte). While the workspace names a `self`, the bar draws
     // the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
     // Mine only, on by default, is applied only where one of the board's projects is one it does
-    // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them.
+    // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them. While the
+    // workspace has more than one hub, line 1 draws the Hub group after Venue, a project's hub
+    // being its `root`; with one hub it draws none, and a hub picked earlier narrows nothing.
+    //
+    // Every card is drawn closed; its title, its Open project page action and Enter on the
+    // keyboard cursor open the project page beside the board (ProjectCard.svelte).
     //
     // The cards and the list are laid out in sections, one per row of `categories` holding a
     // project, in the list's order, and an "other" section last for the projects in no row, each
@@ -67,7 +72,6 @@
     // views/shared/card/project/ProjectCard.svelte, since views/boards/project/Project.svelte draws
     // the same one.
 
-    import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
@@ -75,6 +79,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
     import FoldHead from '../../shared/card/FoldHead.svelte';
+    import SaidBody from '../../shared/writes/SaidBody.svelte';
     import BoardList from './BoardList.svelte';
     import FilterBar from './FilterBar.svelte';
     import NewIdea from './NewIdea.svelte';
@@ -96,12 +101,14 @@
         type QuickFilters
     } from '$lib/state/boards/board';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
+    import { hubList } from '$lib/state/shared/page/hubs';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { toneOf } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
+        fs: { primary, roots },
         selectors: { board, boardPreset, boardStats, offersNewProject, selfNamed, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -134,11 +141,18 @@
         mine: mineApplies && held.mine,
         staleLag: lag
     });
-    /** The facet values that narrow the board, which leave out a role while no `self` is named. */
-    const filters = $derived(appliedFilters(held.filters, named));
+    /** The hubs the Hub group lists, none while the workspace has one hub. */
+    const hubs = $derived(hubList(roots(), primary()));
+    /**
+     * The facet values that narrow the board, which leave out a role while no `self` is named and
+     * a hub while the Hub group is not drawn.
+     */
+    const filters = $derived(appliedFilters(held.filters, named, hubs));
     /** The facets with each value counted over the projects the other filters leave. */
-    const counted = $derived(facets(items, preset, named, { filters, search: held.search, quick }));
-    const groups = $derived(filterGroups(counted, held.filters, preset, named));
+    const counted = $derived(
+        facets(items, preset, named, { filters, search: held.search, quick }, hubs)
+    );
+    const groups = $derived(filterGroups(counted, held.filters, preset, named, hubs));
     const shown = $derived(applyFilters(items, filters, held.search, quick));
     const grid = $derived(preset.cards === 'grid');
     const sections = $derived(cardSections(shown, preset));
@@ -162,7 +176,7 @@
     const now = Date.now();
 
     function write(next: Partial<BoardState>): void {
-        setInstanceState(instance.id, storedState({ ...held, ...next }, ['expanded', 'more']));
+        setInstanceState(instance.id, storedState({ ...held, ...next }, ['more']));
     }
 
     /** Draw the cards or the list; a press on the mode in force changes nothing. */
@@ -188,13 +202,6 @@
                 ? selected.filter((one) => one !== value)
                 : [...selected, value]
         );
-    }
-
-    function toggleCard(id: string): void {
-        const open = held.expanded.includes(id);
-        write({
-            expanded: open ? held.expanded.filter((one) => one !== id) : [...held.expanded, id]
-        });
     }
 
     /** Draw one card's long description whole, or cut it to its clamp again. */
@@ -245,13 +252,11 @@
         {item}
         {now}
         cursor={cursor === item.id}
-        open={held.expanded.includes(item.id)}
         more={held.more.includes(item.id)}
         onmore={() => toggleMore(item.id)}
         label={label(item)}
         tab={tabLabel(item)}
         staleLag={lag}
-        ontoggle={() => toggleCard(item.id)}
         onsaid={(answer: string) => (said = answer)}
     />
 {/snippet}
@@ -361,36 +366,36 @@
                 onsaid={(answer: string) => (said = answer)}
             />
         {/if}
-        {#if said !== ''}
-            <Surface>
-                <p class="said">{said}</p>
-            </Surface>
-        {/if}
-        {#if shown.length === 0}
-            <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
-        {:else if grid}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render projects(shown)}
-        {:else}
-            {#each sections as section (section.key)}
-                <section class="section" data-category={section.key}>
-                    <div class="heading">
-                        <FoldHead
-                            title={sectionTitle(section.key, section.label)}
-                            name={sectionTitle(section.key, section.label)}
-                            open={!folded.has(section.key)}
-                            ontoggle={() => toggleFold(section.key)}
-                            tone={section.color === '' ? undefined : toneOf(section.color)}
-                            count={section.items.length}
-                        />
-                    </div>
-                    {#if !folded.has(section.key)}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render projects(section.items)}
-                    {/if}
-                </section>
-            {/each}
-        {/if}
+        <SaidBody
+            {said}
+            empty={shown.length === 0}
+            message={t('board.empty')}
+            glyph={t('board.empty_glyph')}
+        >
+            {#if grid}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render projects(shown)}
+            {:else}
+                {#each sections as section (section.key)}
+                    <section class="section" data-category={section.key}>
+                        <div class="heading">
+                            <FoldHead
+                                title={sectionTitle(section.key, section.label)}
+                                name={sectionTitle(section.key, section.label)}
+                                open={!folded.has(section.key)}
+                                ontoggle={() => toggleFold(section.key)}
+                                tone={section.color === '' ? undefined : toneOf(section.color)}
+                                count={section.items.length}
+                            />
+                        </div>
+                        {#if !folded.has(section.key)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render projects(section.items)}
+                        {/if}
+                    </section>
+                {/each}
+            {/if}
+        </SaidBody>
     </div>
 </Pane>
 
@@ -427,14 +432,8 @@
         align-items: stretch;
     }
 
-    .said {
-        margin: 0 0 8px;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The terminal shape: the folder is the only monospace line in a card by default, so under the
-       rice themes the whole card follows it rather than mixing two faces. */
+    /* The terminal shape: the folder's name is the only monospace text in a card by default, so
+       under the rice themes the whole card follows it rather than mixing two faces. */
     :global(body.rice:where(:not(.rice-sans))) .board {
         font-family: var(--font-mono);
     }

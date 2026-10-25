@@ -371,7 +371,7 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    /* The terminal shape: the whole tab follows the folder line, as the board does. */
+    /* The terminal shape: the whole tab follows the card's folder name, as the board does. */
     :global(body.rice:where(:not(.rice-sans))) .entry {
         font-family: var(--font-mono);
     }

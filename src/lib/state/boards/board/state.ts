@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { byKey } from '../../../data/helpers/guards.ts';
-import { keyOf } from '../../../data/helpers/hub-names.ts';
+import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
 import {
     fieldItemsShape,
     mapShape,
@@ -47,6 +47,8 @@ export function facetValues(item: BoardItem, facet: string): string[] {
             return item.domain === null ? [] : [keyOf(item.domain.id)];
         case 'venue':
             return item.venue === null ? [] : [keyOf(item.venue.id)];
+        case 'hub':
+            return rootOf(item.project) === '' ? [] : [rootOf(item.project)];
         case 'pillar':
             return ids(item.pillars);
         case 'funding':
@@ -101,14 +103,21 @@ export function applyFilters(
  * The facet values that narrow the board: every value in force, and the role values only while the
  * workspace names a `self` (`named`), which is while the bar offers the Role group. A role saved
  * with no `self` named is kept in the saved state and narrows nothing, since without a `self` no
- * project has a role and no control could take the value out.
+ * project has a role and no control could take the value out. The hub values narrow the board only
+ * while the bar draws the Hub group, which is while the workspace has more than one hub (`hubs`,
+ * the hubs the group lists, empty while it is not drawn), so a workspace that drops to one hub is
+ * not narrowed by a pick made while it had two.
  */
 export function appliedFilters(
     filters: Record<string, string[]>,
-    named: boolean
+    named: boolean,
+    hubs: readonly string[] = []
 ): Record<string, string[]> {
-    if (named || !Object.hasOwn(filters, 'role')) return filters;
-    return Object.fromEntries(Object.entries(filters).filter(([facet]) => facet !== 'role'));
+    const dropped = [...(named ? [] : ['role']), ...(hubs.length > 0 ? [] : ['hub'])];
+    if (!dropped.some((facet) => Object.hasOwn(filters, facet))) return filters;
+    return Object.fromEntries(
+        Object.entries(filters).filter(([facet]) => !dropped.includes(facet))
+    );
 }
 
 /**
@@ -126,7 +135,6 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         mode: 'cards',
         search: '',
         filters: {},
-        expanded: [],
         more: [],
         labels,
         stale: false,
@@ -144,7 +152,6 @@ const boardStateShape = z.object({
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
     mine: z.boolean().catch(true),
-    expanded: recordItemsShape,
     more: recordItemsShape,
     folded: fieldItemsShape,
     columns: fieldItemsShape,
@@ -174,7 +181,6 @@ export function parseBoardState(
     state.stale = held.stale;
     state.dated = held.dated;
     state.mine = held.mine;
-    state.expanded = held.expanded;
     state.more = held.more;
     state.folded = held.folded;
     const columns = held.columns.filter((cell) => LIST_CELLS.includes(cell));

@@ -1,6 +1,6 @@
 // Layer 2, client state. What a `waiting-on:` value is called wherever it is drawn: the strip, the
-// card helper line and the lane cards read one rule, so a project waited on is named the same way
-// on every surface.
+// project card's WAITING ON line and the lane cards read one rule, so a project waited on is named
+// the same way on every surface.
 
 import type { Id, Project } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
@@ -24,4 +24,33 @@ export function waitingLabel(
     const short = project.short ?? '';
     const label = short === '' ? project.title : short;
     return label === '' ? keyOf(id) : label;
+}
+
+/**
+ * One `waiting-on:` value as a card draws it: the id, the words `waitingLabel` gives it, and what
+ * it names, a person, a project or neither, which decides what a press on it opens.
+ */
+export type WaitedOn = { id: Id; label: string; kind: 'person' | 'project' | 'none' };
+
+/**
+ * Each value of a project's `waiting-on:`, in its order, named by `waitingLabel`, each value once:
+ * a value empty after trimming is left out, and a value listed again is drawn at its first place,
+ * so every value a card draws is one tag with a key of its own.
+ */
+export function waitedOn(
+    ids: readonly Id[],
+    people: Record<Id, string>,
+    projects: Record<Id, Project>
+): WaitedOn[] {
+    const values = [...new Set(ids.map((id) => id.trim()).filter((id) => id !== ''))];
+    return values.map((id) => ({
+        id,
+        label: waitingLabel(id, people, projects),
+        kind:
+            byKey(people, id) !== undefined
+                ? 'person'
+                : byKey(projects, id) !== undefined
+                  ? 'project'
+                  : 'none'
+    }));
 }

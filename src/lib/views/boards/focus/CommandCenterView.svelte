@@ -4,7 +4,8 @@
     // stand in, with its red left edge, are drawn by ui/display/ticker/TickerGroup.svelte, which
     // the career banner draws with too, so their look is written there once; this file keeps the
     // look of its own content, the Needs attention group's lines of projects behind their documents
-    // and of projects no lane shows.
+    // and of projects no lane shows. The heading row ends with how many rows the Focus filter
+    // hides, when it hides any, and the live HPC pill.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
@@ -38,6 +39,8 @@
         /** Whether the section is open, and the control on its heading that folds it. */
         open: boolean;
         ontoggle: () => void;
+        /** How many rows the Focus filter hides, said on the heading row when any. */
+        hidden: number;
         attentionRows: TickerRow[];
         refreshRows: TickerRow[];
         onproject: (id: string) => void;
@@ -52,6 +55,7 @@
         view,
         open,
         ontoggle,
+        hidden,
         attentionRows,
         refreshRows,
         onproject,
@@ -61,20 +65,24 @@
         onrefresh
     }: Props = $props();
 
-    /** Whether the command center has at least one row or behind-project group to show. */
+    /**
+     * Whether the command center has at least one row or behind-project group to show, or rows the
+     * Focus filter hides, which its heading row then says.
+     */
     const anything = $derived(
-        hasCommandRows(
-            {
-                overdue: view.overdue,
-                categories: view.categories,
-                subtaskDated: view.subtaskDated,
-                followups: view.followups,
-                snoozed: view.snoozed,
-                attention: attentionRows,
-                refresh: refreshRows
-            },
-            week
-        )
+        hidden > 0 ||
+            hasCommandRows(
+                {
+                    overdue: view.overdue,
+                    categories: view.categories,
+                    subtaskDated: view.subtaskDated,
+                    followups: view.followups,
+                    snoozed: view.snoozed,
+                    attention: attentionRows,
+                    refresh: refreshRows
+                },
+                week
+            )
     );
 
     /**
@@ -115,8 +123,13 @@
     <RootChip record={{ root: text }} />
 {/snippet}
 
-{#snippet pill()}
-    <ToolButton label={pillText()} glyph="hpc" onclick={() => openView('hpc')} />
+{#snippet end()}
+    {#if hidden > 0}
+        <span class="hidden">{t('focus.hidden', hidden)}</span>
+    {/if}
+    {#if pillText() !== ''}
+        <ToolButton label={pillText()} glyph="hpc" onclick={() => openView('hpc')} />
+    {/if}
 {/snippet}
 
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
@@ -189,7 +202,7 @@
         name={t('focus.command.command_center')}
         {open}
         {ontoggle}
-        end={pillText() === '' ? undefined : pill}
+        end={pillText() === '' && hidden === 0 ? undefined : end}
     />
     {#if open}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -271,6 +284,13 @@
        start, kept on one line together, the projects at its end, each piece kept in its place on a
        narrow pane. It is a row of the Command Center, so it takes a ticker row's height, size and
        line (`Ticker.svelte`), and the project links inherit them. */
+    /* How many rows the Focus filter hides, at the end of the heading row in the heading's small
+       muted words. */
+    .hidden {
+        font-size: var(--fs-xs);
+        color: var(--muted-txt, var(--muted));
+    }
+
     .behind {
         min-height: calc(18px * var(--text-scale, 1));
         font-size: var(--fs-xs);

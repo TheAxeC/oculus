@@ -87,7 +87,8 @@ export function grouped(groups: readonly (readonly MenuItem[])[]): MenuItem[] {
 /**
  * One headed run of choices, for a list whose choices fall under several headings (the board's one
  * filter control, a heading per facet). Two groups may hold choices of the same id, so a pick names
- * the group it came from.
+ * the group it came from. A group whose heading is empty is drawn with none, after a rule when
+ * another group comes before it.
  */
 export type MenuGroup = { id: string; heading: string; items: MenuItem[] };
 

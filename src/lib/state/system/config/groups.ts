@@ -33,6 +33,7 @@ import {
     type Catalog,
     type Heading
 } from '../../../data/sources/config/catalog/options.ts';
+import { toggled } from '../../shared/lists/lists.ts';
 import { t } from '../../shared/words/text.ts';
 import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
@@ -475,16 +476,11 @@ export function tocOf(groups: Group[]): TocEntry[] {
     }));
 }
 
-/** The ids of the closed groups after one group is closed or opened. */
-export function toggledGroups(closed: string[], id: string): string[] {
-    return closed.includes(id) ? closed.filter((one) => one !== id) : [...closed, id];
-}
-
 /**
  * The ids of the closed groups after a press on a group's row: a group with sections closes when
  * it is open and opens when it is closed, as a press on a collapsible row of VS Code's tree does,
  * and a group with none has nothing to close.
  */
 export function pressedGroups(closed: string[], entry: TocEntry): string[] {
-    return entry.sections.length === 0 ? closed : toggledGroups(closed, entry.id);
+    return entry.sections.length === 0 ? closed : toggled(closed, entry.id);
 }

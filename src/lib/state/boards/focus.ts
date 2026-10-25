@@ -34,11 +34,13 @@ import {
     wordShape
 } from '../../data/shapes/shapes.ts';
 
-// The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
+// The boundary table lets `views/` import `state/` and nothing of `data/`, so the four model types
 // the Focus view names reach it from here, beside the functions that take and return them.
-export type { Id, Project, Venue } from '../../data/model/index.ts';
+export type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 export { setting } from './board/index.ts';
+import { rolesOf } from '../../data/shapes/boards/roles.ts';
+import { projectRole } from '../../data/shapes/boards/takes.ts';
 import { projectStatusWords, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
@@ -418,6 +420,65 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
+ * One word of `tiers:`: its key, its words (the key itself for a row that names no label), and
+ * whether a Focus lane card leaves it off its tags (`unmarked: true`).
+ */
+export type TierWord = { key: string; label: string; unmarked?: true };
+
+/** The words of `tiers:` of a hub's words, in the order the map lists them. */
+export function tierWords(words: Record<string, unknown>): TierWord[] {
+    const rows = readAs(mapShape, words.tiers) ?? {};
+    return vocabKeys(words.tiers).map((key) => {
+        const row = readAs(mapShape, rows[key]);
+        const label = typeof row?.label === 'string' && row.label !== '' ? row.label : key;
+        return row?.unmarked === true ? { key, label, unmarked: true } : { key, label };
+    });
+}
+
+/**
+ * One fact a lane card draws in its row of tags: which kind it is, the words the tag shows, and
+ * the whole words its tip names, which differ only for a venue drawn by its short name.
+ */
+export type LaneFact = { kind: 'role' | 'tier' | 'venue'; label: string; whole: string };
+
+/**
+ * The facts a lane card draws after its status marks, in this order: the user's role on the
+ * project unless its row of `roles:` carries `unmarked: true`, read only while the workspace names
+ * a `self` (`self` not empty); the project's tier unless its word of `tiers:` carries
+ * `unmarked: true`; and the venue where the stage carries `placed` in `stages`, shown by its short name
+ * (`venueLabel`) with its name as its whole words. `words` are the words of the project's own hub.
+ */
+export function laneFacts(
+    project: Project,
+    words: Record<string, unknown>,
+    self: ReadonlySet<Id>,
+    venues: Record<Id, Venue>
+): LaneFact[] {
+    const facts: LaneFact[] = [];
+    if (self.size > 0) {
+        const roles = rolesOf(words);
+        const role = projectRole(project, roles, self);
+        if (role !== undefined && role.unmarked !== true) {
+            facts.push({ kind: 'role', label: role.label, whole: role.label });
+        }
+    }
+    const tier = project.tier ?? '';
+    const word = tierWords(words).find((one) => one.key === tier);
+    if (tier !== '' && word?.unmarked !== true) {
+        const label = word?.label ?? tier;
+        facts.push({ kind: 'tier', label, whole: label });
+    }
+    if (hasWord(words, 'stages', 'placed', project.stage) && project.venueId !== undefined) {
+        const venue = byKey(venues, project.venueId);
+        const label = venueLabel(venue);
+        if (venue !== undefined && label !== '') {
+            facts.push({ kind: 'venue', label, whole: venue.name === '' ? label : venue.name });
+        }
+    }
+    return facts;
+}
+
+/**
  * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of the
  * three clusters of `CLUSTERS`, so a project on no lane or on the Idea lane is in none. For each,
  * the people named in `waiting-on:` first, then the venue holding it when its stage carries
@@ -425,13 +486,16 @@ export function venueLabel(venue: Venue | undefined): string {
  * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
  * `waiting-on:` value is a people key or another project's id, drawn by waiting.ts. The
  * applications are the entries whose status is in `applications_sent` under `focus:` of
- * config/defaults/behavior.yml.
+ * config/defaults/behavior.yml. A waited-on project is named from `known`, every project of the
+ * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
+ * projects without it.
  */
 export function waiting(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     names: Record<Id, string>,
-    wordsOf?: WordsOf
+    wordsOf?: WordsOf,
+    known?: Record<Id, Project>
 ): Waiting {
     const venues = snapshot.entities.venues;
     const projects = snapshot.entities.projects;
@@ -455,7 +519,7 @@ export function waiting(
         if (isBlocked(project, words)) blocked += 1;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
-                const name = waitingLabel(key, names, projects);
+                const name = waitingLabel(key, names, known ?? projects);
                 people[name] = (people[name] ?? 0) + 1;
             }
             continue;

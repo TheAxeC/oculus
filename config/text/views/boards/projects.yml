@@ -29,6 +29,7 @@ text:
         facet_domain: Domain
         facet_form: Form
         facet_funding: Funding
+        facet_hub: Hub
         facet_pillar: Pillar
         facet_reproduced: Reproduced
         facet_sessions: Sessions

@@ -9,13 +9,14 @@
 // whose index.ts builds the portfolio out of every data folder) since they import every folder
 // beside them and none imports them; the modules every folder of a layer shares sit at its foot
 // (`server/core`, `state/shared` with the catalogs in `words/`, the sentences of an answer in
-// `answers/` and, in `stores/`, the shapes of the stores other stores are handed, the shell action
-// and the browser test, `data/model` with the facade of every type, the files of `ui`).
+// `answers/`, in `stores/`, the shapes of the stores other stores are handed, the shell action and
+// the browser test, and in `lists/` the toggle every list of picked words turns a press over by,
+// `data/model` with the facade of every type, the files of `ui`).
 //
 // A listed folder that holds folders of its own may carry an inner order in INNER, read the same
 // way one level down: a module of one of its sub-folders imports only its own sub-folder or one
-// below it. `state/shared` is the one folder that carries one, `answers` above
-// `words` above `stores`, since the three are the foot of the state layer and nothing else would
+// below it. `state/shared` is the one folder that carries one, `answers` above `page` above `words`
+// above `stores` above `lists`, since they are the foot of the state layer and nothing else would
 // hold an import between them.
 //
 // Imports between layers are the boundary test's (tests/checks/tree/boundaries.test.ts); this reads
@@ -114,7 +115,8 @@ const INNER: Record<string, string[]> = {
         'state/shared/answers',
         'state/shared/page',
         'state/shared/words',
-        'state/shared/stores'
+        'state/shared/stores',
+        'state/shared/lists'
     ]
 };
 

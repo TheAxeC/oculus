@@ -60,9 +60,9 @@
         listFilterOf,
         listGroups,
         sessionRows,
-        toggled,
         type ListFilter
     } from '$lib/state/sessions/folds';
+    import { toggled } from '$lib/state/shared/lists/lists';
     import type { Terminal } from '$lib/state/sessions/terminals.svelte';
     import { TERMINAL_VIEW, emptyTab } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';

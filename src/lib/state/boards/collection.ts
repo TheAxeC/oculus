@@ -117,6 +117,11 @@ export type CollectionState = {
     mine: boolean;
     /** The keys of `roles` picked in the Role facet; none picked lets every entry through. */
     roles: string[];
+    /**
+     * The hubs whose chip is unpressed, whose entries are hidden; read only while the workspace has
+     * more than one hub, so a hub added later starts pressed.
+     */
+    hubs: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -134,7 +139,8 @@ export function emptyCollectionState(): CollectionState {
         picked: {},
         range: {},
         mine: true,
-        roles: []
+        roles: [],
+        hubs: []
     };
 }
 
@@ -149,7 +155,8 @@ const collectionStateShape = searchRevealShape.extend({
     picked: z.record(z.string(), fieldItemsShape).catch({}),
     range: z.record(z.string(), boundsShape).catch({}),
     mine: z.boolean().catch(true),
-    roles: fieldItemsShape
+    roles: fieldItemsShape,
+    hubs: fieldItemsShape
 });
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
@@ -448,6 +455,21 @@ export function applyCollectionFilters(
         if (needle === '') return true;
         return haystack(entry.fields).toLowerCase().includes(needle);
     });
+}
+
+/**
+ * The entries the Hub chips of a collection keep: the hubs hidden are the unpressed ones (`off`,
+ * the instance state's `hubs`) that are chips of `hubs` (state/shared/page/hubs.ts `hubList`, none
+ * while the workspace has one hub), and an entry is kept unless its hub, its `root`, is one of
+ * them. A hub saved unpressed that is no chip now hides nothing.
+ */
+export function keptByHub<T extends { root?: string }>(
+    entries: readonly T[],
+    off: readonly string[],
+    hubs: readonly string[]
+): T[] {
+    const hidden = off.filter((hub) => hubs.includes(hub));
+    return entries.filter((entry) => !hidden.includes(rootOf(entry)));
 }
 
 /** The words one field of an entry holds: each item of a list, or its one value, as text. */

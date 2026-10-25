@@ -10,7 +10,7 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { t } from '$lib/state/shared/words/text';
-    import { toggled } from '../../shared/latex/opened';
+    import { toggled } from '$lib/state/shared/lists/lists';
     import type { CommandNode } from './commands';
 
     type Props = {

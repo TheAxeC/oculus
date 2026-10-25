@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The header of one column of the
-    // board: its glyph, its name and its count on a surface tinted with the lane's hue.
+    // board: its glyph, its name and its count on a surface tinted with the lane's hue, and before
+    // the count how many cards the Focus filter hides from the lane ("3 hidden"), when it hides
+    // any.
     // Lanes.svelte draws it over every project lane with the lane's `icon` of `focus_lanes`, and
     // Band.svelte over the Funding, Jobs and Teaching columns with each column's glyph, so the one
     // rule lives here. A name the glyph vocabulary does not hold, the empty string of a row naming
@@ -17,6 +19,7 @@
     // full opacity.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import { t } from '$lib/state/shared/words/text';
     import { laneGlyph } from '$lib/views/shared/card/card';
 
     type Props = {
@@ -28,9 +31,11 @@
         count: number;
         /** A hue name from state/shared/words/tones.ts. */
         tone: string;
+        /** How many cards the Focus filter hides from the lane, said before the count when any. */
+        hidden?: number;
     };
 
-    let { label, glyph, count, tone }: Props = $props();
+    let { label, glyph, count, tone, hidden = 0 }: Props = $props();
 
     const style = $derived(`--lane: var(--c-${tone}-lane); --lane-txt: var(--c-${tone}-lane-txt)`);
 </script>
@@ -40,7 +45,12 @@
         <Glyph name={laneGlyph(glyph)} />
         <span class="lane-name">{label}</span>
     </span>
-    <span class="count">{count}</span>
+    <span class="counts">
+        {#if hidden > 0}
+            <span class="hidden">{t('focus.hidden', hidden)}</span>
+        {/if}
+        <span class="count">{count}</span>
+    </span>
 </div>
 
 <style>
@@ -77,9 +87,21 @@
         white-space: nowrap;
     }
 
-    .count {
+    /* The hidden count and the count stay on the row's line, at its end. */
+    .counts {
+        display: flex;
         flex: none;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .count {
         font-size: var(--fs-xs);
         font-weight: 600;
+    }
+
+    .hidden {
+        font-size: var(--fs-xs);
+        font-weight: 400;
     }
 </style>

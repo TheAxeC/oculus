@@ -9,7 +9,8 @@
     // A card with no notes draws no block at all: adding its first note is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is
     // open is the card's, handed in, since the card's action and this block's own add control both
-    // open it.
+    // open it. A project card on a board hands `formOnly`, and the block then draws that form
+    // alone, with no head and no note; on the project page it draws the whole list with its form.
     //
     // Two views draw it, as they draw views/shared/forms/dated/Subtasks.svelte:
     // views/shared/card/project/ProjectCard.svelte with the `{ id }` of one manifest, and
@@ -57,9 +58,25 @@
         onadding: (next: boolean) => void;
         /** Why the buttons that write are disabled, already translated; '' when they are not. */
         blocked?: string;
+        /**
+         * Draw the add form alone, with no head and no note of the list: a card on a board, whose
+         * Add Follow-up opens the form under the card's other lines.
+         */
+        formOnly?: boolean;
     };
 
-    let { target, notes, onsaid, adding, onadding, blocked = '' }: Props = $props();
+    let {
+        target,
+        notes,
+        onsaid,
+        adding,
+        onadding,
+        blocked = '',
+        formOnly = false
+    }: Props = $props();
+
+    /** The notes the block draws: none when it draws the add form alone. */
+    const lines = $derived(formOnly ? [] : notes);
 
     /**
      * Whether a note is still off the Focus board: its date lies after the reader's today, the
@@ -107,10 +124,10 @@
     }
 </script>
 
-{#if notes.length > 0 || adding}
+{#if lines.length > 0 || adding}
     <div class="followups">
         <ListHead
-            shown={notes.length > 0}
+            shown={lines.length > 0}
             label={t('project.action.followups')}
             addLabel={t('project.action.add_followup')}
             addTip={t('project.action.add_followup_tip')}
@@ -121,7 +138,7 @@
             onadd={add}
         />
 
-        {#each notes as note (note.key)}
+        {#each lines as note (note.key)}
             {#if editing === note.key}
                 <LineForm
                     text={note.do}

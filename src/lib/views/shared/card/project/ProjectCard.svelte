@@ -1,34 +1,41 @@
 <script lang="ts">
     // Layer 3, shared view. The project-card frame and header live here because card framing
-    // changes independently of its facts, documents, links, sessions and expanded details. The row
-    // of facts under the folder line (the Lead badge, the Focus lane, the form and chips, the code
-    // status, reproduced and the compute resources, each with its glyph and a hover title naming
-    // its kind) is CardFacts.svelte; the venue is the line Venue among the cross-links
-    // (CardLinks.svelte).
+    // changes independently of its facts, links, sessions and the project page's blocks. The row of
+    // facts (the Lead badge, the Focus lane, the form and chips, the code status, reproduced, the
+    // compute resources and the folder, each with its glyph and a hover title naming its kind) is
+    // CardFacts.svelte; WAITING ON, BLOCKED and the cross-links down to the venue are the labelled
+    // lines of CardLinks.svelte.
     //
-    // The card's controls are views/shared/card/CardActions.svelte, shown under the pointer and
-    // kept on one line; the project's folder is offered three times among them, shown in the file
-    // manager through the host, selected in the Files view of this page, and opened as a workbench
-    // (a page that belongs to the folder, with the project view in its documents pane). A project
-    // whose folder is a repository also has its project commands, drawn below the chips by the
-    // commands bar the Repositories view uses (views/shared/sessions/CommandBar.svelte): five
-    // buttons, an overflow menu for the rest, the control that adds a command and the mark of a
-    // file that was not read. The card's ELI5 and next action are drawn by CardBrief.svelte; its
-    // subtasks block is drawn only for a project that has subtasks, and its follow-up block only
-    // for one that has follow-up notes, adding the first of each being one of the controls. The
-    // card is a positioned box whose content may reach past its edge, so the More menu of its
-    // controls is not cut off at the foot of a short card.
+    // A board draws every card closed. The card's title, its Open project page action and Enter on
+    // the keyboard cursor open the project page beside the board as the preview tab of the pane it
+    // lands in (state/workbench/layout/open/opening.ts, `openBeside`), so the next project opened
+    // from the board takes that tab's place, and a page the reader keeps or types in stays. On the
+    // project page (`page`) the card has no Open project page action, its title opens the project
+    // as a tab of the page's own, and its blocks are CardDetails.svelte's two columns, the subtasks
+    // and the follow-up notes at the foot of the right one.
     //
-    // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
-    // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
-    // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included. The folder is a name and stays words. The team is
+    // Under the pointer the card shows three icons, Ask, Open Workbench (while the hub is served)
+    // and Open project page (on a board), through views/shared/card/CardActions.svelte, then a
+    // "..." opener whose menu lists every action in runs (card-menu.ts); a right-click anywhere on
+    // the card, the context menu key and Shift+F10 on a control of the card open the same menu. Add
+    // Subtask and Add Follow-up open their forms on the card, on a board the form alone under its
+    // other lines (`formOnly`). A project whose folder is a repository also has its project commands, drawn
+    // below the facts by the commands bar the Repositories view uses
+    // (views/shared/sessions/CommandBar.svelte). The card's ELI5 and the first sentence of its next
+    // action are CardBrief.svelte's. The card is a positioned box whose content may reach past its
+    // edge, so a menu of its controls is not cut off at the foot of a short card.
+    //
+    // Every project is drawn by this card, whatever its tier: its folder is the one `placeOf`
+    // names, a repository's own Files root for a project read from a repository. The project view
+    // passes `deposit` for every project, a project read from a repository included. The team is
     // the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names the person
     // the workspace setting `self` names carries the Lead badge.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
-    import CardActions, { type CardAction } from '../CardActions.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
+    import CardActions from '../CardActions.svelte';
     import CardBrief from './CardBrief.svelte';
     import { answerWords } from '../../forms/answer-words';
     import CardDetails from './CardDetails.svelte';
@@ -41,10 +48,13 @@
     import Followups from '../../forms/dated/Followups.svelte';
     import Subtasks from '../../forms/dated/Subtasks.svelte';
     import { deadline, deckOf, openWorkbench } from '../card';
+    import { menuRuns, pickAction, stripActions, type ProjectAction } from './card-menu';
     import { placeOf, rootOf } from '$lib/state/shared/page/hubs';
-    import { isStale, newestDocDate, waitingLine, type BoardItem } from '$lib/state/boards/board';
+    import { isStale, newestDocDate, type BoardItem } from '$lib/state/boards/board';
+    import { isBlocked } from '$lib/state/boards/focus';
     import { contextText } from '$lib/state/boards/project-context';
     import { personNames } from '$lib/state/boards/person';
+    import { waitedOn } from '$lib/state/boards/waiting';
     import { chipGlyphName, chipLabel, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -66,8 +76,11 @@
     type Props = {
         /** The joined board item the card presents. */
         item: BoardItem;
-        /** Whether the expanded details are visible. */
-        open: boolean;
+        /**
+         * Whether the card is the project page's: its blocks drawn in two columns, and no Open
+         * project page action. A card on a board is drawn closed.
+         */
+        page?: boolean;
         /** Whether keyboard navigation has selected this project. */
         cursor: boolean;
         /** The title shown on the card. */
@@ -78,16 +91,11 @@
         now: number;
         /** How many stale days make the manifest warning visible. */
         staleLag: number;
-        /** Toggle the expanded details when the board allows expansion. */
-        ontoggle?: () => void;
         /** Whether the deposit action belongs in this card's controls. */
         deposit?: boolean;
         /** Show the outcome of a write or action in the board. */
         onsaid: (said: string) => void;
-        /**
-         * Whether the open card lists the project's documents; a view that draws them itself says
-         * no.
-         */
+        /** Whether the project page's blocks list the project's documents. */
         documents?: boolean;
         /** Whether the ELI5 is drawn whole rather than cut to its clamp. */
         more?: boolean;
@@ -96,13 +104,12 @@
     };
     let {
         item,
-        open,
+        page = false,
         cursor,
         label,
         tab,
         now,
         staleLag,
-        ontoggle,
         deposit = false,
         onsaid,
         documents = true,
@@ -117,20 +124,16 @@
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
-    /** The words of the project's own hub, which its deadline and waiting line are read in. */
+    /** The words of the project's own hub, which its deadline and its BLOCKED line are read in. */
     const words = $derived(vocabOf(rootOf(item.project)));
     const due = $derived(deadline(item.project, now, t, words));
-    const wait = $derived(
+    /** The values of the project's `waiting-on:`, each named and with what it names. */
+    const waiting = $derived(
         snapshot === null
-            ? null
-            : waitingLine(
-                  item.project,
-                  words,
-                  snapshot.entities.venues,
-                  personNames(snapshot),
-                  snapshot.entities.projects
-              )
+            ? []
+            : waitedOn(item.project.waitingOn, personNames(snapshot), snapshot.entities.projects)
     );
+    const blocked = $derived(isBlocked(item.project, words));
     /** Where the project's folder is: the Files root that holds it and its path in that root. */
     const place = $derived(placeOf(item.project));
     const hub = $derived(place.root);
@@ -149,70 +152,98 @@
      * Where the project is cloned: the first folder of the workspace whose origin is its address.
      */
     const clonedIn = $derived(item.project.repository?.clones.at(0) ?? null);
-    const actions = $derived.by((): CardAction[] => {
-        const rows: CardAction[] = [];
-        rows.push({
-            id: 'pin',
-            label:
-                item.project.pin === true ? t('project.card.unpin') : t('project.card.pin_to_top'),
-            glyph: t('project.card.pin_glyph'),
-            active: item.project.pin === true,
-            onclick: pin
-        });
-        rows.push({
-            id: 'copy',
-            label: copied ? t('project.card.copied') : t('project.helper.copy_context'),
-            title: t('project.helper.copy_context_tip'),
-            glyph: 'copy',
-            onclick: copyContext
-        });
-        rows.push({
-            id: 'ask',
-            label: t('project.helper.ask'),
-            title: t('project.helper.ask_tip'),
-            glyph: 'chat',
-            onclick: ask
-        });
-        rows.push({
-            id: 'folder',
-            label: t('project.helper.folder'),
-            title: t('project.helper.folder_tip'),
-            glyph: 'folder',
-            onclick: showFolder
-        });
-        rows.push({
-            id: 'files',
-            label: t('project.helper.show_in_files'),
-            title: t('project.helper.show_in_files_tip'),
-            glyph: 'show_in_files',
-            onclick: () => {
-                showFolderInFiles(place.path, hub);
+    /** Every action of the card, in no order: card-menu.ts orders the strip and the menu's runs. */
+    const actions = $derived.by((): ProjectAction[] => {
+        const pinned = item.project.pin === true;
+        const rows: ProjectAction[] = [
+            {
+                id: 'ask',
+                label: t('project.helper.ask'),
+                title: t('project.helper.ask_tip'),
+                glyph: t('project.card.ask_glyph'),
+                onclick: ask
+            },
+            {
+                id: 'folder',
+                label: t('project.helper.folder'),
+                title: t('project.helper.folder_tip'),
+                glyph: t('project.card.folder_glyph'),
+                onclick: showFolder
+            },
+            {
+                id: 'files',
+                label: t('project.helper.show_in_files'),
+                title: t('project.helper.show_in_files_tip'),
+                glyph: t('project.card.files_glyph'),
+                onclick: () => {
+                    showFolderInFiles(place.path, hub);
+                }
+            },
+            {
+                id: 'subtask',
+                label: t('project.menu.subtask'),
+                title: t('project.action.add_subtask_tip'),
+                glyph: t('project.action.add_subtask_glyph'),
+                onclick: () => {
+                    addingSubtask = !addingSubtask;
+                }
+            },
+            {
+                id: 'followup',
+                label: t('project.menu.followup'),
+                title: t('project.action.add_followup_tip'),
+                glyph: t('project.action.add_followup_glyph'),
+                onclick: () => {
+                    addingFollowup = !addingFollowup;
+                }
+            },
+            {
+                id: 'edit',
+                label: t('project.card.edit_manifest'),
+                glyph: t('project.card.edit_glyph'),
+                onclick: () => {
+                    openBeside('editor', recordField(item.id));
+                }
+            },
+            {
+                id: 'pin',
+                label: pinned ? t('project.card.unpin') : t('project.card.pin_to_top'),
+                glyph: t('project.card.pin_glyph'),
+                onclick: pin
+            },
+            {
+                id: 'copy',
+                label: copied ? t('project.card.copied') : t('project.helper.copy_context'),
+                title: t('project.helper.copy_context_tip'),
+                glyph: t('project.card.copy_glyph'),
+                onclick: copyContext
             }
-        });
+        ];
+        if (!page) {
+            rows.push({
+                id: 'page',
+                label: t('project.card.open_page'),
+                row: t('project.menu.page'),
+                title: t('project.card.open_page_tip'),
+                glyph: t('project.card.page_glyph'),
+                onclick: openPage
+            });
+        }
         if (folders.served(hub)) {
             rows.push({
                 id: 'workbench',
                 label: t('project.helper.open_workbench'),
+                row: t('project.menu.workbench'),
                 title: t('project.helper.open_workbench_tip'),
-                glyph: 'app_view',
+                glyph: t('project.card.workbench_glyph'),
                 onclick: () => openWorkbench(client, item, tab)
-            });
-        }
-        if (ontoggle !== undefined) {
-            rows.push({
-                id: 'toggle',
-                label: t('project.card.toggle_tip'),
-                glyph: open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph'),
-                active: open,
-                toggle: true,
-                onclick: ontoggle
             });
         }
         const deck = deckOf(item.project);
         if (deck !== null) {
             rows.push({
                 id: 'present',
-                label: t('project.card.present'),
+                label: t('project.menu.presentation'),
                 title: t('project.card.present_tip'),
                 glyph: t('project.card.present_glyph'),
                 onclick: () => {
@@ -222,38 +253,6 @@
                 }
             });
         }
-        if (item.project.subtasks.length === 0) {
-            rows.push({
-                id: 'subtask',
-                label: t('project.action.add_subtask'),
-                title: t('project.action.add_subtask_tip'),
-                glyph: t('project.action.add_subtask_glyph'),
-                active: addingSubtask,
-                onclick: () => {
-                    addingSubtask = !addingSubtask;
-                }
-            });
-        }
-        if (item.project.followups.length === 0) {
-            rows.push({
-                id: 'followup',
-                label: t('project.action.add_followup'),
-                title: t('project.action.add_followup_tip'),
-                glyph: t('project.action.add_followup_glyph'),
-                active: addingFollowup,
-                onclick: () => {
-                    addingFollowup = !addingFollowup;
-                }
-            });
-        }
-        rows.push({
-            id: 'edit',
-            label: t('project.card.edit_manifest'),
-            glyph: t('project.card.edit_glyph'),
-            onclick: () => {
-                openBeside('editor', recordField(item.id));
-            }
-        });
         if (deposit) {
             rows.push({
                 id: 'deposit',
@@ -291,6 +290,7 @@
         }
         return rows;
     });
+    const runs = $derived(menuRuns(actions));
     /** The newest document date used in the stale warning tooltip. */
     function newestDoc(): string {
         return newestDocDate(item.project);
@@ -299,9 +299,14 @@
     async function pin(): Promise<void> {
         onsaid(answerWords(await writeManifest(item.id, { pin: item.project.pin !== true })));
     }
-    /** Open the project. */
+    /** Open the project page beside the board, as the preview tab of the pane it lands in. */
+    function openPage(): void {
+        openBeside('project', recordState(item.id, tab), undefined, undefined, { preview: true });
+    }
+    /** The title's press: the page beside the board on a board, the project's tab on its page. */
     function openTitle(): void {
-        openView('project', recordState(item.id, tab));
+        if (page) openView('project', recordState(item.id, tab));
+        else openPage();
     }
     /** Copy the project's generated context to the clipboard and expose failures. */
     async function copyContext(): Promise<void> {
@@ -338,80 +343,119 @@
     }
 </script>
 
-<div class="slot" title={label === item.project.title ? undefined : item.project.title}>
-    <Card
-        id={item.id}
-        {cursor}
-        title={label}
-        tone={item.tone}
-        pinned={item.project.pin === true}
-        ontitle={openTitle}
-    >
-        {#snippet meta()}
-            <RootChip record={item.project} />
-            {#if item.project.stage}
-                <Chip
-                    label={chipLabel(item.project.stage, rootOf(item.project))}
-                    glyph={chipGlyphName(item.project.stage, rootOf(item.project))}
-                    tone={item.tone}
-                    filled
-                />
-            {/if}
-            {#if item.domain}
-                <Tag label={item.domain.label} tone={item.domain.tone} />
-            {/if}
-            {#if due}
-                <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
-            {/if}
-            {#if stale}
-                <span title={t('project.card.stale_tip', newestDoc(), item.project.staleDays ?? 0)}>
+{#snippet subtasks()}
+    <Subtasks
+        target={{ id: item.id }}
+        subtasks={item.project.subtasks}
+        {onsaid}
+        adding={addingSubtask}
+        onadding={(next: boolean) => (addingSubtask = next)}
+        formOnly={!page}
+    />
+{/snippet}
+
+{#snippet followups()}
+    <Followups
+        target={{ id: item.id }}
+        notes={item.project.followups}
+        {onsaid}
+        adding={addingFollowup}
+        onadding={(next: boolean) => (addingFollowup = next)}
+        formOnly={!page}
+    />
+{/snippet}
+
+<ContextMenu
+    label={t('project.menu.label')}
+    groups={runs}
+    own
+    onpick={(id: string) => pickAction(actions, id)}
+>
+    <div class="slot" title={label === item.project.title ? undefined : item.project.title}>
+        <Card
+            id={item.id}
+            {cursor}
+            title={label}
+            tone={item.tone}
+            pinned={item.project.pin === true}
+            ontitle={openTitle}
+        >
+            {#snippet meta()}
+                <RootChip record={item.project} />
+                {#if item.project.stage}
+                    <Chip
+                        label={chipLabel(item.project.stage, rootOf(item.project))}
+                        glyph={chipGlyphName(item.project.stage, rootOf(item.project))}
+                        tone={item.tone}
+                        filled
+                    />
+                {/if}
+                {#if item.domain}
+                    <Tag label={item.domain.label} tone={item.domain.tone} />
+                {/if}
+                {#if due}
                     <Tag
-                        label={t('project.card.stale_behind', item.project.staleDays ?? 0)}
-                        glyph={t('board.stale_glyph')}
-                        tone="amber"
+                        label={due.label}
+                        glyph={t('project.card.deadline_glyph')}
+                        tone={due.tone}
+                    />
+                {/if}
+                {#if stale}
+                    <span
+                        title={t(
+                            'project.card.stale_tip',
+                            newestDoc(),
+                            item.project.staleDays ?? 0
+                        )}
+                    >
+                        <Tag
+                            label={t('project.card.stale_behind', item.project.staleDays ?? 0)}
+                            glyph={t('board.stale_glyph')}
+                            tone="amber"
+                        />
+                    </span>
+                {/if}
+                <CardActions actions={stripActions(actions)} />
+                <span class="menu">
+                    <Menu
+                        label={t('project.card.more_actions')}
+                        glyph={t('project.card.menu_glyph')}
+                        compact
+                        placement="down"
+                        align="right"
+                        items={[]}
+                        groups={runs}
+                        onpick={(id: string) => pickAction(actions, id)}
                     />
                 </span>
-            {/if}
-            <CardActions {actions} />
-        {/snippet}
+            {/snippet}
 
-        <div class="folder">{item.project.workspaceFolder?.root ?? item.project.folder}</div>
-        <div class="row">
-            <CardFacts {item} />
-        </div>
-        {#if wait !== null}
-            <p class="waiting {wait.kind}">{wait.text}</p>
-        {/if}
-        {#if repo !== ''}
-            <div class="commands"><CommandBar {repo} /></div>
-        {/if}
-        <CardLinks {item} />
-        <CardSessions {item} />
-        <CardBrief project={item.project} {more} {onmore} />
-        <CardAddresses {item} />
-        {#if open}
-            <CardDetails {item} {onsaid} {documents} />
-        {/if}
-        {#if open || addingSubtask}
-            <Subtasks
-                target={{ id: item.id }}
-                subtasks={item.project.subtasks}
-                {onsaid}
-                adding={addingSubtask}
-                onadding={(next: boolean) => (addingSubtask = next)}
-            />
-        {/if}
-        {#if open || addingFollowup}
-            <Followups
-                target={{ id: item.id }}
-                notes={item.project.followups}
-                {onsaid}
-                adding={addingFollowup}
-                onadding={(next: boolean) => (addingFollowup = next)}
-            />
-        {/if}
-    </Card>
-</div>
+            <div class="row">
+                <CardFacts {item} onfolder={showFolder} />
+            </div>
+            {#if repo !== ''}
+                <div class="commands"><CommandBar {repo} /></div>
+            {/if}
+            <CardLinks {item} {waiting} {blocked} />
+            <CardSessions {item} />
+            <CardBrief project={item.project} {more} {onmore} next={!page} />
+            <CardAddresses {item} />
+            {#if page}
+                <CardDetails {item} {onsaid} {documents}>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render subtasks()}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render followups()}
+                </CardDetails>
+            {:else}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render subtasks()}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render followups()}
+            {/if}
+        </Card>
+    </div>
+</ContextMenu>
 
 <style>
     /* The slot fills its grid cell, and the card fills the slot, so the cards of one row of a board
@@ -437,11 +481,13 @@
         overflow-wrap: anywhere;
     }
 
-    .folder {
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-        overflow-wrap: anywhere;
+    /* The "..." opener is drawn when the card's icons are (ui/frame/Card.svelte, `--card-at-rest`),
+       right after them. */
+    .menu {
+        display: var(--card-at-rest, flex);
+        flex: 0 0 auto;
+        align-items: center;
+        margin-block: min(0px, calc((1lh - 22px) / 2));
     }
 
     .row {
@@ -455,19 +501,5 @@
 
     .commands {
         margin-top: 6px;
-    }
-
-    .waiting {
-        margin: 3px 0 0;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .waiting.blocked {
-        color: var(--c-red-txt);
-    }
-
-    .waiting.review {
-        color: var(--c-violet-txt);
     }
 </style>

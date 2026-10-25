@@ -86,8 +86,8 @@
 
     // Once the paper is held and In Literature is drawn in the control's place, it takes the focus
     // the control held, unless the focus went somewhere else meanwhile. The control taken off the
-    // page still counts as holding nothing (`focusIsFree`), and the focus is the page's, so it opens
-    // no tooltip over the line the save wrote under the button.
+    // page still counts as holding nothing (`focusIsFree`), and the focus is the page's, so it
+    // opens no tooltip over the line the save wrote under the button.
     $effect(() => {
         if (!saved || !refocus) return;
         untrack(() => {

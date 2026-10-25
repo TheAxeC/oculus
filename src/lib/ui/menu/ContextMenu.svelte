@@ -16,6 +16,10 @@
     //
     // Choices that arrive after the list opened (`lead`) are drawn at its top.
     //
+    // A menu whose choices fall in runs passes `groups` in place of `items`, drawn by
+    // MenuList.svelte as a Menu.svelte list draws them: each run under its heading, a run with no
+    // heading after a rule, and a pick naming the run it came from.
+    //
     // A menu whose items depend on the moment of the right-click (what is selected, what is under
     // the pointer) reads them from the right-click itself, through `read`, as it arrives. A menu
     // that is `own` keeps its right-click from every menu around it, so a text box inside a row
@@ -24,7 +28,7 @@
 
     import { ContextMenu } from 'bits-ui';
     import type { Snippet } from 'svelte';
-    import { menuClosing, type MenuItem } from '$lib/ui/menu/menu-items';
+    import { menuClosing, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import MenuList from './MenuList.svelte';
 
     type Props = {
@@ -32,6 +36,8 @@
         label: string;
         /** The items, when they are known before the right-click. */
         items?: MenuItem[];
+        /** Runs of choices drawn in place of `items`, each under its heading where it has one. */
+        groups?: MenuGroup[];
         /** The items read from the right-click as it arrives, in place of `items`. */
         read?: (event: MouseEvent) => MenuItem[];
         /**
@@ -41,8 +47,11 @@
         lead?: MenuItem[];
         /** Keep the right-click from the menus around this one. */
         own?: boolean;
-        /** A pick, with the pointer event, so a caller can read its modifiers. */
-        onpick: (id: string, event: MouseEvent) => void;
+        /**
+         * A pick, with the pointer event, so a caller can read its modifiers, and, for a choice of
+         * a run of `groups`, that run's id.
+         */
+        onpick: (id: string, event: MouseEvent, group?: string) => void;
         children: Snippet;
         /** Whether the list is open; a caller binds it to know, and it starts closed. */
         open?: boolean;
@@ -51,6 +60,7 @@
     let {
         label,
         items = [],
+        groups,
         read,
         lead = [],
         onpick,
@@ -66,6 +76,10 @@
         lead.length === 0 || rest.length === 0
             ? [...lead, ...rest]
             : [...lead, ...rest.map((item, at) => (at === 0 ? { ...item, rule: true } : item))]
+    );
+    /** Whether a right-click has anything to list: a choice of the list or of one of the runs. */
+    const offered = $derived(
+        groups === undefined ? shown.length > 0 : groups.some((one) => one.items.length > 0)
     );
 
     /** The control the menu was opened on, which takes the focus back when it closes. */
@@ -104,7 +118,7 @@
     function pointed(event: MouseEvent): void {
         if (own) event.stopPropagation();
         if (read !== undefined) heard = read(event);
-        if (shown.length === 0) {
+        if (!offered) {
             event.preventDefault();
             return;
         }
@@ -123,12 +137,13 @@
         if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
         if (event.defaultPrevented) return;
         event.preventDefault();
-        if (read === undefined && items.length === 0) return;
+        if (read === undefined && (groups === undefined ? items.length === 0 : !offered)) return;
         openAtEdge(event.target);
     }
 
-    function pick(id: string, event: MouseEvent): void {
-        closing.hold(() => onpick(id, event));
+    /** A pick, answered once the list has closed; a choice of `items` names no run. */
+    function pick(id: string, event: MouseEvent, group?: string): void {
+        closing.hold(() => onpick(id, event, group));
     }
 
     /**
@@ -155,7 +170,7 @@
         <ContextMenu.Content sideOffset={0} {...closing.content}>
             {#snippet child({ wrapperProps, props })}
                 <div {...wrapperProps}>
-                    <MenuList {label} items={shown} onpick={pick} list={props} />
+                    <MenuList {label} items={shown} {groups} onpick={pick} list={props} />
                 </div>
             {/snippet}
         </ContextMenu.Content>

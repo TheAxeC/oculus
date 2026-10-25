@@ -15,6 +15,8 @@ text:
         form_cancel: Cancel
         fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
         grip_glyph: grip
+        hub_facet: Hub
+        hub_tip: show or hide the entries of {0}
         identity_unusable: 'Writes are off: {0} "{1}" is empty or shared with another entry'
         link_glyph: link
         line: line {0}

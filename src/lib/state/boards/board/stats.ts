@@ -1,7 +1,7 @@
-// Layer 2, client state. The counts on a board's controls, waiting lines, sizes and dissemination
-// live here because they describe board content rather than its saved controls.
+// Layer 2, client state. The counts on a board's controls, sizes and dissemination live here
+// because they describe board content rather than its saved controls.
 
-import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
+import type { Id, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { anyWord, hasWord } from '../../../data/shapes/vocab-keys.ts';
 import {
@@ -11,50 +11,10 @@ import {
     resolvedId,
     rootOf
 } from '../../../data/helpers/hub-names.ts';
-import { t } from '../../shared/words/text.ts';
-import { waitingLabel } from '../waiting.ts';
 import { setting, type BoardItem, type BoardStats, type VenueCount } from './presets.ts';
 
 /** The `venue_conc_warn` of `focus:` when the config names none. */
 export const VENUE_WARN = 4;
-
-/** The derived line under a project's chips, and the class that gives the line its kind. */
-export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string };
-
-/**
- * What a project is waiting on. Explicit people win over submission review (a stage whose word of
- * `stages` carries `pauses_countdown`), which wins over a generic external block (a chip whose word
- * of `chips` carries `blocked`). A `waiting-on:` value is a person drawn by name or another project
- * drawn by its label, through the one rule of waiting.ts.
- */
-export function waitingLine(
-    project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'stage' | 'chips' | 'venueId'>>,
-    config: Record<string, unknown>,
-    venues: Record<Id, Venue>,
-    people: Record<Id, string>,
-    projects: Record<Id, Project> = {}
-): WaitingLine | null {
-    if (project.waitingOn.length > 0) {
-        const names = project.waitingOn.map((id) => waitingLabel(id, people, projects)).join(', ');
-        return { kind: 'people', text: t('project.helper.waiting_on', names) };
-    }
-    if (hasWord(config, 'stages', 'pauses_countdown', project.stage)) {
-        const venue = project.venueId === undefined ? undefined : venues[project.venueId];
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
-        const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
-        return {
-            kind: 'review',
-            text:
-                venue === undefined
-                    ? t('project.helper.under_review_unset')
-                    : t('project.helper.under_review_at', name)
-        };
-    }
-    if (anyWord(config, 'chips', 'blocked', project.chips ?? [])) {
-        return { kind: 'blocked', text: t('project.helper.blocked_external') };
-    }
-    return null;
-}
 
 /**
  * The counts a project board's controls carry: how many projects it holds, which line 2 of its bar

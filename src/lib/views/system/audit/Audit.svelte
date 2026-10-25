@@ -348,7 +348,7 @@
         font-size: var(--fs-sm);
     }
 
-    /* The terminal shape: the sections follow the folder line, as every list does there. */
+    /* The terminal shape: the sections follow the card's folder name, as every list does there. */
     :global(body.rice:where(:not(.rice-sans))) .audit {
         font-family: var(--font-mono);
     }

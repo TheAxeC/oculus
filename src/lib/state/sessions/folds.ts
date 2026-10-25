@@ -117,11 +117,6 @@ export function listFilterOf(state: unknown): ListFilter {
     return readAs(listFilterShape, state) ?? LIST_FILTER;
 }
 
-/** A list with one entry taken out when it holds it and put in when it does not. */
-export function toggled<T>(list: readonly T[], one: T): T[] {
-    return list.includes(one) ? list.filter((item) => item !== one) : [...list, one];
-}
-
 /** Whether a session is waiting on the reader: its latest hook is a notification. */
 export function needsInput(row: GroupedSession): boolean {
     return row.live && row.hook?.event === 'notification';

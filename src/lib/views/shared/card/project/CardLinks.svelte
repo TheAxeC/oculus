@@ -2,9 +2,17 @@
     // Layer 3, shared view. The project cross-link tag groups live here because relationship
     // navigation changes independently of the project-card frame.
     //
-    // Each kind that has entries is its own labelled line, in the order Funding, Pillar, Datasets,
-    // Team, Related and Venue, so a card with many tags is read by kind rather than as one wrapping
-    // run; a kind longer than SHOWN draws that many and a control that draws the rest in place.
+    // Each kind that has entries is its own labelled line, in the order Waiting on, Blocked,
+    // Funding, Pillar, Datasets, Team, Related and Venue, so a card with many tags is read by kind
+    // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
+    // draws the rest in place.
+    //
+    // The waiting kind is the project's `waiting-on:`, each value named by state/boards/waiting.ts
+    // as the Focus board's strip and lane cards name it, in amber: a person opens the Person view
+    // as a TEAM tag does, a project opens it as a RELATED tag does, and a value that names neither
+    // is its key with no press. The blocked kind is one red tag with the words of
+    // `project.helper.blocked_external`, drawn while one of the project's chips carries the flag
+    // `blocked`. A project that is both draws both lines.
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
@@ -23,6 +31,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
+    import type { WaitedOn } from '$lib/state/boards/waiting';
     import { t } from '$lib/state/shared/words/text';
     import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
@@ -39,28 +48,49 @@
     /** The kind whose entries are people, each opening the Person view for its own key. */
     const TEAM = 'team';
 
+    /** The kind of the project's `waiting-on:`, whose entries open what they name. */
+    const WAITING = 'waiting';
+
     type Props = {
         /** The joined board item whose cross-links are shown. */
         item: LinkedItem;
+        /** The values of the project's `waiting-on:`, each with what it names. */
+        waiting?: WaitedOn[];
+        /** Whether one of the project's chips carries the flag `blocked`. */
+        blocked?: boolean;
     };
-    let { item }: Props = $props();
+    let { item, waiting = [], blocked = false }: Props = $props();
 
     /** The kind of the project's venue, whose one entry is its whole text. */
     const VENUE = 'venue';
 
     /**
-     * One line: which kind it is, what it is called, the glyph its entries carry, and whether an
-     * entry's words wrap onto further lines rather than being cut.
+     * One line: which kind it is, what it is called, the glyph its entries carry, the hue they are
+     * drawn in where they have one, and whether an entry's words wrap onto further lines rather
+     * than being cut.
      */
     type Kind = {
         key: string;
         label: string;
-        glyph: string;
+        glyph?: string;
         tags: BoardTag[];
+        tone?: string;
         wrap?: boolean;
     };
 
     const kinds = $derived<Kind[]>([
+        {
+            key: WAITING,
+            label: t('project.card.waiting_on'),
+            tags: waiting.map((one) => ({ id: one.id, label: one.label })),
+            tone: 'amber'
+        },
+        {
+            key: 'blocked',
+            label: t('project.card.blocked'),
+            tags: blocked ? [{ id: 'blocked', label: t('project.helper.blocked_external') }] : [],
+            tone: 'red'
+        },
         {
             key: 'funding',
             label: t('board.facet_funding'),
@@ -112,8 +142,28 @@
         opened = { id: item.id, kinds: [...expanded, key] };
     }
 
+    /**
+     * The glyph one entry carries: its kind's, and for a waited-on value the glyph of the line
+     * whose entries are of its sort, TEAM's for a person and RELATED's for a project.
+     */
+    function glyphOf(kind: Kind, tag: BoardTag): string | undefined {
+        if (kind.key !== WAITING) return kind.glyph;
+        const named = waiting.find((one) => one.id === tag.id)?.kind;
+        if (named === 'person') return t('project.card.team_glyph');
+        if (named === 'project') return t('project.card.related_glyph');
+        return undefined;
+    }
+
     /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
+        if (kind.key === WAITING) {
+            const named = waiting.find((one) => one.id === tag.id)?.kind;
+            if (named === 'person') return () => openView('person', recordState(tag.id, tag.label));
+            if (named === 'project') {
+                return () => openView('project', recordState(tag.id, tag.label));
+            }
+            return null;
+        }
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
         if (kind.key === RELATED) return () => openView('project', recordState(tag.id, tag.label));
         if (kind.key === TEAM) return () => openView('person', recordState(tag.id, tag.label));
@@ -132,7 +182,12 @@
                     {#each drawn as tag (tag.id)}
                         {@const onpress = press(kind, tag)}
                         {#if onpress === null}
-                            <Tag label={tag.label} glyph={kind.glyph} wrap={kind.wrap === true} />
+                            <Tag
+                                label={tag.label}
+                                glyph={glyphOf(kind, tag)}
+                                tone={kind.tone}
+                                wrap={kind.wrap === true}
+                            />
                         {:else}
                             <span class="crosslink">
                                 <ToolButton
@@ -141,7 +196,11 @@
                                     title={t('project.card.open_in', kind.label)}
                                     onclick={onpress}
                                 >
-                                    <Tag label={tag.label} glyph={kind.glyph} />
+                                    <Tag
+                                        label={tag.label}
+                                        glyph={glyphOf(kind, tag)}
+                                        tone={kind.tone}
+                                    />
                                 </ToolButton>
                             </span>
                         {/if}

@@ -1,8 +1,8 @@
 // Layer 4, test helper. A small hub planted in a scratch directory for the reference index and the
 // rename of a hub key: one file of each kind that names a key or defines one, an engine folder
 // holding the configuration files the index reads (`defaults/behavior.yml`, `defaults/sources.yml`
-// and `catalogs/vocab.yml`), and where a row asks for one, the open workspace file, in the hub or in
-// a second workspace folder `lab`.
+// and `catalogs/vocab.yml`), and where a row asks for one, the open workspace file, in the hub or
+// in a second workspace folder `lab`.
 // The texts are synthetic; none of them is a file of the hub.
 
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';

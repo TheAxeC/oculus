@@ -1,11 +1,13 @@
 <script lang="ts">
-    // Layer 3, shared view. Expanded manifest fields and related documents live here because the
-    // expanded card section changes independently of its collapsed frame. The subtasks and the
-    // follow-up blocks are the card's own, drawn under this section, since adding a first subtask
-    // or a first follow-up note is a control of the closed card too. Every prose field is drawn
-    // through CodeText, so a backticked word is code and a web address in the other words is a
-    // link.
+    // Layer 3, shared view. The blocks of manifest fields and related documents the project page's
+    // card draws under its closed card, in two columns: on the left STATUS, LATEST, NEXT (the whole
+    // next action), RESULTS, OUTCOME and IDEAS / AVENUES; on the right REPRODUCED, DISSEMINATED IN,
+    // FILES, then whatever the card puts after them (its subtasks and follow-up blocks). A pane too
+    // narrow for two columns of readable width sets the right column under the left. Every prose
+    // field is drawn through CodeText, so a backticked word is code and a web address in the other
+    // words is a link.
 
+    import type { Snippet } from 'svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
@@ -28,8 +30,10 @@
         onsaid: (said: string) => void;
         /** Whether the project's documents are listed; a view that draws them itself says no. */
         documents: boolean;
+        /** What the right column holds after FILES. */
+        children?: Snippet;
     };
-    let { item, onsaid, documents }: Props = $props();
+    let { item, onsaid, documents, children }: Props = $props();
     const shows = $derived(disseminatedFor(item.id));
 </script>
 
@@ -52,66 +56,83 @@
 {/snippet}
 
 <div class="more">
-    {#if item.project.statusLine}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.status'), item.project.statusLine)}
-    {/if}
-    {#if item.project.latest}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.latest'), item.project.latest)}
-    {/if}
-    {#if item.project.results.length > 0}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render listField(t('project.card.results'), item.project.results)}
-    {/if}
-    {#if item.project.outcome}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.outcome'), item.project.outcome)}
-    {/if}
-    {#if item.project.next}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.next'), item.project.next)}
-    {/if}
-    {#if item.project.ideas.length > 0}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render listField(t('project.card.ideas'), item.project.ideas)}
-    {/if}
-    {#if item.project.reproduced}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(
-            t('project.card.reproduced'),
-            [item.project.reproduced.date, item.project.reproduced.note]
-                .filter((part) => part !== undefined && part !== '')
-                .join(' | ')
-        )}
-    {/if}
-    {#if shows.length > 0}
-        <div class="field">
-            <span class="label">{t('project.card.disseminated_in')}</span>
-            <div class="tags">
-                {#each shows as entry (`${entry.collection}:${entry.id}`)}
-                    <span class="crosslink">
-                        <ToolButton
-                            plain
-                            label={entry.title}
-                            title={t('project.card.open_in', entry.collection)}
-                            onclick={() => goto(client, entry.collection, entry.title)}
-                        >
-                            <Tag label={entry.title} />
-                        </ToolButton>
-                    </span>
-                {/each}
+    <div class="column">
+        {#if item.project.statusLine}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(t('project.card.status'), item.project.statusLine)}
+        {/if}
+        {#if item.project.latest}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(t('project.card.latest'), item.project.latest)}
+        {/if}
+        {#if item.project.next}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(t('project.card.next'), item.project.next)}
+        {/if}
+        {#if item.project.results.length > 0}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render listField(t('project.card.results'), item.project.results)}
+        {/if}
+        {#if item.project.outcome}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(t('project.card.outcome'), item.project.outcome)}
+        {/if}
+        {#if item.project.ideas.length > 0}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render listField(t('project.card.ideas'), item.project.ideas)}
+        {/if}
+    </div>
+    <div class="column">
+        {#if item.project.reproduced}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(
+                t('project.card.reproduced'),
+                [item.project.reproduced.date, item.project.reproduced.note]
+                    .filter((part) => part !== undefined && part !== '')
+                    .join(' | ')
+            )}
+        {/if}
+        {#if shows.length > 0}
+            <div class="field">
+                <span class="label">{t('project.card.disseminated_in')}</span>
+                <div class="tags">
+                    {#each shows as entry (`${entry.collection}:${entry.id}`)}
+                        <span class="crosslink">
+                            <ToolButton
+                                plain
+                                label={entry.title}
+                                title={t('project.card.open_in', entry.collection)}
+                                onclick={() => goto(client, entry.collection, entry.title)}
+                            >
+                                <Tag label={entry.title} />
+                            </ToolButton>
+                        </span>
+                    {/each}
+                </div>
             </div>
-        </div>
-    {/if}
-    <CardDocs {item} {onsaid} {documents} />
+        {/if}
+        <CardDocs {item} {onsaid} {documents} />
+        {#if children !== undefined}
+            {@render children()}
+        {/if}
+    </div>
 </div>
 
 <style>
+    /* Two columns while each can be at least 320 px wide, one under the other in a narrower pane;
+       the left column comes first in the page, so it stays on top when they stack. */
     .more {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+        column-gap: 20px;
+        align-items: start;
         margin-top: 10px;
         padding-top: 8px;
         border-top: 1px solid var(--line);
+    }
+
+    .column {
+        min-width: 0;
     }
 
     .field {

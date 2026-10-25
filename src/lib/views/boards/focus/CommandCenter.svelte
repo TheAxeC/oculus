@@ -3,12 +3,14 @@
     // ticker, in two columns under one heading, with the buttons each line can be acted on by.
     //
     // It counts nothing. The groups are the ticker the board hands it and state/feeds/feeds.ts's
-    // attention and refresh lines; what is here is the markup, the words, the writes and the
-    // opening controls. A line says what it is and what it can be written to (`kind` and `target`),
-    // and this file turns the first into a sentence through the text catalog; the second becomes
-    // buttons, and what one writes, in views/boards/focus/rows.ts, which the tasks section draws
-    // its rows with too. Lead and attention lines open their views; refresh lines ask the shell for
-    // the Update tray through the ui store.
+    // attention and refresh lines over the portfolio the board hands it, both of the records the
+    // Focus filter keeps, and the heading row says how many rows the filter hides; what is here is
+    // the markup, the words, the writes and the opening controls. A line says what it is and what
+    // it can be written to (`kind` and `target`), and this file turns the first into a sentence
+    // through the text catalog; the second becomes buttons, and what one writes, in
+    // views/boards/focus/rows.ts, which the tasks section draws its rows with too. Lead and
+    // attention lines open their views; refresh lines ask the shell for the Update tray through the
+    // ui store.
     //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
     // state/system/machine/hpc/hpc.svelte.ts, drawn only while the cluster answers and the queue is
@@ -22,6 +24,7 @@
         venueWarn,
         type TickerItem
     } from '$lib/state/boards/ticker';
+    import type { Snapshot } from '$lib/state/boards/focus';
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
@@ -34,17 +37,22 @@
 
     const {
         selectors: { configMap },
-        entities: { portfolio },
         inbox: { actionable, state: inboxState },
         layout: { openView },
         schedule: { offered },
         ui: { instanceState, requestUpdateTray, setInstanceState }
     } = client;
 
-    let { week, now, open, ontoggle, onproject, onsaid }: SectionProps = $props();
+    type Props = SectionProps & {
+        /** The portfolio with the records the Focus filter keeps, which the venue load counts. */
+        snapshot: Snapshot | null;
+        /** How many rows the Focus filter hides from the command center. */
+        hidden: number;
+    };
+
+    let { week, now, open, ontoggle, onproject, onsaid, snapshot, hidden }: Props = $props();
 
     const config = $derived(configMap());
-    const snapshot = $derived(portfolio());
     const needs = $derived(
         snapshot === null ? [] : attention(snapshot, config, now, actionable(), vocabOf)
     );
@@ -241,6 +249,7 @@
     {week}
     {view}
     {open}
+    {hidden}
     {ontoggle}
     attentionRows={attentionView.rows}
     refreshRows={refreshView.rows}

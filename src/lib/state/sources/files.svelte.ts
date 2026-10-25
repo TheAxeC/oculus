@@ -1,9 +1,10 @@
-// Layer 2, client state. The files of one project folder, fetched when a card is opened and held,
-// and the rows of it a filter keeps, matched fuzzily.
+// Layer 2, client state. The files of one project folder, fetched when the project page's card asks
+// for them and held, and the rows of it a filter keeps, matched fuzzily.
 //
 // It is state/system/docs.svelte.ts's shape over a different endpoint, and for the same reason: the
 // wire model keeps a folder listing out of the snapshot, so a board of fifty projects carries none
-// of them and an opened card asks api/project-files for its own. files(id) asks the first time an
+// of them and the project page's card (views/shared/card/CardDocs.svelte, drawn by CardDetails on
+// the page alone) asks api/project-files for the folder's files. files(id) asks the first time an
 // id is wanted and holds the answer in the client state's query client; every later call reads what
 // is held. The fetch is scheduled on a microtask by state/client/queries/queries.svelte.ts rather
 // than run inside the call, so reading this from a $derived never writes state while a derived is

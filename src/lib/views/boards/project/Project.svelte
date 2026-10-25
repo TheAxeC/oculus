@@ -25,14 +25,18 @@
     // repository, of the repository.
     //
     // The card is views/shared/card/project/ProjectCard.svelte, the one the board draws, with
-    // `deposit` on and no `ontoggle`: this tab's card is always open, so it carries the deposit
-    // control and no expand control. Every project has the deposit control whatever its tier or
-    // placement; the deposit mirrors the `code/` folder of the project's own folder. It is drawn
-    // with `documents` off, since the documents section below is this tab's list of the project's
-    // documents, and with no clamp state, so its ELI5 is drawn whole. That list draws a known
-    // document the project has not got as the card's tag for it. Everything else the card shows,
-    // the pin, the stale badge, the file finder and the subtasks among it, is the board's card
-    // unchanged.
+    // `page` and `deposit` on: this tab's card draws its blocks in two columns under the closed
+    // card, carries the deposit control and has no Open project page action. Every project has
+    // the deposit control whatever its tier or placement; the deposit mirrors the `code/` folder of
+    // the project's own folder. It is drawn with `documents` off, since the documents section
+    // below is this tab's list of the project's documents, and with no clamp state, so its ELI5 is
+    // drawn whole. That list draws a known document the project has not got as the card's tag for
+    // it. Everything else the card shows, the pin, the stale badge, the file finder and the
+    // subtasks among it, is the board's card unchanged.
+    //
+    // A board opens this view as the preview tab of the pane beside it, which the next project
+    // opened from the board takes over. Typing anywhere in the tab (a subtask, a follow-up or any
+    // form of the card) keeps the tab, so a half-typed form is never replaced.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -65,6 +69,7 @@
 
     const {
         docs: { document: docFor },
+        layout: { keepPreview },
         selectors: { boardItemOf, sessionsForProject, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -107,10 +112,15 @@
     function title(): string {
         return item === null ? t('views.project') : item.project.title;
     }
+
+    /** Keep the tab when the reader types in it, while it is a preview tab. */
+    function typed(): void {
+        if (instance.preview === true) keepPreview(instance.id);
+    }
 </script>
 
 <Pane title={title()}>
-    <div class="project" data-instance={instance.id} data-project={id}>
+    <div class="project" data-instance={instance.id} data-project={id} oninput={typed}>
         {#if id === ''}
             <Empty message={t('project.none')} glyph={t('project.none_glyph')} />
         {:else if item === null}
@@ -125,7 +135,7 @@
                 {item}
                 {now}
                 cursor={cursor === item.id}
-                open
+                page
                 deposit
                 documents={false}
                 label={item.project.title}
@@ -216,7 +226,7 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    /* The terminal shape: the whole tab follows the folder line, as the board does. */
+    /* The terminal shape: the whole tab follows the card's folder name, as the board does. */
     :global(body.rice:where(:not(.rice-sans))) .project {
         font-family: var(--font-mono);
     }

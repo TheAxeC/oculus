@@ -18,13 +18,21 @@
     // project, the lanes each project's stage and chips put it on, and the Idea lane.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
-    // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six
-    // partials under views/boards/focus/, which are this view's own and which nothing else may
-    // import. What is left here is the composition, the awaiting-a-response box, and the one line
-    // that says what the last write answered, or what a press on a career row could not open. The
-    // career banner, the command center and the tasks section fold the same way, each by a control
-    // on its heading, and which of them is closed is kept in the tab's instance state, so a reload
-    // and a move of the tab keep it; all three start open.
+    // state/boards/focus.ts, state/boards/focus/filter.ts, state/feeds/feeds.ts and
+    // state/boards/career.ts; the markup is seven partials under views/boards/focus/ (Band,
+    // CareerPanel, CommandCenter, FocusFilter, Lanes, QuickAdd and Tasks), which are this view's
+    // own and which nothing else may import. What is left here is the composition, the
+    // awaiting-a-response box, and the one line that says what the last write answered, or what a
+    // press on a career row could not open. The career banner, the command center and the tasks
+    // section fold the same way, each by a control on its heading, and which of them is closed is
+    // kept in the tab's instance state, so a reload and a move of the tab keep it; all three start
+    // open.
+    //
+    // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier and Hub
+    // checklists, kept in the tab's instance state beside the folds. The page works the filter out
+    // once (state/boards/focus/filter.ts) and hands the command center, the tasks, the awaiting
+    // box, the band and the lanes the records it keeps and how many rows each hides; the career
+    // banner and the quick add read the whole portfolio.
     //
     // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
     // are each a surface of their own; the awaiting box and the said line are read off a
@@ -33,15 +41,17 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Band from './Band.svelte';
     import CareerPanel from './career/CareerPanel.svelte';
     import CommandCenter from './CommandCenter.svelte';
+    import FocusFilter from './FocusFilter.svelte';
     import Lanes from './lanes/Lanes.svelte';
     import QuickAdd from './QuickAdd.svelte';
     import Tasks from './Tasks.svelte';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { recordState } from '$lib/state/shared/page/records';
-    import { keyOf } from '$lib/state/shared/page/hubs';
+    import { hubList, keyOf } from '$lib/state/shared/page/hubs';
     import {
         foldOpen,
         foldToggled,
@@ -49,12 +59,17 @@
         lanes,
         liveProjects,
         portfolioProjects,
-        waiting,
         type FoldKey,
         type Id
     } from '$lib/state/boards/focus';
+    import {
+        filterLists,
+        focusFilter,
+        focusPage,
+        withFocusFilter,
+        type FocusFilter as Choice
+    } from '$lib/state/boards/focus/filter';
     import { personNames } from '$lib/state/boards/person';
-    import { ticker } from '$lib/state/boards/ticker';
     import { vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -62,7 +77,8 @@
 
     const {
         clock: { minuteNow, startMinuteClock },
-        selectors: { configMap },
+        fs: { primary, roots },
+        selectors: { configMap, selfPeople },
         entities: { portfolio },
         layout: { openView },
         ui: { instanceState, setInstanceState }
@@ -85,18 +101,36 @@
     const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(vocabOf()));
 
+    /** The tab's folded sections and its filter, which its instance state keeps. */
+    const folds = $derived(instanceState(instance.id));
+    const filter = $derived(focusFilter(folds));
+    const self = $derived(selfPeople());
+    const hubs = $derived(hubList(roots(), primary()));
+    /** The rows of the Role and Tier checklists, in the primary hub's words. */
+    const lists = $derived(filterLists(vocabOf()));
+
     /**
-     * The one ticker both dated sections are drawn from. It walks the whole portfolio, so the board
-     * derives it once here and hands it down rather than each section walking it again.
+     * The page under the filter: every section's records, worked out once here and handed down,
+     * with how many rows each hides, so no section reads the portfolio itself.
      */
-    const week = $derived(snapshot === null ? null : ticker(snapshot, config, now, vocabOf));
+    const page = $derived(
+        snapshot === null
+            ? null
+            : focusPage(snapshot, config, now, filter, { self, hubs, wordsOf: vocabOf })
+    );
+    const week = $derived(page?.sections.week ?? null);
+    const strip = $derived(page?.sections.strip ?? null);
+
+    /** What a lane card is read against, from the whole portfolio. */
+    const known = $derived({
+        names: personNames(snapshot),
+        projects: snapshot?.entities.projects ?? {},
+        venues: snapshot?.entities.venues ?? {},
+        self
+    });
 
     /** The projects quick add may write to: every project not at a `terminal` stage. */
     const live = $derived(liveProjects(projects, config, vocabOf));
-
-    const strip = $derived(
-        snapshot === null ? null : waiting(snapshot, config, personNames(snapshot), vocabOf)
-    );
 
     /** One name of a tally, with its count only when the count is above one: "BSPC (2)". */
     function counted(label: string, count: number): string {
@@ -159,16 +193,32 @@
         openView('project', recordState(id, project === undefined ? keyOf(id) : labelOf(project)));
     }
 
-    /** The tab's folded sections, which its instance state keeps. */
-    const folds = $derived(instanceState(instance.id));
-
     /** Open or close one folded section, keeping the rest of the tab's state. */
     function fold(key: FoldKey): void {
         setInstanceState(instance.id, foldToggled(folds, key));
     }
+
+    /** Keep a new choice of the filter, keeping the rest of the tab's state. */
+    function choose(next: Choice): void {
+        setInstanceState(instance.id, withFocusFilter(folds, next));
+    }
 </script>
 
 <Pane title={t('views.focus')}>
+    {#snippet toolbar()}
+        <Toolbar label={t('focus.toolbar')} overflow>
+            <FocusFilter
+                {filter}
+                named={self.size > 0}
+                roles={lists.roles}
+                tiers={lists.tiers}
+                {hubs}
+                mineHides={page?.mineHides ?? false}
+                hides={page?.hides ?? false}
+                onchange={choose}
+            />
+        </Toolbar>
+    {/snippet}
     <div class="focus" data-instance={instance.id}>
         <CareerPanel
             instance={instance.id}
@@ -180,6 +230,8 @@
 
         <CommandCenter
             {week}
+            snapshot={page?.snapshot ?? null}
+            hidden={page?.hidden.command ?? 0}
             {now}
             open={foldOpen(folds, 'command')}
             ontoggle={() => fold('command')}
@@ -189,6 +241,7 @@
 
         <Tasks
             {week}
+            hidden={page?.hidden.tasks ?? 0}
             {now}
             open={foldOpen(folds, 'tasks')}
             ontoggle={() => fold('tasks')}
@@ -204,10 +257,17 @@
             </Surface>
         {/if}
 
-        {#if awaiting.length > 0}
+        {#if awaiting.length > 0 || (page?.hidden.awaiting ?? 0) > 0}
             <Surface fitted>
                 <section class="waitroll">
-                    <p class="wait-head">{t('focus.awaiting_response')}</p>
+                    <p class="wait-head">
+                        {t('focus.awaiting_response')}
+                        {#if (page?.hidden.awaiting ?? 0) > 0}
+                            <span class="wait-hidden">
+                                {t('focus.hidden', page?.hidden.awaiting ?? 0)}
+                            </span>
+                        {/if}
+                    </p>
                     {#each awaiting as row (row.key)}
                         <span class="wait-lbl">{row.label}</span>
                         <span class="wait-names" class:blocked={row.key === 'blocked'}
@@ -218,13 +278,23 @@
             </Surface>
         {/if}
 
-        <Band {now} />
+        {#if page !== null}
+            <Band {now} cards={page.sections.band} hidden={page.hidden.band} />
+        {/if}
 
         {#if board.length === 0 || projects.length === 0}
             <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
         {/if}
 
-        <Lanes {now} {cursor} onproject={openProject} onsaid={(text: string) => (said = text)} />
+        <Lanes
+            {now}
+            {cursor}
+            items={page?.sections.lanes ?? {}}
+            hidden={page?.hidden.lanes ?? {}}
+            {known}
+            onproject={openProject}
+            onsaid={(text: string) => (said = text)}
+        />
     </div>
 </Pane>
 
@@ -258,6 +328,11 @@
     .wait-head {
         grid-column: 1 / -1;
         margin: 0;
+    }
+
+    .wait-hidden {
+        margin-left: 6px;
+        font-weight: 400;
     }
 
     .wait-head,

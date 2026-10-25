@@ -107,9 +107,9 @@ export function instanceNumber(state: unknown, key: string): number {
 
 /**
  * A view's state as its file holds it: `reveal`, the record a pick asked the tab to show, and each
- * field of `lists` that lists records (the cards drawn open or whole, the pillars a map draws),
- * each record written by `recordField`. The state a view's reader parsed holds them as internal
- * ids, and a view writes the state back through this.
+ * field of `lists` that lists records (the cards whose description is drawn whole, the pillars a
+ * map draws), each record written by `recordField`. The state a view's reader parsed holds them as
+ * internal ids, and a view writes the state back through this.
  */
 export function storedState(state: object, lists: readonly string[] = []): Record<string, unknown> {
     const out: Record<string, unknown> = { ...state };

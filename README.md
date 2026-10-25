@@ -9,7 +9,7 @@ Oculus runs on your own machine, in a browser tab or in its own window, on macOS
 A researcher's work is spread over many places: manuscripts in LaTeX, code and data in repositories, grant deadlines in a spreadsheet, follow-ups in mail, papers to read in a reference manager. Oculus keeps all of it in one folder of plain text files that you own and can keep in git, and shows it in one window.
 
 - The Focus page lists what wants attention today: deadlines, the follow-ups that have come due, tasks, and the projects in each lane.
-- Each project is a card with its status, venue, next action and subtasks, and it opens the project's folder, manuscript and repository.
+- Each project is a card with its stage, venue and next action on the project boards, and it opens a page beside the board with its status, results, subtasks and documents, and the project's folder, manuscript and repository.
 - Funding, talks, teaching, position applications and joint work are each a YAML file that the views read and edit. Every write can be undone from History.
 - The Literature page searches the literature sources, watches for new papers, keeps the papers you save in a file of your hub, and copies their BibTeX.
 - A LaTeX manuscript builds in a terminal and opens in the PDF viewer, with SyncTeX between the source and the PDF and the errors listed in Problems.

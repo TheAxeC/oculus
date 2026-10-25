@@ -126,3 +126,603 @@ TEST's workspace has one hub and no blocked card, so the WAITING ON / BLOCKED, H
 ## How many times the verify list ran
 
 `npm run diagrams && npm run test:quick` ran twice. The first run failed only `vitest checks`, on the base tree's `boundaries.test.ts` finding (`views/boards/collection/Collection.svelte styles .slot of ui/frame/toolbar/FoldRun.svelte through .cards > :global([data-reveal] > .slot)`), every other command `ok`; after the change of judgment call 12 the second run printed `test:quick: 48.4 s; every command passed`, exit 0. The G92 and G124 run once after the second. No whole-suite command ran. Run alone, over the tree: `tests/checks/tree/duplication.test.ts`, `tests/checks/source/keys.test.ts`, `tests/checks/source/comment-width.test.ts`, `tests/checks/tree/size.test.ts` (passed) and `tests/checks/tree/boundaries.test.ts` (`Tests  11 passed (11)` after judgment call 12), the others with the results given above, plus `svelte-check` over the tree (0 errors, 0 warnings) and prettier and eslint over the changed files.
+
+# Repair round 1
+
+## Left undone, and one premise found wrong
+
+Every item of `briefs/O77-round1.md` is built. One premise of item 5 holds only in a browser, and it is raised for a ruling:
+
+- **Item 5 in the desktop app.** Item 5 leaves a right-click on a link or inside a selection of the card to the browser's menu, so Copy and Copy link address stay. That holds in a browser tab. In the desktop app Electron draws no menu of its own: `src/lib/shell/context-guard.ts:7-8` says "In the desktop app Electron draws no menu of its own at all, so the elements above show the menu oculus draws (a text box's, with the spelling suggestions at its top) or none", and `src/desktop/preload.cjs:9-10` says Electron emits no `context-menu` event for a right-click the page cancels. So in the desktop app (`npm run app`) a right-click on a link or a selection in a project card opens no menu at all: neither the card's menu, which `leftToBrowser` keeps away, nor a browser menu. This is by reading; no desktop run was made. Options:
+  - (a) The card's menu gains a Copy row when the right-click lands inside a selection of the card and a Copy Link Address row when it lands on a link, both hosts the same, and `leftToBrowser` goes. Pros: the same menu in the browser and the desktop app, and the copy is still there. Cons: two new rows and their words, a user-visible shape nothing names yet.
+  - (b) `leftToBrowser` applies only when the page has no desktop bridge (`desktopOf` of `state/shared/stores/desktop.ts`); in the desktop app the card's menu opens on a link and a selection too. Pros: small; every right-click in the desktop app opens a menu. Cons: no Copy and no Copy Link Address on the card in the desktop app; the two hosts differ.
+  - (c) Leave it as built. Pros: nothing to change. Cons: in the desktop app a right-click on a card link or selection does nothing.
+  - Recommended (a), a judgment: it is the only option under which both hosts keep the copy and open a menu. (c) is the lazy option.
+
+## Items
+
+| Item | State | Proof |
+|---|---|---|
+| 1 Band countdown (ruling 383) | DONE | `bandItem` (`src/lib/state/boards/focus/focus-lanes.ts:153-168`) sets `deadline` only when `!deadlineMet(words, status) && !closesDeadline(words, status)`, `words` being `wordsAt(entry)` = `wordsOf?.(rootOf(entry)) ?? config` (`:193`), passed in all three columns (`:202`, `:209`, `:214`). Run: "Item 1" of `r1.ts` below. HELP's Focus bullet gains "A band card whose status has met or closed its deadline, a status carrying `deadline_met` (`submitted`) or `closes_deadline` in its hub's words, shows no countdown." |
+| 2 Mine only measured on the whole page | DONE | `focusPage` (`filter.ts:470-495`) builds `whole` once (`:478`), reads `mineWouldHide(snapshot, config, whole, scope)` (`:479`, the function at `:396-462`) and then `ruleOf(filter, scope, filter.mine && mineHides)` (`:480`). Run: "Item 2" of `r1.ts`. HELP: "Whether Mine only is offered is read on the whole page, with every role, tier and hub ticked: when it would hide nothing there it is drawn disabled, its tip saying everything here is yours, and is not applied; when it would hide something it applies together with the rest of the choice." |
+| 3 `openInto` at its base text | DONE | `git diff 796273a8 -- src/lib/state/workbench/layout/open/opening.ts`, quoted below: the only hunks are the `openBeside` type and its function. |
+| 4 `waitedOn` drops empty and repeated values | DONE | `waiting.ts:45` `const values = [...new Set(ids.map((id) => id.trim()).filter((id) => id !== ''))];`. Run: "Item 4" of `r1.ts`. The keyed each is `CardLinks.svelte:182` `{#each drawn as tag (tag.id)}`; the WAITING ON tags are `waiting.map((one) => ({ id: one.id, label: one.label }))` (`CardLinks.svelte:85`), `waiting` being `waitedOn(...)` (`ProjectCard.svelte:141`), so every key is a distinct non-empty value. |
+| 5 A link or a selection keeps the browser's menu | DONE in a browser; the desktop app is the open item above | Read below. |
+| 6 On a board, Add draws the form alone | DONE | Read below. |
+| 7 HELP's landing sentence | DONE | Read below. |
+| 8 `instance.ts` rewrap | DONE | `instance.ts:108-113` is one comment, its paragraph lines 109-112 of 99, 97, 99 and 63 characters (`awk 'NR>=106 && NR<=113 {print NR": "length": "$0}'`). |
+| 9 Sentences the step made false | DONE | Read and grep below. |
+| 10 One toggle rule | DONE | Grep and change below. |
+| 11 The collection Hub rule as one function | DONE | `keptByHub` (`src/lib/state/boards/collection.ts:460-473`), called by `Collection.svelte:171`; cases 18 and 19 of `cases.ts` call it. Run below. |
+| 12 The two copies | DONE | `npx vitest run tests/checks/tree/duplication.test.ts` inside the verify run below: part of "Test Files 7 passed (7)". |
+| 13 The six comment lines | DONE | `npx vitest run tests/checks/source/comment-width.test.ts` inside the same run: part of "Test Files 7 passed (7)". |
+| 14 The report's parts | DONE | The sections below. |
+
+### Item 2, how many times `ticker` runs
+
+`ticker` is called in one place of `filter.ts`, inside `sectionsOf`: `filter.ts:264` `week: ticker(snapshot, config, now, wordsOf),`. `focusPage` calls `sectionsOf` at `:478` (`const whole = sectionsOf(snapshot, config, now, scope.wordsOf, known);`) and at `:491` (`const made = sectionsOf(held, config, now, scope.wordsOf, known);`), the second after `:481` `if (!hidesAny(rule)) {`, whose branch returns `whole`. So one `focusPage` call runs `ticker` once when the choice hides nothing and twice when it hides something. `mineWouldHide` reads the records of `whole` and builds nothing.
+
+### Item 5, by reading
+
+The rule is in the card, not in `ContextMenu.svelte`: an `own` menu is also the text box's menu (`TextBoxMenu.svelte:2-4`), a tree row's and a terminal's, and those want their own menu on a selection or a link inside them, so it is not a rule every `own` menu wants.
+
+- `card-menu.ts:73-86` `leftToBrowser`: `:77` `if (!event.isTrusted || (event.clientX === 0 && event.clientY === 0)) return;`, then `:78` `const link = target.closest('a[href]');`, the selection read as non-collapsed, anchored in the card and containing the target, and `:85` `if ((link !== null && card.contains(link)) || selected) event.stopPropagation();`. It is the `.slot` div's `oncontextmenu` (`ProjectCard.svelte:384-388`), inside the card's `ContextMenu` wrapper.
+- A right-click on a link or inside a selection: the event stops at the slot, so the card's `ContextMenu.Trigger` handler `pointed` (`ContextMenu.svelte:118`) never hears it, and neither does the page's guard, a `document` listener (`routes/+page.svelte:289-296`) that would cancel the browser's menu outside a text box (`context-guard.ts:13`, `shouldCancel`). Svelte listens for delegated events on the mount target and on `document` (`node_modules/svelte/src/internal/client/render.js`, "Add the event listener to both the container and the document"); the stop is made while the event is at the container, so it never reaches `document`. The browser draws its own menu.
+- The keyboard: the context menu key and Shift+F10 reach `keys` (`ContextMenu.svelte:136-141`), which raises an untrusted `contextmenu` at the control's edge (`openAtEdge`), which `leftToBrowser` lets through (`:77`); a browser's own key-raised right-click at (0, 0) is let through by the same line and raised again at the edge by `pointed` (`ContextMenu.svelte:126-129`). Unchanged.
+- A text box inside the card: `TextInput` and `DateInput` wrap the box in `TextBoxMenu` (`TextInput.svelte:88`, `DateInput.svelte:64`), an `own` `ContextMenu` whose `pointed` stops the event (`ContextMenu.svelte:119` `if (own) event.stopPropagation();`) before it reaches the slot. Unchanged.
+- The slot carries `<!-- svelte-ignore a11y_no_static_element_interactions -->` with a comment saying it is no control (`ProjectCard.svelte:381-383`), the form `Tabs.svelte:303` and `PaneBody.svelte:314` use; `svelte-check` printed the warning before it.
+
+### Item 6, by reading
+
+`Subtasks.svelte` and `Followups.svelte` take `formOnly?: boolean` ("Draw the add form alone, with no head and no line of the list: a card on a board, whose Add Subtask opens the form under the card's other lines", `Subtasks.svelte:60-64`). The block draws `lines`, `$derived(formOnly ? [] : subtasks)` (`Subtasks.svelte:78`; `Followups.svelte:79` over `notes`), in `{#if lines.length > 0 || adding}` (`:132`), `ListHead shown={lines.length > 0}` (`:135`) and the each over `lines`. With `formOnly` the block is drawn only while `adding` is true, as `ListHead`'s `{#if adding}` form alone. `ProjectCard.svelte:360` and `:371` pass `formOnly={!page}`; the board branch (`:464-468`) renders both blocks, which draw nothing until Add opens the form; the page branch (`:457-463`) renders them inside `CardDetails` with `formOnly` false, the whole list with its form. `EntryCard.svelte:308-323` passes no `formOnly` and is unchanged.
+
+### Item 7, `landing.ts` read whole, and the HELP sentence
+
+New sentence (`docs/HELP.md`, the project card bullet): "Its title, its Open project page action and Enter on the keyboard cursor open the project page beside the board as a preview tab. The page lands in the first of these that the page has: on a workbench, its documents pane; the pane holding the newest page or document opened on the page, while it is still there; an empty pane, an empty documents pane before an empty terminals pane; a pane holding only opened pages and documents; and else a new pane split right of the board. Apart from a workbench's documents pane, a pane holding a tool view, such as Files or Terminal, is not taken, and a locked pane and the board's own pane never are. A preview tab already in the pane the page lands in is replaced, so the next project opened from the board takes that preview tab."
+
+Each clause and the lines it rests on (`src/lib/state/workbench/layout/open/landing.ts`):
+
+- On a workbench, its documents pane: `:72-77` `if (workbench) { const marked = panes(tree).find(({ pane }) => pane.documents === true); if (marked !== undefined && marked.pane.locked !== true && !taken(marked.path)) { return { kind: 'pane', path: marked.path }; } }`, doc `:44` "on a workbench, its documents pane (the pane marked `documents`), whatever it holds".
+- The pane holding the newest page or document opened on the page, while it is still there: `:78-83` the loop over `[...received].reverse()` with `allowed(pane, found.path)`; doc `:45-46`.
+- The board's own pane: `:84-87` takes the reader's pane when it holds opened tabs, but `openOpened` passes the board's tab as the asker (`opening.ts:255-257`, `by = asker ?? (beside ? attention.active(host) ...)`), so `away` (`:66` `taken`) is the board's pane, which is also `reader` (`opening.ts:369`), and every step excludes it: `:67-71` `allowed`, `:74`, `:85`, `:88`. Doc `:52-54` "`away` ... is treated as locked in every step".
+- An empty pane, an empty documents pane before an empty terminals pane: `:89-93`, `empties.find(({ pane }) => pane.keeps === undefined) ?? empties.at(0)`, comment `:89-90`.
+- A pane holding only opened pages and documents: `:94-95` `all.find(({ pane }) => !holdsTool(pane, opened, got))`, `holdsTool` at `:20-31`; doc `:47-48`.
+- Else a new pane split right of the board: `:96` `return { kind: 'split', path: away ?? reader };`; doc `:48-49`, `:54`.
+- A pane holding a tool view is not taken, the workbench's documents pane apart: `:67-71` (`!holdsTool(...) || (samePath(path, reader) && holdsOpened(...))`) and `:94`; doc `:49-50`. The documents pane step at `:72-77` reads no `holdsTool`.
+- A locked pane never: `:68`, `:74`, `:85`, `:88`; doc `:51-52`.
+- A preview tab in the landing pane is replaced: `opening.ts:377-378` `const replaced = preview && landing.kind === 'pane' ? previewIn(paneAt(tree, landing.path)) : null;` and the retarget after it; the board's press passes `preview` (`openBeside`'s `options?.preview === true`, `opening.ts:202`).
+
+### Item 9, the sentences and the grep
+
+- `src/lib/state/sources/files.svelte.ts:1-2`: "The files of one project folder, fetched when the project page's card asks for them and held"; `:5-7`: "so a board of fifty projects carries none of them and the project page's card (views/shared/card/CardDocs.svelte, drawn by CardDetails on the page alone) asks api/project-files for the folder's files". `CardDocs` is drawn only by `CardDetails.svelte:114`, which `ProjectCard.svelte:458` draws under `{#if page}`.
+- `Entry.svelte:374` and `Doc.svelte:309`: "the whole tab follows the card's folder name", as `Project.svelte:229`.
+- The same sentence "follows the folder line" was in three more files the step made false, and they are fixed the same way, widening the path list by comments only: `Slides.svelte:433`, `Audit.svelte:351`, `History.svelte:483`.
+- `Focus.svelte:20-28`: "The arithmetic is the pure functions of state/boards/focus.ts, state/boards/focus/filter.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is seven partials under views/boards/focus/ (Band, CareerPanel, CommandCenter, FocusFilter, Lanes, QuickAdd and Tasks)", the seven `.svelte` imports of `Focus.svelte:45-51`; the paragraph rewrapped.
+- Grep, each of the round's changed names over `docs/`, `README.md`, `src` and `config` (`grep -rn "<name>" docs README.md src` and `grep -rn --exclude=local.yml "<name>" config`): "folder line", "six partials", "an opened card", "when a card is opened", `toggleTheme`, `hubsOff` and filter.ts's `toggled`: no hit. `formOnly`: `ProjectCard.svelte:23`, `:360`, `:371`, `Subtasks.svelte:11`, `:64`, `:74`, `:78`, `Followups.svelte:12`, `:65`, `:75`, `:79`. `keptByHub`: `collection.ts:466`, `Collection.svelte:62`, `:94`, `:171`. `SaidBody`: `Collection.svelte:63`, `:82`, `:442`, `:482`, `Projects.svelte:82`, `:369`, `:398`. `leftToBrowser`: `card-menu.ts:5`, `:73`, `ProjectCard.svelte:20`, `:53`, `:387`. `grep -rn "ThemeFacets\|toggled\b" docs README.md`: no hit.
+
+### Item 10, the toggle
+
+`grep -rn "function toggle\w*\|const toggle\w* = " src` lists, among others: `src/lib/state/sessions/folds.ts:121:export function toggled<T>(list: readonly T[], one: T): T[] {` ("A list with one entry taken out when it holds it and put in when it does not"), `src/lib/views/shared/latex/opened.ts:5:export function toggled(list: readonly string[], id: string): string[] {`, `src/lib/state/sources/explorer/view/place.ts:190:export function toggleExpanded(`, `src/lib/state/sources/repositories/repositories.ts:215:export function toggleFolded(`, `src/lib/state/shared/words/themes.ts:101:export function toggledThemes(`. The generic one already exported for state and views is `folds.ts`'s `toggled<T>`, which `SessionList.svelte:63` imports. `filter.ts`'s `toggled` is deleted; `FocusFilter.svelte:25` and `HubChips.svelte:11` import `toggled` from `$lib/state/sessions/folds`, and `HubChips`' `toggle` is `onchange(toggled(off, hub))`. The same list job is written five times more across the tree (the hits above); folding those is a different concern from this step and is not done here.
+
+### Item 12, the two copies
+
+Grep first, before the change: `grep -rln 'class="said"' src` listed 33 files, none a shared partial for a board's said line and empty message (`shell/panes/strip/StripSaid.svelte` is the strip's red refusal line, a shell partial); `grep -rln "said !== ''" src/lib/views/shared src/lib/ui` lists form partials only. The said line and the empty message become `src/lib/views/shared/writes/SaidBody.svelte` (46 lines; `views/shared/` holds 10 items and `views/shared/writes/` now 4): the line a write answered on a `Surface` while it holds words, then `Empty` with `message` and `glyph` when `empty`, else `children`. `Collection.svelte:442-482` and `Projects.svelte:369-398` draw it; their own `.said` rules and the `Empty` and `Surface` imports `Collection` no longer uses go. The Data and Venues copy was the six-line `write` plus `toggleTheme` pair. The partial of that job already exists, `src/lib/views/shared/forms/ThemeFacets.svelte`, drawn by both views alone (`grep -rn "ThemeFacets" src`), so it takes the toggle: its `ontoggle(theme)` becomes `onchange(off)`, called with `toggledThemes(off, facet.theme)`, and each view passes `onchange={(off: string[]) => write({ off })}`; no new partial.
+
+## Case runs
+
+### `r1.ts`, this round's program (items 1, 2 and 4), whole source
+
+Saved at the scratchpad's `o77/r1.ts`, run as `node r1.ts` with Node v24.21.0.
+
+```ts
+// Scratch runs of the O77 repair round 1 cases (items 1, 2 and 4). Not a test; printed output only.
+const W = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O77';
+// The words module keeps a rune; outside Svelte a plain value stands in for it.
+(globalThis as any).$state = (value: unknown) => value;
+const { engineDir, loadConfig, textCatalog } = await import(`${W}/src/lib/data/sources/config.ts`);
+const { setCatalog } = await import(`${W}/src/lib/state/shared/words/text.ts`);
+const { collectionLanes } = await import(`${W}/src/lib/state/boards/focus/focus-lanes.ts`);
+const { focusPage, focusFilter } = await import(`${W}/src/lib/state/boards/focus/filter.ts`);
+const { waitedOn } = await import(`${W}/src/lib/state/boards/waiting.ts`);
+const { NO_FEEDS, fixtureProject } = await import(`${W}/tests/fixtures/entities-fixture.ts`);
+
+const { config: CONFIG } = loadConfig(engineDir());
+setCatalog(textCatalog(CONFIG));
+const NOW = Date.parse('2026-10-25T12:00:00Z');
+const SELF = 'axel-faes';
+const ME = new Set([SELF]);
+const out = (name: string, value: unknown) => console.log(`${name}: ${JSON.stringify(value)}`);
+
+// hub-b's words make `active` close its deadline; hub-c's take `deadline_met` off `submitted`.
+const statuses = CONFIG.statuses as Record<string, Record<string, unknown>>;
+const HUB_B = { ...CONFIG, statuses: { ...statuses, active: { ...statuses.active, closes_deadline: true } } };
+const HUB_C = { ...CONFIG, statuses: { ...statuses, submitted: { color: statuses.submitted.color } } };
+const WORDS: Record<string, Record<string, unknown>> = { 'hub-b': HUB_B, 'hub-c': HUB_C };
+const wordsOf = (hub?: string) => (hub !== undefined && WORDS[hub] !== undefined ? WORDS[hub] : CONFIG);
+
+const E = (id: string, root: string, fields: Record<string, unknown>, file: string, index: number) => ({
+    id, title: id, fields: { title: id, ...fields }, file, index, root
+});
+const C = (key: string, root: string, entries: unknown[]) => ({
+    id: root === 'hub-a' ? key : `${root}:${key}`, title: key, file: `/${root}/${key}.yml`, root, entries
+});
+
+function snap(projects: unknown[], collections: Record<string, unknown>): any {
+    return {
+        version: 1,
+        entities: {
+            projects: Object.fromEntries(projects.map((one: any) => [one.id, one])),
+            venues: {}, pillars: {}, domains: {}, funding: {}, organisations: {}, resources: {}, datasets: {},
+            people: {
+                [SELF]: { id: SELF, name: 'Axel', self: true },
+                pirmani: { id: 'pirmani', name: 'Pirmani' },
+                student: { id: 'student', name: 'Student' }
+            },
+            collections,
+            feeds: { ...NO_FEEDS },
+            career: { banner: 'kept' }
+        },
+        relations: { projectRelated: [], projectVenue: [] },
+        findings: []
+    };
+}
+
+console.log('--- Item 1 band countdown (collectionLanes)');
+const PAST = '2026-09-01';
+const band = collectionLanes(
+    snap([], {
+        funding: C('funding', 'hub-a', [
+            E('f-submitted', 'hub-a', { status: 'submitted', deadline: PAST }, '/hub-a/funding.yml', 0),
+            E('f-in-prep', 'hub-a', { status: 'in-prep', deadline: PAST }, '/hub-a/funding.yml', 1)
+        ]),
+        'hub-c:funding': C('funding', 'hub-c', [
+            E('f-submitted-c', 'hub-c', { status: 'submitted', deadline: PAST }, '/hub-c/funding.yml', 0)
+        ]),
+        applications: C('applications', 'hub-a', [
+            E('a-active-a', 'hub-a', { status: 'active', deadline: '2026-12-01' }, '/hub-a/applications.yml', 0)
+        ]),
+        'hub-b:applications': C('applications', 'hub-b', [
+            E('a-active-b', 'hub-b', { status: 'active', deadline: '2026-12-01' }, '/hub-b/applications.yml', 0)
+        ])
+    }),
+    CONFIG,
+    wordsOf
+);
+const card = (one: any) => `${one.id}@${one.root} deadline=${one.deadline ?? '(none)'}`;
+for (const stage of band.funding) out(`funding stage ${stage.label}`, stage.items.map(card));
+out('applications', band.applications.map(card));
+out('hub-b active closes_deadline', (HUB_B.statuses as any).active);
+out('hub-c submitted', (HUB_C.statuses as any).submitted);
+
+console.log('--- Item 2 Mine only measured on the whole page (Spec 3)');
+const P = (id: string, over: Record<string, unknown>) =>
+    fixtureProject({ id, title: id, folder: id, file: `${id}/project.yml`, root: 'hub-a', ...over });
+// Every project that names people but not you is of tier personal.
+const spec3 = snap(
+    [
+        P('p-mine', { lead: [SELF], tier: 'research', stage: 'exploring' }),
+        P('p-theirs-1', { lead: ['pirmani'], tier: 'personal', stage: 'exploring' }),
+        P('p-theirs-2', { lead: ['student'], tier: 'personal', stage: 'in-prep' })
+    ],
+    {}
+);
+const page = (s: any, filter: any) =>
+    focusPage(s, CONFIG, NOW, filter, { self: ME, hubs: [], wordsOf: () => CONFIG });
+const lanes = (p: any) =>
+    Object.fromEntries(
+        Object.entries(p.sections.lanes)
+            .filter(([, v]: any) => v.length > 0)
+            .map(([k, v]: any) => [k, v.map((one: any) => one.id)])
+    );
+const summary = (p: any) => ({ lanes: lanes(p), mineHides: p.mineHides, hides: p.hides, hidden: p.hidden });
+out('Personal unticked, Mine only on', summary(page(spec3, { mine: true, roles: [], tiers: ['personal'], hubs: [] })));
+out('Personal unticked, Mine only off', summary(page(spec3, { mine: false, roles: [], tiers: ['personal'], hubs: [] })));
+out('Personal ticked, Mine only on', summary(page(spec3, { mine: true, roles: [], tiers: [], hubs: [] })));
+out('nothing chosen, Mine only off', summary(page(spec3, { mine: false, roles: [], tiers: [], hubs: [] })));
+
+console.log('--- Item 2 case 15 (every row yours)');
+const mineAll = snap(
+    [
+        P('p-sup', { lead: ['student'], supervisors: [SELF], tier: 'personal', stage: 'submitted' }),
+        P('p-lead', { lead: [SELF], tier: 'research', stage: 'exploring' }),
+        P('p-collab', { lead: ['pirmani'], collaborators: [SELF], tier: 'research', stage: 'revision', deadline: '2026-11-12' }),
+        P('p-idea', { lead: [SELF], tier: 'personal', stage: 'nascent' })
+    ],
+    {
+        tasks: C('tasks', 'hub-a', [E('t1', 'hub-a', {}, '/hub-a/tasks.yml', 0)])
+    }
+);
+out('mine on, every project yours', summary(page(mineAll, focusFilter({}))));
+
+console.log('--- Item 4 waitedOn');
+const people = { pirmani: 'Pirmani' };
+out('[pirmani, pirmani]', waitedOn(['pirmani', 'pirmani'], people, {}));
+out('["", pirmani]', waitedOn(['', 'pirmani'], people, {}));
+out('[a, b]', waitedOn(['a', 'b'], people, {}));
+```
+
+Output (exit 0):
+
+```
+--- Item 1 band countdown (collectionLanes)
+funding stage In prep: ["f-in-prep@hub-a deadline=2026-09-01"]
+funding stage Submitted: ["f-submitted-c@hub-c deadline=2026-09-01","f-submitted@hub-a deadline=(none)"]
+applications: ["a-active-a@hub-a deadline=2026-12-01","a-active-b@hub-b deadline=(none)"]
+hub-b active closes_deadline: {"color":"#16a34a","closes_deadline":true}
+hub-c submitted: {"color":"#b45309"}
+--- Item 2 Mine only measured on the whole page (Spec 3)
+Personal unticked, Mine only on: {"lanes":{"run":["p-mine"]},"mineHides":true,"hides":true,"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":1,"push":1,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}}
+Personal unticked, Mine only off: {"lanes":{"run":["p-mine"]},"mineHides":true,"hides":true,"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":1,"push":1,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}}
+Personal ticked, Mine only on: {"lanes":{"run":["p-mine"]},"mineHides":true,"hides":true,"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":1,"push":1,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}}
+nothing chosen, Mine only off: {"lanes":{"run":["p-mine","p-theirs-1"],"push":["p-theirs-2"]},"mineHides":true,"hides":false,"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}}
+--- Item 2 case 15 (every row yours)
+mine on, every project yours: {"lanes":{"run":["p-lead"],"revise":["p-collab"],"review":["p-sup"],"idea":["p-idea"]},"mineHides":false,"hides":false,"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}}
+--- Item 4 waitedOn
+[pirmani, pirmani]: [{"id":"pirmani","label":"Pirmani","kind":"person"}]
+["", pirmani]: [{"id":"pirmani","label":"Pirmani","kind":"person"}]
+[a, b]: [{"id":"a","label":"a","kind":"none"},{"id":"b","label":"b","kind":"none"}]
+```
+
+Item 1 reads: the `submitted` funding entry of hub-a with a past deadline has no deadline; the `in-prep` one keeps it; the hub-b applications entry whose status carries `closes_deadline` in hub-b's words has none, while the same status in hub-a keeps it; hub-c, whose words take `deadline_met` off `submitted`, gets its countdown back for its own entry only. Item 2 reads: under the Spec 3 scenario Mine only is offered (`mineHides: true`) with Personal unticked, and with it on the two projects of others are hidden whatever Personal says; case 15 gives `mineHides: false`.
+
+### `cases.ts`, the first build's program, whole source as it now stands
+
+Cases 18 and 19 call `keptByHub` (item 11). Saved at the scratchpad's `o77/cases.ts`, run as `node cases.ts`.
+
+```ts
+// Scratch runs of the O77 cases over a hand-made snapshot. Not a test; printed output only.
+const W = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O77';
+// The words module keeps a rune; outside Svelte a plain value stands in for it.
+(globalThis as any).$state = (value: unknown) => value;
+const { engineDir, loadConfig, textCatalog } = await import(`${W}/src/lib/data/sources/config.ts`);
+const { setCatalog } = await import(`${W}/src/lib/state/shared/words/text.ts`);
+const { laneFacts } = await import(`${W}/src/lib/state/boards/focus.ts`);
+const { focusPage, focusFilter, withFocusFilter, filterLists } = await import(
+    `${W}/src/lib/state/boards/focus/filter.ts`
+);
+const { hubList } = await import(`${W}/src/lib/state/shared/page/hubs.ts`);
+const board = await import(`${W}/src/lib/state/boards/board/index.ts`);
+const { keptByHub, parseCollectionState } = await import(`${W}/src/lib/state/boards/collection.ts`);
+const { NO_FEEDS, fixtureProject } = await import(`${W}/tests/fixtures/entities-fixture.ts`);
+
+const { config: CONFIG } = loadConfig(engineDir());
+setCatalog(textCatalog(CONFIG));
+const wordsOf = () => CONFIG;
+const NOW = Date.parse('2026-10-25T12:00:00Z');
+const SELF = 'axel-faes';
+const ME = new Set([SELF]);
+const NOBODY = new Set<string>();
+
+const P = (id: string, over: Record<string, unknown>) =>
+    fixtureProject({ id, title: id, folder: id, file: `${id}/project.yml`, root: 'hub-a', ...over });
+
+const projects = [
+    P('p-sup', { lead: ['student'], supervisors: [SELF], tier: 'personal', stage: 'submitted', venueId: 'bspc' }),
+    P('p-lead', { lead: [SELF], tier: 'research', stage: 'exploring' }),
+    P('p-other', { lead: ['pirmani'], tier: 'research', stage: 'in-prep', waitingOn: ['peeters'], deadline: '2026-11-10' }),
+    P('p-collab', { lead: ['pirmani'], collaborators: [SELF], tier: 'research', stage: 'revision', deadline: '2026-11-12', root: 'hub-b' }),
+    P('p-idea', { lead: [SELF], tier: 'personal', stage: 'nascent' }),
+    P('p-wait', { lead: [SELF], tier: 'research', stage: 'exploring', waitingOn: ['pirmani'] })
+];
+
+function snap(list: unknown[], self = true): any {
+    const people: Record<string, unknown> = {
+        pirmani: { id: 'pirmani', name: 'Pirmani' },
+        peeters: { id: 'peeters', name: 'Peeters' },
+        student: { id: 'student', name: 'Student' }
+    };
+    if (self) people[SELF] = { id: SELF, name: 'Axel', self: true };
+    return {
+        version: 1,
+        entities: {
+            projects: Object.fromEntries(list.map((one: any) => [one.id, one])),
+            venues: { bspc: { id: 'bspc', name: 'Biomedical Signal Processing and Control', short: 'BSPC', root: 'hub-a' } },
+            pillars: {}, domains: {}, funding: {}, people, organisations: {}, resources: {}, datasets: {},
+            collections: {
+                tasks: {
+                    id: 'tasks', title: 'Tasks', file: '/x/tasks.yml', root: 'hub-a',
+                    entries: [{ id: 't1', title: 'Renew licence', fields: { title: 'Renew licence' }, file: '/x/tasks.yml', index: 0, root: 'hub-a' }]
+                },
+                events: {
+                    id: 'events', title: 'Events', file: '/x/events.yml', root: 'hub-b',
+                    entries: [{ id: 'e1', title: 'Talk', fields: { title: 'Talk', date: '2026-11-03' }, file: '/x/events.yml', index: 0, root: 'hub-b' }]
+                }
+            },
+            feeds: { ...NO_FEEDS, leads: [{ title: 'Postdoc call', deadline: '2026-11-01', status: 'open', fit: null, root: 'hub-a' }] },
+            career: { banner: 'kept' }
+        },
+        relations: { projectRelated: [], projectVenue: [] },
+        findings: []
+    };
+}
+
+const out = (name: string, value: unknown) => console.log(`${name}: ${JSON.stringify(value)}`);
+const byId = (id: string) => projects.find((one) => one.id === id)!;
+const venues = snap(projects).entities.venues;
+
+console.log('--- C11 laneFacts');
+out('p-sup (supervisor, personal, submitted at BSPC), self named', laneFacts(byId('p-sup'), CONFIG, ME, venues));
+out('p-lead (lead, research, exploring), self named', laneFacts(byId('p-lead'), CONFIG, ME, venues));
+out('p-sup, no self named', laneFacts(byId('p-sup'), CONFIG, NOBODY, venues));
+
+const page = (s: any, filter: any, self = ME, hubs: string[] = []) =>
+    focusPage(s, CONFIG, NOW, filter, { self, hubs, wordsOf });
+const summary = (p: any) => ({
+    lanes: Object.fromEntries(Object.entries(p.sections.lanes).map(([k, v]: any) => [k, v.map((one: any) => one.id)])),
+    lines: [...p.sections.week.overdue, ...p.sections.week.deadlines, ...p.sections.week.tasks].map((one: any) => one.label),
+    awaitingPeople: p.sections.strip.people.map((one: any) => `${one.label}:${one.count}`),
+    career: p.snapshot.entities.career,
+    hidden: p.hidden,
+    hides: p.hides,
+    mineHides: p.mineHides
+});
+
+console.log('--- C12 Mine only on, then off');
+const all = snap(projects);
+out('start filter of an empty tab state', focusFilter({}));
+out('mine on', summary(page(all, focusFilter({}))));
+out('mine off', summary(page(all, { mine: false, roles: [], tiers: [], hubs: [] })));
+
+console.log('--- C13 Collaborator unticked (Mine only off)');
+out('lists', filterLists(CONFIG));
+out('collaborator off', summary(page(all, { mine: false, roles: ['collaborator'], tiers: [], hubs: [] })));
+
+console.log('--- C14 Personal unticked under Tier');
+out('personal off', summary(page(all, { mine: false, roles: [], tiers: ['personal'], hubs: [] })));
+
+console.log('--- C15 a page where Mine only hides nothing');
+const mineAll = snap(projects.filter((one) => one.id !== 'p-other'));
+out('mine on, every project yours', summary(page(mineAll, focusFilter({}))));
+
+console.log('--- C16 no self named');
+const noSelf = snap(projects, false);
+out('mine on, roles [collaborator] saved, no self', summary(page(noSelf, { mine: true, roles: ['collaborator'], tiers: [], hubs: [] }, NOBODY)));
+
+console.log('--- C17 the choice in the instance state');
+const saved = withFocusFilter({ folds: ['tasks'] }, { mine: false, roles: ['collaborator'], tiers: ['personal'], hubs: ['hub-b'] });
+out('saved state', saved);
+out('read back', focusFilter(JSON.parse(JSON.stringify(saved))));
+
+console.log('--- C18 one hub');
+const oneHub = [{ key: 'hub-a', hub: true as const }, { key: 'notes' }];
+out('hubList one hub', hubList(oneHub, 'hub-a'));
+out('focus with a saved hub choice, one hub', summary(page(all, { mine: false, roles: [], tiers: [], hubs: ['hub-b'] }, ME, hubList(oneHub, 'hub-a'))).hidden);
+out('board appliedFilters({hub:[hub-b]}, named, [])', board.appliedFilters({ hub: ['hub-b'] }, true, []));
+const preset = board.presetFor('projects', CONFIG);
+// The Projects board takes research projects you lead: two in hub-a, two in hub-b.
+const boardSnap = snap([
+    ...projects,
+    P('p-b1', { lead: [SELF], tier: 'research', stage: 'exploring', root: 'hub-b' }),
+    P('p-b2', { lead: [SELF], tier: 'research', stage: 'in-prep', root: 'hub-b' })
+]);
+const items = board.boardItems(boardSnap, preset);
+out('board items', items.map((one: any) => `${one.project.id}@${one.project.root}:${one.project.stage}`));
+out('board facets, one hub: groups', board.facets(items, preset, true, undefined, []).map((one: any) => one.key));
+const held1 = parseCollectionState({ hubs: ['hub-b'] });
+out('collection state hubs', held1.hubs);
+const entriesOne = Object.values(snap(projects).entities.collections).flatMap((one: any) => one.entries);
+out('collection keptByHub with one hub, hub-b saved unpressed', keptByHub(entriesOne, held1.hubs, hubList(oneHub, 'hub-a')).map((one: any) => one.id));
+
+console.log('--- C19 two hubs');
+const twoHubs = [{ key: 'hub-b', hub: true as const }, { key: 'hub-a', hub: true as const }];
+const hubs = hubList(twoHubs, 'hub-a');
+out('hubList two hubs, hub-a primary', hubs);
+const hubFacet = (filters: Record<string, string[]>) =>
+    board.facets(items, preset, true, { filters, search: '' }, hubs).find((one: any) => one.key === 'hub');
+out('board Hub group, no filter', hubFacet({})?.values.map((one: any) => `${one.value}:${one.count}`));
+const slices = board.facets(items, preset, true, undefined, hubs).find((one: any) => one.key === 'slice').values.map((one: any) => one.value);
+out('board slice values', slices);
+const exploring = slices.filter((one: string) => one.endsWith('/exploring'));
+out(`board Hub group, slice filter ${JSON.stringify(exploring)}`, hubFacet({ slice: exploring })?.values.map((one: any) => `${one.value}:${one.count}`));
+out('board hub-b pick and the Hub group still counts hub-a', hubFacet({ hub: ['hub-b'] })?.values.map((one: any) => `${one.value}:${one.count}`));
+out('board pick hub-b keeps', board.applyFilters(items, board.appliedFilters({ hub: ['hub-b'] }, true, hubs), '').map((one: any) => one.project.id));
+out('focus hub-b unticked', summary(page(all, { mine: false, roles: [], tiers: [], hubs: ['hub-b'] }, ME, hubs)));
+const tasks = Object.values(all.entities.collections).flatMap((one: any) => one.entries);
+out('collection keptByHub, hub-b unpressed', keptByHub(tasks, parseCollectionState({ hubs: ['hub-b'] }).hubs, hubs).map((one: any) => one.id));
+
+console.log('--- C20 board state with expanded');
+const read = board.parseBoardState({ mode: 'cards', expanded: ['p1'], more: [] }, 'short');
+out('parsed', read);
+out('has expanded', 'expanded' in read);
+```
+
+Output (exit 0):
+
+```
+--- C11 laneFacts
+p-sup (supervisor, personal, submitted at BSPC), self named: ["Supervisor","Personal","BSPC"]
+p-lead (lead, research, exploring), self named: []
+p-sup, no self named: ["Personal","BSPC"]
+--- C12 Mine only on, then off
+start filter of an empty tab state: {"mine":true,"roles":[],"tiers":[],"hubs":[]}
+mine on: {"lanes":{"run":["p-lead","p-wait"],"push":[],"revise":["p-collab"],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-collab","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":1,"tasks":0,"awaiting":1,"lanes":{"run":0,"push":1,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+mine off: {"lanes":{"run":["p-lead","p-wait"],"push":["p-other"],"revise":["p-collab"],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-other","p-collab","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Peeters:1","Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":true}
+--- C13 Collaborator unticked (Mine only off)
+lists: {"roles":[{"key":"lead","label":"Lead"},{"key":"supervisor","label":"Supervisor"},{"key":"collaborator","label":"Collaborator"}],"tiers":[{"key":"research","label":"Research"},{"key":"personal","label":"Personal"},{"key":"software","label":"Software"}]}
+collaborator off: {"lanes":{"run":["p-lead","p-wait"],"push":["p-other"],"revise":[],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-other","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Peeters:1","Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":1,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":1,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+--- C14 Personal unticked under Tier
+personal off: {"lanes":{"run":["p-lead","p-wait"],"push":["p-other"],"revise":["p-collab"],"review":[],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":[]},"lines":["p-other","p-collab","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Peeters:1","Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":0,"tasks":0,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":1},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+--- C15 a page where Mine only hides nothing
+mine on, every project yours: {"lanes":{"run":["p-lead","p-wait"],"push":[],"revise":["p-collab"],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-collab","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":false}
+--- C16 no self named
+mine on, roles [collaborator] saved, no self: {"lanes":{"run":["p-lead","p-wait"],"push":["p-other"],"revise":["p-collab"],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-other","p-collab","Talk","Postdoc call","Renew licence"],"awaitingPeople":["Peeters:1","Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":false}
+--- C17 the choice in the instance state
+saved state: {"folds":["tasks"],"filter":{"mine":false,"roles":["collaborator"],"tiers":["personal"],"hubs":["hub-b"]}}
+read back: {"mine":false,"roles":["collaborator"],"tiers":["personal"],"hubs":["hub-b"]}
+--- C18 one hub
+hubList one hub: []
+focus with a saved hub choice, one hub: {"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}}
+board appliedFilters({hub:[hub-b]}, named, []): {}
+board items: ["p-b1@hub-b:exploring","p-lead@hub-a:exploring","p-wait@hub-a:exploring","p-b2@hub-b:in-prep"]
+board facets, one hub: groups: ["slice","role","year","funding","compute","reproduced","code","sessions"]
+collection state hubs: ["hub-b"]
+collection keptByHub with one hub, hub-b saved unpressed: ["t1","e1"]
+--- C19 two hubs
+hubList two hubs, hub-a primary: ["hub-a","hub-b"]
+board Hub group, no filter: ["hub-a:2","hub-b:2"]
+board slice values: ["in-flight/exploring","in-flight/in-prep"]
+board Hub group, slice filter ["in-flight/exploring"]: ["hub-a:2","hub-b:1"]
+board hub-b pick and the Hub group still counts hub-a: ["hub-a:2","hub-b:2"]
+board pick hub-b keeps: ["p-b1","p-b2"]
+focus hub-b unticked: {"lanes":{"run":["p-lead","p-wait"],"push":["p-other"],"revise":[],"review":["p-sup"],"blocked":[],"backburner":[],"scope":[],"derisk":[],"build":[],"idea":["p-idea"]},"lines":["p-other","Postdoc call","Renew licence"],"awaitingPeople":["Peeters:1","Pirmani:1"],"career":{"banner":"kept"},"hidden":{"command":2,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":1,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+collection keptByHub, hub-b unpressed: ["t1"]
+--- C20 board state with expanded
+parsed: {"mode":"cards","search":"","filters":{},"more":[],"labels":"short","stale":false,"dated":false,"mine":true,"folded":[]}
+has expanded: false
+```
+
+### `c20.ts`, whole source
+
+```ts
+import { parseBoardState } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O77/src/lib/state/boards/board/state.ts';
+const read = parseBoardState({ mode: 'list', stale: true, expanded: [{ hub: 'hub-a', key: 'p1' }] }, 'short');
+console.log(JSON.stringify(read));
+```
+
+Output (exit 0):
+
+```
+{"mode":"list","search":"","filters":{},"more":[],"labels":"short","stale":true,"dated":false,"mine":true,"folded":[]}
+```
+
+### Item 3, `git diff 796273a8 -- src/lib/state/workbench/layout/open/opening.ts`
+
+```
+@@ -74,9 +74,15 @@ export type Opening = {
+     /**
+      * `asker` is the instance of the tool view the view is opened for: a view opened for something
+      * lands outside that instance's pane (landing.ts), so the asked view opens beside the one that
+-     * asked and never over it.
++     * asked and never over it. Of `options` it reads `preview` alone, as openView reads it.
+      */
+-    openBeside: (view: ViewId, state?: unknown, page?: string, asker?: string) => string;
++    openBeside: (
++        view: ViewId,
++        state?: unknown,
++        page?: string,
++        asker?: string,
++        options?: OpenOptions
++    ) => string;
+@@ -183,9 +189,17 @@ export function createOpening(
+      * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
+      * one nobody can see. The pane being read never takes the view: a view opened for something
+      * lands where landingFor puts a view the tab being read asked for, beside that tab's pane.
++     * `preview` is the one option of `options` it reads: with it, the view lands as the preview tab
++     * of the pane it lands in, as openView's preview does.
+      */
+-    function openBeside(view: ViewId, state?: unknown, page?: string, asker?: string): string {
+-        return openInto(view, state, true, page, false, asker);
++    function openBeside(
++        view: ViewId,
++        state?: unknown,
++        page?: string,
++        asker?: string,
++        options?: OpenOptions
++    ): string {
++        return openInto(view, state, true, page, options?.preview === true, asker);
+     }
+```
+
+## Item 14, the report's other parts
+
+### `tests/checks/tree/allow-styling.ts`
+
+`diff <(git show 796273a8:tests/checks/tree/allow-styling.ts) tests/checks/tree/allow-styling.ts`, the five `why` strings of the `ProjectCard.svelte` entries (the `line` keys are unchanged):
+
+| Line | Before | After |
+|---|---|---|
+| 61 | `ProjectCard.svelte:399` | `ProjectCard.svelte:490` |
+| 65 | `ProjectCard.svelte:403` | `ProjectCard.svelte:494` |
+| 69 | `ProjectCard.svelte:399` | `ProjectCard.svelte:490` |
+| 73 | `ProjectCard.svelte:392` | `ProjectCard.svelte:483` |
+| 77 | `ProjectCard.svelte:403` | `ProjectCard.svelte:494` |
+
+The base numbers were already wrong: on the base tree the three rules stood at 425, 432 and 436 (`git show 796273a8:src/lib/views/shared/card/project/ProjectCard.svelte | grep -n ":global(.card"` prints `425: .slot > :global(.card) {`, `432: .slot > :global(.card > .bar) {`, `436: .slot > :global(.card .title) {`) while the entries said 392, 399 and 403. They now say where the rules stand (`grep -n ":global(.card" src/lib/views/shared/card/project/ProjectCard.svelte`: `483`, `490`, `494`). The check reads the `line` key; the `why` text is a reason, which `boundaries.test.ts:846` checks only for being one (`isReason`).
+
+### History words
+
+`git diff 796273a8 -- src tests` added lines plus the new files (`src/lib/state/boards/focus/*.ts`, `HubChips.svelte`, `FocusFilter.svelte`, `card-menu.ts`, `SaidBody.svelte`), 2471 lines, comment lines and test titles grepped for `previously|formerly|used to|no longer|anymore|was|were|revert(ed)?|legacy|old|older|earlier|originally|new|now|still|before|after|until|replaced|removed|renamed|moved|fixed|bug|O77|step|package|session|round`. Every hit is a place, an order or the running page, none the code's history: "after" and "before" of order (`MenuList.svelte` "after another group", `LaneHead.svelte` "said before the count", `ThemeFacets.svelte` "off after each press", `HubChips.svelte` "after the Role chips"); "still" meaning "even so" (`filter.ts` "still reads its venue", `card-menu.ts` "still opens the card's menu"); "now" and "earlier" of the running page, not of the code (`collection.ts:470` "a hub saved unpressed that is no chip now hides nothing", `Projects.svelte:51` "a hub picked earlier narrows nothing", `Band.svelte` "a column that had cards before the filter"); "new" of a new choice or a new tab (`Focus.svelte` "Keep a new choice of the filter"). The step adds no test title.
+
+### Head and doc comments of the touched functions: still true, or rewritten
+
+- Rewritten in the step: `facets` (`board/facets.ts`, the hub facet), `filterGroups` (`filter-menu.ts`, the hub group), `appliedFilters` (`board/state.ts`, the hub values), `waiting` (`focus.ts`, `known`), `grouped` (`menu-items.ts`, a group with no heading), `openBeside` and its type (`opening.ts`), `bandItem` (`focus/focus-lanes.ts`), `ContextMenu.svelte` (head, `groups`, `onpick`, `offered`, `pick`), `MenuList.svelte` (head), `Subtasks.svelte` and `Followups.svelte` (head, `formOnly`), `ThemeFacets.svelte` (head, `onchange`), `ProjectCard.svelte` (head), `Collection.svelte` (head), `Focus.svelte` (head), `card-tree.ts`, `files.svelte.ts` and `project-files.ts` (heads), `stats.ts` (head), `hubs.ts` (head), `waiting.ts` (head), `data/sources/config/sections/focus.ts` (head).
+- New with their own doc: `hubList`, `tierWords`, `laneFacts`, `waitedOn`, `WaitedOn`, `keptByHub`, `stripActions`, `menuRuns`, `leftToBrowser`, `pickAction`, every function of `focus/filter.ts`, `HubChips.svelte`, `FocusFilter.svelte`, `SaidBody.svelte`.
+- Read and still true, unchanged: `facetHeading` ("A facet's heading. The keys are literal so tests/checks/source/keys.test.ts can see every one of them"), `facetValues` (it names the slice, Situation and Form cases and says nothing false of the hub case), `applyFilters` ("Apply facet, text, stale, dated and Mine only controls to board items"), `emptyBoardState`, `parseBoardState` (it names no `expanded`), `emptyCollectionState`, `parseCollectionState`, `collectionLanes` (the band's stacking; the countdown rule is `bandItem`'s), `BandItem` (`deadline?` carries no doc), `instanceNumber` and `storedState` (`instance.ts`, the latter rewrapped, no word changed), `newIdea` (`writes.svelte.ts`, rewrapped, no word changed).
+
+### Helper greps
+
+- `hubList`: `grep -rn "export function hub\w*\|export function \w*Hubs\w*(" src/lib/state src/lib/data` lists `hubsTaking` (`hubs.ts:33`, which `hubList` calls), `hubFileTarget`, `hubFileText`, `hubMovable`, `hubMoveOnto`, `hubPathsOf`, `graphHubs`, `hubDomainsOf`, `hubVocabOf`: none lists the workspace's hubs for a filter.
+- `waitedOn`: `grep -rn "export function \w*[wW]ait\w*(" src/lib` lists `noteWait`, `waitsOnReader`, `waitOf`, `waitingOf`, `waiting` (`focus.ts:478`), `waitingLabel` (`waiting.ts:15`, which `waitedOn` calls) and `groupWaits`: none gives each value with its kind.
+- `tierWords`: `grep -rn "words.tiers\|config.tiers\|\.tiers)" src/lib` lists `manifest.ts:624`, `new-project.ts:81` and `data/index.ts:124`, `:210`, each `vocabKeys(...tiers)` for the keys alone; `grep -rn "tierLabel\|'tiers'" src/lib/state src/lib/data src/lib/views` finds no tier-label reader (`tierLabel` there is a usage account's field).
+- The toggle: item 10 above.
+
+### The step's tests
+
+The step adds or changes no test. It changes three test files' comments (item 13, no word changed) and `tests/checks/tree/allow-styling.ts`'s five `why` strings (above).
+
+### Check 4 of the first brief
+
+The first build ran `git grep` for the brief's check 4, a git command `agents/spec.md` does not allow (only `git status`, `git diff` and `git show`). This round runs plain `grep` in its place: `grep -rn --exclude=local.yml "expanded\|toggleCard\|waitingLine\|under_review_at\|under_review_unset\|helper.waiting_on\|toggle_tip" src config/text docs README.md` prints 184 lines, and `grep -c "toggleCard\|waitingLine\|under_review_at\|under_review_unset\|helper.waiting_on\|toggle_tip"` over them prints 0. Every hit is `expanded` in another sense: the tree, disclosure and fold controls (`ui/tree/*`, `ToolButton.svelte`, `Disclosure.svelte`, `FoldLine.svelte`, `FoldHead.svelte`), the Files and notes trees (`state/sources/explorer/*`, `views/shared/explorer/*`, `notes-section.svelte.ts`), paths with `~` expanded (`folders.ts`, `paths.ts`), `opening.ts`'s folded panes, `composer.ts`, `Customizations.svelte`, `theme.ts`, the repository views, Search, LaTeX and settings views, `card.ts:68-70` and `CardLinks.svelte:135-179` (a tag kind drawn whole after its More), `LaneCard.svelte:143` (`aria-expanded`), `FocusFilter.svelte:210` (`expanded={open}`), `Venues.svelte:119`, `:157`, `Audit.svelte:214` and `History.svelte:305` (Disclosure props).
+
+## What the look on landing should see, added by this round
+
+- Board card, Add Subtask or Add Follow-up on a project that already has subtasks or notes: before, the card drew the whole list with its head and the form; after, the form alone under the card's other lines. The project page draws the whole list with its form, as before.
+- Band (Funding, Positions, Teaching): before, a card whose status is `submitted` or `under-review`, or carries `closes_deadline`, counted down to its deadline; after, it shows no countdown and sorts as an undated card.
+- Focus Filter, Mine only: before this round, measured under the rest of the choice, so with Personal unticked on a workspace where every project of others is personal it was drawn disabled; after, it is offered whenever it would hide a row of the whole page, and applies with the rest of the choice.
+- The venue-load row and the Awaiting counts of Focus: before the step, counted over the whole portfolio; after, over the records the filter keeps.
+- A fresh Focus tab: before the step there was no filter; after, it starts with Mine only on, which hides the projects whose `lead:`, `collaborators:` and `supervisors:` name people but not you, their ticker lines and Awaiting rows, and the collection entries of a file whose `schema:` declares one of those fields and that name others only. A project naming no one stays.
+- The project page's card under the pointer: before the step, the full strip of up to thirteen icons; after, Ask and Open Workbench (where the hub is served), then "..." holding every other action.
+- A right-click on a link or inside a text selection of a project card in a browser tab: the browser's menu (Copy, Copy link address); elsewhere on the card the card's menu. In the desktop app the same right-click opens no menu (the open item at the top).
+- The page beside, which the first report's bullet gave as "a pane split right of the board": it lands where HELP's sentence (item 7) says, so on [Board | Files] a new pane is split right of the board, on [Editor | Board] the editor's pane takes it as a preview tab, and on a workbench its documents pane.
+- The collection view's said line: its gap under it is 8 px, as the project boards', where it was 6 px (`SaidBody.svelte`'s `.said { margin: 0 0 8px; }`).
+
+## Verification, run once after the last change
+
+- `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams && npm run test:quick`: the diagrams rewrote `docs/diagrams/*.dot` and `*.svg`; `test:quick` printed `ok ASCII gate`, `ok prettier ... All matched files use Prettier code style!`, `ok svelte-kit sync`, `ok eslint`, `ok vitest slow`, `ok svelte-check ... 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest`, `ok vitest checks`, `test:quick: 81.4 s; every command passed`, exit 0. It does not cover tests that reach no changed file within its import depth, the build, or the lint of unchanged files (its own last line).
+- `npx vitest run tests/state/boards/board/board-rules.test.ts tests/state/boards/board/hub-facets.test.ts tests/checks/tree/duplication.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts tests/checks/source/keys.test.ts`: `Test Files 7 passed (7)`, `Tests 136 passed (136)`, exit 0.
+- `sh utils/unused-exports.sh` compared with `diff .agents/worktrees/O77-base/unused-exports.txt <output>`: `129c129 < src/lib/state/boards/focus-lanes.ts: entryDeadline > src/lib/state/boards/focus/focus-lanes.ts: entryDeadline` (the moved file) and `283c283`, `board/index.ts`'s line losing `WaitingLine`; no new unused export.
+- `sh utils/folder-check.sh`: no output, exit 0.
+- The removed keys with plain `grep -rn`: the check 4 section above.
+- Characters: `LC_ALL=C grep -nP '[^\x00-\x7F]'` over every file changed this round printed nothing; over this report, after it was written, the same (below).
+- Also run on the round's files: `npx prettier --check` ("All matched files use Prettier code style!") and `npx eslint` (exit 0, no output). No whole-suite command ran.
+
+## Files changed in this round, with line counts (`wc -l` after the last change)
+
+| File | Lines | Items |
+|---|---|---|
+| `src/lib/state/boards/focus/focus-lanes.ts` | 270 | 1 |
+| `src/lib/state/boards/focus/filter.ts` | 495 | 2, 10 |
+| `src/lib/state/workbench/layout/open/opening.ts` | 515 | 3 |
+| `src/lib/state/boards/waiting.ts` | 56 | 4 |
+| `src/lib/views/shared/card/project/card-menu.ts` | 92 | 5 |
+| `src/lib/views/shared/card/project/ProjectCard.svelte` | 519 | 5, 6 |
+| `src/lib/views/shared/forms/dated/Subtasks.svelte` | 311 | 6 |
+| `src/lib/views/shared/forms/dated/Followups.svelte` | 234 | 6 |
+| `docs/HELP.md` | 570 | 1, 2, 6, 7 |
+| `src/lib/state/workbench/layout/instance.ts` | 342 | 8 |
+| `src/lib/state/sources/files.svelte.ts` | 159 | 9 |
+| `src/lib/views/boards/entry/Entry.svelte` | 378 | 9 |
+| `src/lib/views/sources/doc/Doc.svelte` | 313 | 9 |
+| `src/lib/views/boards/focus/Focus.svelte` | 357 | 9 |
+| `src/lib/views/academic/slides/Slides.svelte` | 437 | 9 |
+| `src/lib/views/system/audit/Audit.svelte` | 355 | 9 |
+| `src/lib/views/system/history/History.svelte` | 487 | 9 |
+| `src/lib/views/boards/focus/FocusFilter.svelte` | 283 | 10 |
+| `src/lib/views/boards/collection/HubChips.svelte` | 60 | 10 |
+| `src/lib/state/boards/collection.ts` | 745 | 11 |
+| `src/lib/views/boards/collection/Collection.svelte` | 513 | 11, 12 |
+| `src/lib/views/shared/writes/SaidBody.svelte` (new) | 46 | 12 |
+| `src/lib/views/boards/projects/Projects.svelte` | 440 | 12 |
+| `src/lib/views/shared/forms/ThemeFacets.svelte` | 53 | 12 |
+| `src/lib/views/sources/data/Data.svelte` | 140 | 12 |
+| `src/lib/views/sources/venues/Venues.svelte` | 224 | 12 |
+| `src/lib/state/client/writes.svelte.ts` | 859 | 13 |
+| `src/lib/state/sources/explorer/view/card-tree.ts` | 44 | 13 |
+| `src/lib/views/shared/card/feed/SaveToLiterature.svelte` | 162 | 13 |
+| `tests/data/snapshot/reference-hub.ts` | 348 | 13 |
+| `tests/server/desktop/app-theme-start.test.ts` | 490 | 13 |
+| `tests/ui/controls/editor/kit/comment-rules.test.ts` | 206 | 13 |
+| `tests/checks/tree/allow-styling.ts` | 99 | the card's rule lines |
+| `docs/diagrams/layers.dot`, `layer-state.dot`, `layer-views.dot` and their `.svg` | 101, 173, 189 | written by `npm run diagrams` |
+
+The paths beyond the round's list: `Slides.svelte`, `Audit.svelte` and `History.svelte` (comments only, the same false sentence as item 9's), `FocusFilter.svelte` and `HubChips.svelte` (item 10's imports), `collection.ts` (item 11's function), `ThemeFacets.svelte` (item 12, the existing partial of the Data and Venues copy) and `tests/checks/tree/allow-styling.ts` (the card's rule lines moved).

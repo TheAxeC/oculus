@@ -1,13 +1,13 @@
 // Layer 2, client state, pure. The ui store key a project card keeps its file tree's state under.
 //
 // A card's tree is the Files view's tree, whose state is a record of the same shape
-// (files-view.ts). The record is not the tab's own, which the project view keeps its `{ hub, key, doc }`
-// under, and one tab draws many cards, so each card has a record of its own: the tab's id,
-// `#files:`, the project's hub and its key, the two parts joined by `/`. A hub's name and a key are
-// folder names that may hold `#`, `:` or `/`, so each is percent-encoded, which leaves no such
-// character in either part and keeps one project's key from reaching another's. A Files tab's Notes
-// section keeps its tree in a record under the same prefix (`notesTreeKey`), whose `#` no encoded
-// part holds. The tab's close clears every record under `cardTreePrefix(tab)`
+// (files-view.ts). The record is not the tab's own, which the project view keeps its
+// `{ hub, key, doc }` under, and one tab draws many cards, so each card has a record of its own:
+// the tab's id, `#files:`, the project's hub and its key, the two parts joined by `/`. A hub's name
+// and a key are folder names that may hold `#`, `:` or `/`, so each is percent-encoded, which
+// leaves no such character in either part and keeps one project's key from reaching another's. A
+// Files tab's Notes section keeps its tree in a record under the same prefix (`notesTreeKey`),
+// whose `#` no encoded part holds. The tab's close clears every record under `cardTreePrefix(tab)`
 // (state/client/context.ts), and a rename or a move restates them with the tab's own
 // (explorer/ops.svelte.ts).
 

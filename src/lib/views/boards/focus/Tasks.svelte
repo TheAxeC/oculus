@@ -6,7 +6,8 @@
     // It counts nothing. The lines are state/boards/ticker.ts's `tasks` list, already in the order
     // the three groups are drawn in; the rows, their buttons and what a button writes are
     // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
-    // line draws nothing, and a section with no group at all draws nothing either.
+    // line draws nothing, and a section with no group at all draws nothing either, unless the
+    // Focus filter hides lines of it, which its heading row then says ("3 hidden").
 
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -20,7 +21,12 @@
 
     const client = useState();
 
-    let { week, now, open, ontoggle, onproject, onsaid }: SectionProps = $props();
+    type Props = SectionProps & {
+        /** How many lines the Focus filter hides from the section, said on its heading row. */
+        hidden: number;
+    };
+
+    let { week, now, open, ontoggle, onproject, onsaid, hidden }: Props = $props();
 
     /** The lines of each group, which state/boards/ticker.ts sorts into them. */
     const lines = $derived(taskGroups(week?.tasks ?? []));
@@ -38,7 +44,7 @@
         };
     });
 
-    const anything = $derived(hasTasks(lines));
+    const anything = $derived(hasTasks(lines) || hidden > 0);
 
     function pick(id: string): void {
         const line = view.index[id];
@@ -56,6 +62,10 @@
 
 {#snippet marked(text: string)}
     <RootChip record={{ root: text }} />
+{/snippet}
+
+{#snippet gone()}
+    <span class="hidden">{t('focus.hidden', hidden)}</span>
 {/snippet}
 
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
@@ -80,6 +90,7 @@
             name={t('focus.tasks.heading')}
             {open}
             {ontoggle}
+            end={hidden > 0 ? gone : undefined}
         />
         {#if open}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -122,6 +133,12 @@
         background: transparent;
         backdrop-filter: none;
     }
+    /* How many lines the Focus filter hides, at the end of the heading row in small muted words. */
+    .hidden {
+        font-size: var(--fs-xs);
+        color: var(--muted-txt, var(--muted));
+    }
+
     .grp {
         margin-top: 4px;
         break-inside: avoid;

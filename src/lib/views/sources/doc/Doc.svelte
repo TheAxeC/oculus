@@ -306,7 +306,7 @@
         box-sizing: border-box;
     }
 
-    /* The terminal shape: the whole tab follows the folder line, as the boards do. */
+    /* The terminal shape: the whole tab follows the card's folder name, as the boards do. */
     :global(body.rice:where(:not(.rice-sans))) .view {
         font-family: var(--font-mono);
     }

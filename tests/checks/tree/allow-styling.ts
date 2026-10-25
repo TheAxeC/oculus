@@ -58,23 +58,23 @@ export const HELD: Styling[] = [
     },
     {
         line: 'views/shared/card/project/ProjectCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:399 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:476 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/project/ProjectCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:403 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:480 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/project/ProjectCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
-        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:399 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:476 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/project/ProjectCard.svelte styles .card of ui/frame/Card.svelte through .slot > :global(.card)',
-        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:392 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:469 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/shared/card/project/ProjectCard.svelte styles .title of ui/frame/Card.svelte, ui/frame/Pane.svelte through .slot > :global(.card .title)',
-        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:403 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/shared/card/project/ProjectCard.svelte:480 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/sources/venues/Ribbon.svelte styles .glyph of ui/display/Glyph.svelte through .deadline :global(.tag .glyph)',

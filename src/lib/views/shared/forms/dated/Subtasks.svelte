@@ -8,7 +8,8 @@
     // A card with no lines draws no block at all: adding its first line is one of the card's own
     // actions, which opens the add form here with no heading over it. So whether the add form is
     // open is the card's, handed in, since the card's action and this block's own add control both
-    // open it.
+    // open it. A project card on a board hands `formOnly`, and the block then draws that form
+    // alone, with no head and no line; on the project page it draws the whole list with its form.
     //
     // Two views draw it: views/shared/card/project/ProjectCard.svelte, which hands it the `{ id }`
     // of one manifest, and views/shared/forms/entry/card/EntryCard.svelte, which hands it the
@@ -56,9 +57,25 @@
         onadding: (next: boolean) => void;
         /** Why the buttons that write are disabled, already translated; '' when they are not. */
         blocked?: string;
+        /**
+         * Draw the add form alone, with no head and no line of the list: a card on a board, whose
+         * Add Subtask opens the form under the card's other lines.
+         */
+        formOnly?: boolean;
     };
 
-    let { target, subtasks, onsaid, adding, onadding, blocked = '' }: Props = $props();
+    let {
+        target,
+        subtasks,
+        onsaid,
+        adding,
+        onadding,
+        blocked = '',
+        formOnly = false
+    }: Props = $props();
+
+    /** The lines the block draws: none when it draws the add form alone. */
+    const lines = $derived(formOnly ? [] : subtasks);
 
     /** A button's own words, or the words saying why it is disabled. */
     function why(own?: string): string | undefined {
@@ -112,10 +129,10 @@
     }
 </script>
 
-{#if subtasks.length > 0 || adding}
+{#if lines.length > 0 || adding}
     <div class="subtasks">
         <ListHead
-            shown={subtasks.length > 0}
+            shown={lines.length > 0}
             label={t('project.action.subtasks')}
             count={t('project.action.n_open', open)}
             addLabel={t('project.action.add_subtask')}
@@ -127,7 +144,7 @@
             onadd={add}
         />
 
-        {#each subtasks as line (line.key)}
+        {#each lines as line (line.key)}
             {#if editing === line.key}
                 <LineForm
                     text={line.do}
