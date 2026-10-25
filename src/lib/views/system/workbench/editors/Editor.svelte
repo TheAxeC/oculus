@@ -163,6 +163,7 @@
                 title={row.title}
                 slots={row.entry.slots}
                 removeOnly={row.control === 'parked'}
+                ordered={row.ordered}
                 {discards}
                 onedit={edit}
             />

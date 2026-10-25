@@ -28,6 +28,7 @@
     import type { Project } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
+    import { rootOf } from '$lib/state/shared/page/hubs';
 
     type Props = {
         project: Project;
@@ -103,9 +104,9 @@
         {#each marks as chip (chip)}
             <span class="mark">
                 <Tag
-                    label={chipLabel(chip)}
-                    glyph={chipGlyphName(chip)}
-                    tone={statusMarkTone(chip)}
+                    label={chipLabel(chip, rootOf(project))}
+                    glyph={chipGlyphName(chip, rootOf(project))}
+                    tone={statusMarkTone(chip, rootOf(project))}
                 />
             </span>
         {/each}

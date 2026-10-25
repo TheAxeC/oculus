@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z993 (2026-10-25, O60's look at landing, the orchestrator, automode): a Settings row of thousands of entries
+
+- Chosen: A list of entries in a Settings editor draws its first 100 and a line Show 100 more of n entries for the next 100; Add draws through to the entry it adds, so the Text row (6053 entries) and the Unicode math row (2415) unfold, by hand or by a search, without drawing every card.
+- Not chosen: No card editor past a count, only Open Settings File; a virtual list drawing the cards on screen; leaving every entry drawn, which froze Settings on a search (the lazy option).
+
+Where it applies: O60's landing. Booked in `plan.md` Rulings.
+
+## Z992 (2026-10-25, O60's review over repair round 1, the orchestrator, automode): a hub's removal beyond `<word>: null`
+
+- Chosen: A word a hub's value no longer gives, by `<word>: null` or by a list replaced whole such as `roles`, leaves oculus's own lists that name it; a one-word field of oculus's that names it (a board's `role`) keeps it with one finding on the hub's file; a hub's own list naming such a word gets one finding per word at its place in the hub's file, and the word is left out of the merged value so no second finding follows; Settings draws no modified bar from the removal.
+- Not chosen: Z991's text alone, which leaves findings on oculus's file for a replaced `roles` list and says nothing for a hub's own lanes and funding rows (the lazy option).
+
+Where it applies: O60's landing. Booked in `plan.md` Rulings. Correction at O60's landing: no field of oculus's own values holds one such word, so the one-word clause applies to nothing: a board's `tier` and `role` are `control: multi` word lists (`config/options/layout.yml:131`, `:135`) and lose the word with no finding, and a board left with `role: []` or `tier: []` takes no project (`src/lib/data/shapes/boards/takes.ts:133-137`); the one `control: choice` field fed by such a list, the key of `new_project_dir` (`config/options/sources.yml:31`), is the hub's own (`config/defaults/sources.yml:21` ships `{}`).
+
 ## Z991 (2026-10-25, O60's builder's report, the orchestrator, automode): a hub's removal of a word oculus's own values name
 
 - Chosen: The merge also takes a word a hub removed out of each word list of oculus's own values that names words of that key, so `stages: { nascent: null }` reads with no finding and the same removal in Settings is accepted; a list the hub set itself is left as written, and a word of it the hub removed stays a finding naming the hub's file.

@@ -58,6 +58,7 @@ export function watchedOnce(workspace: Workspace, options: WatchOptions = {}): H
             host: { name: 'test', address: '127.0.0.1' },
             open: () => workspace.open(),
             settings: (dir) => loadConfig(engineDir(), { hub: dir }),
+            defaults: () => loadConfig(engineDir()),
             problems: () => []
         },
         { debounce: 20, ...options }

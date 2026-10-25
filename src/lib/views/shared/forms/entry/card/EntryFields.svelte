@@ -36,12 +36,12 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
-        crossLinks,
         drawnFields,
         type Entry,
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
+    import { crossLinks } from '$lib/state/boards/structure/cross-links';
     import { personName } from '$lib/state/boards/person';
     import { LITERATURE, venueNamed } from '$lib/state/feeds/literature/saved';
     import { pageView } from '$lib/state/forms/page-entry';
@@ -49,6 +49,7 @@
     import { useState } from '$lib/state/client/use';
     import { holdersOf, resolvedId, rootOf } from '$lib/state/shared/page/hubs';
     import { recordState } from '$lib/state/shared/page/records';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -92,7 +93,7 @@
 
     const cardMath = createCardMath();
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
-    const groups = $derived(crossLinks(entry, collection, projects, people, configMap()));
+    const groups = $derived(crossLinks(entry, collection, projects, people, configMap(), vocabOf));
 
     /** The id of the person a person field's key names, or the key itself when it names none. */
     function personId(key: string): string {

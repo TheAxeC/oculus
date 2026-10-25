@@ -96,6 +96,12 @@ export type ConfigRow = RowBase & {
     state: 'set' | 'missing';
     /** Whether the value in force is one the row's control cannot show. */
     mismatch: boolean;
+    /**
+     * Whether the reader may reorder the value's entries: false for a key a hub's or a workspace's
+     * value is laid over oculus's in oculus's place (data/sources/config/merge/in-place.ts), whose
+     * entries keep oculus's order whatever order the file writes them in.
+     */
+    ordered: boolean;
     place: UserPlace;
 };
 
@@ -290,6 +296,7 @@ function rowOf(
         own: pair !== null,
         state: missing ? 'missing' : 'set',
         mismatch: !missing && cannotShow(control, entry, value),
+        ordered: entry.in_place !== true,
         modified: !missing && !isEqual(value, entry.default),
         place: user.place
     };

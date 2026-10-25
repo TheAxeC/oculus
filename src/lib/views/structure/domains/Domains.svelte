@@ -33,6 +33,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -46,7 +47,7 @@
     const cursor = $derived(cardCursor(instance.state));
     const file = registryFile(client, 'domains', 'domains');
     const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
-    const shown = $derived(domainsWithMembers(domains, projects(), configMap()));
+    const shown = $derived(domainsWithMembers(domains, projects(), configMap(), vocabOf));
     function write(next: Partial<DomainsState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }

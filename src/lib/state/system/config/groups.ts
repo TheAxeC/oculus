@@ -5,15 +5,19 @@
 // groups. Inside a group its rows are gathered under their section in the order the sections'
 // first rows appear: the defaults files in the order below, then the catalog's.
 //
-// A heading draws from the defaults files that hold an option of its subject, and shows one line
-// for each (FileLine): the file's subject as a short title, its description, the file Open
-// Settings File opens (the open workspace file, where the user's values of its options are kept)
-// and the defaults file Show Defaults opens, with the sentence of why no line of a key is known
-// when the workspace file is still being read, unreadable, cut or not parsed, or that the
-// workspace is not saved to a file. A heading that holds a key of the hub list has one more line,
-// once whatever number of files it draws from: the hub's settings file, `.oculus/config.yml`,
-// opened in the hub's root, with its own status and, when it is not there, the sentence that a
-// change creates it. A heading exists only while the options catalog holds an option of its
+// A heading draws from the files the options folder describes (the defaults files, and the catalog
+// and schema files of its subfolders and the workspace's words, FILES) that hold an option of its
+// subject, and shows one line for each (FileLine): the file's subject as a short title, its
+// description, the file Open Settings File opens and the file of oculus's Show Defaults opens
+// (`defaultsOf`). A file with a key the workspace sets opens the open workspace file, where the
+// user's values of its options are kept, with the sentence of why no line of a key is known when
+// the workspace file is still being read, unreadable, cut or not parsed, or that the workspace is
+// not saved to a file. A file whose keys under the heading are all keys of the hub list (the hub's
+// vocabulary, its form fields) opens the hub's settings file, `.oculus/config.yml`, read as that
+// file is. A heading that holds a key of the hub list from a file that also holds keys the
+// workspace sets has one more line, once whatever number of files it draws from: the hub's settings
+// file, opened in the hub's root, with its own status and, when it is not there, the sentence that
+// a change creates it. A heading exists only while the options catalog holds an option of its
 // subject, so a merged config with no catalog has none.
 //
 // The rows are read from the merged configuration and the user's files the caller hands in
@@ -33,7 +37,7 @@ import { t } from '../../shared/words/text.ts';
 import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
 import type { AppSettingRow } from './other-rows/app-rows.ts';
-import { LOCAL_NAME, LOCAL_PATH, describedAs } from './config-files.ts';
+import { LOCAL_NAME, LOCAL_PATH, defaultsOf, describedAs } from './config-files.ts';
 import { message, type Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
 import {
@@ -50,13 +54,26 @@ import {
 
 export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
 
-/** The defaults files the Settings view lists, in the order of their rows. */
+/**
+ * The files the options folder describes that the Settings view lists, in the order of their rows:
+ * the defaults files, the hub's vocabulary and project form fields, the catalogs a workspace sets,
+ * and the workspace's own words.
+ */
 export const FILES: readonly string[] = [
     'appearance.yml',
     'behavior.yml',
     'layout.yml',
     'present.yml',
-    'sources.yml'
+    'sources.yml',
+    'catalogs/vocab.yml',
+    'schemas/manifest-schema.yml',
+    'catalogs/agents.yml',
+    'catalogs/file-nesting.yml',
+    'catalogs/glyphs.yml',
+    'catalogs/icons.yml',
+    'catalogs/latex.yml',
+    'catalogs/unimath.yml',
+    'text.yml'
 ];
 
 /**
@@ -82,15 +99,24 @@ export type Row = ConfigRow | LocalRow | AppSettingRow | FileRow;
 export type Section = { id: string; title: string; rows: Row[] };
 
 /**
- * One file a heading draws from: a defaults file (`defaults`), the hub's settings file (`hub`) or
- * the machine's own file (`machine`), with what became of the read of the file it opens.
+ * One file a heading draws from: a file the options folder describes (`defaults`), the hub's
+ * settings file (`hub`) or the machine's own file (`machine`), with what became of the read of the
+ * file it opens.
  */
-export type FileLine = {
+type FileLine = {
     kind: 'defaults' | 'hub' | 'machine';
-    /** The file's name: the defaults file's, or the path of the hub's or the machine's file. */
+    /**
+     * The file's name: the described file's under config/options/ (`behavior.yml`,
+     * `catalogs/vocab.yml`), or the path of the hub's or the machine's file.
+     */
     file: string;
     /** The file's subject in a few words. */
     title: string;
+    /**
+     * The file under config/ Show Defaults opens (`defaultsOf`), null for a line that has none: the
+     * hub's and the machine's file, and the workspace's words, whose default is the text catalog.
+     */
+    defaults: string | null;
     /** What the file holds, in one sentence, or the empty string. */
     description: string;
     /** Whether the file is the machine's own, which the view tags. */
@@ -205,7 +231,7 @@ function folderGroup(
 /** The listings of the three folders the Catalogs, Schemas and Texts groups are made from. */
 export type FolderListings = { catalogs: Listed; schemas: Listed; texts: Listed };
 
-/** The subject of a file of the user's or of a defaults file, as a line's title. */
+/** The subject of a file of the user's or of a file the options folder describes, as a title. */
 function fileTitle(file: string): string {
     switch (file) {
         case 'appearance.yml':
@@ -218,6 +244,24 @@ function fileTitle(file: string): string {
             return t('settings.title_present');
         case 'sources.yml':
             return t('settings.title_sources');
+        case 'catalogs/vocab.yml':
+            return t('settings.title_vocab');
+        case 'schemas/manifest-schema.yml':
+            return t('settings.title_manifest_schema');
+        case 'catalogs/agents.yml':
+            return t('settings.title_agents');
+        case 'catalogs/file-nesting.yml':
+            return t('settings.title_file_nesting');
+        case 'catalogs/glyphs.yml':
+            return t('settings.title_glyphs');
+        case 'catalogs/icons.yml':
+            return t('settings.title_icons');
+        case 'catalogs/latex.yml':
+            return t('settings.title_latex');
+        case 'catalogs/unimath.yml':
+            return t('settings.title_unimath');
+        case 'text.yml':
+            return t('settings.title_text');
         case HUB_FILE:
             return t('settings.title_config');
         case LOCAL_PATH:
@@ -228,8 +272,9 @@ function fileTitle(file: string): string {
 }
 
 /**
- * The line of a defaults file: Open Settings File opens the open workspace file, and the line says
- * why no line of a key is known when that file is not read, or that the workspace has no file.
+ * The line of a file with a key the workspace sets: Open Settings File opens the open workspace
+ * file, and the line says why no line of a key is known when that file is not read, or that the
+ * workspace has no file.
  */
 function defaultsLine(file: string, result: FileResult, user: UserFiles): FileLine {
     const open = user.workspace;
@@ -238,11 +283,35 @@ function defaultsLine(file: string, result: FileResult, user: UserFiles): FileLi
         kind: 'defaults',
         file,
         title: fileTitle(file),
+        defaults: defaultsOf(file),
         description: describedAs(file),
         local: false,
         opens: { root: open?.root ?? null, path: open?.path ?? null },
         status: open === null ? 'rows' : (result.workspace?.status ?? 'rows'),
         said
+    };
+}
+
+/**
+ * The line of a file whose keys under a heading are all keys of the hub list: Open Settings File
+ * opens the hub's settings file, read as `hubFile` says, and Show Defaults oculus's file. With no
+ * primary hub (`hubFile` not given) no folder holds that file, and the line opens none and says so.
+ */
+function hubDefaultsLine(file: string, hubFile: UserFileResult | undefined): FileLine {
+    const opens: Pick<FileLine, 'opens' | 'status' | 'said'> =
+        hubFile === undefined
+            ? { opens: { root: null, path: HUB_FILE }, status: 'rows', said: message('noPrimary') }
+            : hubFileLine(hubFile);
+    return {
+        opens: opens.opens,
+        status: opens.status,
+        said: opens.said,
+        local: false,
+        kind: 'defaults',
+        file,
+        title: fileTitle(file),
+        defaults: defaultsOf(file),
+        description: describedAs(file)
     };
 }
 
@@ -255,6 +324,7 @@ function machineLine(): FileLine {
         kind: 'machine',
         file: LOCAL_PATH,
         title: fileTitle(LOCAL_PATH),
+        defaults: null,
         description: describedAs(LOCAL_NAME),
         local: true,
         opens: { root: PRIMARY_ROOT, path: LOCAL_PATH },
@@ -269,6 +339,7 @@ function hubFileLine(hubFile: UserFileResult): FileLine {
         kind: 'hub',
         file: hubFile.path,
         title: fileTitle(hubFile.path),
+        defaults: null,
         description: describedAs(hubFile.path),
         local: false,
         opens: { root: PRIMARY_ROOT, path: hubFile.path },
@@ -322,10 +393,15 @@ export function settingsGroups(
             const result = results.get(file);
             if (result === undefined) continue;
             const listed = hubKeysOf(file) ?? [];
-            lines.push(defaultsLine(file, result, user));
-            if (result.hubFile !== undefined && entries.some(([key]) => listed.includes(key))) {
-                if (!hubLine) lines.push(hubFileLine(result.hubFile));
-                hubLine = true;
+            const hubFile = result.hubFile;
+            if (entries.every(([key]) => listed.includes(key))) {
+                lines.push(hubDefaultsLine(file, hubFile));
+            } else {
+                lines.push(defaultsLine(file, result, user));
+                if (hubFile !== undefined && entries.some(([key]) => listed.includes(key))) {
+                    if (!hubLine) lines.push(hubFileLine(hubFile));
+                    hubLine = true;
+                }
             }
             rows.push(...result.rows.filter((row) => row.entry.heading === id));
         }

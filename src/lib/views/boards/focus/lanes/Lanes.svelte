@@ -3,8 +3,10 @@
     // the cards on them, and the Idea lane under them, drawn full width. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
     // deadline, what it waits on, its flames and its move menu. Which lane a card sits on, which
-    // marks it draws there and what a move writes are state/boards/focus.ts's laneOf, laneMarks and
-    // moveOnto, so a drop and the menu write the same fields.
+    // marks it draws there and what a move writes are state/boards/focus.ts's projectLane,
+    // laneMarks and hubMoveOnto, so a drop and the menu write the same fields. The board's lanes
+    // are the lanes of every hub of the workspace; a card sits on, and moves to, the lane of its
+    // own hub's lanes with the same key, read under its own hub's words.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -28,22 +30,24 @@
         focusLabel,
         laneItems,
         laneMarks,
-        laneOf,
         isBlocked,
         lanes,
         lanesIn,
-        movable,
-        moveOnto,
+        hubMovable,
+        hubMoveOnto,
         nextPriority,
         pausesCountdown,
         portfolioProjects,
         priorities,
+        projectLane,
         type Id,
         type Lane,
         type Project,
         type Venue
     } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -66,8 +70,8 @@
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
     const projects = $derived(portfolioProjects(snapshot));
-    const board = $derived(lanes(config));
-    const items = $derived(laneItems(projects, board, config));
+    const board = $derived(lanes(vocabOf()));
+    const items = $derived(laneItems(projects, board, config, vocabOf));
     const levels = $derived(priorities(config));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
@@ -76,12 +80,17 @@
     /** The project being dragged. */
     let dragging: { project: Project } | null = null;
 
+    /** The words of the project's own hub. */
+    function wordsAt(project: Project): Record<string, unknown> {
+        return vocabOf(rootOf(project));
+    }
+
     /** The deadline badge of a card: how overdue it is, how long is left, or the date itself. */
     function deadline(project: Project): { label: string; tone?: string } | null {
         const date = project.deadline;
         if (date === undefined || date === '') return null;
         const days = daysUntil(date, now);
-        if (days === null || pausesCountdown(project, config)) return { label: date };
+        if (days === null || pausesCountdown(project, wordsAt(project))) return { label: date };
         if (days < 0) return { label: t('project.card.overdue', -days), tone: 'red' };
         if (days <= DEADLINE_SOON)
             return { label: t('project.card.due_days', days), tone: 'amber' };
@@ -99,7 +108,7 @@
             const who = project.waitingOn.map((key) => waitingLabel(key, names, held)).join(', ');
             return `${t('focus.wait_people')} ${who}`;
         }
-        if (pausesCountdown(project, config)) {
+        if (pausesCountdown(project, wordsAt(project))) {
             const venue: Venue | undefined =
                 project.venueId === undefined
                     ? undefined
@@ -107,19 +116,19 @@
             const name = venue === undefined ? '' : (venue.short ?? venue.name);
             return `${t('focus.wait_review')} ${name === '' ? t('focus.venue_unset') : name}`;
         }
-        if (isBlocked(project, config)) return t('focus.wait_blocked');
+        if (isBlocked(project, wordsAt(project))) return t('focus.wait_blocked');
         return '';
     }
 
     /**
-     * The menu a card carries: every lane the card may move to (`movable`), then every priority,
+     * The menu a card carries: every lane the card may move to (`hubMovable`), then every priority,
      * with the lane it sits on and the priority in force marked.
      */
     function menuFor(project: Project): MenuItem[] {
-        const held = laneOf(project, board, config)?.key ?? '';
+        const held = projectLane(project, vocabOf)?.key ?? '';
         return [
             ...board
-                .filter((lane) => movable(project, lane, config))
+                .filter((lane) => hubMovable(project, lane, vocabOf))
                 .map((lane) => ({
                     id: `lane:${lane.key}`,
                     label: lane.label,
@@ -151,11 +160,12 @@
     }
 
     /**
-     * Move a card onto a lane: the fields state/boards/focus.ts's moveOnto gives, the stage or the
-     * chips that put the card on that lane, in one manifest write, and nothing when it gives none.
+     * Move a card onto a lane: the fields state/boards/focus.ts's hubMoveOnto gives, the stage or
+     * the chips that put the card on that lane, in one manifest write, and nothing when it gives
+     * none.
      */
     async function move(project: Project, lane: Lane): Promise<void> {
-        const fields = moveOnto(project, lane, board, config);
+        const fields = hubMoveOnto(project, lane, vocabOf);
         if (fields === null) return;
         said(await writeManifest(project.id, fields));
     }
@@ -185,12 +195,12 @@
     }
 
     /**
-     * A lane that may not take the dragged project (`movable`), a chip lane for a project at a
+     * A lane that may not take the dragged project (`hubMovable`), a chip lane for a project at a
      * `terminal` stage among them, leaves the event alone, so the browser refuses the drop and the
      * lane does not light.
      */
     function draggedOver(lane: Lane, event: DragEvent): void {
-        if (dragging === null || !movable(dragging.project, lane, config)) return;
+        if (dragging === null || !hubMovable(dragging.project, lane, vocabOf)) return;
         event.preventDefault();
         if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
         over = lane.key;
@@ -198,7 +208,7 @@
 
     /** Dropping a card on a lane moves it there (`move`), and onto its own lane writes nothing. */
     async function dropped(lane: Lane, event: DragEvent): Promise<void> {
-        if (dragging === null || !movable(dragging.project, lane, config)) return;
+        if (dragging === null || !hubMovable(dragging.project, lane, vocabOf)) return;
         event.preventDefault();
         const held = dragging;
         ended();

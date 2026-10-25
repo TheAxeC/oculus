@@ -54,7 +54,7 @@
         fs: { primary },
         layout: { openView, reopenClosed },
         notices,
-        selectors: { collectionsOfKey, configMap },
+        selectors: { collectionsOfKey, configMap, vocabOf },
         writes: { newEntry },
         float
     } = client;
@@ -127,7 +127,8 @@
             primary(),
             configMap(),
             newEntry,
-            hub
+            hub,
+            vocabOf
         ).finally(() => {
             adding = false;
         });

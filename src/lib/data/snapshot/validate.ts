@@ -1,11 +1,11 @@
 // Layer 1, data. The rules of the integrity gate that a schema cannot state: ids that refer to each
-// other across files, identities that must be unique, a status in its vocabulary and a project chip
-// that is no stage word and no form. What a file's own `schema:` states (the keys, the types, the
-// allowed values, the references and the conditions) is checked by schema/check.ts over the schemas
-// schema/run.ts generates, and its findings are merged with these by `sortFindings`. Pure, so it
-// can run anywhere: it reads no file, calls no clock, throws nothing, and repairs nothing. One
-// problem is one Finding, and the list comes back sorted by file then key, so two runs over one
-// tree agree.
+// other across files, identities that must be unique, a status and a stage in the words of their
+// hub, and a project chip that is no stage word and no form. What a file's own `schema:` states
+// (the keys, the types, the allowed values, the references and the conditions) is checked by
+// schema/check.ts over the schemas schema/run.ts generates, and its findings are merged with these
+// by `sortFindings`. Pure, so it can run anywhere: it reads no file, calls no clock, throws
+// nothing, and repairs nothing. One problem is one Finding, and the list comes back sorted by file
+// then key, so two runs over one tree agree.
 //
 // The findings the sources already reported (a manifest that does not parse, a registry file that
 // is missing, an id that is not its folder name) are passed through untouched, never re-derived:
@@ -283,7 +283,7 @@ function manifestChips(manifest: RawManifest): [string, number][] {
 /**
  * A project chip is no stage word and no form: a word of `stages:` belongs in the manifest's
  * `stage:` and a word of `forms:` in its `form:`, and each such chip is one finding naming the
- * field. `withoutStageChips` keeps the schema from naming the same chip as a value outside the
+ * field. `withoutValidated` keeps the schema from naming the same chip as a value outside the
  * chips.
  */
 function checkStageChips(
@@ -303,21 +303,54 @@ function checkStageChips(
     }
 }
 
+/** Whether a manifest's `stage` is a text that is no word of `stages`, its hub's stage words. */
+function strayStage(
+    manifest: RawManifest,
+    stages: readonly string[]
+): manifest is RawManifest & {
+    stage: string;
+} {
+    return typeof manifest.stage === 'string' && !stages.includes(manifest.stage);
+}
+
 /**
- * The schema's findings with those on a chip that is a stage word or a form left out, since
- * `checkStageChips` gives that chip its one finding.
+ * A manifest's `stage`, when it is a text, is a word of the `stages` of its own hub: one finding on
+ * `stage` naming the stage and the closest word of that list, or, for a list with no word, saying
+ * so. `withoutValidated` keeps the schema from naming the same stage as a value outside its list.
  */
-export function withoutStageChips(
+function checkManifestStage(
+    manifest: RawManifest,
+    vocab: Vocabulary,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
+    if (!strayStage(manifest, vocab.stages)) return;
+    const shown = JSON.stringify(manifest.stage);
+    const closest = closestWord(manifest.stage, vocab.stages);
+    const message =
+        closest === undefined
+            ? findingText(catalog, 'findings.validate.stage_no_vocab', shown)
+            : findingText(catalog, 'findings.validate.stage_not_in_vocab', shown, closest);
+    findings.push({ file: manifest.file, key: 'stage', message });
+}
+
+/**
+ * The schema's findings with those this module words itself left out: a chip that is a stage word
+ * or a form (`checkStageChips`) and a stage outside its hub's stages (`checkManifestStage`), so
+ * each has its one finding.
+ */
+export function withoutValidated(
     schema: Finding[],
     raw: RawPortfolio,
     vocab: Vocabulary
 ): Finding[] {
     const taken = new Set(
-        raw.manifests.flatMap((manifest) =>
-            manifestChips(manifest)
+        raw.manifests.flatMap((manifest) => [
+            ...manifestChips(manifest)
                 .filter(([chip]) => vocab.stages.includes(chip) || vocab.forms.includes(chip))
-                .map(([, index]) => `${manifest.file}\nstatus.chips[${index}]`)
-        )
+                .map(([, index]) => `${manifest.file}\nstatus.chips[${index}]`),
+            ...(strayStage(manifest, vocab.stages) ? [`${manifest.file}\nstage`] : [])
+        ])
     );
     return schema.filter((finding) => !taken.has(`${finding.file}\n${finding.key}`));
 }
@@ -481,6 +514,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkClusterFolder(manifest, catalog, findings);
         checkWaitingOn(manifest, catalog, findings);
         checkStageChips(manifest, rules.vocab, catalog, findings);
+        checkManifestStage(manifest, rules.vocab, catalog, findings);
     }
     checkFolderNames(raw, catalog, findings);
     checkSelf(raw, rules.self, catalog, findings);

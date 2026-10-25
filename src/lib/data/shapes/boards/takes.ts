@@ -6,11 +6,12 @@
 // since without one no project has a role. The boards, the page's choice of the board a project
 // opens on, a board's offer of New project (state/boards/board/new-project.ts) and the audit's
 // finding of a project no board takes all read a board through this module, so a board takes the
-// same projects everywhere.
+// same projects everywhere. A project's stage, chips, form and role are held to the words of its
+// own hub when the context gives them (`wordsOf`), and to the context's config otherwise.
 
 import type { Id, Project } from '../../model/index.ts';
 import { fields, isMap } from '../../helpers/guards.ts';
-import { keyOf } from '../../helpers/hub-names.ts';
+import { keyOf, rootOf } from '../../helpers/hub-names.ts';
 import { readAs } from '../shapes.ts';
 import { blockHolds, blockOf, wordList, wordsShape, type WordBlock } from './words.ts';
 import { roleOf, rolesOf, type PeopleOf, type Role } from './roles.ts';
@@ -104,11 +105,16 @@ export function projectRole(
     return roleOf(projectPeople(project), roles, (id) => self.has(id));
 }
 
-/** What a board's rule is read with: the merged config, its roles and the user's ids. */
-export type TakeContext = {
-    config: Record<string, unknown>;
-    roles: readonly Role[];
+/** The words a project is held to: a config's `stages`, `chips`, `forms`, `tiers` and roles. */
+export type TakeWords = { config: Record<string, unknown>; roles: readonly Role[] };
+
+/**
+ * What a board's rule is read with: the merged config, its roles and the user's ids, and, where the
+ * records of several hubs are read, the words of the records of the hub `hub` (`wordsOf`).
+ */
+export type TakeContext = TakeWords & {
     self: ReadonlySet<Id>;
+    wordsOf?: (hub: string) => TakeWords;
 };
 
 /** The context of the merged config and the user's ids. */
@@ -116,13 +122,18 @@ export function takeContext(config: Record<string, unknown>, self: ReadonlySet<I
     return { config, roles: rolesOf(config), self };
 }
 
-/** Whether a project meets every key of a board's rule. */
+/** The words a project of the hub `hub` is held to under a context. */
+export function takeWordsOf(context: TakeContext, hub: string): TakeWords {
+    return context.wordsOf?.(hub) ?? context;
+}
+
+/** Whether a project meets every key of a board's rule, under the words of the project's hub. */
 export function boardTakes(rule: BoardRule, project: Project, context: TakeContext): boolean {
-    const { config } = context;
+    const { config, roles } = takeWordsOf(context, rootOf(project));
     if (rule.tiers !== null && (project.tier === undefined || !rule.tiers.includes(project.tier)))
         return false;
     if (rule.roles !== null && context.self.size > 0) {
-        const role = projectRole(project, context.roles, context.self);
+        const role = projectRole(project, roles, context.self);
         if (role === undefined || !rule.roles.includes(role.key)) return false;
     }
     if (!blockHolds(rule.stages, wordList(project.stage), config.stages)) return false;

@@ -269,7 +269,7 @@
         {cursor}
         title={entry.title === '' ? entry.id : entry.title}
         ontitle={onpage}
-        tone={status === undefined ? undefined : statusTone(status)}
+        tone={status === undefined ? undefined : statusTone(status, root)}
         {pinned}
     >
         {#snippet meta()}
@@ -283,7 +283,7 @@
             {#if status !== undefined && statusPick}
                 <InPlace field="status" {collection} {entry} {schema} {blocked} {onsaid} />
             {:else if status !== undefined}
-                <Chip label={status} tone={statusTone(status)} filled />
+                <Chip label={status} tone={statusTone(status, root)} filled />
             {/if}
             {#if actions.length > 0}
                 <CardActions {actions} />

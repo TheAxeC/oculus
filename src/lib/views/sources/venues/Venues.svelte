@@ -51,6 +51,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -62,7 +63,7 @@
 
     const file = registryFile(client, 'venues', 'venues');
     const allVenues = $derived(venues());
-    const allProjects = $derived(realProjects(projects(), configMap()));
+    const allProjects = $derived(realProjects(projects(), configMap(), vocabOf));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const labelOf = $derived(themeLabeller(hubVocabs(), 'venue_themes'));
@@ -131,7 +132,7 @@
                     {#if held.journalsOpen}
                         <div class="cards">
                             {#each journals as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects, configMap())}
+                                {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
                                 <Reveal
                                     id={venue.id}
                                     wanted={held.reveal}
@@ -172,7 +173,7 @@
                         </div>
                         <div class="cards">
                             {#each conferences as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects, configMap())}
+                                {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
                                 <Reveal
                                     id={venue.id}
                                     wanted={held.reveal}

@@ -1,19 +1,28 @@
-// Layer 1, data. The composer's choices out of config/catalogs/agents.yml, and the argv words a
-// start takes from them.
+// Layer 1, data. The composer's choices out of the agents catalog, and the argv words a start takes
+// from them.
 //
-// The file is read from its text rather than from the merged config, since a refusal names the line
-// it is on and only the text knows lines. Every refusal is a finding and the rest of the file still
-// reads: a value the rule refuses is left out of its picker, and a picker whose flag is not one the
-// CLI takes, or whose default is not one of its values, is left out whole, so the composer never
-// offers a choice the start would then refuse. The flags each agent may be given are held in
-// data/shapes/catalog-words.ts, and a start builds its argv from the parsed file and nothing else:
-// a pick is an id, and the words that reach the command line are the file's.
+// The catalog is read two ways by one parser. Oculus's own file, config/catalogs/agents.yml, is
+// read from its text (parseAgents), so a refusal names the line it is on; the composer shows those.
+// The value the composer offers and a start builds from is the merged `agents` value of the config
+// (readAgents), oculus's file with the open workspace file's `settings: { agents: }` laid over it
+// agent by agent; a value carries no lines, so its refusals name the agent they are under, and the
+// config's findings name the file that agent was read from. Every refusal is a finding and the rest
+// of the catalog is read: a value the rule refuses is left out of its picker, and a picker whose
+// flag is not one the CLI takes, or whose default is not one of its values, is left out whole, so
+// the composer never offers a choice the start would then refuse. The flags each agent may be given
+// are held in data/shapes/catalog-words.ts, and a start builds its argv from the parsed catalog and
+// nothing else: a pick is an id, and the words that reach the command line are the catalog's.
+//
+// A workspace never takes away a question oculus asks before a start (confirmedAgents): a value
+// oculus marks `confirm: true` keeps it, and a value the workspace adds, or whose passed word or
+// picker flag it changes from oculus's, is marked `confirm: true`. A change of a label alone asks
+// nothing, since it changes no command line.
 //
 // The yaml library's own node test is imported as `isYamlMap`, so a parsed value is never mistaken
 // for a node.
 
 import { z } from 'zod';
-import { LineCounter, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
+import { Document, LineCounter, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, YAMLMap } from 'yaml';
 import type {
     AgentChoice,
@@ -25,6 +34,10 @@ import type {
 } from '../../../model/index.ts';
 import { AGENT_FLAGS, AGENTS } from '../../../shapes/catalog-words.ts';
 import { AGENT_FILE_KEYS } from '../../../shapes/catalog-files/agents.ts';
+import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
+import { isMap } from '../../../helpers/guards.ts';
+import type { Finding } from '../../../model/index.ts';
+import { textCatalog } from '../merge/text.ts';
 import { itemsShape, mapShape, readAs, readOr } from '../../../shapes/shapes.ts';
 
 /** The values a flag with a closed set of them accepts, from the same two help texts. */
@@ -64,7 +77,7 @@ function allowed(flag: string, pass: string): boolean {
     return true;
 }
 
-/** Read config/catalogs/agents.yml's text. */
+/** Read config/catalogs/agents.yml's text; each refusal names its line. */
 export function parseAgents(text: string): AgentsRead {
     const counter = new LineCounter();
     const doc = parseDocument(text, { lineCounter: counter, prettyErrors: false });
@@ -75,17 +88,99 @@ export function parseAgents(text: string): AgentsRead {
         const at = range?.[0] ?? (isScalar(key) ? key.range?.[0] : undefined) ?? 0;
         return counter.linePos(at).line;
     };
-    const say = (node: Node | Pair | null | undefined, why: AgentChoicesWhy, what: string) => {
-        findings.push({ line: lineOf(node), why, what });
-    };
     for (const error of doc.errors) {
         findings.push({ line: counter.linePos(error.pos[0]).line, why: 'parse', what: '' });
     }
     if (doc.errors.length > 0) return { agents: [], findings };
+    const agents = readRoot(doc.contents, (node, why, what) => {
+        findings.push({ line: lineOf(node), why, what });
+    });
+    return { agents, findings };
+}
+
+/** One refusal of a value read from the merged config: the agent it is under, why, and what. */
+export type AgentRefusal = { agent: string; why: AgentChoicesWhy; what: string };
+
+/**
+ * Read the merged config's `agents` value, the catalog the composer offers and a start builds
+ * from. A refusal names the agent it is under (the empty text for the value as a whole), since a
+ * value has no lines.
+ */
+export function readAgents(value: unknown): { agents: AgentChoices[]; refusals: AgentRefusal[] } {
+    const refusals: AgentRefusal[] = [];
+    if (value === undefined || value === null) return { agents: [], refusals };
+    const doc = new Document({ agents: value });
+    const agentOf = new Map<unknown, string>();
     const root = doc.contents;
+    const listed = isYamlMap(root) ? root.get('agents', true) : null;
+    if (isYamlMap(listed)) {
+        for (const pair of listed.items) agentOf.set(pair, keyOf(pair));
+    }
+    let agent = '';
+    const agents = readRoot(
+        root,
+        (_node, why, what) => {
+            refusals.push({ agent, why, what });
+        },
+        (pair) => {
+            agent = agentOf.get(pair) ?? '';
+        }
+    );
+    return { agents, refusals };
+}
+
+/** Where a finding about one key of the merged config is placed: its file and its key there. */
+export type KeyPlace = (key: string) => { file: string; key: string };
+
+/** The words of a refusal of the merged `agents` value, by why it was refused. */
+type RefusalWords = (catalog: TextCatalog, key: string, what: string) => string;
+
+/**
+ * The sentence of each refusal of the merged `agents` value. A value of the merged config has no
+ * text to parse, so a refusal for `parse` is worded as one of the shape.
+ */
+const REFUSAL_WORDS: Record<AgentChoicesWhy, RefusalWords> = {
+    parse: (catalog, key, what) => findingText(catalog, 'findings.config.agents_shape', key, what),
+    shape: (catalog, key, what) => findingText(catalog, 'findings.config.agents_shape', key, what),
+    unknown_key: (catalog, key, what) =>
+        findingText(catalog, 'findings.config.agents_unknown_key', key, what),
+    unknown_agent: (catalog, key, what) =>
+        findingText(catalog, 'findings.config.agents_unknown_agent', key, what),
+    no_default: (catalog, key, what) =>
+        findingText(catalog, 'findings.config.agents_no_default', key, what),
+    default_missing: (catalog, key, what) =>
+        findingText(catalog, 'findings.config.agents_default_missing', key, what),
+    flag: (catalog, key, what) => findingText(catalog, 'findings.config.agents_flag', key, what),
+    value: (catalog, key, what) => findingText(catalog, 'findings.config.agents_value', key, what),
+    repeated: (catalog, key, what) =>
+        findingText(catalog, 'findings.config.agents_repeated', key, what)
+};
+
+/**
+ * One config finding for each refusal of the merged `agents` value, on the file and key the agent
+ * it is under was read from (`settings.agents.<agent>` for an agent the workspace file set), worded
+ * from the merged catalog.
+ */
+export function agentsFindings(place: KeyPlace, config: Record<string, unknown>): Finding[] {
+    const catalog = textCatalog(config);
+    return readAgents(config.agents).refusals.map((refusal) => {
+        const at = place(refusal.agent === '' ? 'agents' : `agents.${refusal.agent}`);
+        return { ...at, message: REFUSAL_WORDS[refusal.why](catalog, at.key, refusal.what) };
+    });
+}
+
+/**
+ * The agents of a parsed catalog's top map, sorted as AGENTS lists them; `entering` is told of each
+ * agent's pair before it is read, so a refusal can be placed under its agent.
+ */
+function readRoot(
+    root: unknown,
+    say: Say,
+    entering: (pair: Pair) => void = () => undefined
+): AgentChoices[] {
     if (!isYamlMap(root)) {
-        say(root, 'shape', 'agents');
-        return { agents: [], findings };
+        say(root as Node, 'shape', 'agents');
+        return [];
     }
     const agents: AgentChoices[] = [];
     for (const pair of root.items) {
@@ -99,12 +194,62 @@ export function parseAgents(text: string): AgentsRead {
             continue;
         }
         for (const entry of pair.value.items) {
+            entering(entry);
             const one = readAgent(entry, say);
             if (one !== null) agents.push(one);
         }
     }
     agents.sort((a, b) => AGENTS.indexOf(a.agent) - AGENTS.indexOf(b.agent));
-    return { agents, findings };
+    return agents;
+}
+
+/** A map's entry under a key, or an empty map for one that is missing or no map. */
+function mapIn(value: unknown, key: string): Record<string, unknown> {
+    const inner = isMap(value) ? value[key] : undefined;
+    return isMap(inner) ? inner : {};
+}
+
+/**
+ * The merged `agents` value with every question oculus asks kept and the workspace's changes asked
+ * about: a value whose oculus value holds `confirm: true` keeps it; a value oculus's picker lacks,
+ * one whose `pass` differs from oculus's, and every value of a picker whose `flag` differs from
+ * oculus's (a picker oculus lacks among them) are marked `confirm: true`. A value equal to oculus's
+ * but for its label is left as it is. Nothing of either value is changed in place.
+ */
+export function confirmedAgents(oculus: unknown, merged: unknown): unknown {
+    if (!isMap(merged)) return merged;
+    const shipped = isMap(oculus) ? oculus : {};
+    const out: Record<string, unknown> = {};
+    for (const [agent, entry] of Object.entries(merged)) {
+        const lists = isMap(entry) ? entry.lists : undefined;
+        if (!isMap(entry) || !isMap(lists)) {
+            out[agent] = entry;
+            continue;
+        }
+        const theirs = mapIn(shipped[agent], 'lists');
+        const kept: Record<string, unknown> = {};
+        for (const [name, list] of Object.entries(lists)) {
+            kept[name] = confirmedList(theirs[name], list);
+        }
+        out[agent] = { ...entry, lists: kept };
+    }
+    return out;
+}
+
+/** One picker of the merged value with confirmedAgents' marks, against oculus's picker. */
+function confirmedList(oculus: unknown, list: unknown): unknown {
+    if (!isMap(list) || !Array.isArray(list.values)) return list;
+    const shipped = isMap(oculus) ? oculus : null;
+    const flagChanged = shipped === null || shipped.flag !== list.flag;
+    const theirs: unknown[] =
+        shipped !== null && Array.isArray(shipped.values) ? shipped.values : [];
+    const values = list.values.map((value: unknown) => {
+        if (!isMap(value)) return value;
+        const own = theirs.find((one: unknown) => isMap(one) && one.id === value.id);
+        const asked = flagChanged || !isMap(own) || own.confirm === true || own.pass !== value.pass;
+        return asked ? { ...value, confirm: true } : value;
+    });
+    return { ...list, values };
 }
 
 type Say = (node: Node | Pair | null | undefined, why: AgentChoicesWhy, what: string) => void;

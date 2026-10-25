@@ -118,6 +118,7 @@ text:
         config:
             directory_missing: config directory does not exist
             hub_key_unknown: "key {0} is not one the hub's settings file takes; it is not applied"
+            hub_word_gone: "{0} names {1}, which the hub's words no longer hold; it is not read"
             hub_key_not_map: "{0} must be a map holding keys the hub's settings file takes; it is not applied"
             settings_not_a_map: 'settings must be a map of options; none of it is applied'
             settings_hub_key: "{0} is a key of the hub's settings file, .oculus/config.yml, which a workspace file does not set; it is not applied"
@@ -129,6 +130,22 @@ text:
             settings_removed_unknown: "{0} takes {1} out, which oculus's list does not hold"
             settings_null_unknown: "{0} sets {1} to null, which oculus's map does not hold"
             settings_repeated: "{0} names {1} in more than one entry; none of them is applied and oculus's entry stands"
+            settings_text_unknown: "{0} is not a key of oculus's text catalog; it is not applied"
+            locale_unknown: '{0} names {1}, a display language no approved and enabled app contributes; English is used'
+            manifest_field_none: '{0} names no field; the row is left out'
+            manifest_field_held: "{0} names {1}, a field oculus's project form already has; the row is left out"
+            manifest_field_repeated: '{0} names {1}, which an earlier row adds; the row is left out'
+            manifest_field_section: '{0} names {1}, which is not a section of the project form; the row is left out'
+            manifest_field_type: '{0} names {1}, which is not a kind of field the project form draws; the row is left out'
+            manifest_field_shape: '{0} is not a value a field of the project form takes; the row is left out'
+            agents_shape: '{0}: {1} is not the shape the agents catalog takes; it is left out'
+            agents_unknown_key: '{0}: {1} is not a key the agents catalog takes'
+            agents_unknown_agent: '{0}: {1} is not an agent the composer starts; it is left out'
+            agents_no_default: '{0}: the picker {1} names no default; the picker is left out'
+            agents_default_missing: "{0}: the default {1} is not one of its picker's values; the picker is left out"
+            agents_flag: '{0}: {1} is not a flag this agent takes; the picker is left out'
+            agents_value: '{0}: {1} cannot follow its flag; the value is left out'
+            agents_repeated: '{0}: {1} is listed twice in one picker; the later one is left out'
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
             glyph_no_icon: glyph {0} has no icon
@@ -180,8 +197,8 @@ text:
             language_ending: language {0} lists {1}, which is not a file name or an extension with one dot; the entry is not read
             language_empty: language {0} lists an empty file name
             language_claimed: ending {0} is listed under {1} and under {2}; {1} keeps it
-            latex_editing_row: '{0} of catalogs/latex.yml has a row that cannot be used (an empty prefix, body, name or source, or a chord that is not one key naming a command); the row is left out'
-            latex_unimath_row: 'latex_unimath of catalogs/unimath.yml has a row that cannot be used (a command that is not a name of letters, or an empty detail) or is not a list; the row is left out'
+            latex_editing_row: '{0} has a row that cannot be used (an empty prefix, body, name or source, or a chord that is not one key naming a command); the row is left out'
+            latex_unimath_row: '{0} has a row that cannot be used (a command that is not a name of letters, or an empty detail) or is not a list; the row is left out'
             nesting_not_a_map: patterns is not a map of parent name to the names nested under it; no file is nested
             nesting_key: pattern {0} has no usable parent name (empty, or holding a slash); the pattern is not read
             nesting_value: pattern {0} does not name its nested files as a list of non-empty texts; the pattern is not read
@@ -282,6 +299,8 @@ text:
             waiting_on_itself: 'waiting-on names the project itself: {0}'
             status_not_in_vocab: 'status {0} is not a word of the statuses list; the closest word is {1}'
             status_no_vocab: 'status {0} is not a word of the statuses list, which holds no word'
+            stage_not_in_vocab: 'stage {0} is not a word of the stages list; the closest word is {1}'
+            stage_no_vocab: 'stage {0} is not a word of the stages list, which holds no word'
             lead_status_not_in_vocab: 'status {0} is not a word of the Position Lead statuses; the closest word is {1}'
             lead_status_no_vocab: 'status {0} is not a word of the Position Lead statuses, which hold no word'
             chip_is_stage: 'chip {0} is a stage word, which belongs in stage:, not in the chips'
@@ -340,6 +359,11 @@ text:
             contributes_key: "{0} holds the key {1}, which spells no key of VS Code's key syntax, so the folder is not an app"
             contributes_icon: '{0} holds the icon {1}, which is neither $(name) of a glyph oculus draws nor a file of the app, so the folder is not an app'
             contributes_file: '{0} names {1}, which is not a file of the app of the kind the key takes, so the folder is not an app'
+            contributes_folder: '{0} names {1}, which is not a folder holding files of the app, so the folder is not an app'
+            contributes_translation_other: '{0} names the translation {1}, which is not one for oculus; it is left out'
+            localization_key: "{0} is not a key of oculus's text catalog; the display language {1} of the app {2} does not use it"
+            localization_unread: 'the display language {0} of the app {1} could not read this file ({2}); its words are not used'
+            localization_no_text: 'the display language {0} of the app {1} finds no text: map in this file; its words are not used'
             contributes_container: '{0} names the container {1}, which the app does not declare and which is not explorer, so the folder is not an app'
             contributes_tree_entry: '{0} names an entry, which only a view of type webview takes, so the folder is not an app'
             contributes_setting_kind: '{0} sets a bound or a list of values that its type does not take, so the folder is not an app'

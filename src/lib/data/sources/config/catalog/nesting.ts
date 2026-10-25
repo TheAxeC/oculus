@@ -4,13 +4,14 @@
 // Each is a thing a saved edit can introduce while the server runs, where a throw would take the
 // page down with it; the reader drops that pattern and keeps the rest, and the finding says what
 // was dropped. The drops are the reader's own (data/helpers/files/nesting.ts), so the findings and
-// the nesting cannot disagree. They are worded from the merged catalog, as languageFindings' are.
+// the nesting cannot disagree. They are worded from the merged catalog, as languageFindings' are,
+// and name the file `patterns` was read from (keyPlace): oculus's catalog file, or the open
+// workspace file under `settings.patterns` for a value its `settings:` set.
 
-import { join } from 'node:path';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { readNesting, type NestingDrop } from '../../../helpers/files/nesting.ts';
 import type { Finding } from '../../../model/index.ts';
-import { configDir } from '../folder.ts';
+import { keyPlace, type ConfigWhere } from '../merge/merge.ts';
 import { textCatalog } from '../merge/text.ts';
 
 /** The key of file-nesting.yml a drop is about, and its sentence. */
@@ -31,8 +32,10 @@ function aboutDrop(
 }
 
 /** One finding for each pattern the reader of `patterns:` drops. */
-export function nestingFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const file = join(configDir(engine), 'catalogs', 'file-nesting.yml');
+export function nestingFindings(where: ConfigWhere, config: Record<string, unknown>): Finding[] {
     const catalog = textCatalog(config);
-    return readNesting(config).drops.map((drop) => ({ file, ...aboutDrop(drop, catalog) }));
+    return readNesting(config).drops.map((drop) => {
+        const about = aboutDrop(drop, catalog);
+        return { ...about, ...keyPlace(where, about.key) };
+    });
 }

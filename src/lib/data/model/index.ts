@@ -94,7 +94,10 @@ export type PortfolioConfig = {
     linkedinCadenceDays: number;
     /** The career file, hub-relative, or null for a hub whose career is not read. */
     career: string | null;
-    /** The merged `manifest_schema`, the form the manifest's JSON Schema is made from. */
+    /**
+     * The merged `manifest_schema` with the hub's `manifest_fields` laid into it, the form the
+     * manifest's JSON Schema is made from and the manifest write reads.
+     */
     schema: unknown;
     vocab: Vocabulary;
     /**
@@ -275,20 +278,32 @@ export type ConfigPayload = {
  * `#rrggbb` is left out), and `venue_themes` and `data_themes`, the `{ key, label }` options of the
  * `themes` field of its venue and dataset registries (a plain word is its own label), and the
  * `collections` it lists: the keys its own `collections:` names, or, when its settings name no
- * list, the keys of the engine's list whose file the hub holds at the engine's path.
+ * list, the keys of the engine's list whose file the hub holds at the engine's path. `words` is
+ * the merged value of each key of config/catalogs/vocab.yml a hub sets and of `manifest_fields`,
+ * under this hub's own settings: oculus's value with the hub's `.oculus/config.yml` laid over it.
  */
 export type HubVocab = {
     domains: Record<string, { color?: string; label: string }>;
     venue_themes: { key: string; label: string }[];
     data_themes: { key: string; label: string }[];
     collections: string[];
+    words: Record<string, unknown>;
 };
 
 /**
  * The vocabulary of every hub the workspace holds, by the hub's name, and the name of the primary
- * hub (null in a workspace with none), whose records carry no hub name in their ids.
+ * hub (null in a workspace with none). `order` is every name a record's hub can carry, in the order
+ * a list drawn over several hubs reads them: the primary, then the other hubs in the workspace's
+ * order, and in a workspace with no primary each folder that is no hub at its place among them.
+ * `own` is oculus's own words (the same keys as `words`), which the records of a folder that is no
+ * hub are read under.
  */
-export type HubVocabs = { primary: string | null; lists: Record<string, HubVocab> };
+export type HubVocabs = {
+    primary: string | null;
+    lists: Record<string, HubVocab>;
+    order: string[];
+    own: Record<string, unknown>;
+};
 
 /**
  * One app the apps watcher found: a folder of web files with an `app.yml`, in the machine's apps

@@ -109,20 +109,22 @@ export type FieldSpec = {
 /**
  * One option, or one family. An option of a defaults file carries `default`, the value
  * config/defaults/ holds at its path, which the Settings view's Modified filter compares with and,
- * for a setting the readers of settings/ read, the value used when the key is missing or wrong. A
- * leaf option carries a `control`; a family carries `fields` and no control, and a family that is a
- * list of records may carry `key`, the field a workspace file's `settings:` tells its rows apart
- * by. A `local.yml` key has a help line, and a `control` only where it takes a number or a choice.
- * A key/value family (fields `key` and `value`) may carry `holds: lists`, meaning each key of the
- * map holds a list of values; the reader refuses it on any other entry, and a family without it
- * takes no list at a key.
- * `heading` is the subject the option is listed under (`unheaded` when it names none a HEADINGS
- * word is), and `section` the group inside that heading, the first segment of the key path when
- * absent.
+ * for a setting the readers of settings/ read, the value used when the key is missing or wrong. An
+ * option a hub's or a workspace's value is laid over oculus's in oculus's place
+ * (data/sources/config/merge/in-place.ts) carries `in_place`, since its entries keep oculus's order
+ * whatever order a file writes them in. A leaf option carries a `control`; a family carries
+ * `fields` and no control, and a family that is a list of records may carry `key`, the field a
+ * workspace file's `settings:` tells its rows apart by. A `local.yml` key has a help line, and a
+ * `control` only where it takes a number or a choice. A key/value family (fields `key` and `value`)
+ * may carry `holds: lists`, meaning each key of the map holds a list of values; the reader refuses
+ * it on any other entry, and a family without it takes no list at a key. `heading` is the subject
+ * the option is listed under (`unheaded` when it names none a HEADINGS word is), and `section` the
+ * group inside that heading, the first segment of the key path when absent.
  */
 export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     control?: Control;
     default?: unknown;
+    in_place?: true;
     heading?: Heading | typeof UNHEADED;
     section?: string;
     holds?: 'lists';

@@ -1,0 +1,17 @@
+# ===========================================================================
+# options/catalogs/agents.yml
+# The composer's choices of catalogs/agents.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/agents.yml, the entry carrying as its `default` the value catalogs/agents.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): an agent the workspace names replaces oculus's entry of that agent whole, in oculus's place, and `<agent>: null` takes one out. A value oculus marks `confirm: true` keeps it whatever the workspace writes, and a value the workspace adds, or whose pass or whose picker's flag it changes, is asked about before a start. A finding about a value the workspace set names the workspace file and settings.agents.
+# ===========================================================================
+
+options:
+    agents:
+        heading: sessions
+        section: Agents
+        help: "The composer's choices for a new agent session, per agent: its label and its pickers (lists), each picker with its words, the one flag every value passes, its default and its values. The Settings view writes an agent's entry whole; its pickers are edited in the file."
+        fields:
+            key: the agent, claude or codex
+            label: the words the agent is offered with
+            lists: "the agent's pickers by name, in the order the composer draws them, each with label, flag, default and values"
+
+groups: {}

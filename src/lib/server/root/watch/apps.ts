@@ -22,6 +22,10 @@
 //
 // The keeping of an app (the app stays approved while its files change, until its manifest changes
 // or the process ends) is held here, in memory, as the hash of the manifest approved.
+//
+// A full read that changes what the apps' display languages are made of (routes/localization.ts,
+// `languageStamp`) calls `languageChanged`, which publishes the config again, so the words the
+// server gives follow an app's language as soon as it is approved, enabled, changed or removed.
 
 import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
@@ -53,6 +57,7 @@ import {
     workspaceKey
 } from '../../machine/apps/read/state.ts';
 import { defaultAppData, readStore } from '../../machine/apps/store/store.ts';
+import { languageStamp } from '../../machine/apps/routes/localization.ts';
 import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds of quiet after the last event before one read. */
@@ -118,6 +123,12 @@ export type AppsWatchOptions = {
      * folders are read again only on a config push and by `follow()`.
      */
     follow?: (listener: () => void) => () => void;
+    /**
+     * Called after a full read that changed what the apps' display languages are made of (an app
+     * contributing one approved, enabled, changed or removed, or a file of its folder written), so
+     * the config, whose words follow the language `locale` names, is published again.
+     */
+    languageChanged?: () => void;
     /** The folder the machine apps' stores live in; `~/.oculus/app-data` when absent. */
     appData?: string;
     /** The home folder; the machine's own when absent. */
@@ -356,6 +367,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         arrange();
         publish();
         tellStores(before, state);
+        if (languageStamp(before) !== languageStamp(state)) options.languageChanged?.();
         for (const listener of [...listeners]) {
             try {
                 listener();

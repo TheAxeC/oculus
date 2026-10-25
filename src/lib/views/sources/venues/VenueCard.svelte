@@ -26,8 +26,8 @@
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
+    import { groupProjects } from '$lib/state/boards/structure/cross-links';
     import {
-        groupProjects,
         hrefOf,
         hubPathsOf,
         type Entry,
@@ -46,6 +46,7 @@
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -89,7 +90,7 @@
     /** True while the question before a delete is open. */
     let deleting = $state(false);
 
-    const groups = $derived(groupProjects(projects, configMap()));
+    const groups = $derived(groupProjects(projects, configMap(), vocabOf));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
     const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
 

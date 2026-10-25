@@ -3,10 +3,11 @@
 // lead, its collaborators, then its supervisors (team.ts beside this file): the card's team tags
 // and the Authors column leave out the person the workspace setting `self` names, and the search
 // reads the whole team. Which projects a board holds, a card's category and the user's role on a
-// project are read by data/shapes/boards/, the rules the audit reads too.
+// project are read by data/shapes/boards/, the rules the audit reads too, each under the words of
+// the project's own hub; the cards sort by the stage order of every hub's words.
 
 import { byKey } from '../../../data/helpers/guards.ts';
-import { keyOf } from '../../../data/helpers/hub-names.ts';
+import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { categoryOf } from '../../../data/shapes/boards/categories.ts';
@@ -113,11 +114,13 @@ function itemOf(
     const team = shownTeam(project, people.self).map(person);
     const isSelf = (id: Id): boolean => people.self.has(id);
     const named = people.self.size > 0;
+    const hub = rootOf(project);
+    const words = preset.words(hub);
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
         project,
-        tone: stageTone(project.stage ?? ''),
+        tone: stageTone(project.stage ?? '', hub),
         domain:
             domainId === undefined
                 ? null
@@ -138,10 +141,10 @@ function itemOf(
         datasets: project.datasetIds.map((id) => tag(id, own(id))),
         team,
         teamLine: teamLine(team),
-        category: categoryOf(project, preset.categories, preset.config)?.key ?? '',
-        role: named ? (projectRole(project, preset.roles, people.self)?.key ?? '') : '',
-        lead: isLead(projectPeople(project), preset.roles, isSelf),
-        mine: !named || isMine(projectPeople(project), preset.roles, isSelf),
+        category: categoryOf(project, words.categories, words.config)?.key ?? '',
+        role: named ? (projectRole(project, words.roles, people.self)?.key ?? '') : '',
+        lead: isLead(projectPeople(project), words.roles, isSelf),
+        mine: !named || isMine(projectPeople(project), words.roles, isSelf),
         code: project.codeAvailability?.status ?? '',
         compute: project.resourceIds.flatMap((id) => {
             const one = byKey(entities.resources, id);
@@ -190,9 +193,12 @@ export function boardItemFor(
     return itemOf(project, snapshot, preset, peopleOf(snapshot), sessionsOf);
 }
 
-/** What a board's rule is read with, from its preset and the user of a snapshot. */
+/**
+ * What a board's rule is read with, from its preset and the user of a snapshot: the merged config
+ * and the union's roles, and each project held to the words of its own hub.
+ */
 export function takeContextOf(preset: BoardPreset, self: ReadonlySet<Id>): TakeContext {
-    return { config: preset.config, roles: preset.roles, self };
+    return { config: preset.config, roles: preset.roles, self, wordsOf: preset.words };
 }
 
 /**

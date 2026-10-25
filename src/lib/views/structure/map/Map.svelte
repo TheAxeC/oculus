@@ -58,6 +58,7 @@
     } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
     import { storedState } from '$lib/state/workbench/layout/instance';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
         entities: { portfolio },
@@ -79,7 +80,7 @@
         setInstanceState(instance.id, storedState({ ...held, ...next }, ['lines']));
     }
     const snapshot = $derived(portfolio());
-    const statuses = $derived(archiveStatuses(snapshot, configMap()));
+    const statuses = $derived(archiveStatuses(snapshot, configMap(), vocabOf));
     /**
      * The graph the filters narrow, which is what the chips are drawn from: a type or a line stays
      * on the row while nothing of it is drawn, so a reader can press it back.
@@ -89,7 +90,8 @@
         return buildGraph(snapshot, configMap(), {
             archived: enabled,
             collaborators,
-            labelMode: labelModeOf(configMap())
+            labelMode: labelModeOf(configMap()),
+            wordsOf: vocabOf
         });
     });
     /**

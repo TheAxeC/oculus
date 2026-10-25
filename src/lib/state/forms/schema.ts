@@ -2,6 +2,10 @@
 // says a field is, and what a field of choices may be set to. Pure, so the editor is tested without
 // a browser and the form is changed in the config rather than in a component.
 //
+// A project's form is the form of its own hub: oculus's `manifest_schema` with the hub's
+// `manifest_fields` laid into it (data/shapes/vocab-keys.ts, `withManifestFields`),
+// each added field after oculus's fields of its section, and a `vocab.<key>` list is the hub's own.
+//
 // The `from` of a field names where its choices come from: one of the eight registries, the
 // projects themselves, or `vocab.<key>` for a list of config/catalogs/vocab.yml. That is the only
 // place a widget learns what to offer, so adding a venue to the registry adds it to the form with
@@ -26,7 +30,12 @@ import {
 import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
-import { vocabKeys, vocabSource } from '../../data/shapes/vocab-keys.ts';
+import {
+    MANIFEST_FIELDS_KEY,
+    vocabKeys,
+    vocabSource,
+    withManifestFields
+} from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
     filledTextShape,
@@ -101,9 +110,16 @@ const manifestSchemaShape = z.object({
     fields: mapShape.optional().catch(undefined)
 });
 
-/** The `manifest_schema` of the merged config as its two maps, either absent. */
-function schemaOf(config: Record<string, unknown>): z.infer<typeof manifestSchemaShape> {
-    return readAs(manifestSchemaShape, config.manifest_schema) ?? {};
+/**
+ * The `manifest_schema` of the merged config as its two maps, either absent, with the
+ * `manifest_fields` of `words`, the words of the project's hub, laid into it.
+ */
+function schemaOf(
+    config: Record<string, unknown>,
+    words: Record<string, unknown> = config
+): z.infer<typeof manifestSchemaShape> {
+    const form = withManifestFields(config.manifest_schema, words[MANIFEST_FIELDS_KEY]);
+    return readAs(manifestSchemaShape, form) ?? {};
 }
 
 /** The section names, in the order the schema lists them, under whatever they are displayed as. */
@@ -123,12 +139,16 @@ const fieldRowShape = z.object({
 });
 
 /**
- * Every field of the form, in file order. A field without a `type` or a `section` is still
- * returned, with the empty string for what it does not say, so a schema half edited shows as itself
- * rather than as a shorter form.
+ * Every field of the form of a project whose hub's words are `words`, in file order, the hub's
+ * added fields each after oculus's fields of its section. A field without a `type` or a `section`
+ * is still returned, with the empty string for what it does not say, so a schema half edited shows
+ * as itself rather than as a shorter form.
  */
-export function formFields(config: Record<string, unknown>): FormField[] {
-    const fields = schemaOf(config).fields;
+export function formFields(
+    config: Record<string, unknown>,
+    words: Record<string, unknown> = config
+): FormField[] {
+    const fields = schemaOf(config, words).fields;
     if (fields === undefined) return [];
     const found: FormField[] = [];
     for (const name of Object.keys(fields)) {

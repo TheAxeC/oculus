@@ -1,9 +1,9 @@
 # ===========================================================================
 # options/appearance.yml
-# Every option of defaults/appearance.yml described once, and a help line for each group of its dotted options. loadConfig() reads every file of config/options/ into the merged map: `options` maps a defaults file's name (appearance.yml, the name of this file) to these entries, each carrying as its `default` the value defaults/appearance.yml holds at its path, and `option_groups` maps it to the help lines. catalogOf() in src/lib/data/sources/config/catalog/options.ts reads them, and optionFindings() in option-findings.ts reports an entry or a group line it cannot read.
+# Every option of defaults/appearance.yml described once, and a help line for each group of its dotted options. loadConfig() reads every file of config/options/ and of its folders catalogs/ and schemas/ into the merged map: `options` maps a described file's name (appearance.yml, the name of this file) to these entries, each carrying as its `default` the value defaults/appearance.yml holds at its path, and `option_groups` maps it to the help lines. catalogOf() in src/lib/data/sources/config/catalog/options.ts reads them, and optionFindings() in option-findings.ts reports an entry or a group line it cannot read.
 # ===========================================================================
 
-# Shape, the same in every file of this folder. `options:` maps a dotted key path of the defaults file of the same name to an entry, and `groups:` maps each group of dotted options (a proper prefix of a key path, such as `wallpaper` of `wallpaper.dim`) to the help line the editor shows for it. local.yml has no defaults file: its options are the keys of a hub's .oculus/local.yml.
+# Shape, the same in every file of this folder. `options:` maps a dotted key path of the defaults file of the same name to an entry, and `groups:` maps each group of dotted options (a proper prefix of a key path, such as `wallpaper` of `wallpaper.dim`) to the help line the editor shows for it. local.yml has no defaults file: its options are the keys of a hub's .oculus/local.yml. A file of catalogs/ or schemas/ describes the catalog or schema file of its name, whose value a hub (catalogs/vocab.yml, schemas/manifest-schema.yml) or a workspace (the other catalogs) lays over oculus's by shape, as the head of each says; text.yml describes the workspace's own words.
 # An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
 # A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project stages, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option. A list of records names under `key:` the field its rows are told apart by, which is how a workspace file's `settings:` overrides one row.
 # Every entry outside local.yml holds `help`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `control`. The value the Settings view's Modified filter compares with, the one its Reset puts back, and, for a setting a reader of src/lib/data/sources/config/settings/ reads, the one used when the key is missing or wrong, is the defaults file's own value at the path. A local.yml entry holds `help` and `section`, is listed under This machine with the value in force, and holds `control` where the key takes a number or a choice, and `fields` for a list of records, so the editor checks the file's keys and values by the entry.
@@ -49,6 +49,11 @@ options:
         control: number
         min: 0.7
         max: 1.6
+    locale:
+        heading: appearance
+        section: Display language
+        help: "The display language every word of the interface is drawn in: en, oculus's own English words, or the languageId of a display language an approved, enabled app contributes by its localizations point. A word the language lacks is drawn in English, and a languageId no approved, enabled app contributes is a finding naming the workspace file and settings.locale, and English is drawn. The words of text in this file's settings are laid over the language."
+        control: text
     rice.icons:
         heading: appearance
         section: Terminal themes

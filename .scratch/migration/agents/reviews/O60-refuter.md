@@ -134,3 +134,74 @@ B3. The case 19 Settings edit (remove `nascent`, relabel `exploring`) is refused
 - Declined, case 18: the orchestrator's `find <scratch>/o60/hubcopy -name local.yml` prints nothing, so the copy holds no `local.yml`; the reviewer over round 1 runs it.
 - Declined, `items.py`: written by the orchestrator during O60's /spec to place the text of open item 309 in the ledger (the session transcript holds its heredoc); a ledger edit, not part of the step's build.
 - Declined, the rewrapped paragraphs: the orchestrator read every comment hunk of the diff before the round; no paragraph reads wrong.
+
+## Repair round 1, refuted
+
+Usage: af9e8df3d3d7d269d, claude-opus-5-5, 303983 tokens, 101 tool uses, 20 min 23 s.
+
+### Verification lines
+
+```
+$ npm run diagrams && npm run test:quick   (worktree root; exit 0)
+test:quick: 176 changed file(s), from git since HEAD
+test:quick: 303 test file(s)
+ok      prettier (1.8 s): All matched files use Prettier code style!
+ok      ASCII gate (2.0 s)
+ok      svelte-kit sync (13.7 s)
+ok      eslint (51.4 s)
+ok      svelte-check (64.1 s): 1792887810172 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (110.7 s): Duration  102.09s
+ok      vitest (149.5 s): Duration  141.89s
+ok      vitest slow (174.3 s): Duration  166.80s
+test:quick: 188.5 s; every command passed
+```
+Character-set check over the 176 changed files and the untracked files: exit 0, nothing printed; over `find src tests config -type f ! -name local.yml`: exit 0. `unused-exports.sh`: no line added (`noFunding`, `CrossMember` go). `folder-check.sh`: exit 0. `wc -l`: no file over its limit; `hub-layer.ts` 438, `validate.ts` 529, `in-place.ts` 287.
+
+Reruns of the report's commands: `npx vitest run tests/data/sources/config/layers/hub-vocab.test.ts tests/server/edit/config-value.test.ts`: 26 passed. `r1-case.mjs` from the report's source: output line for line as quoted (nascent 0 findings, idea `["scoping"]`; exploring 0 findings, run `stages: []`; blocked 0 findings, blocked `chips: []`; the hub's own idea row 1 finding; the manifest at nascent: `stage "nascent" is not a word of the stages list; the closest word is failed`). The sweep: `removals 124 findings 0`; `tiers.research` leaves the boards `projects`, `supervision`, `coauthor` and `archive` with `tier: []`. The engine-copy run: `not_words [nascent, scoping]` becomes `[scoping]`, 0 findings. Scratch removed (`ls`). Case 18 over the reviewer's own copy (no `local.yml`, files over 512 KB left out): the base and the worktree give the same finding lines; only the `hubs.lists` line differs, by `words`.
+
+### Verdicts
+
+Items: 1 violated (S1); 2 to 7 hold; 8 violated (T1); 9 holds.
+
+Cases: 1 to 17 met (8, 10, 11 as ruled; 17 at the unit level, the page part at the look); 18 met on the reviewer's copy; 19 to 22 met.
+
+### Spec
+
+- S1. `src/lib/data/sources/config/merge/hub-layer.ts:205-208,216` (`if (written !== undefined && shape.kind === 'whole') continue;`, `if (!isMap(row) || hubWrote(shape, written, name, row)) return row;`): Z991 says a word the hub removed in a list the hub wrote itself stays a finding naming the hub's file; only `categories` has a reader that gives one. A hub's own `focus_lanes` row naming `stages: [exploring]` or `chips: [blocked]`, its own `fund_stages` row naming `statuses: [applied]`, and its own `audit.stage_folders` and `audit.website.kinds` rows naming `nascent` give 0 findings once the hub removes that word. Failure scenario: a hub writes `chips: { blocked: null }` and its own lane `{ key: b, chips: [blocked] }`; lane `b` stays empty with nothing said. Item 1 violated.
+- S2. `config/options/catalogs/vocab.yml:198-207`: `research_audit`'s value names tiers and declares no `from: tiers`, so `tiers: { personal: null }` leaves `skip_tiers: ["personal"]` with 0 findings.
+- S3. The builder's report records two read-only git commands outside the three its prompt allows (`git cat-file -e HEAD:<file>`, `git rev-parse --short HEAD`); the ledger does not.
+- S4. G126's text, dictated before Z991, does not state the removal from oculus's own lists, while the new test row sits under its describe.
+
+### Proof
+
+- P1. The report's item 1 claims a gone word in a hub-written list "stays the reader's finding naming the hub's file and the hub's key"; the reviewer's runs reproduce it for `categories` only. Item 1 violated, with S1.
+
+### Standards
+
+- T1. `docs/HELP.md:517`, `docs/data-map.md:80`, `docs/templates.md:184-185`, `config/options/catalogs/vocab.yml:4`, `hub-layer.ts:8-9` and `:191-192` state the hub-written-list finding as general; it holds for `categories` only (S1). Item 8 violated.
+
+### Behaviour
+
+- B1. `hub-layer.ts:205` and `:437`: `top` is the hub's raw file, so a key the file holds but the hub layer did not apply (a key outside the hub list, a listed key of the wrong kind) blocks the removal from oculus's value at that path. With `statuses: { applied: null }` and a stray `focus: { applications_sent: [x] }`, `focus.applications_sent` keeps `["applied"]`, and the only finding is the stray key's.
+- B2. `hub-vocab.test.ts:121-123`: the finding on a hub-written category names the hub's file and `categories[2]`, the merged list's index; the hub's file holds that row as `categories[0]`.
+- B3. `src/lib/state/system/config/rows.ts:300` with `options-folder.ts:10`: an option's `default` is oculus's value before the hub layer, so Settings draws the modified bar on Boards, Categories, Focus lanes, Funding stages and the focus status rows of a hub that removed a word, and their default line shows the removed word; the report does not state it.
+- B4. A hub replacing `roles` whole with `[ { key: lead, ... } ]` gives two findings on oculus's `config/defaults/layout.yml` (`boards.supervision.role`, `boards.coauthor.role`), the class Z991 rejected as option (c), outside Z991's text, which rules `<word>: null`.
+- Judgment call 16, a board's one-word `tier` left `[]`: follows from Z991 (`config/options/layout.yml:129-132` declares it `control: multi`, `from: tiers`), and the report states it with its before and after. No finding.
+
+### Declined to judge
+
+- The rows' runs on the base replica and before the round's code change: not rerun, since the copies were removed as round item 4 asked; the rows were judged by reading.
+- Case 18's fidelity: the reviewer's copy leaves out files over 512 KB, `.git/` and the like, and gives 1 config finding against the builder's 43; a full copy settles it.
+- Case 17's `schema3.mjs` and `rows17.mjs`: not rerun, since the round changes neither `rows.ts` nor `engine.ts`.
+- Whether a board left with `tier: []` should be hidden or say why it is empty.
+- `<scratch>/o60diff/merge.diff`: not used.
+
+### Closed
+
+- S1, P1, T1, B2, B4: open item 338, closed in automode with Z992 (a); fixed at O60's landing in `hub-layer.ts`, its tests and the documents that state the merge, since `repair_rounds: 1` allows no second round.
+- S2: fixed at landing, `research_audit`'s value declared as drawn from `tiers` in `config/options/catalogs/vocab.yml`.
+- S3: the builder's two read-only git commands outside the allowed three are recorded in O60's booking; nothing rests on them.
+- S4: fixed at landing, G126 in `agents/guarded.md` states the removal from oculus's own lists (Z991, Z992).
+- B1: fixed at landing, the removal reads the keys the hub layer applied, not the raw file.
+- B3: fixed at landing with Z992, the option defaults take the same removal; the look opens Settings on such a hub.
+- Declined, `<scratch>/o60diff/merge.diff`: the orchestrator's own dump of the diff for its read; not a script and not used as evidence.

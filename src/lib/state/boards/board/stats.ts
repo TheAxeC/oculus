@@ -72,12 +72,14 @@ export function waitingLine(
  * filter, so the strip says what the board is rather than what is on screen. The venues come from
  * the registry rather than from the manifests, so a chip carries the catalogued short name and the
  * full one it stands for. A venue is counted by its name, so the one journal catalogued in two hubs
- * of the workspace is one chip with the papers of both.
+ * of the workspace is one chip with the papers of both. `config` gives the settings, and `wordsOf`
+ * the words a project's stage and chips are read by, those of the project's hub.
  */
 export function stats(
     items: BoardItem[],
     venues: Record<Id, Venue>,
-    config: Record<string, unknown> = {}
+    config: Record<string, unknown> = {},
+    wordsOf: (hub: string) => Record<string, unknown> = () => config
 ): BoardStats {
     const warnAt = setting(config, 'venue_conc_warn', VENUE_WARN);
     const counts = new Map<string, { id: Id; count: number }>();
@@ -85,8 +87,9 @@ export function stats(
     let blocked = 0;
     let dated = 0;
     for (const item of items) {
-        if (hasWord(config, 'stages', 'submit_ready', item.project.stage)) submitReady += 1;
-        if (anyWord(config, 'chips', 'blocked', item.project.chips)) blocked += 1;
+        const words = wordsOf(rootOf(item.project));
+        if (hasWord(words, 'stages', 'submit_ready', item.project.stage)) submitReady += 1;
+        if (anyWord(words, 'chips', 'blocked', item.project.chips)) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
         if (id === undefined) continue;

@@ -1,0 +1,18 @@
+# ===========================================================================
+# options/catalogs/unimath.yml
+# The Unicode math symbols of catalogs/unimath.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/unimath.yml, the entry carrying as its `default` the value catalogs/unimath.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): a row naming oculus's command replaces it in oculus's place, a row with a new command comes after oculus's rows, and `{ command: <command>, removed: true }` takes one out. A finding about a value the workspace set names the workspace file and settings.latex_unimath.
+# ===========================================================================
+
+options:
+    latex_unimath:
+        heading: editor
+        section: LaTeX
+        help: The Unicode math symbols the LaTeX completion offers after a backslash while latex.unimath_symbols is true, one row per command.
+        key: command
+        fields:
+            command: the command, letters only, typed after the backslash
+            detail: the glyph, and the package that defines it where one does
+            documentation: the words that describe the symbol
+
+groups: {}

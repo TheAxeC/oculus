@@ -36,6 +36,7 @@
     import { CAREER } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -59,7 +60,7 @@
     const career = $derived(snapshot?.entities.career ?? null);
 
     /** The track record, null when no `self` is set or it holds nothing to draw. */
-    const record = $derived(trackRecord(snapshot, config));
+    const record = $derived(trackRecord(snapshot, config, vocabOf));
 
     /** The days left to the milestone's day, the empty text when it has none. */
     const left = $derived(

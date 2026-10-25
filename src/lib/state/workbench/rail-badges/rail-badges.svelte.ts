@@ -152,14 +152,19 @@ export function createRailBadges(
     }
 
     /**
-     * The count a board gives the rail: its projects in the rows of `categories` in vocab.yml
-     * carrying `rail: true` (`railCount`), in the tone of the first such row; 0, drawn as no
-     * count, when none of its projects is in such a row.
+     * The count a board gives the rail: its projects in the rows of `categories` of their own
+     * hub's words carrying `rail: true` (`railCount`), in the tone of the first such row of every
+     * hub's rows; 0, drawn as no count, when none of its projects is in such a row.
      */
     function boardRail(view: string): RailPart {
         const preset = selectors.boardPreset(view);
         const projects = selectors.board(preset).map((item) => item.project);
-        const rail = railCount(projects, preset.categories, preset.config);
+        const rail = railCount(
+            projects,
+            preset.categories,
+            preset.config,
+            (hub) => preset.words(hub).config
+        );
         return rail.color === ''
             ? { count: rail.count }
             : { count: rail.count, tone: toneOf(rail.color) };

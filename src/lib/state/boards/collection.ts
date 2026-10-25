@@ -13,8 +13,7 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
-import { anyWord, hasWord, wordNumber } from '../../data/shapes/vocab-keys.ts';
-import { bareId, holdersOf, hubId, resolvedId, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -33,8 +32,6 @@ import {
     optionLabel,
     type Entry,
     type Followup,
-    type Person,
-    type Project,
     type SchemaField,
     type Subtask
 } from '../../data/model/index.ts';
@@ -43,7 +40,6 @@ import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
 import { entryPageState } from '../forms/page-entry.ts';
 import { JOINT_WORK } from '../forms/referrers.ts';
-import { teamOf } from './board/team.ts';
 import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
@@ -228,7 +224,7 @@ function mapPairs(value: unknown): string[] {
 }
 
 /** The words of a list value; a lone string is one word and a map is none. */
-function wordsOf(value: unknown): string[] {
+export function listWords(value: unknown): string[] {
     const items = readAs(listOrOneShape, value) ?? [];
     return items.map(textOf).filter((word): word is string => word !== undefined);
 }
@@ -241,7 +237,7 @@ const pairShape = z.object({ label: anyValueShape, value: anyValueShape });
  */
 function pairsOf(value: unknown): string[] {
     const list = readAs(itemsShape, value);
-    if (list === null) return wordsOf(value);
+    if (list === null) return listWords(value);
     const chips: string[] = [];
     for (const item of list) {
         const pair = readAs(pairShape, item);
@@ -261,7 +257,7 @@ function pairsOf(value: unknown): string[] {
 
 /** The values one field draws as, by its kind. A field with none is not drawn at all. */
 function valuesOf(kind: FieldKind, value: unknown): string[] {
-    if (kind === 'chips') return wordsOf(value);
+    if (kind === 'chips') return listWords(value);
     if (kind === 'meta') return pairsOf(value);
     const word = textOf(value);
     return word === undefined || word === '' ? [] : [word];
@@ -721,153 +717,7 @@ export function entryFollowups(entry: Pick<Entry, 'fields'>): Followup[] {
     return followups(entry.fields.followup);
 }
 
-/** One member of a cross-link group. Its project stage remains visible inside the broader group. */
-export type CrossMember = { id: string; label: string; stage: string };
-
-/** One of the three cross-link groups the portfolio uses everywhere. */
-export type CrossGroup = {
-    type: 'in-flight' | 'ideas' | 'done';
-    count: number;
-    members: CrossMember[];
-    warn: boolean;
-};
-
-/** The word a cross-link member is filed under: the project's own `stage:`, else the empty word. */
-function stageOf(project: Project): string {
-    return project.stage ?? '';
-}
-
-/**
- * The projects that name one entry, grouped by stage with a count each.
- *
- * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, a joint work is the projects whose team (`lead:`, `collaborators:`
- * and `supervisors:`, state/boards/board/team.ts) holds its person, and every other collection has
- * no project-side inverse, so it is the entry's own `related:` list of keys. A key of the entry's
- * file names the record its hub resolves it to, the entry's own hub first, then the one other hub
- * that holds it (`resolvedId`); `people` are the people of the snapshot, which a joint work's
- * person is resolved among. A related key no project of the snapshot resolves is left out rather
- * than drawn as a dead link.
- */
-export function crossLinks(
-    entry: Entry,
-    collectionKey: string,
-    projects: Project[],
-    people: readonly Person[],
-    config: Record<string, unknown>
-): CrossGroup[] {
-    let named: Project[];
-    if (collectionKey === FUNDING) {
-        named = projects.filter((project) => project.fundingIds.includes(entry.id));
-    } else if (collectionKey === JOINT_WORK) {
-        const own = readAs(stringShape, entry.fields.person);
-        const key = own ?? bareId(entry);
-        const person = resolvedId(holdersOf(people), rootOf(entry), key);
-        named = projects.filter((project) => person !== null && teamOf(project).includes(person));
-    } else {
-        const held = holdersOf(projects);
-        named = wordsOf(entry.fields.related)
-            .map((key) => resolvedId(held, rootOf(entry), key))
-            .map((id) => projects.find((project) => project.id === id))
-            .filter((project): project is Project => project !== undefined);
-    }
-    return groupProjects(named, config);
-}
-
-/** The cross-link group of a stage, read from its flags in `stages`; null for a stage in none. */
-function groupOf(stage: string, config: Record<string, unknown>): CrossGroup['type'] | null {
-    if (wordNumber(config, 'stages', 'dead', stage) !== null) return null;
-    if (hasWord(config, 'stages', 'live', stage)) return 'in-flight';
-    if (hasWord(config, 'stages', 'idea', stage)) return 'ideas';
-    if (hasWord(config, 'stages', 'terminal', stage)) return 'done';
-    return null;
-}
-
-/**
- * Projects in the in-flight, done and ideas groups, in that order and by project id within each,
- * read from the stage's flags in `stages` on every tier: a stage carrying `live` is in flight,
- * flagged when one of the group's projects carries a chip carrying `blocked` in `chips`; one
- * carrying `idea` is an idea; one carrying `terminal` is done. A project at a stage carrying a
- * `dead` number, or at a stage in none of the three, is left out.
- */
-export function groupProjects(projects: Project[], config: Record<string, unknown>): CrossGroup[] {
-    const grouped: Record<CrossGroup['type'], CrossMember[]> = {
-        'in-flight': [],
-        done: [],
-        ideas: []
-    };
-    for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
-        const stage = stageOf(project);
-        const group = groupOf(stage, config);
-        if (group === null) continue;
-        const short = project.short?.trim() ?? '';
-        grouped[group].push({
-            id: project.id,
-            label: short === '' ? project.title : short,
-            stage
-        });
-    }
-    return (['in-flight', 'done', 'ideas'] as const)
-        .filter((type) => grouped[type].length > 0)
-        .map((type) => ({
-            type,
-            count: grouped[type].length,
-            members: grouped[type],
-            warn:
-                type === 'in-flight' &&
-                projects.some(
-                    (project) =>
-                        grouped['in-flight'].some((member) => member.id === project.id) &&
-                        anyWord(config, 'chips', 'blocked', project.chips)
-                )
-        }));
-}
-
-/**
- * The projects whose stage carries `live` in `stages` (the work in flight) no funding scheme of
- * the file covers, which is the Funding tab's one synthetic card. A project naming a scheme the
- * file does not hold is not covered by it, so the schemes are the file's own keys rather than
- * whatever a manifest happens to name.
- */
-export function noFunding(
-    projects: Project[],
-    schemes: string[],
-    config: Record<string, unknown>
-): Project[] {
-    return projects.filter(
-        (project) =>
-            hasWord(config, 'stages', 'live', project.stage) &&
-            !project.fundingIds.some((id) => schemes.includes(id))
-    );
-}
-
-/** The live projects no entry of the funding file covers, the file's entries handed in whole. */
-export function unfundedBy(
-    projects: Project[],
-    entries: readonly Entry[],
-    config: Record<string, unknown>
-): Project[] {
-    return noFunding(
-        projects,
-        entries.map((entry) => entry.id),
-        config
-    );
-}
-
 /** How many of the subtasks are not done yet. */
 export function openSubtaskCount(subtasks: readonly { done: boolean }[]): number {
     return subtasks.filter((one) => !one.done).length;
-}
-
-/** One cross-link group's members by their own project stage, in the order the members are in. */
-export function membersByStage(
-    group: CrossGroup
-): { stage: string; members: CrossGroup['members'] }[] {
-    const held = new Map<string, CrossGroup['members']>();
-    for (const member of group.members) {
-        const found = held.get(member.stage);
-        if (found === undefined) held.set(member.stage, [member]);
-        else found.push(member);
-    }
-    return [...held].map(([stage, members]) => ({ stage, members }));
 }

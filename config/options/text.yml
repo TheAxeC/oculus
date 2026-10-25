@@ -1,0 +1,16 @@
+# ===========================================================================
+# options/text.yml
+# The workspace's own words, `text`, described once. loadConfig() reads it into the merged map under `options`, named text.yml. The entry carries no `default`: its default is the whole text catalog of config/text/, which the page already holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets words in its file's `settings: { text: { <dotted key>: <word> } }`. A key set there wins over the display language (`locale`) and over oculus's English word. A key oculus's text catalog lacks, and a value that is not a text, are findings naming the workspace file and settings.text.<key>, and the catalog's word stands.
+# ===========================================================================
+
+options:
+    text:
+        heading: appearance
+        section: Words
+        help: "Words of the interface this workspace replaces, by the dotted key of oculus's text catalog (config/text/), such as views.settings. A word may hold the placeholders {0}, {1} and so on of the word it replaces."
+        fields:
+            key: the dotted key of the text catalog
+            value: the word shown in its place
+
+groups: {}

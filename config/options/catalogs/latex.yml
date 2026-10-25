@@ -1,0 +1,16 @@
+# ===========================================================================
+# options/catalogs/latex.yml
+# The LaTeX editing tables of catalogs/latex.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/latex.yml, the entry carrying as its `default` the value catalogs/latex.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): a section the workspace names (notice, at, environments, chords, symbols) replaces oculus's section whole in oculus's place, and `<section>: null` takes one out. A finding about a value the workspace set names the workspace file and settings.latex_editing.
+# ===========================================================================
+
+options:
+    latex_editing:
+        heading: editor
+        section: LaTeX
+        help: 'What the LaTeX editing aids read, by section: the notice of the project the tables follow, the @ suggestions (at), the environments, the keys of the formatting chords (chords) and the math symbol groups the TeX view lists (symbols). A section is set whole; its rows are edited in the file.'
+        fields:
+            key: the section, one of notice, at, environments, chords and symbols
+            value: the section's value, as catalogs/latex.yml writes it
+
+groups: {}

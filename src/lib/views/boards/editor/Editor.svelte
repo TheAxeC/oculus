@@ -95,7 +95,8 @@
     const tabTitle = $derived(
         typeof values.title === 'string' ? values.title : (project?.title ?? '')
     );
-    const fields = $derived(manifestFields());
+    /** The form's fields: oculus's and the ones the project's own hub adds. */
+    const fields = $derived(manifestFields(project === null ? undefined : rootOf(project)));
     const sections = $derived(manifestSections());
 
     /** The edits over the project's own values, by field name. Cleared by Revert and by a save. */

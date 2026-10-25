@@ -127,7 +127,7 @@
 <g id="node19" class="node">
 <title>folder views/boards to layer state</title>
 <polygon fill="none" stroke="none" points="179.55,-1554.48 160.45,-1554.48 160.45,-1542 179.55,-1542 179.55,-1554.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="170" y="-1545.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">121</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="170" y="-1545.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">129</text>
 </g>
 <!-- folder views/boards&#45;&gt;folder views/boards to layer state -->
 <g id="edge26" class="edge">
@@ -178,7 +178,7 @@
 <g id="node23" class="node">
 <title>folder views/feeds to layer state</title>
 <polygon fill="none" stroke="none" points="160.33,-1344.68 145.67,-1344.68 145.67,-1332.2 160.33,-1332.2 160.33,-1344.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="153" y="-1336.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">63</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="153" y="-1336.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">66</text>
 </g>
 <!-- folder views/feeds&#45;&gt;folder views/feeds to layer state -->
 <g id="edge34" class="edge">
@@ -320,7 +320,7 @@
 <g id="node34" class="node">
 <title>folder views/sources to layer state</title>
 <polygon fill="none" stroke="none" points="106.55,-749.92 87.45,-749.92 87.45,-737.44 106.55,-737.44 106.55,-749.92"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-741.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">371</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="97" y="-741.28" font-family="Helvetica,Arial,sans-serif" font-size="8.00">374</text>
 </g>
 <!-- folder views/sources&#45;&gt;folder views/sources to layer state -->
 <g id="edge56" class="edge">
@@ -371,7 +371,7 @@
 <g id="node38" class="node">
 <title>folder views/structure to layer state</title>
 <polygon fill="none" stroke="none" points="87.33,-528.64 72.67,-528.64 72.67,-516.16 87.33,-516.16 87.33,-528.64"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="80" y="-520" font-family="Helvetica,Arial,sans-serif" font-size="8.00">30</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="80" y="-520" font-family="Helvetica,Arial,sans-serif" font-size="8.00">34</text>
 </g>
 <!-- folder views/structure&#45;&gt;folder views/structure to layer state -->
 <g id="edge64" class="edge">
@@ -455,7 +455,7 @@
 <g id="node45" class="node">
 <title>folder views/shared to layer state</title>
 <polygon fill="none" stroke="none" points="104.55,-86.08 85.45,-86.08 85.45,-73.6 104.55,-73.6 104.55,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">356</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="95" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">364</text>
 </g>
 <!-- folder views/shared&#45;&gt;folder views/shared to layer state -->
 <g id="edge78" class="edge">

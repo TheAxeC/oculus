@@ -238,6 +238,8 @@ export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing' | 
  */
 export type Deck = {
     root: string;
+    /** The hub the deck is read under, whose words the stages of its slides are drawn in. */
+    hub: string;
     /** The deck's folder under the root. */
     path: string;
     name: string;

@@ -65,6 +65,7 @@
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -89,9 +90,9 @@
     const entries = $derived(data?.entries ?? []);
     const identOf = $derived(feedIdents('leads', entries));
     const leadOf = $derived(leadIdents(entries));
-    const declined = $derived(declinedCount(vocab, entries));
+    const declined = $derived(declinedCount(vocab, entries, vocabOf));
     const split = $derived(
-        splitLeads(vocab, visibleLeads(vocab, entries, held.showDeclined), today)
+        splitLeads(vocab, visibleLeads(vocab, entries, held.showDeclined, vocabOf), today, vocabOf)
     );
     /** What pressing the declined toggle does, said in its tooltip: its own words are fixed. */
     const declinedToggleTip = $derived(
@@ -206,7 +207,6 @@
                         >
                             <LeadCard
                                 {entry}
-                                {vocab}
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
                                 beside={instance.id}
@@ -239,7 +239,6 @@
                                 >
                                     <LeadCard
                                         {entry}
-                                        {vocab}
                                         cursor={cursor === leadOf(entry)}
                                         expired
                                         onsaid={(words: string) => (said = words)}

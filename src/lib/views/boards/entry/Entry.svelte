@@ -77,10 +77,11 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
-        entities: { config, portfolio },
+        entities: { portfolio },
         feeds: { feed },
         folders,
         fs: { listing },
@@ -296,9 +297,8 @@
             {:else if feedEntry !== null && collectionKey === 'leads'}
                 <LeadCard
                     entry={feedEntry}
-                    vocab={config()?.config ?? {}}
                     cursor={false}
-                    expired={isExpired(configMap(), feedEntry, localDate(Date.now()))}
+                    expired={isExpired(configMap(), feedEntry, localDate(Date.now()), vocabOf)}
                     onsaid={say}
                     beside={instance.id}
                     {blocked}

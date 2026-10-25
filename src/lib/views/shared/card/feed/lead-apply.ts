@@ -2,7 +2,8 @@
 // which the Leads view and the lead's own page both offer through the card: the Applications file
 // of a hub opened beside the view the card is drawn in, with an entry filled from the lead
 // (state/feeds/lead-application.ts) placed in its unsaved text, and then the lead set to the status
-// carrying `lead_applied` in `lead_statuses` of config/catalogs/vocab.yml. The hubs it offers are
+// carrying `lead_applied` in `lead_statuses` of the lead's own hub. The entry's status is the word
+// carrying `default_application` in `statuses` of the hub that takes it. The hubs it offers are
 // those that could take a new entry of Applications (`hubsTaking` of state/shared/page/hubs.ts):
 // with more than one, the card asks which by a menu from the control, the primary first; with one,
 // it opens that hub's file, primary or not. The file is the hub's own (`Collection.file` under that
@@ -17,7 +18,8 @@ import { APPLICATIONS, LEADS_FEED, applicationFromLead } from '$lib/state/feeds/
 import { sourceFileState } from '$lib/state/sessions/source/place';
 import { viewSourceFile } from '$lib/state/sessions/view-source';
 import { fileUnder, hubsTaking, rootOf } from '$lib/state/shared/page/hubs';
-import { feedEntryId } from '$lib/state/shared/page/idents';
+import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
+import { vocabOf } from '$lib/state/shared/words/tones';
 import { t } from '$lib/state/shared/words/text';
 import { answerWords } from '../../forms/answer-words';
 import { placeInFile } from '../../forms/entry-file';
@@ -58,12 +60,12 @@ export async function applyFromLead(
         file,
         held.schema,
         APPLICATIONS,
-        applicationFromLead(entry, configMap()),
+        applicationFromLead(entry, vocabOf(hub)),
         (one) => client.layout.openBeside('source', sourceFileState(client, one), undefined, beside)
     );
     if (!placed.placed) return placed.sentence;
     const lead = feedEntryId(entry);
-    const applied = appliedWord(configMap());
+    const applied = appliedWord(vocabOf(feedRoot(entry)));
     if (lead === '' || applied === '') return '';
     const answer = await client.writes.writeFeedField(LEADS_FEED, lead, 'status', applied);
     return answer.ok ? '' : answerWords(answer);

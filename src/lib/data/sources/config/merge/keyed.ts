@@ -1,6 +1,8 @@
 // Layer 1, data, pure. How a list of records or a map family a workspace file's `settings:` sets is
 // laid over oculus's value of it, entry by entry, so a workspace changes one rail button or one
-// arrangement without copying the rest.
+// arrangement without copying the rest. The six catalogs a workspace sets, and a hub's vocabulary,
+// are not merged here but in oculus's place (in-place.ts), since oculus's order is the order they
+// are drawn in.
 //
 // A list of records whose option names a field under `key:` (the rail by `page`, the themes by
 // `name`) is merged by that field: each workspace entry replaces oculus's entry of the same key, or

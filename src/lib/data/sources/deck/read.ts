@@ -535,6 +535,7 @@ export function createReader(context: DeckContext): DeckReader {
     function absent(root: DeckRoot, path: string, state: DeckState): Deck {
         return {
             root: root.key,
+            hub: context.hub.key,
             path,
             name: basename(path) === PROJECT_DECK ? basename(dirname(path)) : basename(path),
             title: basename(path),
@@ -576,6 +577,7 @@ export function createReader(context: DeckContext): DeckReader {
         const state: DeckState = doc.spec === null ? doc.state : slides.length > 0 ? 'ok' : 'empty';
         return {
             root: root.key,
+            hub: context.hub.key,
             path: doc.path,
             name: doc.name,
             title: doc.title,

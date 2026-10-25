@@ -1,12 +1,15 @@
-// Layer 1, data. The merge of the config, in three layers. First oculus's own folder: the shipped
-// values of config/defaults/, the catalogs/ and schemas/ files and every text fragment under text/,
-// read in name order into one map (a key defined twice named as a finding), then the descriptions
-// of config/options/ (options-folder.ts). Then the hub's own layer, `<hub>/.oculus/config.yml`,
-// whose values at the keys of HUB_LIST replace oculus's (hub-layer.ts). Last the open workspace
-// file's `settings:`, the reader's own values of the other options (workspace-layer.ts). The text
-// catalog is folded out of the fragments (text.ts). A catalog or text file is also parsed with its
-// whole-file shape (data/shapes/catalog-files/), and each issue of the shape is a finding; the
-// merge keeps every key the file holds, as the readers expect.
+// Layer 1, data. The merge of the config, in three layers and a language. First oculus's own
+// folder: the shipped values of config/defaults/, the catalogs/ and schemas/ files and every text
+// fragment under text/, read in name order into one map (a key defined twice named as a finding),
+// then the descriptions of config/options/ (options-folder.ts). Then the hub's own layer,
+// `<hub>/.oculus/config.yml`, whose values at the keys of HUB_LIST are laid over oculus's, a key of
+// the vocabulary by its shape and any other key whole (hub-layer.ts). Then the open workspace
+// file's `settings:`, the reader's own values of the other options, of oculus's catalogs and of its
+// words (workspace-layer.ts). Last the display language the merged `locale` names, laid over the
+// English words under the workspace's own (language.ts). The text catalog is folded out of the
+// fragments (text.ts). A catalog or text file is also parsed with its whole-file shape
+// (data/shapes/catalog-files/), and each issue of the shape is a finding; the merge keeps every
+// key the file holds, as the readers expect.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
@@ -15,9 +18,10 @@ import { HUB_FILE, fromHubFile, hubKeys } from '../../../helpers/hub-names.ts';
 import type { Finding } from '../../../model/index.ts';
 import { DEFAULTS_DIR, configDir, engineFile } from '../folder.ts';
 import { mergeHub } from './hub-layer.ts';
+import { layLanguage, type LanguageSource } from './language.ts';
 import { readOptionsFolder } from './options-folder.ts';
 import { TEXT_KEY, mergeText, readConfigFile, worded, type PendingFinding } from './text.ts';
-import { mergeWorkspace, type WorkspaceLayer } from './workspace-layer.ts';
+import { SETTINGS_KEY, mergeWorkspace, type WorkspaceLayer } from './workspace-layer.ts';
 
 /** The folder under config/ holding the vocabulary catalogs, merged like the defaults files. */
 export const CATALOGS_DIR = 'catalogs';
@@ -80,7 +84,20 @@ export type ReplacedFile =
  * What loadConfig takes besides the engine: the hub whose settings file is merged, the open
  * workspace file whose `settings:` is merged last, and a file read from a given text.
  */
-type ConfigOptions = { hub?: string; workspace?: WorkspaceLayer; instead?: ReplacedFile };
+/**
+ * What loadConfig lays over oculus's files: the hub's settings file (`hub`, its folder), the open
+ * workspace file (`workspace`), the source of the display language `locale` names (`language`), the
+ * words of another parse laid in place of this parse's text catalog (`words`, which a hub other
+ * than the primary is read with, so its findings and records are worded as the workspace's), and
+ * one file's text read instead of the disk (`instead`).
+ */
+export type ConfigOptions = {
+    hub?: string;
+    workspace?: WorkspaceLayer;
+    language?: LanguageSource;
+    words?: Readonly<Record<string, unknown>>;
+    instead?: ReplacedFile;
+};
 
 /**
  * Whether the merge dropped a config file (`behavior.yml`): it raised a finding about the whole
@@ -108,13 +125,16 @@ export function droppedFile(
  *
  * When `hub` is given, the hub's settings file `<hub>/.oculus/config.yml` is merged after oculus's
  * files (hub-layer.ts), and when `workspace` is given, its `settings:` after that
- * (workspace-layer.ts). `instead` replaces what the disk holds of one file of oculus's folder or of
- * the hub's settings file for this merge alone.
+ * (workspace-layer.ts). The display language `locale` names is then laid over the text catalog
+ * from `language` (language.ts), and `words`, when given, replaces the catalog whole. `instead`
+ * replaces what the disk holds of one file of oculus's folder or of the hub's settings file for
+ * this merge alone.
  *
  * `from` names the file each value came from, keyed by dotted path: a top-level key and a text key
  * by oculus's file (`sources.yml` for config/defaults/sources.yml, `catalogs/vocab.yml`), every key
- * of HUB_LIST by the hub's settings file (`.oculus/config.yml`) when the hub sets it, and every
- * option the workspace file sets by the workspace file's own path.
+ * of HUB_LIST by the hub's settings file (`.oculus/config.yml`) when the hub sets it, every option
+ * and every text key the workspace file sets by the workspace file's own path, and every text key a
+ * display language sets by the path of the language's file.
  *
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
@@ -181,8 +201,30 @@ export function loadConfig(
         mergeHub(opts.hub, replaced, config, from, pending);
     }
     if (opts.workspace !== undefined) mergeWorkspace(opts.workspace, config, from, pending);
+    const where = { engine, hub: opts.hub ?? null, from };
+    const workspaceFile = opts.workspace?.file;
+    const own = (key: string): boolean =>
+        workspaceFile !== undefined && from[`${TEXT_KEY}.${key}`] === workspaceFile;
+    layLanguage(config, from, pending, opts.language, (key) => keyPlace(where, key), own);
+    if (opts.words !== undefined) config[TEXT_KEY] = { ...opts.words };
 
     return { config, findings: worded(pending, config), from };
+}
+
+/**
+ * The name `from` holds for a key of the merged map: the key's own, else its longest dotted prefix
+ * that `from` holds, a row index (`[2]`) left out; undefined when no prefix is held.
+ */
+function fromName(
+    from: Readonly<Partial<Record<string, string>>>,
+    key: string
+): string | undefined {
+    const steps = key.replace(/\[\d+\]/g, '').split('.');
+    let name: string | undefined;
+    for (let size = steps.length; size > 0 && name === undefined; size--) {
+        name = from[steps.slice(0, size).join('.')];
+    }
+    return name;
 }
 
 /**
@@ -198,11 +240,7 @@ export function sourceFile(
     from: Readonly<Partial<Record<string, string>>>,
     key: string
 ): string {
-    const steps = key.replace(/\[\d+\]/g, '').split('.');
-    let name: string | undefined;
-    for (let size = steps.length; size > 0 && name === undefined; size--) {
-        name = from[steps.slice(0, size).join('.')];
-    }
+    const name = fromName(from, key);
     if (name === undefined) return configDir(engine);
     if (isAbsolute(name)) return name;
     return fromHubFile(name) && hub !== null ? join(hub, HUB_FILE) : engineFile(engine, name);
@@ -222,4 +260,14 @@ export type ConfigWhere = {
 /** The file one key of a merged config was read from (sourceFile). */
 export function keyFile(where: ConfigWhere, key: string): string {
     return sourceFile(where.engine, where.hub, where.from, key);
+}
+
+/**
+ * The file and the key a finding about one key of a merged config names: the file keyFile gives,
+ * and the key as that file holds it, under `settings.` for a value the workspace file set.
+ */
+export function keyPlace(where: ConfigWhere, key: string): { file: string; key: string } {
+    const name = fromName(where.from, key);
+    const set = name !== undefined && isAbsolute(name);
+    return { file: keyFile(where, key), key: set ? `${SETTINGS_KEY}.${key}` : key };
 }

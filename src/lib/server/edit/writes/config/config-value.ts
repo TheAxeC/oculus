@@ -2,8 +2,9 @@
 // Settings view's write for the editors of a list, a multi, a parked list, a key/value table and a
 // form of records, and the write the rail's list and the audit's mute list go through.
 //
-// The options files (config/options/) decide what may be written: the file must be one of their
-// defaults files, the key one of their entries, and the entry a list-valued control (`list`,
+// The options files (config/options/) decide what may be written: the file must be one of the
+// files they describe (a defaults file, or a catalog or schema file of their subfolders, such as
+// `catalogs/vocab.yml`), the key one of their entries, and the entry a list-valued control (`list`,
 // `multi`, `parked`), a word block (`words`) or a family (`fields`). A single value goes through
 // config-key.ts, the rail and the audit's mute list have a write of their own that checks the value
 // by its own rule and then comes here (`own`), the workbench layout is edited in the file, and the
@@ -11,12 +12,16 @@
 // read.
 //
 // The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
-// settings file, as the whole value, and any other in the `settings:` map of the open workspace
-// file. There the value the reader sees is written as what makes the merge give it back: a list of
-// records whose option names a `key:` field as every entry of it then one `{ <key>: x, removed:
-// true }` for each of oculus's entries it does not hold, a map family as every key of it then `x:
-// null` for each of oculus's keys it does not hold (data/sources/config/merge/keyed.ts), and any
-// other value whole.
+// settings file and any other in the `settings:` map of the open workspace file. There the value
+// the reader sees is written as what makes the merge give it back. A key laid over oculus's value
+// in oculus's place (data/sources/config/merge/in-place.ts), a vocab key of the hub's file and a
+// catalog of the workspace file, is written as the inverse of that merge: the words or rows the
+// reader changed or added, `<word>: null` or `{ <field>: x, removed: true }` for each of oculus's
+// the reader took out, and nothing for one left as oculus ships it. Any other key of the hub's
+// file is written whole. In the workspace file a list of records whose option names a `key:` field
+// is written as every entry of it then one `{ <key>: x, removed: true }` for each of oculus's
+// entries it does not hold, a map family as every key of it then `x: null` for each of oculus's
+// keys it does not hold (data/sources/config/merge/keyed.ts), and any other value whole.
 //
 // The write is refused, with nothing written, unless the merged configuration still holds `base`
 // at the key (the value the editor read), the value fits the entry (config-fit.ts: its shape, and
@@ -43,6 +48,7 @@ import type { Document, Pair } from 'yaml';
 import { isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
 import { LOCAL_NAME } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
+import { inPlaceOf, inPlaceOverride } from '../../../../data/sources/config/merge/in-place.ts';
 import { familyOverride, recordsOverride } from '../../../../data/sources/config/merge/keyed.ts';
 import { familyKind } from '../../../../data/sources/config/merge/workspace-layer.ts';
 import { words } from '../../../core/words.ts';
@@ -143,8 +149,10 @@ function valueAt(parsed: unknown, key: string): unknown {
 }
 
 /**
- * What the file at a place holds for the value the reader sees: the value itself in the hub's
- * settings file, and in the workspace file the value laid over oculus's as the merge reads it back
+ * What the file at a place holds for the value the reader sees, so the merge reads it back: a key
+ * merged in oculus's place as the inverse of that merge over oculus's value (oculus's alone for a
+ * key of the hub's file, oculus's with the hub's file for a catalog of the workspace file), any
+ * other key of the hub's file whole, and any other key of the workspace file over the hub's value
  * (a keyed list or a map family entry by entry, any other value whole).
  */
 function storedForm(
@@ -155,6 +163,11 @@ function storedForm(
     key: string,
     seen: unknown
 ): unknown {
+    const shape = inPlaceOf(key);
+    if (shape !== undefined) {
+        const under = place.layer === 'hub' ? {} : { hub: layers.hub };
+        return inPlaceOverride(shape, mergedAt(loadLayers(engine, under).config, key), seen);
+    }
     if (place.layer === 'hub') return seen;
     const kind = familyKind(entry);
     if (kind.kind !== 'records' && kind.kind !== 'map') return seen;

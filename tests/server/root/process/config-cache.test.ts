@@ -269,7 +269,11 @@ describe('the config cache of the server context', () => {
             report: (findings) => said.push(findings),
             primary: () => null,
             others: () => [],
-            vocabs: () => ({ vocabs: { primary: null, lists: {} }, files: [] })
+            folders: () => [],
+            vocabs: () => ({
+                vocabs: { primary: null, lists: {}, order: [], own: {} },
+                files: []
+            })
         });
         cache.quiet();
         expect(said).toEqual([]);

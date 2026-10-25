@@ -78,6 +78,13 @@ const theme = z.strictObject({
 
 const iconTheme = z.strictObject({ id: text.min(1), label: text.min(1), path: text.min(1) });
 
+const localization = z.strictObject({
+    languageId: text.min(1),
+    languageName: text.min(1),
+    localizedLanguageName: text.optional(),
+    translations: z.array(z.strictObject({ id: text.min(1), path: text.min(1) })).min(1)
+});
+
 /** The shape of each contribution point, by the name the manifest writes it under. */
 export const POINTS = {
     commands: z.array(command),
@@ -89,6 +96,7 @@ export const POINTS = {
     configuration,
     themes: z.array(theme),
     iconThemes: z.array(iconTheme),
+    localizations: z.array(localization),
     ...TOOL_POINTS
 };
 

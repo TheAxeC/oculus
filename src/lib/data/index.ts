@@ -13,7 +13,13 @@ import { z } from 'zod';
 import { focusBlock, isMap, str, strings } from './helpers/guards.ts';
 import { MEMORIES_DIR, WALLPAPER_DIR } from './helpers/files/paths.ts';
 import { filledTextShape, mapShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
-import { coloredWords, vocabKeys, wordsWith } from './shapes/vocab-keys.ts';
+import {
+    MANIFEST_FIELDS_KEY,
+    coloredWords,
+    vocabKeys,
+    withManifestFields,
+    wordsWith
+} from './shapes/vocab-keys.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_LIST_KEYS, readRegistries, registryFiles } from './sources/registries.ts';
 import {
@@ -32,6 +38,7 @@ import { DATA_FOLDER, HUB_FILE, fromHubFile, tierOf } from './helpers/hub-names.
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog, type loadConfig } from './sources/config.ts';
+import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
 import { readYamlMap } from './sources/yaml-file.ts';
 import {
     newProjectDirs,
@@ -46,7 +53,7 @@ import {
     normalise,
     selfKey
 } from './snapshot/normalise.ts';
-import { sortFindings, validate, withoutStageChips } from './snapshot/validate.ts';
+import { sortFindings, validate, withoutValidated } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
 import { listedFields } from './snapshot/schema/manifest.ts';
@@ -209,7 +216,7 @@ export function portfolioConfigFrom(
         feeds,
         linkedinCadenceDays: Number(focusBlock(merged).linkedin_cadence_days),
         career: readAs(pathShape, merged.career_file) ?? defaults().career,
-        schema: merged.manifest_schema,
+        schema: withManifestFields(merged.manifest_schema, merged[MANIFEST_FIELDS_KEY]),
         vocab,
         merged,
         portfolioDeck: readAs(filledTextShape, merged.portfolio_deck) ?? null,
@@ -450,7 +457,7 @@ export function builtHub(read: HubRead, options: BuildOptions): PortfolioBuild {
                 read: !unread.has('people')
             }
         }),
-        ...withoutStageChips(run.findings, raw, config.vocab)
+        ...withoutValidated(run.findings, raw, config.vocab)
     ]);
     const catalog = catalogOf(config.merged);
     const references = buildReferences({
@@ -602,11 +609,24 @@ export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['do
 }
 
 /**
+ * The words a merged config gives a hub's records: the value of each key of
+ * config/catalogs/vocab.yml a hub's settings set (`VOCAB_SHAPES`) and of `manifest_fields`, as
+ * the config holds it. A key the config does not hold is left out.
+ */
+function hubWords(merged: Readonly<Record<string, unknown>>): Record<string, unknown> {
+    const keys = [...Object.keys(VOCAB_SHAPES), MANIFEST_FIELDS_KEY];
+    return Object.fromEntries(
+        keys.filter((key) => Object.hasOwn(merged, key)).map((key) => [key, merged[key]])
+    );
+}
+
+/**
  * The words one hub gives its own records, read from its own files: its domains (`hubDomainsOf`)
  * and the `themes` options of its venue and dataset registries. A file that does not read gives
  * none; its reader reports why. Its collections are the keys its own `collections:` names; a hub
  * whose settings name no list has the engine's list, and lists every key of it when it holds the
- * `.oculus/data/` folder, else the keys whose file it holds.
+ * `.oculus/data/` folder, else the keys whose file it holds. Its `words` are those of the hub's
+ * merged config (`hubWords`).
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
     const unnamed = heldUnnamed(hub, config.unnamed);
@@ -617,7 +637,8 @@ export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
         domains: hubDomainsOf(hub, config),
         venue_themes: themeRows(hubMap(hub, config.registries.venues, config.text)),
         data_themes: themeRows(hubMap(hub, config.registries.datasets, config.text)),
-        collections: held.map((file) => file.key)
+        collections: held.map((file) => file.key),
+        words: hubWords(config.merged)
     };
 }
 
@@ -635,18 +656,39 @@ function hubVocabFiles(hub: string, config: PortfolioConfig): string[] {
 }
 
 /**
+ * Where the records of a workspace come from, for its vocabulary: the name of the primary hub
+ * (null in a workspace with none), the names of its folders in the workspace's order, and oculus's
+ * own merged config, whose words a folder that is no hub is read under.
+ */
+export type VocabPlaces = {
+    primary: string | null;
+    folders: readonly string[];
+    own: Readonly<Record<string, unknown>>;
+};
+
+/**
  * The vocabulary of every hub of the workspace: the primary's (none in a workspace with no
  * primary, whose name is then null) and each other hub's, each read from that hub's own files.
+ * `order` is the primary, then the other hubs in the workspace's order, and with no primary each
+ * folder that is no hub at its place among them, since its records carry the folder's name; with a
+ * primary such a folder's records are the primary's; a hub no folder names comes last. `own` is
+ * oculus's own words.
  */
 export function hubVocabs(
-    primary: string | null,
+    places: VocabPlaces,
     primaryVocab: HubVocab | null,
     others: readonly { key: string; vocab: HubVocab }[]
 ): HubVocabs {
+    const { primary } = places;
     const lists: Record<string, HubVocab> = {};
     if (primary !== null && primaryVocab !== null) lists[primary] = primaryVocab;
     for (const one of others) lists[one.key] = one.vocab;
-    return { primary, lists };
+    const rest = places.folders.filter(
+        (name) => name !== primary && (primary === null || Object.hasOwn(lists, name))
+    );
+    const named = [...(primary !== null && primaryVocab !== null ? [primary] : []), ...rest];
+    const order = [...named, ...Object.keys(lists).filter((name) => !named.includes(name))];
+    return { primary, lists, order, own: hubWords(places.own) };
 }
 
 /**
@@ -661,19 +703,21 @@ function readHubVocab(root: HubRoot, settings: HubSettings): { vocab: HubVocab; 
 /**
  * The vocabulary of a workspace and every file it was read from: the primary hub's, read from its
  * folder `dir` by the settings `read` holds (none when the workspace has no primary folder), and
- * each other hub's, read by its own settings as `settings` gives them.
+ * each other hub's, read by its own settings as `settings` gives them; `places` names the folders
+ * and oculus's own config (`hubVocabs`).
  */
 export function workspaceVocabs(
     primary: { name: string | null; dir: string | null },
     read: { config: Record<string, unknown>; from?: ReturnType<typeof loadConfig>['from'] },
     others: readonly HubRoot[],
-    settings: HubSettings
+    settings: HubSettings,
+    places: Omit<VocabPlaces, 'primary'>
 ): { vocabs: HubVocabs; files: string[] } {
     const own = portfolioConfigFrom(read.config, read.from);
     const vocab = primary.dir === null ? null : hubVocabOf(primary.dir, own);
     const held = others.map((one) => ({ key: one.key, ...readHubVocab(one, settings) }));
     return {
-        vocabs: hubVocabs(primary.name, vocab, held),
+        vocabs: hubVocabs({ ...places, primary: primary.name }, vocab, held),
         files: [
             ...(primary.dir === null ? [] : hubVocabFiles(primary.dir, own)),
             ...held.flatMap((one) => one.files)

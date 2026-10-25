@@ -1,0 +1,295 @@
+# ===========================================================================
+# options/catalogs/vocab.yml
+# Every list of catalogs/vocab.yml a hub sets, described once. loadConfig() reads it into the merged map under `options`, named catalogs/vocab.yml, each entry carrying as its `default` the value catalogs/vocab.yml holds at its key. The shape of an entry is the one the head of options/appearance.yml gives. `priority_levels` is not described: no hub sets it.
+# A hub sets these keys in its own .oculus/config.yml, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts). A map family (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, tiers, research_audit, leads_fit and data_access) merges by word: a word the hub names replaces oculus's row of that word in oculus's place, a new word comes after oculus's words in the hub's order, and `<word>: null` takes one of oculus's words out. `categories` merges by `key`: a row naming oculus's key replaces it in place, a new key comes after oculus's rows, and `{ key: <key>, removed: true }` takes one out. focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole (roles), is also taken out of every word list that names it, each field described below or in another options file with a `from` naming that list (a board's tier or role among them): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. The defaults Settings shows lose the word the same way. The Settings view writes the hub file as the inverse of the merge and offers no reorder of a word or a category, since the merge keeps oculus's order.
+# ===========================================================================
+
+options:
+    palette:
+        heading: boards
+        section: Vocabulary
+        help: Each hex a colour is written with, and the named colour token it is drawn as; a hex the palette does not list is drawn as it is written.
+        fields:
+            key: the hex, as a colour is written in the configuration
+            value: the colour token it is drawn as, such as c-teal
+    stages:
+        heading: boards
+        section: Vocabulary
+        help: "The project stages, by the manifest's stage, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides. A manifest at a stage the list does not hold is a finding naming the closest stage."
+        fields:
+            key: the word a manifest's stage writes
+            label: the words the stage is drawn with on a card, the form and an idea card
+            icon:
+                help: the glyph a chip of the stage is drawn with
+                control: glyph
+            color:
+                help: the colour the stage is drawn in
+                control: colour
+            idea:
+                help: the idea group, the cross-link group of ideas and the Focus board's unplaced projects
+                control: toggle
+            live:
+                help: the in-flight group, which the audit's rules over in-flight work, the pillar cards and the Funding tab read
+                control: toggle
+            terminal:
+                help: the done group, a done or closed outcome
+                control: toggle
+            dead:
+                help: "a dead outcome: the stage's place in the Pillars view's Archival band, a whole number from 1"
+                control: number
+                min: 1
+                whole: true
+            on_map:
+                help: a stage that keeps a Pillars or Domains card awake
+                control: toggle
+            placed:
+                help: a stage that has a venue, so the audit asks for one
+                control: toggle
+            public:
+                help: a public outcome, which the audit of the website's publications asks for on the site
+                control: toggle
+            negative:
+                help: a negative result, which stays in the hub; the website audit reports its project when the site shows it
+                control: toggle
+            dead_end:
+                help: a dead end; the website audit reports its project when the site shows it
+                control: toggle
+            submit_ready:
+                help: a stage the board statistics count as ready to go out
+                control: toggle
+            pauses_countdown:
+                help: a stage that stops a card's and a lane's countdown, counted as submitted work held at its venue
+                control: toggle
+            deadline_met:
+                help: a stage that ends a project's own deadline, which then leaves the deadline radar
+                control: toggle
+            new_idea:
+                help: the stage a new idea is made with, the first stage carrying it
+                control: toggle
+    forms:
+        heading: boards
+        section: Vocabulary
+        help: "The forms of a project's output, by the manifest's form, in the order the project form offers them, each with the words and the glyph it is drawn with."
+        fields:
+            key: the word a manifest's form writes
+            label: the words the form is drawn with on a card and in the form
+            icon:
+                help: the glyph a chip of the form is drawn with
+                control: glyph
+    chips:
+        heading: boards
+        section: Vocabulary
+        help: "The chips a manifest's status.chips picks from, in the order the form offers them, each with its words, its glyph and its flag."
+        fields:
+            key: the word a manifest's status.chips writes
+            label: the words the chip is drawn with on a card and in the form
+            icon:
+                help: the glyph the chip is drawn with
+                control: glyph
+            blocked:
+                help: a chip the Focus board's awaiting box and a board's statistics count as blocked
+                control: toggle
+    statuses:
+        heading: boards
+        section: Vocabulary
+        help: "The statuses a collection entry's status takes, each with its colour and the flags that say what it decides."
+        fields:
+            key: the word an entry's status writes
+            color:
+                help: the colour the status is drawn in
+                control: colour
+            closes_deadline:
+                help: the status ends an entry's deadline on the deadline radar
+                control: toggle
+            deadline_met:
+                help: the status ends a funding entry's or another entry's own deadline
+                control: toggle
+            live_subtasks:
+                help: under closes_deadline, the entry's subtasks and follow-up notes stay on the radar
+                control: toggle
+            waiting:
+                help: an entry waiting on someone else, which the audit asks a date to track by
+                control: toggle
+            acknowledged:
+                help: a funding entry a manuscript acknowledges, so it needs a statement
+                control: toggle
+            default_application:
+                help: the status of the Applications entry a Position Lead's apply control makes, the first word carrying it
+                control: toggle
+            default_task:
+                help: the status of a task added from the palette, the first word carrying it
+                control: toggle
+            obtained:
+                help: funding obtained, which the career banner's track record counts
+                control: toggle
+    lead_statuses:
+        heading: boards
+        section: Vocabulary
+        help: "The statuses a Position Lead's status takes, each with its colour and the flags that say what it decides."
+        fields:
+            key: the word a lead's status writes
+            color:
+                help: the colour the status is drawn in
+                control: colour
+            lead_closed:
+                help: a lead that is closed, counted and listed as done
+                control: toggle
+            lead_declined:
+                help: a lead the reader declined, which the Leads view hides until asked
+                control: toggle
+            lead_applied:
+                help: a lead the reader applied to, which offers no apply control
+                control: toggle
+            default_lead:
+                help: the status a new lead gets and a reopened one goes back to
+                control: toggle
+    focus_lanes:
+        heading: boards
+        section: Vocabulary
+        help: "The lanes of the Focus board, in their order, each with its words, colour and cluster and the stages or the chips that put a project on it. A hub's list replaces oculus's whole."
+        fields:
+            key: the word the lane is named by
+            label: the words the lane is drawn with
+            sub: the line drawn under the lane's label
+            color:
+                help: the colour of the lane's header
+                control: colour
+            cluster:
+                help: the group the lane belongs to on the board
+                control: choice
+                options: [now, parked, incubate, idea]
+            stages:
+                help: 'the stages whose projects sit on the lane; a row names stages or chips, never both'
+                control: multi
+                from: project_stages
+            chips:
+                help: 'the chips that put a project on the lane whatever its stage; a row names stages or chips, never both'
+                control: multi
+                from: status_chips
+    fund_stages:
+        heading: boards
+        section: Vocabulary
+        help: "The stages stacked inside the Focus Funding column, each with the statuses it matches. A hub's list replaces oculus's whole."
+        fields:
+            label: the words the stage is drawn with in the Focus Funding column
+            color:
+                help: the colour the stage is drawn in
+                control: colour
+            statuses:
+                help: the entry statuses the stage matches
+                control: multi
+                from: entry_statuses
+    focus_lane_tones:
+        heading: boards
+        section: Vocabulary
+        help: The hue name of the bar of each collection lane of the Focus board.
+        fields:
+            key: the collection lane, such as funding
+            value:
+                help: the hue its bar is drawn in
+                control: hue
+    tiers:
+        heading: boards
+        section: Vocabulary
+        help: "The kinds of project a manifest's tier names, each with its words; the first is the tier of a new project whose form names none."
+        fields:
+            key: the word a manifest's tier writes
+            label: the words the tier is drawn with in the project form
+    research_audit:
+        heading: boards
+        section: Vocabulary
+        help: "The tiers the audit's research rules and the Orphans card leave alone, under skip_tiers."
+        holds: lists
+        fields:
+            key: the setting, skip_tiers
+            value:
+                help: the tiers it names
+                control: multi
+                from: tiers
+    roles:
+        heading: boards
+        section: Vocabulary
+        help: "The user's roles on a project or a collection entry, highest first, each read from a field of the record. A hub's list replaces oculus's whole."
+        fields:
+            key: the word the role is named by, which a board's role names
+            label: the words the role is drawn with in the Role facet
+            field: the field of a project or an entry that lists people for this role; the user holds the role when it holds the person self names
+    categories:
+        heading: boards
+        section: Vocabulary
+        help: "The categories a project is filed under on every board: the first row whose blocks it meets. A hub's row replaces oculus's row of its key in its place, a new key comes after oculus's rows, and { key: <key>, removed: true } takes one out."
+        key: key
+        fields:
+            key: the word the category is named by, which a board filter stores
+            label: the words the category is drawn with
+            color:
+                help: the colour the category is drawn in
+                control: colour
+            stages:
+                help: "the block a project's stage is held against"
+                control: words
+                from: project_stages
+            forms:
+                help: "the block a project's form is held against"
+                control: words
+                from: project_forms
+            record:
+                help: the row is a record of the work's output
+                control: toggle
+            rail:
+                help: a board gives the rail the count of its projects in such rows, in the colour of the first
+                control: toggle
+            archival:
+                help: the Pillars view's Archival band; such a project is left out of the use counts and the members of a pillar and a domain
+                control: toggle
+    leads_fit:
+        heading: boards
+        section: Vocabulary
+        help: "The colour of a Position Lead's fit chip, by its fit. Oculus ships none; a hub names its own."
+        fields:
+            key: the fit a lead writes
+            value:
+                help: the colour its chip is drawn in
+                control: colour
+    data_access:
+        heading: boards
+        section: Vocabulary
+        help: "The colour of a dataset's access chip, by its access."
+        fields:
+            key: the access a dataset writes
+            value:
+                help: the colour its chip is drawn in
+                control: colour
+    venue_categories:
+        heading: boards
+        section: Vocabulary
+        help: "The categories a venue's category takes, in the order the Venues view offers them. A hub's list replaces oculus's whole."
+        control: list
+    venue_tiers:
+        heading: boards
+        section: Vocabulary
+        help: "The tiers a venue's tier takes, in their order, each with its colour and words. A hub's list replaces oculus's whole."
+        fields:
+            key: the word a venue's tier writes
+            label: the words the tier is drawn with
+            color:
+                help: the colour the tier is drawn in
+                control: colour
+            assignable:
+                help: "off keeps the tier out of the choices a venue's tier offers; it stays the fallback for a venue with no tier"
+                control: toggle
+    radar_buckets:
+        heading: boards
+        section: Vocabulary
+        help: "The buckets of the Lit Watch radar, in their order, each with its glyph, words and colour. A hub's list replaces oculus's whole."
+        fields:
+            key: the word a radar item's bucket writes
+            glyph:
+                help: the glyph the bucket is drawn with
+                control: glyph
+            label: the words the bucket is drawn with
+            color:
+                help: the colour the bucket is drawn in
+                control: colour
+
+groups: {}

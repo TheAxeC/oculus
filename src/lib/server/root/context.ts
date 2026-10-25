@@ -80,6 +80,8 @@ import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
 import type { OpenWorkspace } from '../files/workspace/open.ts';
 import { configOptions, perOculus } from '../files/workspace/paths.ts';
+import { noApps, type AppsHeld } from '../machine/apps/read/held.ts';
+import { languageSource, languageStamp } from '../machine/apps/routes/localization.ts';
 import { stateFileOf } from '../files/workspace/state.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
@@ -169,8 +171,13 @@ export function createServerContext(
             heardHeld.delete(listener);
         };
     };
+    // The display language is read from the apps, which are read after the config that names
+    // their folder; until the watcher's first read the holder holds no app and the words are
+    // oculus's own, and the read that changes a language republishes the config.
+    const appsHeld = { now: (): AppsHeld => noApps() };
+    const language = languageSource(() => appsHeld.now());
     const load = (): ReturnType<typeof loadConfig> =>
-        make.loadConfig(engine, configOptions(open()));
+        make.loadConfig(engine, configOptions(open(), language));
     // The parse the start, a request, a finding or a move of the workspace takes while neither
     // config folder changed, so the folders are parsed once for all of them until a file changes.
     const configCache = createConfigCache({
@@ -178,19 +185,26 @@ export function createServerContext(
         hub: () => open().primaryDir,
         workspace: () => open().file,
         load,
-        loadHub: (dir) => make.loadConfig(engine, dir === null ? {} : { hub: dir }),
+        loadHub: (dir, words) =>
+            make.loadConfig(engine, dir === null ? {} : { hub: dir, ...(words && { words }) }),
+        language: () => languageStamp(appsHeld.now()),
         report: reportFindings,
         primary: () => open().primary,
         others: () =>
             open()
                 .hubs.filter((one) => one.name !== open().primary)
                 .map((one) => ({ key: one.name, dir: one.dir })),
-        vocabs: (read, others, settings) =>
+        folders: () => open().folders.map((one) => one.name),
+        vocabs: (read, others, settings, own) =>
             workspaceVocabs(
                 { name: open().primary, dir: open().primaryDir },
                 read,
                 others,
-                settings
+                settings,
+                {
+                    folders: open().folders.map((one) => one.name),
+                    own: own.config
+                }
             )
     });
     const { config, from } = configCache.read();
@@ -299,6 +313,8 @@ export function createServerContext(
                 host,
                 open,
                 settings: configCache.hub,
+                defaults: configCache.defaults,
+                language,
                 held: heldFindings,
                 problems: () => machine.held().problems,
                 follow: followWorkspace
@@ -392,8 +408,12 @@ export function createServerContext(
         config: () => configCache.quiet().config,
         from: () => configCache.quiet().from,
         open,
-        follow: (listener) => workspace.subscribe(() => listener())
+        follow: (listener) => workspace.subscribe(() => listener()),
+        languageChanged: () => {
+            for (const listener of [...heardHeld]) listener();
+        }
     });
+    appsHeld.now = () => apps.held();
 
     const portfolio = startPortfolio();
     const sessions = startSessions();

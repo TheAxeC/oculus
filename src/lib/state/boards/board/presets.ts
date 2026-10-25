@@ -3,7 +3,9 @@
 // keys that say which projects it takes, its list columns, its search words, its label mode and
 // how its cards are laid out) is its row of `boards` in config/defaults/layout.yml; the categories
 // its cards are filed under and the roles are config/catalogs/vocab.yml's, read through
-// data/shapes/boards/. This module holds no table of boards.
+// data/shapes/boards/. A board over the records of several hubs reads each project under the words
+// of its own hub, and draws its sections, facets and stage order from the union of every hub's
+// words. This module holds no table of boards.
 
 import { z } from 'zod';
 import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -13,7 +15,12 @@ import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 import { vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { categoriesOf, type Category } from '../../../data/shapes/boards/categories.ts';
 import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
-import { boardRows, boardRuleOf, type BoardRule } from '../../../data/shapes/boards/takes.ts';
+import {
+    boardRows,
+    boardRuleOf,
+    type BoardRule,
+    type TakeWords
+} from '../../../data/shapes/boards/takes.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -30,6 +37,12 @@ type CardsMode = 'sections' | 'grid';
 /** One column of the list mode: the key its cell is read from a row by, and its heading. */
 export type BoardColumn = { key: string; label: string };
 
+/**
+ * The words a board reads the projects of one hub by: the hub's words of config/catalogs/vocab.yml
+ * as `config`, its categories and its roles.
+ */
+type BoardWords = TakeWords & { categories: Category[] };
+
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
     /** The view id this preset belongs to, a key of `boards`. */
@@ -38,21 +51,29 @@ export type BoardPreset = {
     rule: BoardRule;
     /** The list mode's columns in order, with the words config/defaults/layout.yml gives them. */
     columns: BoardColumn[];
-    /** The rows of `categories` in vocab.yml, in their order, which every board files cards by. */
-    categories: Category[];
-    /** The rows of `roles` in vocab.yml, highest first. */
-    roles: Role[];
     /**
-     * The order stages sort in, the keys of `stages`; a stage the list does not name sorts after
-     * every stage it does.
+     * The rows of `categories` of every hub's words, in their order, which the board's sections
+     * and its category facet are drawn by.
+     */
+    categories: Category[];
+    /** The rows of `roles` of every hub's words, highest first. */
+    roles: readonly Role[];
+    /**
+     * The order stages sort in, the keys of `stages` of every hub's words; a stage the list does
+     * not name sorts after every stage it does.
      */
     stageOrder: string[];
     /** The label mode the board starts in, from its row's `label_mode`. */
     labels: LabelMode;
     /** How the card mode lays the cards out, from its row's `cards`, `sections` by default. */
     cards: CardsMode;
-    /** The merged config, whose `stages`, `chips` and `forms` the board's blocks are held to. */
+    /** The merged config, whose `boards` row and settings the board reads. */
     config: Record<string, unknown>;
+    /**
+     * The words the projects of the hub `hub` are read by, a project's category and role among
+     * them, and with no hub the union of every hub's words.
+     */
+    words: (hub?: string) => BoardWords;
     /**
      * The search box's placeholder from config/defaults/layout.yml, or the empty string when it has
      * none.
@@ -320,21 +341,38 @@ function cardsOf(row: Record<string, unknown>): CardsMode {
  * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
  * map does not hold is its first board. A config that holds no board gives a board that names no
  * key and so takes every project, with no columns to name. A label mode other than `full` is the
- * short handle.
+ * short handle. `vocab` gives the words of the records of a hub, and the union of every hub's
+ * words for none (state/shared/words/tones.ts, `vocabOf`); without it every project is read by the
+ * merged config. Each hub's words are read once per preset.
  */
-export function presetFor(view: string, config: Record<string, unknown> = {}): BoardPreset {
+export function presetFor(
+    view: string,
+    config: Record<string, unknown> = {},
+    vocab: (hub?: string) => Record<string, unknown> = () => config
+): BoardPreset {
     const rows = boardRows(config);
     const [id, row] = rows.find(([one]) => one === view) ?? rows.at(0) ?? [view, {}];
+    const read = new Map<string | undefined, BoardWords>();
+    const words = (hub?: string): BoardWords => {
+        const held = read.get(hub);
+        if (held !== undefined) return held;
+        const own = vocab(hub);
+        const made = { config: own, categories: categoriesOf(own), roles: rolesOf(own) };
+        read.set(hub, made);
+        return made;
+    };
+    const union = words();
     return {
         id,
         rule: boardRuleOf(row),
         columns: readAs(columnsShape, row.columns) ?? [],
-        categories: categoriesOf(config),
-        roles: rolesOf(config),
-        stageOrder: vocabKeys(config.stages),
+        categories: union.categories,
+        roles: union.roles,
+        stageOrder: vocabKeys(union.config.stages),
         labels: str(row.label_mode) === 'full' ? 'full' : 'short',
         cards: cardsOf(row),
         config,
+        words,
         search: str(row.search)
     };
 }

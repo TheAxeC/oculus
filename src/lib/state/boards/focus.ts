@@ -5,14 +5,26 @@
 // number of days, and the view turns that into a sentence through the text catalogs; a colour is a
 // tone through tones.ts, never a hex. That is what keeps the vocabulary in config and this file
 // free of both.
+//
+// A project is read under the words of its own hub: its lane is the lane of that hub's
+// `focus_lanes` that takes it, drawn in the board's lane of the same key, and its stage and chips
+// are held to that hub's `stages` and `chips`. A function over the projects of several hubs takes
+// `wordsOf` (data/shapes/vocab-keys.ts), the words of each hub, and reads the merged config alone
+// without it; the board's lanes are those of the union of every hub's words.
 
 import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
-import { joinedEntries } from '../../data/helpers/hub-names.ts';
-import { anyWord, hasWord, vocabKeys, wordFlag } from '../../data/shapes/vocab-keys.ts';
+import { joinedEntries, rootOf } from '../../data/helpers/hub-names.ts';
+import {
+    anyWord,
+    hasWord,
+    vocabKeys,
+    wordFlag,
+    type WordsOf
+} from '../../data/shapes/vocab-keys.ts';
 import {
     fieldItemsShape,
     mapShape,
@@ -234,7 +246,7 @@ function holds(
  * stage are compared as written. A lane that may not hold the project (`holds`) is passed over, so
  * a project at a `terminal` stage is on no chip lane, and on whatever lane its stage gives.
  */
-export function laneOf(
+function laneOf(
     project: Pick<Project, 'stage' | 'chips'>,
     all: Lane[],
     config: Record<string, unknown>
@@ -248,36 +260,72 @@ export function laneOf(
 }
 
 /**
- * The status marks a project's card draws on a lane: the words of `projectStatusWords`, each word
- * once in its first place, without the stage when the lane's `stages` is that one stage alone, and
- * without each chip the lane's `chips` holds, since the lane's head already says those. A lane that
- * lists two stages (Push) keeps the stage, which tells its cards apart.
+ * The status marks a project's card draws on a lane: the words of `projectStatusWords` under the
+ * project's hub, each word once in its first place, without the stage when the lane's `stages` is
+ * that one stage alone, and without each chip the lane's `chips` holds, since the lane's head
+ * already says those. A lane that lists two stages (Push) keeps the stage, which tells its cards
+ * apart.
  */
 export function laneMarks(
-    project: Pick<Project, 'stage' | 'form' | 'chips'>,
+    project: Pick<Project, 'stage' | 'form' | 'chips' | 'root'>,
     lane: Pick<Lane, 'stages' | 'chips'>
 ): string[] {
     const said = new Set(lane.chips);
     const stage = project.stage ?? '';
     if (stage !== '' && lane.stages.length === 1 && lane.stages[0] === stage) said.add(stage);
-    const words = new Set(projectStatusWords(project.stage, project.form, project.chips));
-    return [...words].filter((word) => !said.has(word));
+    const marks = projectStatusWords(project.stage, project.form, project.chips, rootOf(project));
+    return [...new Set(marks)].filter((word) => !said.has(word));
 }
 
 /**
- * What sits on each lane, by lane key: each project on the lane `laneOf` gives it, and on none
- * when it gives none. A lane of the cluster `idea` is sorted by title, every other lane by deadline
- * first and then title.
+ * The lanes and the words a project of each hub is read under, each hub's lanes read once:
+ * `wordsOf` gives a hub's words, and the merged config alone stands for every hub without it.
+ */
+function hubLanes(
+    config: Record<string, unknown>,
+    wordsOf: WordsOf | undefined
+): (hub: string) => { lanes: Lane[]; words: Record<string, unknown> } {
+    const read = new Map<string, { lanes: Lane[]; words: Record<string, unknown> }>();
+    return (hub) => {
+        const held = read.get(hub);
+        if (held !== undefined) return held;
+        const words = wordsOf?.(hub) ?? config;
+        const made = { lanes: lanes(words), words };
+        read.set(hub, made);
+        return made;
+    };
+}
+
+/**
+ * The lane of the project's own hub that takes it (`laneOf` over that hub's `focus_lanes` and
+ * words), read through `wordsOf`.
+ */
+export function projectLane(
+    project: Pick<Project, 'stage' | 'chips' | 'root'>,
+    wordsOf: WordsOf
+): Lane | undefined {
+    const words = wordsOf(rootOf(project));
+    return laneOf(project, lanes(words), words);
+}
+
+/**
+ * What sits on each lane of `all`, by lane key: each project on the lane of its own hub's lanes
+ * `laneOf` gives it, put in the lane of `all` of the same key, and on none when it gives none. A
+ * lane of the cluster `idea` is sorted by title, every other lane by deadline first and then
+ * title.
  */
 export function laneItems(
     projects: Project[],
     all: Lane[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): Record<string, Project[]> {
     const out: Record<string, Project[]> = {};
+    const own = hubLanes(config, wordsOf);
     for (const lane of all) out[lane.key] = [];
     for (const project of projects) {
-        const lane = laneOf(project, all, config);
+        const held = own(rootOf(project));
+        const lane = laneOf(project, held.lanes, held.words);
         if (lane !== undefined) byKey(out, lane.key)?.push(project);
     }
     for (const lane of all)
@@ -292,12 +340,38 @@ export function laneItems(
  * So a move's write is never refused in part, and a project at a `terminal` stage is never sent to
  * a chip lane, which would leave it off the board.
  */
-export function movable(project: Project, lane: Lane, config: Record<string, unknown>): boolean {
+function movable(project: Project, lane: Lane, config: Record<string, unknown>): boolean {
     if (!holds(lane, project, config)) return false;
     const chip = lane.chips.at(0);
     if (chip !== undefined) return vocabKeys(config.chips).includes(chip);
     const stage = lane.stages.at(0);
     return stage !== undefined && vocabKeys(config.stages).includes(stage);
+}
+
+/**
+ * Whether a project may be moved onto the lane of its own hub's lanes with the key of `lane`, a
+ * lane of the board: `movable` under that hub's words, and never when the hub has no such lane.
+ */
+export function hubMovable(project: Project, lane: Pick<Lane, 'key'>, wordsOf: WordsOf): boolean {
+    const words = wordsOf(rootOf(project));
+    const own = lanes(words).find((one) => one.key === lane.key);
+    return own !== undefined && movable(project, own, words);
+}
+
+/**
+ * The manifest fields a move of a project onto the board's lane `lane` writes: `moveOnto` over
+ * the lane of the project's own hub with the same key, that hub's lanes and its words, and null
+ * when the hub has no such lane.
+ */
+export function hubMoveOnto(
+    project: Project,
+    lane: Pick<Lane, 'key'>,
+    wordsOf: WordsOf
+): Record<string, unknown> | null {
+    const words = wordsOf(rootOf(project));
+    const all = lanes(words);
+    const own = all.find((one) => one.key === lane.key);
+    return own === undefined ? null : moveOnto(project, own, all, words);
 }
 
 /**
@@ -310,7 +384,7 @@ export function movable(project: Project, lane: Lane, config: Record<string, unk
  * lane with `chips` are taken off. The other chips stay in their order, and `status.chips` is
  * written only when it changes.
  */
-export function moveOnto(
+function moveOnto(
     project: Project,
     lane: Lane,
     all: Lane[],
@@ -340,18 +414,24 @@ export function moveOnto(
 
 /**
  * The projects of any tier whose stage carries `live` (work in flight) or `idea` in `stages` and
- * that no lane of `focus_lanes` takes, so the board is not showing them: with the shipped lanes,
- * which give every such stage a lane, none, and a hub whose lanes leave out a stage or the Idea row
- * lists them.
+ * that no lane of `focus_lanes` takes, each read under its own hub's words, so the board is not
+ * showing them: with the shipped lanes, which give every such stage a lane, none, and a hub whose
+ * lanes leave out a stage or the Idea row lists them.
  */
-export function unplaced(projects: Project[], config: Record<string, unknown>): Project[] {
-    const all = lanes(config);
-    return projects.filter(
-        (project) =>
-            (hasWord(config, 'stages', 'live', project.stage) ||
-                hasWord(config, 'stages', 'idea', project.stage)) &&
-            laneOf(project, all, config) === undefined
-    );
+export function unplaced(
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): Project[] {
+    const own = hubLanes(config, wordsOf);
+    return projects.filter((project) => {
+        const { lanes: held, words } = own(rootOf(project));
+        return (
+            (hasWord(words, 'stages', 'live', project.stage) ||
+                hasWord(words, 'stages', 'idea', project.stage)) &&
+            laneOf(project, held, words) === undefined
+        );
+    });
 }
 
 /** A tally sorted the way the awaiting box reads it: the biggest first, then alphabetically. */
@@ -381,12 +461,15 @@ export function venueLabel(venue: Venue | undefined): string {
 export function waiting(
     snapshot: Snapshot,
     config: Record<string, unknown>,
-    names: Record<Id, string>
+    names: Record<Id, string>,
+    wordsOf?: WordsOf
 ): Waiting {
     const venues = snapshot.entities.venues;
     const projects = snapshot.entities.projects;
-    const board = lanes(config);
-    const items = laneItems(Object.values(projects), board, config);
+    const wordsAt = (record: { root?: string }): Record<string, unknown> =>
+        wordsOf?.(rootOf(record)) ?? config;
+    const board = lanes(wordsOf?.() ?? config);
+    const items = laneItems(Object.values(projects), board, config, wordsOf);
     const onLanes = new Set(
         board
             .filter((lane) => CLUSTERS.includes(lane.cluster))
@@ -399,7 +482,8 @@ export function waiting(
     for (const project of Object.values(projects)) {
         // A blocked project that is also waiting on somebody is blocked as well as waited on.
         if (!onLanes.has(project.id)) continue;
-        if (isBlocked(project, config)) blocked += 1;
+        const words = wordsAt(project);
+        if (isBlocked(project, words)) blocked += 1;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
                 const name = waitingLabel(key, names, projects);
@@ -407,14 +491,14 @@ export function waiting(
             }
             continue;
         }
-        if (pausesCountdown(project, config)) {
+        if (pausesCountdown(project, words)) {
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
             const name = venueLabel(venue);
             held[name] = (held[name] ?? 0) + 1;
         }
     }
     const grants = Object.values(snapshot.entities.funding)
-        .filter((scheme) => deadlineMet(config, scheme.status ?? ''))
+        .filter((scheme) => deadlineMet(wordsAt(scheme), scheme.status ?? ''))
         .map((scheme) => scheme.title)
         .sort();
     const sent = focusWords(config, 'applications_sent');
@@ -446,10 +530,16 @@ export function focusLabel(project: Pick<Project, 'title' | 'short'>, mode: unkn
 
 /**
  * The projects quick add may write to: every project of any tier whose stage does not carry
- * `terminal` in `stages`, in the order given.
+ * `terminal` in `stages` of its own hub's words, in the order given.
  */
-export function liveProjects(projects: Project[], config: Record<string, unknown>): Project[] {
-    return projects.filter((one) => !hasWord(config, 'stages', 'terminal', one.stage));
+export function liveProjects(
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): Project[] {
+    return projects.filter(
+        (one) => !hasWord(wordsOf?.(rootOf(one)) ?? config, 'stages', 'terminal', one.stage)
+    );
 }
 
 /**

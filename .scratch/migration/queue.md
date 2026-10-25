@@ -1,15 +1,16 @@
-In flight (1 of 6 slots in use):
-- O60 (each part of `config/` overridden where it belongs). Builder running in `.agents/worktrees/migration-O60`, base 6912641f.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order:
-- O69 (the bar of a project board reworked, ruling 320). Held until O60 lands, since both change the board's facets.
-- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). Held until O60 lands.
-- O71 (the priority removed, ruling 329). Held until O60 lands.
+- O69 (the bar of a project board reworked, ruling 320). Next: /spec, from main after O60.
+- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). Next: /spec, from main after O60.
+- O71 (the priority removed, ruling 329). Next: /spec, from main after O60.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, 22e74928.
 - O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, commit 9c42ab10; the hub rewrite on disk, waiting for Axel's word.
 - O68 (the Focus lane card marks without the two-mark cap, the career banner as ruling 301 says), 2026-10-24, b0536bf5; the hub rewrite on disk, waiting for Axel's word.
 - O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.

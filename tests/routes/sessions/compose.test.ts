@@ -15,7 +15,7 @@ import {
     handleTerminal,
     type TerminalOptions
 } from '../../../src/lib/server/machine/pty/routes.ts';
-import { engineDir, localDefaults } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, localDefaults } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
 import {
     BASE_CHAT_CONFIG,
@@ -218,6 +218,72 @@ describe('POST /api/terminal, a start in a mode the catalog marks confirm: true'
             }
         }
     );
+});
+
+describe("POST /api/terminal, a start in a value the workspace's agents changed", () => {
+    /** The merged config of a workspace that writes Claude's permission picker of its own. */
+    const SETTINGS = [
+        'folders: []',
+        'settings:',
+        '  agents:',
+        '    claude:',
+        '      label: Claude',
+        '      lists:',
+        '        mode:',
+        '          label: Permissions',
+        '          flag: --permission-mode',
+        '          default: manual',
+        '          values:',
+        '            - { id: manual, label: Manual, pass: manual }',
+        '            - { id: bypassPermissions, label: Bypass, pass: bypassPermissions }',
+        '            - { id: yolo, label: Yolo, pass: bypassPermissions }',
+        '            - { id: plan, label: Plan, pass: dontAsk }',
+        '            - { id: dontAsk, label: Never ask, pass: dontAsk }',
+        '            - { id: other, label: Other, pass: other }',
+        ''
+    ].join('\n');
+    const MERGED = loadConfig(engineDir(), {
+        workspace: { file: join(HERE, 'workspace.yml'), text: SETTINGS }
+    }).config;
+
+    const CASES: [string, number, string[]][] = [
+        ['bypassPermissions', 400, ['Bypass']],
+        ['yolo', 400, ['Yolo']],
+        ['plan', 400, ['Plan']],
+        ['dontAsk', 200, []]
+    ];
+
+    it.each(CASES)('a start with %s answers %s', async (mode, status, names) => {
+        const body = {
+            action: 'compose',
+            agent: 'claude',
+            cwd: HERE,
+            picks: { mode },
+            prompt: 'hi'
+        };
+        const asked = await post(body, source(), { configFor: () => MERGED });
+        expect(asked.response.status).toBe(status);
+        if (status === 400) {
+            expect(await answer(asked.response)).toEqual({ error: 'needs-confirm', names });
+            expect(asked.calls).toEqual([]);
+        } else {
+            expect(asked.argv).toContain('dontAsk');
+        }
+    });
+
+    it('refuses a start with a value its flag cannot pass, which the catalog leaves out', async () => {
+        const body = {
+            action: 'compose',
+            agent: 'claude',
+            cwd: HERE,
+            picks: { mode: 'other' },
+            prompt: 'hi',
+            confirm: true
+        };
+        const refused = await post(body, source(), { configFor: () => MERGED });
+        expect(refused.response.status).toBe(400);
+        expect(refused.calls).toEqual([]);
+    });
 });
 
 describe('POST /api/terminal, a start with a task', () => {

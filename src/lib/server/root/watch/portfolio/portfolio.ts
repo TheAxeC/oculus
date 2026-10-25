@@ -24,13 +24,7 @@ import { existsSync, statSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import {
-    hubVocabOf,
-    hubVocabs,
-    readOtherHub,
-    sourcesFindings,
-    type HubSettings
-} from '../../../../data/index.ts';
+import { readOtherHub, type HubSettings } from '../../../../data/index.ts';
 import { mergedFeeds } from '../../../../data/snapshot/hubs/feeds.ts';
 import { holdersOf, rootOf } from '../../../../data/helpers/hub-names.ts';
 import { selfOf } from '../../../../data/shapes/boards/roles.ts';
@@ -51,36 +45,29 @@ import { namedByConfig, namedByRoots, roleDirectories, watchedDirectories } from
 import {
     configDir,
     iconSet,
-    localFindings,
     loadConfig,
-    sourceFile,
     textCatalog,
     type IconMemory
 } from '../../../../data/sources/config.ts';
+import type { LanguageSource } from '../../../../data/sources/config/merge/language.ts';
+import { configPayload, workspaceHubs } from './payload.ts';
 import {
     HUB_FILE,
     MANIFEST,
     ROOT_FOLDER,
     WORKSPACES_FOLDER
 } from '../../../../data/helpers/hub-names.ts';
-import { platformText } from '../../../../data/places/platform.ts';
-import { vscodeRuleIds } from '../../../../data/places/code-rules.ts';
-import { picturesOf } from '../../../content/images.ts';
-import { wallpaperFindings } from '../../../content/wallpaper.ts';
 import { placeClones } from '../../../../data/sources/clones.ts';
-import { allHubs, primaryConfig } from '../../../files/roots.ts';
+import { primaryConfig } from '../../../files/roots.ts';
 import { engineConfigIn } from '../../../files/workspace/folders.ts';
 import { folderOfHub, hubOfFile, type OpenWorkspace } from '../../../files/workspace/open.ts';
 import { configOptions } from '../../../files/workspace/paths.ts';
-import { readerFindings } from '../../process/context/findings.ts';
 import type { MachineProblem } from '../../../../data/sources/config/machine.ts';
-import { workspaceFindings } from '../../../files/workspace/words.ts';
 import { buildFeeds, isLinkedinFile } from '../../../edit/feeds/feeds.ts';
 import type {
     AuditFinding,
     Finding,
     AuditPayload,
-    ConfigPayload,
     HostInfo,
     PortfolioConfig,
     RepositoryRoot
@@ -106,6 +93,13 @@ export type WatchPaths = {
      * settings file changed.
      */
     settings: HubSettings;
+    /**
+     * The parse of the engine's folder under no hub's settings, whose words the records of a
+     * workspace folder that is no hub are read under.
+     */
+    defaults: () => ReturnType<typeof loadConfig>;
+    /** The display languages the apps contribute, which the config is worded in. */
+    language?: LanguageSource;
     /**
      * The findings the server holds besides those the files raise: a key of the primary's
      * `local.yml` kept at its running value until a restart. Read at every rebuild.
@@ -595,7 +589,8 @@ export function watchPortfolio(
             // on disk, and no request is in flight when it runs.
             const workspace = paths.open();
             const primaryDir = workspace.primaryDir;
-            const { config, findings, from } = loadConfig(paths.engine, configOptions(workspace));
+            const layers = configOptions(workspace, paths.language);
+            const { config, findings, from } = loadConfig(paths.engine, layers);
             followSettings(workspace.file);
             // The hubs other than the primary are read again at every rebuild, each with its own
             // settings, so a folder that left the workspace or lost its config is out of this
@@ -610,72 +605,14 @@ export function watchPortfolio(
             // Each hub's domains and theme words are read from its registry files, so a change of
             // one of them republishes the config channel that carries them, as a settings change
             // does.
-            const hubs = hubVocabs(
-                workspace.primary,
-                primaryDir === null ? null : hubVocabOf(primaryDir, portfolio),
-                others.map((one) => ({ key: one.key, vocab: one.vocab }))
-            );
+            const hubs = workspaceHubs(paths, workspace, portfolio, others);
             const hubsText = JSON.stringify(hubs);
             if (withConfig || hubsText !== publishedHubs) {
                 publishedHubs = hubsText;
-                // The roots of sources.yml, the documents of layout.yml and the icon map are
-                // checked here rather than in loadConfig, which merges files and never touches the
-                // disk: a root whose directory is not on this machine, a document with no file at
-                // its path, and an icon the installed package does not ship are all facts about the
-                // machine, and they belong on the same channel as the rest. The other readers of
-                // the merged config (process/context/findings.ts) are checked here with them, the
-                // rail list against the arrangements and the glyphs of the same merged config, so
-                // their findings reach the page with the config they are about.
                 paths.icons.set = iconSet(config);
-                const payload: ConfigPayload = {
-                    config,
-                    hubs,
-                    text: platformText(textCatalog(config)),
-                    icons: paths.icons.set,
-                    codeThemeClasses: vscodeRuleIds(paths.engine),
-                    host: paths.host,
-                    findings: [
-                        ...findings,
-                        ...others.flatMap((one) => one.findings),
-                        ...readerFindings({ engine: paths.engine, hub: primaryDir, from }, config),
-                        ...localFindings(config, paths.problems()),
-                        ...workspaceFindings(workspace, textCatalog(config)),
-                        ...(paths.held?.() ?? []),
-                        ...wallpaperFindings(
-                            config,
-                            picturesOf(allHubs(config, workspace, paths.settings)),
-                            sourceFile(paths.engine, primaryDir, from, 'wallpaper.image'),
-                            textCatalog(config)
-                        ),
-                        ...(primaryDir === null
-                            ? []
-                            : sourcesFindings(
-                                  config,
-                                  {
-                                      scan: sourceFile(paths.engine, primaryDir, from, 'scan'),
-                                      newProjectDir: sourceFile(
-                                          paths.engine,
-                                          primaryDir,
-                                          from,
-                                          'new_project_dir'
-                                      ),
-                                      memoriesDir: sourceFile(
-                                          paths.engine,
-                                          primaryDir,
-                                          from,
-                                          'memories_dir'
-                                      ),
-                                      wallpaperDir: sourceFile(
-                                          paths.engine,
-                                          primaryDir,
-                                          from,
-                                          'wallpaper_dir'
-                                      )
-                                  },
-                                  primaryDir
-                              ))
-                    ]
-                };
+                const read = { config, findings, from };
+                const parts = { hubs, icons: paths.icons.set };
+                const payload = configPayload(paths, read, workspace, others, parts);
                 hub.publish('config', payload);
                 if (closed) return;
             }

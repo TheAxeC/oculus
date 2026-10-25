@@ -50,7 +50,7 @@ import {
     agentAccounts,
     compose,
     composeRequest,
-    readAgentsFile
+    configAgents
 } from './start/compose.ts';
 import {
     NOT_OURS,
@@ -280,7 +280,7 @@ async function composeSession(
     }
     const composed = compose(
         { ...request, prompt },
-        readAgentsFile(options.engine).agents,
+        configAgents(options.configFor()),
         agentAccounts(local),
         local.claudeBin
     );

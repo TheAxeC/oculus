@@ -83,7 +83,8 @@
         type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
-    import { laneOf, lanes } from '$lib/state/boards/focus';
+    import { projectLane } from '$lib/state/boards/focus';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import {
@@ -91,21 +92,14 @@
         chipLabel,
         statusMarkTone,
         projectStatusWords,
-        toneOf
+        toneOf,
+        vocabOf
     } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
-        selectors: {
-            board,
-            boardPreset,
-            boardStats,
-            configMap,
-            offersNewProject,
-            selfNamed,
-            staleLag
-        },
+        selectors: { board, boardPreset, boardStats, offersNewProject, selfNamed, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -143,9 +137,6 @@
     const rows = $derived(shown.map(row));
     const sections = $derived(cardSections(shown, preset));
     const strip = $derived(boardStats(items));
-    const config = $derived(configMap());
-    /** The Focus board's lanes, for the List's Focus cell: the label of the lane a card sits on. */
-    const focusLanes = $derived(lanes(config));
 
     /** What the last write on this board answered, shown under the toolbar until the next one. */
     let said = $state('');
@@ -255,15 +246,22 @@
      */
     function row(item: BoardItem): Record<string, unknown> {
         const next = item.project.next;
-        const words = projectStatusWords(item.project.stage, item.project.form, item.project.chips);
+        const hub = rootOf(item.project);
+        const words = projectStatusWords(
+            item.project.stage,
+            item.project.form,
+            item.project.chips,
+            hub
+        );
         return {
             id: item.id,
             title: label(item),
             authors: item.teamLine,
             venue: item.venue?.short ?? '',
-            status: words.map((word) => chipLabel(word)).join(' '),
-            statusMarks: words.filter((word) => chipGlyphName(word) !== ''),
-            focus: laneOf(item.project, focusLanes, config)?.label ?? '',
+            hub,
+            status: words.map((word) => chipLabel(word, hub)).join(' '),
+            statusMarks: words.filter((word) => chipGlyphName(word, hub) !== ''),
+            focus: projectLane(item.project, vocabOf)?.label ?? '',
             next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
             domain: item.domain?.label ?? '',
             pillar: item.pillars.map((tag) => tag.label).join(' | '),
@@ -277,10 +275,10 @@
         {#each statusMarks(row) as chip (chip)}
             <span
                 class="mark"
-                title={chipLabel(chip)}
-                style={`--mark: var(--c-${statusMarkTone(chip)}-txt)`}
+                title={chipLabel(chip, cellText(row.hub))}
+                style={`--mark: var(--c-${statusMarkTone(chip, cellText(row.hub))}-txt)`}
             >
-                <Glyph name={chipGlyphName(chip)} />
+                <Glyph name={chipGlyphName(chip, cellText(row.hub))} />
             </span>
         {/each}
     {:else}
@@ -299,7 +297,6 @@
         label={label(item)}
         tab={tabLabel(item)}
         staleLag={lag}
-        {focusLanes}
         ontoggle={() => toggleCard(item.id)}
         onsaid={(answer: string) => (said = answer)}
     />
@@ -396,6 +393,7 @@
             <NewIdea
                 tier={preset.rule.tiers?.at(0)}
                 roles={preset.rule.roles}
+                takes={(hub: string) => offersNewProject(preset, hub)}
                 onclose={() => (adding = false)}
                 onsaid={(answer: string) => (said = answer)}
             />

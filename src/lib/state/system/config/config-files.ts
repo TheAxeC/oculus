@@ -102,7 +102,21 @@ export function isPrivateFile(
 }
 
 /** The folder under config/ that holds oculus's defaults files, which Show Defaults opens. */
-export const DEFAULTS = 'defaults';
+const DEFAULTS = 'defaults';
+
+/** The options file of the workspace's own words, whose default is the whole text catalog. */
+const TEXT_OPTIONS = 'text.yml';
+
+/**
+ * The file under config/ Show Defaults opens for an options file the Settings view lists: the
+ * defaults file of the same name for a defaults file (`defaults/appearance.yml`), the catalog or
+ * schema file itself for one of a subfolder (`catalogs/vocab.yml`), and none for `text.yml`, whose
+ * default is the whole text catalog of config/text/.
+ */
+export function defaultsOf(file: string): string | null {
+    if (file === TEXT_OPTIONS) return null;
+    return file.includes('/') ? file : `${DEFAULTS}/${file}`;
+}
 
 /** The folder under config/ that holds the vocabulary catalogs. */
 export const CATALOGS = 'catalogs';

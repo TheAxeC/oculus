@@ -9,6 +9,7 @@ import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 
 const LOADED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(LOADED);
@@ -134,5 +135,25 @@ describe('the relation fields of a manifest', () => {
             ['lead', typeSentence('lead', 'list', TEXT)]
         ]);
         expect(of('beta')).toEqual([]);
+    });
+
+    it('knows a field the hub adds to its form, and gives the unknown-key finding where no hub adds it', () => {
+        const manifest =
+            'id: alpha\ntier: research\nstage: exploring\ntitle: alpha\ngrant_id: X1\n';
+        const files = { 'projects/active/alpha/project.yml': manifest };
+        const added = plantScratch('oculus-relation-shapes-', {
+            ...files,
+            [HUB_FILE]:
+                'manifest_fields: [ { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." } ]\n'
+        });
+        const read = loadConfig(engineDir(), { hub: added });
+        const config = portfolioConfigFrom(read.config, read.from);
+        const on = (hub: string, settings: typeof CONFIG) =>
+            buildOneHub(hub, settings).snapshot.findings.filter(
+                (one) => one.file.endsWith('/alpha/project.yml') && one.key === 'grant_id'
+            );
+        expect(on(added, config)).toEqual([]);
+        const plain = plantScratch('oculus-relation-shapes-', files);
+        expect(on(plain, CONFIG)).toHaveLength(1);
     });
 });

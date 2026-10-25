@@ -28,6 +28,7 @@
     import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
 
@@ -44,7 +45,9 @@
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
-    const needs = $derived(snapshot === null ? [] : attention(snapshot, config, now, actionable()));
+    const needs = $derived(
+        snapshot === null ? [] : attention(snapshot, config, now, actionable(), vocabOf)
+    );
     const nudges = $derived(
         snapshot === null
             ? []

@@ -24,11 +24,13 @@
         stage?: string;
         /** The project's `domain:` key, which the chip's words and the slide's edge come from. */
         domain?: string;
+        /** The hub the deck is read under, whose words the stage is drawn in. */
+        hub?: string;
         /** The hue the slide's `tag.class` wears, from the deck's `tag_tones`. */
         tagTone?: string;
     };
 
-    let { slide, title, stage, domain, tagTone }: Props = $props();
+    let { slide, title, stage, domain, hub, tagTone }: Props = $props();
 
     const rich = $derived(hasSlideContent(slide));
     const tone = $derived(domain === undefined ? undefined : domainTone(domain));
@@ -41,7 +43,7 @@
             <Tag label={domainLabel(domain)} {tone} />
         {/if}
         {#if stage !== undefined}
-            <Chip label={chipLabel(stage)} tone={stageTone(stage)} filled />
+            <Chip label={chipLabel(stage, hub)} tone={stageTone(stage, hub)} filled />
         {/if}
         {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
             <Tag label={slide.tag.text} tone={tagTone} />

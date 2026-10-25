@@ -11,7 +11,7 @@ import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { hubsTaking } from '../shared/page/hubs.ts';
-import { wordsWith } from '../../data/shapes/vocab-keys.ts';
+import { wordsWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
@@ -76,7 +76,8 @@ type TaskFields =
  * `TASK_KEY_MAX`; a key the file holds already gets `-2`, `-3` and on, inside the same length. An
  * empty title, a title that gives no key (no ASCII letter or digit after the accents are taken off)
  * and no tasks collection give a refusal and no fields. The task's status is the word of `statuses`
- * (config/catalogs/vocab.yml) carrying `default_task`, and none when no word does.
+ * carrying `default_task` in `config`, the words of the hub it is added to, and none when no word
+ * does.
  */
 function taskFields(
     title: string,
@@ -135,6 +136,7 @@ export type TaskAdded =
  * the first that could take it, the primary when it holds one. A refusal of the title, of the key
  * or of the collection, and a refusal of the write, come back as the sentence to say; a hub named
  * that holds no tasks collection is said by its name, and no hub holding one by the workspace.
+ * The status is read in the words of that hub, given as `wordsOf`, and in `config` without it.
  */
 export async function addTask(
     title: string,
@@ -146,11 +148,13 @@ export async function addTask(
         fields: Record<string, unknown>,
         root: string
     ) => Promise<WriteAnswer>,
-    hub?: string
+    hub?: string,
+    wordsOf?: WordsOf
 ): Promise<TaskAdded> {
     const chosen = hub ?? taskHubOrder(collections, primary).at(0);
     const home = collections.find((one) => rootOf(one) === chosen);
-    const made = taskFields(title, home, config);
+    const words = home === undefined ? config : (wordsOf?.(rootOf(home)) ?? config);
+    const made = taskFields(title, home, words);
     if ('refusal' in made) {
         const said =
             made.refusal === 'collection' && hub !== undefined

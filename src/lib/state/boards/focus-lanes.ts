@@ -1,13 +1,15 @@
 // Layer 2, client state. Collection cards and the two attention rows of projects for Focus: the
 // manifests behind their docs and the projects no lane shows, work in flight or ideas of the
 // Projects and Personal boards. All values are derived from the supplied snapshot and config; the
-// view resolves configured colours through toneOf.
+// view resolves configured colours through toneOf. A record is read under the words of its own hub
+// when `wordsOf` (data/shapes/vocab-keys.ts) gives them: a project's stage, and the `fund_stages`
+// row of the grant's hub its status falls in; the band's columns are those of every hub's words.
 
 import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
 import { focusSetting, text as str } from '../../data/helpers/guards.ts';
-import { joinedEntries } from '../../data/helpers/hub-names.ts';
-import { hasWord } from '../../data/shapes/vocab-keys.ts';
+import { joinedEntries, rootOf } from '../../data/helpers/hub-names.ts';
+import { hasWord, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import {
     anyValueShape,
     fieldItemsShape,
@@ -87,19 +89,20 @@ export type Band = {
 };
 
 /**
- * The projects whose stage carries `live` in `stages` whose manifest lags their documents past the
- * grace of `stale_lag_days` under `focus:`.
+ * The projects whose stage carries `live` in `stages` of their own hub's words whose manifest lags
+ * their documents past the grace of `stale_lag_days` under `focus:`.
  */
 export function manifestsBehind(
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): ManifestBehind | null {
     const grace = focusSetting(config, 'stale_lag_days');
     if (grace === null) return null;
     const stale = projects
         .filter(
             (project) =>
-                hasWord(config, 'stages', 'live', project.stage) &&
+                hasWord(wordsOf?.(rootOf(project)) ?? config, 'stages', 'live', project.stage) &&
                 project.staleDays !== undefined &&
                 project.staleDays >= grace
         )
@@ -162,18 +165,34 @@ function bandItem(entry: Entry, key: string): BandItem {
 
 /**
  * The band above the lanes: the durable work that is not a project. Grants stack by the stage their
- * status names, positions are the applications whose status is in `applications_open` under
- * `focus:`, and teaching the education entries whose status is in `education_open` there.
+ * status names, a stage of `fund_stages` of every hub's words holding the grants whose status the
+ * row of the same label of their own hub's words names; positions are the applications whose
+ * status is in `applications_open` under `focus:`, and teaching the education entries whose status
+ * is in `education_open` there.
  */
-export function collectionLanes(snapshot: Snapshot, config: Record<string, unknown>): Band {
+export function collectionLanes(
+    snapshot: Snapshot,
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): Band {
     const collections = snapshot.entities.collections;
     const grants = joinedEntries(collections, 'funding');
     const funding: BandStage[] = [];
-    for (const stage of fundStages(config)) {
+    const read = new Map<string, ReturnType<typeof fundStages>>();
+    const stagesOf = (hub: string): ReturnType<typeof fundStages> => {
+        const held = read.get(hub) ?? fundStages(wordsOf?.(hub) ?? config);
+        read.set(hub, held);
+        return held;
+    };
+    const words = wordsOf?.() ?? config;
+    for (const stage of fundStages(words)) {
         const items = grants
-            .filter((entry) =>
-                stage.statuses.includes(str(entry.fields.status).trim().toLowerCase())
-            )
+            .filter((entry) => {
+                const own = stagesOf(rootOf(entry)).find((one) => one.label === stage.label);
+                return (own?.statuses ?? []).includes(
+                    str(entry.fields.status).trim().toLowerCase()
+                );
+            })
             .map((entry) => bandItem(entry, 'funding'))
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
@@ -188,7 +207,7 @@ export function collectionLanes(snapshot: Snapshot, config: Record<string, unkno
         .filter((entry) => running.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => bandItem(entry, 'education'))
         .sort(bandOrder);
-    const tones = readAs(tonesShape, config.focus_lane_tones) ?? {
+    const tones = readAs(tonesShape, words.focus_lane_tones) ?? {
         funding: '',
         jobs: '',
         teaching: ''

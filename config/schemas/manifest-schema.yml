@@ -1,6 +1,6 @@
 # ===========================================================================
 # manifest-schema.yml
-# oculus's own configuration, the project.yml edit form as data: which fields there are, what each one is called, which widget edits it, which section it sits in, and where a widget's choices come from. Merged with oculus's other config files by loadConfig(); its top-level keys are `manifest_schema` and `groups`, the help lines of the maps its dotted fields lie in.
+# oculus's own configuration, the project.yml edit form as data: which fields there are, what each one is called, which widget edits it, which section it sits in, and where a widget's choices come from. Merged with oculus's other config files by loadConfig(); its top-level keys are `manifest_schema`, `groups`, the help lines of the maps its dotted fields lie in, and `manifest_fields`, the fields a hub adds to the form of its own projects.
 # ===========================================================================
 
 
@@ -84,6 +84,11 @@ manifest_schema:
     doi:           { label: "DOI", type: text, section: Outcome, help: "The DOI of the published paper. Any project may carry it." }
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }
+
+# The fields a hub adds to the project form of its own projects, set in the hub's .oculus/config.yml; oculus adds none. A row is a field of `manifest_schema` with `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `from`, `options` and `required`. The field is drawn after oculus's fields of its section, in the hub's order, and is a known key of that hub's manifests only. A row naming a field the form already has, a section the form lacks or a widget the form does not draw is a finding, and the row is left out. For example:
+#   manifest_fields:
+#     - { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." }
+manifest_fields: []
 
 # The help line of each map a dotted field lies in (`status` of `status.chips`), which the YAML editor shows for the map. A map without a line and a line for no such map are findings.
 groups:

@@ -42,6 +42,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -64,9 +65,9 @@
     const pillars = $derived(kinds.pillars);
     const provisional = $derived(kinds.provisional);
     const offpillar = $derived(kinds.offpillar);
-    const unmatched = $derived(orphans(lines, allProjects, config));
-    const archived = $derived(archival(allProjects, config));
-    const tiers = $derived(venueTiers(configMap().venue_tiers));
+    const unmatched = $derived(orphans(lines, allProjects, config, vocabOf));
+    const archived = $derived(archival(allProjects, config, vocabOf));
+    const tiers = $derived(venueTiers(vocabOf().venue_tiers));
 
     function write(next: Partial<PillarsState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
@@ -91,7 +92,7 @@
                     <LineCard
                         {line}
                         cursor={cursor === line.id}
-                        projects={lineMembers(line, allProjects, config)}
+                        projects={lineMembers(line, allProjects, config, vocabOf)}
                         venues={allVenues}
                         {tiers}
                         entry={file.entryOf(line.id)}
@@ -122,7 +123,7 @@
                             <LineCard
                                 {line}
                                 cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, config)}
+                                projects={lineMembers(line, allProjects, config, vocabOf)}
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}
@@ -154,7 +155,7 @@
                             <LineCard
                                 {line}
                                 cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, config)}
+                                projects={lineMembers(line, allProjects, config, vocabOf)}
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}

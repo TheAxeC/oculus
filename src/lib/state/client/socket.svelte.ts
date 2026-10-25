@@ -360,8 +360,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
 
     /**
      * Install a config push into the stores the page draws from. The colours and the chip
-     * vocabulary ride the same push as the strings: they are keys of the merged config, so an edit
-     * to config/catalogs/vocab.yml recolours the page without a reload, an edit to
+     * vocabulary of every hub ride the same push as the strings: each hub's are its own words of
+     * config/catalogs/vocab.yml under its settings, so an edit to that file or to a hub's settings
+     * recolours the page without a reload, an edit to
      * config/defaults/appearance.yml changes the theme list, and the glyph vocabulary, each name
      * with its ASCII stand-in, arrives the same way. The icons and the classes a VS Code code theme
      * may name are the parts not read out of the merged config: the config carries the icon names
@@ -378,7 +379,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (payload === null) return;
         followServer(payload.host);
         setCatalog(payload.text);
-        setVocab(payload.config, payload.hubs);
+        setVocab(payload.hubs);
         setAppearance(payload.config, payload.codeThemeClasses);
         const glyphs = readAs(stringMapShape, payload.config.glyphs);
         if (glyphs !== null) setGlyphs(glyphs);

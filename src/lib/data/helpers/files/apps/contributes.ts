@@ -15,6 +15,7 @@ export function noContributes(): AppContributes {
         configuration: null,
         themes: [],
         iconThemes: [],
+        localizations: [],
         languages: [],
         grammars: [],
         snippets: [],

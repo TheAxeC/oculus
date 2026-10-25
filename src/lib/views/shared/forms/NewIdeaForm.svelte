@@ -1,24 +1,27 @@
 <script lang="ts">
     // Layer 3, shared view partial. The new-project form used by the project boards and Lit Watch.
     // A new project could go to any hub of the workspace (`hubsTaking` of
-    // state/shared/page/hubs.ts): with more than one, the form draws a Hub field, the primary first
-    // and chosen; with one, it draws none. The write names the hub chosen. A board gives its tier,
-    // and the form then offers a Folder field and sends the tier and the folder with the write; Lit
-    // Watch gives none, and the server creates the project in the first word of `tiers`. A board
-    // gives its `role:` keys too, null when it names none, and the write names the user, the person
-    // the workspace setting `self` names, in the field of the first of them that has one; a board
-    // naming no `role:` and Lit Watch name the user in the field of the first row of `roles:` with
-    // one, its lead. A board draws the form only when its rule takes the project this write makes,
-    // so the new project is on the board it was made on. With no `self`, no person is named. The
-    // Folder starts with the tier's `new_project_dir` entry of the primary while the primary is
-    // chosen, and empty for another hub, whose settings the page does not hold; an empty Folder
-    // sends no folder, so the server takes the `new_project_dir` of the tier in the settings of the
-    // hub written to, and a hub that names none for it refuses, said here. A change of hub starts
-    // the Folder again from that hub's value and clears a Domain the hub's registry does not hold:
-    // the Domain choices are the chosen hub's own, so the key written resolves in that hub.
-    // Optional seed values let a radar spark pre-fill the same form without duplicating its write.
-    // Escape closes it only while it is on screen: a pane keeps the view of a tab it hides mounted,
-    // and a key pressed in another tab is not one this form was asked to answer.
+    // state/shared/page/hubs.ts), and on a board to each hub under whose words the board's rule
+    // takes the project (`takes`): with more than one, the form draws a Hub field, the primary
+    // first and chosen; with one, it draws none. The write names the hub chosen. A board gives its
+    // tier, and the form then offers a Folder field and sends the tier and the folder with the
+    // write; Lit Watch gives none, and the server creates the project in the first word of `tiers`.
+    // A board gives its `role:` keys too, null when it names none, and the write names the user,
+    // the person the workspace setting `self` names, in the field of the first of them that has
+    // one; a board naming no `role:` and Lit Watch name the user in the field of the first row of
+    // `roles:` with one, its lead. The roles are those of the hub chosen: the page holds each hub's
+    // lists, and the server writes the hub's first stage carrying `new_idea`. A board draws the
+    // form only when its rule takes the project this write makes in some hub, so the new project is
+    // on the board it was made on. With no `self`, no person is named. The Folder starts with the
+    // tier's `new_project_dir` entry of the primary while the primary is chosen, and empty for
+    // another hub, whose `new_project_dir` the page does not hold, being a setting and not a list;
+    // an empty Folder sends no folder, so the server takes the `new_project_dir` of the tier in the
+    // settings of the hub written to, and a hub that names none for it refuses, said here. A change
+    // of hub starts the Folder again from that hub's value and clears a Domain the hub's registry
+    // does not hold: the Domain choices are the chosen hub's own, so the key written resolves in
+    // that hub. Optional seed values let a radar spark pre-fill the same form without duplicating
+    // its write. Escape closes it only while it is on screen: a pane keeps the view of a tab it
+    // hides mounted, and a key pressed in another tab is not one this form was asked to answer.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -43,17 +46,22 @@
         tier?: string;
         /** The `role:` keys of the board that opened the form; null for a board naming none. */
         roles?: readonly string[] | null;
+        /** Whether the board's rule takes the project in the hub given; none for Lit Watch. */
+        takes?: (hub: string) => boolean;
         seed?: { id: string; eli5: string; title?: string };
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, tier, roles, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tier, roles, takes, seed, oncreated }: Props = $props();
 
-    /** The hubs a new project can be written to: every hub of the workspace, the primary first. */
+    /**
+     * The hubs a new project can be written to: every hub of the workspace the board's rule takes
+     * it in, the primary first.
+     */
     const hubs = $derived(
         hubsTaking(
             roots()
-                .filter((one) => one.hub === true)
+                .filter((one) => one.hub === true && (takes?.(one.key) ?? true))
                 .map((one) => one.key),
             primary()
         )
@@ -97,7 +105,7 @@
     async function save(): Promise<void> {
         if (id.trim() === '') return;
         const named = folder.trim();
-        const person = newProjectPerson(roles ?? null);
+        const person = newProjectPerson(roles ?? null, hub === '' ? undefined : hub);
         const answer = await newIdea(
             {
                 id: id.trim(),

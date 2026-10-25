@@ -3,10 +3,13 @@
 // list's order, whose `stages:` and `forms:` blocks it meets, and a project no row holds has none.
 // The board cards and their sections, the category facet, the rail's count and the Pillars view's
 // Archival band all read a project's category through `categoryOf`, so the rule is written once
-// and the boards name no categories of their own.
+// and the boards name no categories of their own. A project is filed under the categories and the
+// words of its own hub (`categoriesBy`).
 
 import { z } from 'zod';
+import type { Rooted } from '../../model/index.ts';
 import { mapShape, readAs, rowsShape } from '../shapes.ts';
+import { recordWords, type WordsOf } from '../vocab-keys.ts';
 import { blockHolds, blockOf, wordList, type WordBlock } from './words.ts';
 
 /** One row of `categories:` as the code reads it. */
@@ -101,6 +104,23 @@ export function categoryOf(
     return categories.find((category) => categoryHolds(category, project, config));
 }
 
+/**
+ * The words a record is filed under and their categories: its own hub's as `wordsOf` gives them,
+ * `config`'s without it, each set of words read once.
+ */
+export function categoriesBy(
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): (record: Rooted) => { words: Record<string, unknown>; categories: Category[] } {
+    const read = new Map<Record<string, unknown>, Category[]>();
+    return (record) => {
+        const words = recordWords(config, wordsOf, record);
+        const categories = read.get(words) ?? categoriesOf(words);
+        read.set(words, categories);
+        return { words, categories };
+    };
+}
+
 /** Whether a project's category carries `archival: true`, which makes it no real work. */
 export function isArchival(
     project: Filed,
@@ -111,16 +131,21 @@ export function isArchival(
 }
 
 /**
- * What a board gives the rail: how many of its projects are in a row carrying `rail: true`, and
- * the colour of the first such row of the list, the empty text when the list has none.
+ * What a board gives the rail: how many of its projects are in a row carrying `rail: true`, each
+ * project filed under its own hub's words when `wordsOf` gives them and under `config` and
+ * `categories` without it, and the colour of the first such row of `categories`, the empty text
+ * when the list has none.
  */
 export function railCount(
-    projects: readonly Filed[],
+    projects: readonly (Filed & Rooted)[],
     categories: readonly Category[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): { count: number; color: string } {
-    const count = projects.filter(
-        (project) => categoryOf(project, categories, config)?.rail === true
-    ).length;
+    const filed = categoriesBy(config, wordsOf);
+    const count = projects.filter((project) => {
+        const own = wordsOf === undefined ? { words: config, categories } : filed(project);
+        return categoryOf(project, own.categories, own.words)?.rail === true;
+    }).length;
     return { count, color: categories.find((category) => category.rail)?.color ?? '' };
 }

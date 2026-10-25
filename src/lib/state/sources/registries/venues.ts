@@ -3,9 +3,9 @@
 
 import { z } from 'zod';
 import type { Project, Venue } from '../../../data/model/index.ts';
-import { categoriesOf, isArchival } from '../../../data/shapes/boards/categories.ts';
+import { categoriesBy, isArchival } from '../../../data/shapes/boards/categories.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
-import { hasWord } from '../../../data/shapes/vocab-keys.ts';
+import { hasWord, recordWords, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
@@ -31,28 +31,36 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /**
  * The real projects, which the venue use and concentration counts, the Orphans card and the pillar
  * and domain members read: every project whose category, the first row of `categories:` holding
- * it, does not carry `archival: true`. A project in no category is real.
+ * it, does not carry `archival: true`. A project in no category is real. A project is filed under
+ * its own hub's words when `wordsOf` gives them (`categoriesBy`).
  */
-export function realProjects(projects: Project[], config: Record<string, unknown>): Project[] {
-    const categories = categoriesOf(config);
-    return projects.filter((project) => !isArchival(project, categories, config));
+export function realProjects(
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): Project[] {
+    const filed = categoriesBy(config, wordsOf);
+    return projects.filter((project) => {
+        const { words, categories } = filed(project);
+        return !isArchival(project, categories, words);
+    });
 }
 
 /**
  * Projects targeting one venue, with the concentration marker: two or more of them at a stage
- * carrying `live` in `stages`.
+ * carrying `live` in `stages` of their own hub's words.
  */
 export function venueUsers(
     venue: Venue,
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): VenueUse {
     const users = projects.filter((project) => project.venueId === venue.id);
-    return {
-        projects: users,
-        concentrated:
-            users.filter((project) => hasWord(config, 'stages', 'live', project.stage)).length >= 2
-    };
+    const live = users.filter((project) =>
+        hasWord(recordWords(config, wordsOf, project), 'stages', 'live', project.stage)
+    );
+    return { projects: users, concentrated: live.length >= 2 };
 }
 
 /** Tone of a venue's rank, kept for the card's hue although the rank is drawn as a plain tag. */

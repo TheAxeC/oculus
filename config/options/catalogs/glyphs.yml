@@ -1,0 +1,16 @@
+# ===========================================================================
+# options/catalogs/glyphs.yml
+# The glyph vocabulary of catalogs/glyphs.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/glyphs.yml, the entry carrying as its `default` the value catalogs/glyphs.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): a name the workspace names replaces oculus's stand-in in oculus's place, a new name comes after oculus's, and `<name>: null` takes one out. A finding about a value the workspace set names the workspace file and settings.glyphs.
+# ===========================================================================
+
+options:
+    glyphs:
+        heading: appearance
+        section: Glyphs and icons
+        help: Each glyph name with the ASCII stand-in, one to three printable characters, that a terminal theme draws in place of its icon.
+        fields:
+            key: the glyph name
+            value: the stand-in of one to three printable ASCII characters
+
+groups: {}

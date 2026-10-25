@@ -1,0 +1,19 @@
+# ===========================================================================
+# options/catalogs/file-nesting.yml
+# The nesting patterns of catalogs/file-nesting.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/file-nesting.yml, the entry carrying as its `default` the value catalogs/file-nesting.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): a pattern the workspace names replaces oculus's pattern in oculus's place, a new pattern comes after oculus's, and `<pattern>: null` takes one out. A finding about a value the workspace set names the workspace file and settings.patterns.
+# ===========================================================================
+
+options:
+    patterns:
+        heading: editor
+        section: File nesting
+        help: "The files the Files view draws under another file while File Nesting is on: per parent name, the names nested under it, where ${capture} stands for the part the parent's * matched."
+        holds: lists
+        fields:
+            key: the parent name, a file name or a pattern with one *
+            value:
+                help: the names nested under it
+                control: list
+
+groups: {}

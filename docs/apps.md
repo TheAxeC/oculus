@@ -192,6 +192,7 @@ contributes:
 | `configuration` | map | `title?`, `properties` |
 | `themes` | list | `label`, `uiTheme`, `path` |
 | `iconThemes` | list | `id`, `label`, `path` |
+| `localizations` | list | `languageId`, `languageName`, `localizedLanguageName?`, `translations` (list of `id`, `path`) |
 | `languages` | list | `id`, `aliases?`, `extensions?`, `filenames?`, `filenamePatterns?`, `firstLine?`, `configuration?`, `icon?` |
 | `grammars` | list | `scopeName`, `path`, `language?`, `embeddedLanguages?`, `injectTo?`, `tokenTypes?` |
 | `snippets` | list | `language`, `path` |
@@ -283,6 +284,32 @@ A host calls `oculus.window.createStatusBarItem(id, alignment, priority)`; a pag
 - `themes` name a VS Code colour theme file; it is drawn under a heading of the app's title in the Settings view's choice of theme and in Cmd-K's `:theme`, its row reading `<label> (<app title>)`.
 - `iconThemes` name a VS Code file icon theme file; choose it as File Icon Theme in Settings or with `:file-icons`.
 - When the app stops acting, both fall back to the default.
+
+### Display languages
+
+- `localizations` names display languages, as VS Code's language packs do. Each entry has a `languageId` (`nl`), a `languageName` and an optional `localizedLanguageName`, and its `translations`; the translation whose `id` is `oculus` gives the folder of the app that holds the language's words. A translation for another `id` is left out with a finding.
+- The folder holds YAML files nested as oculus's `config/text/` is, under one top-level `text:`, each word under the dotted key of oculus's text catalog and keeping its placeholders `{0}`, `{1}`:
+
+```yaml
+# lang/nl/views.yml
+text:
+  views:
+    settings: Instellingen
+```
+
+```yaml
+contributes:
+  localizations:
+    - languageId: nl
+      languageName: Dutch
+      localizedLanguageName: Nederlands
+      translations:
+        - { id: oculus, path: lang/nl }
+```
+
+- The workspace chooses a language with `locale` in its file's `settings:`; the first approved, enabled app in the Views list's order that contributes that `languageId` gives the words. A word the language lacks is drawn in English, and the workspace's `text` is laid over the language.
+- A `languageId` declared twice, or a `path` that is not a folder holding files of the app, refuses the app. A key oculus's catalog lacks is a finding naming the file, the language and the app, and the key is not used; a file that does not parse or holds no `text:` map is a finding, and its words are not used. A `locale` no approved, enabled app contributes is a finding, and English is drawn.
+- When the app stops acting, its languages are gone: the page is drawn in English, and a `locale` that names one of them is a finding.
 
 ## The bridge
 

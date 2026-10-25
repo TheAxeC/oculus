@@ -50,10 +50,11 @@
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
-        entities: { config, portfolio },
+        entities: { portfolio },
         feeds: { feed },
         fs: { primary },
         selectors: { configMap },
@@ -65,7 +66,7 @@
     const data = $derived(feed('radar'));
     const held = $derived(parseRadarState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const buckets = $derived(radarBuckets(config()?.config.radar_buckets));
+    const buckets = $derived(radarBuckets(vocabOf().radar_buckets));
     const projects = $derived(portfolio()?.entities.projects ?? {});
     const all = $derived(data?.entries ?? []);
     const split = $derived(dismissedSplit(all));

@@ -206,11 +206,12 @@ export function absentIn(source: string, key: string): boolean {
 
 /**
  * The catalog's entry for one option of one tracked file, or null. The file is compared as the
- * whole string against the catalog's own keys and the key looked up as an own key, so a path, a
- * reserved name and the machine's own file are none of them an option.
+ * whole string against the catalog's own keys, which name a defaults file (`appearance.yml`) or a
+ * file of a subfolder of the options folder (`catalogs/vocab.yml`), and the key looked up as an own
+ * key, so any other path, a reserved name and the machine's own file are none of them an option.
  */
 export function optionOf(catalog: Catalog, file: string, key: string): CatalogEntry | null {
-    if (file === LOCAL_NAME || file !== basename(file)) return null;
+    if (file === LOCAL_NAME || basename(file) === LOCAL_NAME) return null;
     if (!Object.hasOwn(catalog, file)) return null;
     const entries = catalog[file];
     return Object.hasOwn(entries, key) ? entries[key] : null;

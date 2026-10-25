@@ -1,12 +1,15 @@
 // Layer 1, data. The whole-file shape of config/schemas/manifest-schema.yml, the project.yml edit
 // form as data, with a description on every key: its sections, its fields with the widget each is
-// edited by, and the help line of each map a dotted field lies in.
+// edited by, the help line of each map a dotted field lies in, and `manifest_fields`, the fields a
+// hub's settings file adds to the form of its own projects (empty in oculus's own file). The form
+// with a hub's added fields laid into it is data/shapes/vocab-keys.ts's `withManifestFields`.
 
 import { z } from 'zod';
+import { MANIFEST_FIELDS_KEY } from '../vocab-keys.ts';
 import { text } from './common.ts';
 
 /** The widgets the project edit form draws a field with. */
-const MANIFEST_WIDGETS = [
+export const MANIFEST_WIDGETS = [
     'readonly',
     'text',
     'textarea',
@@ -40,6 +43,15 @@ const manifestField = z.strictObject({
         .describe('true makes a project.yml without the field a finding.')
 });
 
+/**
+ * One field a hub adds to the project form: the key of project.yml it adds under `field`, and the
+ * rest as a field of `manifest_schema` is written.
+ */
+export const manifestFieldRow = manifestField.extend({
+    field: text.describe('The key of project.yml the row adds, which no field of oculus holds.'),
+    section: text.describe('The section of `manifest_schema.sections` the field is drawn in.')
+});
+
 /** config/schemas/manifest-schema.yml: the project edit form as data. */
 export const manifestSchemaFileShape = z.strictObject({
     manifest_schema: z
@@ -62,5 +74,11 @@ export const manifestSchemaFileShape = z.strictObject({
     groups: z
         .record(z.string(), text.describe('What the map holds, shown as its description.'))
         .optional()
-        .describe('The help line of each map a dotted field of `fields` lies in, by its name.')
+        .describe('The help line of each map a dotted field of `fields` lies in, by its name.'),
+    [MANIFEST_FIELDS_KEY]: z
+        .array(manifestFieldRow)
+        .optional()
+        .describe(
+            "The fields a hub's settings file adds to the project form of its own projects, each after oculus's fields of its section; oculus's own file holds none."
+        )
 });

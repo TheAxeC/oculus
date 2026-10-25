@@ -23,9 +23,12 @@ export function accessSummary(datasets: Dataset[]): string {
         .join(' | ');
 }
 
-/** The configured tone of an access value, with an unknown value in grey. */
-export function accessTone(access: string | undefined): string {
-    return dataAccessTone(access ?? '');
+/**
+ * The configured tone of an access value under the words of the dataset's hub `hub`, with an
+ * unknown value in grey.
+ */
+export function accessTone(access: string | undefined, hub?: string): string {
+    return dataAccessTone(access ?? '', hub);
 }
 
 /** Search key, name, description, modality and access using every supplied word. */

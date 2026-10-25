@@ -20,8 +20,8 @@ export const POST: RequestHandler = ({ request, locals }) => {
         projectFor: (id) => project(server.hub, id),
         userFor: () => selfName(server.hub),
         // The one read `locals.config` keeps for the request, for the actions that read the config
-        // at the request: the chat launcher, the LaTeX words, the hub task seeds and the glyph
-        // catalog.
+        // at the request: the chat launcher, the agents catalog of a start, the LaTeX words, the
+        // hub task seeds and the glyph catalog.
         configFor: () => locals.config().config,
         localFor: () => server.machine(),
         // A project command runs in a repository under the folders of the open workspace, after the

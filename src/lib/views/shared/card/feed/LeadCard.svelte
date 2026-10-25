@@ -14,8 +14,8 @@
     // in a source tab. The `decline` control is a status write like reopen: it sets the lead's
     // status to the word carrying `lead_declined` in the hub's file, so the change log records it
     // and reopen puts the word carrying `default_lead` back. It is offered on an open lead alone,
-    // so a decline never writes over an outcome. Each flag is a word's of `statuses` in
-    // config/catalogs/vocab.yml.
+    // so a decline never writes over an outcome. Each flag is a word's of `statuses`, and the fit's
+    // colour a word of `leads_fit` and `palette`, in the words of the lead's own hub.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -45,6 +45,7 @@
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';
     import { applyFromLead, applyHubs } from './lead-apply';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -53,8 +54,6 @@
 
     type Props = {
         entry: LeadEntry;
-        /** The merged config, which the fit's colour and the status words are read through. */
-        vocab: Record<string, unknown>;
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
@@ -66,16 +65,7 @@
         blocked: string;
     };
 
-    let {
-        entry,
-        vocab,
-        cursor,
-        expired = false,
-        onsaid,
-        beside,
-        onpage,
-        blocked
-    }: Props = $props();
+    let { entry, cursor, expired = false, onsaid, beside, onpage, blocked }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
@@ -83,6 +73,8 @@
     /** Whether an application from this lead is being placed, during which a pick does nothing. */
     let applying = $state(false);
 
+    /** The words of the lead's own hub, which the fit's colour and the status words are read in. */
+    const vocab = $derived(vocabOf(feedRoot(entry)));
     const text = (field: string): string => textOrNumber(entry[field]);
     const title = $derived(text('title'));
     const identity = $derived(leadId(entry));

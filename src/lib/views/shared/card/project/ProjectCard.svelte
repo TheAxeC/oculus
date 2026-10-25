@@ -37,13 +37,13 @@
     import Followups from '../../forms/dated/Followups.svelte';
     import Subtasks from '../../forms/dated/Subtasks.svelte';
     import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
-    import { placeOf } from '$lib/state/shared/page/hubs';
+    import { placeOf, rootOf } from '$lib/state/shared/page/hubs';
     import { isStale, newestDocDate, waitingLine, type BoardItem } from '$lib/state/boards/board';
-    import { laneOf, type Lane } from '$lib/state/boards/focus';
+    import { projectLane } from '$lib/state/boards/focus';
     import { contextText } from '$lib/state/boards/project-context';
     import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
-    import { chipGlyphName, chipLabel } from '$lib/state/shared/words/tones';
+    import { chipGlyphName, chipLabel, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -57,7 +57,7 @@
         folders,
         layout: { openBeside, openView, showDeck, showFolderInFiles },
         selection: { select },
-        selectors: { configMap, gitRoots, hubDirOf },
+        selectors: { gitRoots, hubDirOf },
         terminals: { showTerminal, startChat },
         writes: { openFolder, writeManifest }
     } = client;
@@ -76,8 +76,6 @@
         now: number;
         /** How many stale days make the manifest warning visible. */
         staleLag: number;
-        /** The Focus board's lanes, parsed once by the view that draws the cards. */
-        focusLanes: Lane[];
         /** Toggle the expanded details when the board allows expansion. */
         ontoggle?: () => void;
         /** Whether the deposit action belongs in this card's controls. */
@@ -102,7 +100,6 @@
         tab,
         now,
         staleLag,
-        focusLanes,
         ontoggle,
         deposit = false,
         onsaid,
@@ -118,15 +115,20 @@
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
-    const due = $derived(deadline(item.project, now, t, configMap()));
-    /** The Focus board lane the project sits on, drawn as a tag before its status chips. */
-    const lane = $derived(laneOf(item.project, focusLanes, configMap()));
+    /** The words of the project's own hub, which its stage, chips and lane are read in. */
+    const words = $derived(vocabOf(rootOf(item.project)));
+    const due = $derived(deadline(item.project, now, t, words));
+    /**
+     * The Focus board lane the project sits on, among its own hub's lanes, drawn as a tag before
+     * its status chips.
+     */
+    const lane = $derived(projectLane(item.project, vocabOf));
     const wait = $derived(
         snapshot === null
             ? null
             : waitingLine(
                   item.project,
-                  configMap(),
+                  words,
                   snapshot.entities.venues,
                   personNames(snapshot),
                   snapshot.entities.projects
@@ -352,8 +354,8 @@
             <RootChip record={item.project} />
             {#if item.project.stage}
                 <Chip
-                    label={chipLabel(item.project.stage)}
-                    glyph={chipGlyphName(item.project.stage)}
+                    label={chipLabel(item.project.stage, rootOf(item.project))}
+                    glyph={chipGlyphName(item.project.stage, rootOf(item.project))}
                     tone={item.tone}
                     filled
                 />

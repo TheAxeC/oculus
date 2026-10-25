@@ -46,6 +46,7 @@ import {
 } from './writes-fixture.ts';
 import { PERSONAL_MANIFEST } from '../../routes/edit/write-fixture.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 
 /**
  * The files a row of the tables below writes in: a research manifest and two personal manifests.
@@ -183,6 +184,39 @@ describe('the file itself', () => {
             const expected = written ? row.changes?.after(before[one]) : before[one];
             expect(readFileSync(fileOf(world, one), 'utf8'), `${row.name}: ${one}`).toBe(expected);
         }
+    });
+});
+
+describe('a field a hub adds to the project form', () => {
+    it("writes the hub's added field into its manifest and refuses it where no hub adds it", () => {
+        const root = hub();
+        const added = loadConfig(engineDir(), {
+            hub: root,
+            instead: {
+                layer: 'hub',
+                name: '.oculus/config.yml',
+                text: 'manifest_fields: [ { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." } ]\n'
+            }
+        });
+        const config = { ...configFor(), schema: portfolioConfigFrom(added.config).schema };
+        const file = manifestPath(root);
+        const out = writeManifest(root, config, 'alpha', { grant_id: 'X1' });
+        expect(out).toEqual({
+            found: true,
+            changed: ['grant_id'],
+            refused: [],
+            records: [record(file, 'alpha', 'grant_id', null, 'X1')]
+        });
+        expect(readFileSync(file, 'utf8')).toBe(`${MANIFEST}grant_id: X1\n`);
+        const other = hub();
+        const refused = writeManifest(other, configFor(), 'alpha', { grant_id: 'X1' });
+        expect(refused).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'grant_id', reason: 'the manifest schema does not name the field' }],
+            records: []
+        });
+        expect(readFileSync(manifestPath(other), 'utf8')).toBe(MANIFEST);
     });
 });
 

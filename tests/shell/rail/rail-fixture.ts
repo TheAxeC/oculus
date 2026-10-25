@@ -7,8 +7,7 @@ import {
     engineDir,
     glyphCatalog,
     loadConfig,
-    textCatalog,
-    vocabCatalog
+    textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
@@ -29,7 +28,7 @@ setCatalog(catalog);
 
 setGlyphs(glyphCatalog(config));
 
-setVocab(vocabCatalog(config), hubVocabs(null, null, []));
+setVocab(hubVocabs({ primary: null, folders: [], own: config }, null, []));
 
 setAppearance(config, vscodeRuleIds());
 

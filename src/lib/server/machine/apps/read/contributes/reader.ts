@@ -57,6 +57,9 @@ const CONTAINER_KINDS: readonly AppContainerKind[] = ['activitybar', 'panel'];
 /** The container of the Files view, which an app's view may name without declaring it. */
 const EXPLORER = 'explorer';
 
+/** The `id` of the translation of a `localizations` entry that holds oculus's words. */
+const OCULUS_TRANSLATION = 'oculus';
+
 /** The namespace of oculus's own commands, which no app declares a command in. */
 const RESERVED = 'oculus.';
 
@@ -420,6 +423,58 @@ class Reader {
         });
     }
 
+    /**
+     * The display languages: each entry's translation for oculus (`id: oculus`), whose `path` is a
+     * folder holding files of the app. A translation for another id is left out with a note, an
+     * entry with no translation for oculus adds no language, and a language declared twice or a
+     * path that holds no file of the app refuses the app, as a theme's file does.
+     */
+    #localizations(value: unknown): void {
+        const list = this.#parse('localizations', value);
+        if (list === null) return;
+        const ids = new Set<string>();
+        list.forEach((one, at) => {
+            const place = (...steps: (string | number)[]): string =>
+                placeOf('localizations', [at, ...steps]);
+            if (ids.has(one.languageId)) {
+                this.#refuse(
+                    'findings.apps.contributes_repeated',
+                    place('languageId'),
+                    one.languageId
+                );
+            }
+            ids.add(one.languageId);
+            let path: string | null = null;
+            for (const [index, translation] of one.translations.entries()) {
+                if (translation.id !== OCULUS_TRANSLATION) {
+                    const where = place('translations', index, 'id');
+                    this.#note(
+                        'findings.apps.contributes_translation_other',
+                        where,
+                        translation.id
+                    );
+                    continue;
+                }
+                const folder = translation.path.replace(/\/+$/, '');
+                const held = [...this.#input.files].some(
+                    (file) => file.startsWith(`${folder}/`) && pathSegmentsOpen(file)
+                );
+                if (!pathSegmentsOpen(folder) || !held) {
+                    const where = place('translations', index, 'path');
+                    this.#refuse('findings.apps.contributes_folder', where, translation.path);
+                }
+                path ??= folder;
+            }
+            if (path === null) return;
+            this.#out.localizations.push({
+                languageId: one.languageId,
+                languageName: one.languageName,
+                localizedLanguageName: one.localizedLanguageName ?? one.languageName,
+                path
+            });
+        });
+    }
+
     /** The references to commands, which need every command read first. */
     #references(): void {
         const known = new Set(this.#out.commands.map((one) => one.command));
@@ -473,6 +528,7 @@ class Reader {
         if (map.configuration !== undefined) this.#configuration(map.configuration);
         this.#themes(map.themes ?? []);
         this.#iconThemes(map.iconThemes ?? []);
+        this.#localizations(map.localizations ?? []);
         readTools(map, this.#helpers(), this.#out);
         this.#references();
         return this.#out;

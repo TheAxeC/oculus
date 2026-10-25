@@ -10,11 +10,13 @@ import { nestingFindings } from '../../../../src/lib/data/sources/config/catalog
 describe('the findings', () => {
     const ENGINE = engineDir();
     const FILE = join(ENGINE, 'config', 'catalogs', 'file-nesting.yml');
-    const { text } = loadConfig(ENGINE).config;
+    const read = loadConfig(ENGINE);
+    const { text } = read.config;
+    const where = { engine: ENGINE, hub: null, from: read.from };
 
     it('says each dropped pattern in the sentence of its kind, on its own key', () => {
         const patterns = { 'a/b': ['x'], 'ok.ts': ['${capture}.js'], 'text.ts': '${capture}.js' };
-        expect(nestingFindings(ENGINE, { text, patterns })).toEqual([
+        expect(nestingFindings(where, { text, patterns })).toEqual([
             {
                 file: FILE,
                 key: 'patterns.a/b',

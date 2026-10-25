@@ -184,6 +184,73 @@ describe(
     }
 );
 
+describe("a hub's word written into the hub's settings file", { tags: ['slow'] }, () => {
+    const STAGES = 'catalogs/vocab.yml';
+
+    /** The stages the reader sees: oculus's without `nascent`, `exploring` relabelled. */
+    function edited(shipped: Record<string, Record<string, unknown>>) {
+        return Object.fromEntries(
+            Object.entries(shipped)
+                .filter(([word]) => word !== 'nascent')
+                .map(([word, row]) => [
+                    word,
+                    word === 'exploring' ? { ...row, label: 'Experimenting' } : row
+                ])
+        );
+    }
+
+    it("writes a removed and a relabelled stage as what changed from oculus's, and the merge gives it back", () => {
+        const one = world();
+        const shipped = inForce(one, 'stages') as Record<string, Record<string, unknown>>;
+        const seen = edited(shipped);
+        const outcome = write(one, STAGES, 'stages', seen);
+        expect(outcome.refused).toEqual([]);
+        expect(outcome.changed).toEqual(['catalogs/vocab.yml:stages']);
+        const stored = at(
+            parse(readFileSync(join(one.hub, '.oculus', 'config.yml'), 'utf8')),
+            'stages'
+        );
+        expect(stored).toEqual({
+            nascent: null,
+            exploring: { ...shipped.exploring, label: 'Experimenting' }
+        });
+        expect(inForce(one, 'stages')).toEqual(seen);
+        const idea = (inForce(one, 'categories') as { key: string }[]).find(
+            (row) => row.key === 'idea'
+        );
+        expect(idea).toEqual({ key: 'idea', label: 'idea', stages: { words: ['scoping'] } });
+        expect(readFileSync(one.workspace, 'utf8')).not.toContain('stages');
+    });
+
+    it('deletes the row of a word the hub added once the reader removes it', () => {
+        const one = world();
+        const file = join(one.hub, '.oculus', 'config.yml');
+        writeFileSync(file, 'stages:\n  trialling: { label: Trialling, live: true }\n');
+        const merged = inForce(one, 'stages') as Record<string, unknown>;
+        expect(Object.keys(merged)).toContain('trialling');
+        const seen = Object.fromEntries(
+            Object.entries(merged).filter(([word]) => word !== 'trialling')
+        );
+        expect(write(one, STAGES, 'stages', seen).changed).toEqual(['catalogs/vocab.yml:stages']);
+        expect(at(parse(readFileSync(file, 'utf8')) ?? {}, 'stages.trialling')).toBeUndefined();
+        expect(inForce(one, 'stages')).toEqual(seen);
+    });
+
+    it('refuses a hub word with no primary hub, with the no-primary sentence, and writes nothing', () => {
+        const one = world();
+        const file = join(one.hub, '.oculus', 'config.yml');
+        const before = readFileSync(file, 'utf8');
+        const shipped = inForce(one, 'stages') as Record<string, Record<string, unknown>>;
+        const outcome = writeConfigValue(one.engine, STAGES, 'stages', edited(shipped), shipped, {
+            workspace: one.workspace
+        });
+        expect(refusalOf(outcome, 'catalogs/vocab.yml:stages')).toBe(
+            words(CATALOG, 'server.workspace.no_primary')
+        );
+        expect(readFileSync(file, 'utf8')).toBe(before);
+    });
+});
+
 describe("the machine's own file", { tags: ['slow'] }, () => {
     it("refuses local.yml without reading the hub's .oculus/local.yml", () => {
         const one = world();

@@ -1,25 +1,28 @@
 <script lang="ts">
     // Layer 3, view partial. The list of the Settings view: a group per subject heading, with one
     // line under it for each file the heading draws from, a title per section, and one item per
-    // setting. A defaults file's line holds the file's subject as its title, its description, Open
-    // Settings File (the open workspace file, which keeps the user's values of its settings, in a
-    // source tab; with the unsaved workspace, Save Workspace As... in its place) and Show Defaults
-    // (the defaults file, in a source tab that only reads it). The hub's settings file and the
-    // machine's own file have a line with their title, their description, the tag on the machine's
-    // file and Open Settings File. The Catalogs, Schemas and Texts groups list files instead: one
-    // row per file with its path and the control that opens it. A user's file that is being read,
-    // could not be read, is cut or does not parse says so on its line, as does the unsaved
-    // workspace; a folder that is not listed says so under its group. Each heading and each section
-    // carries the id the table of contents scrolls to.
+    // setting. A line of a file the options folder describes holds the file's subject as its title,
+    // its description, Open Settings File (the open workspace file, which keeps the user's values
+    // of its settings, in a source tab; with the unsaved workspace, Save Workspace As... in its
+    // place; the hub's settings file for a file whose keys are all the hub's, unavailable with no
+    // primary) and Show Defaults (oculus's file of the values in force where the user sets none,
+    // the defaults file or the catalog or schema file itself, in a source tab that only reads it;
+    // none for the workspace's words, whose default is the whole text catalog). The hub's settings
+    // file and the machine's own file have a line with their title, their description, the tag on
+    // the machine's file and Open Settings File. The Catalogs, Schemas and Texts groups list files
+    // instead: one row per file with its path and the control that opens it. A user's file that is
+    // being read, could not be read, is cut or does not parse says so on its line, as does the
+    // unsaved workspace; a folder that is not listed says so under its group. Each heading and each
+    // section carries the id the table of contents scrolls to.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
-    import { DEFAULTS, openTarget } from '$lib/state/system/config/config-files';
+    import { openTarget } from '$lib/state/system/config/config-files';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
-    import type { FileLine, Group } from '$lib/state/system/config/groups';
+    import type { Group } from '$lib/state/system/config/groups';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { RowWriter } from '$lib/state/system/config/write';
@@ -55,9 +58,9 @@
         if (target !== null) openView('source', sourceTabState(target.root, target.path));
     }
 
-    /** Open oculus's defaults file of a line in a source tab, which reads it and cannot save it. */
-    function showDefaults(line: FileLine): void {
-        openView('source', sourceTabState(OCULUS_CONFIG_ROOT, `${DEFAULTS}/${line.file}`));
+    /** Open oculus's file a line's Show Defaults names in a source tab, which cannot save it. */
+    function showDefaults(path: string): void {
+        openView('source', sourceTabState(OCULUS_CONFIG_ROOT, path));
     }
 </script>
 
@@ -94,13 +97,14 @@
                             {t('workbench.settings_open_unavailable', line.opens.path)}
                         </span>
                     {/if}
-                    {#if line.kind === 'defaults'}
+                    {#if line.defaults !== null}
+                        {@const defaults = line.defaults}
                         <ToolButton
                             label={t('settings.show_defaults')}
                             glyph="open_preview"
-                            title={t('settings.show_defaults_tip', `${DEFAULTS}/${line.file}`)}
+                            title={t('settings.show_defaults_tip', defaults)}
                             compact
-                            onclick={() => showDefaults(line)}
+                            onclick={() => showDefaults(defaults)}
                         />
                     {/if}
                 </div>

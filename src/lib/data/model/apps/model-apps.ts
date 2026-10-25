@@ -99,6 +99,18 @@ type AppTheme = {
 /** A VS Code file icon theme file of the app. */
 type AppIconTheme = { id: string; label: string; path: string };
 
+/**
+ * A display language of the app: VS Code's `languageId` and names, and `path`, the folder of the
+ * app's files that holds the translation of oculus's words (the translation whose `id` is
+ * `oculus`), YAML files nested as config/text/ is.
+ */
+type AppLocalization = {
+    languageId: string;
+    languageName: string;
+    localizedLanguageName: string;
+    path: string;
+};
+
 /** The contributions of an app's manifest as the reader checked them. */
 export type AppContributes = {
     commands: AppCommand[];
@@ -112,6 +124,7 @@ export type AppContributes = {
     configuration: AppConfiguration | null;
     themes: AppTheme[];
     iconThemes: AppIconTheme[];
+    localizations: AppLocalization[];
     languages: AppLanguage[];
     grammars: AppGrammar[];
     snippets: AppSnippetFile[];

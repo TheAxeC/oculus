@@ -12,7 +12,7 @@
 import type { Snapshot } from '../../data/model/index.ts';
 import { focusBlock, focusSetting, numericSetting } from '../../data/helpers/guards.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
-import { hasWord } from '../../data/shapes/vocab-keys.ts';
+import { hasWord, recordWords, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { venueLoad, venueWarn } from '../boards/ticker.ts';
 
@@ -68,13 +68,15 @@ export function staleAfter(config: Record<string, unknown>, feed: string): numbe
  * docs, needs the filesystem mtimes the snapshot does not carry and is not drawn here.
  *
  * The inbox count is not the snapshot's: the plate is read live from the mailboxes on the `inbox`
- * channel, so the caller passes what that channel says and this stays pure over its arguments.
+ * channel, so the caller passes what that channel says and this stays pure over its arguments. A
+ * project is in flight by the `stages` of its own hub, given as `wordsOf`.
  */
 export function attention(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     now: number,
-    inbox: number
+    inbox: number,
+    wordsOf?: WordsOf
 ): AttentionItem[] {
     const out: AttentionItem[] = [];
     const feeds = snapshot.entities.feeds;
@@ -87,7 +89,7 @@ export function attention(
 
     const warn = venueWarn(config);
     const projects = Object.values(snapshot.entities.projects).filter((project) =>
-        hasWord(config, 'stages', 'live', project.stage)
+        hasWord(recordWords(config, wordsOf, project), 'stages', 'live', project.stage)
     );
     for (const one of venueLoad(projects, snapshot.entities.venues, warn)) {
         out.push({ kind: 'venue', id: one.id, count: one.count, label: one.label });

@@ -62,11 +62,10 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
-    import { lanes } from '$lib/state/boards/focus';
 
     const {
         docs: { document: docFor },
-        selectors: { boardItemOf, configMap, sessionsForProject, staleLag },
+        selectors: { boardItemOf, sessionsForProject, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -86,8 +85,6 @@
     const chosen = $derived(instanceChoice(instanceState(instance.id), 'doc', names));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());
-    /** The Focus board's lanes, parsed once for the card's lane tag. */
-    const focusLanes = $derived(lanes(configMap()));
 
     /** What the card's last write answered, which is the one outcome line this tab holds. */
     let said = $state('');
@@ -134,7 +131,6 @@
                 label={item.project.title}
                 tab={item.project.title}
                 staleLag={lag}
-                {focusLanes}
                 onsaid={(answer: string) => (said = answer)}
             />
 

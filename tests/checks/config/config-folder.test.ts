@@ -139,7 +139,8 @@ describe("oculus's own config directory", () => {
             'show_tabs',
             'editor_actions',
             'wrap_tabs',
-            'terminal'
+            'terminal',
+            'locale'
         ],
         'defaults/present.yml': ['defaults'],
         'defaults/behavior.yml': [
@@ -192,7 +193,7 @@ describe("oculus's own config directory", () => {
         ],
         'schemas/cpp-schema.yml': ['cpp_schema'],
         'schemas/deck-schema.yml': ['deck_schema'],
-        'schemas/manifest-schema.yml': ['manifest_schema', 'groups'],
+        'schemas/manifest-schema.yml': ['manifest_schema', 'groups', 'manifest_fields'],
         'defaults/sources.yml': [
             'scan',
             'new_project_dir',
@@ -233,8 +234,10 @@ describe("oculus's own config directory", () => {
     };
 
     /**
-     * The options files, one per defaults file and one for a hub's local.yml, each holding
-     * `options:` and `groups:`, which the merge reads into its own two keys.
+     * The options files at the top of the options folder, one per defaults file, one for a hub's
+     * local.yml and one for the workspace's words, each holding `options:` and `groups:`, which the
+     * merge reads into its own two keys. Those of the catalog and schema files are in its
+     * subfolders (OPTION_SUBFILES), which `tracked` does not list.
      */
     const OPTION_FILES = [
         'options/appearance.yml',
@@ -242,7 +245,20 @@ describe("oculus's own config directory", () => {
         'options/layout.yml',
         'options/local.yml',
         'options/present.yml',
-        'options/sources.yml'
+        'options/sources.yml',
+        'options/text.yml'
+    ];
+
+    /** The options files of the subfolders: one per catalog or schema file the user sets. */
+    const OPTION_SUBFILES = [
+        'options/catalogs/agents.yml',
+        'options/catalogs/file-nesting.yml',
+        'options/catalogs/glyphs.yml',
+        'options/catalogs/icons.yml',
+        'options/catalogs/latex.yml',
+        'options/catalogs/unimath.yml',
+        'options/catalogs/vocab.yml',
+        'options/schemas/manifest-schema.yml'
     ];
 
     /** The keys of the merged map the options folder fills. */
@@ -788,7 +804,7 @@ describe("oculus's own config directory", () => {
                 seen[key] = name;
             }
         }
-        for (const name of OPTION_FILES) {
+        for (const name of [...OPTION_FILES, ...OPTION_SUBFILES]) {
             const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
             expect(Object.keys(parsed).sort(), name).toEqual(['groups', 'options']);
         }

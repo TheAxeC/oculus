@@ -22,7 +22,6 @@
 // a list holding anything but text and a family whose nested list holds anything but records have
 // no draft.
 
-import { isEqual } from 'lodash-es';
 import { byKey, isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { FieldSpec } from '../../../../data/sources/config/catalog/options.ts';
 import { message, type Message } from '../messages.ts';
@@ -254,17 +253,60 @@ export function applyEdit(draft: Draft, edit: Edit): Draft {
 
 // ---- reading a draft back ---------------------------------------------------------------------
 
+/**
+ * The records the file holds for an option, wherever they stand, with what is read off them made
+ * once on its first look-up, so a draft of thousands of cards reads back in one pass over them.
+ */
+type Pool = {
+    records: Plain[];
+    /** The text of each record, as `textOf` writes it. */
+    texts?: Set<string>;
+    /** The base of the nested list of records at each field. */
+    nested: Map<string, Base>;
+};
+
 /** What the file held at the fields of the records being written: the page's checks leave it be. */
 type Base = {
-    /** The records the file holds for the option, wherever they stand. */
-    any: Plain[];
+    any: Pool;
     /** The record at the same key of a map, or none. */
     same: Plain[];
+    /** The values `same` holds at each field. */
+    at: Map<string, unknown[]>;
 };
 
 /** The records of a held value that is a list; any other value holds none. */
 function recordsIn(held: unknown): Plain[] {
     return Array.isArray(held) ? held.filter(isMap) : [];
+}
+
+function poolOf(records: Plain[]): Pool {
+    return { records, nested: new Map() };
+}
+
+function baseWith(any: Pool, same: Plain[]): Base {
+    return { any, same, at: new Map() };
+}
+
+/**
+ * A value as text with the keys of every map sorted, so two values of YAML are equal, keys in any
+ * order, exactly when their texts are.
+ */
+function textOf(value: unknown): string {
+    return JSON.stringify(value, (_, one: unknown) =>
+        isMap(one)
+            ? Object.fromEntries(
+                  Object.keys(one)
+                      .sort()
+                      .map((name) => [name, one[name]])
+              )
+            : one
+    );
+}
+
+/** Whether the file holds a record equal to this one, wherever it stands. */
+function holds(any: Pool, record: Plain): boolean {
+    any.texts ??= new Set(any.records.map(textOf));
+    return any.texts.has(textOf(record));
 }
 
 /** The position of a problem in a draft: the entry and its label. */
@@ -285,8 +327,28 @@ function problemOf(place: Place, name: string, trouble: Trouble): Problem {
 }
 
 /** The values the file held at one field, among the records it is compared with. */
-function heldAt(records: Plain[], name: string): unknown[] {
+function valuesAt(records: Plain[], name: string): unknown[] {
     return records.flatMap((one) => (Object.hasOwn(one, name) ? [one[name]] : []));
+}
+
+/** The values the base's record at the same key held at one field. */
+function heldAt(base: Base, name: string): unknown[] {
+    let held = base.at.get(name);
+    if (held === undefined) {
+        held = valuesAt(base.same, name);
+        base.at.set(name, held);
+    }
+    return held;
+}
+
+/** The base of the nested list of records at one field, for every card of the draft. */
+function nestedAt(base: Base, name: string): Base {
+    let inner = base.any.nested.get(name);
+    if (inner === undefined) {
+        inner = baseWith(poolOf(recordsIn(valuesAt(base.any.records, name))), []);
+        base.any.nested.set(name, inner);
+    }
+    return inner;
 }
 
 /**
@@ -309,7 +371,7 @@ function recordOf(
         if (held === undefined) continue;
         if (controlOf(spec) === 'records') {
             const nested = cardsOf(held);
-            const inner: Base = { any: recordsIn(heldAt(base.any, name)), same: [] };
+            const inner = nestedAt(base, name);
             made[name] = nested.map((one, at) =>
                 childOf(
                     one,
@@ -326,7 +388,7 @@ function recordOf(
         const reading = {
             lists,
             record: card.fields,
-            held: heldAt(base.same, name),
+            held: heldAt(base, name),
             trust
         };
         const written = writtenField(spec, held, reading);
@@ -360,19 +422,18 @@ function childOf(
     if (!trust) {
         const quiet: Problem[] = [];
         const whole = recordOf(card, specs, place, base, lists, true, quiet);
-        if (quiet.length === 0 && base.any.some((one) => isEqual(one, whole))) return whole;
+        if (quiet.length === 0 && holds(base.any, whole)) return whole;
     }
     return recordOf(card, specs, place, base, lists, trust, problems);
 }
 
 /** The base of one card: the record at its key when the file holds a map, else every record. */
-function baseOf(row: ConfigRow, key: string | undefined): Base {
-    const any = recordsIn(row.value);
+function baseOf(row: ConfigRow, any: Pool, key: string | undefined): Base {
     if (key !== undefined && isMap(row.value)) {
         const held = row.value[key];
-        return { any, same: isMap(held) ? [held] : [] };
+        return baseWith(any, isMap(held) ? [held] : []);
     }
-    return { any, same: any };
+    return baseWith(any, any.records);
 }
 
 /** The names of the keys of a list of cards, with the problems of an empty or a repeated one. */
@@ -469,17 +530,11 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
         });
         return result(value);
     }
+    const any = poolOf(recordsIn(row.value));
     if (!draft.keyed) {
+        const base = baseOf(row, any, undefined);
         const list = draft.cards.map((card, index) =>
-            childOf(
-                card,
-                specs,
-                { index, label: String(index + 1) },
-                baseOf(row, undefined),
-                lists,
-                false,
-                problems
-            )
+            childOf(card, specs, { index, label: String(index + 1) }, base, lists, false, problems)
         );
         return result(list);
     }
@@ -495,7 +550,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
                 card,
                 listed,
                 { index, label: String(index + 1) },
-                baseOf(row, keys[index]),
+                baseOf(row, any, keys[index]),
                 lists,
                 false,
                 problems

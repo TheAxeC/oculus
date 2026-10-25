@@ -107,7 +107,7 @@
         {#snippet meta()}
             <RootChip record={dataset} />
             {#if dataset.access}
-                <Tag label={dataset.access} tone={accessTone(dataset.access)} />
+                <Tag label={dataset.access} tone={accessTone(dataset.access, rootOf(dataset))} />
             {/if}
             <CardActions {actions} />
         {/snippet}

@@ -170,12 +170,17 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
                         .open()
                         .hubs.filter((one) => one.name !== workspace.open().primary)
                         .map((one) => ({ key: one.name, dir: one.dir })),
-                vocabs: (read, others, settings) =>
+                folders: () => workspace.open().folders.map((one) => one.name),
+                vocabs: (read, others, settings, own) =>
                     workspaceVocabs(
                         { name: workspace.open().primary, dir: workspace.open().primaryDir },
                         read,
                         others,
-                        settings
+                        settings,
+                        {
+                            folders: workspace.open().folders.map((one) => one.name),
+                            own: own.config
+                        }
                     )
             }),
         fsWrites: overrides.fsWrites ?? fsWrites(),

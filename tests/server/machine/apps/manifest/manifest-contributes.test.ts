@@ -1,8 +1,8 @@
 // Layer 4, server test. The reader of the apps folders, for the key `contributes` and the rules
-// that tie an app's ids to its name: a command, menu, when clause, activation event and unknown
-// point read to the row's `contributes` and the findings, the `app-shell` channel closed to every
-// app, and the ids two apps of one name may not both declare. These are the manifest reader's rows
-// of G49 for the contribution points.
+// that tie an app's ids to its name: a command, menu, when clause, activation event, display
+// language and unknown point read to the row's `contributes` and the findings, the `app-shell`
+// channel closed to every app, and the ids two apps of one name may not both declare. These are the
+// manifest reader's rows of G49 for the contribution points.
 //
 // Every folder here is synthetic, under the system temporary directory. What this does NOT cover:
 // the page that draws what a row holds (tests/state/system/apps).
@@ -249,6 +249,77 @@ const SHARED_ROWS: Row[] = [
         { ids: ['app:notes', 'app:one/notes'], findings: [] }
     ]
 ];
+
+/** The manifest of `notes` contributing Dutch by `localizations`, with a folder of its words. */
+const speaking = (translations: string, extra = ''): Record<string, string> => ({
+    ...notes(
+        `${MANIFEST}contributes:\n  localizations:\n    - { languageId: nl, languageName: Dutch, translations: [ ${translations} ] }\n${extra}`
+    ),
+    'notes/i18n/nl/words.yml': 'text:\n  views:\n    settings: Instellingen\n'
+});
+
+const LOCALIZATION_ROWS: Row[] = [
+    [
+        "a display language whose translation for oculus names a folder of the app's files",
+        () => {
+            const machine = speaking('{ id: oculus, path: i18n/nl }');
+            return {
+                ...outcome({ machine }),
+                held: read({ machine }).scanned.apps[0].row.contributes.localizations
+            };
+        },
+        {
+            ...offeredWith(),
+            held: [
+                {
+                    languageId: 'nl',
+                    languageName: 'Dutch',
+                    localizedLanguageName: 'Dutch',
+                    path: 'i18n/nl'
+                }
+            ]
+        }
+    ],
+    [
+        'a translation for another extension',
+        () => outcome({ machine: speaking('{ id: other, path: x }') }),
+        offeredWith(
+            words(
+                'contributes_translation_other',
+                'contributes.localizations[0].translations[0].id',
+                'other'
+            )
+        )
+    ],
+    [
+        "a translation whose path holds none of the app's files",
+        () => outcome({ machine: speaking('{ id: oculus, path: ../elsewhere }') }),
+        refused(
+            words(
+                'contributes_folder',
+                'contributes.localizations[0].translations[0].path',
+                '../elsewhere'
+            )
+        )
+    ],
+    [
+        'a display language declared twice',
+        () =>
+            outcome({
+                machine: speaking(
+                    '{ id: oculus, path: i18n/nl }',
+                    '    - { languageId: nl, languageName: Dutch, translations: [ { id: oculus, path: i18n/nl } ] }\n'
+                )
+            }),
+        refused(words('contributes_repeated', 'contributes.localizations[1].languageId', 'nl'))
+    ]
+];
+
+describe('reads the display languages of contributes', () => {
+    it.each(LOCALIZATION_ROWS)('%s', (_row, observe, expected) => {
+        expect(observe()).toEqual(expected);
+    });
+});
 
 describe('reads the commands of contributes', () => {
     it.each(COMMAND_ROWS)('%s', (_row, observe, expected) => {

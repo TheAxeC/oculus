@@ -1,22 +1,27 @@
-// Layer 1, data. The options folder, config/options/: one file per defaults file (and local.yml),
-// each holding `options:`, the description of every option of that file by its dotted key path,
-// and `groups:`, the help line of each group of its dotted options. The folder is read on its own,
-// after oculus's other files, into two keys of the merged map: `options`, which maps each file's
-// name to its entries, and `option_groups`, which maps it to what its `groups:` holds. Each entry
-// of a defaults file is given that file's own value at its path as its `default`, since the
-// defaults file is the one place a shipped value is written; local.yml has no defaults file and
-// its entries carry none.
+// Layer 1, data. The options folder, config/options/: one file per file of oculus's config it
+// describes, each holding `options:`, the description of every option of that file by its dotted
+// key path, and `groups:`, the help line of each group of its dotted options. A file at the top
+// describes the defaults file of its name (and local.yml, a hub's machine file); `catalogs/` and
+// `schemas/` describe the catalog and schema files of their name (`catalogs/vocab.yml`, whose words
+// a hub lays over oculus's by shape, and `schemas/manifest-schema.yml`); `text.yml` describes the
+// workspace's words, `text`. The folder is read on its own, after oculus's other files, into two
+// keys of the merged map: `options`, which maps each described file's name (the file's path under
+// config/options/) to its entries, and `option_groups`, which maps it to what its `groups:` holds.
+// Each entry is given oculus's own value at its path as its `default`, since the shipped file is
+// the one place a shipped value is written; local.yml has no shipped file and its entries carry
+// none, and neither does `text`, whose default would be the whole text catalog sent twice.
 //
 // Each file is parsed with its whole-file shape (data/shapes/catalog-files/), and every issue the
 // shape finds is a finding; what the options reader words itself is left to it
 // (catalog/option-findings.ts).
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { OPTIONS_DIR } from '../folder.ts';
 import { LOCAL_NAME } from '../local.ts';
+import { inPlaceOf } from './in-place.ts';
 import { readConfigFile, type PendingFinding } from './text.ts';
 import { valueAt } from './tree.ts';
 
@@ -29,37 +34,55 @@ const GROUPS_KEY = 'option_groups';
 /** A file of the folder read from this text instead of from the disk, named relative to config/. */
 type Instead = { name: string; text: string } | undefined;
 
-/** The names of the folder's files, relative to config/, in name order; none without the folder. */
-function optionNames(dir: string): string[] {
-    let names: string[];
+/** The described file whose entries carry no default: the workspace's words. */
+const NO_DEFAULTS = 'text.yml';
+
+/** The subfolders of the options folder: those of the catalog and schema files. */
+const SUBFOLDERS = ['catalogs', 'schemas'];
+
+/** The `.yml` files of one folder, in name order; none for a folder that cannot be listed. */
+function ymlNames(dir: string): string[] {
     try {
-        names = readdirSync(join(dir, OPTIONS_DIR));
+        return readdirSync(dir)
+            .filter((name) => name.endsWith('.yml') && statSync(join(dir, name)).isFile())
+            .sort();
     } catch {
         return [];
     }
-    return names
-        .filter((name) => name.endsWith('.yml'))
-        .sort()
-        .map((name) => `${OPTIONS_DIR}/${name}`);
 }
 
 /**
- * An options file's entries with each one's default: the defaults file's value at the entry's path,
- * copied so a later layer of the merge cannot change it. An entry that is not a map, and every
- * entry of local.yml, is kept as it is written.
+ * The names of the folder's files, relative to config/: the files at its top in name order, then
+ * those of each subfolder of SUBFOLDERS in that order; none without the folder.
+ */
+function optionNames(dir: string): string[] {
+    const top = join(dir, OPTIONS_DIR);
+    const names = ymlNames(top).map((name) => `${OPTIONS_DIR}/${name}`);
+    for (const sub of SUBFOLDERS) {
+        names.push(...ymlNames(join(top, sub)).map((name) => `${OPTIONS_DIR}/${sub}/${name}`));
+    }
+    return names;
+}
+
+/**
+ * An options file's entries with each one's default: oculus's value at the entry's path, copied so
+ * a later layer of the merge cannot change it, and `in_place` on an entry whose value a hub or a
+ * workspace lays over oculus's in oculus's place (`inPlaceOf`). An entry that is not a map, and
+ * every entry of local.yml and of text.yml, is kept as it is written.
  */
 function withDefaults(
     entries: Record<string, unknown>,
     file: string,
     config: Record<string, unknown>
 ): Record<string, unknown> {
-    if (file === LOCAL_NAME) return entries;
+    if (file === LOCAL_NAME || file === NO_DEFAULTS) return entries;
     const read: Record<string, unknown> = {};
     for (const [path, entry] of Object.entries(entries)) {
         const shipped = valueAt(config, path);
+        const placed = (inPlaceOf(path)?.kind ?? 'whole') === 'whole' ? {} : { in_place: true };
         read[path] =
             isMap(entry) && shipped !== undefined
-                ? { ...entry, default: structuredClone(shipped) }
+                ? { ...entry, default: structuredClone(shipped), ...placed }
                 : entry;
     }
     return read;

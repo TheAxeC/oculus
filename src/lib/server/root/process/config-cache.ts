@@ -10,15 +10,20 @@
 // workspace's primary at each request, and the workspace file is the one open at each request; a
 // file that is not there is stamped as absent, so making it moves the stamp.
 //
-// The settings of every other hub of the workspace (the engine's folder parsed under that hub's
-// own `.oculus/config.yml`) are kept the same way, one parse per hub folder under the stamp of the
-// engine's folder and that hub's settings file. A write target, a file operation, a document, a
-// deck, a terminal action and a rebuild each read the settings of every other hub, and a parse of
-// the whole folder per hub at each of them would hold the event loop as the primary's would, so
-// each of them takes the parse kept here. A parse is kept only for a hub of the workspace open at
-// the call, and every read first drops the parses of the hubs that left the workspace, so a folder
-// outside it is parsed at each read. Its findings are not said here: the rebuild reports them with
-// the build of that hub.
+// The display language the workspace's `locale` names is read from the apps' `localizations`, so
+// the stamp also holds what the apps' display languages are made of (`language`): an app approved,
+// enabled, changed or removed, or a file of a language's folder written, moves it.
+//
+// The settings of every other hub of the workspace (the engine's folder parsed under that hub's own
+// `.oculus/config.yml`, with the words of the primary's parse as its text catalog, so its findings
+// and records are worded in the workspace's language) are kept the same way, one parse per hub
+// folder under the stamp of the engine's folder, that hub's settings file and the primary's. A
+// write target, a file operation, a document, a deck, a terminal action and a rebuild each read the
+// settings of every other hub, and a parse of the whole folder per hub at each of them would hold
+// the event loop as the primary's would, so each of them takes the parse kept here. A parse is kept
+// only for a hub of the workspace open at the call, and every read first drops the parses of the
+// hubs that left the workspace, so a folder outside it is parsed at each read. Its findings are not
+// said here: the rebuild reports them with the build of that hub.
 //
 // The vocabulary of the hubs of the workspace (their domains and theme words, read from each hub's
 // registry files) is kept the same way: its stamp adds the settings file of every other hub and the
@@ -36,6 +41,7 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { isMap } from '../../../data/helpers/guards.ts';
 import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import type { HubRoot, HubSettings } from '../../../data/index.ts';
 import type { Finding, HubVocabs } from '../../../data/model/index.ts';
@@ -112,16 +118,21 @@ function filesStamp(files: readonly string[]): string {
 }
 
 /**
- * What the engine's folder, the hub's settings file and the open workspace file hold, and which hub
- * and which workspace file they are.
+ * What the engine's folder, the hub's settings file and the open workspace file hold, which hub and
+ * which workspace file they are, and what the apps' display languages are made of.
  */
-function configStamp(engine: string, hub: string | null, workspace: string | null = null): string {
+function configStamp(
+    engine: string,
+    hub: string | null,
+    workspace: string | null = null,
+    language = ''
+): string {
     const engineStamp = folderStamp(configDir(engine));
     const fileOfHub = hub === null ? ABSENT : fileStamp(join(hub, HUB_FILE));
     const fileOfWorkspace = workspace === null ? ABSENT : fileStamp(workspace);
     const stamps = [engineStamp, fileOfHub, fileOfWorkspace];
     if (stamps.includes(UNREADABLE)) return UNREADABLE;
-    return `${engineStamp}\n--hub ${hub ?? ''}\n${fileOfHub}\n--workspace ${workspace ?? ''}\n${fileOfWorkspace}`;
+    return `${engineStamp}\n--hub ${hub ?? ''}\n${fileOfHub}\n--workspace ${workspace ?? ''}\n${fileOfWorkspace}\n--language\n${language}`;
 }
 
 /** What the cache needs of the server: where the folders are, how to parse, where findings go. */
@@ -134,21 +145,29 @@ export type ConfigCacheDeps = {
     load: () => LoadedConfig;
     /**
      * Parse the engine's folder under the settings file of the hub at `dir`, or under no hub's
-     * settings for `null`.
+     * settings for `null`; `words`, when given, is the text catalog the parse is worded in.
      */
-    loadHub: (dir: string | null) => LoadedConfig;
+    loadHub: (dir: string | null, words?: Readonly<Record<string, unknown>>) => LoadedConfig;
+    /** What the apps' display languages are made of now; none when absent. */
+    language?: () => string;
     report: (findings: Finding[]) => void;
-    /** The name of the primary hub, and the hubs of the workspace other than it. */
+    /**
+     * The name of the primary hub, the hubs of the workspace other than it, and the names of the
+     * workspace's folders in its order.
+     */
     primary: () => string | null;
     others: () => HubRoot[];
+    folders: () => string[];
     /**
      * The vocabulary of the hubs, read by the primary's config and each other hub's settings, as
-     * `settings` gives them, from the hubs' registry files, and the files it was read from.
+     * `settings` gives them, from the hubs' registry files, with oculus's own words from `own`, the
+     * parse under no hub's settings; and the files it was read from.
      */
     vocabs: (
         primary: LoadedConfig,
         others: HubRoot[],
-        settings: HubSettings
+        settings: HubSettings,
+        own: LoadedConfig
     ) => { vocabs: HubVocabs; files: string[] };
 };
 
@@ -160,8 +179,10 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     let heldVocab: { stamp: string; files: string[]; read: string; vocab: HubVocabs } | undefined;
     const heldHubs = new Map<string, { stamp: string; read: LoadedConfig }>();
     let heldDefaults: { stamp: string; read: LoadedConfig } | undefined;
+    const primaryStamp = (): string =>
+        configStamp(deps.engine, deps.hub(), deps.workspace(), deps.language?.() ?? '');
     const take = (say: boolean): LoadedConfig => {
-        const stamp = configStamp(deps.engine, deps.hub(), deps.workspace());
+        const stamp = primaryStamp();
         if (stamp !== UNREADABLE && held?.stamp === stamp) {
             if (say && !held.said) {
                 deps.report(held.read.findings);
@@ -178,10 +199,14 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     const hub = (dir: string): LoadedConfig => {
         const open = new Set(deps.others().map((one) => one.dir));
         for (const one of heldHubs.keys()) if (!open.has(one)) heldHubs.delete(one);
-        const stamp = configStamp(deps.engine, dir);
+        const own = configStamp(deps.engine, dir);
+        const primary = primaryStamp();
+        const unreadable = own === UNREADABLE || primary === UNREADABLE;
+        const stamp = unreadable ? UNREADABLE : `${own}\n--primary\n${primary}`;
         const kept = heldHubs.get(dir);
         if (stamp !== UNREADABLE && kept?.stamp === stamp) return kept.read;
-        const parsed = deps.loadHub(dir);
+        const words = take(false).config.text;
+        const parsed = deps.loadHub(dir, isMap(words) ? words : undefined);
         if (stamp !== UNREADABLE && open.has(dir)) heldHubs.set(dir, { stamp, read: parsed });
         else heldHubs.delete(dir);
         return parsed;
@@ -201,12 +226,12 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
         vocab() {
             const others = deps.others();
             const stamps = [
-                configStamp(deps.engine, deps.hub(), deps.workspace()),
+                primaryStamp(),
                 ...others.map((one) => fileStamp(join(one.dir, HUB_FILE)))
             ];
             const readable = !stamps.includes(UNREADABLE);
-            const names = others.map((one) => one.key).join('\n');
-            const stamp = `${deps.primary() ?? ''}\n${names}\n${stamps.join('\n')}`;
+            const names = [...others.map((one) => one.key), '--folders', ...deps.folders()];
+            const stamp = `${deps.primary() ?? ''}\n${names.join('\n')}\n${stamps.join('\n')}`;
             if (
                 readable &&
                 heldVocab?.stamp === stamp &&
@@ -214,7 +239,7 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
             ) {
                 return heldVocab.vocab;
             }
-            const made = deps.vocabs(read(), others, hub);
+            const made = deps.vocabs(read(), others, hub, defaults());
             const files = filesStamp(made.files);
             const kept = readable && !files.split('\n').includes(UNREADABLE);
             heldVocab = kept

@@ -3,7 +3,9 @@
 // placement itself is Graphviz's neato, in layout.ts beside this file, and the force simulation the
 // Map runs from it is forces.ts there. Every visible-set and seed rule is independent of the DOM so
 // it can be checked without a browser. It sits in state/boards/structure beside the Pillars and
-// Domains joins, the pure halves of the Structure views.
+// Domains joins, the pure halves of the Structure views. A project's stage is read under the words
+// of its own hub when the caller gives them (`wordsOf`), and the stage chips are drawn in the order
+// and the tones of every hub's words.
 
 import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
@@ -16,7 +18,7 @@ import {
     recordItemsShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { hasWord, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
+import { hasWord, recordWords, vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
 import { selfIds, shownTeam } from '../board/team.ts';
 import { stageTone } from '../../shared/words/tones.ts';
@@ -68,6 +70,8 @@ export type GraphOptions = GraphFilter & {
     archived?: string[];
     collaborators?: boolean;
     labelMode?: string;
+    /** The words of each hub, which a project's stage is read under; the config's without it. */
+    wordsOf?: WordsOf;
 };
 
 export type PointNode = GraphNode & { x: number; y: number; vx: number; vy: number };
@@ -93,7 +97,7 @@ export function labelModeOf(config: Record<string, unknown>): string {
 }
 
 /** The stage of a project at a stage carrying `terminal`, which a Map toggle shows; else none. */
-function archived(project: Project, config: Record<string, unknown>): string | undefined {
+function archivedAt(project: Project, config: Record<string, unknown>): string | undefined {
     return hasWord(config, 'stages', 'terminal', project.stage) ? project.stage : undefined;
 }
 
@@ -109,10 +113,12 @@ export function buildGraph(
     options: GraphOptions = {}
 ): Graph {
     const enabled = new Set(options.archived ?? []);
+    const archived = (project: Project): string | undefined =>
+        archivedAt(project, recordWords(config, options.wordsOf, project));
     const projects = Object.values(snapshot.entities.projects);
     const all = new Map(projects.map((project) => [project.id, project]));
     const visible = projects.filter((project) => {
-        const status = archived(project, config);
+        const status = archived(project);
         return status === undefined || enabled.has(status);
     });
     const visibleIds = new Set(visible.map((project) => project.id));
@@ -125,7 +131,7 @@ export function buildGraph(
                 : (project.short ?? project.title),
         kind: 'project',
         stage: project.stage,
-        ...(archived(project, config) === undefined ? {} : { archived: archived(project, config) }),
+        ...(archived(project) === undefined ? {} : { archived: archived(project) }),
         degree: 0,
         radius: 7
     }));
@@ -143,7 +149,7 @@ export function buildGraph(
                 target: `line::${line}`,
                 kind: 'membership',
                 direction: 'none',
-                archived: archived(project, config) !== undefined
+                archived: archived(project) !== undefined
             });
         }
         if (options.collaborators === true) {
@@ -155,7 +161,7 @@ export function buildGraph(
                     target: `collaborator::${person}`,
                     kind: 'collaborator',
                     direction: 'none',
-                    archived: archived(project, config) !== undefined
+                    archived: archived(project) !== undefined
                 });
             }
         }
@@ -185,7 +191,7 @@ export function buildGraph(
             target: `project::${target}`,
             kind: 'related',
             direction: mutual ? 'mutual' : 'one',
-            archived: archived(from, config) !== undefined || archived(to, config) !== undefined
+            archived: archived(from) !== undefined || archived(to) !== undefined
         });
     }
 
@@ -337,16 +343,18 @@ export function lineCounts(graph: Graph): Record<string, number> {
 
 /**
  * The archive statuses the Map offers a toggle for: every stage carrying `terminal` that a project
- * is at (the done work of every tier), each with the tone the `color` of its row of `stages`
- * gives, the tone its board card and its node are drawn in.
+ * is at (the done work of every tier) under its own hub's words, each with the tone the `color` of
+ * its row of `stages` of every hub's words gives, the tone its board card and its node are drawn
+ * in.
  */
 export function archiveStatuses(
     snapshot: Snapshot | null,
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): { status: string; tone: string }[] {
     const found = new Set<string>();
     for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-        const stage = archived(project, config);
+        const stage = archivedAt(project, recordWords(config, wordsOf, project));
         if (stage) found.add(stage);
     }
     return [...found].map((status) => ({ status, tone: stageTone(status) }));

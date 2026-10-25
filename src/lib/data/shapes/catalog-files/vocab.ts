@@ -1,7 +1,9 @@
 // Layer 1, data. The whole-file shape of config/catalogs/vocab.yml, the controlled vocabularies
 // the boards and the schemas draw from, with a description on every key at every level. The
-// descriptions say what the file's head comments and readers say each key holds. The lead key
-// `leads_fit` is a hub's own, set in its `.oculus/config.yml` and checked by this shape.
+// descriptions say what the file's head comments and readers say each key holds. A hub sets every
+// key but `priority_levels` in its `.oculus/config.yml`, laid over oculus's value by the key's
+// shape (merge/in-place.ts), and the merged value is checked by this shape; the lead key
+// `leads_fit` is a hub's alone, since oculus ships none.
 
 import { z } from 'zod';
 import { colour, flag, text, textMap } from './common.ts';

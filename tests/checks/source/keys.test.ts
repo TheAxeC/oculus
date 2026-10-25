@@ -24,7 +24,6 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import {
     CATALOGS,
-    DEFAULTS,
     LOCAL_NAME,
     SCHEMAS
 } from '../../../src/lib/state/system/config/config-files.ts';
@@ -251,17 +250,19 @@ const COMPUTED_PREFIXES = [
             ])
     },
     {
-        // One description per file of the engine's defaults, catalogs and schemas folders, keyed
-        // by the file's own name. The machine's own file is named whether or not this checkout
-        // holds one, since it is described for every machine and a clone that has not made one
-        // still reads the key. The hub's settings file has one of its own.
+        // One description per file of the engine's defaults, catalogs and schemas folders and per
+        // options file at the top of config/options/ (text.yml among them), keyed by the file's
+        // own name. The machine's own file is named whether or not this checkout holds one, since
+        // it is described for every machine and a clone that has not made one still reads the
+        // key. The hub's settings file has one of its own.
         file: 'lib/state/system/config/config-files.ts',
         start: 'lookup(descriptionKey(',
         keys: () => {
             const names = [
-                ...readdirSync(join(engineDir(), 'config', DEFAULTS)),
+                ...readdirSync(join(engineDir(), 'config', 'defaults')),
                 ...readdirSync(join(engineDir(), 'config', CATALOGS)),
-                ...readdirSync(join(engineDir(), 'config', SCHEMAS))
+                ...readdirSync(join(engineDir(), 'config', SCHEMAS)),
+                ...readdirSync(join(engineDir(), 'config', 'options'))
             ].filter((name) => name.endsWith('.yml'));
             return [...new Set([...names, LOCAL_NAME, HUB_FILE])].map((name) =>
                 descriptionKey(name)

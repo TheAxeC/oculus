@@ -352,17 +352,20 @@ export function offerAlong(
 /**
  * The keys the hub's settings file may set, each with the name of oculus's config file it belongs
  * to (`sources.yml` for config/defaults/sources.yml, `catalogs/vocab.yml` for a catalog), which is
- * the group the Settings view draws it in. Each key is a dotted path into the hub file; a value the
- * file holds at one of these paths replaces oculus's value whole, and a key outside the list is a
- * finding and is not applied. They are the keys that describe this hub rather than the engine: its
- * folders and the files of its records, which of its records a chat's index holds, where the
- * reader's bookmarks, the schedules and the machine's apps are kept, the cluster its jobs run on,
- * the files its writing rules skip or let draw arrows, the conventions its audit holds its projects
- * to (`audit:`: the files and sections it requires, the folders a stage keeps a project in and its
- * website's feed), the values its apps' settings hold, the counts its tabs draw, its entry
- * statuses, project chips and Position Lead statuses, and its own words, which oculus ships none
- * of: the fit colours of its Position Leads. Its domains and theme words are its own registry
- * files'.
+ * the group the Settings view draws it in and the options file under config/options/ that describes
+ * it. Each key is a dotted path into the hub file, and a key outside the list is a finding and is
+ * not applied. A key of config/catalogs/vocab.yml is laid over oculus's value by its shape
+ * (data/sources/config/merge/in-place.ts): a map by its words in oculus's place, `categories` by
+ * its rows' `key`, and `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and
+ * `radar_buckets` whole; `manifest_fields`, the fields the hub adds to the project form, is read
+ * row by row; every other key replaces oculus's value whole. They are the keys that describe this
+ * hub rather than the engine: its folders and the files of its records, which of its records a
+ * chat's index holds, where the reader's bookmarks, the schedules and the machine's apps are kept,
+ * the cluster its jobs run on, the files its writing rules skip or let draw arrows, the conventions
+ * its audit holds its projects to (`audit:`: the files and sections it requires, the folders a
+ * stage keeps a project in and its website's feed), the values its apps' settings hold, the counts
+ * its tabs draw, its vocabulary (every list of vocab.yml but `priority_levels`) and the fields it
+ * adds to the project form. Its domains and theme words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -380,10 +383,25 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'wallpaper.image', file: 'appearance.yml' },
     { key: 'docs', file: 'layout.yml' },
     { key: 'counts', file: 'layout.yml' },
-    { key: 'statuses', file: 'catalogs/vocab.yml' },
+    { key: 'palette', file: 'catalogs/vocab.yml' },
+    { key: 'stages', file: 'catalogs/vocab.yml' },
+    { key: 'forms', file: 'catalogs/vocab.yml' },
     { key: 'chips', file: 'catalogs/vocab.yml' },
+    { key: 'statuses', file: 'catalogs/vocab.yml' },
     { key: 'lead_statuses', file: 'catalogs/vocab.yml' },
+    { key: 'focus_lanes', file: 'catalogs/vocab.yml' },
+    { key: 'fund_stages', file: 'catalogs/vocab.yml' },
+    { key: 'focus_lane_tones', file: 'catalogs/vocab.yml' },
+    { key: 'tiers', file: 'catalogs/vocab.yml' },
+    { key: 'research_audit', file: 'catalogs/vocab.yml' },
+    { key: 'roles', file: 'catalogs/vocab.yml' },
+    { key: 'categories', file: 'catalogs/vocab.yml' },
     { key: 'leads_fit', file: 'catalogs/vocab.yml' },
+    { key: 'data_access', file: 'catalogs/vocab.yml' },
+    { key: 'venue_categories', file: 'catalogs/vocab.yml' },
+    { key: 'venue_tiers', file: 'catalogs/vocab.yml' },
+    { key: 'radar_buckets', file: 'catalogs/vocab.yml' },
+    { key: 'manifest_fields', file: 'schemas/manifest-schema.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },
     { key: 'lint.writing_glyphs', file: 'behavior.yml' },

@@ -6,10 +6,14 @@
 // it; `local.yml` is governed in the `.oculus` folder of each hub.
 //
 // A hub's own settings file, `.oculus/config.yml`, is governed in the hub: its keys are those of
-// the hub list (data/helpers/hub-names.ts), each as its option gives it, or, for a key of a catalog
-// file such as `leads_fit` of catalogs/vocab.yml, as that file's whole-file shape gives it; any
-// other key is not declared. A workspace file's `settings:` takes every option of the defaults
-// files but the keys of the hub list, with the rows and keys that take oculus's entries out.
+// the hub list (data/helpers/hub-names.ts), each as its option gives it, or, for a key no options
+// file describes, as its file's whole-file shape gives it; any other key is not declared. A
+// workspace file's `settings:` takes every option of the defaults files and of the catalog options
+// files but the keys of the hub list, with the rows and keys that take oculus's entries out. A key
+// laid over oculus's value by its shape (merge/in-place.ts), a vocab key of a hub and a catalog of
+// the workspace, takes the form that merge reads: a map of words or names each its row or null, a
+// list of rows each a full row or the row of its key with `removed: true`, and a list replaced
+// whole as a list. The words of `text` are texts, with no null.
 //
 // A group of dotted options is described by its help line in the options file's `groups:`.
 //
@@ -26,6 +30,8 @@ import { manifestSchemaFileShape } from '../../../../shapes/catalog-files/manife
 import { textFileShape } from '../../../../shapes/catalog-files/text.ts';
 import { DEFAULTS_DIR } from '../../folder.ts';
 import { LOCAL_NAME } from '../../local.ts';
+import { inPlaceOf, type InPlace } from '../../merge/in-place.ts';
+import { TEXT_KEY } from '../../merge/text.ts';
 import { SETTINGS_KEY } from '../../merge/workspace-layer.ts';
 import { workspaceFileShape } from '../../merge/workspace-file.ts';
 import {
@@ -115,6 +121,74 @@ function catalogKeySchema(file: string, key: string): JsonSchema | undefined {
     return properties !== undefined && Object.hasOwn(properties, key) ? properties[key] : undefined;
 }
 
+/** The description of a word or a name of a merged map set to null. */
+const NULL_WORD = "null takes oculus's entry of this word or name out.";
+
+/** The description of the field that takes a row of a merged list out. */
+const REMOVED_ROW = "true takes oculus's row of this key out of the list.";
+
+/** A schema that also takes null, as a word of a map merged in oculus's place may be. */
+function orNull(schema: unknown): JsonSchema {
+    return { anyOf: [schema as JsonSchema, { type: 'null', description: NULL_WORD }] };
+}
+
+/**
+ * A key's schema in the form the merge of its shape reads it: a map, each word or name its row or
+ * null; a list of rows told apart by a field, each row a full row or the row of that field with
+ * `removed: true`; or a list replaced whole.
+ */
+function shapedSchema(schema: JsonSchema, shape: InPlace): JsonSchema {
+    const { items, additionalProperties, properties, ...rest } = schema;
+    if (shape.kind === 'map') {
+        const named = (properties ?? {}) as Record<string, unknown>;
+        const shaped: JsonSchema = { ...rest, type: 'object' };
+        if (additionalProperties !== undefined) {
+            shaped.additionalProperties = orNull(additionalProperties);
+        }
+        if (Object.keys(named).length > 0) {
+            shaped.properties = Object.fromEntries(
+                Object.entries(named).map(([name, one]) => [name, orNull(one)])
+            );
+        }
+        return shaped;
+    }
+    const shaped: JsonSchema = { ...rest, type: 'array' };
+    if (items === undefined) return shaped;
+    const rows = { ...(items as JsonSchema) };
+    if (shape.kind === 'rows' && rows.properties !== undefined) {
+        rows.properties = {
+            ...(rows.properties as Record<string, JsonSchema>),
+            removed: { const: true, description: REMOVED_ROW }
+        };
+    }
+    shaped.items = rows;
+    return shaped;
+}
+
+/**
+ * The top-level keys of a file's schema laid over oculus's value by their shape, each put in the
+ * form `shapedSchema` gives it, and `text`, whose words are texts, without the null of a map's
+ * override.
+ */
+function withShapes(schema: JsonSchema): JsonSchema {
+    const properties = (schema.properties ?? {}) as Record<string, JsonSchema>;
+    for (const [key, one] of Object.entries(properties)) {
+        const shape = inPlaceOf(key);
+        if (shape !== undefined) properties[key] = shapedSchema(one, shape);
+    }
+    const text = properties[TEXT_KEY] as JsonSchema | undefined;
+    if (text !== undefined) {
+        const { items: _rows, ...words } = text;
+        const member = words.additionalProperties as { anyOf?: JsonSchema[] } | undefined;
+        properties[TEXT_KEY] = {
+            ...words,
+            type: 'object',
+            additionalProperties: member?.anyOf?.[0] ?? member
+        };
+    }
+    return schema;
+}
+
 /** The help lines of the groups on the way to a dotted key, from its file's `groups:`. */
 function groupsOf(lines: Record<string, string>, key: string): Record<string, string> {
     const steps = key.split('.');
@@ -148,7 +222,7 @@ function hubConfigSchema(catalog: Catalog, groups: Groups, lists: OptionLists): 
             if (schema !== undefined) extra[key] = schema;
         }
     }
-    return optionsSchema(entries, lists, extra, lines);
+    return withShapes(optionsSchema(entries, lists, extra, lines));
 }
 
 /**
@@ -171,7 +245,7 @@ function workspaceSchema(catalog: Catalog, groups: Groups, lists: OptionLists): 
         }
     }
     const properties = schema.properties as Record<string, JsonSchema>;
-    const settings = optionsSchema(entries, { ...lists, overrides: true }, {}, lines);
+    const settings = withShapes(optionsSchema(entries, { ...lists, overrides: true }, {}, lines));
     const { description } = properties[SETTINGS_KEY] as { description?: string };
     properties[SETTINGS_KEY] = { ...settings, type: ['object', 'null'], description };
     return schema;

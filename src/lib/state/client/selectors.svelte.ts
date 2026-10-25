@@ -33,6 +33,7 @@ import { byKey, focusSetting } from '../../data/helpers/guards.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
 import { collectionsOf, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
+import type { WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
 import {
@@ -53,6 +54,7 @@ import {
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
+import { vocabOf } from '../shared/words/tones.ts';
 import {
     newProjectFolder as folderOfNewProjects,
     newProjectPerson as personOfNewProjects,
@@ -163,6 +165,8 @@ const contextWindowShape = z.number().gt(0);
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
     hubVocabs: () => HubVocabs | null;
+    /** The words the records of the hub `hub` are read under, and their union for none. */
+    vocabOf: WordsOf;
     paintLimit: () => number | null;
     editorOptions: () => EditorOptions | null;
     repoSettings: (text: string) => RepoSettings;
@@ -187,11 +191,15 @@ export type SelectorsStore = {
     /**
      * The user and the field a new project names them in, read from the role keys given (a
      * board's `role:`), or from every row of `roles:` when the keys are null (a board naming no
-     * `role:`, and Lit Watch).
+     * `role:`, and Lit Watch), among the roles of the hub `hub` the project is written to.
      */
-    newProjectPerson: (keys: readonly string[] | null) => NewProjectPerson | null;
-    /** Whether a board offers New project: its rule takes the project the board's write makes. */
-    offersNewProject: (preset: BoardPreset) => boolean;
+    newProjectPerson: (keys: readonly string[] | null, hub?: string) => NewProjectPerson | null;
+    /**
+     * Whether a board offers New project: its rule takes the project the board's write makes in the
+     * hub `hub`, read under that hub's words; with no hub, whether it does so in any hub of the
+     * workspace, or under the merged config in a workspace that lists none.
+     */
+    offersNewProject: (preset: BoardPreset, hub?: string) => boolean;
     hubRoot: () => string | null;
     docPlaceFor: (tab: { view: string; state: unknown }) => DocPlace;
     /**
@@ -210,7 +218,8 @@ export type SelectorsStore = {
     projects: () => Project[];
     venues: () => Venue[];
     datasets: () => Dataset[];
-    manifestFields: () => FormField[];
+    /** The project form of a project of the hub `hub`: oculus's fields and the hub's added ones. */
+    manifestFields: (hub?: string) => FormField[];
     manifestSections: () => string[];
     fieldChoices: (field: FormField, project?: Project | null, root?: string) => Choice[];
     contextWindow: () => number;
@@ -304,9 +313,17 @@ export function createSelectors(
         joinedFor(languageMap(configMap()), entities.apps()?.rows ?? [])
     );
 
-    /** The preset of one view id, over the config as it currently stands. */
+    /**
+     * The merged config with the words of the hub `hub` over it, and the union of every hub's
+     * words for none: what a helper reading a vocabulary list and a setting together is given.
+     */
+    function hubConfig(hub?: string): Record<string, unknown> {
+        return { ...configMap(), ...vocabOf(hub) };
+    }
+
+    /** The preset of one view id, over the config and each hub's words as they currently stand. */
     function boardPreset(view: string): BoardPreset {
-        return presetFor(view, configMap());
+        return presetFor(view, configMap(), vocabOf);
     }
 
     /**
@@ -329,7 +346,7 @@ export function createSelectors(
      * chips.
      */
     function boardStats(items: BoardItem[]): BoardStats {
-        return stats(items, entities.portfolio()?.entities.venues ?? {}, configMap());
+        return stats(items, entities.portfolio()?.entities.venues ?? {}, configMap(), vocabOf);
     }
 
     /**
@@ -446,10 +463,10 @@ export function createSelectors(
         const merged = configMap();
         const self = selfIds(snapshot);
         const view = boardIds(merged).find((name) => {
-            const preset = presetFor(name, merged);
+            const preset = presetFor(name, merged, vocabOf);
             return boardTakes(preset.rule, project, takeContextOf(preset, self));
         });
-        const preset = presetFor(view ?? '', merged);
+        const preset = presetFor(view ?? '', merged, vocabOf);
         return boardItemFor(snapshot, project, preset, sessionsOf);
     }
 
@@ -494,9 +511,12 @@ export function createSelectors(
         return snapshot === null ? [] : Object.values(snapshot.entities.datasets);
     }
 
-    /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
-    function manifestFields(): FormField[] {
-        return formFields(configMap());
+    /**
+     * The edit form as config/schemas/manifest-schema.yml describes it, in file order, with the
+     * fields the hub `hub` adds, and every hub's added fields for none.
+     */
+    function manifestFields(hub?: string): FormField[] {
+        return formFields(configMap(), vocabOf(hub));
     }
 
     /** The form's sections, in the order the schema lists them. */
@@ -514,7 +534,7 @@ export function createSelectors(
         hub?: string
     ): Choice[] {
         const root = hub ?? project?.root ?? workspace().primary ?? '';
-        return choicesFor(field, entities.portfolio(), configMap(), root);
+        return choicesFor(field, entities.portfolio(), hubConfig(root), root);
     }
 
     // ------------------------------------------------------------------ sessions The joins over
@@ -722,6 +742,7 @@ export function createSelectors(
     return {
         configMap,
         hubVocabs,
+        vocabOf,
         paintLimit: editorPaintLimit,
         editorOptions: () => editorOptionsNow,
         repoSettings: repoSettingsOf,
@@ -741,10 +762,15 @@ export function createSelectors(
         disseminatedFor,
         domainChoices,
         newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
-        newProjectPerson: (keys) =>
-            personOfNewProjects(rolesOf(configMap()), keys, selfIds(entities.portfolio())),
-        offersNewProject: (preset) =>
-            offersOfNewProjects(preset.rule, takeContextOf(preset, selfIds(entities.portfolio()))),
+        newProjectPerson: (keys, hub) =>
+            personOfNewProjects(rolesOf(vocabOf(hub)), keys, selfIds(entities.portfolio())),
+        offersNewProject: (preset, hub) => {
+            const context = takeContextOf(preset, selfIds(entities.portfolio()));
+            if (hub !== undefined) return offersOfNewProjects(preset.rule, context, hub);
+            const hubs = Object.keys(hubVocabs()?.lists ?? {});
+            if (hubs.length === 0) return offersOfNewProjects(preset.rule, context);
+            return hubs.some((one) => offersOfNewProjects(preset.rule, context, one));
+        },
         hubRoot,
         docPlaceFor,
         engineAtSettled,

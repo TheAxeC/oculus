@@ -3,9 +3,10 @@
     // them: one box per item for a list, a key and a value per entry for a key/value table, a card
     // with a control per catalog field for a record (FieldControl.svelte), and for a field that is
     // a nested list of records the same cards again inside the card. Each entry has Move up, Move
-    // down and Remove, and the list ends with Add. A list that names its items (`slots`) draws one
-    // box per name with no Add, Remove or Move; a parked list draws its items with Remove alone; a
-    // multi is one card holding its picker.
+    // down and Remove, and the list ends with Add; a value merged in oculus's place (`ordered`
+    // false) has no Move, since the merge keeps oculus's order. A list that names its items
+    // (`slots`) draws one box per name with no Add, Remove or Move; a parked list draws its items
+    // with Remove alone; a multi is one card holding its picker.
     //
     // A value a record holds that its control cannot show is drawn after the card's fields as the
     // file has it, with the sentence that the control cannot show it, and so is a field the catalog
@@ -24,6 +25,10 @@
     //
     // Add puts the focus on the first control of the entry it adds once the entry is drawn, as VS
     // Code's Add Item opens its box focused, so what is typed next goes into the new entry.
+    //
+    // A list draws its first PAGE entries and a Show more line for the next PAGE, so a catalog of
+    // thousands of entries (the interface words, the Unicode math symbols) unfolds without drawing
+    // every card at once; Add draws through to the entry it adds.
 
     import { tick } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -66,6 +71,11 @@
         slots?: string[];
         /** A list whose items can only be removed. */
         removeOnly?: boolean;
+        /**
+         * Whether the entries can be moved: false for a value merged in oculus's place, which
+         * keeps oculus's order.
+         */
+        ordered?: boolean;
         /** How many Discards the draft has had, which a control's Add person compares. */
         discards?: number;
         onedit: (edit: Edit) => void;
@@ -84,6 +94,7 @@
         title = '',
         slots,
         removeOnly = false,
+        ordered = true,
         discards = 0,
         onedit
     }: Props = $props();
@@ -98,6 +109,14 @@
     let box: HTMLDivElement | undefined = $state();
     /** The place of the entry an Add asked for, until its first control has taken the focus. */
     let added: number | null = $state(null);
+
+    /** How many entries a list draws at first, and how many more each Show more draws. */
+    const PAGE = 100;
+    /** How many entries are drawn now. */
+    let shown = $state(PAGE);
+    const drawn = $derived(cards.length > shown ? cards.slice(0, shown) : cards);
+    /** How many entries a press of Show more draws. */
+    const next = $derived(Math.min(PAGE, cards.length - shown));
 
     $effect(() => {
         const at = added;
@@ -114,6 +133,7 @@
     /** Add an entry at the end of the list, whose first control then takes the focus. */
     function add(): void {
         added = cards.length;
+        shown = Math.max(shown, cards.length + 1);
         onedit(aimed({ do: 'add' }));
     }
 
@@ -136,7 +156,7 @@
      * Whether a field draws its name before its control: in a card, and in a list of named slots.
      */
     const worded = $derived(!inline || slots !== undefined);
-    const movable = $derived(!fixed && !removeOnly);
+    const movable = $derived(!fixed && !removeOnly && ordered);
 
     /** The name of a field in a control's label, with the nested list it is in. */
     function nameOf(name: string, at: number): string {
@@ -174,7 +194,7 @@
 </script>
 
 <div class="cards" data-cards={form} bind:this={box}>
-    {#each cards as card, at (at)}
+    {#each drawn as card, at (at)}
         <div
             class="card"
             class:inline
@@ -233,7 +253,7 @@
                     {/if}
                 {/each}
             </div>
-            {#if movable || removeOnly}
+            {#if !fixed || removeOnly}
                 <span class="controls">
                     {#if movable}
                         <ToolButton
@@ -285,6 +305,13 @@
             {/if}
         </div>
     {/each}
+    {#if next > 0}
+        <ToolButton
+            label={t('settings.editor_more', next, cards.length)}
+            glyph="expand"
+            onclick={() => (shown += PAGE)}
+        />
+    {/if}
     {#if !fixed && !removeOnly}
         <ToolButton label={t('settings.editor_add')} glyph="add" onclick={add} />
     {/if}

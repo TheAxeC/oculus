@@ -1,10 +1,10 @@
 import { installPageConfig } from '$lib/state/shared/page/install';
 import type { PageLoad } from './$types';
 
-// The catalog, the glyph names with their ASCII stand-ins, the tone vocabulary and the appearance
-// the server read are installed before the page renders, so a component can call t(), glyph(),
-// toneOf() and themes() while it initialises. Every later change reaches the page as a push on the
-// `config` channel instead.
+// The catalog, the glyph names with their ASCII stand-ins, the words of every hub of the workspace
+// (state/shared/words/tones.ts) and the appearance the server read are installed before the page
+// renders, so a component can call t(), glyph(), toneOf() and themes() while it initialises. Every
+// later change reaches the page as a push on the `config` channel instead.
 //
 // The collection keys are not installed anywhere: they are handed to the page, which registers one
 // view per key in the registry of the client it builds. The seed of the `config` channel is handed

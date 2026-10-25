@@ -1,5 +1,7 @@
 // Layer 2, client state. Pure Position Leads status, deadline, fit, ordering, search, and saved
-// view state. The view receives ready-to-draw live and expired lists and owns no feed rules.
+// view state. The view receives ready-to-draw live and expired lists and owns no feed rules. A
+// lead's status is read under the words of its own hub, given as `wordsOf`, and under the config
+// given without it.
 
 import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
@@ -21,7 +23,7 @@ import {
     isLeadOpen,
     openWord
 } from '../../data/accounts/leads.ts';
-import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
+import { vocabKeys, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { feedRoot, uniqueIdents } from '../shared/page/idents.ts';
 
 export type LeadEntry = Record<string, unknown>;
@@ -103,15 +105,33 @@ export function leadIdents(entries: readonly LeadEntry[]): (entry: LeadEntry) =>
     return uniqueIdents(entries, leadId, 'lead');
 }
 
+/** The words a lead is read under: its own hub's through `wordsOf`, else `config`. */
+function leadWords(config: Config, entry: LeadEntry, wordsOf: WordsOf | undefined): Config {
+    return wordsOf?.(feedRoot(entry)) ?? config;
+}
+
 /** Hide the entries the reader declined, or show every entry while the toggle is on. */
-export function visibleLeads(config: Config, entries: LeadEntry[], showing: boolean): LeadEntry[] {
+export function visibleLeads(
+    config: Config,
+    entries: LeadEntry[],
+    showing: boolean,
+    wordsOf?: WordsOf
+): LeadEntry[] {
     if (showing) return entries;
-    return entries.filter((entry) => !isLeadDeclined(config, entry.status));
+    return entries.filter(
+        (entry) => !isLeadDeclined(leadWords(config, entry, wordsOf), entry.status)
+    );
 }
 
 /** How many entries of the feed the reader has declined, which is what the toggle offers. */
-export function declinedCount(config: Config, entries: readonly LeadEntry[]): number {
-    return entries.filter((entry) => isLeadDeclined(config, entry.status)).length;
+export function declinedCount(
+    config: Config,
+    entries: readonly LeadEntry[],
+    wordsOf?: WordsOf
+): number {
+    return entries.filter((entry) =>
+        isLeadDeclined(leadWords(config, entry, wordsOf), entry.status)
+    ).length;
 }
 
 /** The first ISO date inside deadline prose, or null when it contains none. */
@@ -121,9 +141,15 @@ export function deadlineOf(text: unknown): string | null {
 }
 
 /** A closed lead or one whose ISO deadline precedes today belongs in the expired list. */
-export function isExpired(config: Config, lead: LeadEntry, today: string): boolean {
+export function isExpired(
+    config: Config,
+    lead: LeadEntry,
+    today: string,
+    wordsOf?: WordsOf
+): boolean {
     const deadline = deadlineOf(lead.deadline);
-    return isLeadClosed(config, lead.status) || (deadline !== null && deadline < today);
+    const closed = isLeadClosed(leadWords(config, lead, wordsOf), lead.status);
+    return closed || (deadline !== null && deadline < today);
 }
 
 /**
@@ -148,9 +174,14 @@ export function fitTone(fit: unknown, vocab: unknown): string {
 }
 
 /** Split and order live leads soonest first, and expired leads newest first, undated last. */
-export function splitLeads(config: Config, entries: LeadEntry[], today: string): SplitLeads {
-    const live = entries.filter((entry) => !isExpired(config, entry, today));
-    const expired = entries.filter((entry) => isExpired(config, entry, today));
+export function splitLeads(
+    config: Config,
+    entries: LeadEntry[],
+    today: string,
+    wordsOf?: WordsOf
+): SplitLeads {
+    const live = entries.filter((entry) => !isExpired(config, entry, today, wordsOf));
+    const expired = entries.filter((entry) => isExpired(config, entry, today, wordsOf));
     live.sort((left, right) => {
         const a = deadlineOf(left.deadline);
         const b = deadlineOf(right.deadline);

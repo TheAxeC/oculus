@@ -7,7 +7,7 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import { isDormant, type Domain } from '$lib/state/boards/structure/lines';
-    import { domainTone } from '$lib/state/shared/words/tones';
+    import { domainTone, vocabOf } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     type Props = RecordCardProps & { domain: Domain };
@@ -21,7 +21,7 @@
     const cardMath = createCardMath();
 </script>
 
-<div class:dormant={isDormant(projects, configMap())} data-domain={domain.id}>
+<div class:dormant={isDormant(projects, configMap(), vocabOf)} data-domain={domain.id}>
     <RegistryCard
         collection="domains"
         id={domain.id}

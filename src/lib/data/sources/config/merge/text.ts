@@ -142,7 +142,7 @@ class TextNotAMap extends Error {
  * Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. An
  * own `__proto__` key is skipped at every level, because it is no key of the flat map.
  */
-function flattenText(node: unknown, prefix = ''): Record<string, string> {
+export function flattenText(node: unknown, prefix = ''): Record<string, string> {
     const flat: Record<string, string> = {};
     if (!isMap(node)) throw new TextNotAMap(prefix || 'root');
     for (const [key, value] of Object.entries(node)) {

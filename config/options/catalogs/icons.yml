@@ -1,0 +1,16 @@
+# ===========================================================================
+# options/catalogs/icons.yml
+# The line icons of catalogs/icons.yml described once. loadConfig() reads it into the merged map under `options`, named catalogs/icons.yml, the entry carrying as its `default` the value catalogs/icons.yml holds. The shape of an entry is the one the head of options/appearance.yml gives.
+# The workspace sets this catalog in its file's settings:, under the key the catalog holds in the merged config, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts): a glyph name the workspace names replaces oculus's icon in oculus's place, a new name comes after oculus's, and `<name>: null` takes one out. A finding about a value the workspace set names the workspace file and settings.icons.
+# ===========================================================================
+
+options:
+    icons:
+        heading: appearance
+        section: Glyphs and icons
+        help: The line icon each glyph name is drawn as, by the name of an icon the icon package ships.
+        fields:
+            key: the glyph name
+            value: the name of the icon it is drawn as
+
+groups: {}

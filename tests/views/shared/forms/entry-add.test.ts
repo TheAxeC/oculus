@@ -135,7 +135,7 @@ describe('the hub an Add writes to', () => {
  */
 function openingClient(answer: Record<string, unknown>, opened: unknown[]): ClientState {
     const client = {
-        fs: { primary: () => PRIMARY },
+        fs: { primary: () => PRIMARY, roots: () => [{ key: PRIMARY, hub: true }] },
         entities: { config: () => null },
         writes: {
             addLead: () => Promise.resolve(answer),

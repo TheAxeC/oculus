@@ -77,7 +77,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 33 keys and no others; any other key is a finding and is not applied. A key set here replaces oculus's value whole. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 45 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; and `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips, a funding stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                     # the folders projects are found in
@@ -86,6 +86,7 @@ collections:              # the data files and the two feeds (leads, radar), one
 chat_context:             # the collections whose files a chat's index holds for the hub
 new_project_dir:          # the folder a new project is made in, per tier
 linkedin_dir:             # a website's LinkedIn folder
+career_file:              # the career strategy file the Focus board's banner reads
 memories_dir:             # the photo wall's pictures
 wallpaper_dir:            # the backdrop's pictures
 bookmarks:                # where the reader's own bookmarks are kept
@@ -94,10 +95,25 @@ apps_dir:                 # where the machine's apps are kept
 wallpaper.image:          # the backdrop shown
 docs:                     # the hub's documents, each a tab of a page
 counts:                   # the counts the tabs draw
-statuses:                 # the statuses of collection entries, with their colours and roles
-chips:                    # the chips of projects, with their labels and glyphs
-lead_statuses:            # the statuses of Position Leads, with their roles
-leads_fit:                # the fit colours of the Position Leads
+palette:                  # the hex each palette token stands for (by word)
+stages:                   # the stages of projects, with their labels and flags (by word)
+forms:                    # the forms of a project's output (by word)
+chips:                    # the chips of projects, with their labels and glyphs (by word)
+statuses:                 # the statuses of collection entries, with their colours and roles (by word)
+lead_statuses:            # the statuses of Position Leads, with their roles (by word)
+focus_lanes:              # the Focus lanes, in order (whole)
+fund_stages:              # the stages stacked in the Focus Funding column, in order (whole)
+focus_lane_tones:         # the colour of each collection lane bar of Focus (by word)
+tiers:                    # the kinds of project a manifest's tier names (by word)
+research_audit:           # the tiers the audit's research rules skip (by word)
+roles:                    # the roles a person holds on a project, in order (whole)
+categories:               # the categories a project is filed under (by key)
+leads_fit:                # the fit colours of the Position Leads (by word)
+data_access:              # the colour of a dataset's access chip (by word)
+venue_categories:         # the categories of venues, in order (whole)
+venue_tiers:              # the tiers of venues, in order (whole)
+radar_buckets:            # the buckets of Lit Watch, in order (whole)
+manifest_fields:          # the fields the hub adds to the form of its own projects (by row)
 slurm.resource:           # the cluster Live HPC polls
 lint.writing_skip:        # the files the writing rules skip
 lint.writing_glyphs:      # the files the writing rules let draw arrows and glyphs
@@ -110,6 +126,24 @@ audit.website.title:      # the key of a feed entry's title
 audit.website.kinds:      # the sections of the feed a project is expected in, by stage and form
 app_settings:             # the values of the settings apps declare
 ```
+
+## The workspace's settings
+
+`settings:` of a workspace file, `.oculus/workspaces/<name>.yml`, holds the workspace's own values, each key as the merged config holds it, with no file names. A key of the hub's settings above is a finding there and is not applied.
+
+```yaml
+<option>:                 # any option of config/defaults/, as config/options/ describes it
+agents:                   # the composer's agents (by name)
+patterns:                 # the file nesting patterns (by pattern)
+glyphs:                   # the glyphs' ASCII stand-ins (by name)
+icons:                    # the icon map (by name)
+latex_editing:            # the sections of the LaTeX tables (by name)
+latex_unimath:            # the Unicode math rows (by command)
+text:                     # words of the interface, by the dotted key of the text catalog
+locale:                   # the display language: en, or the languageId an app contributes
+```
+
+A catalog is laid over oculus's in oculus's place: an entry the workspace names replaces oculus's where it stands, a new entry comes after oculus's, and `<name>: null` or `{ command: <command>, removed: true }` takes one out. `text` is laid over the display language and over oculus's English words, key by key.
 
 ## Keys and links
 

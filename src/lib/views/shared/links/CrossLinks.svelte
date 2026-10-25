@@ -6,15 +6,16 @@
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import type { Project } from '$lib/state/boards/collection';
     import {
         groupProjects,
         membersByStage,
-        type CrossGroup,
-        type Project
-    } from '$lib/state/boards/collection';
+        type CrossGroup
+    } from '$lib/state/boards/structure/cross-links';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
         layout: { openView },
@@ -26,7 +27,7 @@
     type Props = Source;
 
     let { projects, groups }: Props = $props();
-    const shown = $derived(groups ?? groupProjects(projects ?? [], configMap()));
+    const shown = $derived(groups ?? groupProjects(projects ?? [], configMap(), vocabOf));
     let opened = $state(new Set<string>());
 
     function isOpen(type: string): boolean {

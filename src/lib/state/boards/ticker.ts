@@ -1,11 +1,13 @@
 // Layer 2, client state. Deadline, follow-up, subtask and venue-load arithmetic lives here because
-// ticker timing changes independently of the Focus board lanes.
+// ticker timing changes independently of the Focus board lanes. A record's stage and status are
+// read under the words of its own hub when the caller gives them (`wordsOf`).
 
 import {
     optionKeys,
     type Collection,
     type Id,
     type Project,
+    type Rooted,
     type Snapshot,
     type Venue
 } from '../../data/model/index.ts';
@@ -14,7 +16,7 @@ import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guar
 import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { entryFollowups } from './collection.ts';
-import { hasWord } from '../../data/shapes/vocab-keys.ts';
+import { hasWord, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
 import {
@@ -149,14 +151,23 @@ export function collectionStatuses(collection: Collection | undefined): string[]
     return optionKeys(collection?.schema?.find((field) => field.field === 'status'));
 }
 
-/** The whole ticker, in the order the board shows its groups. */
-export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now: number): Ticker {
+/**
+ * The whole ticker, in the order the board shows its groups. `config` gives the settings, and a
+ * record's stage and status are read under the words of its own hub when `wordsOf` gives them.
+ */
+export function ticker(
+    snapshot: Snapshot,
+    config: Record<string, unknown>,
+    now: number,
+    wordsOf?: WordsOf
+): Ticker {
+    const at = (record: Rooted): Record<string, unknown> => wordsOf?.(rootOf(record)) ?? config;
     const horizon = setting(config, 'deadline_horizon_days', 90);
     const months = setting(config, 'conf_horizon_months', 1);
     const warn = venueWarn(config);
     const labelMode = config.focus_label_mode;
     const projects = Object.values(snapshot.entities.projects);
-    const liveProjects = projects.filter((one) => hasWord(config, 'stages', 'live', one.stage));
+    const liveProjects = projects.filter((one) => hasWord(at(one), 'stages', 'live', one.stage));
     const collections = snapshot.entities.collections;
     const sources = tickerSources(config);
     const categories = tickerCategories(config);
@@ -179,7 +190,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const paper = categoryOf(sources, PROJECTS);
     for (const project of projects) {
         const deadline = (project.deadline ?? '').trim();
-        if (paper === undefined || deadline === '' || settled(project, config)) continue;
+        if (paper === undefined || deadline === '' || settled(project, at(project))) continue;
         const days = daysUntil(deadline, now);
         if (days !== null && days > horizon) continue;
         const line = item(paper, GLYPHS[paper], focusLabel(project, labelMode), days, {
@@ -221,7 +232,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const grant = categoryOf(sources, FUNDING);
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (grant === undefined || closesDeadline(config, status) || deadlineMet(config, status)) {
+        const words = at(scheme);
+        if (grant === undefined || closesDeadline(words, status) || deadlineMet(words, status)) {
             continue;
         }
         const days = daysUntil(isoOf(scheme.deadline), now);
@@ -249,7 +261,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const statuses = collectionStatuses(collections[key]);
         for (const entry of entriesOf(collections, key)) {
             const status = str(entry.fields.status);
-            if (closesDeadline(config, status) || deadlineMet(config, status)) continue;
+            if (closesDeadline(at(entry), status) || deadlineMet(at(entry), status)) continue;
             const days = daysUntil(entryDate(entry), now);
             // An undated entry of a source marked `undated` (the tasks file) is open work rather
             // than a date, so it is a task line; an undated entry of any other file names no
@@ -282,7 +294,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const leadsWindow = setting(config, 'leads_horizon_days', 21);
     const position = categoryOf(sources, LEADS);
     for (const lead of snapshot.entities.feeds.leads ?? []) {
-        if (position === undefined || isLeadClosed(config, lead.status)) continue;
+        if (position === undefined || isLeadClosed(at(lead), lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
         if (days === null || days < 0 || days > leadsWindow) continue;
         dated.push({
@@ -351,7 +363,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+        if (closesDeadline(at(scheme), status) && !statusFlag(at(scheme), status, 'live_subtasks'))
             continue;
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
@@ -370,7 +382,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
-            if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+            if (
+                closesDeadline(at(entry), status) &&
+                !statusFlag(at(entry), status, 'live_subtasks')
+            )
                 continue;
             const held = entryFollowups(entry);
             for (const { note, days } of dueFollowups(held, now)) {
@@ -408,7 +423,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+        if (closesDeadline(at(scheme), status) && !statusFlag(at(scheme), status, 'live_subtasks'))
             continue;
         for (const line of subtaskLines(
             scheme.subtasks,
@@ -430,7 +445,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
-            if (closesDeadline(config, status) && !statusFlag(config, status, 'live_subtasks'))
+            if (
+                closesDeadline(at(entry), status) &&
+                !statusFlag(at(entry), status, 'live_subtasks')
+            )
                 continue;
             for (const line of subtaskLines(
                 subtasksOf(entry.fields.subtasks),
@@ -466,8 +484,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
         venueLoad: venueLoad(liveProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
-        behind: manifestsBehind(liveProjects, config),
-        unplaced: unplacedRow(unplaced(projects, config))
+        behind: manifestsBehind(liveProjects, config, wordsOf),
+        unplaced: unplacedRow(unplaced(projects, config, wordsOf))
     };
 }
 

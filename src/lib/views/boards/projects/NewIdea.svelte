@@ -15,11 +15,13 @@
          * board naming no `role:`, which names the user in the field of the first row of `roles:`.
          */
         roles: readonly string[] | null;
+        /** Whether the board's rule takes the project the write makes in the hub given. */
+        takes?: (hub: string) => boolean;
         seed?: { id: string; eli5: string; title?: string };
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, tier, roles, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tier, roles, takes, seed, oncreated }: Props = $props();
 </script>
 
-<NewIdeaForm {onclose} {onsaid} {tier} {roles} {seed} {oncreated} />
+<NewIdeaForm {onclose} {onsaid} {tier} {roles} {takes} {seed} {oncreated} />

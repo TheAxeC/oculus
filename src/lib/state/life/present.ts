@@ -439,6 +439,7 @@ export function dropRefusal(
 export const deckShape = unchangedAs<Deck>(
     z.object({
         root: z.string(),
+        hub: z.string(),
         path: z.string(),
         name: z.string(),
         title: z.string(),

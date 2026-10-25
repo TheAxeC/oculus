@@ -74,7 +74,7 @@ export const CATALOG_FILES: readonly CatalogFile[] = [
 export function fileShapeOf(name: string): { shape: z.ZodType; owned: Owned } | undefined {
     const norm = name.replaceAll('\\', '/');
     if (norm.startsWith('text/')) return { shape: textFileShape, owned: under('text') };
-    const glob = norm.replace(/^options\/[^/]+\.yml$/, 'options/*.yml');
+    const glob = norm.replace(/^options\/(?:[^/]+\/)?[^/]+\.yml$/, 'options/*.yml');
     const catalog = CATALOG_FILES.find((one) => one.file === glob);
     return catalog === undefined ? undefined : { shape: catalog.shape, owned: catalog.owned };
 }

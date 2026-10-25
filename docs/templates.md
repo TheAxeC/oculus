@@ -36,7 +36,7 @@ Oculus writes these itself, so they have no template:
 
 ## config.yml
 
-The hub's own settings. A key set here replaces oculus's value for this hub. Any other key is a finding.
+The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here is laid over oculus's value by its shape: a map word by word, `categories` row by row by `key`, and a list whose order is its meaning whole. `manifest_fields` adds fields to the form of this hub's projects. Any other key set here replaces oculus's value for this hub. A key not shown here is a finding.
 
 ```yaml
 # Where projects are found: folders relative to the hub. A project is a folder holding project.yml
@@ -171,35 +171,147 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
 
-# The statuses of this hub's collection entries, each with its colour and the flags that say what
-# it does, in the form of `statuses` in oculus's config/catalogs/vocab.yml. Set here, it replaces
-# oculus's whole map for this hub.
-# statuses: {}
+# The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
+# config/defaults/layout.yml. Set here, it replaces oculus's whole map for this hub.
+# counts: {}
+
+# This hub's words, each in the form of the key of the same name in oculus's
+# config/catalogs/vocab.yml, and this hub's records are drawn in them. A map is laid over oculus's
+# word by word: a word named here replaces oculus's in oculus's place, a new word comes after
+# oculus's, and `<word>: null` takes oculus's word out. Only the words that differ are written.
+# A word taken out, or left out of a list replaced whole here such as `roles`, also leaves every
+# list that names it (a category's stages, a Focus lane's stages and chips, a funding stage's
+# statuses, a count's match, a board's tier and role, whose one word leaves an empty list); in a
+# list written here, each such word is a finding at its place in this file, and it is not read.
+
+# The hex each palette token stands for.
+# palette: {}
 #   example:
-#   statuses:
-#     on-hold: { color: "#9ca3af", waiting: true }
+#   palette: { "#0f766e": c-teal }
+
+# The stages of this hub's projects, each with its label, its glyph, its colour and the flags that
+# say what it does.
+# stages: {}
+#   example:
+#   stages:
+#     exploring: { label: Experimenting, icon: orange, color: "#f59e0b", live: true, on_map: true }
+#     trialling: { label: trialling, icon: blue, color: "#2563eb", live: true, on_map: true }
+#     stopped: null
+
+# The forms of this hub's projects' output, each with its label and its glyph.
+# forms: {}
+#   example:
+#   forms:
+#     dataset: { label: "dataset release", icon: page }
 
 # The chips of this hub's projects, each with its label, its glyph and the flags that say what it
-# does, in the form of `chips` in oculus's config/catalogs/vocab.yml. Set here, it replaces
-# oculus's whole map for this hub.
+# does.
 # chips: {}
 #   example:
 #   chips:
 #     on-hold: { label: on hold, icon: black, blocked: true }
 
-# The statuses of this hub's Position Leads, each with the flags that say what it does and a
-# colour, in the form of `lead_statuses` in oculus's config/catalogs/vocab.yml. Set here, it
-# replaces oculus's whole map for this hub.
-# lead_statuses: {}
+# The statuses of this hub's collection entries, each with its colour and the flags that say what
+# it does.
+# statuses: {}
+#   example:
+#   statuses:
+#     on-hold: { color: "#9ca3af", waiting: true }
 
-# The counts the view tabs draw and the rail sums, by view id, in the form of `counts` in oculus's
-# config/defaults/layout.yml. Set here, it replaces oculus's whole map for this hub.
-# counts: {}
+# The statuses of this hub's Position Leads, each with the flags that say what it does and a
+# colour.
+# lead_statuses: {}
+#   example:
+#   lead_statuses:
+#     shortlisted: { color: "#2563eb" }
 
 # The colour of a Position Lead's fit chip, by its fit.
 # leads_fit: {}
 #   example:
 #   leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
+
+# The colour of each collection lane bar of Focus, by the lane, as a palette tone.
+# focus_lane_tones: {}
+#   example:
+#   focus_lane_tones: { funding: teal }
+
+# The kinds of project a manifest's `tier` names, each with its label.
+# tiers: {}
+#   example:
+#   tiers:
+#     teaching: { label: Teaching }
+
+# The tiers the audit's research rules leave alone, and whose projects the Orphans card leaves out.
+# research_audit: {}
+#   example:
+#   research_audit: { skip_tiers: [personal, software] }
+
+# The colour of a dataset's access chip, by its access.
+# data_access: {}
+#   example:
+#   data_access: { embargoed: "#7c3aed" }
+
+# The categories this hub's projects are filed under, each a row with its `key`. A row named here
+# replaces oculus's row of that key in oculus's place, a new row comes after oculus's, and
+# `{ key: <key>, removed: true }` takes oculus's row out.
+# categories: []
+#   example:
+#   categories:
+#     - { key: idea, label: "early ideas", stages: { words: [nascent, scoping] } }
+#     - { key: released, removed: true }
+
+# The lists below are replaced whole, since their order is their meaning: set here, the list is
+# this hub's in full.
+
+# The Focus lanes, in the order they are drawn, each with the stages or chips it takes.
+# focus_lanes: []
+#   example:
+#   focus_lanes:
+#     - { key: run, label: Run, sub: "getting the numbers", color: "#16a34a", cluster: now, stages: [exploring] }
+#     - { key: idea, label: Idea, sub: "ideas not started yet", color: "#b5638a", cluster: idea, stages: [nascent] }
+
+# The stages stacked inside the Focus Funding column, each with the statuses it matches.
+# fund_stages: []
+#   example:
+#   fund_stages:
+#     - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review] }
+
+# The roles a person holds on a project, in the order the project form offers them, each with the
+# manifest field that lists its people.
+# roles: []
+#   example:
+#   roles:
+#     - { key: lead, label: Lead, field: lead }
+#     - { key: student, label: Student, field: collaborators }
+
+# The categories a venue's category takes, in the order the Venues view offers them.
+# venue_categories: []
+#   example:
+#   venue_categories: [journal, conference, workshop]
+
+# The tiers a venue's tier takes, best first, each with its colour and label.
+# venue_tiers: []
+#   example:
+#   venue_tiers:
+#     - { key: core, color: "#7c3aed", label: core }
+#     - { key: unrated, color: "#94a3b8", label: unrated, assignable: false }
+
+# The buckets of Lit Watch, in the order they are drawn, each with its glyph, label and colour.
+# radar_buckets: []
+#   example:
+#   radar_buckets:
+#     - { key: cite_baseline, glyph: green, label: "Cite / baseline", color: "#16a34a" }
+
+# The fields this hub adds to the form of its own projects. A row is a field of the form with
+# `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where
+# its widget takes them, `from`, `options` and `required`. The field is drawn after oculus's fields
+# of its section, in this order, and is a known key of this hub's manifests only. A row with no
+# field, naming a field the form already has or an earlier row names, a section the form lacks or a
+# type the form does not draw is a finding, and the row is left out.
+# manifest_fields: []
+#   example:
+#   manifest_fields:
+#     - { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." }
 ```
 
 ## local.yml
@@ -322,6 +434,13 @@ primary: my-hub
 # `collection`) overrides oculus's entry with the same key, and
 # `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
 # overrides by its keys, and a key set to null takes oculus's key out.
+# The six catalogs, `agents`, `patterns` (file nesting), `glyphs`, `icons`, `latex_editing` and
+# `latex_unimath`, are laid over oculus's in oculus's place: an entry named here replaces oculus's
+# where it stands, a new entry comes after oculus's, `<name>: null` takes one out, and a Unicode
+# math row is matched by its `command`, `{ command: <command>, removed: true }` taking it out.
+# `locale` is the display language: `en`, or the languageId of a display language an approved,
+# enabled app contributes. `text` replaces words of the interface by the dotted key of oculus's
+# text catalog, over the display language and over oculus's English words.
 # `self` is the key of your own entry in the primary hub's people file, which the Person page's
 # "this is me" button and the portfolio chat read.
 # settings:
@@ -333,6 +452,13 @@ primary: my-hub
 #     - { page: literature, removed: true }
 #   counts:
 #     hpc: null
+#   glyphs:
+#     red: R
+#   latex_unimath:
+#     - { command: mbfalpha, detail: "U+1D736", documentation: "bold alpha" }
+#   locale: en
+#   text:
+#     views.settings: Preferences
 ```
 
 ## schedules.yml

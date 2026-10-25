@@ -5,9 +5,37 @@
 // rows that carry it as `true`, so `chips` with `blocked` is the chip words that carry
 // `blocked: true`. A word a list does not hold is answered with the list's closest word. The tiers
 // the research audit skips are read here too, as the audit and the Orphans card read them.
+//
+// Every helper reads the config or the value its caller passes, with no state of its own: a caller
+// drawing one record passes the words of that record's hub, and a caller drawing a list over the
+// records of several hubs passes their union (`unionWords`), each word once with the row of the
+// first hub that holds it. The fields a hub adds to the project form (`manifest_fields`) are among
+// a hub's words, and the form of that hub's projects is oculus's with them laid in
+// (`withManifestFields`), which the page's form, the schema of the hub's project.yml files and the
+// manifest write all read.
 
 import { z } from 'zod';
+import { rootOf } from '../helpers/hub-names.ts';
+import type { Rooted } from '../model/index.ts';
 import { mapShape, readAs, readOr, rowsShape } from './shapes.ts';
+
+/**
+ * The words the records of the hub `hub` are read under, and the union of every hub's words for
+ * none: what a caller drawing the records of several hubs passes a helper.
+ */
+export type WordsOf = (hub?: string) => Record<string, unknown>;
+
+/**
+ * The words a record is read under: those of its own hub (`rootOf`) as `wordsOf` gives them, and
+ * `config` when no `wordsOf` is given.
+ */
+export function recordWords(
+    config: Record<string, unknown>,
+    wordsOf: WordsOf | undefined,
+    record: Rooted
+): Record<string, unknown> {
+    return wordsOf?.(rootOf(record)) ?? config;
+}
 
 /** The name of one vocabulary list entry: its `key` when it is a map, else the entry itself. */
 const vocabKeyShape = z.union([
@@ -155,6 +183,69 @@ export function skippedTiers(config: Record<string, unknown>): string[] {
 }
 
 /**
+ * The field a row of each list of a hub's words is told apart by in a union of several hubs'
+ * words. A list not named here is a list of texts, each told apart by its text.
+ */
+const UNION_FIELD: Readonly<Record<string, string>> = {
+    focus_lanes: 'key',
+    roles: 'key',
+    categories: 'key',
+    venue_tiers: 'key',
+    radar_buckets: 'key',
+    fund_stages: 'label',
+    manifest_fields: 'field'
+};
+
+/** What a row of a list is told apart by in a union: its field's value, or the row as text. */
+function rowName(row: unknown, field: string | undefined): string {
+    const map = readAs(mapShape, row);
+    const named = map !== null && field !== undefined ? map[field] : undefined;
+    if (typeof named === 'string') return named;
+    return typeof row === 'string' ? row : JSON.stringify(row);
+}
+
+/**
+ * The words of several hubs as one, in the order given: each key's value is the union of the
+ * hubs' values, a map holding each word once with the first hub's row, in the order the words
+ * first occur, and a list holding each row once (told apart as `UNION_FIELD` says) with the first
+ * hub's row. A key whose values are of other kinds takes the first hub's value.
+ */
+export function unionWords(
+    hubs: readonly Readonly<Record<string, unknown>>[]
+): Record<string, unknown> {
+    const union: Record<string, unknown> = {};
+    const keys = [...new Set(hubs.flatMap((words) => Object.keys(words)))];
+    for (const key of keys.filter((one) => one !== '__proto__')) {
+        const values = hubs.flatMap((words) => (Object.hasOwn(words, key) ? [words[key]] : []));
+        const maps = values.flatMap((value) => {
+            const map = readAs(mapShape, value);
+            return map === null ? [] : [map];
+        });
+        if (maps.length === values.length) {
+            const merged = new Map<string, unknown>();
+            for (const map of maps) {
+                for (const [word, row] of Object.entries(map)) {
+                    if (!merged.has(word)) merged.set(word, row);
+                }
+            }
+            union[key] = Object.fromEntries(merged);
+        } else if (values.every((value) => Array.isArray(value))) {
+            const field = Object.hasOwn(UNION_FIELD, key) ? UNION_FIELD[key] : undefined;
+            const seen = new Set<string>();
+            union[key] = (values as unknown[][]).flat().filter((row) => {
+                const name = rowName(row, field);
+                if (seen.has(name)) return false;
+                seen.add(name);
+                return true;
+            });
+        } else {
+            union[key] = values[0];
+        }
+    }
+    return union;
+}
+
+/**
  * The Levenshtein distance between two words: the fewest single-character insertions, deletions and
  * substitutions that turn one into the other, compared character by character as written. It keeps
  * two rows of the table, the row above and the row being filled, so it holds two lists the length
@@ -185,4 +276,36 @@ export function closestWord(word: string, words: readonly string[]): string | un
         if (best === undefined || far < best.distance) best = { word: one, distance: far };
     }
     return best?.word;
+}
+
+/** The key of the fields a hub adds to the project form of its own projects. */
+export const MANIFEST_FIELDS_KEY = 'manifest_fields';
+
+/**
+ * The `manifest_schema` value with the rows of a hub's `manifest_fields` laid into its `fields`
+ * map: each row under its `field` key, as the row less `field`, after the last of the form's fields
+ * of its section and after the rows before it of that section, in the hub's order. A row with no
+ * text `field`, or naming a field the map or an earlier row holds, is left out, as the hub layer
+ * leaves it out with its finding. A value that is no map, and rows that are no list, give the value
+ * back.
+ */
+export function withManifestFields(schema: unknown, rows: unknown): unknown {
+    const form = readAs(mapShape, schema);
+    const fields = readAs(mapShape, form?.fields);
+    if (form === null || fields === null || !Array.isArray(rows) || rows.length === 0) {
+        return schema;
+    }
+    const placed = Object.entries(fields);
+    const named = new Set(Object.keys(fields));
+    for (const row of rows) {
+        const own = readAs(mapShape, row);
+        const name = own?.field;
+        if (own === null || typeof name !== 'string' || named.has(name)) continue;
+        named.add(name);
+        const entry = Object.fromEntries(Object.entries(own).filter(([key]) => key !== 'field'));
+        const section = own.section;
+        const last = placed.findLastIndex(([, one]) => readAs(mapShape, one)?.section === section);
+        placed.splice(last < 0 ? placed.length : last + 1, 0, [name, entry]);
+    }
+    return { ...form, fields: Object.fromEntries(placed) };
 }

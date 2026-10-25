@@ -22,7 +22,7 @@
         type BandItem
     } from '$lib/state/boards/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
-    import { namedTone, toneOf } from '$lib/state/shared/words/tones';
+    import { namedTone, toneOf, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
@@ -51,7 +51,7 @@
                   education: [],
                   tones: { funding: '', jobs: '', teaching: '' }
               }
-            : collectionLanes(snapshot, config)
+            : collectionLanes(snapshot, config, vocabOf)
     );
 
     /**

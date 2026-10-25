@@ -55,15 +55,17 @@
             cards={row.cards}
             foot={row.foot}
             legend={row.legend}
+            hub={deck.hub}
         />
     {:else if row.kind === 'idea'}
-        <Grid kind="idea" cards={[row.card]} />
+        <Grid kind="idea" cards={[row.card]} hub={deck.hub} />
     {:else if row.kind === 'project'}
         <Project
             slide={row.slide}
             title={row.title}
             stage={row.stage}
             domain={row.domain}
+            hub={deck.hub}
             tagTone={tagToneOf(deck, row.slide)}
         />
     {:else if row.kind === 'text' || row.kind === 'image' || row.kind === 'columns' || row.kind === 'equation' || row.kind === 'code'}

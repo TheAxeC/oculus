@@ -1,10 +1,12 @@
 // Layer 2, client state. Pure joins for the Pillars and Domains views: the registry lines in the
 // order their collection file lists them, membership, portfolio status, the venue tiers the config
-// names and their counts, and the archival groups. The views receive ready-to-draw lists.
+// names and their counts, and the archival groups. The views receive ready-to-draw lists. A
+// project is read under the words of its own hub when the caller gives them (`wordsOf`), and a list
+// over several hubs (the tiers, the Archival band's stages) is drawn from every hub's words.
 
 import { z } from 'zod';
 import type { Domain, Pillar, Project, Snapshot, Venue } from '../../../data/model/index.ts';
-import { categoriesOf, isArchival } from '../../../data/shapes/boards/categories.ts';
+import { categoriesBy, isArchival } from '../../../data/shapes/boards/categories.ts';
 import {
     optionalTextShape,
     readAs,
@@ -12,7 +14,13 @@ import {
     searchRevealShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { hasWord, skippedTiers, wordsNumbered } from '../../../data/shapes/vocab-keys.ts';
+import {
+    hasWord,
+    recordWords,
+    skippedTiers,
+    wordsNumbered,
+    type WordsOf
+} from '../../../data/shapes/vocab-keys.ts';
 import { realProjects } from '../../sources/registries/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
@@ -50,14 +58,23 @@ export function parseDomainsState(raw: unknown): DomainsState {
 export function lineMembers(
     line: Pillar,
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): Project[] {
-    return realProjects(projects, config).filter((project) => project.pillarIds.includes(line.id));
+    return realProjects(projects, config, wordsOf).filter((project) =>
+        project.pillarIds.includes(line.id)
+    );
 }
 
 /** The projects whose stage carries `live` in `stages`, the work counted as in flight. */
-export function inFlight(projects: Project[], config: Record<string, unknown>): Project[] {
-    return projects.filter((project) => hasWord(config, 'stages', 'live', project.stage));
+export function inFlight(
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): Project[] {
+    return projects.filter((project) =>
+        hasWord(recordWords(config, wordsOf, project), 'stages', 'live', project.stage)
+    );
 }
 
 /**
@@ -68,14 +85,15 @@ export function tierStrip(
     members: Project[],
     venues: Venue[],
     tiers: TierRow[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): TierCount[] {
     if (tiers.length === 0) return [];
     const known = new Set(tiers.map((tier) => tier.key));
     const fallback = (tiers.find((tier) => tier.fallback === true) ?? tiers[tiers.length - 1]).key;
     const venueTier = new Map(venues.map((venue) => [venue.id, venue.tier]));
     const counts = new Map<string, number>();
-    for (const project of inFlight(members, config)) {
+    for (const project of inFlight(members, config, wordsOf)) {
         const held = project.venueId === undefined ? undefined : venueTier.get(project.venueId);
         const key = held !== undefined && known.has(held) ? held : fallback;
         counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -87,30 +105,39 @@ export function tierStrip(
 
 /**
  * Real projects whose pillar tags name no entry in the registry, leaving out the projects of the
- * tiers `research_audit.skip_tiers` names, which need no pillar.
+ * tiers `research_audit.skip_tiers` of their own hub's words names, which need no pillar.
  */
 export function orphans(
     lines: Pillar[],
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): Project[] {
     const known = new Set(lines.map((line) => line.id));
-    const skipped = skippedTiers(config);
-    return realProjects(projects, config).filter(
+    return realProjects(projects, config, wordsOf).filter(
         (project) =>
-            !skipped.includes(project.tier ?? '') && !project.pillarIds.some((id) => known.has(id))
+            !skippedTiers(recordWords(config, wordsOf, project)).includes(project.tier ?? '') &&
+            !project.pillarIds.some((id) => known.has(id))
     );
 }
 
 /**
- * The projects of the Archival band: those whose category, the first row of `categories:` holding
- * them, carries `archival: true`, grouped by stage in the order of the numbers the words of
- * `stages` carry as `dead` (failed, then stopped, in oculus's own vocab.yml).
+ * The projects of the Archival band: those whose category, the first row of `categories:` of their
+ * own hub's words holding them, carries `archival: true`, grouped by stage in the order of the
+ * numbers the words of `stages` of every hub's words carry as `dead` (failed, then stopped, in
+ * oculus's own vocab.yml).
  */
-export function archival(projects: Project[], config: Record<string, unknown>): ArchiveGroup[] {
-    const categories = categoriesOf(config);
-    const unreal = projects.filter((project) => isArchival(project, categories, config));
-    return wordsNumbered(config, 'stages', 'dead')
+export function archival(
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): ArchiveGroup[] {
+    const filed = categoriesBy(config, wordsOf);
+    const unreal = projects.filter((project) => {
+        const { words, categories } = filed(project);
+        return isArchival(project, categories, words);
+    });
+    return wordsNumbered(wordsOf?.() ?? config, 'stages', 'dead')
         .map((stage) => {
             const grouped = unreal.filter((project) => project.stage === stage);
             return { stage, count: grouped.length, projects: grouped };
@@ -118,18 +145,28 @@ export function archival(projects: Project[], config: Record<string, unknown>): 
         .filter((group) => group.count > 0);
 }
 
-/** A card is dormant when it has no member whose stage carries `on_map` in `stages`. */
-export function isDormant(members: Project[], config: Record<string, unknown>): boolean {
-    return !members.some((project) => hasWord(config, 'stages', 'on_map', project.stage));
+/**
+ * A card is dormant when it has no member whose stage carries `on_map` in `stages` of its own hub's
+ * words.
+ */
+export function isDormant(
+    members: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): boolean {
+    return !members.some((project) =>
+        hasWord(recordWords(config, wordsOf, project), 'stages', 'on_map', project.stage)
+    );
 }
 
 /** Real projects that name one domain, preserving project order. */
 export function domainMembers(
     domain: Domain,
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): Project[] {
-    return realProjects(projects, config).filter((project) =>
+    return realProjects(projects, config, wordsOf).filter((project) =>
         project.domainIds.includes(domain.id)
     );
 }
@@ -175,10 +212,11 @@ export function registryLines(
 export function domainsWithMembers(
     domains: Domain[],
     projects: Project[],
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
 ): { domain: Domain; projects: Project[] }[] {
     return domains
-        .map((domain) => ({ domain, projects: domainMembers(domain, projects, config) }))
+        .map((domain) => ({ domain, projects: domainMembers(domain, projects, config, wordsOf) }))
         .filter((item) => item.projects.length > 0);
 }
 

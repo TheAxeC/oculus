@@ -22,6 +22,7 @@ import { pageView } from '$lib/state/forms/page-entry';
 import { hubsTaking, keyOf } from '$lib/state/shared/page/hubs';
 import { askFields } from '$lib/state/forms/new-entry';
 import { radarBuckets } from '$lib/state/feeds/radar';
+import { vocabOf } from '$lib/state/shared/words/tones';
 import { lookUp, lookupOf, sourceName, sourcesAsked } from '$lib/state/feeds/literature/lookup';
 import { hitPaper, LITERATURE } from '$lib/state/feeds/literature/saved';
 import { t } from '$lib/state/shared/words/text';
@@ -122,9 +123,17 @@ export function leadAsk(client: ClientState): Ask {
     };
 }
 
-/** The Add of Lit Watch: the title and the address of the new paper, and its bucket. */
+/**
+ * The Add of Lit Watch: the title and the address of the new paper, and its bucket, one of the
+ * `radar_buckets` of the hub the paper is written to, the primary, else the first hub.
+ */
 export function paperAsk(client: ClientState): Ask {
-    const buckets = radarBuckets(client.entities.config()?.config.radar_buckets).map((one) => ({
+    const hubs = client.fs
+        .roots()
+        .filter((one) => one.hub === true)
+        .map((one) => one.key);
+    const home = hubsTaking(hubs, client.fs.primary()).at(0);
+    const buckets = radarBuckets(vocabOf(home).radar_buckets).map((one) => ({
         id: one.key,
         label: one.label
     }));

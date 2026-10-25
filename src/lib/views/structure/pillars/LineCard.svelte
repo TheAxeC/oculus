@@ -16,7 +16,8 @@
         type TierRow,
         type Venue
     } from '$lib/state/boards/structure/lines';
-    import { paletteTone, toneOf } from '$lib/state/shared/words/tones';
+    import { paletteTone, toneOf, vocabOf } from '$lib/state/shared/words/tones';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -47,13 +48,15 @@
     const {
         selectors: { configMap }
     } = useState();
-    const flight = $derived(inFlight(projects, configMap()));
-    const strip = $derived(tierStrip(projects, venues, tiers, configMap()));
+    const flight = $derived(inFlight(projects, configMap(), vocabOf));
+    const strip = $derived(tierStrip(projects, venues, tiers, configMap(), vocabOf));
     const funding = $derived(optionalText(entry?.fields.funding));
-    const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
+    const tone = $derived(
+        line.color === undefined ? undefined : paletteTone(line.color, rootOf(line))
+    );
 </script>
 
-<div class:dormant={isDormant(projects, configMap())} class:muted data-pillar={line.id}>
+<div class:dormant={isDormant(projects, configMap(), vocabOf)} class:muted data-pillar={line.id}>
     <RegistryCard
         collection="pillars"
         id={line.id}

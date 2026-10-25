@@ -449,9 +449,12 @@ const RELEVANCE = ['high', 'med', 'low'];
 /** The shape of the radar buckets in the vocabulary, each with its key. */
 const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
 
-/** The keys of the radar buckets the engine's own configuration `engineConfig` holds. */
-export function radarBucketKeys(engineConfig: Record<string, unknown>): string[] {
-    const held = engineConfig.radar_buckets;
+/**
+ * The keys of the radar buckets a hub's merged configuration `config` holds: oculus's, or the list
+ * the hub's settings write in their place.
+ */
+export function radarBucketKeys(config: Record<string, unknown>): string[] {
+    const held = config.radar_buckets;
     return bucketKeysShape.parse(held).map((one) => one.key);
 }
 

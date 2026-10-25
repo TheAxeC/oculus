@@ -8,6 +8,7 @@
 
 import { isAbsolute, join } from 'node:path';
 import type { WorkspaceLayer } from '../../../data/sources/config.ts';
+import type { LanguageSource } from '../../../data/sources/config/merge/language.ts';
 import { expandHome } from './folders.ts';
 
 /**
@@ -55,15 +56,21 @@ function hubOption(primaryDir: string | null): { hub?: string } {
 }
 
 /**
- * The options of the config reader for the open workspace: the primary hub's settings file, and the
- * workspace file whose `settings:` is laid over both, none for the unsaved workspace.
+ * The options of the config reader for the open workspace: the primary hub's settings file, the
+ * workspace file whose `settings:` is laid over both, none for the unsaved workspace, and the
+ * source of the display language its `locale` names, none for oculus's own words alone.
  */
-export function configOptions(open: { primaryDir: string | null; file: string | null }): {
+export function configOptions(
+    open: { primaryDir: string | null; file: string | null },
+    language?: LanguageSource
+): {
     hub?: string;
     workspace?: WorkspaceLayer;
+    language?: LanguageSource;
 } {
     return {
         ...hubOption(open.primaryDir),
-        ...(open.file === null ? {} : { workspace: { file: open.file } })
+        ...(open.file === null ? {} : { workspace: { file: open.file } }),
+        ...(language === undefined ? {} : { language })
     };
 }

@@ -1,7 +1,9 @@
-// Layer 2, server. What the composer's start runs: the agent's argument vector built from
-// config/catalogs/agents.yml and the picks, the account's folder as the agent's environment, and
-// the prompt as the vector's last word. GET /api/agents answers the same catalog to the page with
-// the accounts local.yml names, so the pickers offer what a start accepts and nothing else.
+// Layer 2, server. What the composer's start runs: the agent's argument vector built from the
+// merged config's `agents` value (config/catalogs/agents.yml with the open workspace file's
+// `settings: { agents: }` laid over it) and the picks, the account's folder as the agent's
+// environment, and the prompt as the vector's last word. GET /api/agents answers the same catalog
+// to the page with the accounts local.yml names, so the pickers offer what a start accepts and
+// nothing else, and with the refusals of oculus's own file by line.
 //
 // The vector goes to tmux as separate words and tmux runs it directly, so the prompt is one
 // argument and no shell ever reads it: `$(...)`, quotes and semicolons reach the agent as the
@@ -18,12 +20,13 @@
 // A shell takes no picks and no argv: it is the reader's own shell, and its prompt is the first
 // command, typed into it as keys once it has started.
 //
-// A value of agents.yml that carries `confirm: true` (a permission mode or sandbox that lets the
-// agent act without asking) is passed only when the request carries `confirm: true` too, which the
-// composer sets after the reader answered its question; otherwise the start is refused ahead of any
-// run. The check reads the values as the argv does, a pick or else the list's default. A request
-// may also carry a hub task and the seed the page showed for it; routes.ts builds the seed again
-// from the hub and starts only when the two agree.
+// A value of the catalog that carries `confirm: true` (a permission mode or sandbox that lets the
+// agent act without asking, or a value the workspace added or changed) is passed only when the
+// request carries `confirm: true` too, which the composer sets after the reader answered its
+// question; otherwise the start is refused ahead of any run. The check reads the values as the argv
+// does, a pick or else the list's default. A request may also carry a hub task and the seed the
+// page showed for it; routes.ts builds the seed again from the hub and starts only when the two
+// agree.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -36,6 +39,7 @@ import {
     cacheModels,
     choiceArgs,
     parseAgents,
+    readAgents,
     withCacheModels
 } from '../../../../data/sources/config/catalog/agents.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
@@ -76,8 +80,16 @@ export function agentAccounts(local: LocalConfig): AgentAccount[] {
     return local.accounts.map((one) => ({ tool: one.tool, label: one.label, dir: one.dir }));
 }
 
-/** The catalog, read from the engine's config folder; a missing file offers nothing. */
-export function readAgentsFile(engine: string): ReturnType<typeof parseAgents> {
+/** The agents a merged config's `agents` value offers, the composer's and a start's catalog. */
+export function configAgents(config: Record<string, unknown>): AgentChoices[] {
+    return readAgents(config.agents).agents;
+}
+
+/**
+ * Oculus's own catalog file read from the engine's config folder, for its refusals by line; a
+ * missing file offers nothing.
+ */
+function readAgentsFile(engine: string): ReturnType<typeof parseAgents> {
     let text: string;
     try {
         text = readFileSync(join(configDir(engine), AGENTS_FILE), 'utf8');
@@ -256,18 +268,24 @@ export function composeRequest(message: Record<string, unknown>): ComposeStart {
 const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
- * GET /api/agents: the composer's choices, per account for a picker that reads the account's
- * cache, with the accounts and whatever the catalog was refused. A read, so same-origin only.
- * `account` names the Codex account whose cache the model picker is read from.
+ * GET /api/agents: the composer's choices out of the merged config's `agents` value, per account
+ * for a picker that reads the account's cache, with the accounts and what oculus's own catalog file
+ * was refused, by line. A read, so same-origin only. `account` names the Codex account whose cache
+ * the model picker is read from.
  */
-export function handleAgents(request: Request, engine: string, local: LocalConfig): Response {
-    const read = readAgentsFile(engine);
+export function handleAgents(
+    request: Request,
+    engine: string,
+    local: LocalConfig,
+    config: Record<string, unknown>
+): Response {
     const accounts = agentAccounts(local);
     const asked = new URL(request.url).searchParams.get('account') ?? '';
-    const agents = read.agents.map((one) => {
+    const agents = configAgents(config).map((one) => {
         const own = accounts.filter((held) => held.tool === one.agent);
         return accountChoices(one, own.find((held) => held.label === asked) ?? own.at(0) ?? null);
     });
-    const answer: AgentsAnswer = { agents, accounts, findings: read.findings };
+    const findings = readAgentsFile(engine).findings;
+    const answer: AgentsAnswer = { agents, accounts, findings };
     return json(answer, { headers: NO_STORE });
 }

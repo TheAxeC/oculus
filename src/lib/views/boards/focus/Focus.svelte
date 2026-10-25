@@ -55,6 +55,7 @@
     } from '$lib/state/boards/focus';
     import { personNames } from '$lib/state/boards/person';
     import { ticker } from '$lib/state/boards/ticker';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -82,19 +83,19 @@
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
     const projects = $derived(portfolioProjects(snapshot));
-    const board = $derived(lanes(config));
+    const board = $derived(lanes(vocabOf()));
 
     /**
      * The one ticker both dated sections are drawn from. It walks the whole portfolio, so the board
      * derives it once here and hands it down rather than each section walking it again.
      */
-    const week = $derived(snapshot === null ? null : ticker(snapshot, config, now));
+    const week = $derived(snapshot === null ? null : ticker(snapshot, config, now, vocabOf));
 
     /** The projects quick add may write to: every project not at a `terminal` stage. */
-    const live = $derived(liveProjects(projects, config));
+    const live = $derived(liveProjects(projects, config, vocabOf));
 
     const strip = $derived(
-        snapshot === null ? null : waiting(snapshot, config, personNames(snapshot))
+        snapshot === null ? null : waiting(snapshot, config, personNames(snapshot), vocabOf)
     );
 
     /** One name of a tally, with its count only when the count is above one: "BSPC (2)". */

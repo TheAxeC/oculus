@@ -12,6 +12,8 @@
 // It does not cover the views drawing the toggle, the badge, the facet or the sections, which the
 // look does.
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
     AuditFinding,
@@ -21,6 +23,8 @@ import type {
     Snapshot
 } from '../../../../src/lib/data/model/index.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
+import { createIdea } from '../../../../src/lib/server/edit/writes/manifest.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { boardsFindings } from '../../../../src/lib/data/sources/config/sections/boards.ts';
@@ -61,7 +65,7 @@ import {
     newProjectPerson,
     offersNewProject
 } from '../../../../src/lib/state/boards/board/new-project.ts';
-import { laneOf, lanes, unplaced } from '../../../../src/lib/state/boards/focus.ts';
+import { projectLane, unplaced } from '../../../../src/lib/state/boards/focus.ts';
 import { archival, orphans } from '../../../../src/lib/state/boards/structure/lines.ts';
 import { realProjects } from '../../../../src/lib/state/sources/registries/venues.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -364,7 +368,7 @@ describe('the Focus lanes', () => {
         { name: 'case 13: stopped and parked', id: 'c13', lane: undefined }
     ])('$name', (row) => {
         const one = project(row.id);
-        expect(laneOf(one, lanes(CONFIG), CONFIG)?.key).toEqual(row.lane);
+        expect(projectLane(one, () => CONFIG)?.key).toEqual(row.lane);
         expect(unplaced([one], CONFIG)).toEqual([]);
     });
 });
@@ -532,6 +536,58 @@ describe('New project on a board', () => {
         const person = newProjectPerson(rolesOf(CONFIG), rule.roles, MINE);
         expect(person).toEqual({ role_field: row.field, self: SELF });
     });
+
+    scratchIt(
+        "reads the stage written and the boards that offer it in the chosen hub's words",
+        () => {
+            // `home` keeps `nascent` with no `new_idea` and adds `shelved`, a terminal stage
+            // carrying it, so a new project of `home` is written at `shelved` and sits on the
+            // archive board.
+            const settings = [
+                'scan: [ { dir: projects/ideas } ]',
+                'new_project_dir: { research: projects/ideas }',
+                'stages:',
+                '  nascent: { label: nascent, icon: white, color: "#7c5cff", idea: true, on_map: true }',
+                '  shelved: { label: shelved, icon: done, color: "#9ca3af", terminal: true, new_idea: true }',
+                ''
+            ].join('\n');
+            const home = plantScratch('oculus-board-home-', { [HUB_FILE]: settings }, [
+                'projects/ideas'
+            ]);
+            const read = loadConfig(engineDir(), { hub: home });
+            expect(read.findings).toEqual([]);
+            const homeWords = { config: read.config, roles: rolesOf(read.config) };
+            const context = {
+                ...takeContext(CONFIG, MINE),
+                wordsOf: (hub: string) => (hub === 'home' ? homeWords : takeContext(CONFIG, MINE))
+            };
+            const offered = (hub?: string) =>
+                boardIds(CONFIG).filter((id) =>
+                    offersNewProject(presetFor(id, CONFIG).rule, context, hub)
+                );
+            expect(offered()).toEqual([
+                'projects',
+                'supervision',
+                'coauthor',
+                'personal',
+                'software'
+            ]);
+            expect(offered('home')).toEqual([
+                'supervision',
+                'coauthor',
+                'archive',
+                'personal',
+                'software'
+            ]);
+            const out = createIdea(home, portfolioConfigFrom(read.config, read.from), {
+                id: 'new-idea',
+                tier: 'research'
+            });
+            expect(out.refused).toEqual([]);
+            const written = readFileSync(join(home, 'projects/ideas/new-idea/project.yml'), 'utf8');
+            expect(written).toContain('\nstage: shelved\n');
+        }
+    );
 });
 
 describe('the roles of a collection', () => {

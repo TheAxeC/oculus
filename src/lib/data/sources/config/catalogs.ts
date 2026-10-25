@@ -19,7 +19,7 @@ import { readEditorOptions, type EditorProblem } from './editor-options.ts';
 import { configDir, engineFile } from './folder.ts';
 import type { LocalProblem } from './local.ts';
 import type { MachineProblem } from './machine.ts';
-import { CATALOGS_DIR, keyFile, type ConfigWhere } from './merge/merge.ts';
+import { CATALOGS_DIR, keyFile, keyPlace, type ConfigWhere } from './merge/merge.ts';
 import { TEXT_KEY, textCatalog } from './merge/text.ts';
 import { catalogOf } from './catalog/options.ts';
 import { closedPaths } from './settings/machine.ts';
@@ -27,24 +27,19 @@ import { settingProblems } from './settings/problems.ts';
 import { focusFindings } from './sections/focus.ts';
 
 /**
- * The keys of the merged config the client state installs before the page renders: the colours and
- * the words of the stages, forms and chips state/shared/words/tones.ts reads, and the theme list,
- * the theme, the theme a desktop window starts on, the text size, the terminal themes' three
+ * The keys of the merged config the client state installs before the page renders: the theme
+ * list, the theme, the theme a desktop window starts on, the text size, the terminal themes' three
  * settings, the wallpaper, the CRT overlay, the code theme and the lists that shape its choice, the
  * pane strip's three settings and the status bar's values state/shared/words/appearance.ts reads.
  * `themes`, `theme`, `app_theme`, `text_size`, `rice`, `wallpaper`, `crt`, `code_theme`,
  * `code_themes`, `file_icons`, `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are
  * options of the appearance defaults file, and `status_bar` of the behavior defaults file. The
- * research domains and the venue and dataset themes are each hub's own, read from its registry
- * files (`hubVocabOf` of data/index.ts).
+ * colours and the words of the stages, forms, chips and statuses state/shared/words/tones.ts reads
+ * are each hub's own and reach the page in the vocabulary of every hub (`hubVocabs` of
+ * data/index.ts), with the research domains and the venue and dataset themes of its registry
+ * files.
  */
 export const VOCAB_KEYS = [
-    'palette',
-    'statuses',
-    'stages',
-    'forms',
-    'chips',
-    'data_access',
     'themes',
     'theme',
     'app_theme',
@@ -63,11 +58,11 @@ export const VOCAB_KEYS = [
 ];
 
 /**
- * The slice of the merged config the tone lookups and the appearance store need, shipped as the
- * page's data beside the catalog and the glyphs: the keys above, `code_themes` among them, which
+ * The slice of the merged config the appearance store needs, shipped as the page's data beside the
+ * catalog, the glyphs and every hub's vocabulary: the keys above, `code_themes` among them, which
  * holds the VS Code code themes. The whole merged config goes over the `config` channel afterwards
- * and setVocab and setAppearance read the same keys out of it, so this is the first load only and
- * carries no more than those keys.
+ * and setAppearance reads the same keys out of it, so this is the first load only and carries no
+ * more than those keys.
  */
 export function vocabCatalog(config: Record<string, unknown>): Record<string, unknown> {
     const vocab: Record<string, unknown> = {};
@@ -124,10 +119,21 @@ const stringMapShape = mapOfShape(z.string());
  * text. The package is a fact about this machine's install rather than about the merged files,
  * which is why this is separate from loadConfig and takes the engine directory. Like loadConfig's
  * own findings, these are worded from the merged catalog, and a key it lacks is written as the key
- * and its arguments.
+ * and its arguments. With `where`, a finding about a name of a map the open workspace file's
+ * `settings:` set names that file and `settings.glyphs.<name>` or `settings.icons.<name>`
+ * (keyPlace); otherwise, and without `where`, it names oculus's catalog file and the name.
  */
-export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const file = join(configDir(engine), CATALOGS_DIR, 'icons.yml');
+export function iconFindings(
+    engine: string,
+    config: Record<string, unknown>,
+    where?: ConfigWhere
+): Finding[] {
+    const placed = (map: 'glyphs' | 'icons', name: string): { file: string; key: string } => {
+        const own = { file: join(configDir(engine), CATALOGS_DIR, `${map}.yml`), key: name };
+        if (where === undefined) return own;
+        const place = keyPlace(where, `${map}.${name}`);
+        return place.key.startsWith('settings.') ? place : own;
+    };
     const map = iconCatalog(config);
     const glyphs = glyphCatalog(config);
     const catalog = textCatalog(config);
@@ -137,8 +143,7 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
         for (const [name, standIn] of Object.entries(vocabulary)) {
             if (standInShape.safeParse(standIn).success) continue;
             findings.push({
-                file: join(configDir(engine), CATALOGS_DIR, 'glyphs.yml'),
-                key: name,
+                ...placed('glyphs', name),
                 message: findingText(catalog, 'findings.config.glyph_not_ascii', name)
             });
         }
@@ -146,22 +151,19 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
     for (const name of Object.keys(glyphs)) {
         if (Object.hasOwn(map, name)) continue;
         findings.push({
-            file,
-            key: name,
+            ...placed('icons', name),
             message: findingText(catalog, 'findings.config.glyph_no_icon', name)
         });
     }
     for (const [name, icon] of Object.entries(map)) {
         if (!Object.hasOwn(glyphs, name)) {
             findings.push({
-                file,
-                key: name,
+                ...placed('icons', name),
                 message: findingText(catalog, 'findings.config.icon_not_glyph', name)
             });
         } else if (iconFile(icon) === null) {
             findings.push({
-                file,
-                key: name,
+                ...placed('icons', name),
                 message: findingText(catalog, 'findings.config.icon_not_shipped', icon)
             });
         }

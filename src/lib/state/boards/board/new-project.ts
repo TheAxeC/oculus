@@ -4,13 +4,19 @@
 // an empty folder), and the person the new manifest names, the user in the field of the first of
 // the board's roles that has one, or of the first row of `roles:` that has one on a board naming no
 // `role:`. A board offers New project only when the project that write makes is one the board's
-// rule takes (data/shapes/boards/takes.ts), so a new project is on the board it was made on.
+// rule takes (data/shapes/boards/takes.ts), so a new project is on the board it was made on. The
+// tiers, the stages and the roles read are those of the hub the project is written to.
 
 import type { Id, Project } from '../../../data/model/index.ts';
 import { byKey, fields, text as str } from '../../../data/helpers/guards.ts';
 import { folderOf, inScan, keyOf } from '../../../data/helpers/hub-names.ts';
 import { selfField, type Role } from '../../../data/shapes/boards/roles.ts';
-import { boardTakes, type BoardRule, type TakeContext } from '../../../data/shapes/boards/takes.ts';
+import {
+    boardTakes,
+    takeWordsOf,
+    type BoardRule,
+    type TakeContext
+} from '../../../data/shapes/boards/takes.ts';
 import { vocabKeys, wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 import { z } from 'zod';
@@ -58,10 +64,13 @@ export function newProjectPerson(
  * Whether a board offers New project: whether its rule takes the project the board's write makes,
  * of the board's first tier (else the first word of `tiers`, as the server writes it), naming the
  * user in the field `newProjectPerson` gives, at the first stage carrying `new_idea`, with no chip,
- * no form and no other field, in no hub the board names.
+ * no form and no other field, in no hub the board names. With `hub`, the hub the project is
+ * written to, the tiers, the stages and the roles are that hub's; without, the context's own.
  */
-export function offersNewProject(rule: BoardRule, context: TakeContext): boolean {
-    const { config, roles, self } = context;
+export function offersNewProject(rule: BoardRule, context: TakeContext, hub?: string): boolean {
+    const words = hub === undefined ? context : takeWordsOf(context, hub);
+    const { config, roles } = words;
+    const { self } = context;
     const person = newProjectPerson(roles, rule.roles, self);
     const user = [...self].at(0);
     const named = (field: string): Id[] =>
@@ -90,5 +99,5 @@ export function offersNewProject(rule: BoardRule, context: TakeContext): boolean
         folder: '',
         file: ''
     };
-    return boardTakes(rule, project, context);
+    return boardTakes(rule, project, { ...words, self, wordsOf: () => words });
 }

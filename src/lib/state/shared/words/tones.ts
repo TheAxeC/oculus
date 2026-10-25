@@ -1,16 +1,23 @@
-// Layer 2, client state. The config's colours as tones. A tone is the hue part of a palette token:
-// the config says a status is `#7c5cff`, `palette:` says that hex is the token `c-violet`, and the
-// tone is `violet`, which a component turns into `--c-violet`, `--c-violet-txt` and
-// `--on-c-violet`. Nothing outside this module reads a hex, so no component carries one.
+// Layer 2, client state. The config's colours as tones, and the words of each hub's records. A tone
+// is the hue part of a palette token: the config says a status is `#7c5cff`, `palette:` says that
+// hex is the token `c-violet`, and the tone is `violet`, which a component turns into
+// `--c-violet`, `--c-violet-txt` and `--on-c-violet`. Nothing outside this module reads a hex, so
+// no component carries one.
 //
-// The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
-// them as the page's data at first load, and every later edit of config/catalogs/vocab.yml arrives
-// on the `config` channel. The research domains are each hub's own: a record of a hub is drawn with
-// the `domains` of that hub, found from the hub name in front of its domain, and a domain its hub
-// does not list is drawn as an unlisted domain, never with another hub's entry. Every lookup is
-// pure over what was last installed and reads the configuration's generation,
-// state/shared/words/generation.svelte.ts, so a component calling one during its first render gets
-// the page's data and draws again when a push replaces it.
+// The words are installed the way the text catalog and the glyph vocabulary are: the server ships
+// them as the page's data at first load, and every later edit of a hub's `.oculus/config.yml` or
+// of config/catalogs/vocab.yml arrives on the `config` channel. Each hub's words are its own: the
+// words of config/catalogs/vocab.yml with that hub's settings laid over them, and its research
+// `domains`. A lookup is made with the name of the record's hub (`rootOf` of the record, or the hub
+// in front of a domain's id) and reads that hub's words; a name the workspace holds no hub of, a
+// folder that is no hub, reads oculus's own words. A lookup made with no hub, for a list drawn over
+// the records of several hubs, reads the union of every hub's words: the primary's first, then each
+// other hub's in the workspace's order, each word once with the row of the first hub that holds it
+// (data/shapes/vocab-keys.ts, `unionWords`). A domain its hub does not list is drawn as an unlisted
+// domain, never with another hub's entry. Every lookup is pure over what was last installed and
+// reads the configuration's generation, state/shared/words/generation.svelte.ts, so a component
+// calling one during its first render gets the page's data and draws again when a push replaces
+// it.
 //
 // A name is looked up among the record's own keys, so a name every object has, such as
 // `constructor`, finds nothing.
@@ -20,6 +27,7 @@ import type { HubVocabs } from '../../../data/model/index.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
 import { splitHubId } from '../../../data/helpers/hub-names.ts';
 import { mapOfShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
+import { unionWords } from '../../../data/shapes/vocab-keys.ts';
 import { configGeneration } from './generation.svelte.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
@@ -46,14 +54,20 @@ type Installed = {
     lists: { list: LegendList; keys: string[] }[];
 };
 
-/** The palette hex is written in either case in the config, and matched in lower case here. */
-let palette: Record<string, string | undefined> = {};
-let statusPalette: Record<string, string | undefined> = {};
-let stageColor: Record<string, string | undefined> = {};
-let legend: Installed = { words: {}, lists: [] };
-let domainColor: Record<string, Record<string, string | undefined> | undefined> = {};
-let domainText: Record<string, Record<string, string | undefined> | undefined> = {};
-let dataAccess: Record<string, string | undefined> = {};
+/**
+ * The words of one hub as the lookups read them: the palette (a hex in lower case to its token
+ * name), the `color` of each word of `statuses` and `stages` and the hex of each word of
+ * `data_access`, each by the word in lower case, the legend, and the hub's words as the server
+ * sent them, which `vocabOf` gives.
+ */
+type Words = {
+    palette: Record<string, string | undefined>;
+    statuses: Record<string, string | undefined>;
+    stages: Record<string, string | undefined>;
+    legend: Installed;
+    dataAccess: Record<string, string | undefined>;
+    raw: Record<string, unknown>;
+};
 
 /** A value that is a string. */
 const hexShape = z.string();
@@ -99,34 +113,77 @@ function legendRows(value: unknown): Legend[] {
 }
 
 /**
- * Install the vocabulary from the merged config: `palette` (hex to token name), the `color` of the
- * words of `statuses` and `stages`, the legend of the words a project shows (its stage of
- * `stages`, its form of `forms` and its chips of `chips`, a word of a later list taking the place
- * of one of an earlier list among the words, and each list's words kept in the config's order),
- * and from `hubs` the research `domains` of every hub of the workspace, read from each hub's
- * domains registry, each under its hub's name; a domain with no colour wears the neutral tone. A
- * key the config does not hold installs as empty, so every lookup answers with its unknown case
- * rather than throwing: a half-read config still renders a page.
+ * One hub's words as the lookups read them, from the words the server sent: `palette`, the
+ * `color` of the words of `statuses` and `stages`, `data_access`, and the legend of the words a
+ * project shows (its stage of `stages`, its form of `forms` and its chips of `chips`, a word of a
+ * later list taking the place of one of an earlier list among the words, and each list's words
+ * kept in the config's order). A key the words do not hold reads as empty, so every lookup answers
+ * with its unknown case rather than throwing.
  */
-export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
-    palette = stringMap(config.palette, hexShape);
-    statusPalette = stringMap(config.statuses, colorShape);
-    stageColor = stringMap(config.stages, colorShape);
+function installed(raw: Record<string, unknown>): Words {
+    const lists = LISTS.map((list) => ({ list, rows: legendRows(raw[list]) }));
+    return {
+        palette: stringMap(raw.palette, hexShape),
+        statuses: stringMap(raw.statuses, colorShape),
+        stages: stringMap(raw.stages, colorShape),
+        dataAccess: stringMap(raw.data_access, hexShape),
+        legend: {
+            words: Object.fromEntries(
+                lists.flatMap((one) => one.rows).map((row) => [row.key, row])
+            ),
+            lists: lists
+                .filter((one) => one.rows.length > 0)
+                .map((one) => ({ list: one.list, keys: one.rows.map((row) => row.key) }))
+        },
+        raw
+    };
+}
+
+/** Each hub's words by the hub's name, their union over the workspace, and oculus's own. */
+let byHub: Record<string, Words | undefined> = {};
+let union: Words = installed({});
+let own: Words = installed({});
+let domainColor: Record<string, Record<string, string | undefined> | undefined> = {};
+let domainText: Record<string, Record<string, string | undefined> | undefined> = {};
+
+/**
+ * Install the words of every hub of the workspace from `hubs`: each hub's `words` under its name,
+ * oculus's own words for a name no hub holds, the union over the hubs in `order` for a lookup made
+ * with no hub (oculus's own words when the workspace holds no hub), and each hub's research
+ * `domains`, read from its domains registry; a domain with no colour wears the neutral tone.
+ */
+export function setVocab(hubs: HubVocabs): void {
+    byHub = {};
     domainColor = {};
     domainText = {};
     for (const [name, vocab] of Object.entries(hubs.lists)) {
         if (name === '' || name === '__proto__') continue;
+        byHub[name] = installed(vocab.words);
         domainColor[name] = stringMap(vocab.domains, colorShape);
         domainText[name] = stringMap(vocab.domains, labelShape);
     }
-    dataAccess = stringMap(config.data_access, hexShape);
-    const lists = LISTS.map((list) => ({ list, rows: legendRows(config[list]) }));
-    legend = {
-        words: Object.fromEntries(lists.flatMap((one) => one.rows).map((row) => [row.key, row])),
-        lists: lists
-            .filter((one) => one.rows.length > 0)
-            .map((one) => ({ list: one.list, keys: one.rows.map((row) => row.key) }))
-    };
+    own = installed(hubs.own);
+    const order = hubs.order.map((name) => byKey(hubs.lists, name)?.words ?? hubs.own);
+    union = order.length === 0 ? own : installed(unionWords(order));
+}
+
+/**
+ * The words a lookup reads: the union over the workspace's hubs with no hub, the hub's own words
+ * for a hub the workspace holds, and oculus's own words for any other name.
+ */
+function wordsOf(hub: string | undefined): Words {
+    configGeneration();
+    if (hub === undefined) return union;
+    return byKey(byHub, hub) ?? own;
+}
+
+/**
+ * The words of config/catalogs/vocab.yml and `manifest_fields` a record of the hub `hub` is read
+ * under, as `wordsOf` picks them: what a pure helper of data/shapes/vocab-keys.ts or a reader of
+ * a list (`categories`, `roles`, `focus_lanes`) is given in place of the merged config.
+ */
+export function vocabOf(hub?: string): Record<string, unknown> {
+    return wordsOf(hub).raw;
 }
 
 /**
@@ -134,8 +191,8 @@ export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void
  * A token that is not a hue (`muted`) and a hex the palette does not list are both the unknown
  * tone, since a tone must name a `--c-<tone>` the stylesheets define.
  */
-export function toneOf(hex: string): string {
-    return paletteTone(hex) ?? UNKNOWN_TONE;
+export function toneOf(hex: string, hub?: string): string {
+    return paletteTone(hex, hub) ?? UNKNOWN_TONE;
 }
 
 /**
@@ -143,41 +200,37 @@ export function toneOf(hex: string): string {
  * and the unknown tone otherwise: a name no stylesheet defines would draw `--c-<name>` as nothing,
  * and an empty one as `--c-`.
  */
-export function namedTone(name: unknown): string {
-    configGeneration();
+export function namedTone(name: unknown, hub?: string): string {
+    const { palette } = wordsOf(hub);
     const tone = scalar(name).trim();
     if (!TONE.test(tone)) return UNKNOWN_TONE;
     return Object.values(palette).includes(`c-${tone}`) ? tone : UNKNOWN_TONE;
 }
 
 /** A palette hue, or undefined when the value has no usable palette token. */
-export function paletteTone(hex: unknown): string | undefined {
-    configGeneration();
-    const token = byKey(palette, scalar(hex).trim().toLowerCase());
+export function paletteTone(hex: unknown, hub?: string): string | undefined {
+    const token = byKey(wordsOf(hub).palette, scalar(hex).trim().toLowerCase());
     if (!token?.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : undefined;
 }
 
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */
-export function dataAccessTone(access: unknown): string {
-    configGeneration();
-    const hex = byKey(dataAccess, scalar(access).toLowerCase());
-    return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
+export function dataAccessTone(access: unknown, hub?: string): string {
+    const hex = byKey(wordsOf(hub).dataAccess, scalar(access).toLowerCase());
+    return hex === undefined ? UNKNOWN_TONE : toneOf(hex, hub);
 }
 
 /** The tone of a collection entry's status, through the `color` of its word of `statuses`. */
-export function statusTone(status: unknown): string {
-    configGeneration();
-    const hex = byKey(statusPalette, scalar(status).toLowerCase());
-    return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
+export function statusTone(status: unknown, hub?: string): string {
+    const hex = byKey(wordsOf(hub).statuses, scalar(status).toLowerCase());
+    return hex === undefined ? UNKNOWN_TONE : toneOf(hex, hub);
 }
 
 /** The tone of a project's stage, through the `color` of its word of `stages`. */
-export function stageTone(stage: unknown): string {
-    configGeneration();
-    const hex = byKey(stageColor, scalar(stage).toLowerCase());
-    return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
+export function stageTone(stage: unknown, hub?: string): string {
+    const hex = byKey(wordsOf(hub).stages, scalar(stage).toLowerCase());
+    return hex === undefined ? UNKNOWN_TONE : toneOf(hex, hub);
 }
 
 /**
@@ -190,15 +243,16 @@ function domainEntry(
     domain: unknown
 ): { key: string; entry: string | undefined } {
     const { root, id } = splitHubId(scalar(domain), Object.keys(maps));
-    const own = byKey(maps, root);
-    return { key: id, entry: own === undefined ? undefined : byKey(own, id.toLowerCase()) };
+    const held = byKey(maps, root);
+    return { key: id, entry: held === undefined ? undefined : byKey(held, id.toLowerCase()) };
 }
 
-/** The tone of a research domain, through `domains`. */
+/** The tone of a research domain, through `domains` and the palette of the domain's hub. */
 export function domainTone(domain: unknown): string {
     configGeneration();
     const hex = domainEntry(domainColor, domain).entry;
-    return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
+    const hub = splitHubId(scalar(domain), Object.keys(domainColor)).root;
+    return hex === undefined ? UNKNOWN_TONE : toneOf(hex, hub);
 }
 
 /**
@@ -217,9 +271,8 @@ export function domainLabel(domain: unknown): string {
  * The glyph name a stage, a form or a chip carries, and nothing for a word the legend does not
  * list or one whose row names no icon.
  */
-export function chipGlyphName(chip: string): string {
-    configGeneration();
-    return byKey(legend.words, chip)?.icon ?? '';
+export function chipGlyphName(chip: string, hub?: string): string {
+    return byKey(wordsOf(hub).legend.words, chip)?.icon ?? '';
 }
 
 /**
@@ -245,19 +298,18 @@ const ICON_HUES: Record<string, string> = {
  * stage with one, and otherwise the colour its legend icon is named by, so a mark drawn as a line
  * icon keeps the colour its dot had. The unknown tone for a word neither gives a colour.
  */
-export function statusMarkTone(word: string): string {
-    configGeneration();
-    if (byKey(stageColor, word.toLowerCase()) !== undefined) return stageTone(word);
-    return byKey(ICON_HUES, byKey(legend.words, word)?.icon ?? '') ?? UNKNOWN_TONE;
+export function statusMarkTone(word: string, hub?: string): string {
+    const words = wordsOf(hub);
+    if (byKey(words.stages, word.toLowerCase()) !== undefined) return stageTone(word, hub);
+    return byKey(ICON_HUES, byKey(words.legend.words, word)?.icon ?? '') ?? UNKNOWN_TONE;
 }
 
 /**
  * The words of a stage, a form or a chip, its row's `label`, and the word itself for one the legend
  * does not list.
  */
-export function chipLabel(chip: string): string {
-    configGeneration();
-    return byKey(legend.words, chip)?.label ?? chip;
+export function chipLabel(chip: string, hub?: string): string {
+    return byKey(wordsOf(hub).legend.words, chip)?.label ?? chip;
 }
 
 /**
@@ -265,30 +317,29 @@ export function chipLabel(chip: string): string {
  * a glyph, then its form and its chips. The board's list names them all, and a lane card those its
  * lane does not say (state/boards/focus.ts `laneMarks`). Every stage of oculus's own vocab.yml has
  * a glyph; a stage without one, in a hub that names such a stage, gives no mark. A board card draws
- * every stage as its filled chip.
+ * every stage as its filled chip. `hub` is the project's hub.
  */
 export function projectStatusWords(
     stage: string | undefined,
     form: string | undefined,
-    chips: readonly string[]
+    chips: readonly string[],
+    hub?: string
 ): string[] {
-    const marked = stage !== undefined && chipGlyphName(stage) !== '' ? [stage] : [];
+    const marked = stage !== undefined && chipGlyphName(stage, hub) !== '' ? [stage] : [];
     return [...marked, ...(form === undefined ? [] : [form]), ...chips];
 }
 
 /** Every word the legend lists: the stages, the forms, then the chips, in the config's order. */
-export function chipKeys(): string[] {
-    configGeneration();
-    return Object.keys(legend.words);
+export function chipKeys(hub?: string): string[] {
+    return Object.keys(wordsOf(hub).legend.words);
 }
 
 /**
  * The words of each of `stages`, `forms` and `chips`, in that order, each list with its words in
  * the config's order, so a word of two lists is in both. A list that holds no word is left out.
  */
-export function legendLists(): { list: LegendList; keys: string[] }[] {
-    configGeneration();
-    return legend.lists.map((one) => ({ list: one.list, keys: [...one.keys] }));
+export function legendLists(hub?: string): { list: LegendList; keys: string[] }[] {
+    return wordsOf(hub).legend.lists.map((one) => ({ list: one.list, keys: [...one.keys] }));
 }
 
 /**
@@ -296,9 +347,9 @@ export function legendLists(): { list: LegendList; keys: string[] }[] {
  * two maps cover different halves of the vocabulary, and taking both is what gives the gallery's
  * row its spread of hues instead of a wall of grey.
  */
-export function chipTone(key: string): string {
-    const stage = stageTone(key);
-    return stage === UNKNOWN_TONE ? statusTone(key) : stage;
+export function chipTone(key: string, hub?: string): string {
+    const stage = stageTone(key, hub);
+    return stage === UNKNOWN_TONE ? statusTone(key, hub) : stage;
 }
 
 /**
@@ -306,11 +357,12 @@ export function chipTone(key: string): string {
  * that wears it, and how many do.
  */
 export function chipsByTone(
-    keys: readonly string[]
+    keys: readonly string[],
+    hub?: string
 ): { tone: string; key: string; count: number }[] {
     const byTone = new Map<string, { tone: string; key: string; count: number }>();
     for (const key of keys) {
-        const tone = chipTone(key);
+        const tone = chipTone(key, hub);
         const held = byTone.get(tone);
         if (held === undefined) byTone.set(tone, { tone, key, count: 1 });
         else held.count += 1;

@@ -1,16 +1,22 @@
 // Layer 1, data. The open workspace file's `settings:` map, laid over oculus's values after the
-// hub's settings file: the reader's own values for the options of oculus's defaults files, kept
-// with the workspace they were set in. The map holds keys as the defaults files hold them, with no
-// file names, since no key is in two defaults files (`settings: { terminal: { font_px: 14 } }`).
+// hub's settings file: the reader's own values for the options of oculus's defaults files and of
+// oculus's catalogs, kept with the workspace they were set in. The map holds keys as the merged
+// config holds them, with no file names, since no key is in two files (`settings: { terminal: {
+// font_px: 14 } }`, `settings: { glyphs: { red: R } }`).
 //
-// A key of `settings:` is applied when it is an option of a defaults file and its value is one the
-// option takes (catalog/value-rule.ts); a list of records whose option names a `key:` field and a
-// map family are laid over oculus's value entry by entry (keyed.ts), any other value replaces
-// oculus's whole. A key of the hub list, a key no option names, a value the option refuses and an
-// entry the entry-by-entry merge cannot apply are findings that name the workspace file and the
-// key under `settings.`, and oculus's value stands for it. `from` names the workspace file for
-// every key it set, and for a map family it set, the file each of oculus's keys left in the map
-// came from.
+// A key of `settings:` is applied when it is an option the options folder describes and its value
+// is one the option takes (catalog/value-rule.ts). The six catalogs (`agents`, `patterns`,
+// `glyphs`, `icons`, `latex_editing` and `latex_unimath`) are laid over oculus's value in oculus's
+// place (in-place.ts), a map by its keys and the Unicode math rows by their command; the agents
+// keep every `confirm: true` oculus ships, and a value the workspace adds or whose passed words it
+// changes is asked about before a start (catalog/agents.ts, `confirmedAgents`). `text` lays the
+// workspace's words over the text catalog key by key. Any other list of records whose option names
+// a `key:` field, and any other map family, is laid over oculus's value entry by entry with the
+// workspace's entries first (keyed.ts); any other value replaces oculus's whole. A key of the hub
+// list, a key no option names, a value the option refuses and an entry a merge cannot apply are
+// findings that name the workspace file and the key under `settings.`, and oculus's value stands
+// for it. `from` names the workspace file for every key it set (and for each word of `text` it
+// set), and for a map it set, the file each of oculus's keys left in the map came from.
 //
 // A workspace file that is not there, does not read, does not parse or is no map adds nothing and
 // is no finding here: the workspace's own reader (server/files/workspace/open.ts) words it.
@@ -25,9 +31,14 @@ import { valueProblem } from '../catalog/value-rule.ts';
 import { mustBe } from '../catalog/value-words.ts';
 import { LOCAL_NAME } from '../local.ts';
 import { glyphNames } from '../rail.ts';
-import { mergeFamily, mergeRecords, type OverrideProblem } from './keyed.ts';
-import type { PendingFinding } from './text.ts';
+import { confirmedAgents } from '../catalog/agents.ts';
+import { CATALOG_SHAPES, layInPlace, problemFinding, wrongKindFinding } from './in-place.ts';
+import { mergeFamily, mergeRecords } from './keyed.ts';
+import { TEXT_KEY, type PendingFinding } from './text.ts';
 import { setAt, valueAt } from './tree.ts';
+
+/** The key of the merged config the agents catalog is held under. */
+const AGENTS_KEY = 'agents';
 
 /** The key of a workspace file that holds the reader's values of the options. */
 export const SETTINGS_KEY = 'settings';
@@ -74,39 +85,77 @@ function layerText(layer: WorkspaceLayer): string | null {
     }
 }
 
-/** The finding of one entry the merge could not apply, under the option's key. */
-function overrideFinding(file: string, key: string, problem: OverrideProblem): PendingFinding {
-    const entry = problem.entry;
-    switch (problem.kind) {
-        case 'removed_value':
-            return {
-                file,
-                key,
-                words: (catalog) =>
-                    findingText(catalog, 'findings.config.settings_removed_value', key, entry)
-            };
-        case 'removed_unknown':
-            return {
-                file,
-                key,
-                words: (catalog) =>
-                    findingText(catalog, 'findings.config.settings_removed_unknown', key, entry)
-            };
-        case 'null_unknown':
-            return {
-                file,
-                key,
-                words: (catalog) =>
-                    findingText(catalog, 'findings.config.settings_null_unknown', key, entry)
-            };
-        case 'repeated':
-            return {
-                file,
-                key,
-                words: (catalog) =>
-                    findingText(catalog, 'findings.config.settings_repeated', key, entry)
-            };
+/**
+ * A catalog the workspace file sets, laid over oculus's by its shape (in-place.ts), with the
+ * finding of each part that cannot be applied: a map's under `settings.<key>.<name>`, a keyed
+ * list's under `settings.<key>`. The agents keep every `confirm: true` oculus ships and are asked
+ * about first where the workspace adds a value or changes what one passes (`confirmedAgents`).
+ */
+function catalogValue(
+    path: string,
+    oculus: unknown,
+    value: unknown,
+    at: { file: string; key: string },
+    pending: PendingFinding[]
+): { value: unknown } | null {
+    const shape = CATALOG_SHAPES[path];
+    const laid = layInPlace(shape, oculus, value);
+    if ('wrong' in laid) {
+        pending.push(wrongKindFinding(at.file, at.key, at.key, laid.wrong));
+        return null;
     }
+    for (const problem of laid.problems) {
+        const key = shape.kind === 'map' ? `${at.key}.${problem.entry}` : at.key;
+        pending.push(problemFinding(at.file, key, at.key, problem));
+    }
+    if (path === AGENTS_KEY) return { value: confirmedAgents(oculus, laid.value) };
+    return { value: laid.value };
+}
+
+/**
+ * The workspace's words laid over the text catalog: each key of oculus's catalog the map names
+ * takes its text. A key the catalog lacks and a value that is not a text are findings naming
+ * `settings.text.<key>`, and the catalog's word stands. `own` names the keys the workspace set.
+ */
+function textValue(
+    oculus: unknown,
+    value: unknown,
+    at: { file: string; key: string },
+    pending: PendingFinding[]
+): { value: unknown; own: string[] } | null {
+    if (!isMap(value)) {
+        pending.push(wrongKindFinding(at.file, at.key, at.key, 'map'));
+        return null;
+    }
+    const catalog = isMap(oculus) ? oculus : {};
+    const merged: Record<string, unknown> = { ...catalog };
+    const own: string[] = [];
+    for (const [name, word] of Object.entries(value)) {
+        const key = `${at.key}.${name}`;
+        if (!Object.hasOwn(catalog, name)) {
+            pending.push({
+                file: at.file,
+                key,
+                words: (words) => findingText(words, 'findings.config.settings_text_unknown', key)
+            });
+        } else if (typeof word !== 'string') {
+            pending.push({
+                file: at.file,
+                key,
+                words: (words) =>
+                    findingText(
+                        words,
+                        'findings.config.settings_value',
+                        key,
+                        findingText(words, 'findings.words.text')
+                    )
+            });
+        } else {
+            merged[name] = word;
+            own.push(name);
+        }
+    }
+    return { value: merged, own };
 }
 
 /**
@@ -142,7 +191,9 @@ function appliedValue(
         }
         if (kind.kind === 'whole') return { value };
         const merged = mergeRecords(Array.isArray(oculus) ? oculus : [], value, kind.field);
-        for (const problem of merged.problems) pending.push(overrideFinding(file, key, problem));
+        for (const problem of merged.problems) {
+            pending.push(problemFinding(file, key, key, problem));
+        }
         return { value: merged.value };
     }
     if (kind.kind === 'map' || kind.kind === 'whole') {
@@ -162,7 +213,9 @@ function appliedValue(
         }
         if (kind.kind === 'whole') return { value };
         const merged = mergeFamily(isMap(oculus) ? oculus : {}, value);
-        for (const problem of merged.problems) pending.push(overrideFinding(file, key, problem));
+        for (const problem of merged.problems) {
+            pending.push(problemFinding(file, key, key, problem));
+        }
         const kept = Object.keys(merged.value).filter((name) => !Object.hasOwn(value, name));
         return { value: merged.value, kept };
     }
@@ -229,7 +282,7 @@ export function mergeWorkspace(
     }
     const options = optionsByPath(config);
     const hub = hubKeys();
-    const applied: [string, { value: unknown; kept?: string[] }][] = [];
+    const applied: [string, { value: unknown; kept?: string[]; own?: string[] }][] = [];
     const walk = (node: Record<string, unknown>, prefix: string): void => {
         for (const [name, value] of Object.entries(node)) {
             const path = prefix === '' ? name : `${prefix}.${name}`;
@@ -242,6 +295,17 @@ export function mergeWorkspace(
                     words: (catalog) =>
                         findingText(catalog, 'findings.config.settings_hub_key', path)
                 });
+            } else if (entry !== undefined && path === TEXT_KEY) {
+                const taken = textValue(valueAt(config, path), value, { file, key }, pending);
+                if (taken !== null) applied.push([path, taken]);
+            } else if (entry !== undefined && Object.hasOwn(CATALOG_SHAPES, path)) {
+                const oculus = valueAt(config, path);
+                const taken = catalogValue(path, oculus, value, { file, key }, pending);
+                if (taken === null) continue;
+                const written = isMap(value) ? value : {};
+                const kept = isMap(taken.value) ? Object.keys(taken.value) : [];
+                const left = kept.filter((one) => !Object.hasOwn(written, one));
+                applied.push([path, { ...taken, kept: left }]);
             } else if (entry !== undefined) {
                 const at = { file, key };
                 const taken = appliedValue(
@@ -282,6 +346,8 @@ export function mergeWorkspace(
         for (const name of taken.kept ?? []) {
             if (earlier !== undefined) from[`${path}.${name}`] = earlier;
         }
-        from[path] = file;
+        for (const name of taken.own ?? []) from[`${path}.${name}`] = file;
+        // The text catalog keeps the files its words were read from; only the words set are named.
+        if (path !== TEXT_KEY) from[path] = file;
     }
 }

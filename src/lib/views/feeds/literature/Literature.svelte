@@ -65,6 +65,7 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import { recordChoices, selectChoices } from '$lib/state/forms/schema';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
         entities: { config, portfolio },
@@ -81,7 +82,7 @@
     const cursor = $derived(cardCursor(instance.state));
     const radar = $derived(feed('radar'));
     const buckets = $derived(
-        radarBuckets(config()?.config.radar_buckets).map((bucket) => ({
+        radarBuckets(vocabOf().radar_buckets).map((bucket) => ({
             id: bucket.key,
             label: bucket.label
         }))

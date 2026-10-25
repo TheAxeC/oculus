@@ -1,6 +1,6 @@
 # ===========================================================================
 # appearance.yml
-# oculus's shipped values of what the chrome looks like: the UI theme list, the theme drawn and the theme a desktop window starts on, the page's text size, the glyphs and the look of the terminal themes, the wallpaper behind the panels, the CRT overlay, the code theme of the editors and the lists that shape its choice, and the terminal grid's text size, cursor and Option key. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/appearance.yml describe every key. Nothing writes this file.
+# oculus's shipped values of what the chrome looks like: the UI theme list, the theme drawn and the theme a desktop window starts on, the page's text size, the display language, the glyphs and the look of the terminal themes, the wallpaper behind the panels, the CRT overlay, the code theme of the editors and the lists that shape its choice, and the terminal grid's text size, cursor and Option key. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/appearance.yml describe every key. Nothing writes this file.
 # ===========================================================================
 
 
@@ -64,6 +64,9 @@ app_theme: vscode-dark-modern
 
 # The size of the page's text, a multiplier of the theme's own sizes from 0.7 to 1.6 in tenths.
 text_size: 1
+
+# The display language every word of the interface is drawn in: `en`, oculus's own words of config/text/, or the languageId of a display language an approved, enabled app contributes by its `localizations`. A word the language lacks is drawn in English.
+locale: en
 
 # The look of the terminal themes (the themes whose class holds `rice`): `icons` keeps the icons instead of their ASCII stand-ins, `brackets` draws buttons, chips and tags in brackets, and `monospace` draws the interface in the monospace font.
 rice:

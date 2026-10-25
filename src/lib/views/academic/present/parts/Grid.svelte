@@ -3,7 +3,8 @@
     // the legend of the stages the group looks for and the foot line, and the one card of an `idea`
     // slide, which is the same card alone. A card is the project's name with its domain's dot, its
     // maturity (the label of the project's stage) and one line of what the idea is; the dot's hue
-    // and the maturity's words come from config/catalogs/vocab.yml.
+    // and the maturity's words come from config/catalogs/vocab.yml, the maturity's from the words
+    // of the deck's hub.
 
     import Dot from './Dot.svelte';
     import Legend from './Legend.svelte';
@@ -20,9 +21,11 @@
         foot?: string;
         /** The stages the group looks for. */
         legend?: string[];
+        /** The hub the deck is read under, whose words the maturity and the legend are in. */
+        hub?: string;
     };
 
-    let { kind, heading = '', lede = '', cards, foot = '', legend = [] }: Props = $props();
+    let { kind, heading = '', lede = '', cards, foot = '', legend = [], hub }: Props = $props();
 </script>
 
 <section class="slide" data-slide-kind={kind}>
@@ -39,14 +42,14 @@
                     <Dot tone={card.domain === undefined ? undefined : domainTone(card.domain)} />
                     <b><Words text={card.name} /></b>
                     {#if card.maturity !== undefined}
-                        <span class="maturity">{chipLabel(card.maturity)}</span>
+                        <span class="maturity">{chipLabel(card.maturity, hub)}</span>
                     {/if}
                 </div>
                 <div class="desc"><Words text={card.desc} block /></div>
             </div>
         {/each}
     </div>
-    <Legend stages={legend} />
+    <Legend stages={legend} {hub} />
     {#if foot !== ''}
         <p class="hint"><Words text={foot} /></p>
     {/if}

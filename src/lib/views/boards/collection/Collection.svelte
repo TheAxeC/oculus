@@ -93,17 +93,17 @@
         parseCollectionState,
         pinnedFirst,
         statusFacets,
-        unfundedBy,
         type Bounds,
         type CollectionState,
         type Entry
     } from '$lib/state/boards/collection';
+    import { unfundedBy } from '$lib/state/boards/structure/cross-links';
     import { LITERATURE } from '$lib/state/feeds/literature/saved';
     import { entryRoles } from '$lib/state/boards/board';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
-    import { statusTone } from '$lib/state/shared/words/tones';
+    import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -183,7 +183,9 @@
     );
 
     const all = $derived(projects());
-    const unfunded = $derived(key === FUNDING ? unfundedBy(all, entries, configMap()) : []);
+    const unfunded = $derived(
+        key === FUNDING ? unfundedBy(all, entries, configMap(), vocabOf) : []
+    );
 
     let said = $state('');
 
