@@ -2,13 +2,13 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order (1 step):
-- O77 (the project card and the project page, with rulings 378 and 379 and, once ruled, open item 380).
+- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378, 379 and 380), stopped at /spec on open items 381 and 382.
 
 Owed looks:
 - none.
 
 Landed, newest first:
-- O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, the commit that lands it (its hash is written at the next commit).
+- O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, 1283d0ac.
 - O74 (the Focus career banner built from the command center's parts), 2026-10-25, a6d8e34e.
 - O76 (the Pillars view's text made true and short), 2026-10-25, 0a1c3796.
 - O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, 3df7754a.
