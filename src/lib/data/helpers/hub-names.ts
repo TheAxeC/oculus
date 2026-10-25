@@ -392,6 +392,7 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'focus_lanes', file: 'catalogs/vocab.yml' },
     { key: 'fund_stages', file: 'catalogs/vocab.yml' },
     { key: 'focus_lane_tones', file: 'catalogs/vocab.yml' },
+    { key: 'facet_tones', file: 'catalogs/vocab.yml' },
     { key: 'tiers', file: 'catalogs/vocab.yml' },
     { key: 'research_audit', file: 'catalogs/vocab.yml' },
     { key: 'roles', file: 'catalogs/vocab.yml' },

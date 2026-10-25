@@ -1,35 +1,48 @@
 # Oculus text owned by the projects view.
 text:
     board:
+        blocked_badge: '{0} blocked'
+        cell_domain: Domain
+        cell_funding: Funding
+        cell_lane: Lane
+        cell_next: Next
+        cell_pillar: Pillar
+        cell_stage: Stage
+        cell_title: Project
+        cell_venue: Venue
+        cell_with: With
         code_anon: anon
         code_deposited: deposited
         code_none: no code
         code_pending: pending
-        collapse: collapse
+        columns: Columns
+        columns_always: '{0} is always shown'
         compute_none: unset
+        count: '{0} projects'
+        count_one: 1 project
+        count_shown: '{0} of {1} shown'
         empty: No entries match.
         empty_glyph: circle_empty
-        expand_all: expand all
-        facet_category: Category
         facet_code: Code
         facet_compute: Compute
         facet_dataset: Datasets
         facet_domain: Domain
+        facet_form: Form
         facet_funding: Funding
         facet_pillar: Pillar
         facet_reproduced: Reproduced
         facet_sessions: Sessions
-        facet_stage: Stage
-        facet_status: Status
+        facet_status: Situation
+        facet_venue: Venue
         facet_year: Year
-        filter: Filter
-        filter_chip: '{0}: {1}'
         filter_clear: Clear all
-        filter_count: Filter ({0})
-        filter_remove: Remove {0}
-        filter_tick_glyph: check
         filters: Board filters
         full_titles: Full titles
+        group_picked: '{0}: {1}'
+        group_picked_more: '{0} +{1}'
+        mine_all: Every project here is yours
+        more: More
+        more_count: More {0}
         new_idea: + new idea
         new_idea_cancel: cancel
         new_idea_domain: domain
@@ -43,7 +56,8 @@ text:
         new_idea_title: title
         no_funding: No funding
         no_year: No year
-        quick_deadline: deadline
+        pick_search: Search
+        quick_deadline: deadline {0}
         quick_deadline_tip: only the projects that carry a deadline
         quick_stale: stale
         quick_stale_tip: only the projects whose manifest is behind their documents
@@ -54,22 +68,19 @@ text:
         sessions_live: working now
         sessions_none: no session
         sessions_recent: worked on recently
+        slice_words: '{0} {1}'
+        slices: Board slices
+        slices_more: +{0}
+        slices_more_picked: '+{0}, {1} picked'
         stale_glyph: stale
-        stat_blocked: '{0} blocked'
-        stat_dated: '{0} dated'
-        stat_projects: '{0} projects'
-        stat_projects_one: 1 project
-        stat_projects_shown: '{0} of {1} projects shown'
-        stat_submit_ready: '{0} submit-ready'
-        stat_venue_count: x{0}
-        stat_venue_tip: '{0}: {1}'
-        stat_venues_tip: where the board's projects are aimed
-        stats: Board totals
         toolbar: Board controls
-        venue_dist_glyph: venue_dist
+        venue_warn: '{0}: {1} live projects, the warning is {2}'
+        venue_warn_join: '; '
+        venue_warn_one: '{0}: 1 live project, the warning is {1}'
         view_cards: Cards
         view_list: List
         warn_glyph: warn
+        with: with {0}
     views:
         archive: Archive
         archive_glyph: archived

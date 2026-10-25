@@ -235,6 +235,11 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   focus_lane_tones: { funding: teal }
 
+# The colour of each filter group of a project board's bar, by the group, as a palette tone.
+# facet_tones: {}
+#   example:
+#   facet_tones: { form: teal }
+
 # The kinds of project a manifest's `tier` names, each with its label.
 # tiers: {}
 #   example:

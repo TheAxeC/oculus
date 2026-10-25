@@ -1,7 +1,7 @@
 # ===========================================================================
 # options/catalogs/vocab.yml
 # Every list of catalogs/vocab.yml a hub sets, described once. loadConfig() reads it into the merged map under `options`, named catalogs/vocab.yml, each entry carrying as its `default` the value catalogs/vocab.yml holds at its key. The shape of an entry is the one the head of options/appearance.yml gives.
-# A hub sets these keys in its own .oculus/config.yml, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts). A map family (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, tiers, research_audit, leads_fit and data_access) merges by word: a word the hub names replaces oculus's row of that word in oculus's place, a new word comes after oculus's words in the hub's order, and `<word>: null` takes one of oculus's words out. `categories` merges by `key`: a row naming oculus's key replaces it in place, a new key comes after oculus's rows, and `{ key: <key>, removed: true }` takes one out. focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole (roles), is also taken out of every word list that names it, each field described below or in another options file with a `from` naming that list (a board's tier or role among them): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. The defaults Settings shows lose the word the same way. The Settings view writes the hub file as the inverse of the merge and offers no reorder of a word or a category, since the merge keeps oculus's order.
+# A hub sets these keys in its own .oculus/config.yml, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts). A map family (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, facet_tones, tiers, research_audit, leads_fit and data_access) merges by word: a word the hub names replaces oculus's row of that word in oculus's place, a new word comes after oculus's words in the hub's order, and `<word>: null` takes one of oculus's words out. `categories` merges by `key`: a row naming oculus's key replaces it in place, a new key comes after oculus's rows, and `{ key: <key>, removed: true }` takes one out. focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole (roles), is also taken out of every word list that names it, each field described below or in another options file with a `from` naming that list (a board's tier or role among them): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. The defaults Settings shows lose the word the same way. The Settings view writes the hub file as the inverse of the merge and offers no reorder of a word or a category, since the merge keeps oculus's order.
 # ===========================================================================
 
 options:
@@ -15,7 +15,7 @@ options:
     stages:
         heading: boards
         section: Vocabulary
-        help: "The project stages, by the manifest's stage, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides. A manifest at a stage the list does not hold is a finding naming the closest stage when that stage is within half the written stage's length in single-letter changes, rounded down."
+        help: "The project stages, by the manifest's stage, in the order the boards, the Map and the form list them, each with its words, glyph and colour and the flags that say what it decides. A manifest at a stage the list does not hold is a finding naming the closest stage when that stage is within half the written stage's length in single-letter changes, rounded down."
         fields:
             key: the word a manifest's stage writes
             label: the words the stage is drawn with on a card, the form and an idea card
@@ -53,9 +53,6 @@ options:
                 control: toggle
             dead_end:
                 help: a dead end; the website audit reports its project when the site shows it
-                control: toggle
-            submit_ready:
-                help: a stage the board statistics count as ready to go out
                 control: toggle
             pauses_countdown:
                 help: a stage that stops a card's and a lane's countdown, counted as submitted work held at its venue
@@ -190,6 +187,15 @@ options:
             key: the collection lane, such as funding
             value:
                 help: the hue its bar is drawn in
+                control: hue
+    facet_tones:
+        heading: boards
+        section: Vocabulary
+        help: "The hue name of each filter group of a project board's bar: its heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own."
+        fields:
+            key: the filter group, such as form
+            value:
+                help: the hue the group is drawn in
                 control: hue
     tiers:
         heading: boards

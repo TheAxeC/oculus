@@ -1,10 +1,10 @@
 // Layer 2, client state. Board item construction and sorting live here because project joins change
 // independently of filters, facets and statistics. A project's people are read as its team, its
 // lead, its collaborators, then its supervisors (team.ts beside this file): the card's team tags
-// and the Authors column leave out the person the workspace setting `self` names, and the search
-// reads the whole team. Which projects a board holds, a card's category and the user's role on a
-// project are read by data/shapes/boards/, the rules the audit reads too, each under the words of
-// the project's own hub; the cards sort by the stage order of every hub's words.
+// and the list's With column leave out the person the workspace setting `self` names, and the
+// search reads the whole team. Which projects a board holds, a card's category and the user's role
+// on a project are read by data/shapes/boards/, the rules the audit reads too, each under the words
+// of the project's own hub; the cards sort by the stage order of every hub's words.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
@@ -19,6 +19,7 @@ import {
     type TakeContext
 } from '../../../data/shapes/boards/takes.ts';
 import { personNames } from '../person.ts';
+import { sliceValue, sliceWord } from './facets.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
     SESSIONS_NONE,
@@ -117,6 +118,14 @@ function itemOf(
     const named = people.self.size > 0;
     const hub = rootOf(project);
     const words = preset.words(hub);
+    const category = categoryOf(project, words.categories, words.config);
+    // A pillar's colour is the hex its entry writes; anything else gives the tag none.
+    const pillar = (id: Id): BoardTag => {
+        const held = byKey(entities.pillars, id);
+        const color = held?.color ?? '';
+        const made = tag(id, held?.title ?? own(id));
+        return /^#[0-9a-f]{6}$/i.test(color) ? { ...made, color } : made;
+    };
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
@@ -135,14 +144,13 @@ function itemOf(
                       short:
                           venue.short !== undefined && venue.short !== '' ? venue.short : venue.name
                   },
-        pillars: project.pillarIds.map((id) =>
-            tag(id, byKey(entities.pillars, id)?.title ?? own(id))
-        ),
+        pillars: project.pillarIds.map(pillar),
         funding: project.fundingIds.map((id) => tag(id, own(id))),
         datasets: project.datasetIds.map((id) => tag(id, own(id))),
         team,
         teamLine: teamLine(team),
-        category: categoryOf(project, words.categories, words.config)?.key ?? '',
+        category: category?.key ?? '',
+        slice: sliceValue(category?.key ?? '', sliceWord(category, project)),
         role: named ? (projectRole(project, words.roles, people.self)?.key ?? '') : '',
         lead: isLead(projectPeople(project), words.roles, isSelf),
         mine: !named || isMine(projectPeople(project), words.roles, isSelf),

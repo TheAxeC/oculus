@@ -222,14 +222,13 @@ options:
                         help: the values one of which the field must hold
                         control: list
             columns:
-                help: the columns of the board's list mode, in order
+                help: the columns the board's list mode draws, in order, until the viewer picks others in its Columns menu, which offers every cell and always shows Project. Each section of the list is a table of its own, its rows one line high, and the columns that do not fit in the list's width are left out from the right
                 control: records
                 fields:
                     cell:
                         help: the cell the column draws
                         control: choice
-                        options:
-                            [title, authors, venue, status, focus, next, domain, pillar, funding]
+                        options: [title, stage, venue, lane, next, with, domain, pillar, funding]
                     label: the column's heading, the cell's name when it has none
             search: the placeholder of the board's search box
             label_mode:
@@ -237,7 +236,7 @@ options:
                 control: choice
                 options: [short, full]
             cards:
-                help: how the card mode lays the cards out. sections, the default, draws one section per category of categories in vocab.yml that holds a card, in that list's order, headed by the category's label and count in its colour, with the cards in no category last; grid draws one grid of every card
+                help: how the cards and the list are laid out. sections, the default, draws one section per category of categories in vocab.yml that holds a project, in that list's order, headed by the category's label and count in its colour, which a press folds, with the projects in no category last; grid draws one section of every project with no heading
                 control: choice
                 options: [sections, grid]
     counts:

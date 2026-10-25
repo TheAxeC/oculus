@@ -4,8 +4,8 @@
 // how its cards are laid out) is its row of `boards` in config/defaults/layout.yml; the categories
 // its cards are filed under and the roles are config/catalogs/vocab.yml's, read through
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
-// of its own hub, and draws its sections, facets and stage order from the union of every hub's
-// words. This module holds no table of boards.
+// of its own hub, and draws its sections, slices, facets and stage order from the union of every
+// hub's words. This module holds no table of boards.
 
 import { z } from 'zod';
 import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -53,7 +53,7 @@ export type BoardPreset = {
     columns: BoardColumn[];
     /**
      * The rows of `categories` of every hub's words, in their order, which the board's sections
-     * and its category facet are drawn by.
+     * and its slices are drawn by.
      */
     categories: Category[];
     /** The rows of `roles` of every hub's words, highest first. */
@@ -88,8 +88,11 @@ export type BoardPreset = {
  */
 export type SessionsOf = (project: Project) => string;
 
-/** A tag on a card: the id a filter names it by, and the words the chip carries. */
-export type BoardTag = { id: Id; label: string };
+/**
+ * A tag on a card: the id a filter names it by, the words the chip carries, and, for a pillar whose
+ * entry writes one as `#rrggbb`, its `color`, which a picked pillar is filled in.
+ */
+export type BoardTag = { id: Id; label: string; color?: string };
 
 /** A tag for a related project, either way: `held` is false when no project has the id. */
 export type RelatedTag = BoardTag & { held: boolean };
@@ -126,13 +129,18 @@ export type BoardItem = {
      * `shownTeam`).
      */
     team: BoardTag[];
-    /** The team as one line (`teamLine`), which the Authors column draws. */
+    /** The team as one line (`teamLine`), which the list's With column draws. */
     teamLine: string;
     /**
      * The key of the project's category, the first row of `categories` that holds it, or the empty
      * string when none does.
      */
     category: string;
+    /**
+     * The project's slice of the board's second bar line, `<category key>/<stage or form>`
+     * (facets.ts, `sliceValue`), or the empty string for a project with no stage.
+     */
+    slice: string;
     /**
      * The key of the user's role on the project (`roles` of vocab.yml), or the empty string when
      * it has none or the workspace names no `self`.
@@ -163,6 +171,7 @@ export type BoardItem = {
     sessions: string;
     /**
      * The project's form, when it has one, then its chips: the words the card's status row draws.
+     * The Form and Situation facets read the form and the chips apart, from `project`.
      */
     chips: string[];
     /** Everything the search reads, lower case, one string. */
@@ -171,8 +180,11 @@ export type BoardItem = {
     related?: RelatedTag[];
 };
 
-/** One value of one facet: what a filter stores, what the menu says, and how many carry it. */
-export type FacetValue = { value: string; label: string; count: number };
+/**
+ * One value of one facet: what a filter stores, the words its list says, how many carry it, and the
+ * hue of a value that has a colour of its own (a slice, a domain, a pillar).
+ */
+export type FacetValue = { value: string; label: string; count: number; tone?: string };
 
 /** One facet: the key a filter is stored under, and its values in the order the menu lists them. */
 export type Facet = { key: string; values: FacetValue[] };
@@ -194,40 +206,39 @@ export type BoardState = {
     dated: boolean;
     /**
      * Mine only: only the projects whose role fields name the user and those naming no one. On
-     * until the reader switches it off; applied only where the board draws it, which is while the
-     * workspace names a `self` and one of the board's projects is one it does not keep (state.ts,
-     * `offersMine`).
+     * until the reader switches it off; drawn while the workspace names a `self`, and applied only
+     * where one of the board's projects is one it does not keep (state.ts, `offersMine`).
      */
     mine: boolean;
+    /** The keys of the folded sections, the empty key for the "other" section. */
+    folded: string[];
+    /**
+     * The cells of the list's columns the reader shows, in the board's order, and absent for the
+     * board's own `columns`.
+     */
+    columns?: string[];
 };
 
-/** The counts of the strip above the board, and the venues the board's projects aim at. */
+/** The counts the board's controls carry, over the board's projects before any filter. */
 export type BoardStats = {
-    /** How many projects the board holds, before any filter. */
-    active: number;
-    submitReady: number;
+    /** How many projects the board holds. */
+    projects: number;
     /** How many carry a chip whose word of `chips` carries the flag `blocked`. */
     blocked: number;
     /** How many carry a deadline. */
     dated: number;
+    /** `venue_conc_warn` under `focus:` of config/defaults/behavior.yml. */
+    warnAt: number;
+    /** The venues that many projects at a stage flagged `live` aim at, most aimed at first. */
     venues: VenueCount[];
 };
 
-/**
- * One venue of the stats strip: how many of the board's projects aim at it, and whether that warns.
- */
+/** One venue the board warns on: how many of its live projects aim at it. */
 export type VenueCount = {
     id: Id;
-    /** The registry's short name, which is what the chip carries. */
+    /** The registry's short name, its full name where it has none. */
     short: string;
-    /** The registry's full name, which is what the chip's tooltip carries. */
-    name: string;
     count: number;
-    /**
-     * True from `venue_conc_warn` under `focus:` of config/defaults/behavior.yml up: too much of
-     * the board on one venue.
-     */
-    warn: boolean;
 };
 
 /** The quick filters applyFilters is given beside the facets: stale, deadline and Mine only. */
@@ -243,21 +254,41 @@ export type QuickFilters = {
     staleLag?: number;
 };
 
-/** The facets, in the order the filter menu offers them. */
+/**
+ * The facets, in the order the bar offers them: the slices of its second line, then the group
+ * buttons of its first line, then the groups its More list holds.
+ */
 export const FACETS = [
-    'stage',
-    'category',
+    'slice',
+    'form',
+    'status',
     'role',
     'year',
     'domain',
+    'venue',
     'pillar',
     'funding',
     'dataset',
-    'status',
     'compute',
     'reproduced',
     'code',
     'sessions'
+];
+
+/**
+ * The cells a board's list can draw, in the order its Columns menu lists those its `columns` do
+ * not name; config/options/layout.yml offers the same cells to `columns`.
+ */
+export const LIST_CELLS = [
+    'title',
+    'stage',
+    'venue',
+    'lane',
+    'next',
+    'with',
+    'domain',
+    'pillar',
+    'funding'
 ];
 
 /**
@@ -401,6 +432,15 @@ export function venueText(venue: Venue): string {
  */
 export function teamLine(team: readonly BoardTag[]): string {
     return team.map((tag) => tag.label).join(', ');
+}
+
+/**
+ * The words of a label up to its first " (", so "de-risking (feasibility experiment)" reads
+ * "de-risking": what a slice and the list's stage chip draw, the whole label being their tip.
+ */
+export function shortWords(label: string): string {
+    const at = label.indexOf(' (');
+    return at < 0 ? label : label.slice(0, at);
 }
 
 /**

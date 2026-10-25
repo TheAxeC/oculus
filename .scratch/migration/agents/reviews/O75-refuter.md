@@ -169,30 +169,212 @@ Cases of the brief's "Cases":
 
 Reviewer usage: a77378f8667072b40, claude-opus-5-5, 305807 tokens, 70 tool uses, 14 min 40 s.
 
-## Repair round <n>, refuted (one section per run after a round, when the configuration block says refute_after_repair: yes)
+## Repair round 1, refuted
 
 ```
-<each verification command rerun over the repaired tree, and its summary line, verbatim>
-<each command the round's report quotes as evidence, and what it printed>
+$ npm run diagrams && npm run test:quick -- --base e0687c50        (run 1, exit 1)
+test:quick: 50 changed file(s), from git since e0687c50
+test:quick: 134 test file(s)
+ok      prettier (4.8 s): All matched files use Prettier code style!
+ok      ASCII gate (7.0 s)
+ok      svelte-kit sync (35.6 s)
+ok      eslint (118.4 s)
+ok      svelte-check (139.3 s): 1792935422099 COMPLETED 540 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+FAILED  vitest (225.9 s)
+ok      vitest checks (238.8 s): Duration  218.18s (...)
+FAILED  vitest slow (335.5 s)
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder
+test:quick: 371.7 s; failed: vitest, vitest slow
+(md5 of docs/diagrams/* the same before and after; git status --short: 50 lines before and after)
+
+$ npm run test:quick -- --base e0687c50        (run 2, the same tree; exit 1)
+ok      prettier / ASCII gate / svelte-kit sync / eslint
+ok      svelte-check (47.9 s): ... 540 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (258.7 s): Duration  240.54s (...)
+ok      vitest checks (283.7 s): Duration  263.95s (...)
+FAILED  vitest slow (352.4 s)
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > ... (4 rows) Error: Test timed out in 20000ms.
+ Test Files  1 failed | 34 passed (35)
+      Tests  4 failed | 373 passed | 85 skipped (462)
+test:quick: 366.0 s; failed: vitest slow
+
+$ uptime; npx vitest run tests/data/hubs/hub-portfolio.test.ts --tagsFilter slow --testTimeout 20000
+load averages: 14.87 19.23 15.62
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+
+$ sh utils/folder-check.sh
+folder-check exit 0
+
+$ diff .agents/worktrees/O75-base/unused-exports.txt <(sh utils/unused-exports.sh)
+125,126c125,126  filter-menu.ts and index.ts lose filtersInForce
+232c232          Unused exported types (111) -> (109)
+283,285c283      FilterChoice, Facet, presets.ts BoardColumn leave the list
+(no line added; the same diff the first build quotes)
+
+$ npx vitest run tests/state/boards/board/board-rules.test.ts tests/state/boards/board/hub-facets.test.ts tests/checks/look/contrast.test.ts tests/checks/config/config-folder.test.ts
+ Test Files  4 passed (4)
+      Tests  169 passed | 2 skipped (171)
+
+$ npx vitest run --reporter=verbose tests/state/boards/board/hub-facets.test.ts     (marker glyph dropped)
+ |unit| tests/state/boards/board/hub-facets.test.ts > the group lists on a workspace of two hubs > lists a value both hubs name once, counted over both
+ |unit| ... > the group lists on a workspace of two hubs > keeps both hubs' projects under a filter on that value
+ |unit| ... > the group lists on a workspace of two hubs > counts that value over both hubs' projects another facet's value leaves
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+
+$ ASCII gate of the rules file over src tests bin config (! -name local.yml): nothing printed
+$ LC_ALL=C grep -n '[^ -~]' docs/HELP.md docs/templates.md docs/data-map.md O75-report.md FoldRun.svelte: nothing printed, exit 1
+
+$ npx vitest run --config <scratchpad>/caserun/caserun.config.mts --reporter=verbose <scratchpad>/caserun/r1-tones.case.ts   (exit 0)
+facet_tones of the config: {"code":"cyan",...,"form":"pink",...,"venue":"amber","year":"slate"}
+group tones: [["form","pink"],["year","slate"],["venue","amber"],["funding","cyan"],...]
+  hub findings: []
+group tones: [["form","teal"],["year","slate"],["venue","amber"],...]
+  hub findings: []
+group tones: [["form","grey"],["year","slate"],["venue","amber"],...]
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+(every line equals the report's quoted output)
+
+$ npx vitest run --config <scratchpad>/caserun/caserun.config.mts --reporter=verbose <scratchpad>/caserun/after.case.ts
+diff of its printed "name: value" lines against the report's quoted block (39 lines): exit 0, identical
+(case 21 now printed: hub findings: ["key stages.submit-ready.submit_ready is not a key this file takes"], own findings: [])
+
+$ quoted case-run sources against the files on disk (caserun.config.mts, before.test.ts, after.case.ts, r1-tones.case.ts): each identical
+
+$ grep "focus_lane_tones" vs "facet_tones" over src tests config docs README.md (--exclude=local.yml, diagrams out)
+every list beside focus_lane_tones names facet_tones: vocab.yml:4 and :194, options/catalogs/vocab.yml:4 and :191, vocab.ts:323, in-place.ts:55, hub-names.ts:395, config-folder.test.ts:224, HELP.md:522, templates.md:239-241, data-map.md:107; tones.ts:203, focus-lanes.ts and Band.svelte are readers, not lists
+
+$ diff of HUB_LIST keys (hub-names.ts) against the data map's "hub's settings" block: identical, 46 keys each; data-map.md:80 says "these 45 keys"
+
+$ stage flags of stageWord: base 13 (with submit_ready), now 12; base test line 692-694 "13 stage flags ... toHaveLength(34)"
+
+$ removed-name grep (Filter menu, stage/category facet, Expand all, expand_all, board.collapse, totals line, board statistics, Authors/Status column, cell: authors/status/focus, submit_ready, submitReady, STATS_VENUES, filterChips, filterLabel, InForceChip, filtersInForce, Stats.svelte, facet_category, facet_stage, stat_, facet_*_tone): 0 each; "filter menu" only in Settings Header and SessionList (their own menus); "A card opens and closes in place" in HELP.md: none
+
+$ history-word grep over the round's added lines (snapshot diff and FoldRun.svelte): "no longer give" (vocab.yml:4, options vocab.yml:4, HELP.md:522, base text on hub data), "before it is pressed" (Chip), "controls before them", "a gap before the next" (FilterBar): none is history; no step id, no date
+
+$ compiled Chip.svelte CSS (svelte/compiler, in memory): `.chip.toned.outlined.svelte-70lp0a:not(.filled)` (0,5,0) at source line 45; `.chip.pressable.svelte-70lp0a:hover:not(:disabled)` (0,5,0) at line 81, later
 ```
+
+The first run's unit-tier failure printed no FAIL line under the filter used; the second run's unit tier passed on the same tree. Both runs' slow-tier failures are timeouts in `tests/data/hubs/hub-portfolio.test.ts`, a file the step does not change, which passes alone; the load average was 15 to 19. Under the rules file's "Verify before you report", these are not counted as findings.
 
 ### Verdicts
 
-- <n>, and <the case>: the verdicts again for the whole diff since the base, in the form of "Verdicts" above.
+Items of the brief's "What to build":
+
+- 1: holds. `FACETS`, `facetValues` form, venue and status, Form and Venue headings, "Situation"; the after.case.ts rerun gives the same c2 and c18 lines.
+- 2: holds. The slices, `slice` on the item, `parseBoardState` given the board's slice values; reruns of c3, c4 and c6 are identical; G124 'a saved slice filter' passes in the four-file run.
+- 3: holds. FilterBar.svelte line 1 is unchanged in order and rule. Its fold is now `FoldRun.svelte` with the same room arithmetic (`room()`, FilterBar.svelte:88-104).
+- 4: holds. PickMenu.svelte is unchanged in this round.
+- 5: holds. The flag is gone from vocab.yml, vocab.ts and the options file. The config-folder flag count follows: 13 to 12 stage flags, 34 to 33 keys.
+- 6: holds. An unpicked slice is outlined in its hue: SliceLine.svelte:142 passes `outlined`, and Chip.svelte:178-180 sets `border-color: var(--tone)` on a toned, outlined, unfilled chip. Picked slices stay filled. Facet tones come from `facet_tones` through `namedTone` (filter-menu.ts:71-85), as ruling 376 (a) replaces decision 8.
+- 7: holds. SliceLine.svelte line 2 keeps the same content; its fold is `FoldRun` with `keep`, so no label ends the run (:98-109).
+- 8: holds. Unchanged in this round.
+- 9: holds. Unchanged in this round.
+- 10: holds. Unchanged in this round; rerun c17 is identical.
+- 11: holds. hub-facets.test.ts:1-10 and :45 name the group lists; HELP.md:295 has no card sentence; the removed-name grep finds 0 for each name.
+- 12: holds. G124's row passes. G92's fixture gains `venue: null`, `chips: []` and `slice: ''` (the last asked by round item 4), with no assertion changed. The describe title is now 'the group lists on a workspace of two hubs'.
+
+Cases of the brief's "Cases":
+
+- 1: not verifiable. Reading: line 1 and line 2 each fold through `FoldRun.svelte`, as checked under round item 6 below. The look must see at a 532 px and a 1400 px pane two bar lines, line 1 never wrapping, line 2 ending in "+n" at 532 px.
+- 2: met, after.case.ts rerun (Situation lists blocked and parked, no form; Form lists journal article, conference paper, poster).
+- 3: met, after.case.ts rerun.
+- 4: met, after.case.ts rerun.
+- 5: not verifiable. Reading `pickCategory` (unchanged). The look must see the publications label pick every slice, then clear them.
+- 6: met, G124 row (four-file run) and the after.case.ts rerun (`filters: {}`).
+- 7: met, after.case.ts rerun ("deadline 3", "16 projects", "5 of 16 shown"); the view passes the unfiltered items (unchanged).
+- 8: met, after.case.ts rerun ("2 blocked", empty with none).
+- 9: met, after.case.ts rerun.
+- 10: not verifiable. Reading FilterBar.svelte:137-145 (`disabled={!mine}`, tip `board.mine_all`). The look must see it.
+- 11: not verifiable. Reading gives the fills as before and the unpicked slice outlined in its stage hue. The look must see each hue.
+- 12: not verifiable. Reading PickMenu.svelte (unchanged). The look must see it.
+- 13: not verifiable. Reading (unchanged). The look must see it.
+- 14: met, reading Projects.svelte header (unchanged).
+- 15: not verifiable. Reading BoardList.svelte (unchanged). The look must see it.
+- 16: met, the four-file run (169 passed, 2 skipped).
+- 17: met, after.case.ts rerun.
+- 18: met, after.case.ts rerun.
+- 19: met, after.case.ts rerun.
+- 20: met, after.case.ts rerun for the first part, reading for the second.
+- 21: met, after.case.ts rerun ("key stages.submit-ready.submit_ready is not a key this file takes"; own findings []).
+- 22: met for the first part, after.case.ts rerun (pillar `pl` tone blue, `pn` cyan from `facet_tones`); the second part is the look's.
+
+Items of the round brief:
+
+- 1: violated, Proof 1. The listed commands match the transcript, and every listed `file:line` range matches today's tree. Four commands that wrote files in the scratchpad are not listed.
+- 2: holds. `facet_tones` sits in vocab.yml:193-207 with a comment line, is merged as `MAP` (in-place.ts:55), declared as `textMap` (vocab.ts:323), and is read through `preset.words(hub)` and `namedTone` (filter-menu.ts:80-84). A group the map does not name gives `namedTone('')`, which is `UNKNOWN_TONE`. Every list beside `focus_lane_tones` names it. The three cases reproduce. The data map's key count sentence is now false (Standards 1).
+- 3: holds. Chip.svelte gains the prop `outlined` (default false), and only SliceLine.svelte:142 passes it (grep). Every other toned Chip lacks the class, so it is drawn as before. The hover border wins by source order at equal specificity (0,5,0), as the comment says. Focus is an outline, which the new rule does not touch. A filled or pressed chip is excluded by `:not(.filled)`. The rice theme's `border: 0` leaves the colour invisible.
+- 4: holds. hub-facets.test.ts head comment and describe title read 'the group lists on a workspace of two hubs'; the fixture has `slice: ''`; the file passes with 3 tests.
+- 5: holds. The HELP grep finds nothing.
+- 6: holds. `FoldRun.svelte` holds `gapOf`, `widths`, the run's width, `measure` over `fit()`, `clipped` and the two `watchToolbar` calls. `.run`, `.slot` and `.slot.clipped` are written once, at FoldRun.svelte:109-125. The run's gap is 6px, as both old runs had, and both lines' `.line` gap is 6px. The run's width is the sum of the kept widths plus `gapOf(box)` times (n-1), as both lines computed it before. FilterBar's room and opener and SliceLine's room, opener and label rule are the arithmetic each line had. Both watchers observe the line and the run's children, and the run is still a direct child of the line, so this is unchanged. Case 1 itself is the look's.
+- 7: holds. Table.svelte:22-28 says what `th { position: sticky }` (:107) and the `body.wall` rules (:131-144) do. The paragraph is not rewrapped whole (Standards 2).
+- 8: holds. Every quoted source is byte-identical to its scratchpad file, and both case programs reproduce.
+- 9: holds. The pillar title, the columns of the other five boards (checked against `git show e0687c50:config/defaults/layout.yml`), sorting per section and the outlined slice are stated with before and after.
 
 ### Findings
 
-- <file:line, or page and section>: "<the quoted hunk>"; what is wrong: <the closure claimed and what the rerun or the read showed, or what is there against what the brief or the standard asks>; under the heading it belongs to (spec, proof, standards, behaviour); failure scenario: <the input or state and the wrong result it gives, or the reader and what the text leads them to do wrong>; verdict: <the item or case it makes violated, partial or unmet, when there is one>. Or: none.
+- Spec 1. `tests/checks/config/config-folder.test.ts:693-695`: "// 12 stage flags, ..." / `expect(keys).toHaveLength(33);`.
+  - What is wrong: the round widened this file only "where it lists the keys", and this flag-count change goes beyond that. Brief item 5 requires it: the base flagged 13 stage flags, and today's `stageWord` has 12 with `submit_ready` gone. The count stays exact, the empty-help assertion is unchanged, and nothing is loosened. The builder disclosed it at the head of the round with the red line from before the fix. The first build left this test red because test:quick did not select it.
+  - Failure scenario: none in code; a landing that checks the diff against the round's path list alone would reject a needed fix. Accept at landing.
+  - Verdict: none.
+- Proof 1. The report, "Scripts of the first build": "Every command of the first build that changed a file other than through the Edit and Write tools is listed here".
+  - What is wrong: the transcript holds four more first-build Bash calls that wrote files, none of them listed. All four are shell redirects into the scratchpad. Each call is numbered in Bash order, with its line in the transcript.
+    - Call 123 (L905): `head -30 src/lib/views/boards/projects/Projects.svelte > <scratchpad>/projects-head.txt`.
+    - Call 168 (L1352): `sh utils/unused-exports.sh > <scratchpad>/unused-after.txt`.
+    - Call 173 (L1381): `... > <scratchpad>/keys.txt`.
+    - Call 195 (L1546): `sh utils/unused-exports.sh > <scratchpad>/unused-after.txt`.
+  - None changed a file of the worktree. Every worktree-changing call (50, 72, 83, 85, 110, 117, 118, 124, 127, 133, 151, 152, 160, 163, 164, 167, 176, 177, 191, 196, 201, and the case-run copies 48, 49, 51, 142, 176) is listed, and each listed range matches today's tree.
+  - Failure scenario: none for the diff, since no hunk comes from these four. A reader of the section takes "every command" as complete when it is not. Fixed at landing by appending the four lines above to the section.
+  - Verdict: round item 1 violated.
+- Proof 2. The report, "Files changed in this round": "`layer-state.dot` 173 and `layer-state.svg` 855, new in this round's list since `FoldRun.svelte` is a new module".
+  - What is wrong: `git diff e0687c50 -- docs/diagrams/layer-state.dot` changes two edges: state/boards to state/shared goes from 8 to 9, and state/boards to layer data from 71 to 72. These come from filter-menu.ts's new imports of `shared/words/tones.ts` and `data/shapes/shapes.ts`. `FoldRun.svelte` is a ui module and does not appear in the state diagram.
+  - No decision rests on it.
+  - Failure scenario: the orchestrator reading the diagrams at landing looks for a state-layer edge from FoldRun and finds none.
+  - Verdict: none.
+- Standards 1. `docs/data-map.md:80`: "`.oculus/config.yml` may set these 45 keys and no others".
+  - What is wrong: the round added `facet_tones:` to the block under that sentence (:107). The block now lists 46 keys, identical to `HUB_LIST` (diff exit 0, 46 each), so the sentence is false. This breaks the rules file's rule that a sentence the change makes false is a defect of the change.
+  - Failure scenario: a reader counting a hub's settable keys from the data map is off by one and takes `facet_tones` for an extra or doubts the list.
+  - Fix at landing: 45 to 46.
+  - Verdict: none (round item 2's own text is met).
+- Standards 2. `src/lib/ui/display/table/Table.svelte:27-28`: "* rows painting nothing inside a surface." / "* Without it, the header row over a wallpaper paints nothing."
+  - What is wrong: the rules file asks that a comment the step edits be rewrapped as a whole paragraph at 100 columns. Here the last sentence starts on a new line after a 50-column line in the same paragraph. No line breaks inside a sentence, so the letter of the "so" clause holds.
+  - Failure scenario: none for behaviour; a reader sees a ragged paragraph.
+  - Fix at landing: rewrap.
+  - Verdict: none.
 
 ### Declined to judge
 
-- <a point the reviewer did not check, or declined because it is the user's call or outside what a read and a rerun can settle>, <the reason>. Or: nothing.
+- The first run's unit-tier failure: which file failed was not printed under my filter. The second run's unit tier passed on the same tree, so no rerun alone was possible.
+- Whether the four scratchpad redirects of Proof 1 count as "a program that changed a file" for open item 375. This is the orchestrator's reading of ruling 375 (a); no hunk of the diff comes from them.
+- What the pressed and outlined slices, both bar lines' folding at 532 px and 1400 px, the list and the headings look like: the look on landing, as cases 1, 5, 10 to 13, 15 and the second part of 22 say.
+- The flag-count test's red run after the first build ("to have a length of 34 but got 33"): not reproduced, since it needs the snapshot tree run as a whole and the reviewer writes no file. The base count of 13 and today's 12 were read from `git show e0687c50:` and the tree.
+- G92's and G124's Test lines in `agents/guarded.md`: ledger lines the orchestrator writes at landing. The new G92 describe title is exactly 'the group lists on a workspace of two hubs'.
 
-Reviewer usage: <the session fills this from the completion notice: agent id, served model, tokens, tool uses, minutes>.
+Reviewer usage: afe8c52befef9e67a, claude-opus-5-5, 307494 tokens, 94 tool uses, 26 min 26 s.
 
-## Closed (the orchestrator's disposition of every finding above, appended before /land)
+## Closed (the orchestrator's disposition of every finding above)
 
-- <finding>: closed in the round, <file:line, or page and section, and the check that shows it>; or fixed at landing, <what and where>; or raised to the user as an open item, <the item as the state file holds it>.
+First run:
+- Spec 1 to 3 (`Chip.svelte`, `vocab.ts:240-242`, the extra `items.ts` lines, outside the path list): each needed by an item and named in the report; accepted at landing and recorded in the booking.
+- Spec 4 (the builder's unapproved programs): closed under ruling 375 (a) and the standing ruling "Unapproved builder scripts": listed in round 1 (round item 1), every hunk read by the orchestrator against the brief and kept; the four scratchpad redirects the review over round 1 found unlisted (Proof 1 over round 1) are added to the report's list at landing.
+- Spec 5 (an unpicked slice not outlined in its hue): closed in round 1 (item 3); the review over the round found it holding (`SliceLine.svelte:142`, `Chip.svelte:178-180`).
+- Spec 6 (the brief's `stays` premise): the brief's error, corrected in the booking; `Table.svelte`'s `stays` comment rewritten in round 1 (item 7).
+- Proof 1 (the case-run sources not quoted): closed in round 1 (item 8); every quoted source byte-identical to its scratchpad file.
+- Standards 1 (the `--dir` whole-suite run): recorded in the booking; its result was not used.
+- Standards 2 (the head comment and describe title naming the Filter menu): closed in round 1 (item 4).
+- Standards 3 (the HELP card sentence): closed in round 1 (item 5).
+- Standards 4 (the facet tones in a words catalog): closed in round 1 (item 2, open item 376 ruled (a)), `facet_tones` in `config/catalogs/vocab.yml`.
+- Standards 5 (two copies of the fold run): closed in round 1 (item 6), `src/lib/ui/frame/toolbar/FoldRun.svelte`.
+- Behaviour 1 to 3 (the pillar title, the five boards' columns, sorting per section): closed in round 1 (item 9), each stated with its before and after.
+
+Over round 1:
+- Spec 1 (the config-folder flag count 13 to 12, 34 to 33 keys): follows the `submit_ready` removal item 5 asks for; accepted at landing and recorded in the booking.
+- Proof 1 (four scratchpad redirects not listed: calls 123, 168, 173 and 195 of the first build): closed under the standing ruling "Unapproved builder scripts"; none changed the worktree; the four commands are appended to the report's "Scripts of the first build" at landing.
+- Proof 2 (`layer-state` attributed to `FoldRun.svelte`): the change comes from `filter-menu.ts`'s new imports; recorded in the booking.
+- Standards 1 (`docs/data-map.md:80` "these 45 keys"): fixed at landing to 46.
+- Standards 2 (`Table.svelte:27-28` paragraph not rewrapped): fixed at landing, the paragraph rewrapped whole.
 
 ---
 

@@ -52,6 +52,7 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     focus_lanes: WHOLE,
     fund_stages: WHOLE,
     focus_lane_tones: MAP,
+    facet_tones: MAP,
     tiers: MAP,
     research_audit: MAP,
     roles: WHOLE,

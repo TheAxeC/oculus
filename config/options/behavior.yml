@@ -167,7 +167,7 @@ options:
     focus.venue_conc_warn:
         heading: boards
         section: Thresholds and horizons
-        help: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and the board statistics flag the venue.
+        help: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and a project board's Venue button marks the venue.
         control: number
     focus.linkedin_cadence_days:
         heading: boards

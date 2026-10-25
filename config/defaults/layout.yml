@@ -223,7 +223,7 @@ floats:
   - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
-# The project boards, by view id, in the order a project opened from anywhere is placed by: it opens on the first board that takes it, and on the first board when none does. A project is on every board whose keys it meets, and a board meets a key only when every list it names holds. `tier` is a word of `tiers` in config/catalogs/vocab.yml, or a list of them. `role` is a key of `roles` there, or a list: the user's role on the project, the first row whose field holds the person the workspace setting `self` names; with no `self` the key is not applied. `stages`, `chips` and `forms` are blocks held against the project's `stage:`, its `status.chips` and its `form:`, each with the lists `words` (one of its words is listed), `not_words` (none is), `flags` (one of its words carries one of these flags of the vocabulary) and `not_flags` (none does); `forms` takes no flags. `hub` is the root of one hub of the workspace, whose projects alone the board takes. `match` maps a manifest field (domain, pillars, funding, datasets, venue, compute, related, lead, collaborators, supervisors, tags, year, tier, stage, form, chips) to the values one of which the field must hold, a record by its key. `columns` are the columns of its list mode, each the `cell` it draws (title, authors, venue, status, focus, next, domain, pillar or funding) under the heading `label`, the cell's name when it has none. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the Full titles button in the board's header overrides it for the viewer; the full title is always on hover. `cards` is how the card mode lays the cards out: `sections` (the default) one section per category of `categories` in vocab.yml that holds a card, in that list's order, headed by the category's label and count in its colour, with the cards in no category last; `grid` one grid of every card. A board draws the categories its projects are in, on its category facet and its tab's counts, and names none of its own. A key here that is no board view is never shown.
+# The project boards, by view id, in the order a project opened from anywhere is placed by: it opens on the first board that takes it, and on the first board when none does. A project is on every board whose keys it meets, and a board meets a key only when every list it names holds. `tier` is a word of `tiers` in config/catalogs/vocab.yml, or a list of them. `role` is a key of `roles` there, or a list: the user's role on the project, the first row whose field holds the person the workspace setting `self` names; with no `self` the key is not applied. `stages`, `chips` and `forms` are blocks held against the project's `stage:`, its `status.chips` and its `form:`, each with the lists `words` (one of its words is listed), `not_words` (none is), `flags` (one of its words carries one of these flags of the vocabulary) and `not_flags` (none does); `forms` takes no flags. `hub` is the root of one hub of the workspace, whose projects alone the board takes. `match` maps a manifest field (domain, pillars, funding, datasets, venue, compute, related, lead, collaborators, supervisors, tags, year, tier, stage, form, chips) to the values one of which the field must hold, a record by its key. `columns` are the columns its list mode draws until the viewer picks others in its Columns menu, each the `cell` it draws (title, stage, venue, lane, next, with, domain, pillar or funding) under the heading `label`, the cell's name when it has none; the menu offers every cell, Project always shown. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the Full titles button in the board's header overrides it for the viewer; the full title is always on hover. `cards` is how the cards and the list are laid out: `sections` (the default) one section per category of `categories` in vocab.yml that holds a project, in that list's order, headed by the category's label and count in its colour, which a press folds, with the projects in no category last; `grid` one section of every project with no heading. A board draws the categories its projects are in, in its sections, the slices of its bar and its tab's counts, and names none of its own. A key here that is no board view is never shown.
 boards:
   projects:
     tier: research
@@ -231,11 +231,11 @@ boards:
     stages: { not_flags: [terminal] }
     columns:
       - { cell: title,   label: Project }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: status,  label: Status }
-      - { cell: focus,   label: Focus }
+      - { cell: lane,    label: Lane }
       - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search title | eli5 | results | ideas | doc text ..."
     label_mode: short
   supervision:
@@ -243,11 +243,11 @@ boards:
     role: supervisor
     columns:
       - { cell: title,   label: Paper }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: domain,  label: Domain }
-      - { cell: pillar,  label: Pillar }
-      - { cell: funding, label: Funding }
+      - { cell: lane,    label: Lane }
+      - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search supervision | title | eli5 | outcome | doc text ..."
     label_mode: short
   coauthor:
@@ -255,11 +255,11 @@ boards:
     role: [collaborator, other]
     columns:
       - { cell: title,   label: Paper }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: domain,  label: Domain }
-      - { cell: pillar,  label: Pillar }
-      - { cell: funding, label: Funding }
+      - { cell: lane,    label: Lane }
+      - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search coauthor | title | eli5 | outcome | doc text ..."
     label_mode: short
   archive:
@@ -268,33 +268,33 @@ boards:
     stages: { flags: [terminal] }
     columns:
       - { cell: title,   label: Paper }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: domain,  label: Domain }
-      - { cell: pillar,  label: Pillar }
-      - { cell: funding, label: Funding }
+      - { cell: lane,    label: Lane }
+      - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search archive | title | eli5 | outcome | doc text ..."
     label_mode: short
   personal:
     tier: personal
     columns:
       - { cell: title,   label: Project }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: status,  label: Status }
-      - { cell: focus,   label: Focus }
+      - { cell: lane,    label: Lane }
       - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search personal | title | eli5 | next | doc text ..."
     label_mode: short
   software:
     tier: software
     columns:
       - { cell: title,   label: Software }
-      - { cell: authors, label: Authors }
+      - { cell: stage,   label: Stage }
       - { cell: venue,   label: Venue }
-      - { cell: domain,  label: Domain }
-      - { cell: pillar,  label: Pillar }
-      - { cell: funding, label: Funding }
+      - { cell: lane,    label: Lane }
+      - { cell: next,    label: Next }
+      - { cell: with,    label: With }
     search: "Search software | title | eli5 | tags | doc text ..."
     label_mode: short
 

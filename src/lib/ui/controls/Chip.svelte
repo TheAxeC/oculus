@@ -4,7 +4,8 @@
     // status out of the run of words on a card, so every other tag a view lists is
     // ui/controls/Tag.svelte instead. It is VS Code's count badge in shape: 11px words, an 18 px
     // minimum, a full round end. Outline is the default and the filled form is for the one chip
-    // that has to carry a row; a pressed toggle is drawn filled in its hue.
+    // that has to carry a row; a pressed toggle is drawn filled in its hue, and an `outlined` one
+    // not pressed has its border in its hue.
     //
     // The hue reaches the CSS as three custom properties the component sets from the tone, so the
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
@@ -12,7 +13,8 @@
     // tests/checks/look/contrast.test.ts measures under every theme.
     //
     // Given an `onclick` it is a toggle with `aria-pressed`, toned or untoned (the Joint-work and
-    // disclosure pills are untoned). Given an `onremove` instead, it carries a remove control after
+    // disclosure pills are untoned), drawn disabled with its tooltip saying why where it would
+    // change nothing (`disabled`). Given an `onremove` instead, it carries a remove control after
     // its label: a button of its own, which Tab reaches, named and titled by `removeLabel`. A
     // toggle never carries one, so no button is drawn inside another.
 
@@ -32,6 +34,11 @@
         /** Fill the chip with its hue instead of tinting the text. */
         filled?: boolean;
         /**
+         * Draw the border of a toned chip that is not filled in its hue too, for a chip that must
+         * read in its colour before it is pressed, as a slice of a board's bar does.
+         */
+        outlined?: boolean;
+        /**
          * Makes the chip a toggle the reader presses. A chip given none is a mark and not a
          * control.
          */
@@ -40,6 +47,11 @@
         pressed?: boolean;
         /** The tooltip of a toggle chip, when it should say more than the label does. */
         title?: string;
+        /**
+         * A toggle chip shown and not pressable, for a toggle that would change nothing right now.
+         * The reason belongs in `title`, as ToolButton.svelte's disabled button carries it.
+         */
+        disabled?: boolean;
         /**
          * Draws a remove control after the label that calls this when pressed. It is drawn only on
          * a chip given no `onclick`.
@@ -54,9 +66,11 @@
         tone,
         glyph,
         filled = false,
+        outlined = false,
         onclick,
         pressed,
         title,
+        disabled = false,
         onremove,
         removeLabel = ''
     }: Props = $props();
@@ -81,6 +95,7 @@
         class="chip"
         class:toned={tone !== undefined}
         class:filled={solid}
+        class:outlined
         class:bracketed
         {style}
     >
@@ -103,9 +118,11 @@
             class="chip pressable"
             class:toned={tone !== undefined}
             class:filled={solid}
+            class:outlined
             class:bracketed
             aria-pressed={pressed}
             {style}
+            {disabled}
             {onclick}
         >
             {#if glyph !== undefined && glyph !== ''}
@@ -158,6 +175,12 @@
         color: var(--tone-txt, var(--muted-txt));
     }
 
+    /* An outlined chip that is not filled draws its border in its hue as well as its words; the
+       hover's accent border below marks the one under the pointer, as on any toggle chip. */
+    .chip.toned.outlined:not(.filled) {
+        border-color: var(--tone);
+    }
+
     /* The remove control is the chip's own icon box: no border and no fill, the 16 px icon given
        back the room it takes over the 11 px line, as the glyph before the label is, and the accent
        on hover and on keyboard focus. */
@@ -190,8 +213,13 @@
         cursor: pointer;
     }
 
-    .chip.pressable:hover {
+    .chip.pressable:hover:not(:disabled) {
         border-color: var(--accent);
+    }
+
+    .chip.pressable:disabled {
+        opacity: 0.5;
+        cursor: default;
     }
 
     /* A pressed toggle with no hue of its own is marked in the accent. */

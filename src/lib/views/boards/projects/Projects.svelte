@@ -29,74 +29,75 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The project board: cards or a table, a search, quick filters, one filter menu
-    // headed by every way the board can be split, the stage first, the facet values in force as
-    // removable chips, a stats strip and a short or full title. It is registered six times, as
-    // `projects`, `supervision`, `coauthor`, `archive`, `personal` and `software`, and reads which
-    // board it is from the instance it was mounted as, so the six board tabs are one component
-    // here. A board holds every project its keys in `boards:` meet, so one project may be on
-    // several. The cards are laid out in sections, one per row of `categories` holding a card, in
-    // the list's order, and an "other" section last for the cards in no row, or as one flat grid
-    // where the board's `cards:` says `grid`. The header holds New project, Expand all and
-    // Collapse, then Cards and List, the one in force pressed, and Full titles, pressed while the
-    // board draws full titles. A board offers New project, written with its tier and its `role:`
-    // keys, only when its rule takes the project that write makes
+    // Layer 3, view. The project board: cards or a list, under a bar of two lines and a header. It
+    // is registered six times, as `projects`, `supervision`, `coauthor`, `archive`, `personal` and
+    // `software`, and reads which board it is from the instance it was mounted as, so the six board
+    // tabs are one component here. A board holds every project its keys in `boards:` meet, so one
+    // project may be on several.
+    //
+    // The header holds New project, Cards and List, the one in force pressed, Full titles, pressed
+    // while the board draws full titles, and, in list mode, Columns, a menu that shows or hides
+    // each cell of the list, Project always shown. A board offers New project, written with its
+    // tier and its `role:` keys, only when its rule takes the project that write makes
     // (state/boards/board/new-project.ts), so Archive, which takes done work, offers none with the
-    // shipped boards. While the workspace names a `self`, the board draws the Role facet, and a
-    // card whose lead is the user carries the Lead badge; the Mine only toggle, on by default, is
-    // drawn and applied only where one of the board's projects is one it does not keep. Without a
-    // `self` it draws none of them.
+    // shipped boards. Line 1 of the bar is the search, the toggles and the group buttons
+    // (views/boards/projects/FilterBar.svelte); line 2 the slices, each the projects of one
+    // category at one stage or form, how many projects are shown, and Clear all
+    // (views/boards/projects/SliceLine.svelte). While the workspace names a `self`, the bar draws
+    // the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
+    // Mine only, on by default, is applied only where one of the board's projects is one it does
+    // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them.
+    //
+    // The cards and the list are laid out in sections, one per row of `categories` holding a
+    // project, in the list's order, and an "other" section last for the projects in no row, each
+    // headed by the category's label in its colour with its count
+    // (views/shared/card/FoldHead.svelte); the heading stays at the top of the pane while its
+    // section scrolls under it, and a press on its fold control folds the section, which the board
+    // remembers. A board whose `cards:` says `grid` draws its cards and its list as one section
+    // with no heading. The list draws one table per section
+    // (views/boards/projects/BoardList.svelte).
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
-    // joined, and the facets, the filter menu's groups, the chips, the filters, the counts and the
-    // sentence cut are the pure functions of state/board; each facet's counts are taken over the
-    // projects the search, the quick filters and the other facets leave. The bar is
-    // views/boards/projects/FilterBar.svelte, the strip views/boards/projects/Stats.svelte and the
-    // new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of the
-    // boundary table: a view too large for one file is split into its own folder. The card is
+    // joined, and the facets, the slices, the groups, the filters, the counts on the controls and
+    // the columns are the pure functions of state/boards/board/; each facet's counts are taken over
+    // the projects the search, the toggles and the other facets leave, and the counts on the
+    // controls over the board's projects before any filter. The new-project form is
+    // views/boards/projects/NewIdea.svelte, which is the partials rule of the boundary table: a
+    // view too large for one file is split into its own folder. The card is
     // views/shared/card/project/ProjectCard.svelte, since views/boards/project/Project.svelte draws
-    // the same one. A web address written in a cell of the table, the next line's among them, is a
-    // link (ui/display/text/LinkedText.svelte).
+    // the same one.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
-    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import Table from '$lib/ui/display/table/Table.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
+    import FoldHead from '../../shared/card/FoldHead.svelte';
+    import BoardList from './BoardList.svelte';
     import FilterBar from './FilterBar.svelte';
     import NewIdea from './NewIdea.svelte';
-    import Stats from './Stats.svelte';
+    import SliceLine from './SliceLine.svelte';
     import {
+        appliedFilters,
         applyFilters,
         cardSections,
         facets,
-        filterChips,
         filterGroups,
-        firstSentence,
+        listCells,
         offersMine,
         parseBoardState,
+        pickCell,
+        sliceGroups,
         type BoardItem,
         type BoardMode,
         type BoardState,
         type QuickFilters
     } from '$lib/state/boards/board';
-    import { projectLane } from '$lib/state/boards/focus';
-    import { rootOf } from '$lib/state/shared/page/hubs';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
-    import {
-        chipGlyphName,
-        chipLabel,
-        statusMarkTone,
-        projectStatusWords,
-        toneOf,
-        vocabOf
-    } from '$lib/state/shared/words/tones';
+    import { toneOf } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -107,42 +108,43 @@
 
     let { instance }: ViewProps = $props();
 
-    /** How much of `next` a list row shows. */
-    const ROW_NEXT = 110;
-
     const preset = $derived(boardPreset(instance.view));
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    /** Whether the workspace names a `self`, which the Mine only toggle and the Role facet need. */
+    /** Whether the workspace names a `self`, which Mine only and the Role facet need. */
     const named = $derived(selfNamed());
-    /** Whether the board draws Mine only, which it applies only while it draws it. */
-    const mineShown = $derived(offersMine(items, named));
+    /** Whether Mine only changes the board, which is where it is applied. */
+    const mineApplies = $derived(offersMine(items, named));
     /** The facets with their counts over every project, which the saved state is read against. */
     const offered = $derived(facets(items, preset, named));
+    /** The board's slices by category, read from its projects before any filter. */
+    const slices = $derived(sliceGroups(items, preset));
     const held = $derived(
         parseBoardState(
             instanceState(instance.id),
             preset.labels,
             offered,
-            preset.categories.map((one) => one.key)
+            slices.flatMap((group) => group.slices.map((one) => one.value))
         )
     );
     const lag = $derived(staleLag());
     const quick: QuickFilters = $derived({
         stale: held.stale,
         dated: held.dated,
-        mine: mineShown && held.mine,
+        mine: mineApplies && held.mine,
         staleLag: lag
     });
+    /** The facet values that narrow the board, which leave out a role while no `self` is named. */
+    const filters = $derived(appliedFilters(held.filters, named));
     /** The facets with each value counted over the projects the other filters leave. */
-    const counted = $derived(
-        facets(items, preset, named, { filters: held.filters, search: held.search, quick })
-    );
-    const groups = $derived(filterGroups(counted, held.filters, preset));
-    const chips = $derived(filterChips(counted, held.filters, preset));
-    const shown = $derived(applyFilters(items, held.filters, held.search, quick));
-    const rows = $derived(shown.map(row));
+    const counted = $derived(facets(items, preset, named, { filters, search: held.search, quick }));
+    const groups = $derived(filterGroups(counted, held.filters, preset, named));
+    const shown = $derived(applyFilters(items, filters, held.search, quick));
+    const grid = $derived(preset.cards === 'grid');
     const sections = $derived(cardSections(shown, preset));
+    const folded = $derived(new Set(held.folded));
+    const cells = $derived(listCells(preset.columns, held.columns));
+    /** The counts on the controls, over the board's projects before any filter. */
     const strip = $derived(boardStats(items));
 
     /** What the last write on this board answered, shown under the toolbar until the next one. */
@@ -163,22 +165,29 @@
         setInstanceState(instance.id, storedState({ ...held, ...next }, ['expanded', 'more']));
     }
 
-    /** Draw the cards or the table; a press on the mode in force changes nothing. */
+    /** Draw the cards or the list; a press on the mode in force changes nothing. */
     function setMode(mode: BoardMode): void {
         if (held.mode !== mode) write({ mode });
     }
 
-    /** Add or remove one value of one facet, which is what a pick in the filter menu means. */
+    /** Set the picked values of one facet, and take the facet out when none is left. */
+    function setFacet(facet: string, values: string[]): void {
+        const next = { ...held.filters };
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+        if (values.length === 0) delete next[facet];
+        else next[facet] = values;
+        write({ filters: next });
+    }
+
+    /** Add or remove one value of one facet, which is what a pick in a group's list means. */
     function toggleFilter(facet: string, value: string): void {
         const selected = held.filters[facet] ?? [];
-        const next = selected.includes(value)
-            ? selected.filter((one) => one !== value)
-            : [...selected, value];
-        const filters = { ...held.filters };
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        if (next.length === 0) delete filters[facet];
-        else filters[facet] = next;
-        write({ filters });
+        setFacet(
+            facet,
+            selected.includes(value)
+                ? selected.filter((one) => one !== value)
+                : [...selected, value]
+        );
     }
 
     function toggleCard(id: string): void {
@@ -194,9 +203,13 @@
         write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
     }
 
-    /** Open or close every card of the board at once, which is what the two bulk controls do. */
-    function bulk(expand: boolean): void {
-        write({ expanded: expand ? shown.map((item) => item.id) : [] });
+    /** Fold a section, or unfold it, by its category's key. */
+    function toggleFold(key: string): void {
+        write({
+            folded: folded.has(key)
+                ? held.folded.filter((one) => one !== key)
+                : [...held.folded, key]
+        });
     }
 
     /** The board's own name, the key the registry names it by. */
@@ -221,63 +234,11 @@
         return short === undefined || short === '' ? item.project.title : short;
     }
 
-    /**
-     * The status keys one row's marks are drawn for. They ride beside the row's sortable words
-     * rather than in them, since a mark is a component and a cell's value is text; each is drawn
-     * in its own hue with its words as the title, as a lane draws it.
-     */
-    function statusMarks(row: Record<string, unknown>): string[] {
-        const marks = row.statusMarks;
-        if (!Array.isArray(marks)) return [];
-        return marks.filter((chip): chip is string => typeof chip === 'string');
-    }
-
-    /**
-     * One row of the list mode. Every column key of the boards' columns is filled here; the Authors
-     * cell is the team line, the names of the lead, the collaborators and the supervisors without
-     * the user.
-     */
-    function row(item: BoardItem): Record<string, unknown> {
-        const next = item.project.next;
-        const hub = rootOf(item.project);
-        const words = projectStatusWords(
-            item.project.stage,
-            item.project.form,
-            item.project.chips,
-            hub
-        );
-        return {
-            id: item.id,
-            title: label(item),
-            authors: item.teamLine,
-            venue: item.venue?.short ?? '',
-            hub,
-            status: words.map((word) => chipLabel(word, hub)).join(' '),
-            statusMarks: words.filter((word) => chipGlyphName(word, hub) !== ''),
-            focus: projectLane(item.project, vocabOf)?.label ?? '',
-            next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
-            domain: item.domain?.label ?? '',
-            pillar: item.pillars.map((tag) => tag.label).join(' | '),
-            funding: item.funding.map((tag) => tag.label).join(' | ')
-        };
+    /** A section's words: its category's label, or "other" for the projects in no category. */
+    function sectionTitle(key: string, words: string): string {
+        return key === '' ? t('board.section_other') : words;
     }
 </script>
-
-{#snippet statusCell(row: Record<string, unknown>, column: Column)}
-    {#if column.key === 'status'}
-        {#each statusMarks(row) as chip (chip)}
-            <span
-                class="mark"
-                title={chipLabel(chip, cellText(row.hub))}
-                style={`--mark: var(--c-${statusMarkTone(chip, cellText(row.hub))}-txt)`}
-            >
-                <Glyph name={chipGlyphName(chip, cellText(row.hub))} />
-            </span>
-        {/each}
-    {:else}
-        <LinkedText text={cellText(row[column.key])} />
-    {/if}
-{/snippet}
 
 {#snippet card(item: BoardItem)}
     <Card
@@ -295,6 +256,21 @@
     />
 {/snippet}
 
+{#snippet projects(part: BoardItem[])}
+    {#if held.mode === 'list'}
+        <Surface>
+            <BoardList items={part} {cells} {label} />
+        </Surface>
+    {:else}
+        <div class="cards">
+            {#each part as item (item.id)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render card(item)}
+            {/each}
+        </div>
+    {/if}
+{/snippet}
+
 {#snippet tools()}
     <Toolbar label={t('board.toolbar')} overflow>
         {#if offersNew}
@@ -308,18 +284,6 @@
                 onclick={() => (adding = !adding)}
             />
         {/if}
-        <ToolButton
-            bare
-            label={t('board.expand_all')}
-            glyph={t('project.card.expand_glyph')}
-            onclick={() => bulk(true)}
-        />
-        <ToolButton
-            bare
-            label={t('board.collapse')}
-            glyph={t('project.card.collapse_glyph')}
-            onclick={() => bulk(false)}
-        />
         <ToolButton
             bare
             glyph="cards"
@@ -341,6 +305,25 @@
             pressed={held.labels === 'full'}
             onclick={() => write({ labels: held.labels === 'full' ? 'short' : 'full' })}
         />
+        {#if held.mode === 'list'}
+            <Menu
+                label={t('board.columns')}
+                glyph="sliders"
+                compact
+                bare
+                placement="down"
+                align="right"
+                items={cells.map((cell) => ({
+                    id: cell.key,
+                    label: cell.label,
+                    checked: cell.shown,
+                    disabled: cell.key === 'title',
+                    title: cell.key === 'title' ? t('board.columns_always', cell.label) : cell.label
+                }))}
+                onpick={(key: string) =>
+                    write({ columns: pickCell(preset.columns, held.columns, key) })}
+            />
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -349,10 +332,21 @@
         {held}
         placeholder={preset.search}
         {groups}
-        {chips}
-        mine={mineShown}
+        stats={strip}
+        {named}
+        mine={mineApplies}
         onwrite={write}
         ontoggle={toggleFilter}
+    />
+    <SliceLine
+        groups={slices}
+        {counted}
+        filters={held.filters}
+        shown={shown.length}
+        total={strip.projects}
+        ontoggle={toggleFilter}
+        onslices={(values: string[]) => setFacet('slice', values)}
+        onclear={() => write({ filters: {} })}
     />
 {/snippet}
 
@@ -367,7 +361,6 @@
                 onsaid={(answer: string) => (said = answer)}
             />
         {/if}
-        <Stats stats={strip} shown={shown.length} />
         {#if said !== ''}
             <Surface>
                 <p class="said">{said}</p>
@@ -375,37 +368,26 @@
         {/if}
         {#if shown.length === 0}
             <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
-        {:else if held.mode === 'list'}
-            <Surface>
-                <div class="table">
-                    <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
-                </div>
-            </Surface>
-        {:else if preset.cards === 'grid'}
-            <div class="cards">
-                {#each shown as item (item.id)}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render card(item)}
-                {/each}
-            </div>
+        {:else if grid}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render projects(shown)}
         {:else}
             {#each sections as section (section.key)}
                 <section class="section" data-category={section.key}>
-                    <h3
-                        class="heading"
-                        style={section.color === ''
-                            ? undefined
-                            : `--section: var(--c-${toneOf(section.color)}-txt)`}
-                    >
-                        {section.key === '' ? t('board.section_other') : section.label}
-                        <span class="count">{section.items.length}</span>
-                    </h3>
-                    <div class="cards">
-                        {#each section.items as item (item.id)}
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render card(item)}
-                        {/each}
+                    <div class="heading">
+                        <FoldHead
+                            title={sectionTitle(section.key, section.label)}
+                            name={sectionTitle(section.key, section.label)}
+                            open={!folded.has(section.key)}
+                            ontoggle={() => toggleFold(section.key)}
+                            tone={section.color === '' ? undefined : toneOf(section.color)}
+                            count={section.items.length}
+                        />
                     </div>
+                    {#if !folded.has(section.key)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render projects(section.items)}
+                    {/if}
                 </section>
             {/each}
         {/if}
@@ -413,34 +395,27 @@
 </Pane>
 
 <style>
-    /* A status mark is a line icon, so it is drawn in the hue of its own status. */
-    .mark {
-        color: var(--mark, var(--muted-txt));
-    }
-
-    /* A table wider than the pane scrolls inside its own box and not the pane. */
-    .table {
-        min-width: 0;
-        overflow-x: auto;
-    }
-
-    /* A section of the card view: the cards of one category under a heading in the category's
-       colour, which carries the count. */
+    /* A section of the cards or the list: the projects of one category under a heading in the
+       category's colour, which carries the count. */
     .section + .section {
         margin-top: 14px;
     }
 
+    /* The heading stays at the top of the pane's body while its section scrolls under it, on the
+       pane's own background, so the cards do not read through it. */
     .heading {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        margin: 0 0 8px;
-        font-size: var(--fs-md);
-        color: var(--section, var(--muted-txt));
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 2px 0 6px;
+        background: var(--panel);
     }
 
-    .count {
-        font-size: var(--fs-sm);
+    /* Over a wallpaper the heading is the strip of `tokens.css` that keeps a mix of its own, the
+       panel at the wallpaper's opacity, as a table's header row that stays is. */
+    :global(body.wall) .heading {
+        background: var(--panel-on-wall);
+        backdrop-filter: blur(var(--wall-blur));
     }
 
     /* The cards of one row stretch to the row's height, in file order, so no empty cell is left

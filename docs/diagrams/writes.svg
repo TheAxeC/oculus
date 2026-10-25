@@ -3130,63 +3130,63 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3485C127.81,-3485 149.95,-3485 172.09,-3485 172.09,-3382.33 172.09,-3279.67 172.09,-3177 222.71,-3177 273.33,-3177 323.94,-3177"/>
 <polygon fill="currentColor" stroke="currentColor" points="323.7,-3179.1 329.7,-3177 323.7,-3174.9 323.7,-3179.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:132 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:131 -->
 <g id="node203" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:132</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:131</title>
 <polygon fill="none" stroke="currentColor" points="329.81,-3202 329.81,-3224 599.85,-3224 599.85,-3202 329.81,-3202"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3209" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:132 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3209" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:131 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:132 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:131 -->
 <g id="edge180" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:132</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:131</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3493C129.81,-3493 153.95,-3493 178.09,-3493 178.09,-3399.67 178.09,-3306.33 178.09,-3213 226.2,-3213 274.31,-3213 322.43,-3213"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3215.1 328.3,-3213 322.3,-3210.9 322.3,-3215.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:133 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:132 -->
 <g id="node204" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:133</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:132</title>
 <polygon fill="none" stroke="currentColor" points="329.81,-3238 329.81,-3260 599.85,-3260 599.85,-3238 329.81,-3238"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3245" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:133 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3245" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:132 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:133 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:132 -->
 <g id="edge181" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:133</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:132</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3501C155.81,-3501 205.95,-3501 256.09,-3501 256.09,-3417 256.09,-3333 256.09,-3249 278.21,-3249 300.32,-3249 322.44,-3249"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3251.1 328.3,-3249 322.3,-3246.9 322.3,-3251.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:14 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:139 -->
 <g id="node205" class="node">
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:139</title>
+<polygon fill="none" stroke="currentColor" points="329.81,-3274 329.81,-3296 599.85,-3296 599.85,-3274 329.81,-3274"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3281" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:139 text.optional(</text>
+</g>
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:139 -->
+<g id="edge182" class="edge">
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:139</title>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3509C157.81,-3509 209.95,-3509 262.09,-3509 262.09,-3434.33 262.09,-3359.67 262.09,-3285 282.24,-3285 302.4,-3285 322.55,-3285"/>
+<polygon fill="currentColor" stroke="currentColor" points="322.3,-3287.1 328.3,-3285 322.3,-3282.9 322.3,-3287.1"/>
+</g>
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:14 -->
+<g id="node206" class="node">
 <title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:14</title>
-<polygon fill="none" stroke="currentColor" points="332.59,-3274 332.59,-3296 597.07,-3296 597.07,-3274 332.59,-3274"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="338.59" y="-3281" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:14 text.optional(</text>
+<polygon fill="none" stroke="currentColor" points="332.59,-3310 332.59,-3332 597.07,-3332 597.07,-3310 332.59,-3310"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="338.59" y="-3317" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:14 text.optional(</text>
 </g>
 <!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:14 -->
-<g id="edge182" class="edge">
+<g id="edge183" class="edge">
 <title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:14</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3509C157.81,-3509 209.95,-3509 262.09,-3509 262.09,-3434.33 262.09,-3359.67 262.09,-3285 283.16,-3285 304.23,-3285 325.3,-3285"/>
-<polygon fill="currentColor" stroke="currentColor" points="325.09,-3287.1 331.09,-3285 325.09,-3282.9 325.09,-3287.1"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3517C159.81,-3517 213.95,-3517 268.09,-3517 268.09,-3451.67 268.09,-3386.33 268.09,-3321 287.15,-3321 306.21,-3321 325.27,-3321"/>
+<polygon fill="currentColor" stroke="currentColor" points="325.09,-3323.1 331.09,-3321 325.09,-3318.9 325.09,-3323.1"/>
 </g>
 <!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:140 -->
-<g id="node206" class="node">
+<g id="node207" class="node">
 <title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:140</title>
-<polygon fill="none" stroke="currentColor" points="329.81,-3310 329.81,-3332 599.85,-3332 599.85,-3310 329.81,-3310"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3317" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:140 text.optional(</text>
+<polygon fill="none" stroke="currentColor" points="329.81,-3346 329.81,-3368 599.85,-3368 599.85,-3346 329.81,-3346"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3353" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:140 text.optional(</text>
 </g>
 <!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:140 -->
-<g id="edge183" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:140</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3517C159.81,-3517 213.95,-3517 268.09,-3517 268.09,-3451.67 268.09,-3386.33 268.09,-3321 286.23,-3321 304.38,-3321 322.52,-3321"/>
-<polygon fill="currentColor" stroke="currentColor" points="322.3,-3323.1 328.3,-3321 322.3,-3318.9 322.3,-3323.1"/>
-</g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:141 -->
-<g id="node207" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:141</title>
-<polygon fill="none" stroke="currentColor" points="329.81,-3346 329.81,-3368 599.85,-3368 599.85,-3346 329.81,-3346"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3353" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:141 text.optional(</text>
-</g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:141 -->
 <g id="edge184" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:141</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:140</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3525C161.81,-3525 217.95,-3525 274.09,-3525 274.09,-3469 274.09,-3413 274.09,-3357 290.27,-3357 306.46,-3357 322.64,-3357"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3359.1 328.3,-3357 322.3,-3354.9 322.3,-3359.1"/>
 </g>
@@ -3202,15 +3202,15 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3533C163.81,-3533 221.95,-3533 280.09,-3533 280.09,-3486.33 280.09,-3439.67 280.09,-3393 295.2,-3393 310.3,-3393 325.41,-3393"/>
 <polygon fill="currentColor" stroke="currentColor" points="325.09,-3395.1 331.09,-3393 325.09,-3390.9 325.09,-3395.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:153 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:152 -->
 <g id="node209" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:153</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:152</title>
 <polygon fill="none" stroke="currentColor" points="324.25,-3418 324.25,-3440 605.41,-3440 605.41,-3418 324.25,-3418"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3425" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:153 colour.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3425" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:152 colour.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:153 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:152 -->
 <g id="edge186" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:153</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:152</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3541C165.81,-3541 225.95,-3541 286.09,-3541 286.09,-3503.67 286.09,-3466.33 286.09,-3429 296.34,-3429 306.6,-3429 316.85,-3429"/>
 <polygon fill="currentColor" stroke="currentColor" points="316.75,-3431.1 322.75,-3429 316.75,-3426.9 316.75,-3431.1"/>
 </g>
@@ -3238,99 +3238,99 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3557C169.81,-3557 233.95,-3557 298.09,-3557 298.09,-3538.33 298.09,-3519.67 298.09,-3501 307.15,-3501 316.21,-3501 325.27,-3501"/>
 <polygon fill="currentColor" stroke="currentColor" points="325.09,-3503.1 331.09,-3501 325.09,-3498.9 325.09,-3503.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:185 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:184 -->
 <g id="node212" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:185</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:184</title>
 <polygon fill="none" stroke="currentColor" points="324.25,-3526 324.25,-3548 605.41,-3548 605.41,-3526 324.25,-3526"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3533" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:185 colour.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3533" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:184 colour.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:185 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:184 -->
 <g id="edge189" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:185</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:184</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3565C171.81,-3565 237.95,-3565 304.09,-3565 304.09,-3555.67 304.09,-3546.33 304.09,-3537 308.31,-3537 312.53,-3537 316.75,-3537"/>
 <polygon fill="currentColor" stroke="currentColor" points="316.75,-3539.1 322.75,-3537 316.75,-3534.9 316.75,-3539.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:200 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:199 -->
 <g id="node213" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:200</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:199</title>
 <polygon fill="none" stroke="currentColor" points="329.81,-3562 329.81,-3584 599.85,-3584 599.85,-3562 329.81,-3562"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3569" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:200 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3569" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:199 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:200 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:199 -->
 <g id="edge190" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:200</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:199</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3573C153.81,-3573 201.95,-3573 250.09,-3573 274.26,-3573 298.44,-3573 322.61,-3573"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3575.1 328.3,-3573 322.3,-3570.9 322.3,-3575.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:215 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:214 -->
 <g id="node214" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:215</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:214</title>
 <polygon fill="none" stroke="currentColor" points="328.43,-3598 328.43,-3620 601.23,-3620 601.23,-3598 328.43,-3598"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3605" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:215 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3605" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:214 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:215 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:214 -->
 <g id="edge191" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:215</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:214</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3581C151.81,-3581 197.95,-3581 244.09,-3581 244.09,-3590.33 244.09,-3599.67 244.09,-3609 269.75,-3609 295.41,-3609 321.08,-3609"/>
 <polygon fill="currentColor" stroke="currentColor" points="320.92,-3611.1 326.92,-3609 320.92,-3606.9 320.92,-3611.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:216 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:215 -->
 <g id="node215" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:216</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:215</title>
 <polygon fill="none" stroke="currentColor" points="329.81,-3634 329.81,-3656 599.85,-3656 599.85,-3634 329.81,-3634"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3641" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:216 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3641" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:215 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:216 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:215 -->
 <g id="edge192" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:216</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:215</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3589C149.81,-3589 193.95,-3589 238.09,-3589 238.09,-3607.67 238.09,-3626.33 238.09,-3645 266.19,-3645 294.29,-3645 322.39,-3645"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3647.1 328.3,-3645 322.3,-3642.9 322.3,-3647.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:241 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:240 -->
 <g id="node216" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:241</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:240</title>
 <polygon fill="none" stroke="currentColor" points="328.43,-3670 328.43,-3692 601.23,-3692 601.23,-3670 328.43,-3670"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3677" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:241 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3677" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:240 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:241 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:240 -->
 <g id="edge193" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:241</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:240</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3597C147.81,-3597 189.95,-3597 232.09,-3597 232.09,-3625 232.09,-3653 232.09,-3681 261.72,-3681 291.34,-3681 320.97,-3681"/>
 <polygon fill="currentColor" stroke="currentColor" points="320.92,-3683.1 326.92,-3681 320.92,-3678.9 320.92,-3683.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:242 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:243 -->
 <g id="node217" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:242</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:243</title>
 <polygon fill="none" stroke="currentColor" points="329.81,-3706 329.81,-3728 599.85,-3728 599.85,-3706 329.81,-3706"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3713" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:242 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="335.81" y="-3713" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:243 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:242 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:243 -->
 <g id="edge194" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:242</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:243</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3605C145.81,-3605 185.95,-3605 226.09,-3605 226.09,-3642.33 226.09,-3679.67 226.09,-3717 258.25,-3717 290.4,-3717 322.56,-3717"/>
 <polygon fill="currentColor" stroke="currentColor" points="322.3,-3719.1 328.3,-3717 322.3,-3714.9 322.3,-3719.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:261 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:262 -->
 <g id="node218" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:261</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:262</title>
 <polygon fill="none" stroke="currentColor" points="328.43,-3742 328.43,-3764 601.23,-3764 601.23,-3742 328.43,-3742"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3749" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:261 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="334.43" y="-3749" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:262 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:261 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:262 -->
 <g id="edge195" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:261</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:262</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3613C143.81,-3613 181.95,-3613 220.09,-3613 220.09,-3659.67 220.09,-3706.33 220.09,-3753 253.71,-3753 287.34,-3753 320.96,-3753"/>
 <polygon fill="currentColor" stroke="currentColor" points="320.92,-3755.1 326.92,-3753 320.92,-3750.9 320.92,-3755.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:262 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:263 -->
 <g id="node219" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:262</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:263</title>
 <polygon fill="none" stroke="currentColor" points="324.25,-3778 324.25,-3800 605.41,-3800 605.41,-3778 324.25,-3778"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3785" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:262 colour.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="330.25" y="-3785" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:263 colour.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:262 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:263 -->
 <g id="edge196" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:262</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:263</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3621C141.81,-3621 177.95,-3621 214.09,-3621 214.09,-3677 214.09,-3733 214.09,-3789 248.31,-3789 282.53,-3789 316.75,-3789"/>
 <polygon fill="currentColor" stroke="currentColor" points="316.75,-3791.1 322.75,-3789 316.75,-3786.9 316.75,-3791.1"/>
 </g>
@@ -3358,15 +3358,15 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3637C137.81,-3637 169.95,-3637 202.09,-3637 202.09,-3711.67 202.09,-3786.33 202.09,-3861 243.16,-3861 284.23,-3861 325.3,-3861"/>
 <polygon fill="currentColor" stroke="currentColor" points="325.09,-3863.1 331.09,-3861 325.09,-3858.9 325.09,-3863.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:343 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:349 -->
 <g id="node222" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:343</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:349</title>
 <polygon fill="none" stroke="currentColor" points="320.09,-3886 320.09,-3908 609.57,-3908 609.57,-3886 320.09,-3886"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="326.09" y="-3893" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:343 textMap.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="326.09" y="-3893" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:349 textMap.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:343 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:349 -->
 <g id="edge199" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:343</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:349</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-3645C135.81,-3645 165.95,-3645 196.09,-3645 196.09,-3729 196.09,-3813 196.09,-3897 235,-3897 273.91,-3897 312.82,-3897"/>
 <polygon fill="currentColor" stroke="currentColor" points="312.58,-3899.1 318.58,-3897 312.58,-3894.9 312.58,-3899.1"/>
 </g>

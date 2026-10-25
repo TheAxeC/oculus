@@ -13,6 +13,7 @@ export {
     firstSentence,
     presetFor,
     setting,
+    shortWords,
     venueText
 } from './presets.ts';
 export type {
@@ -39,20 +40,29 @@ export {
     newestDocDate,
     takeContextOf
 } from './items.ts';
-export { cardSections, facets } from './facets.ts';
+export { cardSections, facets, sliceGroups } from './facets.ts';
+export type { Slice, SliceGroup } from './facets.ts';
 export {
+    LINE_FACETS,
+    blockedBadge,
+    deadlineWords,
     facetHeading,
-    filterChips,
     filterGroups,
-    filterLabel,
-    filtersInForce,
-    valueLabel
+    groupWords,
+    listCells,
+    moreWords,
+    pickCell,
+    shownWords,
+    sliceChoices,
+    valueLabel,
+    venueWarning
 } from './filter-menu.ts';
-export type { FilterChoice, FilterGroup, InForceChip } from './filter-menu.ts';
+export type { FilterChoice, FilterGroup, ListCell } from './filter-menu.ts';
 export { VENUE_WARN, disseminated, humanSize, stats, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';
 export {
     STALE_LAG,
+    appliedFilters,
     applyFilters,
     emptyBoardState,
     facetValues,

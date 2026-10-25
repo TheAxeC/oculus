@@ -115,7 +115,6 @@ const stageWord = z.strictObject({
     dead_end: flag(
         "A dead end: the audit of the website's publications reports its project when the site shows it, to be given another stage or taken off the site."
     ),
-    submit_ready: flag('A stage the board statistics count as ready to go out.'),
     pauses_countdown: flag(
         "A stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue."
     ),
@@ -140,7 +139,7 @@ const chipWord = z.strictObject({
     label: text.optional().describe('The words the chip is drawn with on a card and in the form.'),
     icon: text.optional().describe('The glyph name the chip is drawn with.'),
     blocked: flag(
-        "A chip the Focus board's awaiting box counts as blocked and a board's statistics strip counts in its blocked number, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
+        "A chip the Focus board's awaiting box counts as blocked and a project board counts in the red badge of its Situation button, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
     )
 });
 
@@ -238,7 +237,9 @@ export const wordBlock = z.strictObject({
 
 /** One row of `categories`: a category of the boards, the stages and forms it holds, its flags. */
 const categoryRow = z.strictObject({
-    key: text.describe('The word the category is named by, which a board filter stores.'),
+    key: text.describe(
+        "The word the category is named by, which a board's slice filter and its folded sections store."
+    ),
     label: text.optional().describe('The words the category is drawn with.'),
     color: colour
         .optional()
@@ -277,7 +278,7 @@ export const vocabFileShape = z.strictObject({
         .record(z.string(), stageWord)
         .optional()
         .describe(
-            "The project stages, by the manifest's `stage`, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides."
+            "The project stages, by the manifest's `stage`, in the order the boards, the Map and the form list them, each with its words, glyph and colour and the flags that say what it decides."
         ),
     forms: z
         .record(z.string(), formWord)
@@ -318,6 +319,11 @@ export const vocabFileShape = z.strictObject({
         .optional()
         .describe(
             'The hue name of the bar of each collection lane of the Focus board: funding, jobs and teaching.'
+        ),
+    facet_tones: textMap
+        .optional()
+        .describe(
+            "The hue name of each filter group of a project board's bar, by the group: its heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own."
         ),
     tiers: z
         .record(z.string(), tierWord)

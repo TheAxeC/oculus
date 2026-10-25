@@ -6,7 +6,7 @@
 // the category, the role with the Lead badge and Mine only, the board items with the Mine only
 // filter and the Role facet, the card sections, the rail count, the Archival band with the real
 // projects and the Orphans card, the Focus lanes, the audit's placement findings, the board keys
-// with the config check, a saved category filter, and the roles of a collection. The projects are
+// with the config check, a saved slice filter, and the roles of a collection. The projects are
 // synthetic; the collection is planted in a scratch hub and built through buildOneHub.
 //
 // It does not cover the views drawing the toggle, the badge, the facet or the sections, which the
@@ -59,7 +59,8 @@ import {
     cardSections,
     facets,
     parseBoardState,
-    presetFor
+    presetFor,
+    sliceGroups
 } from '../../../../src/lib/state/boards/board/index.ts';
 import {
     newProjectPerson,
@@ -489,14 +490,18 @@ describe("a board's keys", () => {
     });
 });
 
-describe('a saved category filter', () => {
-    it('case 32: a value naming no row of categories is dropped', () => {
+describe('a saved slice filter', () => {
+    it('case 32: a slice the board holds is kept and a slice it does not hold is dropped', () => {
         const preset = presetFor('projects', CONFIG);
-        const items = boardItems(snapshotOf([project('c1'), project('c9'), project('c4')]), preset);
-        const keys = preset.categories.map((one) => one.key);
-        const held = parseBoardState({ filters: { category: ['in-progress'] } }, 'short', [], keys);
-        expect(held.filters).toEqual({});
-        expect(applyFilters(items, held.filters, '').length).toBe(items.length);
+        const submitted = project('sub', { tier: 'research', lead: [SELF], stage: 'submitted' });
+        const items = boardItems(snapshotOf([project('c1'), project('c9'), submitted]), preset);
+        const values = sliceGroups(items, preset).flatMap((group) =>
+            group.slices.map((slice) => slice.value)
+        );
+        const saved = { filters: { slice: ['in-review/submitted', 'publications/poster'] } };
+        const held = parseBoardState(saved, 'short', [], values);
+        expect(held.filters).toEqual({ slice: ['in-review/submitted'] });
+        expect(applyFilters(items, held.filters, '').map((one) => one.id)).toEqual(['sub']);
     });
 });
 

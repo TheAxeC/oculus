@@ -341,9 +341,8 @@ export function createSelectors(
     }
 
     /**
-     * The strip above one board, over the board's own projects and the venue registry they aim at.
-     * Before the first snapshot the venues are empty, which is a strip of zeroes and no venue
-     * chips.
+     * The counts one board's controls carry, over the board's own projects and the venue registry
+     * they aim at. Before the first snapshot the venues are empty, so no venue warns.
      */
     function boardStats(items: BoardItem[]): BoardStats {
         return stats(items, entities.portfolio()?.entities.venues ?? {}, configMap(), vocabOf);

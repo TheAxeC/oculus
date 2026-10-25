@@ -1,14 +1,15 @@
-In flight (1 of 6 slots in use):
-- O75 (the bar of a project board, its section headings and the list view), review over repair round 1 running.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order (1 step):
-- O77 (the project card and the project page, with ruling 378 and, once ruled, open item 379), once O75 has landed.
+- O77 (the project card and the project page, with rulings 378 and 379 and, once ruled, open item 380).
 
 Owed looks:
 - none.
 
 Landed, newest first:
-- O74 (the Focus career banner built from the command center's parts), 2026-10-25, the commit that lands it (its hash is written at the next commit).
+- O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, the commit that lands it (its hash is written at the next commit).
+- O74 (the Focus career banner built from the command center's parts), 2026-10-25, a6d8e34e.
 - O76 (the Pillars view's text made true and short), 2026-10-25, 0a1c3796.
 - O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, 3df7754a.
 - O72 (the closest-word hint named only within half the word's length), 2026-10-25, 5a47cae5.

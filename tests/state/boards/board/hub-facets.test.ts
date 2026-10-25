@@ -1,12 +1,13 @@
-// Layer 2, client-state tests. The Projects board's filter menu on a workspace of two hubs
-// (state/boards/board/facets.ts, facets, over the values state.ts's facetValues reads): a domain
-// and a resource that both hubs' projects name are one row each, counted over both hubs, and a
-// filter on that row keeps both hubs' projects (state.ts, applyFilters). With another facet's value
-// in force, the shared domain is counted over both hubs' projects that value leaves, and the menu
-// keeps every value the board holds, at 0 where none is left. The items are synthetic and hold only
-// what the facets read; the second hub's ids carry its prefix, as the merged portfolio gives them.
+// Layer 2, client-state tests. The group lists of the Projects board's bar on a workspace of two
+// hubs (state/boards/board/facets.ts, facets, over the values state.ts's facetValues reads): a
+// domain and a resource that both hubs' projects name are one row each, counted over both hubs,
+// and a filter on that row keeps both hubs' projects (state.ts, applyFilters). With another
+// facet's value in force, the shared domain is counted over both hubs' projects that value leaves,
+// and the Domain list keeps every value the board holds, at 0 where none is left. The items are
+// synthetic and hold only what the facets read, their `slice` empty since the preset has no
+// categories; the second hub's ids carry its prefix, as the merged portfolio gives them.
 //
-// It does not cover the menu drawing the rows, which the look does.
+// It does not cover the group lists drawing the rows, which the look does.
 
 import { describe, expect, it } from 'vitest';
 import type { BoardItem, BoardPreset } from '../../../../src/lib/state/boards/board/presets.ts';
@@ -20,8 +21,10 @@ function item(id: string, root?: string): BoardItem {
     const key = (one: string): string => (root === undefined ? one : `${root}:${one}`);
     return {
         id: key(id),
-        project: root === undefined ? { id } : { id: key(id), root },
+        project: root === undefined ? { id, chips: [] } : { id: key(id), root, chips: [] },
         category: '',
+        slice: '',
+        venue: null,
         year: '',
         domain: { id: key('methods'), label: 'Methods', tone: '' },
         pillars: [],
@@ -39,7 +42,7 @@ function item(id: string, root?: string): BoardItem {
 const ITEMS = [item('one'), item('two', 'look-hub2')];
 const PRESET = { categories: [], roles: [], stageOrder: [] } as unknown as BoardPreset;
 
-describe('the filter menu on a workspace of two hubs', () => {
+describe('the group lists on a workspace of two hubs', () => {
     it('lists a value both hubs name once, counted over both', () => {
         const found = facets(ITEMS, PRESET);
         const rows = (key: string) => found.find((facet) => facet.key === key)?.values;

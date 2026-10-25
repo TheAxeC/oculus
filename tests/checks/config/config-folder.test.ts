@@ -221,6 +221,7 @@ describe("oculus's own config directory", () => {
             'focus_lanes',
             'fund_stages',
             'focus_lane_tones',
+            'facet_tones',
             'tiers',
             'research_audit',
             'roles',
@@ -689,9 +690,9 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 13 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, no tier
+        // 12 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, no tier
         // flag, the 2 keys of a roles row and the 6 keys of a categories row.
-        expect(keys).toHaveLength(34);
+        expect(keys).toHaveLength(33);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

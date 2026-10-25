@@ -1,5 +1,5 @@
-// Layer 2, client state. Board statistics, waiting lines, sizes and dissemination live here because
-// they describe board content rather than its saved controls.
+// Layer 2, client state. The counts on a board's controls, waiting lines, sizes and dissemination
+// live here because they describe board content rather than its saved controls.
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
@@ -14,9 +14,6 @@ import {
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
 import { setting, type BoardItem, type BoardStats, type VenueCount } from './presets.ts';
-
-/** How many venues the strip's distribution shows, most aimed at first. */
-const STATS_VENUES = 8;
 
 /** The `venue_conc_warn` of `focus:` when the config names none. */
 export const VENUE_WARN = 4;
@@ -60,14 +57,16 @@ export function waitingLine(
 }
 
 /**
- * The strip above the board: how many projects it holds, how many are ready to go out (a stage
- * whose word of `stages` carries `submit_ready`), how many are waiting on somebody, how many are
- * dated, and where they are aimed. The counts are over the board's own projects, before any
- * filter, so the strip says what the board is rather than what is on screen. The venues come from
- * the registry rather than from the manifests, so a chip carries the catalogued short name and the
- * full one it stands for. A venue is counted by its name, so the one journal catalogued in two hubs
- * of the workspace is one chip with the papers of both. `config` gives the settings, and `wordsOf`
- * the words a project's stage and chips are read by, those of the project's hub.
+ * The counts a project board's controls carry: how many projects it holds, which line 2 of its bar
+ * ends with; how many carry a deadline, which the deadline toggle reads; how many are blocked (a
+ * chip whose word of `chips` carries `blocked`), the Situation button's badge; and the venues that
+ * `venue_conc_warn` of `focus:` or more of its projects at a stage flagged `live` aim at, the
+ * Venue button's mark, counted as the Focus venue-load line counts them. The counts are over the
+ * board's own projects, before any filter, so they say what the board is rather than what is on
+ * screen. A venue is counted by its name, so the one journal catalogued in two hubs of the
+ * workspace is one venue with the papers of both, and carries the registry's short name. `config`
+ * gives the settings, and `wordsOf` the words a project's stage and chips are read by, those of
+ * the project's hub.
  */
 export function stats(
     items: BoardItem[],
@@ -77,37 +76,32 @@ export function stats(
 ): BoardStats {
     const warnAt = setting(config, 'venue_conc_warn', VENUE_WARN);
     const counts = new Map<string, { id: Id; count: number }>();
-    let submitReady = 0;
     let blocked = 0;
     let dated = 0;
     for (const item of items) {
         const words = wordsOf(rootOf(item.project));
-        if (hasWord(words, 'stages', 'submit_ready', item.project.stage)) submitReady += 1;
         if (anyWord(words, 'chips', 'blocked', item.project.chips)) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
-        if (id === undefined) continue;
+        if (id === undefined || !hasWord(words, 'stages', 'live', item.project.stage)) continue;
         const name = byKey(venues, id)?.name ?? keyOf(id);
         const held = counts.get(name);
         counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
-    const rows: VenueCount[] = [...counts.entries()].map(([name, { id, count }]) => {
-        const venue = byKey(venues, id);
-        return {
-            id,
-            short: venue?.short !== undefined && venue.short !== '' ? venue.short : name,
-            name,
-            count,
-            warn: count >= warnAt
-        };
-    });
+    const rows: (VenueCount & { name: string })[] = [...counts.entries()]
+        .filter(([, { count }]) => count >= warnAt)
+        .map(([name, { id, count }]) => {
+            const venue = byKey(venues, id);
+            const short = venue?.short !== undefined && venue.short !== '' ? venue.short : name;
+            return { id, short, name, count };
+        });
     rows.sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
     return {
-        active: items.length,
-        submitReady,
+        projects: items.length,
         blocked,
         dated,
-        venues: rows.slice(0, STATS_VENUES)
+        warnAt,
+        venues: rows.map(({ id, short, count }) => ({ id, short, count }))
     };
 }
 

@@ -77,7 +77,7 @@ describe("the words of each hub's records", () => {
         expect(statusTone('pending', 'home')).toBe('purple');
     });
 
-    it("draws each hub's cards in its own stage words and orders and labels the stage facet from the union", () => {
+    it("draws each hub's cards in its own stage words and orders and labels the stages of the slices from the union", () => {
         const lab = hubWith('stages: { exploring: { label: Experimenting, color: "#2563eb" } }\n');
         const home = hubWith(
             'stages: { trialling: { label: Trialling, color: "#0d9488", live: true } }\n'

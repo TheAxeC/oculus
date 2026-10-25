@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
 import {
+    fieldItemsShape,
     mapShape,
     optionalTextShape,
     readAs,
@@ -14,6 +15,7 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import {
     FACETS,
+    LIST_CELLS,
     NONE,
     type BoardItem,
     type BoardState,
@@ -26,24 +28,25 @@ import {
 export const STALE_LAG = 1;
 
 /**
- * The values one item carries for one facet. A project with no stage carries no stage value, so it
- * is under no value of the stage facet.
+ * The values one item carries for one facet. A project with no stage is in no slice, so it is under
+ * no value of the slice facet; the Situation facet (`status`) reads the project's own chips and the
+ * Form facet its form, apart; a venue is its key, so a venue two hubs catalogue is one value.
  */
 export function facetValues(item: BoardItem, facet: string): string[] {
     const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
     switch (facet) {
-        case 'stage': {
-            const stage = item.project.stage ?? '';
-            return stage === '' ? [] : [stage];
-        }
-        case 'category':
-            return item.category === '' ? [] : [item.category];
+        case 'slice':
+            return item.slice === '' ? [] : [item.slice];
+        case 'form':
+            return item.project.form === undefined ? [] : [item.project.form];
         case 'role':
             return item.role === '' ? [] : [item.role];
         case 'year':
             return [item.year === '' ? NONE : item.year];
         case 'domain':
             return item.domain === null ? [] : [keyOf(item.domain.id)];
+        case 'venue':
+            return item.venue === null ? [] : [keyOf(item.venue.id)];
         case 'pillar':
             return ids(item.pillars);
         case 'funding':
@@ -51,7 +54,7 @@ export function facetValues(item: BoardItem, facet: string): string[] {
         case 'dataset':
             return ids(item.datasets);
         case 'status':
-            return item.chips;
+            return item.project.chips;
         case 'compute':
             return item.compute.length === 0 ? [NONE] : ids(item.compute);
         case 'reproduced':
@@ -95,9 +98,23 @@ export function applyFilters(
 }
 
 /**
- * Whether the board draws Mine only: the workspace names a `self` (`named`) and one of the board's
- * projects, read before any filter, is one Mine only does not keep. On any other board it would
- * change nothing, so the board neither draws it nor applies it.
+ * The facet values that narrow the board: every value in force, and the role values only while the
+ * workspace names a `self` (`named`), which is while the bar offers the Role group. A role saved
+ * with no `self` named is kept in the saved state and narrows nothing, since without a `self` no
+ * project has a role and no control could take the value out.
+ */
+export function appliedFilters(
+    filters: Record<string, string[]>,
+    named: boolean
+): Record<string, string[]> {
+    if (named || !Object.hasOwn(filters, 'role')) return filters;
+    return Object.fromEntries(Object.entries(filters).filter(([facet]) => facet !== 'role'));
+}
+
+/**
+ * Whether Mine only changes the board: the workspace names a `self` (`named`) and one of the
+ * board's projects, read before any filter, is one Mine only does not keep. The toggle is drawn
+ * while a `self` is named and applied only where this holds; elsewhere it is drawn disabled.
  */
 export function offersMine(items: BoardItem[], named: boolean): boolean {
     return named && items.some((item) => !item.mine);
@@ -114,7 +131,8 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         labels,
         stale: false,
         dated: false,
-        mine: true
+        mine: true,
+        folded: []
     };
 }
 
@@ -128,20 +146,24 @@ const boardStateShape = z.object({
     mine: z.boolean().catch(true),
     expanded: recordItemsShape,
     more: recordItemsShape,
+    folded: fieldItemsShape,
+    columns: fieldItemsShape,
     filters: mapShape.optional().catch(undefined)
 });
 
 /**
  * Read a saved board state, falling back one field at a time when a value is invalid. Given the
  * facets the board offers, a compute value that none of them offers is dropped: it names a resource
- * the registry does not hold, such as `hpc`. Given the keys of `categories` (`categories`), a
- * category value that names no row is dropped, so the board shows unfiltered on that facet.
+ * the registry does not hold, such as `hpc`. Given the values of the board's slices (`slices`), a
+ * slice value that names none of them is dropped, so the board shows unfiltered on that facet. The
+ * folded sections are read as words, the empty key of the "other" section kept; the columns are
+ * read as the cells of `LIST_CELLS`, and a list that names none of them stands for the board's own.
  */
 export function parseBoardState(
     value: unknown,
     labels: LabelMode = 'short',
     offered?: Facet[],
-    categories?: readonly string[]
+    slices?: readonly string[]
 ): BoardState {
     const state = emptyBoardState(labels);
     const held = readAs(boardStateShape, value);
@@ -154,6 +176,9 @@ export function parseBoardState(
     state.mine = held.mine;
     state.expanded = held.expanded;
     state.more = held.more;
+    state.folded = held.folded;
+    const columns = held.columns.filter((cell) => LIST_CELLS.includes(cell));
+    if (columns.length > 0) state.columns = columns;
     for (const [facet, selected] of Object.entries(held.filters ?? {})) {
         if (!FACETS.includes(facet)) continue;
         const read = readAs(stringItemsShape, selected) ?? [];
@@ -161,8 +186,8 @@ export function parseBoardState(
         const values =
             facet === 'compute' && offered !== undefined
                 ? read.filter((one) => known?.includes(one) === true)
-                : facet === 'category' && categories !== undefined
-                  ? read.filter((one) => categories.includes(one))
+                : facet === 'slice' && slices !== undefined
+                  ? read.filter((one) => slices.includes(one))
                   : read;
         if (values.length > 0) state.filters[facet] = values;
     }

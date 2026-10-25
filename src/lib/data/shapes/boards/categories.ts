@@ -1,10 +1,10 @@
 // Layer 1, data, pure. The categories of `categories:` in config/catalogs/vocab.yml, the one list
 // of what a project is filed under on every board: a project's category is the first row, in the
 // list's order, whose `stages:` and `forms:` blocks it meets, and a project no row holds has none.
-// The board cards and their sections, the category facet, the rail's count and the Pillars view's
-// Archival band all read a project's category through `categoryOf`, so the rule is written once
-// and the boards name no categories of their own. A project is filed under the categories and the
-// words of its own hub (`categoriesBy`).
+// The board cards and their sections, the slices of a board's bar, the rail's count and the
+// Pillars view's Archival band all read a project's category through `categoryOf`, so the rule is
+// written once and the boards name no categories of their own. A project is filed under the
+// categories and the words of its own hub (`categoriesBy`).
 
 import { z } from 'zod';
 import type { Rooted } from '../../model/index.ts';

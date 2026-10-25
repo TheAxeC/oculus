@@ -894,6 +894,13 @@ cd /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O75 && export PA
 
 The list above was read from the transcript's Bash calls by `jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | .input.command'` over the builder's transcript, filtered for `python3 -`, `perl -pi`, `perl -0pi`, `perl -CSD`, `sed -i`, `cat >`, `cp `, `mv `, `rm ` and `prettier --write`. Each quoted command was compared with the transcript's text by `diff`, and every one matched.
 
+Four more commands of the first build wrote files, all in the scratchpad and none in the worktree, added at landing from the review over round 1 (Proof 1), each with its Bash call number and its line in the builder's transcript:
+
+- Call 123 (L905): `head -30 src/lib/views/boards/projects/Projects.svelte > <scratchpad>/projects-head.txt`.
+- Call 168 (L1352): `sh utils/unused-exports.sh > <scratchpad>/unused-after.txt`.
+- Call 173 (L1381): `... > <scratchpad>/keys.txt`.
+- Call 195 (L1546): `sh utils/unused-exports.sh > <scratchpad>/unused-after.txt`.
+
 ## Case-run sources
 
 All live in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/caserun/`.

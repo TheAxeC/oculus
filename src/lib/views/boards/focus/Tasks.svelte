@@ -14,7 +14,7 @@
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
-    import FoldHead from './FoldHead.svelte';
+    import FoldHead from '../../shared/card/FoldHead.svelte';
     import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { useState } from '$lib/state/client/use';
 

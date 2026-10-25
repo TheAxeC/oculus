@@ -19,10 +19,13 @@
         /** Whether a click on a heading sorts by that column. */
         sortable?: boolean;
         /**
-         * Whether the header row stays over the rows while they scroll under it, which it does
-         * when the table is drawn straight into a view's scrolling body (Problems, Gallery). A
-         * table inside a box that scrolls it sideways (`overflow-x: auto`) leaves this off: such
-         * a box never scrolls up or down, so the header row scrolls away with its table.
+         * Every table's header row is sticky: it stays at the top of the box that scrolls the
+         * table up and down, and scrolls away with its rows inside a box that never scrolls up or
+         * down. `stays` sets the grounds over a wallpaper of a table whose header row stays over
+         * its rows while they scroll under it (Problems, Gallery): the header row and the rows
+         * paint the panel at the wallpaper's opacity with the wallpaper's blur behind them, the
+         * rows painting nothing inside a surface. Without it, the header row over a wallpaper
+         * paints nothing.
          */
         stays?: boolean;
     };
