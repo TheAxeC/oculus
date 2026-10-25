@@ -1,7 +1,7 @@
 # ===========================================================================
 # options/schemas/manifest-schema.yml
 # The fields a hub adds to the project form, `manifest_fields` of schemas/manifest-schema.yml, described once. loadConfig() reads it into the merged map under `options`, named schemas/manifest-schema.yml, the entry carrying as its `default` the value schemas/manifest-schema.yml holds (oculus adds no field). The shape of an entry is the one the head of options/appearance.yml gives.
-# A hub sets `manifest_fields` in its own .oculus/config.yml. Each row adds its field to the project form of that hub's projects, after oculus's fields of its section, in the hub's order, and makes it a known key of that hub's manifests. A row naming a field oculus's form has, a section the form lacks, a type the form does not draw, no field, or a field an earlier row names is a finding naming the hub's file and the row's key, and the row is left out.
+# A hub sets `manifest_fields` in its own .oculus/config.yml. Each row adds its field to the project form of that hub's projects, after oculus's fields of its section, in the hub's order, and makes it a known key of that hub's manifests. A row naming a field oculus's form has, a section the form lacks, a type the form does not draw, a `from` that names no registry, `projects` or vocab list, no field, or a field an earlier row names is a finding naming the hub's file and the row's key, and the row is left out.
 # ===========================================================================
 
 options:

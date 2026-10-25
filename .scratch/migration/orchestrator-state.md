@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O73
-  brief_check: .scratch/migration/agents/reviews/O73-brief-check.md (a29e38315e43e1a49, claude-opus-5-5, 174594 tokens, 42 tool uses, 7 min 6 s)
-  base: 77f949b5
-  worktree: .agents/worktrees/migration-O73
-  executor: agent
-  worker: claude:opus
-  session_id: a1fc7a1e8c9959398 (claude-opus-5-5)
-  launched: 2026-10-25
-  report: .scratch/migration/agents/reviews/O73-report.md
-  builder_usage: 199079 tokens, 50 tool uses, 10 min 4 s
-  reviewer_report: .scratch/migration/agents/reviews/O73-refuter.md (ac642df4d4c103114, claude-opus-5-5, 181154 tokens, 43 tool uses, 8 min 42 s)
-  round: 0
-  shared_paths: "config/text/findings.yml with O72 (lines 300-305), this step lines 140-142; docs/HELP.md with O72 (line 519), this step line 524. The changed lines of each pair are separated by unchanged lines, so each merge is simple"
-  landing: not-started
 - step: O75
   brief_check: .scratch/migration/agents/reviews/O75-brief-check.md (a695ad7391dc25a0a, claude-opus-5-5, 263818 tokens, 80 tool uses, 11 min 11 s)
   landing: preparing
@@ -562,6 +548,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-25 (O73 landed). O73 is on main (booked under O73 in `plan.md`, `agents/reviews/O73-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 59.2 s) and on main (`cmp` of the staged diffs: SAME, 12 paths), with the review's three fixes at landing (two comment wordings, one rewrap, the builder's scratch folders removed) and G128 extended in `agents/guarded.md`. The O72 row of `queue.md` names its commit 5a47cae5. In flight (2 of 6): O75 (stopped on 364), O76 (stopped on 360); O74 stopped on 357. Next: on Axel's rulings, O75's dispatch (364), O76's dispatch (360), O74's /spec (357); O77 after O75. Open items: 364, 360, 357.
 - 2026-10-25 (O72 landed; O73 reviewed; O75 and O76 briefs checked). O72 is on main (booked under O72 in `plan.md`, `agents/reviews/O72-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed) and on main (`cmp` of the staged diffs: SAME, 9 paths), with one fix at landing (the comment of `StatusSaid`). O73's review found every item and case holding; its three wording and tidiness findings are fixed at its landing. O75's and O76's brief checks are saved and their findings closed in the briefs; O75 waits on open item 364 (its paths), O76 on open item 360 (the Off-pillar sentence), and both were closed items for automode choices Z998 to Z1006. In flight (3 of 6): O73 (landing next), O75 (stopped on 364), O76 (stopped on 360); O74 stopped on 357. Open items: 364, 360, 357.
 - 2026-10-25 (rulings 346 and 348; 347 withdrawn into 345). 346 (a) is the new step O74, the career banner built from the command center's parts; 348 (a) goes into the bar's step; 345 holds the bar as one design and adds the Form facet, since the Status facet lists the forms. Queued: O72, O73, O74, not yet started. Open items: 345.
 - 2026-10-25 (rulings 337, 340, 342, 344; open items 345, 346). Axel ruled (a) on all four: 337 and 344 recorded, 340 and 342 the new steps O72 and O73 in `plan.md`. He rejected O69's bar ("The filter was NOT reworked AT ALL") and O70's career banner ("Why does career not look like, or behave like command center"): open items 345 and 346 hold the redesigns. Nothing in flight; O72 and O73 wait until 345 and 346 are discussed. Open items: 345, 346.

@@ -1,8 +1,9 @@
 // Layer 1, data tests. The fields a hub's `.oculus/config.yml` adds to the project form under
 // `manifest_fields`: each row's field is drawn in the form of that hub's projects after oculus's
 // fields of its section, and is a known key of that hub's manifests and of no other hub's; a row
-// the form cannot take is a finding naming the hub's file and the row's key, and is left out. The
-// cases that read a manifest plant a hub in a scratch directory and build it.
+// the form cannot take, or a row whose `from` names no list, is a finding naming the hub's file and
+// the row's key, and is left out. The cases that read a manifest plant a hub in a scratch directory
+// and build it.
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../../../src/lib/data/index.ts';
@@ -86,5 +87,65 @@ describe('the fields a hub adds to the project form', () => {
                 help: 'The grant number.'
             }
         ]);
+    });
+
+    it('words a row whose from names no registry, projects or vocab list and leaves it out', () => {
+        const read = withHub(
+            [
+                'manifest_fields:',
+                '  - { field: a, label: A, type: chips, section: Core, from: nope }',
+                '  - { field: b, label: B, type: chips, section: Core, from: [people, vocab.nope] }',
+                '  - { field: c, label: C, type: chips, section: Core, from: vocab.stages }',
+                '  - { field: d, label: D, type: chips, section: Core, from: [people, projects] }',
+                '  - { field: e, label: E, type: chips, section: Core, from: vocab.statuses.acknowledged }',
+                ''
+            ].join('\n')
+        );
+        expect(read.findings.map((one) => `${one.file} | ${one.key} | ${one.message}`)).toEqual([
+            `${FILE} | manifest_fields.0.from | manifest_fields.0.from names nope, which is no registry, projects or vocab list; the row is left out`,
+            `${FILE} | manifest_fields.1.from | manifest_fields.1.from names vocab.nope, which is no registry, projects or vocab list; the row is left out`
+        ]);
+        const taken = read.config.manifest_fields as { field: string }[];
+        expect(taken.map((row) => row.field)).toEqual(['c', 'd', 'e']);
+    });
+
+    it("holds a from to the vocab lists of the hub's own values, and words one that names nothing", () => {
+        const rows = [
+            '  - { field: a, label: A, type: chips, section: Core, from: vocab.leads_fit }',
+            '  - { field: b, label: B, type: chips, section: Core, from: vocab.statuses.nope }',
+            '  - { field: c, label: C, type: chips, section: Core, from: [] }',
+            '  - { field: d, label: D, type: chips, section: Core, from: "" }',
+            '  - { field: e, label: E, type: chips, section: Core, from: [people, ""] }'
+        ];
+        const fit = 'leads_fit: { strong: "#16a34a", reach: "#9ca3af" }\n';
+        const none = (i: number): string =>
+            `${FILE} | manifest_fields.${i}.from | manifest_fields.${i}.from names no list; the row is left out`;
+        const table: { settings: string; said: string[]; taken: string[] }[] = [
+            {
+                settings: `${fit}manifest_fields:\n${rows.join('\n')}\n`,
+                said: [
+                    `${FILE} | manifest_fields.1.from | manifest_fields.1.from names vocab.statuses.nope, which is no registry, projects or vocab list; the row is left out`,
+                    none(2),
+                    none(3),
+                    none(4)
+                ],
+                taken: ['a']
+            },
+            {
+                settings: `manifest_fields:\n${rows[0]}\n`,
+                said: [
+                    `${FILE} | manifest_fields.0.from | manifest_fields.0.from names vocab.leads_fit, which is no registry, projects or vocab list; the row is left out`
+                ],
+                taken: []
+            }
+        ];
+        for (const { settings, said, taken } of table) {
+            const read = withHub(settings);
+            expect(read.findings.map((one) => `${one.file} | ${one.key} | ${one.message}`)).toEqual(
+                said
+            );
+            const fields = read.config.manifest_fields as { field: string }[];
+            expect(fields.map((row) => row.field)).toEqual(taken);
+        }
     });
 });

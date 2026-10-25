@@ -1,5 +1,4 @@
-In flight (3 of 6 slots in use):
-- O73 (a finding for a `manifest_fields:` row whose `from` names no list; ruling 342), reviewed, landing next.
+In flight (2 of 6 slots in use):
 - O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 352, 354, 355), brief checked and corrected, stopped on open item 364 (its paths), waiting for Axel's ruling.
 - O76 (the Pillars view's text; ruling 349), brief checked and corrected, stopped on open item 360 (the false Off-pillar sentence), waiting for Axel's ruling.
 
@@ -11,7 +10,8 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O72 (the closest-word hint named only within half the word's length), 2026-10-25, this commit.
+- O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, this commit.
+- O72 (the closest-word hint named only within half the word's length), 2026-10-25, 5a47cae5.
 - O69 (the bar of a project board reworked: the stage a facet of the Filter menu, the values in force as removable chips, Cards, List and Full titles in the header), 2026-10-25, 5d586dba.
 - O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
 - O71 (the priority removed: the manifest field, `priority_levels`, the flames and the menu section), 2026-10-25, e66c2a4e.

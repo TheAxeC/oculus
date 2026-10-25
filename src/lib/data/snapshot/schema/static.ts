@@ -12,8 +12,7 @@ import { fieldsOf } from './field.ts';
 import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files/vocab.ts';
-import { vocabSource } from '../../shapes/vocab-keys.ts';
-import { REGISTRIES, VOCAB_PREFIX } from './lists.ts';
+import { REGISTRIES, VOCAB_PREFIX, vocabLists } from './lists.ts';
 import { manifestGroupProblems, manifestSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
 import type { NamedSchema } from './set.ts';
@@ -37,6 +36,19 @@ export const SCHEMA_FILES = [
 ] as const;
 
 /**
+ * Whether a `from` source names a list: `projects`, one of the eight registries, or `vocab.<name>`
+ * where `<name>` is a list `vocabLists` reads from the merged configuration, so `vocab.<key>` for a
+ * key of config/catalogs/vocab.yml set there and `vocab.<key>.<field>` for a field a row of that
+ * key carries as `true`. An empty source names no list. Which keys a list holds on disk does not
+ * matter here.
+ */
+export function namesList(source: string, merged: Record<string, unknown>): boolean {
+    if (source === 'projects' || REGISTRIES.includes(source as RegistryName)) return true;
+    if (!source.startsWith(VOCAB_PREFIX)) return false;
+    return Object.hasOwn(vocabLists(merged, VOCAB_FILE_KEYS), source.slice(VOCAB_PREFIX.length));
+}
+
+/**
  * What is wrong with the schema files themselves: a `from` that names no registry, `projects` or
  * vocab list, a `when` that names a field its record does not declare, and in the manifest schema
  * file a map of dotted fields with no help line in `groups:` or a line for no such map. Which keys
@@ -45,12 +57,7 @@ export const SCHEMA_FILES = [
 export function schemaFileProblems(
     merged: Record<string, unknown>
 ): { file: string; problems: SchemaProblem[] }[] {
-    const lists: Lists = (source) => {
-        if (source === 'projects' || REGISTRIES.includes(source as RegistryName)) return [];
-        const name = source.startsWith(VOCAB_PREFIX) ? source.slice(VOCAB_PREFIX.length) : '';
-        const { key } = vocabSource(name);
-        return VOCAB_FILE_KEYS.includes(key) && merged[key] !== undefined ? [] : undefined;
-    };
+    const lists: Lists = (source) => (namesList(source, merged) ? [] : undefined);
     return SCHEMA_FILES.map(({ key, file }) => {
         const problems: SchemaProblem[] = [];
         const ctx: Context = { lists, problems, at: '' };

@@ -192,7 +192,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G127. Each hub's records are drawn under that hub's own vocabulary, with no primary as with one, a folder that is no hub under oculus's; a list drawn over several hubs holds every hub's words, the primary's first, each word once with the row of the first hub that holds it.
   Code: `hubVocabOf`, `hubVocabs` and `workspaceVocabs` in `src/lib/data/index.ts`, and the lookups of `src/lib/state/shared/words/tones.ts`.
   Test: `tests/state/shared/hub-words.test.ts`, every row of describe "the words of each hub's records".
-- G128. A `manifest_fields:` row of a hub adds its field to that hub's project form and manifests and to no other hub's; a row naming a field oculus has, a section the form lacks, a type the form does not draw, no field, or a field another row names is a finding and is left out.
+- G128. A `manifest_fields:` row of a hub adds its field to that hub's project form and manifests and to no other hub's; a row naming a field oculus has, a section the form lacks, a type the form does not draw, a `from` that names no registry, `projects` or vocab list, no field, or a field another row names is a finding and is left out.
   Code: `src/lib/state/forms/schema.ts` and the reader of `manifest_fields` in `src/lib/data/sources/config/merge/hub-layer.ts`.
   Test: `tests/data/sources/config/layers/manifest-fields.test.ts`, every row of describe 'the fields a hub adds to the project form'.
 - G129. A workspace's `agents` value never removes a `confirm: true` oculus ships, and a value it adds, or whose flag or passed value it changes, is asked about before a start.

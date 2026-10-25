@@ -138,6 +138,8 @@ text:
             manifest_field_section: '{0} names {1}, which is not a section of the project form; the row is left out'
             manifest_field_type: '{0} names {1}, which is not a kind of field the project form draws; the row is left out'
             manifest_field_shape: '{0} is not a value a field of the project form takes; the row is left out'
+            manifest_field_from: '{0} names {1}, which is no registry, projects or vocab list; the row is left out'
+            manifest_field_from_none: '{0} names no list; the row is left out'
             agents_shape: '{0}: {1} is not the shape the agents catalog takes; it is left out'
             agents_unknown_key: '{0}: {1} is not a key the agents catalog takes'
             agents_unknown_agent: '{0}: {1} is not an agent the composer starts; it is left out'

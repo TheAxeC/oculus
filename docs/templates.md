@@ -306,8 +306,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where
 # its widget takes them, `from`, `options` and `required`. The field is drawn after oculus's fields
 # of its section, in this order, and is a known key of this hub's manifests only. A row with no
-# field, naming a field the form already has or an earlier row names, a section the form lacks or a
-# type the form does not draw is a finding, and the row is left out.
+# field, naming a field the form already has or an earlier row names, a section the form lacks, a
+# type the form does not draw or a `from` that names no registry, `projects` or vocab list is a
+# finding, and the row is left out.
 # manifest_fields: []
 #   example:
 #   manifest_fields:
