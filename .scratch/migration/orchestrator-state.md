@@ -37,7 +37,9 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: "config/text/findings.yml with O73 (after line 140), this step lines 300-305; docs/HELP.md with O73 (line 524), this step line 519. The changed lines of each pair are separated by unchanged lines, so each merge is simple"
   landing: not-started
 - step: O73
-  brief_check: "running: a29e38315e43e1a49"
+  brief_check: .scratch/migration/agents/reviews/O73-brief-check.md (a29e38315e43e1a49, claude-opus-5-5, 174594 tokens, 42 tool uses, 7 min 6 s)
+  landing: preparing
+- step: O75
   landing: preparing
 ```
 
