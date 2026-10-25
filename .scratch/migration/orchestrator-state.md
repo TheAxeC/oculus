@@ -25,8 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O72
-  brief_check: "running: a4dd23ef439ad4f70"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O72-brief-check.md (a4dd23ef439ad4f70, claude-opus-5-5, 144903 tokens, 33 tool uses, 5 min 55 s)
+  base: b254d6ac
+  worktree: .agents/worktrees/migration-O72
+  executor: agent
+  worker: claude:opus
+  session_id: ab21545866a2563dc (claude-opus-5-5)
+  launched: 2026-10-25
+  report: .scratch/migration/agents/reviews/O72-report.md
+  round: 0
+  shared_paths: "config/text/findings.yml with O73 (after line 140), this step lines 300-305; docs/HELP.md with O73 (line 524), this step line 519. The changed lines of each pair are separated by unchanged lines, so each merge is simple"
+  landing: not-started
 - step: O73
   brief_check: "running: a29e38315e43e1a49"
   landing: preparing
