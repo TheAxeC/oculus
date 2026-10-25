@@ -10,7 +10,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, this commit.
+- O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, 3df7754a.
 - O72 (the closest-word hint named only within half the word's length), 2026-10-25, 5a47cae5.
 - O69 (the bar of a project board reworked: the stage a facet of the Filter menu, the values in force as removable chips, Cards, List and Full titles in the header), 2026-10-25, 5d586dba.
 - O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
