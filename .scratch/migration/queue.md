@@ -2,12 +2,14 @@ In flight (0 of 6 slots in use):
 - none.
 
 Queued, in order:
-- none.
+- O72 (the closest-word hint within half the word's length; ruling 340), held until open items 345 and 346 are discussed.
+- O73 (a finding for a `manifest_fields:` row whose `from` names no list; ruling 342), held until open items 345 and 346 are discussed.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O69 (the bar of a project board reworked: the stage a facet of the Filter menu, the values in force as removable chips, Cards, List and Full titles in the header), 2026-10-25, 5d586dba.
 - O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
 - O71 (the priority removed: the manifest field, `priority_levels`, the flames and the menu section), 2026-10-25, e66c2a4e.
 - O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, aa79b883.
