@@ -2,14 +2,14 @@ In flight (1 of 6 slots in use):
 - O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 352, 354, 355, 364), building (base e0687c50).
 
 Queued, in order:
-- O74 (the career banner built from the command center's parts; rulings 346, 357), brief checked, stopped on open items 371, 372 and 373, waiting for Axel's rulings.
+- O74 (the career banner built from the command center's parts; rulings 346, 357, 371, 372, 373), brief written again under rulings 371 (a), 372 (a) and 373 (a), builder being launched.
 - O77 (the project card and the project page; rulings 352, 353, 356), not yet started; after O75, which changes `Projects.svelte` and `stats.ts` too.
 
 Owed looks:
 - none.
 
 Landed, newest first:
-- O76 (the Pillars view's text made true and short), 2026-10-25, the commit that lands it (its hash is written at the next commit).
+- O76 (the Pillars view's text made true and short), 2026-10-25, 0a1c3796.
 - O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, 3df7754a.
 - O72 (the closest-word hint named only within half the word's length), 2026-10-25, 5a47cae5.
 - O69 (the bar of a project board reworked: the stage a facet of the Filter menu, the values in force as removable chips, Cards, List and Full titles in the header), 2026-10-25, 5d586dba.

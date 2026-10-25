@@ -214,9 +214,9 @@ Agent usage: a12d854c070c867cd, claude-opus-5-5, 237654 tokens, 83 tool uses, 9 
 - 3.4 (offsets): `arrived` `:45-64`, `boards:` `:227-299` and `TickerRow`'s `mark` written in "What is on the tree".
 - 3.5 (`daysLeft`): item 3 exports `daysLeft` so the NEXT tail is built beside the other rows.
 - 4.1 (G28 covers `draft-entry.ts`): Verify 4 runs G28's tests that reach the career editor and the draft (`form-draft`, `page-entry`, `held-unsaved`, `source` test files) before and after; the Cases preamble says so.
-- 4.4 (links lost in the rows): a stop, open item 373.
-- 4.5 (the command center's look copied): a stop, open item 372.
-- 4.6 (the finder's text rule in `draft-entry.ts`): a stop, open item 371.
+- 4.4 (links lost in the rows): a stop, open item 373; ruled (a) and closed in the brief: item 5 gives a row that holds a web address one Open link button per distinct address, case 12 rewritten to it, Decision 9, the new key `career_open_link: 'Open {0}'` (a dictated line added after the check, held: plain ASCII, a key and its words as the file's other `career_*` keys are written).
+- 4.5 (the command center's look copied): a stop, open item 372; ruled (a) and closed in the brief: item 9 builds `src/lib/ui/display/ticker/TickerGroup.svelte` with the group and the box, items 2 and 3 draw the banner with it, the Conventions sentence rewritten to the one source, case 25 (the command center unchanged at the look), Decision 8, the paths widened to `TickerGroup.svelte` and `CommandCenterView.svelte`.
+- 4.6 (the finder's text rule in `draft-entry.ts`): a stop, open item 371; ruled (a) and closed in the brief: item 4 puts the rule in `src/lib/data/helpers/files/yaml/career-text.ts`, called from `draft-entry.ts` as it calls `collection-text.ts`, with the one line `'data/helpers/files/yaml/career-text'` added to the `state:` list of `tests/checks/tree/boundaries.test.ts` (G16) that this call needs (a dictated code line added after the check, held: the form of the list's other entries), case 26 and Verify 4 running G16's test; the paths widened to `career-text.ts` and that one line.
 - 4.7 (case 9's `other`): case 9 says it is a run of the choice function only, since `trackRecord` gives no `other` row.
 - 5.1: case 13 (the banner open on a fresh tab, its fold kept over a reload).
 - 5.2: case 14 (each file row's press at its line, and the duplicate-task ids and ranks run).
