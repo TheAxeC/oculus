@@ -34,6 +34,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a6cd05066857dc9c8 (claude-opus-5-5)
   launched: 2026-10-25
   report: .scratch/migration/agents/reviews/O75-report.md
+  builder_usage: 112916 tokens, 312 tool uses, 55 min 30 s
+  reviewer_report: running: a77378f8667072b40 (claude-opus-5-5)
   round: 0
   landing: not-started
 - step: O74
@@ -46,6 +48,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a3f212aba186ea413 (claude-opus-5-5)
   launched: 2026-10-25
   report: .scratch/migration/agents/reviews/O74-report.md
+  builder_usage: 111047 tokens, 139 tool uses, 38 min 40 s
+  reviewer_report: running: addf65e05d5a93f7d (claude-opus-5-5)
   round: 0
   landing: not-started
 ```
@@ -570,6 +574,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-25 (O75 and O74 reported; both reviews running). The builders of O75 (a6cd05066857dc9c8) and O74 (a3f212aba186ea413) reported every item done; each report is saved under `agents/reviews/` (ASCII, grep count 0) with its `builder_usage`, and each whole diff was read. Reviewers a77378f8667072b40 (O75) and addf65e05d5a93f7d (O74), each served claude-opus-5-5, run. In flight (2 of 6): O75 (review), O74 (review). Next: the refuter reports, each finding closed in a repair round, at landing or raised; /land O75, then O74 with O75's FoldHead import lines; O77 after O75. Open items: none.
 - 2026-10-25 (O74 launched; rulings 371 to 373). Axel ruled 371 (a), 372 (a) and 373 (a), booked in `plan.md` Rulings and on O74's line. O74 prepared again (base a5387bdc): the finder's text rule in a new `src/lib/data/helpers/files/yaml/career-text.ts` with its one line in the `state:` list of `tests/checks/tree/boundaries.test.ts`, the command center's group and box in a new `src/lib/ui/display/ticker/TickerGroup.svelte` drawn by both sections, Open link on a career row that holds a web address; findings 4.4 to 4.6 of its brief check closed in the brief. Builder a3f212aba186ea413 on claude-opus-5-5. O76 landed as 0a1c3796. In flight (2 of 6): O75 (building), O74 (building). Next: their reports, /refute, /land with the look on TEST; O77 after O75. Open items: none (374 ruled (a)).
 - 2026-10-25 (O76 landed; O75 building; O74 stopped). O76 is on main (booked under O76 in `plan.md`, `agents/reviews/O76-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 51.0 s; `keys.test.ts` 10 passed) and on main (`cmp` of the staged diffs: SAME, 8 paths), with one fix at landing (the key `pillars.untagged` renamed `pillars.on_no_line`); looked at on TEST, where the hub's nine pillar colours show. Axel ruled 364 (2) (a); O75 prepared at e0687c50 and its builder a6cd05066857dc9c8 launched. O74's brief check returned; three findings widen its paths and are open items 371, 372 and 373; its brief is held in the session's scratch folder. In flight (1 of 6): O75 (building). Next: Axel's rulings on 371 to 373, then /spec O74 from the held brief; O75's report, /refute and /land; O77 after O75. Open items: 371, 372, 373.
 - 2026-10-25 (O73 landed). O73 is on main (booked under O73 in `plan.md`, `agents/reviews/O73-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 59.2 s) and on main (`cmp` of the staged diffs: SAME, 12 paths), with the review's three fixes at landing (two comment wordings, one rewrap, the builder's scratch folders removed) and G128 extended in `agents/guarded.md`. The O72 row of `queue.md` names its commit 5a47cae5. In flight (2 of 6): O75 (stopped on 364), O76 (stopped on 360); O74 stopped on 357. Next: on Axel's rulings, O75's dispatch (364), O76's dispatch (360), O74's /spec (357); O77 after O75. Open items: 364, 360, 357.

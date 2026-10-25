@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O75 (the bar of a project board, its section headings and the list view), building.
-- O74 (the career banner built from the command center's parts), building.
+- O75 (the bar of a project board, its section headings and the list view), review running.
+- O74 (the career banner built from the command center's parts), review running.
 
 Queued, in order (1 step):
 - O77 (the project card and the project page), once O75 has landed.
