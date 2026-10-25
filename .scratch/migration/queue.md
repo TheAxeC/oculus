@@ -2,7 +2,7 @@ In flight (1 of 6 slots in use):
 - O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 352, 354, 355, 364), building (base e0687c50).
 
 Queued, in order:
-- O74 (the career banner built from the command center's parts; rulings 346, 357, 371, 372, 373), brief written again under rulings 371 (a), 372 (a) and 373 (a), builder being launched.
+- O74 (the career banner built from the command center's parts; rulings 346, 357, 371, 372, 373), brief written again under rulings 371 (a), 372 (a) and 373 (a) (base a5387bdc), building.
 - O77 (the project card and the project page; rulings 352, 353, 356), not yet started; after O75, which changes `Projects.svelte` and `stats.ts` too.
 
 Owed looks:
