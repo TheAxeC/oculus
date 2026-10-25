@@ -184,3 +184,38 @@ Findings: none.
 - Whether G92's table needs a row for the new Hub facet under the test rule's "one row per input that gives a different outcome". The entry's text speaks of values shared across hubs, and the brief says no row; this is the orchestrator's call.
 
 Agent usage: a0e953361e2056991, claude-opus-5-5, 297500 tokens, 106 tool uses, 13 min 50 s.
+
+## Closed
+
+- Names 1 (`instance.ts:109-111`): item 1 rewords the doc of `storedState`; the path is in the write list.
+- Names 2 (`waiting.ts:1-3`): item 5 names every waited-on value by `waitingLabel` and rewords the head comment; decision 6; the path is in the write list.
+- Names 3 (`project-files.ts:1`, `README.md:12`): item 10 rewords both; both are in the write list.
+- Names 4 (a) to (e): `CommandCenterView.svelte`, `LaneHead.svelte`, the `facet_tones` rows of `vocab.yml` and its options file are in the write list; the Filter action uses `sliders`, an existing glyph, and the board's `PickMenu.svelte` list, so no glyph file, `MenuOpener.svelte` or `Menu.svelte` changes; `CardActions.svelte` stays unchanged (item 4, case 6).
+- Names 5: the "..." opener reads a new key `project.card.menu_glyph` (`more`), so `project.card.more_glyph` is untouched (item 4, decision 5).
+- Names 6: `tests/checks/tree/allow-styling.ts` lines 55-80 are in the write list, and item 11 says its entries follow the card's lines.
+- Step line 1: item 4 and case 4 name the glyph `page`.
+- Step line 2: ruled by Axel, open item 381 (a): item 6 and case 10 follow the ruled column with OUTCOME after RESULTS, and the first-sentence line is not drawn on the page.
+- Step line 3: item 9 says the board's Hub group starts with nothing picked, like every group, which keeps every hub; decision 11.
+- Step line 4: Ask and Open project page are in the menu (item 4, case 5, decision 4).
+- Step line 5: the row words are new keys in the words ruling 353 gives (item 4).
+- Premises 1: the `openBeside` premise rewritten to `openInto`, `openOpened` and `landingFor`, with `preview` passed into `openOpened` (item 2); `landing.ts` and `opening.ts` lines 40-400 are on the read list.
+- Premises 2: a record's hub is its `root`, a non-hub folder's project being the primary's in a workspace with a primary (premise and item 9); the exception for non-hub folders is gone.
+- Premises 3: the line ranges corrected; `allow-styling.ts` named.
+- Cases 1 (case 2): case 2 rewritten to `landingFor`'s behaviour, checked by reading `openInto`, `openOpened` and `landingFor`.
+- Cases 2 (case 6): case 6 checks by reading the unchanged `CardActions.svelte` and the `ContextMenu.svelte` diff.
+- Cases 3 (the report under `.scratch/`): not changed; the builder's report path in the worktree's copy of the ledger is the one ledger file `plan-orchestration` allows a builder to write ("The builder").
+- The question (cases 2, 7, 13 to 15, 18 to 20, verify 4): the look on landing runs on a scratch server with a workspace of two hubs and a project at each waiting state (case 7); cases 13, 14, 18 and 19 add the look; case 20 adds the board's draw; verify 4 greps the other keys that lose their reader.
+- Implied inputs 1: case 16 and item 8 (no `self`: Mine only and Role not drawn or applied, no role mark).
+- Implied inputs 2: item 9 (a saved hub choice applies only while the list is drawn) and case 18.
+- Implied inputs 3: item 2 and decision 2 (a second press activates and keeps the tab).
+- Implied inputs 4: item 2 (typing in the page keeps its tab) and case 21.
+- Implied inputs 5 and 6 (a float, a maximised pane): item 2 places the page where `openOpened` and `landingFor` do, which handles both as they do for every view opened for something.
+- Implied inputs 7: item 5 and case 7 (a value that names nothing is a tag of its key with no press).
+- Implied inputs 8: item 5 and case 8 (no folder, no folder item).
+- Implied inputs 9: premise and item 9 (`root`).
+- Implied inputs 10: the Hub group is a facet, drawn with the values the board's projects hold, under item 9's rule of more than one hub in the workspace.
+- Implied inputs 11: item 8 (lanes drawn with their counts; `focus.none` for a portfolio with no projects).
+- Implied inputs 12: item 8 and decision 14 (the list stays open on a pick), case 17.
+- Implied inputs 13: ruled by Axel, open item 382 (a): item 7 and case 11 (no review wait line on a lane card).
+- Implied inputs 14: decision 13 names the saved keys.
+- Implied inputs 15: case 6 covers the other `ContextMenu` users.

@@ -1,8 +1,8 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (1 of 6 slots in use):
+- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 382), prepared, its builder next.
 
-Queued, in order (1 step):
-- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378, 379 and 380), stopped at /spec on open items 381 and 382.
+Queued, in order (0 steps):
+- none.
 
 Owed looks:
 - none.
