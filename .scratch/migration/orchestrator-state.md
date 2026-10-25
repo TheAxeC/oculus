@@ -38,7 +38,16 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: not-started
 - step: O73
   brief_check: .scratch/migration/agents/reviews/O73-brief-check.md (a29e38315e43e1a49, claude-opus-5-5, 174594 tokens, 42 tool uses, 7 min 6 s)
-  landing: preparing
+  base: 77f949b5
+  worktree: .agents/worktrees/migration-O73
+  executor: agent
+  worker: claude:opus
+  session_id: a1fc7a1e8c9959398 (claude-opus-5-5)
+  launched: 2026-10-25
+  report: .scratch/migration/agents/reviews/O73-report.md
+  round: 0
+  shared_paths: "config/text/findings.yml with O72 (lines 300-305), this step lines 140-142; docs/HELP.md with O72 (line 519), this step line 524. The changed lines of each pair are separated by unchanged lines, so each merge is simple"
+  landing: not-started
 - step: O75
   landing: preparing
 ```
