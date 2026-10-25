@@ -94,8 +94,14 @@ export type BoardTag = { id: Id; label: string };
 /** A tag for a related project, either way: `held` is false when no project has the id. */
 export type RelatedTag = BoardTag & { held: boolean };
 
-/** What a card's cross-link lines read: a project's board item and its related projects. */
-export type LinkedItem = Pick<BoardItem, 'id' | 'pillars' | 'funding' | 'datasets' | 'team'> & {
+/**
+ * What a card's cross-link lines read: a project's board item, with its venue, and its related
+ * projects.
+ */
+export type LinkedItem = Pick<
+    BoardItem,
+    'id' | 'pillars' | 'funding' | 'datasets' | 'team' | 'venue'
+> & {
     /** The projects a project's `related:` names, and those whose `related:` names it. */
     related?: RelatedTag[];
 };

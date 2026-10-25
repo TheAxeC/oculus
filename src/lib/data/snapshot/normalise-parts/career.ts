@@ -1,9 +1,9 @@
-// Layer 1, data. The career strategy as the Focus board's career banner reads it, out of the map
-// sources/documents/career.ts parsed: the title, the goal, the next milestone and its day, the
-// situation, the order of work and its note. Pure, like normalise: every section is optional, the
-// order of work tolerates the plain-string form the file may write, and a row without its words is
-// left out. A key the file holds beyond these is read by no part of the banner, and stays in
-// `sections` for the editor.
+// Layer 1, data. The career strategy out of the map sources/documents/career.ts parsed: the title,
+// the goal, the next milestone and its day, the situation, the order of work and its note, of which
+// the Focus board's Career banner draws all but the title. Pure, like normalise: every section is
+// optional, the order of work tolerates the plain-string form the file may write, and a row
+// without its words is left out. A key the file holds beyond these is read by no part of the
+// banner, and stays in `sections` for the editor.
 
 import { z } from 'zod';
 import { ISO_DATE } from '../../helpers/dates.ts';
@@ -54,7 +54,7 @@ function milestoneDate(raw: Record<string, unknown>): string | undefined {
 }
 
 /**
- * The career strategy as the banner reads it. Every section is optional and the order of work
+ * The career strategy of the career file. Every section is optional and the order of work
  * tolerates the plain-string form the file is allowed to write, so a half-filled career file draws
  * the half it has.
  */

@@ -146,10 +146,13 @@ options:
     focus_lanes:
         heading: boards
         section: Vocabulary
-        help: "The lanes of the Focus board, in their order, each with its words, colour and cluster and the stages or the chips that put a project on it. A hub's list replaces oculus's whole."
+        help: "The lanes of the Focus board, in their order, each with its words, glyph, colour and cluster and the stages or the chips that put a project on it. A hub's list replaces oculus's whole."
         fields:
             key: the word the lane is named by
             label: the words the lane is drawn with
+            icon:
+                help: the glyph drawn before the lane's label on a project card and in the lane's heading
+                control: glyph
             sub: the line drawn under the lane's label
             color:
                 help: the colour of the lane's header

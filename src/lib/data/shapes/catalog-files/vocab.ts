@@ -24,14 +24,17 @@ const keyed = z.strictObject({
 });
 
 /**
- * One row of `focus_lanes`: a lane's words, colour and cluster, and the stages or the chips that
- * put a project on it. A row names `stages` or `chips`, never both and never neither, so a move
- * onto the lane has one defined write.
+ * One row of `focus_lanes`: a lane's words, glyph, colour and cluster, and the stages or the chips
+ * that put a project on it. A row names `stages` or `chips`, never both and never neither, so a
+ * move onto the lane has one defined write.
  */
 const laneRow = z
     .strictObject({
         key: text.describe('The word the lane is named by.'),
         label: text.optional().describe('The words the lane is drawn with.'),
+        icon: text
+            .optional()
+            .describe('The glyph name the lane is drawn with, a key of glyphs.yml.'),
         sub: text.optional().describe("The line drawn under the lane's label."),
         color: colour
             .optional()

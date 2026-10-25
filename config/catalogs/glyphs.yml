@@ -134,6 +134,7 @@ glyphs:
   grip: "::"
   active: "(*)"
   idea: "(i)"
+  build: "[B]"
   stale: "(t)"
   deadline: "[t]"
   timing: "(s)"

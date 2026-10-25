@@ -1,14 +1,19 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The career banner at the top of the
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The Career banner at the top of the
     // board. Its heading is the row the command center and the tasks section draw theirs with
-    // (FoldHead.svelte): the fold control, named "Fold Career strategy" or "Unfold Career
-    // strategy", then the career file's title and its next milestone with its day, one line cut
-    // with an ellipsis (state/boards/career.ts `foldedLine`). Unfolded, it is the whole panel: the
-    // situation, one fact a row, the goal, the next milestone with its day and the days left to it,
-    // the order of work with its note, and the track record, the user's projects counted by each
-    // record row of `categories:` for each role and the funding the user leads that was obtained
-    // (`trackRecord`). Each section is drawn only when it has something. A web address written in
-    // a fact, the goal, the milestone, a task or a note is a link
+    // (FoldHead.svelte): the fold control, named "Fold Career" or "Unfold Career", then the
+    // banner's glyph and the word Career, and nothing else. Unfolded, its sections stand side by
+    // side across the width, in the order Goal, Next, Situation, Order of work and Track record,
+    // each a column headed in the Focus board's section look (the command center's group heading:
+    // a glyph and the label in extra-small bold capitals in the accent colour). The columns wrap
+    // under one another only where the pane is too narrow to hold them side by side. Next is one
+    // plain line, the milestone, its day and the days left to it (state/boards/career.ts
+    // `nextLine`); Situation one fact a row; Order of work the tasks with their notes and the
+    // order's note; Track record a table (ui/display/table/Table.svelte), a row per role and a
+    // column per record row of `categories:` any role has a project in, each cell the count of the
+    // user's projects, and a last row Funding obtained, the funding the user leads that was
+    // obtained (`trackRecord`, `recordTable`). Each section is drawn only when it has something. A
+    // web address written in a fact, the goal, the milestone, a task or a note is a link
     // (ui/display/text/LinkedText.svelte).
     //
     // Its Edit control opens the editor of the career file's sections, built from the file's own
@@ -24,15 +29,16 @@
     // draws nothing when the hub holds no career file, which is the ordinary case for a hub that
     // keeps no career plan, and the board then starts at the command center.
 
-    import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import FoldHead from '../FoldHead.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
-    import { daysLeft, foldedLine, trackRecord } from '$lib/state/boards/career';
+    import { nextLine, recordTable, trackRecord } from '$lib/state/boards/career';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -59,13 +65,14 @@
     const snapshot = $derived(portfolio());
     const career = $derived(snapshot?.entities.career ?? null);
 
-    /** The track record, null when no `self` is set or it holds nothing to draw. */
-    const record = $derived(trackRecord(snapshot, config, vocabOf));
+    /** The track record's table, null when no `self` is set or it holds nothing to draw. */
+    const record = $derived.by(() => {
+        const held = trackRecord(snapshot, config, vocabOf);
+        return held === null ? null : recordTable(held);
+    });
 
-    /** The days left to the milestone's day, the empty text when it has none. */
-    const left = $derived(
-        career?.milestoneDate === undefined ? '' : daysLeft(career.milestoneDate, now)
-    );
+    /** The Next line, the empty text when the file names no milestone. */
+    const next = $derived(career === null ? '' : nextLine(career, now));
 
     /** The career file as the editor sees it, null while the file has no schema. */
     const page = $derived(pageNamed(CAREER));
@@ -95,15 +102,15 @@
     let unfolded = $state(false);
 </script>
 
-{#snippet section(label: string)}
-    <p class="seclbl">{label}</p>
+{#snippet heading(label: string, glyph: string)}
+    <p class="lbl"><Glyph name={glyph} />{label}</p>
 {/snippet}
 
 {#if career !== null}
     <section class="career" data-surface>
         <FoldHead
             glyph={t('focus.career_glyph')}
-            title={foldedLine(career)}
+            title={t('focus.career_heading')}
             name={t('focus.career_heading')}
             open={unfolded}
             ontoggle={() => (unfolded = !unfolded)}
@@ -125,78 +132,92 @@
             {#if open && page !== null}
                 <EntryEditor {page} {instance} {file} />
             {:else}
-                {#if career.situation.length > 0}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.career_situation'))}
-                    <div class="facts">
-                        {#each career.situation as fact (fact.label)}
-                            <b>{fact.label}</b>
-                            <span><LinkedText text={fact.value} /></span>
-                        {/each}
-                    </div>
-                {/if}
-
-                {#if career.goal !== undefined}
-                    <p class="goal">
-                        <b>{t('focus.career_goal')}</b>
-                        <LinkedText text={career.goal} />
-                    </p>
-                {/if}
-
-                {#if career.milestone !== undefined}
-                    <p class="milestone">
-                        <Glyph name={t('project.card.deadline_glyph')} />
-                        <b>{t('focus.next')}</b>
-                        <LinkedText text={career.milestone} />
-                        {#if career.milestoneDate !== undefined}
-                            <span class="when">{career.milestoneDate}</span>
-                        {/if}
-                        {#if left !== ''}
-                            <Tag label={left} />
-                        {/if}
-                    </p>
-                {/if}
-
-                {#if career.order.length > 0}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.order_of_work'))}
-                    <ol class="order">
-                        {#each career.order as row, at (`${at}:${row.task}`)}
-                            <li>
-                                <span class="task"><LinkedText text={row.task} /></span>
-                                {#if row.note !== undefined}
-                                    <span class="ordernote"><LinkedText text={row.note} /></span>
-                                {/if}
-                                {#if row.when !== undefined}
-                                    <span class="when">{row.when}</span>
-                                {/if}
-                            </li>
-                        {/each}
-                    </ol>
-                    {#if career.orderNote !== undefined}
-                        <p class="note"><LinkedText text={career.orderNote} /></p>
+                <div class="sections">
+                    {#if career.goal !== undefined}
+                        <div class="sec">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render heading(t('focus.career_goal'), t('focus.career_goal_glyph'))}
+                            <p class="goal"><LinkedText text={career.goal} /></p>
+                        </div>
                     {/if}
-                {/if}
 
-                {#if record !== null}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render section(t('focus.career_record'))}
-                    <div class="facts">
-                        {#each record.roles as role (role.key)}
-                            <b>{role.label}</b>
-                            <span>
-                                {#each role.lines as line (line.key)}
-                                    <span class="line">
-                                        {t('focus.career_record_line', line.label, line.count)}
-                                    </span>
+                    {#if next !== ''}
+                        <div class="sec">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render heading(t('focus.next'), t('focus.career_next_glyph'))}
+                            <p class="next"><LinkedText text={next} /></p>
+                        </div>
+                    {/if}
+
+                    {#if career.situation.length > 0}
+                        <div class="sec">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render heading(
+                                t('focus.career_situation'),
+                                t('focus.career_situation_glyph')
+                            )}
+                            <div class="facts">
+                                {#each career.situation as fact (fact.label)}
+                                    <b>{fact.label}</b>
+                                    <span><LinkedText text={fact.value} /></span>
                                 {/each}
-                            </span>
-                        {/each}
-                    </div>
-                    {#if record.funding > 0}
-                        <p class="note">{t('focus.career_funding', record.funding)}</p>
+                            </div>
+                        </div>
                     {/if}
-                {/if}
+
+                    {#if career.order.length > 0}
+                        <div class="sec">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render heading(
+                                t('focus.order_of_work'),
+                                t('focus.career_order_glyph')
+                            )}
+                            <ol class="order">
+                                {#each career.order as row, at (`${at}:${row.task}`)}
+                                    <li>
+                                        <span class="task"><LinkedText text={row.task} /></span>
+                                        {#if row.note !== undefined}
+                                            <span class="ordernote">
+                                                <LinkedText text={row.note} />
+                                            </span>
+                                        {/if}
+                                        {#if row.when !== undefined}
+                                            <span class="when">{row.when}</span>
+                                        {/if}
+                                    </li>
+                                {/each}
+                            </ol>
+                            {#if career.orderNote !== undefined}
+                                <p class="note"><LinkedText text={career.orderNote} /></p>
+                            {/if}
+                        </div>
+                    {/if}
+
+                    {#if record !== null}
+                        <div class="sec wide">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render heading(
+                                t('focus.career_record'),
+                                t('focus.career_record_glyph')
+                            )}
+                            <div class="record">
+                                <Table
+                                    columns={record.columns}
+                                    rows={record.rows}
+                                    rowKey={record.rowKey}
+                                >
+                                    {#snippet cell(row: Record<string, unknown>, column: Column)}
+                                        {#if column.numeric === true}
+                                            <span class="count">{cellText(row[column.key])}</span>
+                                        {:else}
+                                            <b class="role">{cellText(row[column.key])}</b>
+                                        {/if}
+                                    {/snippet}
+                                </Table>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
             {/if}
         </div>
     </section>
@@ -243,8 +264,42 @@
         padding: 4px 0 0;
     }
 
-    .seclbl {
-        margin: 4px 0 2px;
+    /* The sections side by side: each column at least 240px at the text scale wide, or the whole
+       width where the pane is narrower, as many in a row as the width holds, and the row's width
+       shared out among them. A section with nothing to draw is no column, so the ones drawn fill
+       the width, and the columns wrap under one another only where the width cannot hold them side
+       by side. The track record's table needs about two columns to hold its words whole, so where
+       the band has two columns or more it spans two, wrapping under the others when the row cannot
+       hold it beside them. */
+    .sections {
+        container: career / inline-size;
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(min(calc(240px * var(--text-scale, 1)), 100%), 1fr)
+        );
+        align-items: start;
+        gap: 4px 16px;
+    }
+
+    /* One section, as the command center's group stands under its heading. */
+    .sec {
+        min-width: 0;
+        margin-top: 4px;
+    }
+
+    @container career (width >= 32rem) {
+        .wide {
+            grid-column: span 2;
+        }
+    }
+
+    /* The section's heading in the command center's look (CommandCenterView.svelte `.lbl`). */
+    .lbl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 2px;
         font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
@@ -275,57 +330,51 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    /* A fact, a line of the track record and a task of the order of work are rows of the board,
-       drawn at the ticker row's size and line (ui/display/ticker/Ticker.svelte), with every word in
-       them. */
+    /* A fact and a task of the order of work are rows of the board, drawn at the ticker row's size
+       and line (ui/display/ticker/Ticker.svelte), with every word in them. */
     .facts span {
         font-size: var(--fs-xs);
         line-height: calc(14px * var(--text-scale, 1));
         overflow-wrap: anywhere;
     }
 
-    /* Each line of a role's track record stands on its own line in the value column. */
-    .facts .line {
-        display: block;
-    }
-
-    .goal {
-        display: flex;
-        align-items: baseline;
-        gap: 5px;
-        margin: 6px 0 0;
+    /* The goal and the Next line are one plain line each, wrapping in their column. */
+    .goal,
+    .next {
+        margin: 0;
         font-size: var(--fs-md);
         overflow-wrap: anywhere;
     }
 
-    .goal b {
+    /* The track record's table keeps to its column: a heading's and a cell's words wrap between
+       words and never inside one, and a table still wider than the column scrolls sideways inside
+       it. Its cells are drawn at the board's row size, the role's words in the labels' look of the
+       facts, and its headings in the section look on the banner's own ground rather than the
+       table's header strip. */
+    .record {
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    .record :global(th) {
+        background: transparent;
+        color: var(--accent-txt, var(--accent));
+        white-space: normal;
+    }
+
+    .record .count {
+        font-size: var(--fs-xs);
+    }
+
+    .record .role {
         font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
     }
 
-    /* The milestone, its day and the days left wrap onto a further line in a narrow pane. */
-    .milestone {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 5px;
-        margin: 6px 0 0;
-        padding: 4px 8px;
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--c-orange);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        font-size: var(--fs-md);
-    }
-
-    :global(body.wall) .milestone {
-        background: transparent;
-    }
-
     .order {
-        margin: 3px 0 0;
+        margin: 0;
         padding-left: 16px;
     }
 

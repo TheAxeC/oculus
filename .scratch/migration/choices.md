@@ -4992,3 +4992,10 @@ Where it applies: O55. Booked in `plan.md` Rulings.
 - Not chosen: New project kept on Archive with the project landing on Projects, the lazy option, since the button would make something the board does not show; a terminal stage written from Archive, which makes a new project that is already done; Personal and Software projects written without a lead, which gives each one an Audit finding the user did not cause.
 
 Where it applies: O55. Booked in `plan.md` Rulings.
+
+## Z995 (2026-10-25, O70's look at landing, the orchestrator, automode): how wide the career banner's track record is
+
+- Chosen: the track record's section spans two columns of the banner's grid wherever the grid has two or more, and its table's headings and cells wrap between words and never inside one. At a pane wide enough for five columns but not six the track record stands under the other four, two columns wide; from about 1520 px the five sections stand in one band.
+- Not chosen: a table one column wide whose words break inside them ("SUPERVI SOR", "FUNDING OBTAINE D"), and a table one column wide that scrolls sideways and hides Publications and Other outputs. Both were the lazy options: each keeps case 11's one band of five at 1400 px by drawing a table that cannot be read.
+
+Where it applies: O70. Booked in `plan.md` Rulings.

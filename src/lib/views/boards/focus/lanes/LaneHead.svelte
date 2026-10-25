@@ -1,8 +1,12 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The header of one column of the
-    // board: the lane's glyph where it has one, its name and its count on a surface tinted with the
-    // lane's hue. Lanes.svelte draws it over every project lane and Band.svelte over the Funding,
-    // Jobs and Teaching columns, each with its glyph, so the one rule lives here.
+    // board: its glyph, its name and its count on a surface tinted with the lane's hue.
+    // Lanes.svelte draws it over every project lane with the lane's `icon` of `focus_lanes`, and
+    // Band.svelte over the Funding, Jobs and Teaching columns with each column's glyph, so the one
+    // rule lives here. A name the glyph vocabulary does not hold, the empty string of a row naming
+    // no `icon` among them, draws the Focus board's own glyph (views/shared/card/card.ts
+    // `laneGlyph`, which a project card's lane draws with too), so every header carries a glyph and
+    // no name from a hub's file reaches a Glyph that would throw.
     //
     // The surface is `--c-<hue>-lane`, the hue mixed into the panel by themes/derive.ts, and the
     // glyph, the name and the count are drawn in `--c-<hue>-lane-txt`, which derive.ts makes
@@ -13,12 +17,13 @@
     // full opacity.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import { laneGlyph } from '$lib/views/shared/card/card';
 
     type Props = {
         /** The lane's words, already translated by the view. */
         label: string;
-        /** A name in `glyphs:` drawn before the words; a lane without one draws its words alone. */
-        glyph?: string;
+        /** A name in `glyphs:` drawn before the words; another draws the Focus board's glyph. */
+        glyph: string;
         /** How many cards the lane holds. */
         count: number;
         /** A hue name from state/shared/words/tones.ts. */
@@ -32,9 +37,7 @@
 
 <div class="lane-h" {style}>
     <span class="lane-title">
-        {#if glyph !== undefined}
-            <Glyph name={glyph} />
-        {/if}
+        <Glyph name={laneGlyph(glyph)} />
         <span class="lane-name">{label}</span>
     </span>
     <span class="count">{count}</span>

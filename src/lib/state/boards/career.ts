@@ -1,6 +1,7 @@
-// Layer 2, client state. The career banner's arithmetic: the one line of the folded banner, the
-// days left to the next milestone, and the track record, the user's projects counted by the record
-// rows of `categories:` for each role, and the funding the user leads that was obtained.
+// Layer 2, client state. The Career banner's arithmetic: the Next line, the next milestone with its
+// day and the days left to it, and the track record, the user's projects counted by the record rows
+// of `categories:` for each role, and the funding the user leads that was obtained, with the table
+// the banner draws it as.
 //
 // Pure over the snapshot, the merged config and the day the caller passes. A project's category
 // and role are read with the boards' own rule (data/shapes/boards/categories.ts `categoryOf`,
@@ -23,35 +24,31 @@ import { t } from '../shared/words/text.ts';
 export type { Career } from '../../data/model/index.ts';
 
 /**
- * The one line of the folded banner: the title and the next milestone with its day, each part left
- * out when the file gives none.
+ * The days left to a day written YYYY-MM-DD, in words: `in 1 day` and `in {0} days` before the day,
+ * `today` on it, `1 day ago` and `{0} days ago` after it, counted from `now` with `daysUntil`; the
+ * empty text for a value that is no day.
  */
-export function foldedLine(career: Career | null): string {
-    if (career === null) return '';
-    const { milestone, milestoneDate } = career;
-    const next =
-        milestone === undefined
-            ? ''
-            : t(
-                  'focus.career_next',
-                  milestoneDate === undefined
-                      ? milestone
-                      : t('focus.career_milestone', milestone, milestoneDate)
-              );
-    return [career.title, next].filter((part) => part !== '').join(' | ');
+function daysLeft(date: string, now: number): string {
+    const days = daysUntil(date, now);
+    if (days === null) return '';
+    if (days === 1) return t('focus.career_in_day');
+    if (days > 1) return t('focus.career_in_days', days);
+    if (days === 0) return t('focus.today');
+    if (days === -1) return t('focus.career_day_ago');
+    return t('focus.career_days_ago', -days);
 }
 
 /**
- * The days left to a day written YYYY-MM-DD, as the banner words them: `in {0}d` before the day,
- * `today` on it and `{0}d ago` after it, counted from `now` with `daysUntil`; the empty text for a
- * value that is no day.
+ * The banner's Next line: the milestone, its day and the days left to it, `<milestone> on <day>,
+ * in 24 days`; the milestone alone when the file gives no day, and the empty text when it gives no
+ * milestone. The milestone is kept as written, so a web address in it is drawn as a link.
  */
-export function daysLeft(date: string, now: number): string {
-    const days = daysUntil(date, now);
-    if (days === null) return '';
-    if (days > 0) return t('focus.in_days', days);
-    if (days === 0) return t('focus.today');
-    return t('focus.days_ago', -days);
+export function nextLine(career: Pick<Career, 'milestone' | 'milestoneDate'>, now: number): string {
+    const { milestone, milestoneDate } = career;
+    if (milestone === undefined) return '';
+    if (milestoneDate === undefined) return milestone;
+    const left = daysLeft(milestoneDate, now);
+    return left === '' ? milestone : t('focus.career_next_line', milestone, milestoneDate, left);
 }
 
 /** One line of a role's track record: a record row of `categories:` and its count. */
@@ -119,4 +116,68 @@ export function trackRecord(
         );
     }).length;
     return held.length === 0 && funding === 0 ? null : { roles: held, funding };
+}
+
+/**
+ * One column of the track record's table: the key its cells are read at in a row, its heading,
+ * and whether it holds counts. The shape of ui/display/table/table-rows.ts `Column`, which the
+ * banner draws it with.
+ */
+type RecordColumn = { key: string; label: string; numeric?: boolean };
+
+/** The track record as a table: its columns and its rows, each row's cells by column key. */
+type RecordTable = {
+    columns: RecordColumn[];
+    rows: Record<string, string | number>[];
+    /** The key of the cell that tells the rows apart, a row's place in the table. */
+    rowKey: string;
+};
+
+/** The key of the column of the rows' words, the role's label or Funding obtained. */
+const LABEL = 'label';
+
+/** The key of the one count column of a table with no role row, whose heading is empty. */
+const COUNT = 'count';
+
+/** The key a record row's column is read at, apart from LABEL, COUNT and the row key. */
+const recordKey = (key: string): string => `record:${key}`;
+
+/** The key of a row's place, which tells two rows apart whatever their words. */
+const AT = 'at';
+
+/**
+ * The track record as the banner's table: a first column of the rows' words with an empty heading,
+ * then one column per record row of `categories:` that any role has a project in, in the list's
+ * order, headed by its label; one row per role, its label and its count in each column, then, when
+ * funding is obtained, a row Funding obtained with its count in the first count column and the
+ * other cells blank. With no role row the table holds one count column with an empty heading and
+ * the Funding obtained row alone. Every role's lines name the same record rows in the same order
+ * (`trackRecord`), so the first role's give the columns.
+ */
+export function recordTable(record: TrackRecord): RecordTable {
+    const lines = record.roles.at(0)?.lines ?? [];
+    const kept = lines.filter((line) =>
+        record.roles.some((role) => role.lines.some((one) => one.key === line.key && one.count > 0))
+    );
+    const counts: RecordColumn[] =
+        kept.length === 0
+            ? [{ key: COUNT, label: '', numeric: true }]
+            : kept.map((line) => ({ key: recordKey(line.key), label: line.label, numeric: true }));
+    const first = kept.at(0);
+    const fundingKey = first === undefined ? COUNT : recordKey(first.key);
+    const rows: Record<string, string | number>[] = record.roles.map((role) => {
+        const row: Record<string, string | number> = { [LABEL]: role.label };
+        for (const line of role.lines) {
+            if (kept.some((one) => one.key === line.key)) row[recordKey(line.key)] = line.count;
+        }
+        return row;
+    });
+    if (record.funding > 0) {
+        rows.push({ [LABEL]: t('focus.career_funding_row'), [fundingKey]: record.funding });
+    }
+    return {
+        columns: [{ key: LABEL, label: '' }, ...counts],
+        rows: rows.map((row, at) => ({ ...row, [AT]: String(at) })),
+        rowKey: AT
+    };
 }

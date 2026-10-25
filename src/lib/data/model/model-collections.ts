@@ -195,9 +195,9 @@ export type FeedData = {
 export type RawFeeds = Feeds;
 
 /**
- * The career strategy of the career file (`career_file`), which the Focus board's career banner
- * reads: its title, the goal it works toward, the next milestone with its day, the situation, the
- * order of work and its note.
+ * The career strategy of the career file (`career_file`): its title, the goal it works toward, the
+ * next milestone with its day, the situation, the order of work and its note. The Focus board's
+ * Career banner draws all of them but the title.
  */
 export type Career = {
     title: string;

@@ -2,9 +2,9 @@
     // Layer 3, shared view. The project cross-link tag groups live here because relationship
     // navigation changes independently of the project-card frame.
     //
-    // Each kind that has entries is its own labelled line, so a card with many tags is read by kind
-    // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
-    // draws the rest in place.
+    // Each kind that has entries is its own labelled line, in the order Funding, Pillar, Datasets,
+    // Team, Related and Venue, so a card with many tags is read by kind rather than as one wrapping
+    // run; a kind longer than SHOWN draws that many and a control that draws the rest in place.
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
@@ -15,6 +15,10 @@
     // implements it and a software project the papers it names. Its entries open a project tab
     // rather than a registered view, except for an id that no project holds, which is drawn as its
     // tag with no press.
+    //
+    // The venue kind is the venue the project's `venue_id` names, drawn only when it names one: its
+    // whole text (its name with its quartile and the rest) as one tag with no press, which wraps
+    // onto further lines rather than being cut, so every part of it can be read.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -41,12 +45,19 @@
     };
     let { item }: Props = $props();
 
-    /** One line: which kind it is, what it is called, and the glyph its entries carry. */
+    /** The kind of the project's venue, whose one entry is its whole text. */
+    const VENUE = 'venue';
+
+    /**
+     * One line: which kind it is, what it is called, the glyph its entries carry, and whether an
+     * entry's words wrap onto further lines rather than being cut.
+     */
     type Kind = {
         key: string;
         label: string;
         glyph: string;
         tags: BoardTag[];
+        wrap?: boolean;
     };
 
     const kinds = $derived<Kind[]>([
@@ -79,6 +90,13 @@
             label: t('project.card.related'),
             glyph: t('project.card.related_glyph'),
             tags: item.related ?? []
+        },
+        {
+            key: VENUE,
+            label: t('project.card.venue'),
+            glyph: 'venue',
+            tags: item.venue === null ? [] : [{ id: item.venue.id, label: item.venue.text }],
+            wrap: true
         }
     ]);
 
@@ -114,7 +132,7 @@
                     {#each drawn as tag (tag.id)}
                         {@const onpress = press(kind, tag)}
                         {#if onpress === null}
-                            <Tag label={tag.label} glyph={kind.glyph} />
+                            <Tag label={tag.label} glyph={kind.glyph} wrap={kind.wrap === true} />
                         {:else}
                             <span class="crosslink">
                                 <ToolButton

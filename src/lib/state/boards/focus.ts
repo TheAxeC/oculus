@@ -55,13 +55,16 @@ export const CLUSTERS = ['now', 'parked', 'incubate'];
 export const IDEA = 'idea';
 
 /**
- * One lane of the board: its key, its words, its hue and its cluster, and what puts a project on
- * it, the stages of `stages` or the chips of `chips` its row names, each empty when the row names
- * none.
+ * One lane of the board: its key, its words, its glyph name, its hue and its cluster, and what puts
+ * a project on it, the stages of `stages` or the chips of `chips` its row names, each empty when
+ * the row names none. The glyph name is the row's `icon` as written, the empty string when the row
+ * names none; a view draws it through views/shared/card/card.ts `laneGlyph`, which draws the glyph
+ * `focus` for a name the glyph vocabulary lacks.
  */
 export type Lane = {
     key: string;
     label: string;
+    icon: string;
     sub: string;
     tone: string;
     cluster: string;
@@ -145,13 +148,15 @@ export function snoozed(value: unknown, now: number): boolean {
 }
 
 /**
- * One row of `focus_lanes`: a map with a key; its label is the key when it names none, and its
- * `stages` and `chips` are lists of words, empty when the row leaves them out.
+ * One row of `focus_lanes`: a map with a key; its label is the key when it names none, its `icon`
+ * the empty string when it names none, and its `stages` and `chips` are lists of words, empty when
+ * the row leaves them out.
  */
 const laneShape = z
     .object({
         key: wordShape.refine((key) => key !== ''),
         label: wordShape,
+        icon: wordShape,
         sub: wordShape,
         color: wordShape,
         cluster: wordShape,
@@ -161,6 +166,7 @@ const laneShape = z
     .transform((row): Lane => ({
         key: row.key,
         label: row.label === '' ? row.key : row.label,
+        icon: row.icon,
         sub: row.sub,
         tone: toneOf(row.color),
         cluster: row.cluster,

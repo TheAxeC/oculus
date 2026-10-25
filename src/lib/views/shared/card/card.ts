@@ -1,6 +1,6 @@
-// Layer 3, view helpers. Project-card path, label and deadline calculations, what a session press
-// on the card opens, and the shape of a card's control, live here because pure display rules
-// change independently of Svelte markup.
+// Layer 3, view helpers. Project-card path, label and deadline calculations, the glyph each fact
+// of the card's top row is drawn with, what a session press on the card opens, and the shape of a
+// card's control, live here because pure display rules change independently of Svelte markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import { pausesCountdown } from '$lib/state/boards/focus';
@@ -14,7 +14,8 @@ import {
 } from '$lib/state/workbench/layout';
 import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
-import { t } from '$lib/state/shared/words/text';
+import { hasGlyph, t } from '$lib/state/shared/words/text';
+import { resourceGlyph } from '$lib/state/forms/schema';
 import { openPage } from '../explorer/opening';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
@@ -140,6 +141,37 @@ export function openWorkbench(client: ClientState, item: BoardItem, tab: string)
  */
 export function deckOf(project: BoardItem['project']): string | null {
     return project.deck ?? null;
+}
+
+/** The glyph a lane is drawn with when its row names none, or a name the glyph vocabulary lacks. */
+const LANE_GLYPH = 'focus';
+
+/** The glyph a form or a chip is drawn with when its word names none, or a name it lacks. */
+const WORD_GLYPH = 'tag';
+
+/**
+ * The glyph a lane of `focus_lanes` is drawn with, on a project card and in the lane's heading on
+ * the Focus board: the row's `icon` where the glyph vocabulary holds it, else the Focus board's own
+ * glyph, so every lane carries one and no name from a hub's file reaches a Glyph that would throw.
+ */
+export function laneGlyph(icon: string): string {
+    return hasGlyph(icon) ? icon : LANE_GLYPH;
+}
+
+/**
+ * The glyph a form or a chip is drawn with in a card's top row: its word's `icon` where the glyph
+ * vocabulary holds it, else the glyph `tag`, so every fact carries one.
+ */
+export function wordGlyph(icon: string): string {
+    return hasGlyph(icon) ? icon : WORD_GLYPH;
+}
+
+/**
+ * The glyph a compute resource is drawn with in a card's top row: the one of its kind
+ * (`resourceGlyph`), and the cluster's for a kind outside the three, so every fact carries one.
+ */
+export function computeGlyph(kind: string): string {
+    return resourceGlyph(kind) ?? t('project.card.hpc_glyph');
 }
 
 /** The catalogued label for a code-deposit state. */

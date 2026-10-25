@@ -133,6 +133,7 @@ icons:
     grip: grip-vertical
     active: map-pin
     idea: lightbulb
+    build: hammer
     stale: hourglass
     deadline: alarm-clock
     timing: timer

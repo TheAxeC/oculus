@@ -1,11 +1,122 @@
-# O69 builder report: the bar of a project board reworked
+# O69 builder report: the bar of a project board reworked (state after repair round 1)
 
-Everything in the brief is done. Three things the orchestrator acts on: (1) `facetValues` moved from `facets.ts` to `state.ts` to keep the import graph free of cycles, so G92's Code line in `agents/guarded.md` (which names `facetValues` in `facets.ts`) needs the orchestrator's edit; (2) two lines outside the write list were changed because the step made them false (`config/catalogs/vocab.yml:213` and the head comment `tests/state/boards/board/hub-facets.test.ts:1-6`); (3) one whole-suite command ran: a first try at running the case program with `npx vitest run --dir <scratchpad> --project unit` ran the tree's unit tests for about three minutes before I stopped it (details under "Test runs").
+Everything in the brief and in repair round 1 is done. Four things the orchestrator acts on: (1) `facetValues` moved from `facets.ts` to `state.ts` to keep the import graph free of cycles, so G92's Code line in `agents/guarded.md` (which names `facetValues` in `facets.ts`) needs the orchestrator's edit, as the round's "Not sent" says; (2) three files outside the brief's write list and the round's widening were changed, each because the step or the round made a line false or a helper duplicate: `config/catalogs/vocab.yml:213`, the head comment `tests/state/boards/board/hub-facets.test.ts:1-9`, and `src/lib/state/boards/board/items.ts` (G124's code: its board sort now calls the shared `stageRank`, see "Repair round 1", item 5); (3) one whole-suite command ran in the first build (`npx vitest run --dir <scratchpad> --project unit`, stopped after about three minutes; "Test runs"), and none in the round; (4) the state file holds a new open item 342 since the first report.
 
-## Open items of the state file (verbatim, `.scratch/migration/orchestrator-state.md:169-180`)
+## Open items of the state file (verbatim, main ledger `.scratch/migration/orchestrator-state.md:192-194`)
 
 - 337 (2026-10-25, O60's builder's report, the breach it records; `agents/spec.md`'s rule that a builder writes no script the brief does not build): O60's builder aaf9969093ea82a29 wrote three helper scripts the brief does not build and no ruling approves, in the session's scratch folder outside the tree: `wrap.py` and `wrap2.py`, which rewrapped the comment paragraphs of the changed files at 100 columns, and `greps.sh`, which runs the brief's four reader greps over a tree and gave the report's counts of 68 reader files on the base and 85 on the worktree. (a) record it, and use nothing they printed as evidence: every rewrapped comment is judged by the reviewers' and the orchestrator's own reading of the diff, and the reader coverage by the reviewer's own greps, as open item 330 ruled for O63. Pros: the step keeps its work and no evidence rests on an unapproved script. Cons: none found. (b) send the rewraps back in the repair round to be redone by hand. Pros: no edit a script made stays. Cons: the same text again, at the cost of a round, when a read already judges each paragraph. Recommended (a); (b) is not the lazy option but costs a round for no change in the text. Left for Axel: `refute`'s Finding dispositions send an unapproved script to the user.
 - 340 (2026-10-25, O60's look at landing, item 3 of `agents/briefs/O60.md`): the unknown-stage finding names the closest word of the hub's stages at any distance (`closestWord`, `src/lib/data/shapes/vocab-keys.ts:272`), as a collection entry's status finding does (`src/lib/data/snapshot/validate.ts:234`). Over the look's copy of the hub with `stages: { nascent: null }`, each of the 18 manifests at `nascent` reads 'stage "nascent" is not a word of the stages list; the closest word is failed', which points the reader at a stage that means the opposite. (a) both findings name the closest word only when it is within half the word's length in edits, rounded down, and otherwise end after 'is not a word of the stages list' (or of the statuses). Pros: no hint that misleads. Cons: a word mistyped beyond that distance gets no hint. (b) keep both as built. Pros: no change. Cons: the misleading hint on every word removed or far off. Recommended (a); (b) is the lazy option. Left for Axel: it changes the collection status finding too, which is outside O60's line, so it needs a step, and no step is scheduled without his word.
+- 342 (2026-10-25, O71's first run, case 11): a hub `manifest_fields:` row whose `from` names a list that `vocab.yml`, the registries or `projects` do not hold gets no finding, from `loadConfig`, the schema-file check or the build (`config/text/findings.yml:135-140` holds no such kind; `runSchemas` turns no problem of the manifest schema's context into a finding, `src/lib/data/snapshot/schema/run.ts:243-252`), so nothing tells the hub its row names no list. (a) a step that gives such a row a finding naming the hub's file and the row's `from`, with G128's text extended and its row in `manifest-fields.test.ts`. (b) leave it. Recommended (a); (b) is the lazy option. It is a new step and needs Axel's word.
+
+## Repair round 1
+
+The round's brief is `agents/briefs/O69-round1.md`, answering `agents/reviews/O69-refuter.md`. Its widening of the path list, used: `tests/state/shared/hub-words.test.ts` (items 1 and 2) and `tests/state/boards/board/hub-facets.test.ts` beyond its fixture (item 3). One file beyond both: `src/lib/state/boards/board/items.ts` (item 5).
+
+1. **G127's test checks `stageLabel`.** Done. `tests/state/shared/hub-words.test.ts`, the row that installs `lab` and `home` (now `:77`), gains, after its `chipLabel` lines (`:103-106`):
+
+   ```ts
+   expect(stageLabel('exploring')).toBe('Experimenting');
+   expect(stageLabel('exploring', 'lab')).toBe('Experimenting');
+   expect(stageLabel('exploring', 'home')).toBe('exploring');
+   expect(stageLabel('trialling')).toBe('Trialling');
+   ```
+
+   Case 17 needs its own install, so it is its own row of the same test (`:109-116`):
+
+   ```ts
+   it("labels a stage by its row of stages where the hub's chips list the same word", () => {
+       const lab = hubWith('chips: { exploring: { label: "a chip word", icon: red } }\n');
+       install([{ name: 'lab', dir: lab }], 'lab');
+       expect(chipLabel('exploring', 'lab')).toBe('a chip word');
+       expect(stageLabel('exploring', 'lab')).toBe('exploring');
+       expect(chipLabel('exploring')).toBe('a chip word');
+       expect(stageLabel('exploring')).toBe('exploring');
+   });
+   ```
+
+   The test's head comment gains the sentence "A stage reads by the label of its row of `stages` (`stageLabel`), also where a hub's `chips` list the same word." and is rewrapped at 100 columns. Run after the change (`npx vitest run tests/state/shared/hub-words.test.ts tests/state/boards/board/hub-facets.test.ts --reporter=verbose`):
+
+   ```
+   (passed) |unit| tests/state/shared/hub-words.test.ts > the words of each hub's records > draws each hub's cards in its own stage words and orders and labels the stage facet from the union 345ms
+   (passed) |unit| tests/state/shared/hub-words.test.ts > the words of each hub's records > labels a stage by its row of stages where the hub's chips list the same word 164ms
+   ```
+
+   On the unchanged tree these rows cannot pass: `stageLabel` does not exist there. Run in the base replica (below), both fail at the first `stageLabel` call: `TypeError: stageLabel is not a function` at `tests/state/shared/hub-words.test.ts:103:16` and `:113:16` (`Tests  2 failed | 2 passed (4)`).
+
+2. **The row's title.** Done. The row at `hub-words.test.ts:77` is now titled "draws each hub's cards in its own stage words and orders and labels the stage facet from the union"; it names no board buttons, which the step removes. Its assertions check the stage tones, `preset.stageOrder` (the stage facet's order) and the labels.
+
+3. **G92's test with a filter in force.** Done. `tests/state/boards/board/hub-facets.test.ts:55-79`, the row "counts that value over both hubs' projects another facet's value leaves": four projects, `one` (primary hub, `zonmw`), `two` (`look-hub2`, `zonmw`), `three` (`look-hub2`, `fwo`) and `four` (`look-hub2`, `fwo`, domain `other`); the first three at the shared domain `methods`. It calls `facets(items, PRESET, false, { filters: { funding: ['zonmw'] }, search: '' })` and asserts the domain values `[{ value: 'methods', label: 'methods', count: 2 }, { value: 'other', label: 'other', count: 0 }]` (the shared domain counted over one project of each hub, and `other` still listed at 0, so the values are the whole board's) and the funding values `[['fwo', 2], ['zonmw', 2]]` (the facet in force counted over the whole board, both values listed). The head comment (`:1-9`) gains the sentence on counts under another facet's value. After the change: `(passed) ... > counts that value over both hubs' projects another facet's value leaves 7ms`. On the base replica: fails at `tests/state/boards/board/hub-facets.test.ts:71:32` with domain counts `3` and `1` received where `2` and `0` are expected (`Tests  1 failed | 2 passed (3)`), since the base counts ignore the filters.
+
+4. **Comments rewrapped.** Done, words unchanged. Each named paragraph was rewritten whole at 100 columns. The new text of each paragraph was written by hand as an old/new pair and applied by an inline `python3` heredoc that asserted each old text occurs once and that the words of old and new are equal (ignoring the `*` and `//` comment marks); no file was left. The line widths after (`awk '{print NR, length}'`):
+   - `presets.ts:190-193`: 95, 98, 98, 21 (the last line ends the paragraph).
+   - `tones.ts:117-123`: 99, 98, 95, 96, 99, 99, 17.
+   - `facets.ts:1-4`: 100, 95, 98, 47.
+   - `facets.ts:130-136` (the doc comment of `facets`, which held `:137-138` before): 97, 100, 94, 96, 99, 99, 14.
+   - `filter-menu.ts:133-138`: 98, 98, 100, 99, 98, 55.
+   - `FilterBar.svelte:8-10`: 98, 100, 94.
+   Each line short of 100 ends where the next word would not fit, read line by line. The two test head comments changed in this round were wrapped the same way.
+
+5. **The reuse greps.** Each a grep of `src` and `tests` for the name and its key call, run from the worktree root after the last change:
+
+   `stageLabel` (`grep -rn "\bstageLabel\b" src tests`), name:
+   ```
+   src/lib/server/content/audit/projects.ts:196:                ...sentence('audit.msg_no_venue', rules.stageLabel(project.stage)),
+   src/lib/server/content/audit/publications.ts:254:    const published = [...rules.publicStages].map((one) => `"${rules.stageLabel(one)}"`).join(', ');
+   src/lib/server/content/audit/publications.ts:273:                ? sentence('audit.msg_site_negative', rules.stageLabel(stage), shown)
+   src/lib/server/content/audit/publications.ts:274:                : sentence('audit.msg_site_deadend', rules.stageLabel(stage), shown, published)),
+   src/lib/server/content/audit/rules.ts:46:    stageLabel: (stage: string) => string;
+   src/lib/server/content/audit/rules.ts:161:        stageLabel: stageLabelOf(config),
+   src/lib/state/shared/words/tones.ts:245:export function stageLabel(stage: string, hub?: string): string {
+   src/lib/state/boards/board/facets.ts:15:import { chipKeys, chipLabel, domainLabel, stageLabel } from '../../shared/words/tones.ts';
+   src/lib/state/boards/board/facets.ts:55:    if (facet === 'stage') return stageLabel(value);
+   ```
+   plus the test lines of item 1. Key call (`grep -rn "stageLabels" src tests`): only `tones.ts:68`, `:141`, `:246`. The audit's `stageLabelOf` (`rules.ts:127-133`) is server code under `src/lib/server/`, which client state cannot import, and reads the `stages` rows of the one config it is given, not each hub's words; none of the hits is a client function giving a stage's label by hub.
+
+   `byStage` (`grep -rn "\bbyStage\b" src tests`):
+   ```
+   src/lib/state/boards/board/items.ts:174:    const byStage = stageRank(left.project.stage, order) - stageRank(right.project.stage, order);
+   src/lib/state/boards/board/items.ts:175:    if (byStage !== 0) return byStage;
+   src/lib/data/shapes/catalog-files/vocab.ts:59:        const byStage = (row.stages ?? []).length > 0;
+   src/lib/data/shapes/catalog-files/vocab.ts:61:        return byStage !== byChip;
+   ```
+   The grep showed that the first build's `byStage` in `facets.ts` computed the same rank as the local `rank` of `compare` in `items.ts` (lines 170-180 at `add19ad5`, `git show add19ad5:src/lib/state/boards/board/items.ts`): `order.indexOf(stage)`, an unknown stage after every known one. Both now call one exported `stageRank` in `presets.ts:261`, beside `FACETS`:
+   ```ts
+   export function stageRank(stage: string | undefined, order: readonly string[]): number {
+       const at = stage === undefined ? -1 : order.indexOf(stage);
+       return at < 0 ? order.length : at;
+   }
+   ```
+   `facets.ts:89` sorts the stage values by it; `items.ts:174` keeps its local name `byStage` for the difference, as at the base. The `vocab.ts` hits are a boolean of another meaning. Key call (`grep -rn "order\.indexOf\|stageOrder\.indexOf" src`): `presets.ts:262` (the shared rank) and eight ranks over other things (`build.ts:188`, `notes.ts:188`, `literature/merge.ts:151` (sources), `files-view.ts:142`, `terminal-list.ts:162`, `Collection.svelte:282`, `:300`, `Controls.svelte:93`), none over stages. `grep -rn "\bstageRank\b" src tests`: `facets.ts:22`, `:89`, `items.ts:25`, `:174`, `presets.ts:261`.
+
+   `without` (`grep -rn "function without\|const without\|without = " src tests`): 45 lines; the ones named `without` exactly are `entries.ts:168` (a record without edit fields), `audit-mute.ts:37` (a list without one signature), `overrides.ts:100` (a record without one key, server code), `slides.ts:147`, `characters.ts:283` (ranges), `draft.ts:202` (a list without one index), `clangd.svelte.ts:28` (a record without one instance, a closure), `hits.ts:60` (search files), `SessionList.svelte:191`, `facets.ts:123` (mine), a parameter default `shell.svelte.ts:272`, and three test-local constants (`scm.test.ts:150`, `hooks-server.test.ts:552`, `write.test.ts:153`). Two have the same shape (a record less one key): `overrides.ts:100`, under `src/lib/server/`, which client state cannot import, and `clangd.svelte.ts:28`, a closure inside another function, which nothing can import. None of the hits is an exported client helper that drops a key from a record.
+
+   `offersMine` (`grep -rn "\boffersMine\b" src tests`):
+   ```
+   src/lib/state/boards/board/index.ts:60:    offersMine,
+   src/lib/state/boards/board/state.ts:102:export function offersMine(items: BoardItem[], named: boolean): boolean {
+   src/lib/state/boards/board/presets.ts:193:     * `offersMine`).
+   src/lib/views/boards/projects/Projects.svelte:81:        offersMine,
+   src/lib/views/boards/projects/Projects.svelte:119:    const mineShown = $derived(offersMine(items, named));
+   ```
+   Key call (`grep -rn "!item\.mine\|item\.mine)" src tests`): `state.ts:86` (the Mine only filter of `applyFilters`) and `state.ts:103` (`offersMine`); nothing else asks whether a project is one Mine only drops.
+
+   `InForce` (`grep -rn "\bInForce\b" src tests`):
+   ```
+   src/lib/state/boards/board/facets.ts:120:type InForce = { filters: Record<string, string[]>; search: string; quick?: QuickFilters };
+   src/lib/state/boards/board/facets.ts:142:    inForce?: InForce
+   ```
+   The grep finds no other type of the name; `filtersInForce` (`filter-menu.ts:160`) is a function that counts the values in force, not this shape.
+
+The base replica of items 1 and 3: built in the scratchpad from the worktree with every changed `src` and `config` file taken from `add19ad5` and the round's two test files kept as changed, then the two files run, then removed:
+
+```
+WT=<worktree>; R=<scratchpad>/o69-base; mkdir -p $R && cd $WT && rsync -a --exclude 'config/local.yml' src tests config utils package.json tsconfig.json vite.config.ts .npmrc $R/ && rsync -a .svelte-kit $R/ && ln -s $WT/node_modules $R/node_modules && for f in $(git diff --name-only -- src config tests | grep -v '^tests/'); do git show add19ad5:$f > $R/$f; done && rm $R/src/lib/views/boards/projects/FilterBar.svelte
+cd $R && npx vitest run tests/state/boards/board/hub-facets.test.ts
+cd $R && npx vitest run tests/state/shared/hub-words.test.ts
+rm -rf <scratchpad>/o69-base
+```
+
+`ls -d <scratchpad>/o69-base` after: `No such file or directory`. Outputs as quoted under items 1 and 3.
 
 ## The cases' first run (unchanged tree, before any change)
 
@@ -64,6 +175,8 @@ No case is one the brief's own rules get wrong. One wording difference, not a ru
 
 ## The cases after the change (final run, same command)
 
+Run again after the round's last change, with the case program's copy in `<scratchpad>/o69/` (`npx vitest list` listed only its one test first): the 18 `CASE` lines are identical to the ones below (`diff` of the two printed nothing).
+
 ```
 CASE 1: stage group: in preparation 4 | submitted / under review 6; bar stage chips: stageCounts absent; FACETS[0]=stage
 CASE 2: shown 4; stage group: in preparation 4 [x] | submitted / under review 6; funding group: zonmw 1 | fwo 0 | No funding 3
@@ -113,42 +226,73 @@ Per case, the result against the brief:
 
 | Item | State | Proof |
 |---|---|---|
-| 1 Stage facet first, labelled by `stageLabel`, no value for an empty stage, heading `board.facet_stage` | DONE | cases 1, 11, 12, 17 above |
+| 1 Stage facet first, labelled by `stageLabel`, no value for an empty stage, heading `board.facet_stage` | DONE | cases 1, 11, 12, 17 above; round item 1 |
 | 2 Stage chips, `toggleStage`, `hiddenStages`, `stageCounts`, `StageCount`, `board.stage_toggle_tip` removed | DONE | verify 4 grep below; case 5 |
-| 3 Counts over the other filters, by `facets` with an optional last argument; fixture gains `stageOrder: []` | DONE | cases 2, 3, 10, 14, 18; verify 2 |
+| 3 Counts over the other filters, by `facets` with an optional last argument; fixture gains `stageOrder: []` | DONE | cases 2, 3, 10, 14, 18; round item 3; verify 2 |
 | 4 Chips with remove control and Clear all; `filterChips` in `filter-menu.ts`; `Chip` `onremove`/`removeLabel` | DONE | cases 4, 6, 16; view read, look on landing |
 | 5 Mine only drawn and applied only where it changes the board (`offersMine` in `state.ts`) | DONE | cases 7, 14, 15 |
 | 6 Cards, List, Full titles in the header; `ModeSwitch.svelte` deleted; keys removed; glyph `full_titles` | DONE | verify 4 grep; view read, look on landing |
 | 7 Bar moved into `FilterBar.svelte`, files under limits | DONE | verify 5 |
 | 8 Words that state the bar made true | DONE | list under "Comments and documents" |
-| Verify 1 `npm run diagrams && npm run test:quick` | DONE | `test:quick: 47.6 s; every command passed` |
-| Verify 2 guarded tests, before and after | DONE | before and after: `Tests  84 passed (84)` |
+| Round 1 item 1 `stageLabel` in G127's test | DONE | "Repair round 1", item 1 |
+| Round 1 item 2 the row's title | DONE | "Repair round 1", item 2 |
+| Round 1 item 3 G92's row with a filter in force | DONE | "Repair round 1", item 3 |
+| Round 1 item 4 rewraps | DONE | "Repair round 1", item 4 (widths) |
+| Round 1 item 5 reuse greps quoted | DONE | "Repair round 1", item 5 |
+| Verify 1 `npm run diagrams && npm run test:quick` | DONE | `test:quick: 61.5 s; every command passed` |
+| Verify 2 guarded tests | DONE | `Test Files  3 passed (3)` / `Tests  89 passed (89)` |
 | Verify 3 unused exports against the base | DONE | no line added (below) |
 | Verify 4 the grep | DONE | prints only `graph.ts`'s own `stageCounts` |
 | Verify 5 line counts | DONE | below |
-| Verify 6 new or changed tests run before and after | DONE | the only changed test file is `hub-facets.test.ts` (fixture and head comment); 84 passed before and after |
+| Verify 6 new or changed tests run before and after | DONE | the round's extended row and two new rows fail on the base replica and pass after; "Repair round 1", items 1 and 3 |
 | Verify 7 prose read | DONE | below |
 
-Verify 1, the lines `npm run test:quick` printed (run once, after `npm run diagrams`, which exited 0):
+Verify 1, the lines `npm run test:quick` printed (run once in the round, after `npm run diagrams`, which exited 0, and after the round's last change to the tree):
 
 ```
-test:quick: 26 changed file(s), from git since HEAD
+test:quick: 30 changed file(s), from git since HEAD
 test:quick: 11 test file(s)
-ok      ASCII gate (0.8 s)
-ok      prettier (1.0 s): All matched files use Prettier code style!
-ok      svelte-kit sync (2.0 s)
-ok      eslint (20.6 s)
-ok      svelte-check (25.4 s): 1792896645043 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (32.8 s): Duration  24.82s (transform 21.07s, setup 0ms, import 41.74s, tests 6.91s, environment 2ms)
-ok      vitest checks (45.5 s): Duration  37.45s (transform 12.07s, setup 0ms, import 36.06s, tests 1.28s, environment 0ms)
-test:quick: 47.6 s; every command passed
+        tests/state/boards/board/hub-facets.test.ts: changed
+        tests/state/shared/hub-words.test.ts: changed
+        tests/checks/source/keys.test.ts: imports at depth 1
+        tests/data/hubs/workspace-projects.test.ts: imports at depth 1
+        tests/state/boards/board/board-rules.test.ts: imports at depth 1
+        tests/state/boards/board/items.test.ts: imports at depth 1
+        tests/state/boards/map-forces.test.ts: imports at depth 2
+        tests/state/sessions/terminal/moved-pane-screen.test.ts: imports at depth 2
+        tests/state/workbench/count-row.test.ts: imports at depth 2
+        tests/views/shared/forms/entry-add.test.ts: imports at depth 2
+        tests/views/sources/bar-actions.test.ts: imports at depth 2
+ok      prettier (2.8 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.9 s)
+ok      ASCII gate (3.0 s)
+ok      vitest (45.9 s): Duration  38.54s (transform 54.49s, setup 0ms, import 61.88s, tests 7.12s, environment 3ms)
+ok      eslint (56.0 s)
+ok      svelte-check (57.2 s): 1792898698430 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (58.5 s): Duration  50.93s (transform 15.61s, setup 0ms, import 49.40s, tests 1.37s, environment 0ms)
+test:quick: 61.5 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
 ```
 
-The 11 test files it chose: `hub-facets.test.ts` (changed), `keys.test.ts`, `workspace-projects.test.ts`, `board-rules.test.ts`, `items.test.ts`, `hub-words.test.ts` (imports at depth 1), `map-forces.test.ts`, `moved-pane-screen.test.ts`, `count-row.test.ts`, `entry-add.test.ts`, `bar-actions.test.ts` (depth 2). The last change to the tree was made before this run; only the scratch case program ran after it.
+`items.test.ts` (G124's board sort, which now calls `stageRank`) and `board-rules.test.ts` are among the 11 files and passed.
 
-Verify 2 after the change: `npx vitest run tests/state/boards/board/hub-facets.test.ts tests/state/boards/board/board-rules.test.ts` printed `Test Files  2 passed (2)` / `Tests  84 passed (84)`.
+Verify 2, after the change: `npx vitest run tests/state/shared/hub-words.test.ts tests/state/boards/board/hub-facets.test.ts tests/state/boards/board/board-rules.test.ts` printed `Test Files  3 passed (3)` / `Tests  89 passed (89)`. The verbose run of the first two files lists all seven rows passed (`Tests  7 passed (7)`).
 
-Verify 3: `sh utils/unused-exports.sh` diffed against `O69-base/unused-exports.txt` prints two changed lines and no added line. Line 126 lists the same names in another order (`facetValues` now re-exported from `state.ts`, so it is printed last). Line 284 loses `QuickFilters` (now read by `Projects.svelte`), `StageCount` (deleted) and `FilterGroup` (now read by `FilterBar.svelte`). The new exports `stageLabel`, `facetLabel`, `filterChips`, `InForceChip` and `offersMine` each have an importer outside their file.
+Verify 3: `sh utils/unused-exports.sh` diffed against `O69-base/unused-exports.txt` prints two changed lines and no added line:
+
+```
+126c126
+< src/lib/state/boards/board/index.ts: FACETS, NONE, venueText, facetValues, facetHeading, filtersInForce, valueLabel, emptyBoardState
+---
+> src/lib/state/boards/board/index.ts: FACETS, NONE, venueText, facetHeading, filtersInForce, valueLabel, emptyBoardState, facetValues
+284c284
+< src/lib/state/boards/board/index.ts: BoardColumn, Facet, FacetValue, LabelMode, QuickFilters, SessionsOf, StageCount, VenueCount, FilterChoice, FilterGroup, WaitingLine
+---
+> src/lib/state/boards/board/index.ts: BoardColumn, Facet, FacetValue, LabelMode, SessionsOf, VenueCount, FilterChoice, WaitingLine
+```
+
+Line 126 lists the same names in another order (`facetValues` is re-exported from `state.ts`, so it is printed last). Line 284 loses `QuickFilters` (read by `Projects.svelte`), `StageCount` (deleted) and `FilterGroup` (read by `FilterBar.svelte`). The new exports `stageLabel`, `facetLabel`, `filterChips`, `InForceChip`, `offersMine` and `stageRank` each have an importer outside their file.
 
 Verify 4: `grep -rn "hiddenStages\|stageCounts\|StageCount\|toggleStage\|stage_toggle_tip\|ModeSwitch\|view_cards_glyph\|view_list_glyph\|helper.short\|helper.full\|board.labels\|Aa toggle" src tests config docs --exclude=local.yml` prints:
 
@@ -160,16 +304,17 @@ src/lib/state/boards/structure/graph.ts:376:    const names = Object.keys(stageC
 
 The YAML keys `labels:`, `view:`, `view_cards_glyph:`, `view_list_glyph:`, `stage_toggle_tip:` (`projects.yml`) and `short:`, `full:` (`project.yml` `helper`) are removed (`git diff config/text`), and `keys.test.ts` passed inside verify 1.
 
-Verify 5, `wc -l` after the last change: `Projects.svelte` 466, `FilterBar.svelte` 114, `Chip.svelte` 248 (limit 520); `facets.ts` 197, `filter-menu.ts` 168, `state.ts` 170, `presets.ts` 409, `stats.ts` 149, `index.ts` 63, `tones.ts` 384 (limit 880). `src/lib/state/boards/board/` still holds ten files.
+Verify 5, `wc -l` after the last change: `Projects.svelte` 466, `FilterBar.svelte` 114, `Chip.svelte` 248 (limit 520); `facets.ts` 191, `filter-menu.ts` 168, `state.ts` 170, `presets.ts` 418, `items.ts` 234, `stats.ts` 149, `index.ts` 63, `tones.ts` 384 (limit 880). `ls src/lib/state/boards/board | wc -l` prints 10.
 
-ASCII: the spec's perl gate over every changed file and `FilterBar.svelte` printed nothing.
+ASCII: the spec's perl gate (`perl -ne 'print ... if /[^\x00-\x7F]/'`) over every changed file but the regenerated `.svg`, `FilterBar.svelte` and this report printed nothing.
 
 ## Test runs
 
-- `npm run test:quick` ran once, after `npm run diagrams`.
-- Whole-suite command, once: to find a way to run the case program from the scratchpad, I ran `npx vitest run --dir <scratchpad>/o69 --project unit`. The `unit` project's `include` is relative to the root, so it ran the tree's unit tests (its output shows the scratch-repository rebase tests of the suite) until I killed it after about three minutes; it reported no result. `git status --short` after it printed nothing, so it left no file in the worktree. Every later case run used the scratch config, checked first with `vitest list`, which listed only the scratch file.
-- Single files: `tests/checks/source/keys.test.ts`, `tests/checks/imports/cycles.test.ts`, `tests/checks/tree/boundaries.test.ts`, `tests/state/shared/hub-words.test.ts`, `tests/checks/config/config.test.ts`, `tests/data/sources/config/layers/catalogs.test.ts` in one run, where `cycles.test.ts` and `boundaries.test.ts` timed out at vitest's default 5 s (those checks run with `--testTimeout 0` under `npm run test:checks`); rerun alone with `--testTimeout 0`: `Test Files  2 passed (2)` / `Tests  18 passed (18)`. The four others passed in the first run.
-- `npx eslint` over the changed source files printed nothing; `npx svelte-check --tsconfig ./tsconfig.json --threshold error` printed `COMPLETED 4289 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run test:quick` ran twice in all: once in the first build and once in the round, each after `npm run diagrams` and after that pass's last change.
+- Whole-suite command, once, in the first build: to find a way to run the case program from the scratchpad, I ran `npx vitest run --dir <scratchpad>/o69 --project unit`. The `unit` project's `include` is relative to the root, so it ran the tree's unit tests (its output shows the scratch-repository rebase tests of the suite) until I killed it after about three minutes; it reported no result. `git status --short` after it printed nothing, so it left no file in the worktree. Every later case run used the scratch config, checked first with `vitest list`, which listed only the scratch file. No whole-suite command ran in the round.
+- First build, single files: `tests/checks/source/keys.test.ts`, `tests/checks/imports/cycles.test.ts`, `tests/checks/tree/boundaries.test.ts`, `tests/state/shared/hub-words.test.ts`, `tests/checks/config/config.test.ts`, `tests/data/sources/config/layers/catalogs.test.ts` in one run, where `cycles.test.ts` and `boundaries.test.ts` timed out at vitest's default 5 s (those checks run with `--testTimeout 0` under `npm run test:checks`); rerun alone with `--testTimeout 0`: `Test Files  2 passed (2)` / `Tests  18 passed (18)`. The four others passed in the first run.
+- First build: `npx eslint` over the changed source files printed nothing; `npx svelte-check --tsconfig ./tsconfig.json --threshold error` printed `COMPLETED 4289 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- Round: the four files covering the round's changes (`hub-words.test.ts`, `hub-facets.test.ts`, `board-rules.test.ts`, `items.test.ts`) in one run, all passed (91 tests); the two new-row files on the base replica (failures quoted under "Repair round 1"); the three named files of verify 2.
 
 ## Files changed (`git diff --numstat`, added and removed lines; `FilterBar.svelte` is new)
 
@@ -186,27 +331,30 @@ ASCII: the spec's perl gate over every changed file and `FilterBar.svelte` print
 | `docs/diagrams/layer-state.dot`, `.svg` | 1, 1 | 1, 1 | yes (regenerated) |
 | `docs/diagrams/layer-views.dot`, `.svg` | 5, 5 | 5, 5 | yes (regenerated) |
 | `docs/diagrams/layers.dot`, `.svg` | 2, 2 | 2, 2 | yes (regenerated) |
-| `src/lib/state/boards/board/facets.ts` | 68 | 45 | yes |
+| `src/lib/state/boards/board/facets.ts` | 62 | 45 | yes |
 | `src/lib/state/boards/board/filter-menu.ts` | 44 | 6 | yes |
 | `src/lib/state/boards/board/index.ts` | 13 | 5 | yes |
-| `src/lib/state/boards/board/presets.ts` | 6 | 15 | yes |
+| `src/lib/state/boards/board/items.ts` | 2 | 5 | no, see below |
+| `src/lib/state/boards/board/presets.ts` | 15 | 15 | yes |
 | `src/lib/state/boards/board/state.ts` | 55 | 11 | yes |
 | `src/lib/state/boards/board/stats.ts` | 3 | 30 | yes |
-| `src/lib/state/shared/words/tones.ts` | 18 | 5 | yes |
+| `src/lib/state/shared/words/tones.ts` | 21 | 8 | yes |
 | `src/lib/ui/controls/Chip.svelte` | 59 | 8 | yes |
 | `src/lib/views/boards/projects/Projects.svelte` | 78 | 109 | yes |
 | `src/lib/views/boards/projects/FilterBar.svelte` | 114 (new) | 0 | yes |
 | `src/lib/views/shared/card/ModeSwitch.svelte` | 0 | 29 (deleted) | yes |
-| `tests/state/boards/board/hub-facets.test.ts` | 6 | 5 | fixture line 38 yes; head comment lines 1-6 no, see below |
+| `tests/state/boards/board/hub-facets.test.ts` | 33 | 5 | fixture line 38 yes (brief); the row of round item 3 yes (round's widening); head comment no, see below |
+| `tests/state/shared/hub-words.test.ts` | 20 | 4 | yes (round's widening, items 1 and 2) |
 
-Outside the write list, each needed by the step:
+Outside the write list and the round's widening, each needed by the step or the round:
 
 - `config/catalogs/vocab.yml:213` (the head comment of `roles`): it said a board draws "a Mine only toggle", which item 5 makes false for a project board where the toggle would change nothing. It now adds "a project board draws the toggle only where one of its projects is one the toggle does not keep". O71 writes lines 4 and 183-190 of this file, so the lines are apart.
-- `tests/state/boards/board/hub-facets.test.ts:1-6` (head comment): it named `facetValues` in `facets.ts`; it now says `facets` counts "over the values state.ts's facetValues reads".
+- `tests/state/boards/board/hub-facets.test.ts:1-9` (head comment): it named `facetValues` in `facets.ts`; it now says `facets` counts "over the values state.ts's facetValues reads", and gains the sentence for the round's row.
+- `src/lib/state/boards/board/items.ts:25`, `:174` (G124's code, `compare`, the board's sort): its local `rank` was the same function as the first build's `byStage` in `facets.ts`; round item 5's reuse grep found it, and both now call `stageRank` (`presets.ts:261`). The sort is unchanged in what it computes (pinned first, then the stage's place in `order` with an unknown stage last, then the title); `items.test.ts` and `board-rules.test.ts` passed in verify 1 and in the round's file run.
 
 ## Judgment calls the brief left open (each reversible)
 
-1. `facetValues` lives in `state.ts`. Item 3 has `facets` (in `facets.ts`) call `applyFilters` (in `state.ts`), and `state.ts` imported `facetValues` from `facets.ts`; both at once is a runtime import cycle, which `tests/checks/imports/cycles.test.ts` refuses. With `facetValues` in `state.ts`, `facets.ts` imports `state.ts` and nothing imports back. `index.ts` re-exports it from `state.ts`, so the facade is unchanged. G92's Code line in `agents/guarded.md:288` ("`facets` and `facetValues` in `src/lib/state/boards/board/facets.ts`") is now wrong about `facetValues` and needs the orchestrator's edit; the other choice, `applyFilters` moved into `facets.ts`, would make its "`applyFilters` in state.ts" wrong instead.
+1. `facetValues` lives in `state.ts`. Item 3 has `facets` (in `facets.ts`) call `applyFilters` (in `state.ts`), and `state.ts` imported `facetValues` from `facets.ts`; both at once is a runtime import cycle, which `tests/checks/imports/cycles.test.ts` refuses. With `facetValues` in `state.ts`, `facets.ts` imports `state.ts` and nothing imports back. `index.ts` re-exports it from `state.ts`, so the facade is unchanged. G92's Code line in `agents/guarded.md:288` ("`facets` and `facetValues` in `src/lib/state/boards/board/facets.ts`") is wrong about `facetValues` and needs the orchestrator's edit; the other choice, `applyFilters` moved into `facets.ts`, would make its "`applyFilters` in state.ts" wrong instead.
 2. The label of a chip for a value the board does not offer is `facetLabel`'s, exported from `facets.ts` with its resource map made optional. It is the value itself where the config names nothing (`Stage: retired-stage`), the role's label for a role (case 16: `Role: Lead`), and through `valueLabel` the catalog word for the none values (`Year: No year`, not `Year: __none__`). Item 4's "the stored value itself" read literally would print the internal `__none__` and the role key, and case 16 asks for the role's label.
 3. The chip type is named `InForceChip`, since `src/lib/state/boards/collection.ts:490` has a local `FilterChip` type of another shape.
 4. The remove control is a native `<button>` inside `Chip.svelte` (a `ui/` primitive, as `TabFace.svelte`'s close button is), with the `dismiss` glyph, a `Tooltip` and `aria-label` from `removeLabel`; its box gives the 16 px icon back the room over the 11 px line as the chip's own glyph does, the accent on hover and on keyboard focus.
@@ -214,6 +362,7 @@ Outside the write list, each needed by the step:
 6. A press on Cards or List while that mode is in force writes nothing (`setMode` compares first). Full titles writes `labels: 'full'` or `'short'`.
 7. The counting reuses the result of every filter for a facet with no value picked, and runs `applyFilters` once more without that facet's values for each facet that has one.
 8. `facets` takes `{ filters, search, quick? }` as its last argument through a local type `InForce` (not exported).
+9. The stage values of the menu and the board's sort share one rank, `stageRank`, exported from `presets.ts` beside `FACETS` (both callers already import `presets.ts`, so no import is added across files that did not have one).
 
 ## Host- or user-visible changes, before and after (for the look on TEST)
 
@@ -227,23 +376,32 @@ Outside the write list, each needed by the step:
 
 ## Comments and documents
 
-Each changed sentence was read against `spec.md`'s prose rules: plain sentences, no history, comments rewrapped as paragraphs at 100 columns, and `HELP.md` as one line per bullet. Departure: `HELP.md:290` stays one long bullet, as it was, with the Mine only sentence rewritten in place; the five new bullets after it are short.
+Each changed sentence was read against `spec.md`'s prose rules: plain sentences, no history, comments rewrapped as paragraphs at 100 columns (the paragraphs the refutation named are rewrapped in round item 4), and `HELP.md` as one line per bullet. Departure: `HELP.md:290` stays one long bullet, as it was, with the Mine only sentence rewritten in place; the five new bullets after it are short.
 
-Rewritten: the head comment of `Projects.svelte`; the head comments of `facets.ts`, `state.ts`, `filter-menu.ts`, `stats.ts:1`, `Chip.svelte` (first paragraph and the toggle paragraph); the doc comments of `facets`, `facetLabel`, `applyFilters`, `BoardState.mine`, `QuickFilters`, `FACETS`, `installed` in `tones.ts`; `docs/HELP.md:290` and the bullets after it, `:523` (was 518); `vocab.yml:52`, `:213`; `config/defaults/layout.yml:226`; `config/options/layout.yml:236`; the head comment of `hub-facets.test.ts`.
+Rewritten: the head comment of `Projects.svelte`; the head comments of `facets.ts`, `state.ts`, `filter-menu.ts`, `stats.ts:1`, `Chip.svelte` (first paragraph and the toggle paragraph); the doc comments of `facets`, `facetLabel`, `applyFilters`, `BoardState.mine`, `QuickFilters`, `FACETS`, `installed` in `tones.ts`; `docs/HELP.md:290` and the bullets after it, `:523` (was 518); `vocab.yml:52`, `:213`; `config/defaults/layout.yml:226`; `config/options/layout.yml:236`; the head comments of `hub-facets.test.ts` and `hub-words.test.ts`.
 
-Still true, read after the change: the doc comments of `parseBoardState`, `emptyBoardState`, `isStale`, `filterGroups`, `valueLabel`, `facetHeading`, `filtersInForce`, `filterLabel`, `cardSections`, `orderValues`, `chipLabel`; `presets.ts`'s head comment; `tones.ts`'s head comment; `src/lib/state/client/selectors.svelte.ts:180` (a `self` is still needed for Mine only); `Pane.svelte:10-13`; `docs/apps.md` and `README.md` name no part of the bar (`grep -n -i "facet\|filter menu" docs/apps.md README.md` printed nothing).
+Still true, read after the change: the doc comments of `parseBoardState`, `emptyBoardState`, `isStale`, `filterGroups`, `valueLabel`, `facetHeading`, `filtersInForce`, `filterLabel`, `cardSections`, `orderValues`, `chipLabel`; `presets.ts`'s head comment; `tones.ts`'s head comment; the comment of `compare` in `items.ts` ("Pinned first, then the config's stage order, then the title."); `src/lib/state/client/selectors.svelte.ts:180` (a `self` is still needed for Mine only); `Pane.svelte:10-13`; `docs/apps.md` and `README.md` name no part of the bar (`grep -n -i "facet\|filter menu" docs/apps.md README.md` printed nothing).
 
-New sentences added: `stageLabel`, `byStage`, `InForce`, `without`, `filterChips`, `InForceChip`, `offersMine`, `facetValues`'s doc comment, the `Chip` props `onremove` and `removeLabel` and the `.remove` style comment, the `FilterBar.svelte` head comment, props and style comment, the `mineShown`, `offered`, `counted` and `setMode` comments in `Projects.svelte`.
+New sentences added: `stageLabel`, `stageRank`, `InForce`, `without`, `filterChips`, `InForceChip`, `offersMine`, `facetValues`'s doc comment, the comment on the stage order inside `facets`, the `Chip` props `onremove` and `removeLabel` and the `.remove` style comment, the `FilterBar.svelte` head comment, props and style comment, the `mineShown`, `offered`, `counted` and `setMode` comments in `Projects.svelte`, the sentences the round adds to the two test head comments.
 
-History-word grep over every added line and `FilterBar.svelte` (`git diff -U0 | grep '^+'` plus the new file, `grep -i "before\|used to\|no longer\|still\|always has been\|always had\|as before\|previously\|the step adds\|after this package lands\|O69\|O7[01]"`), three hits, none history: "is still the board saying what its one value is" (an existing sentence of `facets`'s doc comment, rewrapped; "still" means "even so"), "read before any filter" (`offersMine`, the order of reading), "as the glyph before the label is" (`Chip.svelte`, a position).
+History-word grep over every added line and `FilterBar.svelte` (`git diff -U0 | grep '^+'` plus the new file, `grep -i "before\|used to\|no longer\|still\|always has been\|always had\|as before\|previously\|the step adds\|after this package lands\|O69\|O7[01]"`), three hits, none history:
 
-Names grep after the change (`grep -rn -i "stage button\|stage toggle\|stage chip\|title length\|Short/Full\|Cards/List\|short or full" src tests config docs README.md --exclude=local.yml`, diagrams left out): the card's stage chip (`presets.ts:107`), the Map's stage chips (`graph.ts:7`, `Legend.svelte:11`), the Present slide's stage chips (`Project.svelte:2`) and `Projects.svelte:34` "a short or full title", each still true.
+```
++ * everything is still the board saying what its one value is, and the reader can read it. The role
++ * projects, read before any filter, is one Mine only does not keep. On any other board it would
++       back the room it takes over the 11 px line, as the glyph before the label is, and the accent
+```
+
+The first is an existing sentence of `facets`'s doc comment, rewrapped ("still" means "even so"); the second is `offersMine` (the order of reading); the third is `Chip.svelte` (a position).
+
+Names grep after the change (`grep -rn -i "stage button\|stage toggle\|stage chip\|title length\|Short/Full\|Cards/List\|short or full" src tests config docs README.md --exclude=local.yml --exclude-dir=diagrams`): the card's stage chip (`presets.ts:107`), the Map's stage chips (`graph.ts:7`, `Legend.svelte:11`, drawn by the Map's own bar, `src/lib/views/structure/map/Controls.svelte:9`), the Present slide's stage chips (`Project.svelte:2`) and `Projects.svelte:34` "a short or full title", each still true.
 
 ## Ids, keys and paths in flight
 
-- The facet key `stage`: one entry of `FACETS`, no other facet of that name; a saved `filters.stage` was dropped before and is read now (case 6).
+- The facet key `stage`: one entry of `FACETS`, no other facet of that name; a saved `filters.stage` was dropped at the base and is read now (case 6).
 - Text keys `board.facet_stage`, `board.filter_chip`, `board.filter_clear`, `board.filter_remove`, `board.full_titles`: each once in the `board` group of `projects.yml`, each read (`keys.test.ts` passed in verify 1). Glyph name `full_titles`: one row in each catalog.
 - The chips' each-key is facet and value joined by a newline; a value is in a facet's list once, since a pick toggles it.
+- The exported name `stageRank`: one definition (`presets.ts:261`), two callers (`facets.ts:89`, `items.ts:174`).
 - No asynchronous path is added.
 
 ## Wrong or impossible in the brief
@@ -257,9 +415,11 @@ Names grep after the change (`grep -rn -i "stage button\|stage toggle\|stage chi
 - The counts run `applyFilters` once per facet with a value picked, over every project of the board; with 13 facets the cost is at most 14 passes over the board's projects per state change. Not measured.
 - The remove control's look at the terminal themes (the chip's bracket rule draws `[` and `]` around the whole chip, the x inside) is for the look.
 - Item 3's counting uses the search, stale, deadline and Mine only only as the view hands them; the view hands Mine only as `mineShown && held.mine`.
-- No test was added; the brief asks for none, and no entry of `agents/guarded.md` covers `filterChips`, `offersMine` or `stageLabel`.
+- Tests: the round extends one row and adds one under G127 (`hub-words.test.ts`) and adds one under G92 (`hub-facets.test.ts`). No entry of `agents/guarded.md` covers `filterChips` or `offersMine`, so neither has a test; their behaviour is shown by cases 4, 6, 7, 14, 15 and 16 of the case program.
 
-## The case-run program (scratchpad, deleted after this report)
+## The case-run program of the first build (scratchpad)
+
+The folder `<scratchpad>/o69/` holds now the reviewer's copy of these two files (refutation line 83); I leave it. The round ran it once, read only, after its last change ("The cases after the change"); the round's rows are tests in the tree.
 
 `<scratchpad>/o69/vitest.config.mts`:
 

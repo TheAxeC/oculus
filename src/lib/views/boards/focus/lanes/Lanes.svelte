@@ -190,7 +190,7 @@
         style={`--tone: var(--c-${one.tone})`}
         data-surface
     >
-        <LaneHead label={one.label} count={held.length} tone={one.tone} />
+        <LaneHead label={one.label} glyph={one.icon} count={held.length} tone={one.tone} />
         <p class="lane-sub">{one.sub}</p>
         <div
             class="lane-body"

@@ -89,7 +89,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
 
-# The career file, drawn by Focus's Career strategy banner.
+# The career file, drawn by Focus's Career banner.
 # career_file: .oculus/data/academic/career.yml
 
 # The photo wall's folder, inside the hub.
@@ -1411,11 +1411,11 @@ entries:
 
 ### .oculus/data/academic/career.yml
 
-One record of sections, drawn by Focus's Career strategy banner: the title, the goal, the next milestone with its day and the days left to it, the situation and the order of work.
+One record of sections, drawn by Focus's Career banner: the goal, the next milestone with its day and the days left to it, the situation and the order of work.
 
 ```yaml
 schema:
-  - { field: title, type: text, help: "Banner title." }
+  - { field: title, type: text, help: "The title of the career file's editor page." }
   - { field: goal, type: text, help: "The position the plan works toward." }
   - { field: milestone, type: text, help: "The next milestone." }
   - { field: milestone_date, type: date, help: "The day of the next milestone." }

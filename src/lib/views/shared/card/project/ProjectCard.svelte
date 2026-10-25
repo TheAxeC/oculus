@@ -1,6 +1,10 @@
 <script lang="ts">
-    // Layer 3, shared view. The project-card frame, header and status chips live here because card
-    // framing changes independently of its documents, links, sessions and expanded details.
+    // Layer 3, shared view. The project-card frame and header live here because card framing
+    // changes independently of its facts, documents, links, sessions and expanded details. The row
+    // of facts under the folder line (the Lead badge, the Focus lane, the form and chips, the code
+    // status, reproduced and the compute resources, each with its glyph and a hover title naming
+    // its kind) is CardFacts.svelte; the venue is the line Venue among the cross-links
+    // (CardLinks.svelte).
     //
     // The card's controls are views/shared/card/CardActions.svelte, shown under the pointer and
     // kept on one line; the project's folder is offered three times among them, shown in the file
@@ -18,9 +22,9 @@
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
     // project read from a repository. The project view passes `deposit` for every project, a
-    // project read from a repository included. The folder and the venue are names and stay words.
-    // The team is the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names
-    // the person the workspace setting `self` names carries the Lead badge.
+    // project read from a repository included. The folder is a name and stays words. The team is
+    // the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names the person
+    // the workspace setting `self` names carries the Lead badge.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -31,17 +35,15 @@
     import RootChip from '../RootChip.svelte';
     import CardAddresses from './CardAddresses.svelte';
     import CardLinks from './CardLinks.svelte';
+    import CardFacts from './CardFacts.svelte';
     import CardSessions from './CardSessions.svelte';
-    import CardStatus from './CardStatus.svelte';
     import CommandBar from '../../sessions/CommandBar.svelte';
     import Followups from '../../forms/dated/Followups.svelte';
     import Subtasks from '../../forms/dated/Subtasks.svelte';
-    import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
+    import { deadline, deckOf, openWorkbench } from '../card';
     import { placeOf, rootOf } from '$lib/state/shared/page/hubs';
     import { isStale, newestDocDate, waitingLine, type BoardItem } from '$lib/state/boards/board';
-    import { projectLane } from '$lib/state/boards/focus';
     import { contextText } from '$lib/state/boards/project-context';
-    import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
     import { chipGlyphName, chipLabel, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -115,14 +117,9 @@
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
-    /** The words of the project's own hub, which its stage, chips and lane are read in. */
+    /** The words of the project's own hub, which its deadline and waiting line are read in. */
     const words = $derived(vocabOf(rootOf(item.project)));
     const due = $derived(deadline(item.project, now, t, words));
-    /**
-     * The Focus board lane the project sits on, among its own hub's lanes, drawn as a tag before
-     * its status chips.
-     */
-    const lane = $derived(projectLane(item.project, vocabOf));
     const wait = $derived(
         snapshot === null
             ? null
@@ -380,25 +377,7 @@
 
         <div class="folder">{item.project.workspaceFolder?.root ?? item.project.folder}</div>
         <div class="row">
-            {#if item.lead}
-                <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} />
-            {/if}
-            {#if lane}
-                <Tag label={lane.label} />
-            {/if}
-            <CardStatus {item} />
-            {#if item.code !== ''}
-                <Tag label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />
-            {/if}
-            {#if item.reproduced}
-                <Tag label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
-            {/if}
-            {#each item.compute as resource (resource.id)}
-                <Tag label={resource.label} glyph={resourceGlyph(resource.kind)} />
-            {/each}
-            {#if item.venue}
-                <span class="venue">{item.venue.text}</span>
-            {/if}
+            <CardFacts {item} />
         </div>
         {#if wait !== null}
             <p class="waiting {wait.kind}">{wait.text}</p>
@@ -472,14 +451,6 @@
         gap: 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-top: 6px;
-    }
-
-    .venue {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
     }
 
     .commands {

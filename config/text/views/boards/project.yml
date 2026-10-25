@@ -36,6 +36,7 @@ text:
             subtasks: Subtasks
             unsnooze: un-snooze
         card:
+            chip_tip: 'Status: {0}'
             clipboard_blocked: clipboard blocked
             clone: Clone
             clone_glyph: clone
@@ -44,7 +45,9 @@ text:
             cloned_in: 'Cloned in {0}'
             cloned_in_tip: 'The repository of this project is cloned in {0}'
             code_glyph: published
+            code_tip: 'Code: {0}'
             collapse_glyph: collapse
+            compute_tip: 'Compute: {0}'
             copied: Copied
             copy_failed: copy failed
             dataset_glyph: data
@@ -67,10 +70,13 @@ text:
             files_title: Files
             folder_failed: 'The folder could not be shown in Finder: {0}'
             folder_failed_linux: 'The file manager could not open the folder: {0}'
+            form_tip: 'Form: {0}'
             funding_glyph: funding
             hpc_glyph: hpc
             ideas: Ideas / avenues
+            lane_tip: 'Focus lane: {0}'
             latest: Latest
+            lead_tip: 'Role: {0}'
             machine_glyph: host
             more_actions: More
             more_glyph: disclosure
@@ -90,6 +96,7 @@ text:
             related: related
             related_glyph: code
             repro_glyph: check
+            repro_tip: Reproduced
             reproduced: Reproduced
             show_less: Show less
             show_more: Show more
@@ -102,6 +109,7 @@ text:
             stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
             toggle_tip: Expand / Collapse
             unpin: Unpin
+            venue: Venue
         doc_failed: 'the document was not read: {0}'
         doc_loading: loading the document ...
         documents: Documents
