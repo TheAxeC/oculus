@@ -645,7 +645,6 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 #   chips: []           # from the chips list, such as blocked, parked, numbers-to-run, results-in;
                         # blocked and parked put the card on the Blocked and Backburner lanes
 #   line: ""            # one short line
-# priority: high        # high, med or low
 # pin: true             # keep the card at the top of its board
 # venue: ""             # a venue's id from the venues registry
 # links: []

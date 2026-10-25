@@ -1,5 +1,5 @@
-// Layer 2, client state. Focus lanes, priorities, flames and waiting arithmetic live here because
-// changes to the board do not change deadline ticker calculations.
+// Layer 2, client state. Focus lanes and waiting arithmetic live here because changes to the board
+// do not change deadline ticker calculations.
 //
 // No words live here. An item carries what it is (`kind`), the glyph it is drawn with and the
 // number of days, and the view turns that into a sentence through the text catalogs; a colour is a
@@ -67,13 +67,6 @@ export type Lane = {
     cluster: string;
     stages: string[];
     chips: string[];
-};
-
-/** One priority level of `priority_levels`: its manifest value, its words and its flame count. */
-export type Priority = {
-    key: string;
-    label: string;
-    flames: number;
 };
 
 /** A label with a count, and the registry id when the tally names one venue. */
@@ -180,36 +173,6 @@ const lanesShape = rowsShape(laneShape);
 /** The lanes of `focus_lanes`, in the config's order, each hue already a tone. */
 export function lanes(config: Record<string, unknown>): Lane[] {
     return readAs(lanesShape, config.focus_lanes) ?? [];
-}
-
-/** One row of `priority_levels`: a map with a key; its label is the key when it names none. */
-const priorityShape = z
-    .object({
-        key: wordShape.refine((key) => key !== ''),
-        label: wordShape,
-        flames: z.number().catch(0)
-    })
-    .transform((row): Priority => ({
-        key: row.key,
-        label: row.label === '' ? row.key : row.label,
-        flames: row.flames
-    }));
-
-const prioritiesShape = rowsShape(priorityShape);
-
-/** The priority levels of `priority_levels`, in the config's order. */
-export function priorities(config: Record<string, unknown>): Priority[] {
-    return readAs(prioritiesShape, config.priority_levels) ?? [];
-}
-
-/** How many flames a project's `priority:` draws, and none for a project carrying no priority. */
-export function flamesOf(
-    project: Pick<Project, 'priority'>,
-    config: Record<string, unknown>
-): number {
-    const held = project.priority;
-    if (held === undefined) return 0;
-    return priorities(config).find((level) => level.key === held)?.flames ?? 0;
 }
 
 /** A project sorts inside its lane by its deadline, and by its title when it has none. */
@@ -548,18 +511,6 @@ export function liveProjects(
  */
 export function focusWords(config: Record<string, unknown>, key: string): string[] {
     return strings(focusBlock(config)[key]).map((word) => word.trim().toLowerCase());
-}
-
-/**
- * The next priority in the cycle: unset, then every level of `priority_levels` from the fewest
- * flames to the most, then unset again, so one click on an unset card asks for the least. A value
- * the levels do not hold starts the cycle over.
- */
-export function nextPriority(levels: Priority[], current: string | undefined): string {
-    const climbing = [...levels].sort((a, b) => a.flames - b.flames);
-    const cycle = ['', ...climbing.map((level) => level.key)];
-    const at = cycle.indexOf(current ?? '');
-    return cycle[(at < 0 ? 0 : at + 1) % cycle.length];
 }
 
 /** The lanes of one cluster, in the board's order. */

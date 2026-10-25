@@ -2,11 +2,11 @@
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
     // the cards on them, and the Idea lane under them, drawn full width. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
-    // deadline, what it waits on, its flames and its move menu. Which lane a card sits on, which
-    // marks it draws there and what a move writes are state/boards/focus.ts's projectLane,
-    // laneMarks and hubMoveOnto, so a drop and the menu write the same fields. The board's lanes
-    // are the lanes of every hub of the workspace; a card sits on, and moves to, the lane of its
-    // own hub's lanes with the same key, read under its own hub's words.
+    // deadline, what it waits on and its move menu. Which lane a card sits on, which marks it draws
+    // there and what a move writes are state/boards/focus.ts's projectLane, laneMarks and
+    // hubMoveOnto, so a drop and the menu write the same fields. The board's lanes are the lanes of
+    // every hub of the workspace; a card sits on, and moves to, the lane of its own hub's lanes
+    // with the same key, read under its own hub's words.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -26,7 +26,6 @@
     import {
         CLUSTERS,
         IDEA,
-        flamesOf,
         focusLabel,
         laneItems,
         laneMarks,
@@ -35,10 +34,8 @@
         lanesIn,
         hubMovable,
         hubMoveOnto,
-        nextPriority,
         pausesCountdown,
         portfolioProjects,
-        priorities,
         projectLane,
         type Id,
         type Lane,
@@ -72,7 +69,6 @@
     const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(vocabOf()));
     const items = $derived(laneItems(projects, board, config, vocabOf));
-    const levels = $derived(priorities(config));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
     let over = $state<string | null>(null);
@@ -121,26 +117,14 @@
     }
 
     /**
-     * The menu a card carries: every lane the card may move to (`hubMovable`), then every priority,
-     * with the lane it sits on and the priority in force marked.
+     * The menu a card carries: every lane the card may move to (`hubMovable`), each by its key,
+     * with the lane it sits on marked.
      */
     function menuFor(project: Project): MenuItem[] {
         const held = projectLane(project, vocabOf)?.key ?? '';
-        return [
-            ...board
-                .filter((lane) => hubMovable(project, lane, vocabOf))
-                .map((lane) => ({
-                    id: `lane:${lane.key}`,
-                    label: lane.label,
-                    active: lane.key === held
-                })),
-            ...levels.map((level) => ({
-                id: `prio:${level.key}`,
-                label: level.label,
-                active: level.key === project.priority
-            })),
-            { id: 'prio:', label: t('focus.priority_none'), active: project.priority === undefined }
-        ];
+        return board
+            .filter((lane) => hubMovable(project, lane, vocabOf))
+            .map((lane) => ({ id: lane.key, label: lane.label, active: lane.key === held }));
     }
 
     /** Say what one write answered, on the board's one outcome line. */
@@ -148,14 +132,9 @@
         onsaid(answerWords(answer));
     }
 
-    /** Picking a lane moves the card onto it (`move`); picking a priority writes `priority:`. */
-    async function choose(project: Project, choice: string): Promise<void> {
-        const value = choice.slice(choice.indexOf(':') + 1);
-        if (!choice.startsWith('lane:')) {
-            said(await writeManifest(project.id, { priority: value }));
-            return;
-        }
-        const lane = board.find((one) => one.key === value);
+    /** Picking a lane of the menu, named by its key, moves the card onto it (`move`). */
+    async function choose(project: Project, key: string): Promise<void> {
+        const lane = board.find((one) => one.key === key);
         if (lane !== undefined) await move(project, lane);
     }
 
@@ -168,18 +147,6 @@
         const fields = hubMoveOnto(project, lane, vocabOf);
         if (fields === null) return;
         said(await writeManifest(project.id, fields));
-    }
-
-    /** Write the next priority of the cycle, which state/boards/focus.ts's nextPriority gives. */
-    async function cyclePriority(project: Project): Promise<void> {
-        said(await writeManifest(project.id, { priority: nextPriority(levels, project.priority) }));
-    }
-
-    /**
-     * How many flames a card draws: none means one, faint, so the badge can be clicked to set one.
-     */
-    function flames(project: Project): number {
-        return Math.max(flamesOf(project, config), 1);
     }
 
     function started(project: Project, event: DragEvent): void {
@@ -241,11 +208,8 @@
                     current={cursor === project.id}
                     due={deadline(project)}
                     wait={waitLine(project)}
-                    flames={flames(project)}
-                    unset={flamesOf(project, config) === 0}
                     items={menuFor(project)}
                     onpick={(id: string) => void choose(project, id)}
-                    oncycle={() => void cyclePriority(project)}
                     onopen={() => onproject(project.id)}
                     ondragstart={(event: DragEvent) => started(project, event)}
                     ondragend={ended}

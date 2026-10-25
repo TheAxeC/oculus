@@ -219,7 +219,6 @@ describe("oculus's own config directory", () => {
             'statuses',
             'lead_statuses',
             'focus_lanes',
-            'priority_levels',
             'fund_stages',
             'focus_lane_tones',
             'tiers',

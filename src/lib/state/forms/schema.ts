@@ -353,7 +353,6 @@ export function fieldValues(
         tags: project.tags,
         'status.chips': project.chips,
         'status.line': project.statusLine,
-        priority: project.priority,
         'waiting-on': project.waitingOn.map((one) => (waitedOn(one) ? keyOf(one) : one)),
         snooze: project.snooze,
         subtasks: openSubtasks(project),

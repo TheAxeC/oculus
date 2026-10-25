@@ -86,7 +86,6 @@ text:
             word_teaching: teaching
         days_ago: '{0}d ago'
         empty_glyph: circle_empty
-        fire_glyph: fire
         fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding
@@ -101,12 +100,10 @@ text:
         none: '- none -'
         now_glyph: now
         order_of_work: Order of work
-        priority_none: No priority
         qa_cancel: Cancel
         qa_project: Project
         qa_save: Save
         quick_add: 'Quick add:'
-        set_priority: set priority
         tasks:
             grp_followups_label: Follow-ups
             grp_subtasks_label: Subtasks

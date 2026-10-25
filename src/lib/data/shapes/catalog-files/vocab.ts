@@ -1,9 +1,9 @@
-// Layer 1, data. The whole-file shape of config/catalogs/vocab.yml, the controlled vocabularies
-// the boards and the schemas draw from, with a description on every key at every level. The
+// Layer 1, data. The whole-file shape of config/catalogs/vocab.yml, the controlled vocabularies the
+// boards and the schemas draw from, with a description on every key at every level. The
 // descriptions say what the file's head comments and readers say each key holds. A hub sets every
-// key but `priority_levels` in its `.oculus/config.yml`, laid over oculus's value by the key's
-// shape (merge/in-place.ts), and the merged value is checked by this shape; the lead key
-// `leads_fit` is a hub's alone, since oculus ships none.
+// key in its `.oculus/config.yml`, laid over oculus's value by the key's shape (merge/in-place.ts),
+// and the merged value is checked by this shape; the lead key `leads_fit` is a hub's alone, since
+// oculus ships none.
 
 import { z } from 'zod';
 import { colour, flag, text, textMap } from './common.ts';
@@ -15,7 +15,6 @@ const keyed = z.strictObject({
     icon: text.optional().describe('The glyph name the row is drawn with, a key of glyphs.yml.'),
     color: colour.optional().describe('The colour the row is drawn in, a hex the palette maps.'),
     glyph: text.optional().describe('The glyph name the row is drawn with, a key of glyphs.yml.'),
-    flames: z.number().optional().describe("The number of flames a priority's badge draws."),
     assignable: z
         .boolean()
         .optional()
@@ -306,10 +305,6 @@ export const vocabFileShape = z.strictObject({
         .describe(
             'The lanes of the Focus board, in their order, each with its words, colour and cluster and the stages or the chips that put a project on it.'
         ),
-    priority_levels: z
-        .array(keyed)
-        .optional()
-        .describe('The priorities a card may carry, each with the flames of its count badge.'),
     fund_stages: z
         .array(fundStage)
         .optional()

@@ -12,12 +12,11 @@
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.tiers, vocab.stages, vocab.forms, vocab.chips, vocab.priority_levels), or
-# `vocab.<key>.<field>` for the keys of a map whose row carries that field as true
-# (vocab.statuses.acknowledged, the funding statuses a manuscript acknowledges). A list of sources
-# offers their keys together (`waiting-on` takes people and projects). Each value of a `from` field
-# is a link in the YAML editor: it opens the entry it names, lists the other files that name it and
-# renames it everywhere.
+# `vocab.<key>` (vocab.tiers, vocab.stages, vocab.forms, vocab.chips), or `vocab.<key>.<field>` for
+# the keys of a map whose row carries that field as true (vocab.statuses.acknowledged, the funding
+# statuses a manuscript acknowledges). A list of sources offers their keys together (`waiting-on`
+# takes people and projects). Each value of a `from` field is a link in the YAML editor: it opens
+# the entry it names, lists the other files that name it and renames it everywhere.
 # `options:` is a literal list, and a select takes both. Every field has a `help:` line: the form
 # shows it and the YAML editor shows it on hover. oculus turns this file into the JSON Schema
 # of every project.yml, so a key not named here is marked in the editor and is a finding.
@@ -39,7 +38,6 @@ manifest_schema:
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
     "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
-    priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
     venue:         { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
     links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }

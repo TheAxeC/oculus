@@ -154,7 +154,6 @@ glyphs:
   orange_square: "[o]"
   cross_box: "[-]"
   trash: "[d]"
-  fire: "^"     # per-card priority badge (repeated by flame count)
   checkbox_on: "[x]"
   checkbox_off: "[ ]"
   email: "[m]"

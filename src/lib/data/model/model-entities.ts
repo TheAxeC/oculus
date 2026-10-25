@@ -353,11 +353,6 @@ export type Project = Rooted & {
     staleDays?: number;
     chips: Chip[];
     statusLine?: string;
-    /**
-     * The flame badge of the Focus card: `high`, `med` or `low`, the `priority_levels` of
-     * vocab.yml.
-     */
-    priority?: string;
     eli5?: string;
     next?: string;
     latest?: string;

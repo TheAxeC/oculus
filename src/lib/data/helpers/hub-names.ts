@@ -364,8 +364,8 @@ export function offerAlong(
  * the cluster its jobs run on, the files its writing rules skip or let draw arrows, the conventions
  * its audit holds its projects to (`audit:`: the files and sections it requires, the folders a
  * stage keeps a project in and its website's feed), the values its apps' settings hold, the counts
- * its tabs draw, its vocabulary (every list of vocab.yml but `priority_levels`) and the fields it
- * adds to the project form. Its domains and theme words are its own registry files'.
+ * its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the project
+ * form. Its domains and theme words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },

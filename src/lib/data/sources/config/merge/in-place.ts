@@ -39,8 +39,8 @@ const MAP: InPlace = { kind: 'map' };
 const WHOLE: InPlace = { kind: 'whole' };
 
 /**
- * The keys of config/catalogs/vocab.yml a hub's settings file sets, each with its shape.
- * `priority_levels` is not among them, and `leads_fit`, which oculus ships none of, is a map.
+ * The keys of config/catalogs/vocab.yml a hub's settings file sets, every key of the file, each
+ * with its shape. `leads_fit`, which oculus ships none of, is a map.
  */
 export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     palette: MAP,

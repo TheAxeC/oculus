@@ -153,3 +153,16 @@ none
 - What the project form's select draws for a hub row whose `from` names no list: not run; it belongs to open item 342.
 
 Reviewer usage: a9d96075314610db6, claude-opus-5-5, 221201 tokens, 61 tool uses, 13 min 13 s.
+
+## Closed
+
+No repair round was sent: every finding is small and inside the brief, or a record.
+
+- Proof 1 (no failing line quoted for the changed tests of `normalise.test.ts` and `config-folder.test.ts`): closed by reading, as the refutation judges; both rows fail on the base by reading and pass after in the reviewer's seven-file run. Recorded in the booking.
+- Proof 2 (judgment call 2's grep on the base prints four lines of `Lanes.svelte`): closed; every base hit is in the reader the step rewrites, so the bare-key ids have no other reader. Recorded in the booking.
+- Standards 1 (`Lanes.svelte:120` at 101 columns): fixed at landing, the comment rewrapped.
+- Standards 2 (`vocab.ts:1-6` not rewrapped whole): fixed at landing, the paragraph rewrapped at 100 columns.
+- Standards 3 (the bare-key menu id's empty, duplicated and colliding cases unstated): closed by the refutation's reading, stated in the booking: an empty key never reaches the menu, and two rows of one key give two items of one id as at the base.
+- Standards 4 (`docs/HELP.md:517` and G126): fixed at landing, the Doc text applied and G126's sentence rewritten in `agents/guarded.md`.
+- Standards 5 (`parity.md:12`): fixed at landing, the row struck.
+- Behaviour 1 (a `flames:` field on a `venue_tiers` or `radar_buckets` row is now a config finding): stated in the booking with its before and after.

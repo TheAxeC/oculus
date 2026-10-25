@@ -168,7 +168,6 @@ project.yml:
   stage: vocab stages
   form: vocab forms
   status.chips: [vocab chips]
-  priority: vocab priority_levels
 people:
   affiliations: [organisations key]
 funding:

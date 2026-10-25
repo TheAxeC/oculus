@@ -255,7 +255,6 @@ function project(
         pin: manifest.pin === true ? true : undefined,
         chips: strings(status.chips),
         statusLine: str(status.line),
-        priority: str(manifest.priority),
         eli5: str(manifest.eli5),
         next: str(manifest.next),
         latest: str(manifest.latest),

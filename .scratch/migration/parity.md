@@ -9,7 +9,7 @@ Read from the cockpit's built page on 127.0.0.1:8787 and the oculus page on 8790
 - No "Needs attention" group (the inbox count) and no "Refresh live data" group (the lit watch, inbox and scout run dates) and no position-lead deadlines: the feed files are not read. A feed summary (counts and dates) is small and belongs here; the feed views themselves stay in O25.
 - No quick add ("+ follow-up", "+ deadline" on a chosen project).
 - The lede is the cockpit's subtitle (`working_now_sub`) drawn as the first line with its leading dash; the cockpit draws it under the lanes' cluster header as a subtitle.
-- The priority flame is drawn only when set; the cockpit draws it always, faint when unset, and a click cycles it (unset, low, med, high). oculus has a menu instead.
+- ~~The priority flame is drawn only when set; the cockpit draws it always, faint when unset, and a click cycles it (unset, low, med, high). oculus has a menu instead.~~ (O71 removed the priority field and its flame.)
 - No drag of a card onto a lane; oculus has a menu. The cockpit has both a drop target per lane and the ideas grid as a drop target.
 - The band's cards carry no note line (the cockpit draws the entry's first sentence under the title) and no date badge glyph.
 - No career panel (moved to O22b; it belongs on this board as the collapsed panel at the foot, with the host status buttons `awaiting`, `warm`, `candidate`, `drafted`, `dropped`).
