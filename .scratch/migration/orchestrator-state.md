@@ -25,8 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O69
-  brief_check: "running: a22fb5ba62b399f71"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O69-brief-check.md (a22fb5ba62b399f71, claude-opus-5-5, 208122 tokens, 56 tool uses, 8 min 58 s)
+  base: add19ad5
+  worktree: .agents/worktrees/migration-O69
+  executor: agent
+  worker: claude:opus
+  session_id: ab7c1c30c97cc10a2 (claude-opus-5-5)
+  launched: 2026-10-25
+  report: .scratch/migration/agents/reviews/O69-report.md
+  round: 0
+  shared_paths: "config/catalogs/icons.yml and glyphs.yml with O70 (rows after idea) and O71 (the fire rows), this step's rows after list; config/text/views/boards/project.yml with O70 (project.card keys), this step the helper keys; presets.ts with O70 (lines 97-101), this step the board types and FACETS; docs/HELP.md with O70 (line 287) and O71 (line 517, applied at landing), this step lines 290 and 518; config/catalogs/vocab.yml with O70 (168-180) and O71 (4, 183-190), this step line 52. Each pair of hunks is separated by unchanged lines, so each merge is simple; docs/diagrams is regenerated at each landing"
+  landing: not-started
 - step: O70
   brief_check: "running: a702302861796c9d4"
   landing: preparing

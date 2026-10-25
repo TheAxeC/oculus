@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- O69 (the bar of a project board reworked, ruling 320). /spec: brief written, brief check running. Next: close its findings, the preparation commit, the builder.
-- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). /spec: brief written, brief check running; shares `icons.yml`, `glyphs.yml`, `presets.ts` and `docs/HELP.md` with O69 at separate lines. Next: as O69.
-- O71 (the priority removed, ruling 329). /spec: brief written, brief check running; shares `vocab.yml`, the options' `vocab.yml`, `focus.yml`, `vocab.ts`, `focus.ts`, `Lanes.svelte` and the glyph catalogs with O69 and O70 at separate lines, and hands its `docs/HELP.md:517` sentence to the landing. Next: as O69.
+- O69 (the bar of a project board reworked, ruling 320). Builder running in its worktree since 2026-10-25, base add19ad5. Next: its report, the review, the landing.
+- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). /spec: brief written, brief check done, findings being closed; shares `icons.yml`, `glyphs.yml`, `presets.ts` and `docs/HELP.md` with O69 at separate lines. Next: the preparation commit and the builder.
+- O71 (the priority removed, ruling 329). /spec: brief written, brief check done, findings being closed; shares `vocab.yml`, the options' `vocab.yml`, `focus.yml`, `vocab.ts`, `focus.ts`, `Lanes.svelte` and the glyph catalogs with O69 and O70 at separate lines, and hands its `docs/HELP.md:517` sentence to the landing. Next: the preparation commit and the builder.
 
 Queued, in order:
 - none.
