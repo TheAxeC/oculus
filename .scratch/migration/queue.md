@@ -1,12 +1,11 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (4 of 6 slots in use):
+- O72 (the closest-word hint within half the word's length; ruling 340), built, under review.
+- O73 (a finding for a `manifest_fields:` row whose `from` names no list; ruling 342), built, under review.
+- O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 352, 354, 355), brief check running.
+- O76 (the Pillars view's text; ruling 349), brief checked and corrected, stopped on open item 360 (the false Off-pillar sentence), waiting for Axel's ruling.
 
 Queued, in order:
-- O72 (the closest-word hint within half the word's length; ruling 340), not yet started.
-- O73 (a finding for a `manifest_fields:` row whose `from` names no list; ruling 342), not yet started.
-- O74 (the career banner built from the command center's parts; ruling 346), not yet started.
-- O75 (the bar of a project board, the section headings and the list view; rulings 345, 348, 350, 351, 354, 355), not yet started.
-- O76 (the Pillars view's text; ruling 349), not yet started.
+- O74 (the career banner built from the command center's parts; ruling 346), stopped on open item 357, waiting for Axel's ruling.
 - O77 (the project card and the project page; rulings 352, 353, 356), not yet started; after O75, which changes `Projects.svelte` and `stats.ts` too.
 
 Owed looks:
