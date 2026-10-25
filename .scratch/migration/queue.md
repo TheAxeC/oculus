@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O75 (the bar of a project board, its section headings and the list view), repair round 1.
-- O74 (the career banner built from the command center's parts), repair round 1.
+- O74 (the career banner built from the command center's parts), review over repair round 1 running.
 
 Queued, in order (1 step):
 - O77 (the project card and the project page), once O75 has landed.
