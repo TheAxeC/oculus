@@ -151,11 +151,17 @@
         white-space: nowrap;
     }
 
-    /* The small text button, VS Code's: 22 px high, for a row that is 22 px high. */
+    /* The small text button, VS Code's: 22 px high, for a row that is 22 px high. Its 16 px glyph
+       stands 2 px taller than the 14 px line, so it overhangs the line by 1 px above and below
+       instead of making the button taller. */
     .tool.small {
         font-size: var(--fs-xs);
         line-height: calc(14px * var(--text-scale, 1));
         padding: 3px 6px;
+    }
+
+    .tool.small > :global(.glyph) {
+        margin-block: -1px;
     }
 
     /* An icon control of a row or a card: the 16 px icon in 2 px of room either side, 20 px, no

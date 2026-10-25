@@ -529,8 +529,11 @@ export function portfolioProjects(snapshot: Snapshot | null): Project[] {
     return Object.values(snapshot?.entities.projects ?? {});
 }
 
-/** The two sections of the Focus board that fold, by the key their closed state is kept under. */
-export type FoldKey = 'command' | 'tasks';
+/**
+ * The three sections of the Focus board that fold, the career banner, the command center and the
+ * tasks, by the key their closed state is kept under.
+ */
+export type FoldKey = 'career' | 'command' | 'tasks';
 
 /** The folded sections a Focus tab's saved state names as closed; a wrong value names none. */
 const closedShape = z.object({ closed: fieldItemsShape });

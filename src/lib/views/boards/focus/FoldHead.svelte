@@ -93,7 +93,11 @@
         text-overflow: ellipsis;
     }
 
+    /* The end of the row is a flex row too, so a control in it stands on the row's centre line and
+       the row stays as high as its tallest control, with no line box of text around it. */
     .end {
+        display: flex;
         flex: 0 0 auto;
+        align-items: center;
     }
 </style>

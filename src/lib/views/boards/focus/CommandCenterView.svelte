@@ -1,9 +1,13 @@
 <script lang="ts">
     // Layer 3, focus view partial. Command-center groups and their actions live here because visual
-    // grouping changes independently of ticker calculation and writes.
+    // grouping changes independently of ticker calculation and writes. The groups and the box they
+    // stand in, with its red left edge, are drawn by ui/display/ticker/TickerGroup.svelte, which
+    // the career banner draws with too, so their look is written there once; this file keeps the
+    // look of its own content, the Needs attention group's lines of projects behind their documents
+    // and of projects no lane shows.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
+    import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -117,207 +121,152 @@
 
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
     {#if rows.length > 0}
-        <div class="grp">
-            <p class="lbl"><Glyph name={glyph} />{label}</p>
-            <Ticker {rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
-        </div>
+        <TickerGroup
+            {label}
+            {glyph}
+            runs={[{ key: label, rows }]}
+            {onpick}
+            {onaction}
+            reveal
+            kept={view.kept}
+            {marked}
+        />
     {/if}
 {/snippet}
 
 {#snippet kindGroups(label: string, glyph: string, groups: RowGroup[])}
     {#if groups.length > 0}
-        <div class="grp">
-            <p class="lbl"><Glyph name={glyph} />{label}</p>
-            {#each groups as one (one.kind)}
-                <p class="sub">{runHeading(one)}</p>
-                <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
-            {/each}
+        <TickerGroup
+            {label}
+            {glyph}
+            runs={groups.map((one) => ({ key: one.kind, note: runHeading(one), rows: one.rows }))}
+            {onpick}
+            {onaction}
+            reveal
+            kept={view.kept}
+            {marked}
+        />
+    {/if}
+{/snippet}
+
+{#snippet behind()}
+    {#if week?.behind}
+        <div class="behind">
+            <span class="lead"
+                ><Glyph name={t('board.stale_glyph')} />
+                <b>{week.behind.count} {manifestWord(week.behind.count)}</b></span
+            >
+            {t('focus.command.behind_refresh')}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render links(week.behind.projects, week.behind.more)}
+        </div>
+    {/if}
+    {#if week?.unplaced}
+        <div class="behind">
+            <span class="lead"
+                ><Glyph name={t('focus.command.unplaced_glyph')} />
+                <b>{week.unplaced.count}</b></span
+            >
+            <span>
+                {#if week.unplaced.count === 1}
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
+                    {@html t('focus.command.unplaced_one')}
+                {:else}
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
+                    {@html t('focus.command.unplaced_many')}
+                {/if}
+            </span>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render links(week.unplaced.projects, week.unplaced.more)}
         </div>
     {/if}
 {/snippet}
 
-{#if anything}
-    <section class="week" data-surface>
-        <FoldHead
-            glyph={t('focus.command.command_center_glyph')}
-            title={t('focus.command.command_center')}
-            name={t('focus.command.command_center')}
-            {open}
-            {ontoggle}
-            end={pillText() === '' ? undefined : pill}
-        />
-        {#if open}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render group(
-                t('focus.command.grp_overdue_label'),
-                t('focus.command.grp_overdue_glyph'),
-                view.overdue
-            )}
-            {#if needsAttention}
-                <div class="grp">
-                    <p class="lbl">
-                        <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
-                            'focus.command.grp_attention_label'
-                        )}
-                    </p>
-                    {#if attentionRows.length > 0}
-                        <Ticker rows={attentionRows} onpick={onattention} />
-                    {/if}
-                    {#if week?.behind}
-                        <div class="behind">
-                            <span class="lead"
-                                ><Glyph name={t('board.stale_glyph')} />
-                                <b>{week.behind.count} {manifestWord(week.behind.count)}</b></span
-                            >
-                            {t('focus.command.behind_refresh')}
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render links(week.behind.projects, week.behind.more)}
-                        </div>
-                    {/if}
-                    {#if week?.unplaced}
-                        <div class="behind">
-                            <span class="lead"
-                                ><Glyph name={t('focus.command.unplaced_glyph')} />
-                                <b>{week.unplaced.count}</b></span
-                            >
-                            <span>
-                                {#if week.unplaced.count === 1}
-                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                                    {@html t('focus.command.unplaced_one')}
-                                {:else}
-                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                                    {@html t('focus.command.unplaced_many')}
-                                {/if}
-                            </span>
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render links(week.unplaced.projects, week.unplaced.more)}
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-            {#if view.categories.length > 0}
-                <!-- The group may run on into the second column, a category at a time: each
-                     category is one block that does not break, and the group's heading is inside
-                     the first, so it never stands alone at a column's foot. -->
-                <div class="grp split">
-                    {#each view.categories as one, at (one.category)}
-                        <div class="category">
-                            {#if at === 0}
-                                <p class="lbl">
-                                    <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
-                                        'focus.command.grp_deadlines_label'
-                                    )}
-                                </p>
-                            {/if}
-                            <p class="sub">
-                                {categoryLabel(one.category)}
-                            </p>
-                            <Ticker
-                                rows={one.rows}
-                                {onpick}
-                                {onaction}
-                                reveal
-                                kept={view.kept}
-                                {marked}
-                            />
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render kindGroups(
-                t('focus.command.grp_subtask_dl_label'),
-                t('focus.command.grp_subtask_glyph'),
-                view.subtaskDated
-            )}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render group(
-                t('focus.command.grp_followups_label'),
-                t('focus.command.grp_followups_glyph'),
-                view.followups
-            )}
-            {#if refreshRows.length > 0}
-                <div class="grp">
-                    <p class="lbl">
-                        <Glyph name={t('focus.command.refresh_glyph')} />{t(
-                            'focus.command.grp_refresh_label'
-                        )}
-                    </p>
-                    <Ticker rows={refreshRows} onpick={onrefresh} />
-                </div>
-            {/if}
-            {#if view.snoozed.length > 0}
-                <details class="grp">
-                    <summary class="lbl"
-                        ><Glyph name={t('focus.command.snoozed_glyph')} />{t(
-                            'focus.command.snoozed',
-                            view.snoozed.length
-                        )}</summary
-                    ><Ticker
-                        rows={view.snoozed}
-                        {onpick}
-                        {onaction}
-                        reveal
-                        kept={view.kept}
-                        {marked}
-                    />
-                </details>
-            {/if}
+{#snippet content()}
+    <FoldHead
+        glyph={t('focus.command.command_center_glyph')}
+        title={t('focus.command.command_center')}
+        name={t('focus.command.command_center')}
+        {open}
+        {ontoggle}
+        end={pillText() === '' ? undefined : pill}
+    />
+    {#if open}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render group(
+            t('focus.command.grp_overdue_label'),
+            t('focus.command.grp_overdue_glyph'),
+            view.overdue
+        )}
+        {#if needsAttention}
+            <TickerGroup
+                label={t('focus.command.grp_attention_label')}
+                glyph={t('focus.command.grp_attention_glyph')}
+                runs={attentionRows.length > 0 ? [{ key: 'attention', rows: attentionRows }] : []}
+                onpick={onattention}
+                after={behind}
+            />
         {/if}
-    </section>
+        {#if view.categories.length > 0}
+            <!-- The group may run on into the second column, a category at a time. -->
+            <TickerGroup
+                label={t('focus.command.grp_deadlines_label')}
+                glyph={t('focus.command.grp_deadlines_glyph')}
+                runs={view.categories.map((one) => ({
+                    key: one.category,
+                    note: categoryLabel(one.category),
+                    rows: one.rows
+                }))}
+                split
+                {onpick}
+                {onaction}
+                reveal
+                kept={view.kept}
+                {marked}
+            />
+        {/if}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render kindGroups(
+            t('focus.command.grp_subtask_dl_label'),
+            t('focus.command.grp_subtask_glyph'),
+            view.subtaskDated
+        )}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render group(
+            t('focus.command.grp_followups_label'),
+            t('focus.command.grp_followups_glyph'),
+            view.followups
+        )}
+        {#if refreshRows.length > 0}
+            <TickerGroup
+                label={t('focus.command.grp_refresh_label')}
+                glyph={t('focus.command.refresh_glyph')}
+                runs={[{ key: 'refresh', rows: refreshRows }]}
+                onpick={onrefresh}
+            />
+        {/if}
+        {#if view.snoozed.length > 0}
+            <TickerGroup
+                label={t('focus.command.snoozed', view.snoozed.length)}
+                glyph={t('focus.command.snoozed_glyph')}
+                runs={[{ key: 'snoozed', rows: view.snoozed }]}
+                folded
+                {onpick}
+                {onaction}
+                reveal
+                kept={view.kept}
+                {marked}
+            />
+        {/if}
+    {/if}
+{/snippet}
+
+{#if anything}
+    <!-- eslint-disable-next-line @typescript-eslint/no-unsafe-call -- svelte-check types the snippet TickerGroup.svelte's module script exports; the lint's parser does not read it -->
+    {@render box('red', content)}
 {/if}
 
 <style>
-    .week {
-        padding: 4px 8px;
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--c-red);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        columns: 2 22em;
-        column-gap: 16px;
-    }
-
-    /* Over a wallpaper the section is the one translucent layer under its rows, so it carries
-       `data-surface`; drawn inside a surface already (a free float's fill) it paints nothing. */
-    :global(body.wall) .week {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    :global(body.wall [data-surface]) .week {
-        background: transparent;
-        backdrop-filter: none;
-    }
-    .grp {
-        margin-top: 4px;
-        break-inside: avoid;
-    }
-    .grp.split {
-        break-inside: auto;
-    }
-    .category {
-        break-inside: avoid;
-    }
-    .lbl {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin: 0 0 2px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-txt, var(--accent));
-    }
-    summary.lbl {
-        cursor: pointer;
-    }
-    .sub {
-        margin: 6px 0 2px;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
     /* A needs-attention line is one sentence that wraps as text: the glyph and the count at its
        start, kept on one line together, the projects at its end, each piece kept in its place on a
        narrow pane. It is a row of the Command Center, so it takes a ticker row's height, size and

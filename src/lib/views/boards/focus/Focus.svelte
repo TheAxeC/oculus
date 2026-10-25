@@ -21,10 +21,10 @@
     // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six
     // partials under views/boards/focus/, which are this view's own and which nothing else may
     // import. What is left here is the composition, the awaiting-a-response box, and the one line
-    // that says what the last write answered. The command center and the tasks section fold, each
-    // by a control on its heading, and which of them is closed is kept in the tab's instance state,
-    // so a reload and a move of the tab keep it; both start open. The career banner folds by itself
-    // and starts folded.
+    // that says what the last write answered, or what a press on a career row could not open. The
+    // career banner, the command center and the tasks section fold the same way, each by a control
+    // on its heading, and which of them is closed is kept in the tab's instance state, so a reload
+    // and a move of the tab keep it; all three start open.
     //
     // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
     // are each a surface of their own; the awaiting box and the said line are read off a
@@ -147,7 +147,10 @@
               ].filter((row) => row.names.length > 0)
     );
 
-    /** What the last write on this board answered, whichever partial made it. */
+    /**
+     * What the last write on this board answered, whichever partial made it, or why a press on a
+     * career row opened the file at no line.
+     */
     let said = $state('');
 
     /** Open one project as its own tab, the same tab a click on a board card opens. */
@@ -167,7 +170,13 @@
 
 <Pane title={t('views.focus')}>
     <div class="focus" data-instance={instance.id}>
-        <CareerPanel instance={instance.id} {now} />
+        <CareerPanel
+            instance={instance.id}
+            {now}
+            open={foldOpen(folds, 'career')}
+            ontoggle={() => fold('career')}
+            onsaid={(text: string) => (said = text)}
+        />
 
         <CommandCenter
             {week}

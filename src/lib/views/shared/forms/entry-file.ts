@@ -1,8 +1,10 @@
-// Layer 3, shared view support. What Edit in File and a lead's `applied` control do: open the YAML
-// file in a source tab and put the caret where the entry is, or in a new entry placed in the tab's
-// unsaved text. The text rules and the refusals are state/sessions/source/draft-entry.ts; this
-// opens the tab around them. The Add of a collection, a registry view, the leads feed and Lit Watch
-// writes the entry itself and opens its page (entry/entry-add.ts).
+// Layer 3, shared view support. What Edit in File, a lead's `applied` control and a press on a row
+// of the Focus board's career banner do: open the YAML file in a source tab and put the caret where
+// the entry or the section is, or in a new entry placed in the tab's unsaved text. The text rules
+// and the refusals are state/sessions/source/draft-entry.ts; this opens the tab around them
+// (`openFound`, which Edit in File and the career banner share). The Add of a collection, a
+// registry view, the leads feed and Lit Watch writes the entry itself and opens its page
+// (entry/entry-add.ts).
 //
 // The tab is kept, so a single click elsewhere cannot point a preview tab at another file and drop
 // the new entry with it. The place is opened as an empty range, which the editor's range command
@@ -87,13 +89,21 @@ export async function placeInFile(
 }
 
 /**
- * Open a file at an entry. The sentence is `collection.entry_gone` when the file's text does not
- * hold the entry, in which case the tab stays where it was, and '' otherwise.
+ * Open a file at a place found in its text: the tab opened and kept, its draft read, `find` asked
+ * for the place in the tab's text by the tab's id, and the tab opened there. When `find` answers no
+ * place, the sentence is its answer's, and the tab is opened at the line a refusal names, or with
+ * no line when the text does not hold the place, so a tab newly opened shows the file's top and one
+ * already open stays where it was. The sentence is '' when the place is found, and when no tab
+ * could be opened.
  */
-async function editInFile(client: ClientState, file: ViewSource, at: EntryAt): Promise<string> {
+export async function openFound(
+    client: ClientState,
+    file: ViewSource,
+    find: (tab: string) => EntryAnswer
+): Promise<string> {
     const id = await openedDraft(client, file, (one) => openSourceFile(client, one));
     if (id === '') return '';
-    return arrived(client, file, findEntry(client.source, id, at));
+    return arrived(client, file, find(id));
 }
 
 /**
@@ -125,7 +135,8 @@ export async function openEntry(
     onsaid: (said: string) => void
 ): Promise<void> {
     if (file === null) return;
-    const sentence = await editInFile(client, file, entryTarget(entry, schema, fault));
+    const at = entryTarget(entry, schema, fault);
+    const sentence = await openFound(client, file, (tab) => findEntry(client.source, tab, at));
     if (sentence !== '') onsaid(sentence);
 }
 

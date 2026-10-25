@@ -307,6 +307,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
         'data/helpers/files/yaml/collection-text',
+        'data/helpers/files/yaml/career-text',
         'data/prose/latex',
         'data/prose/bib',
         'data/prose/markdown/**',

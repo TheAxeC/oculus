@@ -15,12 +15,15 @@ text:
         career_in_day: in 1 day
         career_in_days: 'in {0} days'
         career_next_glyph: calendar
-        career_next_line: '{0} on {1}, {2}'
+        career_next_tail: '{0}, {1}'
+        career_open_link: 'Open {0}'
         career_order_glyph: list
         career_record: Track record
+        career_record_count: '{0} {1}'
         career_record_glyph: book
         career_situation: Situation
         career_situation_glyph: info
+        career_task_note: '{0}, {1}'
         cluster_incubate: 'Incubation: idea to project'
         cluster_now: 'Now: do these'
         cluster_parked: Parked / on hold
