@@ -33,7 +33,9 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: ab7c1c30c97cc10a2 (claude-opus-5-5)
   launched: 2026-10-25
   report: .scratch/migration/agents/reviews/O69-report.md
-  round: 0
+  builder_usage: "313028 tokens, 116 tool uses, 24 min 32 s"
+  reviewer_report: .scratch/migration/agents/reviews/O69-refuter.md (adb9824963260c1c1, claude-opus-5-5, 251445 tokens, 68 tool uses, 16 min 15 s)
+  round: 1
   shared_paths: "config/catalogs/icons.yml and glyphs.yml with O70 (rows after idea) and O71 (the fire rows), this step's rows after list; config/text/views/boards/project.yml with O70 (project.card keys), this step the helper keys; presets.ts with O70 (lines 97-101), this step the board types and FACETS; docs/HELP.md with O70 (line 287) and O71 (line 517, applied at landing), this step lines 290 and 518; config/catalogs/vocab.yml with O70 (168-180) and O71 (4, 183-190), this step line 52. Each pair of hunks is separated by unchanged lines, so each merge is simple; docs/diagrams is regenerated at each landing"
   landing: not-started
 - step: O70
@@ -45,6 +47,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: af7b764eef41dd267 (claude-opus-5-5)
   launched: 2026-10-25
   report: .scratch/migration/agents/reviews/O70-report.md
+  builder_usage: "348382 tokens, 132 tool uses, 31 min 50 s"
   round: 0
   shared_paths: "config/catalogs/icons.yml and glyphs.yml with O69 (rows after list) and O71 (the fire rows), this step's rows after idea; config/text/views/boards/project.yml with O69 (the helper keys), this step the project.card keys; presets.ts with O69 (the board types and FACETS), this step LinkedItem at 97-101; docs/HELP.md with O69 (290 and 518) and O71 (517, at landing), this step 287-288; config/catalogs/vocab.yml with O69 (52) and O71 (4, 185-190), this step 171-182; config/options/catalogs/vocab.yml with O71 (3), this step 146-168; config/text/views/boards/focus.yml with O71 (85-112), this step the career_ keys at the top; vocab.ts with O71 (1-20, 305-315), this step 27-62; focus.ts with O71 (72-78, 185-214), this step 57-70 and 154-183; Lanes.svelte with O71 (outside 226), this step 226; docs/templates.md with O71 (648), this step 92 and 1415. Each pair of hunks is separated by unchanged lines, so each merge is simple; docs/diagrams is regenerated at each landing"
   landing: not-started
@@ -57,7 +60,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a8db849d942ed8cc0 (claude-opus-5-5)
   launched: 2026-10-25
   report: .scratch/migration/agents/reviews/O71-report.md
-  builder_usage: "first run, stopped on case 11: 190952 tokens, 55 tool uses, 7 min 30 s"
+  builder_usage: "first run, stopped on case 11: 190952 tokens, 55 tool uses, 7 min 30 s; round 0: 278800 tokens, 56 tool uses, 13 min 16 s"
+  reviewer_report: .scratch/migration/agents/reviews/O71-refuter.md (a9d96075314610db6, claude-opus-5-5, 221201 tokens, 61 tool uses, 13 min 13 s)
   round: 0
   shared_paths: "config/catalogs/vocab.yml with O69 (52) and O70 (171-182), this step 4 and 185-190; config/options/catalogs/vocab.yml with O70 (146-168), this step 3; config/catalogs/icons.yml and glyphs.yml with O69 and O70 (new rows after list and idea), this step the fire rows; config/text/views/boards/focus.yml with O70 (the career_ keys at the top), this step 85-112; vocab.ts with O70 (27-62), this step 1-20 and 305-315; focus.ts with O70 (57-70, 154-183), this step 1-3, 72-78, 185-214 and 552-564; Lanes.svelte with O70 (226), this step its other ranges; docs/templates.md with O70 (92, 1415), this step 648; docs/HELP.md:517 is applied at landing as Doc text. Each pair of hunks is separated by unchanged lines, so each merge is simple; docs/diagrams is regenerated at each landing"
   landing: not-started
