@@ -29,6 +29,16 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: preparing
 - step: O76
   brief_check: .scratch/migration/agents/reviews/O76-brief-check.md (a3823758f5f3e72f3, claude-opus-5-5, 165169 tokens, 37 tool uses, 5 min 25 s)
+  base: 006e4f24
+  worktree: .agents/worktrees/migration-O76
+  executor: agent
+  worker: claude:opus
+  session_id: aa83b2c7c27f97437 (claude-opus-5-5)
+  launched: 2026-10-25
+  report: .scratch/migration/agents/reviews/O76-report.md
+  round: 0
+  landing: not-started
+- step: O74
   landing: preparing
 ```
 
