@@ -5076,3 +5076,10 @@ Where it applies: O75. Booked in `plan.md` Rulings.
 - Not chosen: one header row above the first section. Neither was the lazy option.
 
 Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1007 (2026-10-25, O77's review, the orchestrator, automode): the two duplication copies and the six comment-width lines red on main
+
+- Chosen: O77's repair round 1 ends them, its paths widened by those files (`Collection.svelte`, `Projects.svelte`, `Data.svelte`, `Venues.svelte`, two new partials, and six comments rewrapped), an internal effect only.
+- Not chosen: a later step for them, the lazy option.
+
+Where it applies: O77. Booked in `plan.md` Rulings.
