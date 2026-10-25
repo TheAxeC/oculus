@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1016), at /spec: brief checked and every finding closed in the brief; its builder next.
+- O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1016), building: builder launched 2026-10-26 at base e5ad5b79.
 
 Queued, in order (3 steps):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), after O78.

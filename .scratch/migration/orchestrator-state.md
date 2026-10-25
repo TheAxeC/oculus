@@ -26,7 +26,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 dispatch:          # steps in flight, up to six (Z632)
 - step: O78
   brief_check: .scratch/migration/agents/reviews/O78-brief-check.md (ab5cec249b37c5055, claude-opus-5-5, 263896 tokens, 81 tool uses, 11 min 55 s)
-  landing: preparing
+  base: e5ad5b79
+  worktree: .agents/worktrees/migration-O78
+  executor: agent
+  worker: claude:opus
+  session_id: a584e9b15ed298b15 (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O78-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -576,6 +584,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O78 building). O78's brief written from main at a374362d and checked (`agents/reviews/O78-brief-check.md`, ab5cec249b37c5055, claude-opus-5-5), every finding closed in the brief and named under the report's Closed heading; Z1011 and Z1012 written to keep reader words and glyph names in text words (the rules file, ruling 396 (a)), Z1014 to Z1016 booked; preparation commit e5ad5b79 is the base; worktree `.agents/worktrees/migration-O78`, base copy and unused exports in `.agents/worktrees/O78-base/`; builder a584e9b15ed298b15 launched on ordo-high, served claude-opus-5-5. Next: its report, the review, the landing (G131 added to `agents/guarded.md` then), then O79, O80, O81.
 - 2026-10-25 (O77 landed). O77 is on main (booked under O77 in `plan.md`, `agents/reviews/O77-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 55.7 s) and on main (every one of the 90 staged paths equal under `cmp` to the gate's file). Fixes at landing, eight: one `toggled` in `src/lib/state/shared/lists/lists.ts`; the HELP landing sentence; ruling 384's card menu on a right-click anywhere on the card; ruling 385's lane card (name first, tags wrapping, no "+N"); ruling 378 (a) as the flag `unmarked: true` on tier and role words, no word or list position in code; the chips in their word's tone on the lane card and the board card; the wait line through `waitedOn`; the config-folder count and the diagrams. Looked at on TEST (8790) and on a two-hub scratch server (8797). Nothing in flight. Next: O78 to O81 in order (rulings 386 to 404, "Steps O78 to O81"), each through /spec, the build, /refute and /land. Open items: none.
 - 2026-10-25 (O77 refuted; round 1 sent). The review (a88a9c6ce833fcaca, claude-opus-5-5, 355179 tokens, 92 tool uses, 17 min 7 s) is saved in `agents/reviews/O77-refuter.md`: item 5 violated (a repeated `waiting-on:` value throws), case 19 partial, every other item holds and every other case met or left to the look. Round 1 (`agents/briefs/O77-round1.md`) sends ruling 383, the Mine only measure (Spec 3) with the page built at most twice, `openInto` back to its base text, `waitedOn` without repeats or empties, the browser's menu on a link or a selection, the add form alone on a board card, the HELP landing sentence, the comment fixes, one toggle rule, the collection Hub rule as a function, and under Z1007 the two duplication copies and six comment-width lines red on main. In flight (1 of 6): O77 (round 1). Next: its report, the review over round 1, /land. Open items: none.
 - 2026-10-25 (O77 reported; its review running). The builder's report is saved in `agents/reviews/O77-report.md` (128 lines, ASCII) and `builder_usage` written; the orchestrator read the whole diff (50 tracked files and the new `state/boards/focus/filter.ts`, `focus/focus-lanes.ts` (moved), `FocusFilter.svelte`, `HubChips.svelte`, `card-menu.ts`). Points for the round: `focusPage` builds the sections up to three times per change (whole, without Mine only, with it); `openInto`'s preview now lands beside the pane being read. The review runs (a88a9c6ce833fcaca, claude-opus-5-5). In flight (1 of 6): O77 (review). Next: the review, then round 1 with its findings and ruling 383, then /land. Open items: none.
