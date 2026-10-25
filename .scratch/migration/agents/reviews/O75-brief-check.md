@@ -242,9 +242,9 @@ Agent usage: a695ad7391dc25a0a, claude-opus-5-5, 263818 tokens, 80 tool uses, 11
 
 ## Closed
 
-- Names 1, 3, 4, 5 and Cases 5 (sentences the step makes false outside its paths): raised to Axel as open item 364 (1), since widening the paths is his under ruling Brief check scope; item 11 lists the places and is completed from his ruling before dispatch.
-- Names 2 (the `submit_ready` flag left with no reader): raised to Axel as open item 364 (2).
-- Implied 6 (a picked pillar in its own colour, ruling 348 (a), needs `items.ts`): raised to Axel as open item 364 (3).
+- Names 1, 3, 4, 5 and Cases 5 (sentences the step makes false outside its paths): raised to Axel as open item 364 (1), since widening the paths is his under ruling Brief check scope; ruled (a): item 11 says how each place is made true and the paths hold each line.
+- Names 2 (the `submit_ready` flag left with no reader): raised to Axel as open item 364 (2); ruled (a): item 5 removes the flag, the paths hold its lines, case 21 checks a hub that writes it.
+- Implied 6 (a picked pillar in its own colour, ruling 348 (a), needs `items.ts`): raised to Axel as open item 364 (3); ruled (a): item 6 gives `BoardTag` an optional `color` filled in `items.ts`, case 22.
 - Names 6 (the diagrams `npm run diagrams` rewrites): `docs/diagrams/` is in the paths as generated output, no hand edit.
 - Names 7 (three full folders): the slices go into `facets.ts`, PickMenu into `src/lib/views/boards/projects/`, FoldHead into `src/lib/views/shared/card/`; "What is on the tree", items 2, 4 and 8, the paths and decision 9 say so.
 - Step line 1 (the cards no longer opening in place): premise corrected in `plan.md`, the words taken out of O75's line since O77's line carries them; "What is on the tree" records it.
