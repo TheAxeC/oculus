@@ -5092,3 +5092,75 @@ Z1007 called its change internal only. One effect is visible: the partial `views
 - Not chosen: a gap prop on the partial to keep 6 px on the collection view, which keeps two looks for one line; the lazy option is leaving the change unsaid.
 
 Where it applies: O77. Booked in `plan.md` Rulings.
+
+## Z1009 (2026-10-25, O78's /spec, open item 405, the orchestrator, automode): the form and names of the collection flags of ruling 386
+
+Ruling 386 (a) puts on each entry of `collections:` the oculus features that read it, "the same form as flags on vocabulary words", and names no flag. Today the features pick a collection by key: the Focus band's positions and teaching columns (`state/boards/focus/focus-lanes.ts:207-214`), the Awaiting box (`state/boards/focus.ts:538`, `state/boards/focus/filter.ts:459-461`), the Applications rail badge and tab count (`state/workbench/rail-badges/rail-badges.svelte.ts:262`, `views/boards/collection/rail-part.ts:11`, `views/boards/collection/Collection.svelte:13`, `data/sources/config/sections/counts.ts:38`), the entry a lead's applied press writes (`state/feeds/lead-application.ts:18`), Disseminated in (`state/boards/board/stats.ts:79`), tasks (`state/forms/new-entry.ts:22`, `views/shared/forms/entry/task-card.ts:15`, `shell/keys/lists/task-hub-list.svelte.ts:41`, `shell/keys/rows/CommandRows.svelte:126,139`, `views/boards/focus/rows.ts:78`) and joint work (`state/forms/referrers.ts:19`, `data/snapshot/normalise.ts:146`, `views/boards/person/Person.svelte:172`).
+
+- Chosen: one boolean key per feature on the entry, as a flag on a vocabulary word is: `band_positions`, `band_teaching`, `awaiting`, `open_badge`, `lead_applications`, `dissemination`, `tasks` and `joint_work`. Oculus's `sources.yml` sets `band_positions`, `awaiting`, `open_badge`, `lead_applications` and `dissemination` on applications, `band_teaching` and `dissemination` on education, `dissemination` on events, `tasks` on tasks and `joint_work` on joint-work. `lead_applications` and `tasks` name one collection per hub: a second entry carrying one is a finding and the first is used. The others may stand on several entries, whose entries are joined as every hub's are today.
+- Not chosen: one list `flags: [...]` on the entry, a form no other flag of oculus's config has. The lazy option is a table in code from feature to key, which keeps the keys in code.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1010 (2026-10-25, O78's /spec, open item 406, the orchestrator, automode): the words of `registry:` (ruling 387)
+
+Ruling 387 (a) gives a `collections:` entry a `registry:` field naming which oculus registry the file is. The code's registry kinds are `RegistryName` (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`; `data/sources/registries.ts:25-34`) and the feeds `leads` and `radar` (`data/snapshot/normalise.ts:80`), and Literature is found by its key (`data/sources/collections.ts:43`, `server/edit/feeds/literature.ts:40`, `server/edit/feeds/feed-route.ts:55`). O78's step line lists statements as a registry and leaves funding out; no code reads statements as a registry (`grep -rn "'statements'" src` hits only `views/shared/explorer/tree/make/make-words.ts:62`), and funding is carried as the scheme entities (`snapshot.entities.funding`).
+
+- Chosen: `registry:` takes `datasets`, `venues`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`, `literature`, `leads` or `radar`, oculus's `sources.yml` setting each on today's entry of that name (`datasets` on `data`). Statements carries none and stays a collection view. An unknown word, and a word on two entries of one hub's list, is a finding, the first entry being used. An entry whose registry is `datasets`, `venues`, `pillars`, `domains`, `leads` or `radar` draws no card-list view, its own view drawing it; `funding`, `people`, `organisations`, `resources` and `literature` keep their collection views. A hub list with no entry of a registry reads that registry from oculus's entry of it, as a hub list leaving a key out does today.
+- Not chosen: `registry: data`, the key's word, where the code, the record list of the data file (`datasets:`) and the entity kind say `datasets`. The lazy option is keeping the step line's list as written, statements a registry nothing reads and funding left keyed in code.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1011 (2026-10-25, O78's /spec, open item 407, the orchestrator, automode): a collection view's place, label, glyph and Make Folder a Hub line on its entry
+
+A collection view's place in the catalogue is `COLLECTION_PLACES` by key (`state/workbench/layout/tabs/left-out.ts:19-31`), its label and glyph the text words `views.<key>` and `views.<key>_glyph` (`config/text/views/boards/collection.yml:49-70`, read by `views/boards/collection/Collection.svelte:15-17`), and its line in Make Folder a Hub a switch on the key (`views/shared/explorer/tree/make/make-words.ts:51-90`). A hub collection keyed `grants` is placed in Registries, labelled `views.grants` and given no line. The rules file asks every reader-facing string from a catalog file under `config/text/` (`agents/spec.md`, "What every package obeys"), and ruling 396 (a) keeps glyph names in text words.
+
+- Chosen: the entry carries `group:` (a rail page's `page` or a key of `nav_groups`) and `order:` (its place in the group), and `label:`, `glyph:` and `about:`, each the dotted key of a text-catalog word (`label: views.funding`, `glyph: views.funding_glyph`, `about: files.make_collection_line_funding`), so the words stay in `config/text/` and a renamed key keeps them. Oculus's `sources.yml` names today's words; `COLLECTION_PLACES`, the key-built `views.${id}` lookups and `collectionLine` go. An entry with no `label:` is labelled by its file's own `title:`, with no `glyph:` drawn with the text word `views.collection_glyph`, with no `about:` given no line, and with no `group:` placed in Registries after the placed ones, as now. A `label:`, `glyph:` or `about:` naming no word of the catalog is a finding naming the entry, and the field reads as absent.
+- Not chosen: the words written on the entry itself, which puts reader words outside `config/text/` against the rules file. The lazy option is `group:` and `order:` alone with the words left keyed by the collection's key, so a renamed key still loses its label and glyph.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1012 (2026-10-25, O78's /spec, open item 408, the orchestrator, automode): the ticker's category words
+
+The words of `ticker_categories` (`config/defaults/behavior.yml:57`) are named in code: their headings (`views/boards/focus/rows.ts:395-404`), their nouns and sentences (`views/boards/focus/CommandCenter.svelte:72-101`) and their glyphs (`state/boards/board/ticker-lines.ts:13-21`). Ruling 396 (a) moves the glyph names of `ticker-lines.ts:13-25` to text words, (b) glyphs from config words being the lazy option.
+
+- Chosen: `ticker_categories` becomes a keyed map in `config/catalogs/vocab.yml`, in drawing order, each word `{ label, glyph, noun, overdue_noun }`, each value the dotted key of a text-catalog word (`overdue_noun` optional, `noun` used when it is absent), and the flag `manifests: true` on the word the project manifests' deadlines carry. Oculus's words are today's: paper (`manifests: true`), funding, event, teaching, position, collab, task, conference, naming today's headings and nouns, and the category glyphs as new text words `focus.command.glyph_<word>` beside them, which carries ruling 396 (a) for the category entries of `GLYPHS`; overdue, followup and subtask stay for O80. paper, funding and conference get the nouns `word_paper` (paper), `word_funding` (funding) and `word_conference` (conference call), where today an entry line in those categories falls back to "joint work"; oculus's own configuration sends no entry line there, so no line changes. The key under `focus:` in `behavior.yml` is removed. A line's due and overdue sentences are chosen by its source, oculus's own kinds: a manifest's deadline, a funding scheme, a venue's call (with its month form), and a lead or an entry, whose sentences are the generic ones with its category's noun, so position reads "position deadline in 3d" through its noun and `position_deadline` goes. A field naming no word of the catalog is a finding naming the file and the word, and the field reads as absent (the heading `focus.command.kind_other`, no glyph). Every line reads as it does today.
+- Not chosen: the words and glyph names written on the vocab word, which is option (b) of ruling 396 and puts reader words outside `config/text/`. The lazy option is leaving the switches.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1013 (2026-10-25, O78's /spec, open item 409, the orchestrator, automode): the events the reader only attended
+
+Disseminated in leaves out an events entry whose `role` is `attend` (`state/boards/board/stats.ts:97`), naming a key and a word of the hub's events schema in code.
+
+- Chosen: a `dissemination_skip:` condition on the entry, in the shape of a `When` (`data/model/model-collections.ts:120-124`: each key a field, a value or a list of values), an entry it matches not counted; oculus's events entry carries `{ role: attend }`.
+- Not chosen: a flag on a schema option, which is a plain word. The lazy option is leaving the test in code.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1014 (2026-10-26, O78's /spec, open item 410, the orchestrator, automode): where a collection's ticker lines come from
+
+`ticker_sources` (`config/defaults/behavior.yml:59-69`) names a source per row by `collection`, and `state/boards/ticker.ts:93-111` compares the rows with the words `projects`, `funding`, `leads` and `venues` written in code to find the scheme, lead and venue-call loops. A hub that keys funding `grants` gets no scheme lines, and one that keys tasks `todo` no task lines. No hub or workspace file sets `ticker_sources` (`grep -rln ticker_sources` over the hubs' and workspaces' `.oculus/` folders: none).
+
+- Chosen: a `collections:` entry carries `ticker: { category: <word of ticker_categories>, undated: true }` (`undated` optional), and `ticker_sources` and its option go. The scheme, lead and venue-call loops take their category from the `ticker:` of the entry whose `registry:` is `funding`, `leads` and `venues`, and an entry collection's lines from its own `ticker:`, in each hub by its own list; the manifests' deadlines carry the word flagged `manifests: true` (Z1012). Oculus's entries carry today's rows: funding `funding`, events `event`, education `teaching`, tasks `task` with `undated: true`, applications `position`, joint-work `collab`, leads `position`, venues `conference`. A `category:` naming no word of `ticker_categories` is a finding naming the entry, and the entry gives no lines. `chat_context` stays a list of keys, which a hub sets in its own `config.yml` as today, since it compares keys with keys and names no word in code.
+- Not chosen: `ticker_sources` rows naming a `registry:` beside `collection:`, which keeps two lists of one collection's settings and a merge key that a registry row lacks. The lazy option is the rows left as they are with the four words in code.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1015 (2026-10-26, O78's /spec, open item 411, the guarded entries of O78's tests, the orchestrator, automode): which entries O78's tests stand under
+
+The rules file allows a test only as the test of one entry of `agents/guarded.md` (`agents/spec.md`, "What every package obeys"); O78's brief made six cases tests without naming an entry.
+
+- Chosen: the findings of a `collections:` entry (cases 5, 6, 7 and the text-key and category findings) are rows of a new describe 'the fields of a collections entry' in `tests/data/sources/collections.test.ts`, under G32 (the collections parser); registries by `registry:` change the rows of `tests/data/sources/registries.test.ts` (G32); Make Folder a Hub's written list (case 11) changes 'makes a hub of two collections' in `tests/routes/hubs/make.test.ts` (G9); joint work by flag changes the rows of `tests/state/forms/referrers.test.ts` (G32, the referrer joins); the collection a flag or a registry names in each hub (cases 2 and 3) is a new entry G131, "a feature reads the collection its flag or its `registry:` names, in each hub by that hub's own list, never by a key written in code", Code `src/lib/data/helpers/hub-names.ts` (the helpers of O78's item 4) and `src/lib/state/client/selectors.svelte.ts`, Test `tests/data/helpers/hub-names.test.ts`, every row of describe 'the collection a flag or a registry names', added to `agents/guarded.md` at landing.
+- Not chosen: no test of cases 2 and 3, which leaves the step's main rule with a run only. The lazy option is that one.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1016 (2026-10-26, O78's /spec, open item 412, collection views across hubs, the orchestrator, automode): a key that is a view id, and one key in two hubs
+
+A collection's view id is its key (`views/boards/collection/Collection.svelte:15`), and `venues`, `data`, `pillars`, `domains`, `leads` and `radar` are also the ids of oculus's own views (`Venues.svelte:5`, `Data.svelte:5`, `Pillars.svelte:5`, `Domains.svelte:5`, `Leads.svelte:5`, `Radar.svelte:6`). Today a registry key gets no card-list view by key; once a registry is found by `registry:`, a hub entry keyed `venues` with no `registry:` would get a card-list view under an id oculus's Venues view holds.
+
+- Chosen: a plain collection whose key is the id of one of oculus's own views is a finding naming the entry and gets no card-list view; its entries are still read. A collection view is registered once per key and joins that key's entries of every hub as today, its `group:`, `order:`, `label:` and `glyph:` from the first hub in the workspace's order (the primary first) whose entry has that key; a feature's flag or registry is read per hub, so a key that is the funding registry in hub A and a plain collection in hub B is read by the funding features in A only.
+- Not chosen: a card-list view under a changed id, which gives one view two ids to keep apart. The lazy option is leaving the collision to whichever registers last.
+
+Where it applies: O78. Booked in `plan.md` Rulings.
