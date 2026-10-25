@@ -39,8 +39,6 @@ dispatch:          # steps in flight, up to six (Z632)
 - step: O73
   brief_check: "running: a29e38315e43e1a49"
   landing: preparing
-- step: O74
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -178,6 +176,17 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 357 (2026-10-25, step O74, the career banner as command-center rows): ruling 346 (a) makes every line of the banner a command-center row, "glyph, words, tail, buttons under the pointer, a press opening that entry of the career file", and names neither which buttons a career row carries nor what a press on a Track record row opens, which is no entry of the career file (its counts are worked out from the projects and the funding file). On the tree today the banner's lines have no press and no buttons (`src/lib/views/boards/focus/career/CareerPanel.svelte`); a command-center row's press opens the record it names (a project's tab, a collection's view) and its buttons under the pointer write to it (done, snooze, a status), in `views/boards/focus/rows.ts`. The career file `.oculus/data/academic/career.yml` holds `goal`, `milestone` with `milestone_date`, the `situation` facts and the `order` tasks, and the banner already edits it in place with its Edit form. How a row would look, unfolded, the pointer on ORDER OF WORK's first row:
+  ```
+  v [focus] Career                                              [Edit]
+  NEXT                              | SITUATION
+  [cal] FWO Senior        2026-11-17, in 23 days | [i] PhD   May 2023, KU Leuven ...
+  GOAL                              | [i] Now   Postdoc, U Twente ...
+  [flag] Assistant professor / ...  | TRACK RECORD
+  ORDER OF WORK                     | [book] Lead       3 journal, 1 conference
+  [list] ERC Starting Grant  Oct 2027 [Edit] | [book] Funding obtained   1
+  ```
+  (a) A press on a row of the file (Next, Goal, a Situation fact, an Order of work task) opens the career file in an editor tab at that entry's line; under the pointer each such row carries one button, Edit, which opens the banner's own form on that section. A Track record role row opens that role's board (Lead to Projects, Supervisor to Supervision, Collaborator to Coauthor), the Funding obtained row opens the Funding view, and these rows carry no button, since nothing of them is written in the career file. Pro: the same split as the command center, a press opens the record and a button changes it; every row goes somewhere. Con: opening the file at a line needs the line of each entry, read from the file's text, which the career model does not carry today. (b) A press on a row of the file opens the banner's own form on that section, and under the pointer one button, Open in file, opens the career file in an editor tab at that entry's line; the Track record rows as in (a). Pro: the form, which checks the file's schema, is the first thing a press reaches. Con: a press edits where every command-center press opens. Recommended (a), for the same split as the command center. The lazy option is rows with no press and no button, which ruling 346 (a) does not allow.
 
 
 
