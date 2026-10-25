@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z994 (2026-10-25, O69's /spec, the orchestrator, automode): the facet counts of a project board
+
+- Chosen: Each facet's counts are written by hand over `facetValues`, counted over the projects every other filter leaves, through the board's one `applyFilters`.
+- Not chosen: itemsjs 2.4.4, a faceted search package, which would add a second filter path and a second search beside the board's own for a few lines.
+
+Where it applies: O69's brief. Booked in `plan.md` Rulings.
+
 ## Z993 (2026-10-25, O60's look at landing, the orchestrator, automode): a Settings row of thousands of entries
 
 - Chosen: A list of entries in a Settings editor draws its first 100 and a line Show 100 more of n entries for the next 100; Add draws through to the entry it adds, so the Text row (6053 entries) and the Unicode math row (2415) unfold, by hand or by a search, without drawing every card.

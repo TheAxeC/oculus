@@ -1,16 +1,16 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (3 of 6 slots in use):
+- O69 (the bar of a project board reworked, ruling 320). /spec: brief written, brief check running. Next: close its findings, the preparation commit, the builder.
+- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). /spec: brief written, brief check running; shares `icons.yml`, `glyphs.yml`, `presets.ts` and `docs/HELP.md` with O69 at separate lines. Next: as O69.
+- O71 (the priority removed, ruling 329). /spec: brief written, brief check running; shares `vocab.yml`, the options' `vocab.yml`, `focus.yml`, `vocab.ts`, `focus.ts`, `Lanes.svelte` and the glyph catalogs with O69 and O70 at separate lines, and hands its `docs/HELP.md:517` sentence to the landing. Next: as O69.
 
 Queued, in order:
-- O69 (the bar of a project board reworked, ruling 320). Next: /spec, from main after O60.
-- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). Next: /spec, from main after O60.
-- O71 (the priority removed, ruling 329). Next: /spec, from main after O60.
+- none.
 
 Owed looks:
 - none.
 
 Landed, newest first:
-- O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, 22e74928.
+- O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, aa79b883.
 - O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, commit 9c42ab10; the hub rewrite on disk, waiting for Axel's word.
 - O68 (the Focus lane card marks without the two-mark cap, the career banner as ruling 301 says), 2026-10-24, b0536bf5; the hub rewrite on disk, waiting for Axel's word.
 - O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.
