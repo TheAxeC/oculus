@@ -4999,3 +4999,38 @@ Where it applies: O55. Booked in `plan.md` Rulings.
 - Not chosen: a table one column wide whose words break inside them ("SUPERVI SOR", "FUNDING OBTAINE D"), and a table one column wide that scrolls sideways and hides Publications and Other outputs. Both were the lazy options: each keeps case 11's one band of five at 1400 px by drawing a table that cannot be read.
 
 Where it applies: O70. Booked in `plan.md` Rulings.
+
+## Z996 (2026-10-25, O75's /spec, the orchestrator, automode): the list each group button of a project board's bar opens
+
+- Chosen: a bits-ui Popover holding a bits-ui Command, both of the bits-ui oculus already pins: a search field over the values, the arrows moving between them, a press or Enter toggling a value with the list left open.
+- Not chosen: a text field written by hand above oculus's menu list inside the dropdown menu, its keys taken back from the menu's own. Neither was the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z997 (2026-10-25, O75's /spec, the orchestrator, automode): the names of a board's list columns in `boards:`
+
+- Chosen: the cells `title, stage, venue, lane, next, with, domain, pillar, funding`, the old `status`, `focus` and `authors` gone; every board's default columns are Project (or Paper, Software), Stage, Venue, Lane, Next and With, and Domain, Pillar and Funding stay choosable in the column menu.
+- Not chosen: the old names kept with new drawings, the lazy option, since `status` would draw the stage, `focus` the lane and `authors` the With line.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z998 (2026-10-25, O76's /spec, the orchestrator, automode): the words of the Orphans card's tag
+
+- Chosen: `pillars.untagged` reads "<n> on no line", true of every orphan, one with a `pillars:` naming no line of the file included.
+- Not chosen: the tag removed. Keeping "<n> untagged" was the lazy option.
+
+Where it applies: O76. Booked in `plan.md` Rulings.
+
+## Z999 (2026-10-25, O76's /spec, the orchestrator, automode): the provisional line's note
+
+- Chosen: the sentence "Its promotion trigger is in its entry of the pillars file." dropped, since the pillars schema has no trigger field and oculus cannot know where a hub writes one.
+- Not chosen: "Its promotion trigger is written in the pillars file.", true of this hub only. Keeping the sentence was the lazy option.
+
+Where it applies: O76. Booked in `plan.md` Rulings.
+
+## Z1000 (2026-10-25, O76's /spec, the orchestrator, automode): the tip on a pillar card's counts
+
+- Chosen: the counts row wrapped in oculus's Tooltip with `focusable`, so the tip shows on the pointer's rest and on keyboard focus.
+- Not chosen: the browser's `title`, which never shows for the keyboard, the lazy option.
+
+Where it applies: O76. Booked in `plan.md` Rulings.
