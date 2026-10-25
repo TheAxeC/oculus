@@ -3,7 +3,8 @@
 // (state/forms/schema.ts) and the code that decides by a word's flag all read them: a list gives
 // one key for each entry that has one, and a map gives its own keys. A field narrows either to the
 // rows that carry it as `true`, so `chips` with `blocked` is the chip words that carry
-// `blocked: true`. A word a list does not hold is answered with the list's closest word. The tiers
+// `blocked: true`. A word a list does not hold is answered with the list's closest word when that
+// word is within half the written word's length in single-letter changes, rounded down. The tiers
 // the research audit skips are read here too, as the audit and the Orphans card read them.
 //
 // Every helper reads the config or the value its caller passes, with no state of its own: a caller
@@ -266,16 +267,20 @@ function distance(from: string, to: string): number {
 
 /**
  * The word of `words` closest to `word`, the one at the smallest Levenshtein distance, the first in
- * the list's order among those at one distance, and none for an empty list: what a finding about a
- * word the list does not hold names as the word meant.
+ * the list's order among those at one distance, when that distance is at most half the length of
+ * `word`, rounded down; none when no word lies that near, and none for an empty list. It is what a
+ * finding about a word the list does not hold names as the word meant. The bound is here, in the
+ * one function every such finding calls, because a word further off is no likely misspelling of
+ * the word written, and naming it would mislead the reader.
  */
 export function closestWord(word: string, words: readonly string[]): string | undefined {
+    const bound = Math.floor(word.length / 2);
     let best: { word: string; distance: number } | undefined;
     for (const one of words) {
         const far = distance(word, one);
         if (best === undefined || far < best.distance) best = { word: one, distance: far };
     }
-    return best?.word;
+    return best !== undefined && best.distance <= bound ? best.word : undefined;
 }
 
 /** The key of the fields a hub adds to the project form of its own projects. */

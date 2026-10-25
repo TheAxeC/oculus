@@ -212,13 +212,32 @@ function checkWaitingOn(manifest: RawManifest, catalog: TextCatalog, findings: F
     }
 }
 
-/** The sentence of a status outside its list: the status as shown, and the closest word if any. */
-type StatusSaid = (shown: string, closest: string | undefined) => string;
+/**
+ * The hint a list gives for a value it does not hold: `empty` for a list with no word, `far` when
+ * no word lies within the bound `closestWord` keeps, and `near` with the word it finds there.
+ */
+type WordHint = { kind: 'empty' } | { kind: 'far' } | { kind: 'near'; word: string };
 
 /**
- * The finding of each entry whose `status` is not a word of `words`, naming the closest word of the
- * list, or, for a list with no word, saying so, in the sentence `said` gives. An entry with no
- * status has nothing to check.
+ * The hint of `words` for `written`, a value it does not hold: a list with no word is told by the
+ * list itself, and a list with words gives the closest word only when `closestWord` finds one
+ * within half the length of `written` in single-letter changes, rounded down.
+ */
+function wordHint(written: string, words: readonly string[]): WordHint {
+    if (words.length === 0) return { kind: 'empty' };
+    const word = closestWord(written, words);
+    return word === undefined ? { kind: 'far' } : { kind: 'near', word };
+}
+
+/** The sentence of a status outside its list: the status as shown, and the hint of its list. */
+type StatusSaid = (shown: string, hint: WordHint) => string;
+
+/**
+ * The finding of each entry whose `status` is not a word of `words`, in the sentence `said` gives:
+ * naming the closest word of the list when one lies within half the status's length in
+ * single-letter changes, rounded down, ending after the list's name when none does, and saying so
+ * for a list with no word. A status that is no text is compared as its JSON, the form the finding
+ * shows it in. An entry with no status has nothing to check.
  */
 function statusFindings(
     file: string,
@@ -231,8 +250,8 @@ function statusFindings(
         if (status === undefined) return [];
         if (typeof status === 'string' && words.includes(status)) return [];
         const shown = JSON.stringify(status);
-        const closest = closestWord(typeof status === 'string' ? status : shown, words);
-        return [{ file, key: `entries[${index}].status`, message: said(shown, closest) }];
+        const hint = wordHint(typeof status === 'string' ? status : shown, words);
+        return [{ file, key: `entries[${index}].status`, message: said(shown, hint) }];
     });
 }
 
@@ -243,10 +262,12 @@ function checkEntryStatus(
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
-    const said: StatusSaid = (shown, closest) =>
-        closest === undefined
+    const said: StatusSaid = (shown, hint) =>
+        hint.kind === 'empty'
             ? findingText(catalog, 'findings.validate.status_no_vocab', shown)
-            : findingText(catalog, 'findings.validate.status_not_in_vocab', shown, closest);
+            : hint.kind === 'far'
+              ? findingText(catalog, 'findings.validate.status_unknown', shown)
+              : findingText(catalog, 'findings.validate.status_not_in_vocab', shown, hint.word);
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
         findings.push(...statusFindings(collection.file, collection.entries, statuses, said));
@@ -264,10 +285,17 @@ export function leadStatusFindings(
     words: string[],
     catalog: TextCatalog
 ): Finding[] {
-    const said: StatusSaid = (shown, closest) =>
-        closest === undefined
+    const said: StatusSaid = (shown, hint) =>
+        hint.kind === 'empty'
             ? findingText(catalog, 'findings.validate.lead_status_no_vocab', shown)
-            : findingText(catalog, 'findings.validate.lead_status_not_in_vocab', shown, closest);
+            : hint.kind === 'far'
+              ? findingText(catalog, 'findings.validate.lead_status_unknown', shown)
+              : findingText(
+                    catalog,
+                    'findings.validate.lead_status_not_in_vocab',
+                    shown,
+                    hint.word
+                );
     return statusFindings(file, entries, words, said);
 }
 
@@ -315,8 +343,10 @@ function strayStage(
 
 /**
  * A manifest's `stage`, when it is a text, is a word of the `stages` of its own hub: one finding on
- * `stage` naming the stage and the closest word of that list, or, for a list with no word, saying
- * so. `withoutValidated` keeps the schema from naming the same stage as a value outside its list.
+ * `stage` naming the stage and, when a word of that list lies within half the stage's length in
+ * single-letter changes, rounded down, the closest such word; ending after the list's name when no
+ * word lies that near; and saying so for a list with no word. `withoutValidated` keeps the schema
+ * from naming the same stage as a value outside its list.
  */
 function checkManifestStage(
     manifest: RawManifest,
@@ -326,11 +356,13 @@ function checkManifestStage(
 ): void {
     if (!strayStage(manifest, vocab.stages)) return;
     const shown = JSON.stringify(manifest.stage);
-    const closest = closestWord(manifest.stage, vocab.stages);
+    const hint = wordHint(manifest.stage, vocab.stages);
     const message =
-        closest === undefined
+        hint.kind === 'empty'
             ? findingText(catalog, 'findings.validate.stage_no_vocab', shown)
-            : findingText(catalog, 'findings.validate.stage_not_in_vocab', shown, closest);
+            : hint.kind === 'far'
+              ? findingText(catalog, 'findings.validate.stage_unknown', shown)
+              : findingText(catalog, 'findings.validate.stage_not_in_vocab', shown, hint.word);
     findings.push({ file: manifest.file, key: 'stage', message });
 }
 

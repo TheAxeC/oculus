@@ -98,7 +98,7 @@ chips:
   ai-tells:         { label: "AI-writing tells", icon: red }
 
 
-# The statuses a collection entry's `status` takes, each with the `color` it is drawn in, and the flags that say what a status decides; a status the list does not hold is a finding naming the closest word. Each line says how the code compares a status with the flag: `wordFlag` trims an entry's status and puts it in lower case:
+# The statuses a collection entry's `status` takes, each with the `color` it is drawn in, and the flags that say what a status decides; a status the list does not hold is a finding naming the closest word when that word is within half the written status's length in single-letter changes, rounded down. Each line says how the code compares a status with the flag: `wordFlag` trims an entry's status and puts it in lower case:
 # - `closes_deadline`: the status ends an entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
 # - `deadline_met`: the status ends a funding entry's or another entry's own deadline, so it leaves the deadline radar, and a funding entry carrying it is listed in the Focus board's awaiting box; compared trimmed and in lower case (`wordFlag`).
 # - `live_subtasks`: a status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case (`wordFlag`).
@@ -155,7 +155,7 @@ statuses:
   applied:       { color: "#0891b2", closes_deadline: true }
 
 
-# The statuses a Position Lead's `status` takes, each with the `color` it is drawn in where it has one, and the flags that say what it decides; a status the list does not hold is a finding naming the closest word. Every flag is compared trimmed and in lower case (`wordFlag`):
+# The statuses a Position Lead's `status` takes, each with the `color` it is drawn in where it has one, and the flags that say what it decides; a status the list does not hold is a finding naming the closest word when that word is within half the written status's length in single-letter changes, rounded down. Every flag is compared trimmed and in lower case (`wordFlag`):
 # - `lead_closed`: a Position Lead that is closed, counted and listed as done.
 # - `lead_declined`: a Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes.
 # - `lead_applied`: a Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes.

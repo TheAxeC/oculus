@@ -74,7 +74,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
         const file = `${hub}/projects/ideas/x/project.yml`;
         const on = snapshot.findings.filter((one) => one.file === file && one.key === 'stage');
         expect(on.map((one) => one.message)).toEqual([
-            'stage "nascent" is not a word of the stages list; the closest word is failed'
+            'stage "nascent" is not a word of the stages list'
         ]);
     });
 

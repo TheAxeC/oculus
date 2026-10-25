@@ -196,7 +196,7 @@ deck present.yml:
   groups.<name>.slides: [a project]
 ```
 
-The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`; a project's `tier:` is a word of `tiers`, and its category on the boards is the first row of `categories` whose `stages` and `forms` blocks hold it. A status that is no word of its list is a finding naming the closest word of the list, and a stage word or a form written as a chip is a finding naming the field it belongs in.
+The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`; a project's `tier:` is a word of `tiers`, and its category on the boards is the first row of `categories` whose `stages` and `forms` blocks hold it. A status that is no word of its list is a finding naming the closest word of the list when that word is within half the written word's length in single-letter changes, rounded down, and a stage word or a form written as a chip is a finding naming the field it belongs in.
 
 One key of `config.yml` names a primary key and is not checked by the Findings view: `slurm.resource` is a `resources` key of an entry with `kind: cluster` and a `host`; Live HPC says which condition fails.
 

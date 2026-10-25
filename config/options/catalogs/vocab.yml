@@ -15,7 +15,7 @@ options:
     stages:
         heading: boards
         section: Vocabulary
-        help: "The project stages, by the manifest's stage, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides. A manifest at a stage the list does not hold is a finding naming the closest stage."
+        help: "The project stages, by the manifest's stage, in the order the boards, the Map, the board statistics and the form list them, each with its words, glyph and colour and the flags that say what it decides. A manifest at a stage the list does not hold is a finding naming the closest stage when that stage is within half the written stage's length in single-letter changes, rounded down."
         fields:
             key: the word a manifest's stage writes
             label: the words the stage is drawn with on a card, the form and an idea card

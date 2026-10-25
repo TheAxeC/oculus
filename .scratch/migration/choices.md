@@ -5034,3 +5034,45 @@ Where it applies: O76. Booked in `plan.md` Rulings.
 - Not chosen: the browser's `title`, which never shows for the keyboard, the lazy option.
 
 Where it applies: O76. Booked in `plan.md` Rulings.
+
+## Z1001 (2026-10-25, O75's /spec, the orchestrator, automode): line 2 of a project board's bar at a narrow width
+
+- Chosen: the slices that do not fit fold, last in, first out, into a "+<n>" button at the line's end that opens a list of them headed by category, so the bar stays two lines as ruled.
+- Not chosen: line 2 wrapping to a third line, the lazy option, against the ruled "at most two lines".
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1002 (2026-10-25, O75's /spec, the orchestrator, automode): a picked value that no button shows
+
+- Chosen: a facet with a picked value always has its button, its list holding the value at 0 when no project holds it, and a role value applied only while the bar offers the Role group.
+- Not chosen: a line of in-force chips kept for such values. Leaving a value hidden while it narrows the board was the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1003 (2026-10-25, O75's /spec, the orchestrator, automode): the badge and the mark when Situation or Venue fold into More
+
+- Chosen: More carries the red blocked badge and the amber venue mark of the facets it holds.
+- Not chosen: leaving them hidden inside More, the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1004 (2026-10-25, O75's /spec, the orchestrator, automode): the headings of a board drawn as one grid
+
+- Chosen: a board whose row says `cards: grid` draws its cards and its list as one section, with no heading and no folding.
+- Not chosen: headings forced onto a grid board. Neither was the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1005 (2026-10-25, O75's /spec, the orchestrator, automode): the deadline toggle on a board with no dated project
+
+- Chosen: it reads "deadline 0" and stays pressable.
+- Not chosen: hiding it at 0. Neither was the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
+
+## Z1006 (2026-10-25, O75's /spec, the orchestrator, automode): the header row of each section's table in the list view
+
+- Chosen: each section's table draws its own header row, not sticky, under the sticky section heading.
+- Not chosen: one header row above the first section. Neither was the lazy option.
+
+Where it applies: O75. Booked in `plan.md` Rulings.
