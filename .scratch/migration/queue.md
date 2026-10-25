@@ -5,6 +5,8 @@ Queued, in order:
 - O72 (the closest-word hint within half the word's length; ruling 340), not yet started.
 - O73 (a finding for a `manifest_fields:` row whose `from` names no list; ruling 342), not yet started.
 - O74 (the career banner built from the command center's parts; ruling 346), not yet started.
+- O75 (the bar of a project board; rulings 345, 348, 350, 351), not yet started; waits for the board review's rulings.
+- O76 (the Pillars view's text; ruling 349), not yet started.
 
 Owed looks:
 - none.
