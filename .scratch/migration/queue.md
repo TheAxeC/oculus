@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 382), prepared, its builder next.
+- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 382), its builder running (a03c2980d7a4157d9, claude-opus-5-5).
 
 Queued, in order (0 steps):
 - none.
