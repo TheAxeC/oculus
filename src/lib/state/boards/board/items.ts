@@ -22,6 +22,7 @@ import { personNames } from '../person.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
     SESSIONS_NONE,
+    stageRank,
     venueText,
     type BoardItem,
     type BoardPreset,
@@ -170,11 +171,7 @@ function peopleOf(snapshot: Snapshot): People {
 function compare(left: BoardItem, right: BoardItem, order: string[]): number {
     const pinned = Number(right.project.pin === true) - Number(left.project.pin === true);
     if (pinned !== 0) return pinned;
-    const rank = (item: BoardItem): number => {
-        const at = item.project.stage === undefined ? -1 : order.indexOf(item.project.stage);
-        return at < 0 ? order.length : at;
-    };
-    const byStage = rank(left) - rank(right);
+    const byStage = stageRank(left.project.stage, order) - stageRank(right.project.stage, order);
     if (byStage !== 0) return byStage;
     return left.project.title.localeCompare(right.project.title);
 }

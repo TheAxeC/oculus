@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
-- O69 (the bar of a project board reworked, ruling 320). Base add19ad5. Reviewed; repair round 1 (the rows of G127's and G92's tests, a retitled row, rewrapped comments) with its builder since 2026-10-25. Next: the review over the round, the landing with its look.
-- O70 (the facts of a project card say what they are, lane icons, the venue as its own line, ruling 328; the career banner redrawn, from Axel's look). Base f5818542. Built and reviewed; its findings (the track record table's headings, `docs/templates.md:1419`, two comment lines) are small and are fixed at landing. Next: the landing with its look.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order:
 - none.
@@ -9,6 +8,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
+- O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
 - O71 (the priority removed: the manifest field, `priority_levels`, the flames and the menu section), 2026-10-25, e66c2a4e.
 - O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, aa79b883.
 - O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, commit 9c42ab10; the hub rewrite on disk, waiting for Axel's word.

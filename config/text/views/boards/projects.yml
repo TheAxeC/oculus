@@ -19,13 +19,17 @@ text:
         facet_pillar: Pillar
         facet_reproduced: Reproduced
         facet_sessions: Sessions
+        facet_stage: Stage
         facet_status: Status
         facet_year: Year
         filter: Filter
+        filter_chip: '{0}: {1}'
+        filter_clear: Clear all
         filter_count: Filter ({0})
+        filter_remove: Remove {0}
         filter_tick_glyph: check
         filters: Board filters
-        labels: Title length
+        full_titles: Full titles
         new_idea: + new idea
         new_idea_cancel: cancel
         new_idea_domain: domain
@@ -62,13 +66,9 @@ text:
         stat_venues_tip: where the board's projects are aimed
         stats: Board totals
         toolbar: Board controls
-        stage_toggle_tip: show or hide the projects at the stage {0}
         venue_dist_glyph: venue_dist
-        view: View
         view_cards: Cards
-        view_cards_glyph: cards
         view_list: List
-        view_list_glyph: list
         warn_glyph: warn
     views:
         archive: Archive

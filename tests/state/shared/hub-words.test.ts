@@ -1,9 +1,11 @@
 // Layer 2, client state tests. The words of each hub's records: the server reads every hub's
 // vocabulary under that hub's own `.oculus/config.yml` (`workspaceVocabs`), the page installs them
 // (`setVocab`), and a lookup made with a record's hub reads that hub's words, with no primary as
-// with one, while a folder that is no hub reads oculus's own. A lookup made with no hub, for a
-// list drawn over several hubs, reads the union of every hub's words: the primary's first, each
-// word once with the row of the first hub that holds it. The hubs are planted in scratch folders.
+// with one, while a folder that is no hub reads oculus's own. A lookup made with no hub, for a list
+// drawn over several hubs, reads the union of every hub's words: the primary's first, each word
+// once with the row of the first hub that holds it. A stage reads by the label of its row of
+// `stages` (`stageLabel`), also where a hub's `chips` list the same word. The hubs are planted in
+// scratch folders.
 
 import { describe, expect } from 'vitest';
 import { workspaceVocabs } from '../../../src/lib/data/index.ts';
@@ -14,6 +16,7 @@ import { fitTone } from '../../../src/lib/state/feeds/leads.ts';
 import {
     chipLabel,
     setVocab,
+    stageLabel,
     stageTone,
     statusTone,
     vocabOf
@@ -74,7 +77,7 @@ describe("the words of each hub's records", () => {
         expect(statusTone('pending', 'home')).toBe('purple');
     });
 
-    it("draws each hub's cards in its own stage words and builds the board's buttons from the union", () => {
+    it("draws each hub's cards in its own stage words and orders and labels the stage facet from the union", () => {
         const lab = hubWith('stages: { exploring: { label: Experimenting, color: "#2563eb" } }\n');
         const home = hubWith(
             'stages: { trialling: { label: Trialling, color: "#0d9488", live: true } }\n'
@@ -97,6 +100,19 @@ describe("the words of each hub's records", () => {
         expect(chipLabel('exploring')).toBe('Experimenting');
         expect(chipLabel('trialling')).toBe('Trialling');
         expect(chipLabel('trialling', 'lab')).toBe('trialling');
+        expect(stageLabel('exploring')).toBe('Experimenting');
+        expect(stageLabel('exploring', 'lab')).toBe('Experimenting');
+        expect(stageLabel('exploring', 'home')).toBe('exploring');
+        expect(stageLabel('trialling')).toBe('Trialling');
+    });
+
+    it("labels a stage by its row of stages where the hub's chips list the same word", () => {
+        const lab = hubWith('chips: { exploring: { label: "a chip word", icon: red } }\n');
+        install([{ name: 'lab', dir: lab }], 'lab');
+        expect(chipLabel('exploring', 'lab')).toBe('a chip word');
+        expect(stageLabel('exploring', 'lab')).toBe('exploring');
+        expect(chipLabel('exploring')).toBe('a chip word');
+        expect(stageLabel('exploring')).toBe('exploring');
     });
 
     it("reads a folder that is no hub under oculus's own words in a workspace with no primary", () => {

@@ -1,19 +1,20 @@
 // Layer 2, client state. Board filters and saved state live here because they change which items a
-// board shows and what its controls remember.
+// board shows and what its controls remember. The values an item carries for each facet are read
+// here too, since the filter is their first reader and facets.ts counts them through the filter.
 
 import { z } from 'zod';
 import { byKey } from '../../../data/helpers/guards.ts';
+import { keyOf } from '../../../data/helpers/hub-names.ts';
 import {
-    fieldItemsShape,
     mapShape,
     optionalTextShape,
     readAs,
     recordItemsShape,
     stringItemsShape
 } from '../../../data/shapes/shapes.ts';
-import { facetValues } from './facets.ts';
 import {
     FACETS,
+    NONE,
     type BoardItem,
     type BoardState,
     type Facet,
@@ -24,13 +25,53 @@ import {
 /** The `stale_lag_days` of `focus:` when the config names none. */
 export const STALE_LAG = 1;
 
+/**
+ * The values one item carries for one facet. A project with no stage carries no stage value, so it
+ * is under no value of the stage facet.
+ */
+export function facetValues(item: BoardItem, facet: string): string[] {
+    const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
+    switch (facet) {
+        case 'stage': {
+            const stage = item.project.stage ?? '';
+            return stage === '' ? [] : [stage];
+        }
+        case 'category':
+            return item.category === '' ? [] : [item.category];
+        case 'role':
+            return item.role === '' ? [] : [item.role];
+        case 'year':
+            return [item.year === '' ? NONE : item.year];
+        case 'domain':
+            return item.domain === null ? [] : [keyOf(item.domain.id)];
+        case 'pillar':
+            return ids(item.pillars);
+        case 'funding':
+            return item.funding.length === 0 ? [NONE] : ids(item.funding);
+        case 'dataset':
+            return ids(item.datasets);
+        case 'status':
+            return item.chips;
+        case 'compute':
+            return item.compute.length === 0 ? [NONE] : ids(item.compute);
+        case 'reproduced':
+            return [item.reproduced ? '1' : '0'];
+        case 'code':
+            return [item.code === '' ? NONE : item.code];
+        case 'sessions':
+            return [item.sessions];
+        default:
+            return [];
+    }
+}
+
 /** Whether a project's manifest trails its documents by at least the configured lag. */
 export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
     const days = item.project.staleDays;
     return days !== undefined && days >= lag;
 }
 
-/** Apply facet, text, stale, dated, Mine only and hidden-stage controls to board items. */
+/** Apply facet, text, stale, dated and Mine only controls to board items. */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
@@ -38,11 +79,8 @@ export function applyFilters(
     quick: QuickFilters = {}
 ): BoardItem[] {
     const needle = search.trim().toLowerCase();
-    const hidden = quick.hiddenStages ?? [];
     const lag = quick.staleLag ?? STALE_LAG;
     return items.filter((item) => {
-        const stage = item.project.stage;
-        if (stage !== undefined && hidden.includes(stage)) return false;
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
         if (quick.mine === true && !item.mine) return false;
@@ -56,6 +94,15 @@ export function applyFilters(
     });
 }
 
+/**
+ * Whether the board draws Mine only: the workspace names a `self` (`named`) and one of the board's
+ * projects, read before any filter, is one Mine only does not keep. On any other board it would
+ * change nothing, so the board neither draws it nor applies it.
+ */
+export function offersMine(items: BoardItem[], named: boolean): boolean {
+    return named && items.some((item) => !item.mine);
+}
+
 /** The state a board starts in before it has remembered any controls. */
 export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
     return {
@@ -67,8 +114,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         labels,
         stale: false,
         dated: false,
-        mine: true,
-        hiddenStages: []
+        mine: true
     };
 }
 
@@ -80,7 +126,6 @@ const boardStateShape = z.object({
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
     mine: z.boolean().catch(true),
-    hiddenStages: fieldItemsShape,
     expanded: recordItemsShape,
     more: recordItemsShape,
     filters: mapShape.optional().catch(undefined)
@@ -107,7 +152,6 @@ export function parseBoardState(
     state.stale = held.stale;
     state.dated = held.dated;
     state.mine = held.mine;
-    state.hiddenStages = held.hiddenStages;
     state.expanded = held.expanded;
     state.more = held.more;
     for (const [facet, selected] of Object.entries(held.filters ?? {})) {

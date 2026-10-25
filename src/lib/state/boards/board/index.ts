@@ -29,7 +29,6 @@ export type {
     LabelMode,
     QuickFilters,
     SessionsOf,
-    StageCount,
     VenueCount
 } from './presets.ts';
 export {
@@ -40,16 +39,25 @@ export {
     newestDocDate,
     takeContextOf
 } from './items.ts';
-export { cardSections, facetValues, facets } from './facets.ts';
+export { cardSections, facets } from './facets.ts';
 export {
     facetHeading,
+    filterChips,
     filterGroups,
     filterLabel,
     filtersInForce,
     valueLabel
 } from './filter-menu.ts';
-export type { FilterChoice, FilterGroup } from './filter-menu.ts';
-export { VENUE_WARN, disseminated, humanSize, stageCounts, stats, waitingLine } from './stats.ts';
+export type { FilterChoice, FilterGroup, InForceChip } from './filter-menu.ts';
+export { VENUE_WARN, disseminated, humanSize, stats, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';
-export { STALE_LAG, applyFilters, emptyBoardState, isStale, parseBoardState } from './state.ts';
+export {
+    STALE_LAG,
+    applyFilters,
+    emptyBoardState,
+    facetValues,
+    isStale,
+    offersMine,
+    parseBoardState
+} from './state.ts';
 export { entryRoles } from '../../../data/shapes/boards/roles.ts';

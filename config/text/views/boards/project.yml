@@ -123,10 +123,8 @@ text:
             folder: Folder
             folder_tip: show the project folder in Finder
             folder_tip_linux: open the project folder in the file manager
-            full: Full
             open_workbench: Open Workbench
             open_workbench_tip: open a workbench for the project folder
-            short: Short
             show_in_files: Show in Files
             show_in_files_tip: select the project folder in the Files view
             under_review_at: under review at {0}

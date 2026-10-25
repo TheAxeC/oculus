@@ -1,5 +1,5 @@
-// Layer 2, client state. Board statistics, waiting lines, stage counts, sizes and dissemination
-// live here because they describe board content rather than its saved controls.
+// Layer 2, client state. Board statistics, waiting lines, sizes and dissemination live here because
+// they describe board content rather than its saved controls.
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
@@ -13,13 +13,7 @@ import {
 } from '../../../data/helpers/hub-names.ts';
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
-import {
-    setting,
-    type BoardItem,
-    type BoardStats,
-    type StageCount,
-    type VenueCount
-} from './presets.ts';
+import { setting, type BoardItem, type BoardStats, type VenueCount } from './presets.ts';
 
 /** How many venues the strip's distribution shows, most aimed at first. */
 const STATS_VENUES = 8;
@@ -115,27 +109,6 @@ export function stats(
         dated,
         venues: rows.slice(0, STATS_VENUES)
     };
-}
-
-/**
- * How many projects are at each stage, in the order of `stages` of the config, with a stage that
- * map does not name after the ones it does and in its own order. A project with no stage is not
- * counted: there is no toggle to draw for a stage that has no name.
- */
-export function stageCounts(items: BoardItem[], order: string[] = []): StageCount[] {
-    const counts = new Map<string, number>();
-    for (const item of items) {
-        const stage = item.project.stage;
-        if (stage === undefined || stage === '') continue;
-        counts.set(stage, (counts.get(stage) ?? 0) + 1);
-    }
-    const rank = (stage: string): number => {
-        const at = order.indexOf(stage);
-        return at < 0 ? order.length : at;
-    };
-    return [...counts.entries()]
-        .map(([stage, count]) => ({ stage, count }))
-        .sort((left, right) => rank(left.stage) - rank(right.stage));
 }
 
 /** A size as the file finder writes it: megabytes to one decimal, else whole kilobytes. */

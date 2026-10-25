@@ -1,8 +1,10 @@
 // Layer 2, client-state tests. The Projects board's filter menu on a workspace of two hubs
-// (state/boards/board/facets.ts, facets and facetValues): a domain and a resource that both hubs'
-// projects name are one row each, counted over both hubs, and a filter on that row keeps both
-// hubs' projects (state.ts, applyFilters). The items are synthetic and hold only what the facets
-// read; the second hub's ids carry its prefix, as the merged portfolio gives them.
+// (state/boards/board/facets.ts, facets, over the values state.ts's facetValues reads): a domain
+// and a resource that both hubs' projects name are one row each, counted over both hubs, and a
+// filter on that row keeps both hubs' projects (state.ts, applyFilters). With another facet's value
+// in force, the shared domain is counted over both hubs' projects that value leaves, and the menu
+// keeps every value the board holds, at 0 where none is left. The items are synthetic and hold only
+// what the facets read; the second hub's ids carry its prefix, as the merged portfolio gives them.
 //
 // It does not cover the menu drawing the rows, which the look does.
 
@@ -35,7 +37,7 @@ function item(id: string, root?: string): BoardItem {
 }
 
 const ITEMS = [item('one'), item('two', 'look-hub2')];
-const PRESET = { categories: [], roles: [] } as unknown as BoardPreset;
+const PRESET = { categories: [], roles: [], stageOrder: [] } as unknown as BoardPreset;
 
 describe('the filter menu on a workspace of two hubs', () => {
     it('lists a value both hubs name once, counted over both', () => {
@@ -48,5 +50,31 @@ describe('the filter menu on a workspace of two hubs', () => {
     it("keeps both hubs' projects under a filter on that value", () => {
         const kept = applyFilters(ITEMS, { domain: ['methods'], compute: ['utwente'] }, '');
         expect(kept.map((one) => one.id)).toEqual(['one', 'look-hub2:two']);
+    });
+
+    it("counts that value over both hubs' projects another facet's value leaves", () => {
+        const funded = (one: BoardItem, scheme: string): BoardItem => ({
+            ...one,
+            funding: [{ id: scheme, label: scheme }]
+        });
+        const items = [
+            funded(item('one'), 'zonmw'),
+            funded(item('two', 'look-hub2'), 'look-hub2:zonmw'),
+            funded(item('three', 'look-hub2'), 'look-hub2:fwo'),
+            {
+                ...funded(item('four', 'look-hub2'), 'look-hub2:fwo'),
+                domain: { id: 'look-hub2:other', label: 'Other', tone: '' }
+            }
+        ];
+        const found = facets(items, PRESET, false, { filters: { funding: ['zonmw'] }, search: '' });
+        const rows = (key: string) => found.find((facet) => facet.key === key)?.values;
+        expect(rows('domain')).toEqual([
+            { value: 'methods', label: 'methods', count: 2 },
+            { value: 'other', label: 'other', count: 0 }
+        ]);
+        expect(rows('funding')?.map((one) => [one.value, one.count])).toEqual([
+            ['fwo', 2],
+            ['zonmw', 2]
+        ]);
     });
 });

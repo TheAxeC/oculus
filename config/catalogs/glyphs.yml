@@ -31,6 +31,7 @@ glyphs:
   dismiss: "x"
   cards: "[#]"
   list: "==="
+  full_titles: "Aa"
   disclosure: "v"
   now: ">"
   chevron: ">"

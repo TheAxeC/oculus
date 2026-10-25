@@ -194,15 +194,11 @@ export type BoardState = {
     dated: boolean;
     /**
      * Mine only: only the projects whose role fields name the user and those naming no one. On
-     * until the reader switches it off; not applied while the workspace names no `self`.
+     * until the reader switches it off; applied only where the board draws it, which is while the
+     * workspace names a `self` and one of the board's projects is one it does not keep (state.ts,
+     * `offersMine`).
      */
     mine: boolean;
-    /**
-     * The stages switched OFF, which is what the stage toggles hold. Every stage is on until one is
-     * clicked, so a stage the hub grows later is on the day it appears rather than hidden by a
-     * state saved before it existed.
-     */
-    hiddenStages: string[];
 };
 
 /** The counts of the strip above the board, and the venues the board's projects aim at. */
@@ -234,18 +230,12 @@ export type VenueCount = {
     warn: boolean;
 };
 
-/**
- * One stage of the board with how many are at it, in the order the board's own sort put them in.
- */
-export type StageCount = { stage: string; count: number };
-
-/** The quick filters and stage toggles applyFilters is given beside the facets. */
+/** The quick filters applyFilters is given beside the facets: stale, deadline and Mine only. */
 export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
     /** Mine only: only the items whose `mine` is true. */
     mine?: boolean;
-    hiddenStages?: string[];
     /**
      * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind counts as
      * behind.
@@ -253,8 +243,9 @@ export type QuickFilters = {
     staleLag?: number;
 };
 
-/** The facets, in the order the toolbar offers them. */
+/** The facets, in the order the filter menu offers them. */
 export const FACETS = [
+    'stage',
     'category',
     'role',
     'year',
@@ -268,6 +259,15 @@ export const FACETS = [
     'code',
     'sessions'
 ];
+
+/**
+ * Where a stage sorts in `order`, the keys of `stages`: its place there, and after every stage the
+ * order names for a stage it does not name or no stage at all.
+ */
+export function stageRank(stage: string | undefined, order: readonly string[]): number {
+    const at = stage === undefined ? -1 : order.indexOf(stage);
+    return at < 0 ? order.length : at;
+}
 
 /**
  * The values of the sessions facet: a session running in the project's folder now, one in the

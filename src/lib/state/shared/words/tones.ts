@@ -57,14 +57,15 @@ type Installed = {
 /**
  * The words of one hub as the lookups read them: the palette (a hex in lower case to its token
  * name), the `color` of each word of `statuses` and `stages` and the hex of each word of
- * `data_access`, each by the word in lower case, the legend, and the hub's words as the server
- * sent them, which `vocabOf` gives.
+ * `data_access`, each by the word in lower case, the legend, the label of each word of `stages` by
+ * the word as written, and the hub's words as the server sent them, which `vocabOf` gives.
  */
 type Words = {
     palette: Record<string, string | undefined>;
     statuses: Record<string, string | undefined>;
     stages: Record<string, string | undefined>;
     legend: Installed;
+    stageLabels: Record<string, string | undefined>;
     dataAccess: Record<string, string | undefined>;
     raw: Record<string, unknown>;
 };
@@ -113,15 +114,17 @@ function legendRows(value: unknown): Legend[] {
 }
 
 /**
- * One hub's words as the lookups read them, from the words the server sent: `palette`, the
- * `color` of the words of `statuses` and `stages`, `data_access`, and the legend of the words a
- * project shows (its stage of `stages`, its form of `forms` and its chips of `chips`, a word of a
- * later list taking the place of one of an earlier list among the words, and each list's words
- * kept in the config's order). A key the words do not hold reads as empty, so every lookup answers
- * with its unknown case rather than throwing.
+ * One hub's words as the lookups read them, from the words the server sent: `palette`, the `color`
+ * of the words of `statuses` and `stages`, `data_access`, the legend of the words a project shows
+ * (its stage of `stages`, its form of `forms` and its chips of `chips`, a word of a later list
+ * taking the place of one of an earlier list among the words, and each list's words kept in the
+ * config's order), and the label of each word of `stages`, which no later list takes the place of.
+ * A key the words do not hold reads as empty, so every lookup answers with its unknown case rather
+ * than throwing.
  */
 function installed(raw: Record<string, unknown>): Words {
     const lists = LISTS.map((list) => ({ list, rows: legendRows(raw[list]) }));
+    const stageRows = lists.find((one) => one.list === 'stages')?.rows ?? [];
     return {
         palette: stringMap(raw.palette, hexShape),
         statuses: stringMap(raw.statuses, colorShape),
@@ -135,6 +138,7 @@ function installed(raw: Record<string, unknown>): Words {
                 .filter((one) => one.rows.length > 0)
                 .map((one) => ({ list: one.list, keys: one.rows.map((row) => row.key) }))
         },
+        stageLabels: Object.fromEntries(stageRows.map((row) => [row.key, row.label])),
         raw
     };
 }
@@ -231,6 +235,15 @@ export function statusTone(status: unknown, hub?: string): string {
 export function stageTone(stage: unknown, hub?: string): string {
     const hex = byKey(wordsOf(hub).stages, scalar(stage).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex, hub);
+}
+
+/**
+ * The words of a stage, the `label` of its row of `stages`, and the word itself for one no row of
+ * `stages` holds. A word that `forms` or `chips` also lists keeps its stage row's label here, where
+ * the legend `chipLabel` reads gives it the label of the later list.
+ */
+export function stageLabel(stage: string, hub?: string): string {
+    return byKey(wordsOf(hub).stageLabels, stage) ?? stage;
 }
 
 /**

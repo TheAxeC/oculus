@@ -244,3 +244,154 @@ none
 - Cost: the counts run `applyFilters` once per facet with a value picked. The report says not measured, and I did not measure it either.
 
 Reviewer usage: adb9824963260c1c1, claude-opus-5-5, 251445 tokens, 68 tool uses, 16 min 15 s.
+
+## Repair round 1, refuted
+
+Usage: a3b5a389772e4bb60, claude-opus-5-5, 218318 tokens, 49 tool uses, 9 min 19 s
+
+Every check the brief and the round name passes on the reviewer's rerun; the round's three new or extended test rows fail on a base replica and pass on the worktree; the round's delta adds nothing wrong to the code. Two findings, neither needing another round: Spec 1 (the rewraps of round item 4 applied by an inline `python3` heredoc no ruling approves, its source not quoted; the text it produced checked correct by the reviewer's own word comparison and line widths) and Standards 1 (G92's Test line does not name the round's new row; its Code line is still false).
+
+### Verification lines
+
+Every command ran from `.agents/worktrees/migration-O69` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, unless it names another folder. Before `test:quick`, `ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep` listed the gate worktree's vitest and svelte-check; the reviewer waited in the foreground until it printed nothing. In place of `npm run diagrams`, which writes the diagram files, `tests/checks/diagrams/diagrams.test.ts` was run. Vitest's pass mark is written `<check mark>` and its pointer `<heavy right-pointing angle quotation mark ornament>`.
+
+```
+$ npm run test:quick -- --base add19ad5
+test:quick: 30 changed file(s), from git since add19ad5
+test:quick: 11 test file(s)
+        tests/state/boards/board/hub-facets.test.ts: changed
+        tests/state/shared/hub-words.test.ts: changed
+        tests/checks/source/keys.test.ts: imports at depth 1
+        tests/data/hubs/workspace-projects.test.ts: imports at depth 1
+        tests/state/boards/board/board-rules.test.ts: imports at depth 1
+        tests/state/boards/board/items.test.ts: imports at depth 1
+        tests/state/boards/map-forces.test.ts: imports at depth 2
+        tests/state/sessions/terminal/moved-pane-screen.test.ts: imports at depth 2
+        tests/state/workbench/count-row.test.ts: imports at depth 2
+        tests/views/shared/forms/entry-add.test.ts: imports at depth 2
+        tests/views/sources/bar-actions.test.ts: imports at depth 2
+ok      ASCII gate (0.7 s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.9 s)
+ok      eslint (28.1 s)
+ok      svelte-check (29.4 s): 1792899528433 COMPLETED 537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (35.6 s): Duration  26.88s (transform 33.66s, setup 0ms, import 41.05s, tests 6.42s, environment 2ms)
+ok      vitest checks (52.0 s): Duration  43.19s (transform 16.81s, setup 0ms, import 41.87s, tests 1.22s, environment 0ms)
+test:quick: 55.3 s; every command passed
+
+$ npx vitest run tests/state/shared/hub-words.test.ts tests/state/boards/board/hub-facets.test.ts tests/state/boards/board/board-rules.test.ts
+ Test Files  3 passed (3)
+      Tests  89 passed (89)
+
+$ npx vitest run tests/state/shared/hub-words.test.ts tests/state/boards/board/hub-facets.test.ts --reporter=verbose
+ <check mark> hub-facets.test.ts > the filter menu on a workspace of two hubs > lists a value both hubs name once, counted over both
+ <check mark> hub-facets.test.ts > the filter menu on a workspace of two hubs > keeps both hubs' projects under a filter on that value
+ <check mark> hub-facets.test.ts > the filter menu on a workspace of two hubs > counts that value over both hubs' projects another facet's value leaves
+ <check mark> hub-words.test.ts > the words of each hub's records > draws each hub's leads and entries in its own colours in a workspace with no primary
+ <check mark> hub-words.test.ts > the words of each hub's records > draws each hub's cards in its own stage words and orders and labels the stage facet from the union
+ <check mark> hub-words.test.ts > the words of each hub's records > labels a stage by its row of stages where the hub's chips list the same word
+ <check mark> hub-words.test.ts > the words of each hub's records > reads a folder that is no hub under oculus's own words in a workspace with no primary
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+
+$ npx vitest run tests/checks/diagrams/diagrams.test.ts --testTimeout 0
+      Tests  47 passed (47)
+$ npx vitest run tests/state/boards/board/items.test.ts
+      Tests  2 passed (2)
+
+$ grep -rn "hiddenStages\|stageCounts\|StageCount\|toggleStage\|stage_toggle_tip\|ModeSwitch\|view_cards_glyph\|view_list_glyph\|helper.short\|helper.full\|board.labels\|Aa toggle" src tests config docs --exclude=local.yml
+src/lib/state/boards/structure/graph.ts:320:export function stageCounts(graph: Graph): Record<string, number> {
+src/lib/state/boards/structure/graph.ts:375:    const counted = stageCounts(drawn);
+src/lib/state/boards/structure/graph.ts:376:    const names = Object.keys(stageCounts(base));
+
+$ wc -l: Projects.svelte 466, FilterBar.svelte 114, Chip.svelte 248, facets.ts 191, filter-menu.ts 168, state.ts 170, presets.ts 418, items.ts 234, stats.ts 149, index.ts 63, tones.ts 384, hub-words.test.ts 132, hub-facets.test.ts 80
+$ ls src/lib/state/boards/board | wc -l
+      10
+
+$ spec.md's perl ASCII gate over src tests config: no line printed, exit 0 (the tree has no bin folder)
+$ LC_ALL=C grep -n '[^ -~]' docs/HELP.md .scratch/migration/agents/reviews/O69-report.md
+(prints nothing)
+
+$ sh utils/unused-exports.sh, diffed against .agents/worktrees/O69-base/unused-exports.txt
+two changed lines in src/lib/state/boards/board/index.ts (facetValues moved in its line; QuickFilters, StageCount and FilterGroup gone), no added line
+```
+
+The base replica (every changed `src` and `config` file from `add19ad5`, FilterBar removed, the round's test files as on the worktree), built in the reviewer's scratch folder and removed after:
+
+```
+$ npx vitest run tests/state/boards/board/hub-facets.test.ts
+ FAIL  ... > counts that value over both hubs' projects another facet's value leaves
+-     "count": 2,
++     "count": 3,
+-     "count": 0,
++     "count": 1,
+ <heavy right-pointing angle quotation mark ornament> tests/state/boards/board/hub-facets.test.ts:71:32
+      Tests  1 failed | 2 passed (3)
+
+$ npx vitest run tests/state/shared/hub-words.test.ts
+ FAIL  ... > draws each hub's cards in its own stage words and orders and labels the stage facet from the union
+TypeError: stageLabel is not a function
+ <heavy right-pointing angle quotation mark ornament> tests/state/shared/hub-words.test.ts:103:16
+ FAIL  ... > labels a stage by its row of stages where the hub's chips list the same word
+TypeError: stageLabel is not a function
+ <heavy right-pointing angle quotation mark ornament> tests/state/shared/hub-words.test.ts:113:16
+      Tests  2 failed | 2 passed (4)
+
+$ rm -rf <replica>; ls -d <replica>
+ls: <replica>: No such file or directory
+```
+
+The case program, copied verbatim from the report into a scratch folder and rerun: 18 `CASE` lines, `Tests 1 passed (1)`, identical under `diff` to the report's "The cases after the change"; the folder removed. The reuse greps of round item 5, rerun in the report's form, print the hits the report quotes; `grep -rn "indexOf(.*stage\|stages\?\.indexOf\|Order\.indexOf" src | grep -v "^src/lib/server"` prints only `presets.ts:262`.
+
+### Verdicts
+
+Round items (`agents/briefs/O69-round1.md`):
+- 1 `stageLabel` in G127's test: holds. `hub-words.test.ts:103-106` asserts `stageLabel('exploring')` Experimenting, `('exploring', 'lab')` Experimenting, `('exploring', 'home')` exploring, `('trialling')` Trialling; the new row at `:109-116` gives `chipLabel` "a chip word" where `stageLabel` gives exploring. Both rows fail on the base replica.
+- 2 the row's title: holds (`hub-words.test.ts:80`).
+- 3 G92's row with a filter in force: holds (`hub-facets.test.ts:55-79`, a four-project list since `ITEMS` carries no funding); it asserts methods 2, other 0, both funding values 2; it fails on the base replica.
+- 4 rewraps: holds as text (every named paragraph breaks where the next word would pass 100 columns; the words of each paragraph equal the round-1 snapshot's); Spec 1 for how it was applied.
+- 5 reuse greps: holds.
+- The change to `src/lib/state/boards/board/items.ts`: holds. The base's local `rank` in `compare` is token for token `stageRank` at `presets.ts:261-264`; no ordering changes; it leaves one copy of the rule where the first build had two; `board-rules.test.ts` and `items.test.ts` pass; neither O70's nor O71's brief names `items.ts`.
+
+Brief items over the whole diff since `add19ad5`: 1 holds, 2 holds, 3 holds, 4 holds, 5 holds, 6 holds, 7 holds, 8 holds for every place it names (G92's Code line still false, left to the orchestrator; Standards 1).
+
+Cases: 1, 2, 3, 5, 6, 8, 12, 14, 16, 18 met by their CASE lines; 4 met for the state (the drawn line for the look); 7 met by CASE 7 and G124's rows; 10 met by CASE 10 and G92's new row; 11 met by both CASE 11 lines and G127's extended row; 17 met by CASE 17 and G127's new row; 9, 13, 15 and 19 met by reading, for the look.
+
+### Spec
+
+- 1. Round item 4: the rewraps were applied by an inline `python3` heredoc the brief does not build and no ruling approves, which also computed a check (the equality of the words) and whose source the report does not quote (the report's "Repair round 1", item 4; `presets.ts:190-193`, `tones.ts:117-123`, `facets.ts:1-4`, `facets.ts:128-136`, `filter-menu.ts:133-138`, `FilterBar.svelte:8-10`, the two test head comments). Failure scenario: a reader takes "the words of old and new are equal" as checked on the evidence of a program nobody can read. The reviewer's own checks show the words unchanged and the lines wrapped whole; nothing in the diff needs changing. The same pattern as open item 337.
+
+### Proof
+
+none.
+
+### Standards
+
+- 1. `agents/guarded.md:288-290`, G92: its Test line does not name the round's row "counts that value over both hubs' projects another facet's value leaves" (`hub-facets.test.ts:55`), and its Code line names `facetValues` in `facets.ts`, where it is at `state.ts:32`. Failure scenario: a later step reads the third row as a test no entry names and deletes it, and the counts under a filter lose their only test. Fix at landing: Code "`facets` in `src/lib/state/boards/board/facets.ts`; `facetValues` and `applyFilters` in `src/lib/state/boards/board/state.ts`", the Test line gaining the new row.
+
+### Behaviour
+
+none.
+
+### Declined to judge
+
+- `npm run diagrams` itself, which writes files; the landing's gate run settles it.
+- Whether a whole-suite command ran in the round; the report says none did.
+- The inline heredoc of round item 4, whose source is not in the report; its result judged by the reviewer's own comparison (Spec 1).
+- `.scratch/migration/agents/briefs/O69-round1.md`, untracked inside the worktree, identical to the main ledger's copy; whether the wip commit carries it is the orchestrator's.
+- What is drawn (the chips line, the remove control under the terminal themes, Tab and Enter on it, the header buttons' pressed state, inside the header's overflow popover too): for the look on TEST.
+- The cost of the counting (one more `applyFilters` per facet with a value picked): not measured.
+
+## Closed
+
+First run:
+- Spec 1 (no rows for `stageLabel` in G127's test nor for `facets(...inForce)` in G92's; the premise that the step touches G92 and G124 only, G127 also): sent in repair round 1 (items 1 and 3) and closed there; the round's review gives cases 10, 11 and 17 met and the rows failing on a base replica.
+- Standards 1 (G92's Code line names `facetValues` in `facets.ts`): fixed at landing in `agents/guarded.md`, the Code line now `facets` in `facets.ts`, `facetValues` and `applyFilters` in `state.ts`.
+- Standards 2 (the title of `hub-words.test.ts:77`): sent in round 1 (item 2) and closed there.
+- Standards 3 (ten comment paragraphs ending short): sent in round 1 (item 4) and closed there as text; how the round applied it is the round's Spec 1.
+- Standards 4 (the whole-suite command of the first build): recorded in the booking.
+- Standards 5 (the reuse greps): sent in round 1 (item 5) and closed there; the round's shared `stageRank` in `items.ts` judged in the round's review (holds).
+
+Repair round 1:
+- Spec 1 (the rewraps applied by an inline `python3` heredoc no ruling approves): raised to Axel as open item 344. Nothing the heredoc printed is used: the orchestrator's own greedy rewrap at 100 columns of each of the eight paragraphs, run in the gate worktree, gives each paragraph byte for byte as it stands.
+- Standards 1 (G92's Test line does not name the round's row; the Code line still false): fixed at landing in `agents/guarded.md`, the Test line naming "counts that value over both hubs' projects another facet's value leaves" and the entry's sentence saying the value is counted under the other filters in force.

@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, primitive. An inline label in a hue: a status word and the project stage, and a
-    // filter the reader presses. The capsule is what marks a status out of the run of words on a
-    // card, so every other tag a view lists is ui/controls/Tag.svelte instead. It is VS Code's
-    // count badge in shape: 11px words, an 18 px minimum, a full round end. Outline is
-    // the default and the filled form is for the one chip that has to carry a row; a pressed
-    // toggle is drawn filled in its hue.
+    // Layer 3, primitive. An inline label in a hue: a status word and the project stage, a filter
+    // the reader presses, and a filter in force the reader takes out. The capsule is what marks a
+    // status out of the run of words on a card, so every other tag a view lists is
+    // ui/controls/Tag.svelte instead. It is VS Code's count badge in shape: 11px words, an 18 px
+    // minimum, a full round end. Outline is the default and the filled form is for the one chip
+    // that has to carry a row; a pressed toggle is drawn filled in its hue.
     //
     // The hue reaches the CSS as three custom properties the component sets from the tone, so the
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
@@ -12,7 +12,9 @@
     // tests/checks/look/contrast.test.ts measures under every theme.
     //
     // Given an `onclick` it is a toggle with `aria-pressed`, toned or untoned (the Joint-work and
-    // disclosure pills are untoned).
+    // disclosure pills are untoned). Given an `onremove` instead, it carries a remove control after
+    // its label: a button of its own, which Tab reaches, named and titled by `removeLabel`. A
+    // toggle never carries one, so no button is drawn inside another.
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
@@ -38,9 +40,26 @@
         pressed?: boolean;
         /** The tooltip of a toggle chip, when it should say more than the label does. */
         title?: string;
+        /**
+         * Draws a remove control after the label that calls this when pressed. It is drawn only on
+         * a chip given no `onclick`.
+         */
+        onremove?: () => void;
+        /** The remove control's accessible name and tooltip, already translated by the view. */
+        removeLabel?: string;
     };
 
-    let { label, tone, glyph, filled = false, onclick, pressed, title }: Props = $props();
+    let {
+        label,
+        tone,
+        glyph,
+        filled = false,
+        onclick,
+        pressed,
+        title,
+        onremove,
+        removeLabel = ''
+    }: Props = $props();
 
     const solid = $derived(filled || pressed === true);
     const style = $derived(
@@ -69,6 +88,13 @@
             <span class="mark"><Glyph name={glyph} /></span>
         {/if}
         <span class="label">{label}</span>
+        {#if onremove !== undefined}
+            <Tooltip text={removeLabel}>
+                <button type="button" class="remove" aria-label={removeLabel} onclick={onremove}>
+                    <Glyph name="dismiss" />
+                </button>
+            </Tooltip>
+        {/if}
     </span>
 {:else}
     <Tooltip text={title ?? ''}>
@@ -117,15 +143,44 @@
     }
 
     /* A long value is cut at the chip's own edge rather than at the card's, so a column of chips
-       keeps its column and the caller's tooltip carries the whole value. */
+       keeps its column and the caller's tooltip carries the whole value. The cut box is a line of
+       15px, tall enough for the letters below the line (g, p, y), and its margin gives the 4px it
+       takes over the chip's 11px line back, so the chip stays as high. */
     .chip .label {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: calc(15px * var(--text-scale, 1));
+        margin: calc(-2px * var(--text-scale, 1)) 0;
     }
 
     .chip.toned {
         color: var(--tone-txt, var(--muted-txt));
+    }
+
+    /* The remove control is the chip's own icon box: no border and no fill, the 16 px icon given
+       back the room it takes over the 11 px line, as the glyph before the label is, and the accent
+       on hover and on keyboard focus. */
+    .remove {
+        display: inline-flex;
+        align-items: center;
+        margin: calc(-3px * var(--text-scale, 1)) 0;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .remove:hover {
+        color: var(--accent);
+    }
+
+    .remove:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     /* A chip the reader presses is the same capsule with a button's behaviour: the words keep the

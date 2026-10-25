@@ -29,59 +29,61 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The project board: cards or a table, a search, quick filters, stage toggles,
-    // one filter menu headed by every way the board can be split, a stats strip and a short or full
-    // title. It is registered six times, as `projects`, `supervision`, `coauthor`, `archive`,
-    // `personal` and `software`, and reads which board it is from the instance it was mounted as,
-    // so the six board tabs are one component here. A board holds every project its keys in
-    // `boards:` meet, so one project may be on several. The cards are laid out in sections, one per
-    // row of `categories` holding a card, in the list's order, and an "other" section last for the
-    // cards in no row, or as one flat grid where the board's `cards:` says `grid`. A board offers
-    // New project, written with its tier and its `role:` keys, only when its rule takes the project
-    // that write makes (state/boards/board/new-project.ts), so Archive, which takes done work,
-    // offers none with the shipped boards. While the workspace names a `self`, the board draws the
-    // Mine only toggle, on by default, and the Role facet, and a card whose lead is the user
-    // carries the Lead badge; without one it draws none of them.
+    // Layer 3, view. The project board: cards or a table, a search, quick filters, one filter menu
+    // headed by every way the board can be split, the stage first, the facet values in force as
+    // removable chips, a stats strip and a short or full title. It is registered six times, as
+    // `projects`, `supervision`, `coauthor`, `archive`, `personal` and `software`, and reads which
+    // board it is from the instance it was mounted as, so the six board tabs are one component
+    // here. A board holds every project its keys in `boards:` meet, so one project may be on
+    // several. The cards are laid out in sections, one per row of `categories` holding a card, in
+    // the list's order, and an "other" section last for the cards in no row, or as one flat grid
+    // where the board's `cards:` says `grid`. The header holds New project, Expand all and
+    // Collapse, then Cards and List, the one in force pressed, and Full titles, pressed while the
+    // board draws full titles. A board offers New project, written with its tier and its `role:`
+    // keys, only when its rule takes the project that write makes
+    // (state/boards/board/new-project.ts), so Archive, which takes done work, offers none with the
+    // shipped boards. While the workspace names a `self`, the board draws the Role facet, and a
+    // card whose lead is the user carries the Lead badge; the Mine only toggle, on by default, is
+    // drawn and applied only where one of the board's projects is one it does not keep. Without a
+    // `self` it draws none of them.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
-    // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
-    // cut are the pure functions of state/board. The strip is views/boards/projects/Stats.svelte
-    // and the new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of
-    // the boundary table: a view too large for one file is split into its own folder. The
-    // card is views/shared/card/project/ProjectCard.svelte, since
-    // views/boards/project/Project.svelte draws the same one. A web address written in a cell of
-    // the table, the next line's among them, is a link (ui/display/text/LinkedText.svelte).
+    // joined, and the facets, the filter menu's groups, the chips, the filters, the counts and the
+    // sentence cut are the pure functions of state/board; each facet's counts are taken over the
+    // projects the search, the quick filters and the other facets leave. The bar is
+    // views/boards/projects/FilterBar.svelte, the strip views/boards/projects/Stats.svelte and the
+    // new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of the
+    // boundary table: a view too large for one file is split into its own folder. The card is
+    // views/shared/card/project/ProjectCard.svelte, since views/boards/project/Project.svelte draws
+    // the same one. A web address written in a cell of the table, the next line's among them, is a
+    // link (ui/display/text/LinkedText.svelte).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import Search from '$lib/ui/controls/text/Search.svelte';
-    import Segment from '$lib/ui/controls/segment/Segment.svelte';
-    import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
-    import Chip from '$lib/ui/controls/Chip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
-    import ModeSwitch from '../../shared/card/ModeSwitch.svelte';
+    import FilterBar from './FilterBar.svelte';
     import NewIdea from './NewIdea.svelte';
     import Stats from './Stats.svelte';
     import {
         applyFilters,
         cardSections,
         facets,
+        filterChips,
         filterGroups,
-        filterLabel,
         firstSentence,
+        offersMine,
         parseBoardState,
-        stageCounts,
         type BoardItem,
         type BoardMode,
-        type BoardState
+        type BoardState,
+        type QuickFilters
     } from '$lib/state/boards/board';
     import { projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
@@ -113,6 +115,9 @@
     const items = $derived(board(preset));
     /** Whether the workspace names a `self`, which the Mine only toggle and the Role facet need. */
     const named = $derived(selfNamed());
+    /** Whether the board draws Mine only, which it applies only while it draws it. */
+    const mineShown = $derived(offersMine(items, named));
+    /** The facets with their counts over every project, which the saved state is read against. */
     const offered = $derived(facets(items, preset, named));
     const held = $derived(
         parseBoardState(
@@ -122,18 +127,20 @@
             preset.categories.map((one) => one.key)
         )
     );
-    const groups = $derived(filterGroups(offered, held.filters, preset));
-    const stages = $derived(stageCounts(items, preset.stageOrder));
     const lag = $derived(staleLag());
-    const shown = $derived(
-        applyFilters(items, held.filters, held.search, {
-            stale: held.stale,
-            dated: held.dated,
-            mine: named && held.mine,
-            hiddenStages: held.hiddenStages,
-            staleLag: lag
-        })
+    const quick: QuickFilters = $derived({
+        stale: held.stale,
+        dated: held.dated,
+        mine: mineShown && held.mine,
+        staleLag: lag
+    });
+    /** The facets with each value counted over the projects the other filters leave. */
+    const counted = $derived(
+        facets(items, preset, named, { filters: held.filters, search: held.search, quick })
     );
+    const groups = $derived(filterGroups(counted, held.filters, preset));
+    const chips = $derived(filterChips(counted, held.filters, preset));
+    const shown = $derived(applyFilters(items, held.filters, held.search, quick));
     const rows = $derived(shown.map(row));
     const sections = $derived(cardSections(shown, preset));
     const strip = $derived(boardStats(items));
@@ -152,17 +159,13 @@
      */
     const now = Date.now();
 
-    const labelModes: SegmentItem[] = [
-        { id: 'short', label: t('project.helper.short') },
-        { id: 'full', label: t('project.helper.full') }
-    ];
-
     function write(next: Partial<BoardState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }, ['expanded', 'more']));
     }
 
+    /** Draw the cards or the table; a press on the mode in force changes nothing. */
     function setMode(mode: BoardMode): void {
-        write({ mode });
+        if (held.mode !== mode) write({ mode });
     }
 
     /** Add or remove one value of one facet, which is what a pick in the filter menu means. */
@@ -189,16 +192,6 @@
     function toggleMore(id: string): void {
         const open = held.more.includes(id);
         write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
-    }
-
-    /** Every stage is on until it is clicked off, so the state holds the ones that are off. */
-    function toggleStage(stage: string): void {
-        const off = held.hiddenStages.includes(stage);
-        write({
-            hiddenStages: off
-                ? held.hiddenStages.filter((one) => one !== stage)
-                : [...held.hiddenStages, stage]
-        });
     }
 
     /** Open or close every card of the board at once, which is what the two bulk controls do. */
@@ -327,64 +320,40 @@
             glyph={t('project.card.collapse_glyph')}
             onclick={() => bulk(false)}
         />
+        <ToolButton
+            bare
+            glyph="cards"
+            label={t('board.view_cards')}
+            pressed={held.mode === 'cards'}
+            onclick={() => setMode('cards')}
+        />
+        <ToolButton
+            bare
+            glyph="list"
+            label={t('board.view_list')}
+            pressed={held.mode === 'list'}
+            onclick={() => setMode('list')}
+        />
+        <ToolButton
+            bare
+            glyph="full_titles"
+            label={t('board.full_titles')}
+            pressed={held.labels === 'full'}
+            onclick={() => write({ labels: held.labels === 'full' ? 'short' : 'full' })}
+        />
     </Toolbar>
 {/snippet}
 
 {#snippet bar()}
-    <Toolbar label={t('board.filters')}>
-        <Search
-            fill
-            value={held.search}
-            placeholder={preset.search === '' ? t('board.search_default') : preset.search}
-            oninput={(value: string) => write({ search: value })}
-        />
-        <Menu
-            label={filterLabel(held.filters)}
-            items={[]}
-            {groups}
-            onpick={(value: string, _event: MouseEvent, facet?: string) => {
-                if (facet !== undefined) toggleFilter(facet, value);
-            }}
-            placement="down"
-        />
-        <Chip
-            label={t('board.quick_stale')}
-            title={t('board.quick_stale_tip')}
-            glyph={t('board.stale_glyph')}
-            pressed={held.stale}
-            onclick={() => write({ stale: !held.stale })}
-        />
-        <Chip
-            label={t('board.quick_deadline')}
-            title={t('board.quick_deadline_tip')}
-            glyph={t('project.card.deadline_glyph')}
-            pressed={held.dated}
-            onclick={() => write({ dated: !held.dated })}
-        />
-        {#if named}
-            <Chip
-                label={t('roles.mine')}
-                title={t('roles.mine_tip')}
-                pressed={held.mine}
-                onclick={() => write({ mine: !held.mine })}
-            />
-        {/if}
-        {#each stages as one (one.stage)}
-            <Chip
-                label={`${one.stage} ${one.count}`}
-                title={t('board.stage_toggle_tip', one.stage)}
-                pressed={!held.hiddenStages.includes(one.stage)}
-                onclick={() => toggleStage(one.stage)}
-            />
-        {/each}
-        <ModeSwitch mode={held.mode} onchange={setMode} />
-        <Segment
-            label={t('board.labels')}
-            items={labelModes}
-            value={held.labels}
-            onchange={(id) => write({ labels: id === 'full' ? 'full' : 'short' })}
-        />
-    </Toolbar>
+    <FilterBar
+        {held}
+        placeholder={preset.search}
+        {groups}
+        {chips}
+        mine={mineShown}
+        onwrite={write}
+        ontoggle={toggleFilter}
+    />
 {/snippet}
 
 <Pane title={title()} toolbar={tools} {bar}>

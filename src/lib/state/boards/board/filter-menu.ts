@@ -1,15 +1,19 @@
 // Layer 2, client state. The board's one filter control as data: a group per facet, headed by the
-// facet's name, a choice per value with its count, the values in force ticked, and how many values
-// are in force in all, which is what the control's own words carry.
+// facet's name, a choice per value with its count, the values in force ticked, how many values are
+// in force in all, which is what the control's own words carry, and the values in force as the
+// chips drawn under the bar, each with the words of its remove control.
 //
-// It is apart from the view so the grouping and the count can be read without a DOM: a menu's list
-// is drawn only once it is opened, which a server rendering never does. The shape of a group is the
-// one ui/menu/Menu.svelte's `groups` takes, written out here because the state layer imports no ui
-// file.
+// It is apart from the view so the grouping, the count and the chips can be read without a DOM: a
+// menu's list is drawn only once it is opened, which a server rendering never does. The shape of a
+// group is the one ui/menu/Menu.svelte's `groups` takes, written out here because the state layer
+// imports no ui file.
 
+import { byKey } from '../../../data/helpers/guards.ts';
 import { t } from '../../shared/words/text.ts';
 import { toneOf } from '../../shared/words/tones.ts';
+import { facetLabel } from './facets.ts';
 import {
+    FACETS,
     NONE,
     SESSIONS_LIVE,
     SESSIONS_RECENT,
@@ -37,6 +41,7 @@ export type FilterGroup = { id: string; heading: string; items: FilterChoice[] }
  * them.
  */
 export function facetHeading(facet: string): string {
+    if (facet === 'stage') return t('board.facet_stage');
     if (facet === 'category') return t('board.facet_category');
     if (facet === 'role') return t('roles.facet');
     if (facet === 'year') return t('board.facet_year');
@@ -116,6 +121,39 @@ export function filterGroups(
                 })
             };
         });
+}
+
+/**
+ * One facet value in force as a chip under the bar: its facet and value, which a press on its
+ * remove control takes out, its words, and the words of that control.
+ */
+export type InForceChip = { facet: string; value: string; label: string; remove: string };
+
+/**
+ * The chips of the values in force: facet by facet in the menu's order, and value by value in the
+ * order they were picked, each reading `<facet heading>: <value label>`. A value the board offers
+ * reads as its choice in the menu does. A value it does not offer, one no project holds any more or
+ * one of a facet the menu does not draw (a role while the workspace names no `self`), reads by the
+ * words its facet gives it, which is the value itself where the config names none, so every value
+ * that narrows the board has a chip that takes it out.
+ */
+export function filterChips(
+    groups: Facet[],
+    filters: Record<string, string[]>,
+    preset: BoardPreset
+): InForceChip[] {
+    return FACETS.flatMap((facet) => {
+        const offered = groups.find((group) => group.key === facet)?.values ?? [];
+        return (byKey(filters, facet) ?? []).map((value) => {
+            const held = offered.find((one) => one.value === value) ?? {
+                value,
+                label: facetLabel(facet, value, preset),
+                count: 0
+            };
+            const label = t('board.filter_chip', facetHeading(facet), valueLabel(facet, held));
+            return { facet, value, label, remove: t('board.filter_remove', label) };
+        });
+    });
 }
 
 /** How many values are in force over every facet, which the control's words count. */

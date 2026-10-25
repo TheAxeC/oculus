@@ -233,7 +233,7 @@ options:
                     label: the column's heading, the cell's name when it has none
             search: the placeholder of the board's search box
             label_mode:
-                help: how the board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title; any other value counts as short. The board's Aa toggle overrides it for the viewer
+                help: how the board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title; any other value counts as short. The Full titles button in the board's header overrides it for the viewer
                 control: choice
                 options: [short, full]
             cards:

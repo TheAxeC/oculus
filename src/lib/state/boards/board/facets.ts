@@ -1,5 +1,7 @@
-// Layer 2, client state. Board facet values, labels, ordering and counts live here because facet
-// vocabulary changes independently of item construction and board state.
+// Layer 2, client state. Board facet labels, ordering and counts live here because facet vocabulary
+// changes independently of item construction and board state. The values an item carries for a
+// facet are state.ts's `facetValues`, which the filter reads too, so a facet counts a value under
+// the same rule the filter keeps a project by.
 //
 // A value that names a record of a hub (a domain, a pillar, a funding scheme, a dataset, a
 // resource) is that record's key, its internal id with the hub's name off: on a workspace of two
@@ -8,50 +10,22 @@
 // record, which items.ts gives by the key. The card view's sections, one per category, are cut
 // here too, since a section is the category facet's value laid out.
 
+import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
-import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
+import { chipKeys, chipLabel, domainLabel, stageLabel } from '../../shared/words/tones.ts';
 import {
     CODE_VALUES,
     FACETS,
     NONE,
     REPRODUCED_VALUES,
     SESSIONS_VALUES,
+    stageRank,
     type BoardItem,
     type BoardPreset,
-    type Facet
+    type Facet,
+    type QuickFilters
 } from './presets.ts';
-
-export function facetValues(item: BoardItem, facet: string): string[] {
-    const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
-    switch (facet) {
-        case 'category':
-            return item.category === '' ? [] : [item.category];
-        case 'role':
-            return item.role === '' ? [] : [item.role];
-        case 'year':
-            return [item.year === '' ? NONE : item.year];
-        case 'domain':
-            return item.domain === null ? [] : [keyOf(item.domain.id)];
-        case 'pillar':
-            return ids(item.pillars);
-        case 'funding':
-            return item.funding.length === 0 ? [NONE] : ids(item.funding);
-        case 'dataset':
-            return ids(item.datasets);
-        case 'status':
-            return item.chips;
-        case 'compute':
-            return item.compute.length === 0 ? [NONE] : ids(item.compute);
-        case 'reproduced':
-            return [item.reproduced ? '1' : '0'];
-        case 'code':
-            return [item.code === '' ? NONE : item.code];
-        case 'sessions':
-            return [item.sessions];
-        default:
-            return [];
-    }
-}
+import { applyFilters, facetValues } from './state.ts';
 
 /** The name and registry position of each resource, from the first item that carries it. */
 type Recorded = Map<string, { label: string; order: number }>;
@@ -67,9 +41,18 @@ function recordResources(items: BoardItem[]): Recorded {
     return recorded;
 }
 
-/** The words a facet value carries, for the values that are data rather than vocabulary. */
-function facetLabel(facet: string, value: string, preset: BoardPreset, recorded: Recorded): string {
+/**
+ * The words a facet value carries, for the values that are data rather than vocabulary. A compute
+ * value reads by the resource's name `recorded` holds, and as itself without one.
+ */
+export function facetLabel(
+    facet: string,
+    value: string,
+    preset: BoardPreset,
+    recorded: Recorded = new Map()
+): string {
     if (value === NONE) return value;
+    if (facet === 'stage') return stageLabel(value);
     if (facet === 'compute') return recorded.get(value)?.label ?? value;
     if (facet === 'category') {
         return preset.categories.find((one) => one.key === value)?.label ?? value;
@@ -99,6 +82,12 @@ function orderValues(
     recorded: Recorded
 ): string[] {
     const has = (value: string): boolean => (counts.get(value) ?? 0) > 0;
+    if (facet === 'stage') {
+        // A stage `stages` does not name comes after every stage it does, in the order first met.
+        const order = preset.stageOrder;
+        const stages = [...counts.keys()].filter(has);
+        return stages.sort((left, right) => stageRank(left, order) - stageRank(right, order));
+    }
     if (facet === 'category') return preset.categories.map((one) => one.key).filter(has);
     // Every role is listed, with none at it too, so the facet names each role a project may hold.
     if (facet === 'role') return preset.roles.map((one) => one.key);
@@ -127,19 +116,47 @@ function orderValues(
     return values.includes(NONE) ? [...named, NONE] : named;
 }
 
+/** The filters in force on a board: its facet values, its search and its quick filters. */
+type InForce = { filters: Record<string, string[]>; search: string; quick?: QuickFilters };
+
+/** The facet values in force without those of one facet. */
+function without(filters: Record<string, string[]>, facet: string): Record<string, string[]> {
+    return Object.fromEntries(Object.entries(filters).filter(([key]) => key !== facet));
+}
+
 /**
- * Every facet the board can be split on, with its counts. A facet with one value is offered as
- * that one value: a filter that selects everything is still the board saying what its one value
- * is, and the reader can read it. The role facet is offered only while the workspace names a
- * `self` (`named`), since without one no project has a role.
+ * Every facet the board can be split on, with its counts. A facet lists the values the board's
+ * projects hold, in an order read from all of them, so the menu keeps its rows while the reader
+ * picks. Given the filters in force (`inForce`), a value's count is how many of the projects the
+ * search, the quick filters and every other facet's values leave carry it, 0 where they leave none,
+ * so a facet's own pick does not narrow its counts; given none, it is how many of the board's
+ * projects carry it. A facet with one value is offered as that one value: a filter that selects
+ * everything is still the board saying what its one value is, and the reader can read it. The role
+ * facet is offered only while the workspace names a `self` (`named`), since without one no project
+ * has a role.
  */
-export function facets(items: BoardItem[], preset: BoardPreset, named = false): Facet[] {
+export function facets(
+    items: BoardItem[],
+    preset: BoardPreset,
+    named = false,
+    inForce?: InForce
+): Facet[] {
     const found: Facet[] = [];
     const recorded = recordResources(items);
+    const kept =
+        inForce === undefined
+            ? items
+            : applyFilters(items, inForce.filters, inForce.search, inForce.quick);
+    // The projects one facet counts over: every filter in force but that facet's own values.
+    const left = (facet: string): BoardItem[] =>
+        inForce === undefined || (byKey(inForce.filters, facet) ?? []).length === 0
+            ? kept
+            : applyFilters(items, without(inForce.filters, facet), inForce.search, inForce.quick);
     for (const facet of FACETS) {
         if (facet === 'role' && !named) continue;
-        const counts = countValues(items, facet);
-        const values = orderValues(facet, counts, preset, recorded).map((value) => ({
+        const whole = countValues(items, facet);
+        const counts = inForce === undefined ? whole : countValues(left(facet), facet);
+        const values = orderValues(facet, whole, preset, recorded).map((value) => ({
             value,
             label: facetLabel(facet, value, preset, recorded),
             count: counts.get(value) ?? 0
