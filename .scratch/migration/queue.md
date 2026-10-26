@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), built, review running.
+- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), repair round 1.
 
 Queued, in order (2 steps):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waits for O80's landing (shared files not simple to merge); rulings 425 (a), 426 and 427 (a) given.
@@ -9,7 +9,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
-- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, its landing commit; open item 430 raised.
+- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
 - O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.
 - O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 385, Z1007), 2026-10-25, a374362d.
 - O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, 1283d0ac.
