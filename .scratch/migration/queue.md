@@ -1,5 +1,5 @@
 In flight (3 of 6 slots in use):
-- O84 (who the user is), repair round 1 being built.
+- O84 (who the user is), repair round 1 reported; its review over the round next.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), building.
 - O94 (LinkedIn's Mark posted), /spec: brief check done, its findings being closed in the brief.
 

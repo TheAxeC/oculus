@@ -33,7 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a6b9bb9efcca75eff (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O84-report.md
-  builder_usage: 360226 tokens, 327 tool uses, 114 min 30 s
+  builder_usage: 360226 tokens, 327 tool uses, 114 min 30 s; round 1: 346893 tokens, 129 tool uses, 36 min 30 s
   reviewer_report: .scratch/migration/agents/reviews/O84-refuter.md (aa3b772655f6267cf, claude-opus-5-5, 111375 tokens, 116 tool uses, 23 min 38 s)
   shared_paths: with O86, simple merges in separate lines: `src/lib/data/snapshot/hubs/merge.ts` (O86 lines 16-19 and `feedsOf`; O84 a new paragraph after line 19 or a new file), `normalise.ts` (O86 41 and 588-597; O84 360-395, 601, 620-635), `src/lib/data/model/index.ts` (O86 725; O84 43), `model-collections.ts` (O86 411-450; O84 490-510), `src/lib/server/root/context.ts` (O86 383-390 and 810-816; O84 295-330), `docs/templates.md` (O86 530-548; O84 372-512 and 1055-1065); with O89, `config/defaults/sources.yml` (O89 line 34; O84 lines 5 and 82); the generated `docs/diagrams/*` with O86 and O89, regenerated at each landing.
   round: 1
@@ -50,7 +50,7 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: with O84, simple merges in separate lines: `config/options/sources.yml` (O84 189-196; O87 78-90), `docs/templates.md` (O84 372-512 and 1055-1065; O87 64-68, 274-278, 318-332), `src/lib/state/boards/focus/filter.ts` (O84 comments; O87 280-480), `tests/checks/config/config-folder.test.ts` (O84 its rows; O87 222-245), `docs/HELP.md` (O84 Doc text at 288 and 532; O87 294, 529, 538, 547); the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
 - step: O94
-  brief_check: "running: a0b48bbc141e6efce"
+  brief_check: .scratch/migration/agents/reviews/O94-brief-check.md (a0b48bbc141e6efce, claude-opus-5-5, 183761 tokens, 49 tool uses, 8 min 7 s)
   landing: preparing
 ```
 
