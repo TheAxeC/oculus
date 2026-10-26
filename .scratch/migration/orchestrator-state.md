@@ -48,12 +48,21 @@ dispatch:          # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O81-report.md
   builder_usage: 312064 tokens, 102 tool uses, 17 min 53 s (first run, handed back at cases 18, 26 and 28); build under the cases ruling: 309417 tokens, 392 tool uses, 65 min 18 s; repair round 1: 339844 tokens, 24 tool uses, 3 min 49 s to its first stop while its checks ran, then 113806 tokens, 57 tool uses, 24 min 46 s to its report
   shared_paths: `tests/state/boards/board/board-rules.test.ts` (O81 the describe 'New project on a board', O79 rows of other describes), with migration step O79; `docs/HELP.md`, `docs/data-map.md` and `docs/templates.md` are left to O79 and O83 and reach O81 only as its report's Doc text, applied at its landing; simple, since the hunks are apart
-  reviewer_report: .scratch/migration/agents/reviews/O81-refuter.md (acff93497f9c76629, claude-opus-5-5, 319541 tokens, 89 tool uses, 19 min 1 s)
+  reviewer_report: .scratch/migration/agents/reviews/O81-refuter.md (acff93497f9c76629, claude-opus-5-5, 319541 tokens, 89 tool uses, 19 min 1 s); over round 1: ad19dc3160a25fdc1, claude-opus-5-5, 228877 tokens, 46 tool uses, 16 min 56 s
   round: 1
   landing: not-started
 - step: O85
   brief_check: .scratch/migration/agents/reviews/O85-brief-check.md (a8ab0d4773e514752, claude-opus-5-5, 276151 tokens, 97 tool uses, 14 min 31 s, the run after its resume on a 529 server error)
-  landing: preparing
+  base: 8d52965c
+  worktree: .agents/worktrees/migration-O85
+  executor: agent
+  worker: claude:opus
+  session_id: a3a4085fe48cb342d (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O85-report.md
+  shared_paths: with O79, simple merges, each in separate lines: `src/lib/state/client/writes.svelte.ts` (O79 the comment at line 435, O85 lines 560-630), `src/lib/server/edit/writes.ts` (O79 near line 218 and its write bodies, O85 the head comment at line 29), `src/lib/server/edit/writes/undo.ts` (O79 near lines 259-341, 495 and 587, O85 lines 90-140), `config/text/server.yml` (O79 `server.edit.*`, O85 new keys under `server.workspace.*`); `docs/HELP.md` and `docs/data-map.md` take O85's Doc text at landing. None with O81.
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)

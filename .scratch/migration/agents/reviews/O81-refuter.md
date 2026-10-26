@@ -148,3 +148,246 @@ none.
 - Whether the record board's columns, label mode and search should come from the first `boards:` row (judgment call 2, `presets.ts` `recordPreset`). The report names it as a reversible decision, and it is the orchestrator's to keep or reverse.
 
 Reviewer usage: acff93497f9c76629, claude-opus-5-5, 319541 tokens, 89 tool uses, 19 min 1 s.
+
+# Repair round 1, refuted
+
+The round closes all four items of `agents/briefs/O81-round1.md`. Its only code change is the type swap in `presets.ts`, and every claim of the round section that I reran gave the same result. Item 9 now holds, so every item of the brief holds. Every case is met, except those that only the look on landing can show. One minor Standards finding, which needs no change to the step.
+
+## Round delta (what changed since the snapshot `.agents/worktrees/migration-O81-round-1`)
+
+```
+$ git status --short  vs  migration-O81-round-1/files.txt
+the same 44 tracked paths; the heads/ folder now listed as one untracked directory
+(it holds the two files that files.txt lists as untracked); plus the untracked ledger
+copies .scratch/migration/agents/briefs/O81-cases.md, O81-round1.md, reviews/O81-report.md
+$ cmp of every path of files.txt, snapshot against worktree
+CHANGED src/lib/state/boards/board/presets.ts      (no other path differs)
+$ cmp heads/FoldHead.svelte, heads/GroupHead.svelte against the snapshot: same, same
+$ cmp worktree O81-report.md against the main ledger's copy: report-identical
+$ diff -u snapshot presets.ts  worktree presets.ts
+-import { vocabKeys } from '../../../data/shapes/vocab-keys.ts';
++import { vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
+-/** What gives the words of the records of a hub, and the union of every hub's words for none. */
+-type VocabOf = (hub?: string) => Record<string, unknown>;
+-function wordsReader(vocab: VocabOf): (hub?: string) => BoardWords {
++function wordsReader(vocab: WordsOf): (hub?: string) => BoardWords {
+-    vocab: VocabOf = () => config      (presetFor)
++    vocab: WordsOf = () => config
+-    vocab: VocabOf = () => config      (recordPreset)
++    vocab: WordsOf = () => config
+```
+
+## Verification (rerun by the reviewer, from the worktree root, PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH)
+
+```
+$ git diff 335db1c9 -- docs/diagrams | md5 ; git status --short | md5      (before the list)
+49c6397e7e75753f45dd019e52f12854
+b2da7a5d1dcbab0221ebc0391de2b76a
+$ uptime
+15:10  up 3 days,  5:15, 1 user, load averages: 19.64 15.85 14.89
+$ npm run diagrams && npm run test:quick -- --base 335db1c9      (once)
+test:quick: 49 changed file(s), from git since 335db1c9
+test:quick: 299 test file(s)
+ok      prettier (2.3 s): All matched files use Prettier code style!
+ok      ASCII gate (2.4 s)
+ok      svelte-kit sync (4.8 s)
+ok      eslint (95.9 s)
+ok      svelte-check (131.9 s): 1793023986919 COMPLETED 545 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (235.2 s): Duration  217.55s (transform 168.24s, setup 0ms, import 439.07s, tests 401.70s, environment 4ms)
+ok      vitest (317.9 s): Duration  301.86s (transform 397.49s, setup 0ms, import 622.92s, tests 468.29s, environment 69.05s)
+FAILED  vitest slow (352.5 s)
+ FAIL  |unit| tests/server/git/git-ops.test.ts [ tests/server/git/git-ops.test.ts ]
+Error: Hook timed out in 10000ms.
+ Test Files  1 failed | 75 passed (76)
+      Tests  674 passed | 234 skipped (908)
+test:quick: 358.3 s; failed: vitest slow
+test:quick: not covered: tests that reach no changed file within the import depth,
+exit 1
+$ uptime
+15:16  up 3 days,  5:22, 1 user, load averages: 18.75 18.59 16.63
+$ git diff 335db1c9 --stat -- tests/server/git/git-ops.test.ts ; git status --short tests/server/git
+(nothing; the step does not change the file)
+$ npx vitest run tests/server/git/git-ops.test.ts            (the red file, alone by name)
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+$ git diff 335db1c9 -- docs/diagrams | md5 ; git status --short | md5      (after the list)
+49c6397e7e75753f45dd019e52f12854
+b2da7a5d1dcbab0221ebc0391de2b76a
+$ npx vitest run tests/state/boards/board/board-rules.test.ts
+ Test Files  1 passed (1)
+      Tests  104 passed (104)
+$ sh utils/unused-exports.sh | diff /Users/axelfaes/workspace/oculus/.agents/worktrees/O81-base/unused-exports.txt -     (check 4)
+check4 diff exit 0
+$ grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml     (check 9)
+check9 exit 1 (nothing)
+$ LC_ALL=C perl -ne '<spec.md gate>' $(find src tests config -type f ! -name local.yml)     (check 10; bin does not exist)
+perl gate exit 0 (nothing)
+$ the same perl gate over every path git status --short lists (svg excluded), then a plain perl byte check over docs/diagrams/*.svg *.dot
+changed-files gate exit 0 (nothing); diagrams: nothing
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O81-report.md
+report grep exit 1 (nothing)
+$ wc -l of every changed file (check 11), the largest
+609 presets.ts, 710 focus.ts, 782 data/index.ts, 825 board-rules.test.ts, 837 model/index.ts, 840 keys.test.ts, 877 hub-names.ts;
+components: 480 Projects.svelte, 395 Lanes.svelte, 389 Focus.svelte, 361 +page.svelte, 334 Band.svelte, 317 CommandCenterView.svelte, 248 CareerPanel.svelte, 203 Venues.svelte, 157 Tasks.svelte, 123 heads/FoldHead.svelte, 89 heads/GroupHead.svelte
+
+Reruns of the commands the round section quotes as evidence:
+$ grep -n "VocabOf\|WordsOf" src/lib/state/boards/board/presets.ts
+20:import { vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
+463:function wordsReader(vocab: WordsOf): (hub?: string) => BoardWords {
+497:    vocab: WordsOf = () => config
+534:    vocab: WordsOf = () => config
+$ grep -rn "VocabOf" src tests      (only hits: hubVocabOf, a different, older name; no type VocabOf left)
+$ for each quoted current line: "<n>:$(sed -n <n>p <base file>)" looked up with grep -Fxq in the report's round section;
+  base files from git show 335db1c9:docs/<file>, each cmp-equal to the worktree's copy
+HELP.md:287 match / HELP.md:292 match / HELP.md:311 match / HELP.md:312 match / data-map.md:117 match /
+templates.md:335 match / :336 match / :337 match / :338 match / apps.md:423 match
+$ word diff (one word per line) of each replacement against its base line
+:287  hunks at words 172-210 (cluster heading, lane colour and count, the fold sentence) and 1544-1563 (Track record role row); nothing else
+:292  291c291 with -> of; 292a293,295 fold / control, / the       (the report's "`with` to `of the fold control,`")
+data-map:117  adds "rows { key, label, ribbon? }," only
+apps:423  data_themes }` -> data_themes, collections, list, words }`: ... ; adds the descriptions of collections, list, words only
+$ grep -n "export type HubVocab = {" -A 8 src/lib/data/model/model-collections.ts
+217-224: domains, venue_themes, data_themes, collections, list: { file: string; value: unknown }, words
+$ git show 335db1c9:src/lib/data/model/index.ts | grep -n "type HubVocab = {" -A 9
+296-302: domains, venue_themes, data_themes, collections, words      (the payload "before" of Visible changes item 9 holds)
+src/lib/data/model/index.ts:272  hubs: HubVocabs;   src/lib/data/index.ts:666  list: { file: listFileOf(hub, config), value: config.merged.collections },
+$ git diff 335db1c9 -U0 -- tests   (item 3's completeness)
+keys.test.ts 158-159 a comment; :168 the COMPUTED_FINDING_KEYS entry (in the table);
+hub-names.test.ts :278 one fixture field "list: { file: '', value: collections }," (no assertion; named in the report's Items row 3);
+hub-vocab.test.ts :194 and :206-208 (in the table);
+board-rules.test.ts: the head comment, imports, fixtures moved verbatim to board-fixture.ts (read side by side: same text), three added rows; no existing assertion changed
+$ npx vitest run <the five files with failed rows, one run>
+ Test Files  5 passed (5)
+      Tests  84 passed (84)
+$ npx vitest run tests/routes/edit/config-key.test.ts
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+$ npx vitest run tests/ui/html.dom.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+$ uptime
+15:20  up 3 days,  5:25, 1 user, load averages: 13.68 15.44 15.62
+
+The case-run program (for the case verdicts over the whole diff):
+$ npx vitest run --config <scratch>/o81-cases/caserun.config.mts --disableConsoleIntercept <scratch>/o81-cases/after.case.ts
+exit 0; 84 `case` lines;  Test Files  1 passed (1) / Tests  1 passed (1)
+diff of its `case` lines against the report's quoted block (report lines 723-1160): diff exit 0
+git status --short | md5 before and after: b2da7a5d1dcbab0221ebc0391de2b76a both; ls <scratch>/o81-cases unchanged
+```
+
+My run of the list was red on a different file than the builder's run (`git-ops.test.ts`, a 10 s hook time-out under load averages near 19). The step does not change that file, and it passes alone. The six files the builder named as timed out all pass in my reruns.
+
+## Round items
+
+- Item 1: closed.
+  - Each Doc text item quotes the current line as `grep -n` prints it on the base tree, every one an exact match, and then its whole replacement.
+  - The Venues bullet is given as a new top-level line after `311:  - The log under the plan lists every request...` and before `312:- **Present.**...`, with both neighbours quoted.
+  - The word diffs show that the replacements change only the sentences they name.
+- Item 2: closed. `type VocabOf` is gone, and `wordsReader`, `presetFor` and `recordPreset` take `WordsOf` from `vocab-keys.ts`, as `career.ts:19,72` does.
+- Item 3: closed. The table holds every changed line of an existing assertion or allow list in `git diff 335db1c9 -U0 -- tests`. The one other changed line, `hub-names.test.ts:278`, is a fixture field that the widened `HubVocab` type requires; it is no assertion, and the Items row names it.
+- Item 4: closed.
+  - The `docs/apps.md:423` row is quoted and replaced with the fields `{ domains, venue_themes, data_themes, collections, list, words }`, each checked against `model-collections.ts:217-224`.
+  - Visible changes item 9 gives the payload before (base `HubVocab`, checked above) and after.
+
+No finding was closed by removing a check, and no fix reaches beyond its finding: the only code delta is the type swap.
+
+## Verdicts
+
+Items of the brief's "What to build", over the whole diff since 335db1c9:
+
+- 1: holds. `heads/GroupHead.svelte` (read whole):
+  - a bare `ToolButton` named `focus.fold`/`focus.unfold` with the collapse or expand glyph;
+  - the optional `Glyph`;
+  - the label at `--fs-md` in `var(--c-<tone>-txt)`, or in `--muted-txt` when there is no tone;
+  - the count as plain text at `--fs-sm`;
+  - no state, and a head comment that names its users and says that `FoldHead` heads a box.
+- 2: holds. `Projects.svelte` heads each section with `GroupHead` (label, name, `open={!folded.has(section.key)}`, `toggleFold`). `FoldHead`'s comment no longer names the board.
+- 3: holds.
+  - `Lanes.svelte` and `Band.svelte` draw `GroupHead`, with the keys from `groupFold` (`focus.ts`).
+  - Each group's content uses `hidden={open ? false : 'until-found'}` with `onbeforematch`.
+  - Check 8 printed nothing in the first refutation, and the round did not touch these files (cmp).
+- 4: holds.
+  - `config/catalogs/vocab.yml` holds the four rows, with their own comment.
+  - The row shape in `vocab.ts` is strict: `key` min 1, `label` required, `ribbon` a flag.
+  - `UNION_FIELD` maps `venue_categories` to `key`, and the options entry has three fields, `ribbon` a toggle.
+  - The hub-vocab row is in the new shape (cases 9, 10, 11 and 25 in the rerun output).
+- 5: holds.
+  - `venueSections` in `venues.ts` gives one section per row, the first row of a key winning, then Other keyed `''`, and drops empty sections.
+  - The Venues tab keeps `folded: string[]`.
+  - The words `venues.journals` and `venues.conferences` are gone, `venues.intro` is reworded, and no code names a category word (check 5 ran clean in the first refutation; the round did not touch these files).
+- 6: holds.
+  - `BoardRule.record` and its branch in `boardTakes` (`takes.ts`); `recordPreset`, which now takes `WordsOf`.
+  - `RECORD_VIEW` is registered by `Projects.svelte` and kept by `registerBoards` (`views.ts`).
+  - `recordRows` opens `track_record` with `{ id, label }`. `roleBoard` and `boardOf` are gone.
+  - The rows in G124's test pass (104 passed).
+- 7: holds. The head comments named by the item are rewritten (read in the diff).
+- 8: holds. Check 4 gives diff exit 0.
+- 9: holds. The Doc text is complete and placed as the round brief asks (round item 1 above). The `docs/apps.md` row is given too (round item 4).
+
+Cases of the brief's "Cases" (my rerun of `after.case.ts` matches the report's block line for line):
+
+- 1: not verifiable here. By reading the markup: the chevron, the label in the category tone at `--fs-md`, the count, Other last, and `folded` kept. The look on landing settles it.
+- 2: met: `cluster:now` false; `cluster:parked`, `cluster:incubate`, `lane:idea` and `band` true. The page itself on the look.
+- 3: met, `band` folds and is kept.
+- 4: met: `career` false, every other key true.
+- 5: met: `groupFold('cluster','career')` gives `cluster:career`, separate from `career`.
+- 6: met by reading (`until-found` and `onbeforematch`). The find bar on the look.
+- 7: met: `["journal: Journals 46","conference: Conferences 27 ribbon","thesis: Theses 2","meeting: Meetings 1"]`.
+- 8: met: workshop and no-category venues under Other after Meetings.
+- 9: met: Conferences with the ribbon, then Journals, then Other.
+- 10: met.
+  - Finding: `venue_categories.0 must be a map` on the hub's `config.yml`.
+  - Sections: `["(other): Other 5"]`; the form's options are `[{"id":"journal","label":"journal"}]`.
+- 11: met: the label finding and the ribbon finding, each naming the hub's file.
+- 12: met: `folded: ["thesis"]`, and an old `journalsOpen: false` reads as `folded: []`. The reload on the look.
+- 13: met under cases ruling 3: the labels Journals, Conferences, Theses and Meetings, with the keys as ids.
+- 14: met: each role's row lines equal its record board's sections (lead 9/16/10/9, supervisor 4, collaborator 1/2/6/6). One board on the look.
+- 15: met: the idea project is not on the Lead record board.
+- 16: met by the run. The second press on the look.
+- 17: met: search and facet narrow the projects, and the tab keeps `{id, label}` through the board's writes.
+- 18: met: the registration has `listed: false`, `group: ""` and no count hooks, and no role is offered New project.
+- 19: met: the `boards.track_record` finding, and the record view is unchanged.
+- 20: met: the record view stays registered through both pushes.
+- 21: met: `career:role:ghost` opens `track_record`.
+- 22: met: `career:funding` opens `funding`.
+- 23: not verifiable here. By reading, only the import path of `FoldHead` changed in its three users; the look on landing settles it.
+- 24: met: one Journals section holding the primary's row and the journals of both hubs.
+- 25: met: an empty key is a shape finding, a repeated key gives one section, and only Other has the key `''`.
+- 26: met: no project and the board's empty message.
+- 27: met: 0 projects and `board.record_no_role`. The look on landing.
+- 28: met under cases ruling 2: `view_id` for `debug` and `track_record`, the `venues` finding unchanged, and the board finding listed beside them.
+- 29: met by the run. The Settings view on the look.
+
+## 1. Spec
+
+none.
+
+## 2. Proof
+
+none. Every claim of the round section I reran gave the same result:
+- the line matches and word diffs of item 1;
+- the grep of item 2;
+- item 3's diff;
+- item 4's `HubVocab` fields and line numbers;
+- board-rules 104 passed; checks 4, 9 and 10 printing nothing; the line counts of check 11;
+- each red file passing alone.
+
+## 3. Standards
+
+- Report, "# Repair round 1", Checks 1, the rerun bullet: "The five files with failed rows, in one `npx vitest run`: `Test Files  1 failed | 4 passed (5)`".
+  - What is wrong: `spec.md`, "Token discipline", says a red line in a file the step does not change is rerun alone. Five files were rerun in one run, and only `config-key.test.ts` and `html.dom.test.ts` were then run by themselves.
+  - Failure scenario: none in this round. My own run of the same five files passed 84 of 84, and each file the step does not change is outside what the step can influence. A combined rerun is a heavier load than a run alone, so it cannot hide a failure that a run alone would show.
+  - Verdict: no change needed.
+
+## 4. Behaviour
+
+none.
+
+## Declined to judge
+
+- Whether the quoted Doc text lines still match `docs/HELP.md`, `docs/apps.md`, `docs/data-map.md` and `docs/templates.md` on main's current head. O83 has landed and O79 is in flight, and both write these files. I checked them against the base 335db1c9 only, as the round brief asks. `git show main:docs/HELP.md` (and the same for the other three files) would settle it, and that command is outside the ones allowed to me.
+- The look cases and look parts (1, 2, 3, 6, 7, 12, 14, 16, 17, 18, 23, 27, 29). The review starts no page; the look on landing on the TEST page settles them.
+- Whether the builder left a background command running when it stopped in this round. The state file's `builder_usage` records "3 min 49 s to its first stop while its checks ran, then ... 24 min 46 s to its report". `spec.md` ("What every package obeys", the rule on hand-backs) asks that nothing of the agent is still running at a hand-back. Only the builder's transcript shows whether that stop was a hand-back with a command still running.
+- The first-run programs on the unchanged tree. `before.case.ts` imports exports the step removed, and the base copy has no setup to run it in. The first refutation compared its saved outputs with the report.
+
+Usage: ad19dc3160a25fdc1, claude-opus-5-5, 228877 tokens, 46 tool uses, 16 min 56 s
