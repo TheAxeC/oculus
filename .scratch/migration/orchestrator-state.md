@@ -45,8 +45,10 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aef746e492419e883 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O82-report.md
+  builder_usage: 326906 tokens, 135 tool uses, 28 min 57 s
+  reviewer_report: .scratch/migration/agents/reviews/O82-refuter.md (a2050ca41ab3495b9, claude-opus-5-5, 289965 tokens, 81 tool uses, 23 min 25 s)
   shared_paths: "docs/apps.md with O80 of this plan: O82 changes line 421, the hpc row's status words, and O80 changes other rows, so the merge is simple"
-  round: 0
+  round: 1
   landing: not-started
 ```
 
