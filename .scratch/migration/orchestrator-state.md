@@ -36,7 +36,7 @@ dispatch:          # steps in flight, up to six (Z632)
   builder_usage: 77328 tokens, 340 tool uses, 59 min 35 s
   reviewer_report: .scratch/migration/agents/reviews/O86-refuter.md (ad0866bc88d7625f3, claude-opus-5-5, 280671 tokens, 59 tool uses, 16 min 10 s)
   shared_paths: with O89, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O89, regenerated at each landing.
-  round: 0
+  round: 1
   landing: not-started
 - step: O89
   brief_check: .scratch/migration/agents/reviews/O89-brief-check.md (a17b47d782ada96fb, claude-opus-5-5, 241420 tokens, 78 tool uses, 11 min 1 s)
