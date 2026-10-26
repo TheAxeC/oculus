@@ -144,3 +144,82 @@ Look cases: the brief defines none of the 23 cases as a look. What the look at l
 - I ran no git command other than `git diff a11f9f14`, `git status --short` and `git show a11f9f14:<path>`. The report's `git status --porcelain` count of 137 paths matches `git status --short` (133 modified, 4 untracked).
 
 Reviewer usage: a3d077e13c109e0ab, claude-opus-5-5, 247539 tokens, 121 tool uses, 31 min 26 s.
+
+## Repair round 1, refuted
+
+Step O79, worktree `.agents/worktrees/migration-O79`, base a11f9f14, over the round snapshot `.agents/worktrees/migration-O79-round-1/`. The reviewer changed nothing; its only git commands were `git diff a11f9f14`, `git status --short` and `git show a11f9f14:<path>`.
+
+The verify list passes and every closure the builder claims reproduces. Two findings break a rule: a schema that does not read draws a false refusal (Behaviour 1), and the feeds channel carries `key_fault?` and `primary_key?` without the Apps guide saying so (Spec 1).
+
+### Verification
+
+```
+npm run test:quick -- --base a11f9f14        (once)
+test:quick: 140 changed file(s), from git since a11f9f14
+test:quick: 309 test file(s)
+ok      prettier (4.3 s): All matched files use Prettier code style!
+ok      ASCII gate (4.6 s)
+ok      svelte-kit sync (7.4 s)
+ok      eslint (64.6 s)
+ok      svelte-check (107.7 s): 1793029600569 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (164.8 s)
+ok      vitest (216.8 s)
+ok      vitest slow (278.0 s)
+test:quick: 287.2 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+EXIT 0
+```
+
+Reruns of the round section's commands:
+
+```
+npx vitest run, the 8 changed test files: Test Files 8 passed (8), Tests 182 passed (182)   (report: 182)
+npx vitest run, the 23 related files: 1 failed | 548 passed; tests/checks/source/catalog-file-keys.test.ts
+  'has a reader for every top-level key of every catalog file' timed out at 5000 ms (twice alone);
+  with --testTimeout 0, as tests/tiers/quick.mjs:259-262 runs tree checks: <check mark> 8869ms, 1 passed
+npx vitest run tests/checks/tree/boundaries.test.ts tests/state/sessions/source/draft-entry.test.ts: 2 files, 18 tests passed
+unused exports: 229 against the base's 230; every other difference a base name now gone; no new line
+reuse grep over the base copy: keyFault 0, KeyFault 0, keyedSchema 0, noPrimaryKey 0, noPrimaryKeyLine 0
+history-word grep over the round's added lines: one hit, code, not history; no step or ruling ids
+ASCII gate over src tests config and docs/HELP.md docs/apps.md docs/data-map.md: prints nothing
+```
+
+### Verdicts
+
+Items: 1 holds (`primaryKeyOf` answers from `keyFaultOf`, `model-collections.ts:104,128`; `writableField` reads `primaryKeyOf`, `forms/schema.ts:117-118`); 2, 3 and 4 hold; 5 holds with Spec 1 and Standards 3; 6 holds with Standards 2.
+
+Cases: 1 met as the ruling reads it (case 5 governs case 1); 2 met; 3 met (asserts `server.entries.no_primary_key_none`); 4 met (asserts `_two` with 'name, key'); 5 to 11 met; 12 met (the venue Add's written order equals the base's, `writes.test.ts:574` against base `:559`); 13 to 18 met; 19 met (`_unkeyed`, `_none`, `_beside` rows); 20 met; 21 met by test (`schema-rules.test.ts:675`, `choices.test.ts:182`); 22 and 23 met.
+
+Closures checked: Standards 2 (`manifestKey`) closed by a fix; Behaviour 1 closed for the five causes the round brief lists, every refusal (`entries.ts:243-246`, `feeds.ts:79-82`, `literature.ts:153-155`) and the card line (`entry-file.ts:162`, `draft-entry.ts:69-70`) reading the computed cause; Behaviour 2 closed with `server.feeds.entry_key_taken`, which also reaches the feed put-back and the Literature save; Behaviour 3 closed (`render.ts:21-26`); Proof 3 closed by the two tests above. No check removed. `key_fault?` (Z1037) is on the snapshot's `Collection` (`normalise.ts:562`) and documented on the collections row (`docs/apps.md:410`).
+
+### 1. Spec
+
+- `src/lib/data/model/model-collections.ts:381-382`, `FeedData.key_fault?`: set by `readFeedFile` (`feeds.ts:138`), spread by `buildFeeds` (`:153-154`) into the `feeds` channel payload (`portfolio.ts:718-737`), kept by `mergedFeeds` (`snapshot/hubs/feeds.ts:63`). The payload row `docs/apps.md:420` names neither `key_fault?` nor `primary_key?`, and no client code reads `FeedData.key_fault`. Failure scenario: an app built against the guide meets two undocumented keys and breaks silently when they change. Fix: document both on the feeds row, or keep `key_fault` on `FeedRead` only.
+- `keyedSchema` (`field.ts:175-177`) now goes through nine readers; before, the snapshot keyed a file whose `schema:` does not read by its named key. Inside item 2 of the round brief; its consequence is Behaviour 1.
+
+### 2. Proof
+
+- The report's 549 passed over 23 related files reproduces as 1 failed | 548 passed, the failure a load-dependent timeout of `catalog-file-keys.test.ts` that passes with `--testTimeout 0` as the tier runs it. No decision rests on the count.
+- The report's "Every reader of a file's primary key goes through it" overstates: `server/files/fs/bookmarks.ts:141`, `state/forms/page-entry.ts:196`, `state/boards/collection/index.ts:279`, `views/shared/forms/entry-file.ts:123` and `views/shared/forms/entry/entry-add.ts:113` do not. Each agrees with `keyedSchema` in every case; no reader disagrees.
+- The round's new rows quote no failing line on the unchanged tree; the round brief waives that. Verdict: none.
+
+### 3. Standards
+
+- `src/lib/views/shared/forms/entry-file.ts:75`: a 140-column line in the edited doc comment of `placeInFile`; the rules file asks for an edited comment rewrapped as a paragraph at 100 columns.
+- `tests/state/sessions/source/draft-entry.test.ts` (new, 78 lines): named by no entry of `agents/guarded.md` (`draft-entry.ts` is on G28's Code line, `guarded.md:81`, whose Test line names no such test); the round brief asked for assertions on the existing rows, not a new file; its first row asserts over catalog constants, as does `tests/server/edit/feeds.test.ts:202-204`; the normalise.test row titled G8 sits under the snapshot readers' entry (`guarded.md:248`) while `normalise.ts` is not on G8's Code line. The rows that test behaviour (each cause's card line through `noPrimaryKeyLine`, `placeEntry` refusing with it) read correctly.
+- `docs/HELP.md:274` and `docs/data-map.md:56` say "a field whose value is a list"; `UNKEYED_TYPES` (`model-collections.ts:73-80`) holds `keymap`, a map.
+
+### 4. Behaviour
+
+- `field.ts:175-177` with `keyFaultOf`: a `schema:` that does not read becomes `[]` and the cause `none`, so the refusal and the card line say the schema flags no field even when it flags one. Case program: `[{ field: 'key', type: 'text', primary_key: true }, { field: 'note' }]` printed `[] {"cause":"none"} null`. Failure scenario: a people schema flagging `key` with one row typed `typ:` refuses every write with a sentence that sends the reader to flag a field already flagged; the real cause is only in the Audit view. Fix: a cause of its own for a schema that does not read, pointing to the schema's finding, in both catalogs, `noPrimaryKey` and `noPrimaryKeyLine`, asserted by a writes-collection row.
+- `model-collections.ts:108-110`: a schema with no flag whose `collections:` entry names `primary_key:` gives `none`; following its remedy turns the cause into `beside`. Low.
+- `feeds.ts:497-500` (`restoreFeedEntry`, the undo of a feed entry deletion): the refusal changes on screen from "an entry with that title is already in the file" to "An entry with this title is in the file already."; the round's report does not list it among the visible changes. Low.
+
+### Declined to judge
+
+- Every screen state, left to the look at landing: each cause's card line, the Leads Add refusals, the History undo refusal, the Literature save over a taken key.
+- The case programs of cases 1, 9, 10, 15 and 18 were not rerun; their verdicts rest on the first review's reruns and the delta.
+- Whether `key_fault?` should be on the feeds payload at all is Z1037's; only its documentation was judged.
+
+Reviewer usage: a71fbc599aa5dbf73, claude-opus-5-5, 239602 tokens, 58 tool uses, 13 min 40 s.

@@ -5356,3 +5356,13 @@ Item 2 of O79's round asks the card line to read the one computed cause of a fil
 
 Where it applies: O79. Booked in `plan.md` Rulings, open item 457.
 Builds on it: O79
+
+## Z1038 (2026-10-26, O79's landing, the orchestrator, automode): the findings of the review over O79's repair round 1 are fixed at landing
+
+The review over round 1 (`agents/reviews/O79-refuter.md`, "Repair round 1, refuted") is the last round's, so its findings go to no builder; each is small and inside the brief and its round.
+
+- Chosen: (a) fixed at landing on main: a sixth cause `unread` for a `schema:` that does not read, whose refusal and card line point to the schema's finding, in `server.yml` and `collection.yml`, `KeyFault`, `noPrimaryKey` and `noPrimaryKeyLine`, asserted by a writes-collection row; the `none` cause carrying the named key when the `collections:` entry names one, its sentence then naming both steps; `primary_key?` and `key_fault?` written on the feeds row of `docs/apps.md`, as Z1037 chose; the doc comment of `placeInFile` rewrapped at 100 columns; "a list or a map" in `docs/HELP.md` and `docs/data-map.md`; the assertions over catalog constants (`draft-entry.test.ts` first row, `feeds.test.ts:202-204`) removed; `draft-entry.test.ts` and the normalise row booked under G8's Test line with `draft-entry.ts` and `normalise.ts` on its Code line; the undo refusal of a feed entry listed among the visible changes in the landing report.
+- Not chosen: (b) raising each to Axel as an open item, though none needs his ruling; (c) landing with the false refusal and the undocumented feeds keys, the lazy option.
+
+Where it applies: O79's landing.
+Builds on it: O79

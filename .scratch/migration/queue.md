@@ -1,11 +1,11 @@
 In flight (3 of 6 slots in use):
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), built under the cases ruling; reviewed, repair round 1 running.
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), built under the cases ruling; reviewed, repair round 1 built and reviewed; landing next, its findings fixed at landing (Z1038).
 - O85 (a hub's own settings set in Settings for any hub of the workspace, the primary first and chosen; rulings 440, 443, 444, Z1033, Z1034), building under its cases ruling (Z1035, Z1036).
 - O86 (the update tasks of every hub), its /spec under way.
 
 Queued, in order:
 - O88 (one heading: `GroupHead` the only grouping heading, owning its strip, rounding, margin and fold control; rulings 448, 449 (b), 455), built beside O89.
-- O89 (one record card and one way to add a dated line, Quick add included; rulings 450 to 455); its kinds wait on open item 456.
+- O89 (one record card and one way to add a dated line, Quick add included; rulings 450 to 456), built beside O88.
 - O84 (who the user is: `self` out of the workspace file and into the primary hub's `.oculus/local.yml`, the person in any hub; rulings 437, 438); `self` read from the primary hub's `.oculus/local.yml` (ruling 439 (b)); waits for O79 to land, since both change `normalise.ts`, `validate.ts`, `data/index.ts`, `config/options/sources.yml` and the same line of `config/defaults/sources.yml`.
 - O87 (the Focus band's positions and teaching by stages, as Funding, and the dated subtasks and due follow-ups in Tasks; rulings 445, 446, 447); its /spec can run now that O81 has landed; O81 changed the same files: `vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts` and `Band.svelte`.
 
