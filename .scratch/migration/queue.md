@@ -4,8 +4,7 @@ In flight (2 of 6 slots in use):
 
 Queued, in order: none.
 
-Owed looks:
-- O83: the Live HPC partial and `slurm_down` states, the stale marks, the Focus pill and the rail badge with jobs; waits on open item 435.
+Owed looks: none.
 
 Landed, newest first:
 - O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 9961e0d5.
