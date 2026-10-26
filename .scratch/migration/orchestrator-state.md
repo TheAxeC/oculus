@@ -53,7 +53,16 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: not-started
 - step: O81
   brief_check: .scratch/migration/agents/reviews/O81-brief-check.md (a5d05f8c3ea7e30b0, claude-opus-5-5, 269017 tokens, 92 tool uses, 11 min 20 s)
-  landing: preparing
+  base: 335db1c9
+  worktree: .agents/worktrees/migration-O81
+  executor: agent
+  worker: claude:opus
+  session_id: a88ba93357e1b0941 (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O81-report.md
+  shared_paths: `tests/state/boards/board/board-rules.test.ts` (O81 the describe 'New project on a board', O79 rows of other describes), with migration step O79; `docs/HELP.md`, `docs/data-map.md` and `docs/templates.md` are left to O79 and O83 and reach O81 only as its report's Doc text, applied at its landing; simple, since the hunks are apart
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
