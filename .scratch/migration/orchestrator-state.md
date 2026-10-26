@@ -52,7 +52,7 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O81
-  brief_check: "running: a5d05f8c3ea7e30b0"
+  brief_check: .scratch/migration/agents/reviews/O81-brief-check.md (a5d05f8c3ea7e30b0, claude-opus-5-5, 269017 tokens, 92 tool uses, 11 min 20 s)
   landing: preparing
 ```
 

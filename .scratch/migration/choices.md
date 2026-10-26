@@ -5274,3 +5274,13 @@ Ruling 399 (a) puts a flag on a `venue_categories` word that draws its Venues se
 
 Where it applies: O81. Booked in `plan.md` Rulings and in `agents/briefs/O81.md`.
 Builds on it: O81
+
+## Z1030 (2026-10-26, O81's /spec, the brief check's findings, two files outside the step's paths, the orchestrator, automode): `UNION_FIELD` and a G124 row
+
+O81's brief check found two things the step's own requirements need outside its write list. `unionWords` (`src/lib/data/shapes/vocab-keys.ts:229-262`) tells the rows of a list apart by the field `UNION_FIELD` (`:204-212`) names, and `venue_categories`, which O81 turns into rows, is not named there, so two hubs naming one category with different words give two sections of one key. G124 (`agents/guarded.md`) covers `src/lib/state/boards/board/presets.ts`, which O81 writes for the record board, and states "A board offers New project only when its rule takes the project the write makes"; the record board offers none.
+
+- Chosen: (a) `UNION_FIELD` names `venue_categories: 'key'`, so the union holds each category once with the first hub's row, as G127 states; and the record board's New project answer comes from G124's rule unchanged (a new project is in no record row, so the board does not take it), with one row of G124's test 'New project on a board' saying so. Pros: one section per word, as the step's line says; G124 holds with no exception. Cons: two paths widen, `vocab-keys.ts` by one line and `tests/state/boards/board/board-rules.test.ts` by one row in a describe O79 does not touch.
+- Not chosen: (c) the section function deduplicating keys itself, leaving `vocabOf()` with two rows of one key for every other reader. The lazy option is (b), no change: duplicate sections in a two-hub workspace, and a record board whose New project rests on a special case G124 does not state.
+
+Where it applies: O81. Booked in `agents/briefs/O81.md` (items 4 and 6, premises 17 and 18, the paths) and `agents/reviews/O81-brief-check.md` (Closed).
+Builds on it: O81
