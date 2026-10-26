@@ -5164,3 +5164,12 @@ A collection's view id is its key (`views/boards/collection/Collection.svelte:15
 - Not chosen: a card-list view under a changed id, which gives one view two ids to keep apart. The lazy option is leaving the collision to whichever registers last.
 
 Where it applies: O78. Booked in `plan.md` Rulings.
+
+## Z1017 (2026-10-26, O78's build, open item 413, the options description of `ticker:` and `dissemination_skip:`, raised by O78's builder, the orchestrator, automode): how the settings catalogue describes the two map fields of a collections entry
+
+The options catalogue checks a field with no `control:` and no `fields:` as a text (`data/sources/config/catalog/schemas/options.ts:288-291`), so `config/options/sources.yml` describing `ticker:` and `dissemination_skip:` by a help line alone makes the schema refuse both on oculus's own `config/defaults/sources.yml` and on the `.oculus/config.yml` Make Folder a Hub writes (9 problems, `tests/checks/config/config-folder.test.ts`, 3 tests failed in the builder's final run). The catalogue already has a key/value field family, fields `key` and `value`, the form of a board's `match:` (`config/options/layout.yml`, `match:`), which is the shape of a `When` (`data/model/model-collections.ts:120-124`) that Z1013 gave `dissemination_skip:`; it has a single record for a family with no `key` field only on its own-reader files (`schemas/options.ts:44-46`, `OWN_READER`).
+
+- Chosen: (a) `dissemination_skip:` is described as a key/value field family, `key` the entry field and `value` a text or a list of texts, as `match:` is; `ticker:` is described as a field family with no `key` field marked `holds: record`, a single record of its fields (`category` a choice from the words of `ticker_categories`, `undated` a toggle), the word beside `holds: lists` in the options vocabulary, which the options reader, the schema, the value rule and the Settings editors (`state/system/config/editors/fields.ts`, `draft.ts`, `rows.ts`) read. Settings then edits both fields and the schema checks them.
+- Not chosen: (b) a new control `record` for both fields, which leaves the key/value family form unused for a field already in its shape and puts a family under the controls; (c) flattening the fields into `ticker_category`, `ticker_undated` and a text, which reverses Z1013 and Z1014. The lazy option is (d) a `map` control taking any map unchecked and drawn read-only.
+
+Where it applies: O78, its repair round 1. Booked in `plan.md` Rulings.
