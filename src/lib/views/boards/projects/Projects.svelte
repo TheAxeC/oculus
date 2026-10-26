@@ -252,7 +252,8 @@
 
     /**
      * The board's own name, the one its registration carries, read from its `label:`; a track
-     * record tab's is its role's, by the role's words, or by its key when `roles:` holds it no more.
+     * record tab's is its role's, by the role's words, or by its key when `roles:` holds it no
+     * more.
      */
     function title(): string {
         if (record && role !== '') {

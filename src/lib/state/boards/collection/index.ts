@@ -734,7 +734,7 @@ const subtaskFieldsShape = z.object({
  * The `subtasks:` of one entry as the block draws them. A list is keyed by position and a map by
  * its own keys, which is what the write path addresses a line by; a line with no `do` is no line.
  */
-export function entrySubtasks(entry: Entry): Subtask[] {
+export function entrySubtasks(entry: Pick<Entry, 'fields'>): Subtask[] {
     const lines: Subtask[] = [];
     for (const [key, item] of readAs(keyedRowsShape, entry.fields.subtasks) ?? []) {
         const record = readAs(subtaskFieldsShape, item);

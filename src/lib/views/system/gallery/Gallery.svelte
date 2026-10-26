@@ -19,7 +19,10 @@
 <script lang="ts">
     // Layer 3, view. Every primitive with sample data, in one pane: the living style sheet. It is
     // opened under each theme to see what a card, a chip, a meter and a table actually look like
-    // there, so a theme is checked against the components rather than against the token list.
+    // there, so a theme is checked against the components rather than against the token list. The
+    // cards include the record card every record of the portfolio is drawn by
+    // (views/shared/card/record/RecordCard.svelte), with its strip, its menu with the Add run and a
+    // foot of the portfolio's first projects; its actions write nothing.
     //
     // The sample data is the config's own vocabulary: the Chips and the Tags sections draw every
     // word of `stages`, `forms` and `chips`, grouped by its list in the config's order, and the
@@ -58,6 +61,18 @@
         type LegendList
     } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import {
+        pageAction,
+        statusAction,
+        type RecordAction
+    } from '$lib/views/shared/card/record/record-menu';
+    import { portfolioProjects } from '$lib/state/boards/focus';
+    import { useState } from '$lib/state/client/use';
+
+    const {
+        entities: { portfolio }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     const cursor = $derived(cardCursor(instance.state));
@@ -94,6 +109,37 @@
             count: row.count
         }))
     );
+
+    /**
+     * The record card's sample actions, which do nothing: Page and Edit in File in its strip, a
+     * Status submenu of the first three words with the first in force, and Delete.
+     */
+    const recordActions = $derived.by((): RecordAction[] => [
+        pageAction(() => undefined),
+        {
+            id: 'edit',
+            label: t('collection.edit_in_file'),
+            glyph: t('collection.edit_glyph'),
+            onclick: () => undefined
+        },
+        ...statusAction(
+            chips.slice(0, 3).map((chip, at) => ({
+                id: `status:${chip.key}`,
+                label: chip.label,
+                checked: at === 0,
+                onclick: () => undefined
+            }))
+        ),
+        {
+            id: 'delete',
+            label: t('entry_form.delete'),
+            glyph: t('entry_form.delete_glyph'),
+            onclick: () => undefined
+        }
+    ]);
+
+    /** The projects the record card's foot draws: the first of the portfolio's. */
+    const sampleProjects = $derived(portfolioProjects(portfolio()).slice(0, 8));
 
     /** The rows the Meters and the Ticker draw. */
     const leading = $derived(rows.slice(0, 3));
@@ -183,6 +229,11 @@
     {/if}
 {/snippet}
 
+<!-- The record card's text. -->
+{#snippet text()}
+    {t('gallery.card_body')}
+{/snippet}
+
 <Pane title={t('gallery.title')} toolbar={tools} {bar}>
     <div class="gallery" data-instance={instance.id}>
         <section>
@@ -217,6 +268,17 @@
                 >
                     {t('gallery.card_body')}
                 </Card>
+                <RecordCard
+                    id="record"
+                    cursor={cursor === 'record'}
+                    title={t('gallery.card_record')}
+                    tone={rows[1]?.tone}
+                    actions={recordActions}
+                    strip={['page', 'edit']}
+                    dated={{ target: { id: '' }, blocked: t('gallery.record_blocked') }}
+                    {text}
+                    projects={sampleProjects}
+                />
             </div>
         </section>
 

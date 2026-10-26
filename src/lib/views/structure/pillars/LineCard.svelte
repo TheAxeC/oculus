@@ -1,15 +1,23 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. One registry-line card (RegistryCard.svelte) with its portfolio
-    // metrics and registry prose. The metrics row is one Tooltip that says what its counts count,
-    // in the tab order so the keyboard reaches the words as the pointer does.
+    // Layer 3, Pillars partial. One registry line as the record card
+    // (views/shared/card/record/RecordCard.svelte): the tag counting its projects, its portfolio
+    // metrics, its registry prose, and the strip of its projects at the foot. Its heading and the
+    // strip's Page open the line's page; the menu holds Page, the Add run, Edit in File and Delete
+    // (views/shared/forms/registry/registry-card.svelte.ts). The metrics row is one Tooltip that
+    // says what its counts count, in the tab order so the keyboard reaches the words as the pointer
+    // does.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import {
+        createRegistryCard,
+        type RegistryCardProps
+    } from '$lib/views/shared/forms/registry/registry-card.svelte';
+    import { projectCount } from '$lib/views/shared/card/card';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import type { RecordCardProps } from '$lib/views/shared/forms/registry/record-card.svelte';
     import {
         inFlight,
         isDormant,
@@ -24,7 +32,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
-    type Props = RecordCardProps & {
+    type Props = RegistryCardProps & {
         line: Pillar;
         venues: Venue[];
         tiers: TierRow[];
@@ -47,62 +55,89 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const client = useState();
     const {
         selectors: { configMap, registryKey }
-    } = useState();
+    } = client;
     const flight = $derived(inFlight(projects, configMap(), vocabOf));
     const strip = $derived(tierStrip(projects, venues, tiers, configMap(), vocabOf));
     const funding = $derived(optionalText(entry?.fields.funding));
     const tone = $derived(
         line.color === undefined ? undefined : paletteTone(line.color, rootOf(line))
     );
+
+    /** The key the line's hub gives the pillars registry, which its page and writes name. */
+    const collection = $derived(registryKey('pillars', rootOf(line)));
+
+    const card = createRegistryCard(client, () => ({
+        file,
+        entry,
+        schema,
+        fault,
+        onsaid,
+        collection,
+        title: line.title
+    }));
 </script>
 
+{#snippet meta()}
+    <Tag label={projectCount(projects.length)} />
+{/snippet}
+
+{#snippet facts()}
+    {#if !muted}
+        <Tooltip text={t('pillars.counts_tip')} focusable>
+            <div class="metrics">
+                <strong>{flight.length} {t('pillars.in_flight')}</strong>
+                <span class="total">{projects.length} {t('pillars.total')}</span>
+                {#each strip as tier (tier.key)}
+                    <Tag
+                        label={`${tier.count} ${tier.label}`}
+                        tone={tier.color === undefined ? undefined : toneOf(tier.color)}
+                    />
+                {/each}
+            </div>
+        </Tooltip>
+    {/if}
+{/snippet}
+
+{#snippet text()}
+    {#if line.goal}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        <p class="goal">{@html inlineMarkdown(line.goal, cardMath(line.goal))}</p>
+    {/if}
+    {#if funding}
+        <p class="funding">
+            <Glyph name="funding" />
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+            {@html inlineMarkdown(funding, cardMath(funding))}
+        </p>
+    {/if}
+    {#if line.blurb}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        <p class="blurb">{@html inlineMarkdown(line.blurb, cardMath(line.blurb))}</p>
+    {/if}
+{/snippet}
+
 <div class:dormant={isDormant(projects, configMap(), vocabOf)} class:muted data-pillar={line.id}>
-    <RegistryCard
-        collection={registryKey('pillars', rootOf(line))}
+    <RecordCard
         id={line.id}
         {cursor}
         title={line.title}
+        titleHtml={inlineMarkdown(line.title, cardMath(line.title))}
+        ontitle={card.onpage}
         {tone}
         record={line}
-        {projects}
-        {entry}
-        {schema}
-        {file}
-        {fault}
+        actions={card.actions}
+        strip={['page']}
+        dated={card.dated}
         {onsaid}
-    >
-        {#if !muted}
-            <Tooltip text={t('pillars.counts_tip')} focusable>
-                <div class="metrics">
-                    <strong>{flight.length} {t('pillars.in_flight')}</strong>
-                    <span class="total">{projects.length} {t('pillars.total')}</span>
-                    {#each strip as tier (tier.key)}
-                        <Tag
-                            label={`${tier.count} ${tier.label}`}
-                            tone={tier.color === undefined ? undefined : toneOf(tier.color)}
-                        />
-                    {/each}
-                </div>
-            </Tooltip>
-        {/if}
-        {#if line.goal}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="goal">{@html inlineMarkdown(line.goal, cardMath(line.goal))}</p>
-        {/if}
-        {#if funding}
-            <p class="funding">
-                <Glyph name="funding" />
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                {@html inlineMarkdown(funding, cardMath(funding))}
-            </p>
-        {/if}
-        {#if line.blurb}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="blurb">{@html inlineMarkdown(line.blurb, cardMath(line.blurb))}</p>
-        {/if}
-    </RegistryCard>
+        {meta}
+        {facts}
+        {text}
+        {projects}
+        deleting={card.deleting}
+    />
 </div>
 
 <style>

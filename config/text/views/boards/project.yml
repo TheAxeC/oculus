@@ -12,6 +12,9 @@ text:
             agent_tip: open the composer seeded with this task, in its folder
             box_off_glyph: checkbox_off
             box_on_glyph: checkbox_on
+            change_deadline: Change deadline
+            deadline: Deadline
+            deadline_tip: set or change the deadline
             del: del
             delete_subtask: delete subtask
             done: done
@@ -23,18 +26,23 @@ text:
             followups: Follow-ups
             mark_done: mark done
             n_open: '{0} open'
+            new_deadline: New deadline
+            new_followup: New follow-up
+            new_subtask: New subtask
+            not_before: Not before
             reopen: reopen
             set_status: 'set status: {0}'
             snooze_1mo: 1mo
             snooze_1w: 1w
             snooze_hide: hide
             snooze_tip: snooze {0}
-            subtask_cancel: cancel
+            subtask_cancel: Cancel
             subtask_deadline: deadline
             subtask_do: what to do
-            subtask_save: save
+            subtask_save: Save
             subtasks: Subtasks
             unsnooze: un-snooze
+            what: What
         card:
             ask_glyph: chat
             blocked: Blocked
@@ -93,6 +101,8 @@ text:
             open_in: open in {0}
             open_page: Open project page
             open_page_tip: open the project page beside the board
+            open_record_page: Open page
+            open_record_page_tip: open the page of this record
             outcome: Outcome
             overdue: overdue {0}d
             page_glyph: page
@@ -155,11 +165,17 @@ text:
             open_view_tip: open the TeX view on this manuscript's main file
         menu:
             add: Add
+            deadline: Deadline
             followup: Follow-up
             label: Project actions
             open: Open
             page: Project Page
             presentation: Presentation
+            record_label: Record actions
+            record_page: Page
+            set_status: Set Status
+            status: Status
+            status_glyph: flag
             subtask: Subtask
             workbench: Workbench
         no_documents: This project has no Markdown document.

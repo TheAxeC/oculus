@@ -7,8 +7,8 @@
 // configuration the page then holds. Reset of a family the workspace file sets sends the reset and
 // shows the default until the push. A draft held for a hub other than the primary is kept under
 // that hub, and while the hub's settings are being read the row's item (settings/Item.svelte,
-// rendered on the server) draws neither the draft nor the primary's value, so the draft is not drawn
-// stale.
+// rendered on the server) draws neither the draft nor the primary's value, so the draft is not
+// drawn stale.
 //
 // It does not cover the line the editor draws, nor the empty family's line, which the look does,
 // nor the server's write of the emptied family into the workspace file as every one of oculus's

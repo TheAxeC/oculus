@@ -19,6 +19,7 @@ export {
     bareId,
     holdersOf,
     keyOf,
+    REGISTRY_VIEWS,
     resolvedId,
     rootOf,
     type RegistryWord

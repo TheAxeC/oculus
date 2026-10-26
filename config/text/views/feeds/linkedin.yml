@@ -6,7 +6,7 @@ text:
         addidea: + idea
         addidea_tip: new LinkedIn idea draft (served mode)
         default_pick: a recent project milestone
-        edit: edit
+        edit: Edit
         edit_tip: edit this post file
         filters: LinkedIn filters
         form_category: Category
@@ -14,7 +14,7 @@ text:
         form_title: Post title
         idea_tag: idea
         ideas_hdr: Ideas ({0})
-        markpost: mark posted
+        markpost: Mark posted
         markpost_tip: mark posted - rename xx- to the next number
         no_dates: no dated posts
         no_folder: The LinkedIn folder {0} is not in the hub.

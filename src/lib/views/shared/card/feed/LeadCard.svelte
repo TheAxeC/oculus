@@ -1,30 +1,33 @@
 <script lang="ts">
-    // Layer 3, shared view. One position lead with its fit, deadline, posting, status writes and
-    // confirmed deletion, drawn by the Leads view (views/feeds/leads/Leads.svelte), where its title
-    // opens its page, and on that page (views/boards/entry/Entry.svelte), where it is handed no
-    // page opener and its title is words. Feed rules stay in state and server modules.
+    // Layer 3, shared view. One position lead as the record card
+    // (views/shared/card/record/RecordCard.svelte): its fit, deadline and posting, drawn by the
+    // Leads view (views/feeds/leads/Leads.svelte), where its title and the strip's Page open its
+    // page, and on that page (views/boards/entry/Entry.svelte), where it is handed `page` and no
+    // page opener, its title is words, and its subtasks and follow-ups are listed. Feed rules stay
+    // in state and server modules.
     //
-    // The `applied` control opens the Applications file of a hub beside the view the card is drawn
-    // in, with an entry filled from the lead, and the lead is set to the one status carrying
-    // `lead_applied` once that entry is placed (views/shared/card/feed/lead-apply.ts). With more
-    // than one hub holding Applications, the control is a menu of those hubs, the primary first,
-    // and the hub picked takes the entry; with one, a press opens that hub's file. While the entry
-    // is being placed the control waits, and a second press or pick does nothing. The controls that
-    // write the lead are disabled, `blocked` as their title, while the leads file has unsaved text
-    // in a source tab. The `decline` control is a status write like reopen: it sets the lead's
+    // The strip holds Applied and Page. The menu holds Page and the posting in its Open run, the
+    // Add run (entry-actions.ts `feedDated`), the Status submenu with Applied, Decline and Reopen,
+    // and Delete, which asks first. Applied opens the Applications file of a hub beside the view
+    // the card is drawn in, with an entry filled from the lead, and the lead is set to the one
+    // status carrying `lead_applied` once that entry is placed (lead-apply.ts beside this file).
+    // With more than one hub holding Applications, Applied is a menu of those hubs, in the strip
+    // and in the Status submenu, the primary first, and the hub picked takes the entry; with one, a
+    // press opens that hub's file. While the entry is being placed Applied waits, and a second
+    // press or pick does nothing.
+    //
+    // The actions that write the lead are disabled, `blocked` as their title, while the leads file
+    // has unsaved text in a source tab. Decline is a status write like Reopen: it sets the lead's
     // status to the one word carrying `lead_declined` in the hub's file, so the change log records
-    // it and reopen puts the one word carrying `default_lead` back. It is offered on an open lead
-    // alone, so a decline never writes over an outcome. A control whose flag no word of the hub's
-    // `lead_statuses` carries, or two or more do, is drawn disabled with a title saying so, since
-    // it has no word to write. Each flag is a word's of `statuses`, and the fit's colour a word of
+    // it and Reopen puts the one word carrying `default_lead` back. It is offered on an open lead
+    // alone, so a decline never writes over an outcome. An action whose flag no word of the hub's
+    // `lead_statuses` carries, or two or more do, is disabled with a title saying so, since it has
+    // no word to write. Each flag is a word's of `statuses`, and the fit's colour a word of
     // `leads_fit` and `palette`, in the words of the lead's own hub.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
@@ -43,7 +46,14 @@
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
     import { chosenHub } from '$lib/state/shared/page/hubs';
-    import RootChip from '$lib/views/shared/card/RootChip.svelte';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import {
+        pageAction,
+        statusAction,
+        type RecordAction
+    } from '$lib/views/shared/card/record/record-menu';
+    import type { CardAction } from '$lib/views/shared/card/card';
+    import { feedDated } from '$lib/views/shared/forms/entry/entry-actions';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
@@ -61,15 +71,26 @@
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
-        /** The view instance the Applications tab of the `applied` control opens beside. */
+        /** The view instance the Applications tab of the `applied` action opens beside. */
         beside: string;
         /** Open the lead's page, where its fields are edited; none on that page itself. */
         onpage?: () => void;
-        /** Why the controls that write the lead are disabled, '' when they are not. */
+        /** Drawn on the lead's own page: its subtasks and follow-ups listed. */
+        page?: boolean;
+        /** Why the actions that write the lead are disabled, '' when they are not. */
         blocked: string;
     };
 
-    let { entry, cursor, expired = false, onsaid, beside, onpage, blocked }: Props = $props();
+    let {
+        entry,
+        cursor,
+        expired = false,
+        onsaid,
+        beside,
+        onpage,
+        page = false,
+        blocked
+    }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
@@ -79,19 +100,20 @@
 
     /** The words of the lead's own hub, which the fit's colour and the status words are read in. */
     const vocab = $derived(vocabOf(feedRoot(entry)));
-    const text = (field: string): string => textOrNumber(entry[field]);
-    const title = $derived(text('title'));
+    /** One field of the lead as its words. */
+    const word = (field: string): string => textOrNumber(entry[field]);
+    const title = $derived(word('title'));
     const identity = $derived(leadId(entry));
     /** The lead's internal id, which its writes name it by. */
     const record = $derived(feedEntryId(entry));
-    const institution = $derived(text('inst'));
-    const country = $derived(text('country'));
-    const type = $derived(text('typ'));
-    const focus = $derived(text('focus'));
-    const fit = $derived(text('fit'));
-    const status = $derived(text('status').trim().toLowerCase());
-    const deadline = $derived(text('deadline'));
-    const url = $derived(text('url'));
+    const institution = $derived(word('inst'));
+    const country = $derived(word('country'));
+    const type = $derived(word('typ'));
+    const focus = $derived(word('focus'));
+    const fit = $derived(word('fit'));
+    const status = $derived(word('status').trim().toLowerCase());
+    const deadline = $derived(word('deadline'));
+    const url = $derived(word('url'));
     const key = $derived(fitKey(fit, vocab));
     const tone = $derived(fitTone(fit, vocab));
     const sub = $derived(`${institution} | ${country}`);
@@ -103,8 +125,8 @@
     );
 
     /**
-     * The status each control writes, in the lead's own hub's words: the one word carrying its
-     * flag, the empty text when no word or more than one does, which draws the control disabled.
+     * The status each action writes, in the lead's own hub's words: the one word carrying its
+     * flag, the empty text when no word or more than one does, which disables the action.
      */
     const writes = $derived({
         applied: appliedWord(vocab),
@@ -112,19 +134,114 @@
         open: openWord(vocab)
     });
 
-    /** A control's own words, or the words saying why it is disabled. */
+    /** The lead's lines and deadline, which the card's Add run writes; none with no schema. */
+    const dated = $derived(feedDated(client, 'leads', entry, blocked, page));
+
+    /** An action's own words, or the words saying why it is disabled. */
     function why(own: string): string {
         return blocked === '' ? own : blocked;
     }
 
     /**
-     * The words of a control that writes `word`: why it is disabled, `none` when no one word
+     * The words of an action that writes `word`: why it is disabled, `none` when no one word
      * carries its flag and the blocking words while the leads file is blocked, and its own words
      * otherwise.
      */
     function whyWriting(own: string, word: string, none: string): string {
         return blocked === '' && word === '' ? none : why(own);
     }
+
+    /** Applied: one action with one hub, a menu of the hubs with more than one. */
+    function appliedAction(): CardAction {
+        const off = blocked !== '' || writes.applied === '';
+        const many = hubs.length > 1;
+        const own = many ? t('leads.action.applied_hub_tip') : t('leads.action.applied_tip');
+        return {
+            id: 'applied',
+            label: t('leads.action.applied'),
+            title: whyWriting(own, writes.applied, t('leads.action.applied_none')),
+            turning: applying,
+            disabled: off,
+            items: many
+                ? hubs.map((hub) => ({
+                      id: `applied:${hub}`,
+                      label: hub,
+                      disabled: off || applying,
+                      onclick: () => apply(hub)
+                  }))
+                : undefined,
+            onclick: () => apply(chosenHub(hubs, client.fs.primary()) ?? '')
+        };
+    }
+
+    /** The statuses the card writes: Applied, Decline on an open lead, Reopen on a closed one. */
+    const states = $derived.by((): CardAction[] => {
+        const rows: CardAction[] = [];
+        if (!isApplied(vocab, status)) rows.push(appliedAction());
+        if (isOpen(vocab, status)) {
+            rows.push({
+                id: 'decline',
+                label: t('leads.action.decline'),
+                title: whyWriting(
+                    t('leads.action.decline_tip'),
+                    writes.declined,
+                    t('leads.action.decline_none')
+                ),
+                disabled: blocked !== '' || writes.declined === '',
+                onclick: () => mark(writes.declined)
+            });
+        }
+        if (isClosed(vocab, status)) {
+            rows.push({
+                id: 'reopen',
+                label: t('leads.action.reopen'),
+                title: whyWriting(
+                    t('leads.action.reopen_tip'),
+                    writes.open,
+                    t('leads.action.reopen_none')
+                ),
+                disabled: blocked !== '' || writes.open === '',
+                onclick: () => mark(writes.open)
+            });
+        }
+        return rows;
+    });
+
+    /**
+     * The card's actions: Page and the posting, then, for a lead with an identity, the Status
+     * submenu and Delete.
+     */
+    const actions = $derived.by((): RecordAction[] => {
+        const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
+        const link = posting(url);
+        if (link !== undefined) {
+            rows.push({
+                id: 'posting',
+                label: t('leads.posting'),
+                title: link,
+                glyph: 'link',
+                run: 'open',
+                onclick: () => {
+                    window.open(link, '_blank', 'noreferrer');
+                }
+            });
+        }
+        if (identity === '') return rows;
+        return [
+            ...rows,
+            ...statusAction(states, blocked === '' ? undefined : blocked),
+            {
+                id: 'delete',
+                label: t('entry_form.delete'),
+                title: why(t('leads.action.delete_lead_tip')),
+                glyph: t('entry_form.delete_glyph'),
+                disabled: blocked !== '',
+                onclick: () => {
+                    sure = true;
+                }
+            }
+        ];
+    });
 
     function say(answer: WriteAnswer): void {
         onsaid(answerWords(answer));
@@ -157,123 +274,66 @@
     }
 </script>
 
-<div class:expired data-lead={title}>
-    <Card
+{#snippet meta()}
+    <Tag label={key ?? t('leads.fit_none')} {tone} />
+    {#if expired}
+        <Tag label={status || t('leads.expired')} tone="grey" />
+    {/if}
+    {#if deadline !== '' || expired}
+        <span class="deadline">
+            <Glyph name="deadline" />
+            <span>{deadline || t('leads.no_deadline')}</span>
+            {#if deadlineTail !== ''}
+                <span> | {deadlineTail}</span>
+            {/if}
+        </span>
+    {/if}
+{/snippet}
+
+{#snippet text()}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+    <p class="sub">{@html inlineMarkdown(sub, cardMath(sub))}</p>
+    {#if country !== '' || type !== ''}
+        <div class="chips">
+            {#if country !== ''}
+                <Tag label={country} />
+            {/if}
+            {#if type !== ''}
+                <Tag label={type} />
+            {/if}
+        </div>
+    {/if}
+    {#if note !== ''}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
+    {/if}
+    {#if posting(url) !== undefined}
+        <p class="posting">
+            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
+            <a href={posting(url)} target="_blank" rel="noreferrer">
+                <Glyph name="link" />
+                <span>{t('leads.posting')}</span>
+            </a>
+        </p>
+    {/if}
+{/snippet}
+
+<div class="slot" class:expired data-lead={title}>
+    <RecordCard
         id={identity}
         {cursor}
         {title}
         titleHtml={inlineMarkdown(title, cardMath(title))}
         ontitle={onpage}
         tone={expired ? 'grey' : tone}
-    >
-        {#snippet meta()}
-            <RootChip record={{ root: feedRoot(entry) }} />
-            <Tag label={key ?? t('leads.fit_none')} {tone} />
-            {#if expired}
-                <Tag label={status || t('leads.expired')} tone="grey" />
-            {/if}
-            {#if deadline !== '' || expired}
-                <span class="deadline">
-                    <Glyph name="deadline" />
-                    <span>{deadline || t('leads.no_deadline')}</span>
-                    {#if deadlineTail !== ''}
-                        <span> | {deadlineTail}</span>
-                    {/if}
-                </span>
-            {/if}
-            {#if identity !== ''}
-                <span class="actions">
-                    {#if !isApplied(vocab, status) && hubs.length > 1}
-                        <Menu
-                            label={t('leads.action.applied')}
-                            title={whyWriting(
-                                t('leads.action.applied_hub_tip'),
-                                writes.applied,
-                                t('leads.action.applied_none')
-                            )}
-                            small
-                            placement="down"
-                            waiting={blocked !== '' || applying || writes.applied === ''}
-                            items={hubs.map((hub) => ({ id: hub, label: hub }))}
-                            onpick={(hub: string) => void apply(hub)}
-                        />
-                    {:else if !isApplied(vocab, status)}
-                        <ToolButton
-                            label={t('leads.action.applied')}
-                            title={whyWriting(
-                                t('leads.action.applied_tip'),
-                                writes.applied,
-                                t('leads.action.applied_none')
-                            )}
-                            small
-                            disabled={blocked !== '' || writes.applied === ''}
-                            waiting={applying}
-                            onclick={() => apply(chosenHub(hubs, client.fs.primary()) ?? '')}
-                        />
-                    {/if}
-                    {#if isOpen(vocab, status)}
-                        <ToolButton
-                            label={t('leads.action.decline')}
-                            title={whyWriting(
-                                t('leads.action.decline_tip'),
-                                writes.declined,
-                                t('leads.action.decline_none')
-                            )}
-                            small
-                            disabled={blocked !== '' || writes.declined === ''}
-                            onclick={() => mark(writes.declined)}
-                        />
-                    {/if}
-                    {#if isClosed(vocab, status)}
-                        <ToolButton
-                            label={t('leads.action.reopen')}
-                            title={whyWriting(
-                                t('leads.action.reopen_tip'),
-                                writes.open,
-                                t('leads.action.reopen_none')
-                            )}
-                            small
-                            disabled={blocked !== '' || writes.open === ''}
-                            onclick={() => mark(writes.open)}
-                        />
-                    {/if}
-                    <ToolButton
-                        label={t('project.action.del')}
-                        title={why(t('leads.action.delete_lead_tip'))}
-                        small
-                        disabled={blocked !== ''}
-                        onclick={() => (sure = true)}
-                    />
-                </span>
-            {/if}
-        {/snippet}
-
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="sub">{@html inlineMarkdown(sub, cardMath(sub))}</p>
-        {#if country !== '' || type !== ''}
-            <div class="chips">
-                {#if country !== ''}
-                    <Tag label={country} />
-                {/if}
-                {#if type !== ''}
-                    <Tag label={type} />
-                {/if}
-            </div>
-        {/if}
-        {#if note !== ''}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
-        {/if}
-        {#if posting(url) !== undefined}
-            <p class="posting">
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-                <a href={posting(url)} target="_blank" rel="noreferrer">
-                    <Glyph name="link" />
-                    <span>{t('leads.posting')}</span>
-                </a>
-            </p>
-        {/if}
-    </Card>
+        record={{ root: feedRoot(entry) }}
+        {actions}
+        strip={['applied', 'page']}
+        {dated}
+        {onsaid}
+        {meta}
+        {text}
+    />
 </div>
 
 {#if sure}
@@ -288,6 +348,12 @@
 {/if}
 
 <style>
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     /* An expired lead is faded and greyed as archival; while the pointer is over it or the keyboard
        focus is inside it both lift, so it is read at full strength. */
     .expired {
@@ -311,7 +377,6 @@
     }
 
     .deadline,
-    .actions,
     .chips,
     .posting a {
         display: inline-flex;
@@ -323,17 +388,6 @@
     .deadline {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
-    }
-
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
-       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
-       inside it. */
-    .actions {
-        display: var(--card-at-rest, inline-flex);
-        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
-           words beside them, so a line they share stays as tall as it was at rest; on a line of
-           their own they reach no further than the gap between the lines. */
-        margin-block: min(0px, calc((1lh - 22px) / 2));
     }
 
     .sub {

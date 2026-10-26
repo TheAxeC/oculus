@@ -22,14 +22,14 @@ text:
         live: live
         messages: '{0} messages'
         notes_error: 'The triage notes were not read: {0}'
-        open_provider: open at the provider
+        open_provider: Open at the provider
         polling: reading mailboxes...
         provider_google: Gmail
         provider_microsoft: Outlook
         refresh_now: Refresh now
         refused: 'Refused: {0}'
         reply: to reply
-        restore: restore
+        restore: Restore
         restore_tip: back to the plate
         retrying: retrying every {0}m
         said_archived: The thread is off the inbox.
@@ -49,7 +49,7 @@ text:
         show_draft: Draft reply
         thread: (thread)
         triage_tip: mark triaged / done
-        triaged: triaged
+        triaged: Triaged
         triaged_sec: Triaged
         unconfigured: not configured
         unsorted: unsorted

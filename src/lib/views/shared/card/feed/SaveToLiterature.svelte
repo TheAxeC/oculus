@@ -1,15 +1,11 @@
 <script lang="ts">
-    // Layer 3, shared view partial. Save to Literature on a paper's card: the Literature search
-    // card and the Lit Watch card draw it. The hubs it offers are those that could take a new entry
-    // of the Literature collection (`hubsTaking` of state/shared/page/hubs.ts): a hub holds the
-    // collection of the entry of its list that names the `literature` registry, and also the one
-    // its list leaves to oculus's entry when the file is there. With more than one, a press opens a
-    // menu of them, the primary first, each by its name, and the pick saves the paper there; with
-    // one, a press saves there at once, primary or not. The save names the hub, so the server writes
-    // where the card looks. The button reads
-    // In Literature, not pressable, once any of those hubs' collections holds the paper by the rule
-    // the server refuses a second copy by, so a card offers Save only while no hub holds it. In
-    // Literature is drawn waiting, not disabled, so it keeps a place in the focus order: when a
+    // Layer 3, shared view partial. Save to Literature as a control of the Literature search
+    // card's meta row, drawn at rest too; the Lit Watch card and the search card's menu carry the
+    // same Save as a row. Which hubs it offers and when it reads In Literature is the card's
+    // `literature` (literature-save.svelte.ts).
+    //
+    // With more than one hub, a press opens a menu of them; with one, a press saves there at once.
+    // In Literature is drawn waiting, not disabled, so it keeps a place in the focus order: when a
     // save pressed or picked from the control lands with the focus lost, In Literature takes it,
     // and the keyboard stays on the card. What the save answered is said under the button, in the
     // card; a refused save also gets the notification every refused write gets
@@ -19,28 +15,16 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { focusIsFree, focusQuietly } from '$lib/ui/frame/quiet-focus';
-    import { inLiterature, type PaperIds } from '$lib/state/feeds/literature/saved';
-    import { hubsTaking, keyOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
-    import { useState } from '$lib/state/client/use';
-    import { refusalWords } from '../../forms/answer-words';
-
-    const {
-        fs: { primary },
-        selectors: { registryCollections },
-        writes: { saveLiterature }
-    } = useState();
+    import type { LiteratureSave } from './literature-save.svelte';
 
     type Props = {
-        /** What the paper is compared by. */
-        ids: PaperIds;
-        /** The fields the save sends; the server cleans them and makes the key. */
-        paper: Record<string, unknown>;
-        source: 'search' | 'lit-watch';
+        /** The card's Save, which its menu row shares, so a save from either waits in both. */
+        literature: LiteratureSave;
     };
 
-    let { ids, paper, source }: Props = $props();
-    let saving = $state(false);
+    let { literature }: Props = $props();
+
     /** What the last save answered, the empty string before any. */
     let said = $state('');
     /** The control's box, which In Literature is found in. */
@@ -53,36 +37,17 @@
      */
     let landed = false;
 
-    /** The Literature collection of each hub that holds one. */
-    const held = $derived(registryCollections('literature'));
-    /** The hubs a save can write to, the primary first. */
-    const hubs = $derived(hubsTaking(held, primary()));
-    const saved = $derived(
-        held.some((one) =>
-            inLiterature(
-                ids,
-                one.entries.map((entry) => entry.fields)
-            )
-        )
-    );
-
     /**
      * Save the paper to the hub named, or, with no hub holding Literature, where the server picks.
      */
     async function save(hub: string | undefined): Promise<void> {
-        if (saving) return;
-        saving = true;
+        if (literature.saving) return;
         refocus = box?.contains(document.activeElement) ?? false;
-        try {
-            const answer = await saveLiterature(source, paper, hub);
-            const refused = refusalWords(answer);
-            if (refused !== '') refocus = false;
-            // The answer's id is the paper's id in the portfolio; its citation key is the key.
-            said = refused === '' ? t('literature.saved', keyOf(answer.id ?? '')) : refused;
-            landed = refused === '' && !saved;
-        } finally {
-            saving = false;
-        }
+        const answer = await literature.save(hub);
+        if (answer === null) return;
+        if (answer.refused) refocus = false;
+        said = answer.words;
+        landed = !answer.refused && !literature.saved;
     }
 
     // Once the paper is held and In Literature is drawn in the control's place, it takes the focus
@@ -90,7 +55,7 @@
     // page still counts as holding nothing (`focusIsFree`), and the focus is the page's, so it
     // opens no tooltip over the line the save wrote under the button.
     $effect(() => {
-        if (!saved || !refocus) return;
+        if (!literature.saved || !refocus) return;
         untrack(() => {
             refocus = false;
             const button = box?.querySelector('button');
@@ -102,17 +67,17 @@
     // only, so a paper the answer's entry does not match never takes the focus later.
     $effect(() => {
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- the read is the dependency
-        held;
+        literature.collections;
         untrack(() => {
             if (!landed) return;
             landed = false;
-            if (!saved) refocus = false;
+            if (!literature.saved) refocus = false;
         });
     });
 </script>
 
 <span class="save" bind:this={box}>
-    {#if saved}
+    {#if literature.saved}
         <ToolButton
             label={t('literature.in_literature')}
             glyph="book"
@@ -120,23 +85,23 @@
             title={t('literature.in_literature_tip')}
             onclick={() => undefined}
         />
-    {:else if hubs.length > 1}
+    {:else if literature.hubs.length > 1}
         <Menu
             label={t('literature.save')}
             glyph="book"
             title={t('literature.save_hub_tip')}
             placement="down"
-            waiting={saving}
-            items={hubs.map((hub) => ({ id: hub, label: hub }))}
+            waiting={literature.saving}
+            items={literature.hubs.map((hub) => ({ id: hub, label: hub }))}
             onpick={(hub: string) => void save(hub)}
         />
     {:else}
         <ToolButton
             label={t('literature.save')}
             glyph="book"
-            waiting={saving}
+            waiting={literature.saving}
             title={t('literature.save_tip')}
-            onclick={() => save(hubs.at(0))}
+            onclick={() => save(literature.hubs.at(0))}
         />
     {/if}
     {#if said !== ''}

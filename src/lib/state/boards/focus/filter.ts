@@ -106,7 +106,9 @@ export type FilterScope = {
     self: ReadonlySet<Id>;
     hubs: readonly string[];
     wordsOf: WordsOf;
-    /** The hubs' `collections:` lists and oculus's own, which the ticker reads the registries by. */
+    /**
+     * The hubs' `collections:` lists and oculus's own, which the ticker reads the registries by.
+     */
     lists: TickerLists;
 };
 

@@ -1,57 +1,63 @@
 <script lang="ts">
-    // Layer 3, shared view partial. Project cross-links grouped as in flight, done and ideas, each
-    // group nesting its members under their own project stage, and each member opening its tab.
+    // Layer 3, shared view partial. The project strip at the foot of a record card
+    // (views/shared/card/record/RecordCard.svelte, which hands it the groups): project cross-links
+    // grouped as in flight, done and ideas, each group nesting its members under their own project
+    // stage, or grouped by one stage each (the Archival card's), headed by the stage's words and
+    // glyph with its members directly under it. Each group is a disclosure with its count, and each
+    // member opens its tab. A strip handed `oneOpen` keeps one group open at a time.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { Project } from '$lib/state/boards/collection';
     import {
-        groupProjects,
+        groupKey,
         membersByStage,
         type CrossGroup
     } from '$lib/state/boards/structure/cross-links';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
-    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
-        layout: { openView },
-        selectors: { configMap }
+        layout: { openView }
     } = useState();
 
-    type Source =
-        { projects: Project[]; groups?: never } | { projects?: never; groups: CrossGroup[] };
-    type Props = Source;
+    type Props = {
+        /** The groups the strip draws, in their order. */
+        groups: CrossGroup[];
+        /** Keep one group open at a time, opening one closing the other (the Archival card's). */
+        oneOpen?: boolean;
+    };
 
-    let { projects, groups }: Props = $props();
-    const shown = $derived(groups ?? groupProjects(projects ?? [], configMap(), vocabOf));
+    let { groups, oneOpen = false }: Props = $props();
     let opened = $state(new Set<string>());
 
-    function isOpen(type: string): boolean {
-        return opened.has(type);
+    function isOpen(key: string): boolean {
+        return opened.has(key);
     }
 
-    function toggle(type: string): void {
+    /** Open or close one group; with `oneOpen`, opening it closes the other group that is open. */
+    function toggle(key: string): void {
         // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the collection is local to the call and is read once, never mutated in place while the page holds it
-        const next = new Set(opened);
-        if (next.has(type)) next.delete(type);
-        else next.add(type);
+        const next = new Set(oneOpen ? [] : opened);
+        if (opened.has(key)) next.delete(key);
+        else next.add(key);
         opened = next;
     }
 
-    /** The catalogued group label, singular for one idea and plural otherwise. */
+    /** The group's label: its stage's words, else the catalogued words, one idea singular. */
     function label(group: CrossGroup): string {
+        if (group.stage !== undefined) return group.stage.label;
         if (group.type === 'in-flight') return t('project.helper.xlink_in_flight');
         if (group.type === 'done') return t('project.helper.xlink_done');
         if (group.count === 1) return t('project.helper.xlink_idea');
         return t('project.helper.xlink_ideas');
     }
 
-    /** The glyph of one group, the name its catalogued word beside the group's label holds. */
+    /** The glyph of one group: its stage's, else the name its catalogued word holds. */
     function glyph(group: CrossGroup): string {
+        if (group.stage !== undefined) return group.stage.glyph;
         if (group.type === 'in-flight') return t('project.helper.xlink_in_flight_glyph');
         if (group.type === 'done') return t('project.helper.xlink_done_glyph');
         return t('project.helper.xlink_idea_glyph');
@@ -59,15 +65,15 @@
 </script>
 
 <div class="groups">
-    {#each shown as group (group.type)}
-        <div class="group" data-project-group={group.type}>
+    {#each groups as group (groupKey(group))}
+        <div class="group" data-project-group={groupKey(group)}>
             <span class="group-head">
                 <Glyph name={glyph(group)} />
                 <Disclosure
                     count={group.count}
                     label={label(group)}
-                    expanded={isOpen(group.type)}
-                    onclick={() => toggle(group.type)}
+                    expanded={isOpen(groupKey(group))}
+                    onclick={() => toggle(groupKey(group))}
                 />
                 {#if group.warn}
                     <span class="warn">
@@ -75,11 +81,13 @@
                     </span>
                 {/if}
             </span>
-            {#if isOpen(group.type)}
+            {#if isOpen(groupKey(group))}
                 <div class="members">
                     {#each membersByStage(group) as kind (kind.stage)}
                         <div class="kind" data-project-kind={kind.stage}>
-                            <Tag label={kind.stage} />
+                            {#if group.stage === undefined}
+                                <Tag label={kind.stage} />
+                            {/if}
                             {#each kind.members as member (member.id)}
                                 <span class="member">
                                     <ToolButton

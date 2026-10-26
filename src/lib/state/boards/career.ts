@@ -55,16 +55,16 @@ export type TrackRecord = { roles: RoleRecord[]; funding: number };
 /**
  * The track record of the user the workspace setting `self` names, over every project and every
  * funding entry of the snapshot, which holds every hub of the workspace; the funding entries are
- * those of each hub's collection whose entry names the `funding` registry. For each role of `roles:`
- * that has a field, in the roles' order, one line per row of `categories:` carrying `record: true`,
- * in the list's order, each with the number of projects whose category (`categoryOf`) is that row
- * and whose role (`projectRole`) is that role; a role with no project in any record row gives no
- * lines, and the counts are never summed. The funding count is the funding entries whose highest
- * role field (`lead` in oculus's own vocab.yml) names the user (`isLead`, by key) and whose status
- * carries `obtained` in `statuses`, compared trimmed and in lower case (`wordFlag`). Null when no
- * `self` is set, and when no role has a line and no funding is obtained. The roles and the rows
- * are those of every hub's words, and a project or an entry is filed under the words of its own hub
- * when `wordsOf` gives them, under `config` otherwise.
+ * those of each hub's collection whose entry names the `funding` registry. For each role of
+ * `roles:` that has a field, in the roles' order, one line per row of `categories:` carrying
+ * `record: true`, in the list's order, each with the number of projects whose category
+ * (`categoryOf`) is that row and whose role (`projectRole`) is that role; a role with no project
+ * in any record row gives no lines, and the counts are never summed. The funding count is the
+ * funding entries whose highest role field (`lead` in oculus's own vocab.yml) names the user
+ * (`isLead`, by key) and whose status carries `obtained` in `statuses`, compared trimmed and in
+ * lower case (`wordFlag`). Null when no `self` is set, and when no role has a line and no funding
+ * is obtained. The roles and the rows are those of every hub's words, and a project or an entry is
+ * filed under the words of its own hub when `wordsOf` gives them, under `config` otherwise.
  */
 export function trackRecord(
     snapshot: Snapshot | null,

@@ -1,80 +1,61 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. Non-real work grouped by the words of `stages` that carry a `dead`
-    // number, in the order of those numbers, with one stage's group open at a time and project
-    // links inside it.
+    // Layer 3, Pillars partial. Non-real work as the record card
+    // (views/shared/card/record/RecordCard.svelte), grouped by the words of `stages` that carry a
+    // `dead` number, in the order of those numbers. The groups are the project strip at its foot
+    // (views/shared/links/CrossLinks.svelte), each headed by its stage's label and glyph with its
+    // count and opening to its project links in the snapshot's order, one stage open at a time. The
+    // card has no action, so no menu of its own.
 
-    import Card from '$lib/ui/frame/Card.svelte';
-    import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import {
-        archivedCount,
-        type ArchiveGroup,
-        type Project
-    } from '$lib/state/boards/structure/lines';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import { wordGlyph } from '$lib/views/shared/card/card';
+    import { archivedCount, type ArchiveGroup } from '$lib/state/boards/structure/lines';
+    import { stageGroup } from '$lib/state/boards/structure/cross-links';
+    import { chipGlyphName, chipLabel } from '$lib/state/shared/words/tones';
     import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/shared/words/text';
-    import { useState } from '$lib/state/client/use';
-    import { recordState } from '$lib/state/shared/page/records';
-
-    const {
-        layout: { openView }
-    } = useState();
 
     type Props = { id: string; cursor: boolean; groups: ArchiveGroup[] };
     let { id, cursor, groups }: Props = $props();
-    let shown = $state('');
     const count = $derived(archivedCount(groups));
 
-    /** The short name when the manifest gives one, else the title; an empty short is none. */
-    function labelOf(project: Project): string {
-        const short = project.short?.trim() ?? '';
-        return short === '' ? project.title : short;
-    }
+    /** One strip group per stage, headed by the stage's label and glyph. */
+    const strip = $derived(
+        groups.map((group) =>
+            stageGroup(
+                {
+                    word: group.stage,
+                    label: chipLabel(group.stage),
+                    glyph: wordGlyph(chipGlyphName(group.stage))
+                },
+                group.projects
+            )
+        )
+    );
 </script>
 
+{#snippet meta()}
+    <Glyph name="archived" />
+    <Tag label={t('pillars.not_active', count)} />
+{/snippet}
+
+{#snippet text()}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+    <p>{@html inlineMarkdown(t('pillars.archival_blurb'))}</p>
+{/snippet}
+
 <div class="muted" data-pillar-archival>
-    <Card {id} {cursor} title={t('pillars.archival')}>
-        {#snippet meta()}
-            <Glyph name="archived" />
-            <Tag label={t('pillars.not_active', count)} />
-        {/snippet}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p>{@html inlineMarkdown(t('pillars.archival_blurb'))}</p>
-        <div class="groups">
-            {#each groups as group (group.stage)}
-                <div class="group">
-                    <Chip
-                        label={`${group.stage} ${group.count}`}
-                        pressed={shown === group.stage}
-                        onclick={() => (shown = shown === group.stage ? '' : group.stage)}
-                    />
-                    {#if shown === group.stage}
-                        <div class="members">
-                            {#each group.projects as project (project.id)}
-                                <ToolButton
-                                    small
-                                    label={labelOf(project)}
-                                    onclick={() =>
-                                        openView(
-                                            'project',
-                                            recordState(project.id, labelOf(project))
-                                        )}
-                                />
-                            {/each}
-                        </div>
-                    {/if}
-                </div>
-            {/each}
-        </div>
-    </Card>
+    <RecordCard {id} {cursor} title={t('pillars.archival')} {meta} {text} groups={strip} oneOpen />
 </div>
 
 <style>
     /* The archival card is faded as archival; while the pointer is over it or the keyboard focus
        is inside it the fade lifts, so it is read at full strength. */
     .muted {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
         opacity: 0.62;
         transition: opacity 120ms ease;
     }
@@ -93,28 +74,5 @@
     p {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-    }
-
-    .groups,
-    .group,
-    .members {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .groups {
-        margin-top: 8px;
-    }
-
-    /* A group and the members of an open group are rows of the tree's height. */
-    .group,
-    .members {
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .members {
-        flex-basis: 100%;
     }
 </style>

@@ -139,7 +139,9 @@ export const REGISTRY_VIEWS: Partial<Record<RegistryWord, string>> = {
     radar: 'radar'
 };
 
-/** The registry words that name a YAML feed's file, which is read as a feed and is no collection. */
+/**
+ * The registry words that name a YAML feed's file, which is read as a feed and is no collection.
+ */
 export const FEED_REGISTRIES = ['leads', 'radar'] as const;
 
 /** One feed a `collections:` entry names. */

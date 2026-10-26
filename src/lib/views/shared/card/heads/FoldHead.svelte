@@ -1,14 +1,14 @@
 <script lang="ts">
     // Layer 3, view partial of the Focus board. The heading row of a box that folds: the fold
-    // control, a bare button named "Fold <name>" or "Unfold <name>" with the fold glyph of the
-    // state, then the box's glyph, where it has one, and its title in bold, drawn in the box's hue
-    // where it has one, then its count as a badge, where it has one, then whatever the box puts at
-    // the end of the row. The career banner (views/boards/focus/career/CareerPanel.svelte), the
-    // command center (views/boards/focus/CommandCenterView.svelte, its HPC pill at the end) and the
-    // tasks section (views/boards/focus/Tasks.svelte) draw their headings with it, so their fold
-    // controls, glyphs and titles stand at the same places and the same height, and their markup
-    // and their spacing are written here once. A group of cards is headed by GroupHead.svelte
-    // beside it instead.
+    // control (FoldControl.svelte beside it), a bare button named "Fold <name>" or "Unfold <name>"
+    // with the fold glyph of the state, then the box's glyph, where it has one, and its title in
+    // bold, drawn in the box's hue where it has one, then its count as a badge, where it has one,
+    // then whatever the box puts at the end of the row. The career banner
+    // (views/boards/focus/career/CareerPanel.svelte), the command center
+    // (views/boards/focus/CommandCenterView.svelte, its HPC pill at the end) and the tasks section
+    // (views/boards/focus/Tasks.svelte) draw their headings with it, so their fold controls, glyphs
+    // and titles stand at the same places and the same height, and their markup and their spacing
+    // are written here once. A group of cards is headed by GroupHead.svelte beside it instead.
     //
     // The fold control, the glyph, the title and the count are one group that does not wrap: a
     // title longer than the pane is cut with an ellipsis on the fold control's line, so the row
@@ -17,9 +17,8 @@
 
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import FoldControl from './FoldControl.svelte';
 
     type Props = {
         /** The glyph name drawn before the title, or nothing for a title with none. */
@@ -44,13 +43,7 @@
 
 <div class="head">
     <span class="lead">
-        <ToolButton
-            bare
-            label={open ? t('focus.fold', name) : t('focus.unfold', name)}
-            glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
-            expanded={open}
-            onclick={ontoggle}
-        />
+        <FoldControl {name} {open} {ontoggle} />
         <b
             class:toned={tone !== undefined}
             style={tone === undefined ? undefined : `--title: var(--c-${tone}-txt)`}

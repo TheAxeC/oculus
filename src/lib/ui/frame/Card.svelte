@@ -4,7 +4,13 @@
     // holds are the caller's snippets.
     //
     // The tone is a hue name, not a colour: the component turns it into `--c-<tone>` on its own
-    // custom property and the bar paints that, so the only colours here are tokens.
+    // custom property and the bar paints that, so the only colours here are tokens. The ring is a
+    // hue name the same way, drawn as the card's border in that hue.
+    //
+    // A card that `fill`s grows to the box it is laid out in, so the cards of one row of a grid are
+    // one height, and draws past its own edge, so a menu of its controls is not cut off at the
+    // foot of a short card; its bar then carries the card's rounded corners itself and a long
+    // unbroken title breaks inside the card's width.
 
     import type { Snippet } from 'svelte';
     import { sanitise } from '../html';
@@ -27,6 +33,10 @@
         tone?: string;
         /** Draws an accent ring inside the border, for a card the view is holding on to. */
         pinned?: boolean;
+        /** A hue name of state/shared/words/tones.ts the border is drawn in, for a marked card. */
+        ring?: string;
+        /** Grow to the box the card is laid out in and draw past its own edge. */
+        fill?: boolean;
         /** The heading level, so a card inside a section is not always an h3. */
         level?: number;
         /**
@@ -50,6 +60,8 @@
         heading: drawnHeading,
         tone,
         pinned = false,
+        ring,
+        fill = false,
         level = 3,
         ontitle,
         meta,
@@ -58,13 +70,21 @@
     }: Props = $props();
 
     const element = $derived(`h${Math.min(6, Math.max(1, Math.trunc(level)))}`);
-    const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
+    const style = $derived.by(() => {
+        const hues = [
+            tone === undefined ? '' : `--tone: var(--c-${tone})`,
+            ring === undefined ? '' : `--ring: var(--c-${ring})`
+        ].filter((one) => one !== '');
+        return hues.length === 0 ? undefined : hues.join('; ');
+    });
 </script>
 
 <article
     class="card"
     class:toned={tone !== undefined}
     class:pinned
+    class:ringed={ring !== undefined}
+    class:fill
     {style}
     data-card={id}
     data-cursor={cursor || undefined}
@@ -157,6 +177,26 @@
        unpinned one are the same size and a list of them does not jump. */
     .card.pinned {
         box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    /* The ring is the card's own border in its hue, drawn inside so a marked card and an unmarked
+       one are the same size. */
+    .card.ringed {
+        border-color: var(--ring);
+        box-shadow: inset 0 0 0 1px var(--ring);
+    }
+
+    .card.fill {
+        flex: 1 1 auto;
+        overflow: visible;
+    }
+
+    .card.fill > .bar {
+        border-radius: var(--input-radius) 0 0 var(--input-radius);
+    }
+
+    .card.fill .title {
+        overflow-wrap: anywhere;
     }
 
     :global(.card[data-cursor]) {

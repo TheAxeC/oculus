@@ -1,13 +1,14 @@
 <script lang="ts">
-    // Layer 3, view partial of views/feeds/inbox/Inbox.svelte. One thread of the plate: what it
-    // wants, how old it is, the note about it, the answer that has been drafted for it, and the two
-    // writes to the mailbox the view allows.
+    // Layer 3, view partial of views/feeds/inbox/Inbox.svelte. One thread of the plate as the
+    // record card (views/shared/card/record/RecordCard.svelte): what it wants, how old it is, the
+    // note about it, the answer that has been drafted for it, and the two writes to the mailbox the
+    // view allows.
     //
     // The draft is an editor over the thread's own note. Typing in it writes nothing: the note is
     // saved by its own control, and the answer is sent by a control behind a confirmation naming
-    // who it goes to and which account it goes from. Archive needs no draft, so it sits on the
-    // card's own row beside the triage control, behind a confirmation of its own. There is no other
-    // write to a mailbox anywhere on the page, and neither of these two ever creates a draft at the
+    // who it goes to and which account it goes from. Archive needs no draft, so it is an action of
+    // the card beside the triage action, behind a confirmation of its own. There is no other write
+    // to a mailbox anywhere on the page, and neither of these two ever creates a draft at the
     // provider.
     //
     // The card is titled by the sender's display name, with the address in smaller words after it
@@ -16,15 +17,22 @@
     // message itself is the provider's own snippet, already decoded on the server, clamped to two
     // lines. The kind tag is drawn only in the Triaged section, where the card has left the section
     // that names its kind, and the account tag only while there is more than one account to tell
-    // apart. Draft reply and the provider's page are compact controls on the same row as Archive
-    // and Triaged; the draft editor opens under the card's text.
+    // apart. The strip holds Draft reply, Triaged (Restore once triaged) and Archive; the menu
+    // holds the provider's page in its Open run, the Add run, Triaged or Restore in its Status
+    // submenu, Draft reply and Archive. The draft editor opens under the card's text.
+    //
+    // A thread is no record of a hub, so its Follow-up and Subtask write to a record picked on the
+    // card (views/shared/forms/dated/RecordPick.svelte) among `projects` and the entries of the
+    // collections, "What" starting with the thread's subject; a thread has no Deadline.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import { statusAction, type RecordAction } from '$lib/views/shared/card/record/record-menu';
+    import type { Project } from '$lib/state/boards/focus';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
@@ -60,6 +68,8 @@
         onreply: (thread: InboxThread, body: string) => Promise<MailAnswer>;
         onarchive: (thread: InboxThread) => Promise<MailAnswer>;
         onsaid: (words: string) => void;
+        /** The live projects a Follow-up or a Subtask from the thread may be written to. */
+        projects: Project[];
     };
 
     let {
@@ -74,7 +84,8 @@
         ontriage,
         onreply,
         onarchive,
-        onsaid
+        onsaid,
+        projects
     }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
@@ -144,116 +155,144 @@
     function openProvider(): void {
         if (thread.url) window.open(thread.url, '_blank', 'noopener,noreferrer');
     }
+
+    /**
+     * The card's actions: the provider's page, Triaged or Restore in the Status submenu, Draft
+     * reply and Archive; the writes are disabled while one is under way.
+     */
+    const actions = $derived.by((): RecordAction[] => {
+        const rows: RecordAction[] = [];
+        if (thread.url) {
+            rows.push({
+                id: 'provider',
+                label: t('inbox.open_provider'),
+                glyph: 'launch',
+                run: 'open',
+                onclick: openProvider
+            });
+        }
+        const status: RecordAction = note.triaged
+            ? {
+                  id: 'restore',
+                  label: t('inbox.restore'),
+                  title: t('inbox.restore_tip'),
+                  glyph: 'refresh',
+                  disabled: busy,
+                  onclick: () => mark(false)
+              }
+            : {
+                  id: 'triaged',
+                  label: t('inbox.triaged'),
+                  title: t('inbox.triage_tip'),
+                  glyph: 'done',
+                  disabled: busy,
+                  onclick: () => mark(true)
+              };
+        return [
+            ...rows,
+            ...statusAction([status]),
+            {
+                id: 'draft',
+                label: t('inbox.show_draft'),
+                glyph: 'draft',
+                active: draftOpen,
+                onclick: () => onshowdraft(thread, !draftOpen)
+            },
+            {
+                id: 'archive',
+                label: t('inbox.archive'),
+                title: t('inbox.archive_tip'),
+                glyph: 'archived',
+                disabled: busy,
+                onclick: () => {
+                    asking = 'archive';
+                }
+            }
+        ];
+    });
 </script>
 
-<div data-inbox={thread.id}>
-    <Card {id} {cursor} title={name} tone={kindTone(kind)}>
-        {#snippet heading()}
-            <Tooltip text={thread.sender}>
-                <span class="name">{name}</span>
-            </Tooltip>
-            {#if from.name !== '' && from.address !== ''}
-                <span class="address">{from.address}</span>
-            {/if}
-        {/snippet}
-        {#snippet meta()}
-            {#if note.triaged}
-                <Tag label={kindLabel()} tone={kindTone(kind)} />
-            {/if}
-            {#if accountTag}
-                <Tag label={account} />
-            {/if}
-            {#if ageText() !== ''}
-                <span class="age">{ageText()}</span>
-            {/if}
-            {#if thread.messages > 1}
-                <span class="age">{t('inbox.messages', thread.messages)}</span>
-            {/if}
-            <span class="controls">
-                <ToolButton
-                    label={t('inbox.show_draft')}
-                    glyph="draft"
-                    compact
-                    active={draftOpen}
-                    expanded={draftOpen}
-                    onclick={() => onshowdraft(thread, !draftOpen)}
-                />
-                {#if thread.url}
-                    <ToolButton
-                        label={t('inbox.open_provider')}
-                        glyph="launch"
-                        compact
-                        onclick={openProvider}
-                    />
-                {/if}
-                <ToolButton
-                    label={t('inbox.archive')}
-                    title={t('inbox.archive_tip')}
-                    glyph="archived"
-                    compact
-                    disabled={busy}
-                    onclick={() => (asking = 'archive')}
-                />
-                {#if note.triaged}
-                    <ToolButton
-                        label={t('inbox.restore')}
-                        title={t('inbox.restore_tip')}
-                        glyph="refresh"
-                        compact
-                        disabled={busy}
-                        onclick={() => void mark(false)}
-                    />
-                {:else}
-                    <ToolButton
-                        label={t('inbox.triaged')}
-                        title={t('inbox.triage_tip')}
-                        glyph="done"
-                        compact
-                        disabled={busy}
-                        onclick={() => void mark(true)}
-                    />
-                {/if}
-            </span>
-        {/snippet}
+{#snippet heading()}
+    <Tooltip text={thread.sender}>
+        <span class="name">{name}</span>
+    </Tooltip>
+    {#if from.name !== '' && from.address !== ''}
+        <span class="address">{from.address}</span>
+    {/if}
+{/snippet}
 
-        {#if thread.subject !== ''}
-            <p class="subject">{thread.subject}</p>
-        {/if}
-        {#if note.what}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="what">{@html inlineMarkdown(note.what, cardMath(note.what))}</p>
-        {/if}
-        {#if thread.snippet !== ''}
-            <p class="snippet">{thread.snippet}</p>
-        {/if}
+{#snippet meta()}
+    {#if note.triaged}
+        <Tag label={kindLabel()} tone={kindTone(kind)} />
+    {/if}
+    {#if accountTag}
+        <Tag label={account} />
+    {/if}
+    {#if ageText() !== ''}
+        <span class="age">{ageText()}</span>
+    {/if}
+    {#if thread.messages > 1}
+        <span class="age">{t('inbox.messages', thread.messages)}</span>
+    {/if}
+{/snippet}
 
-        {#if draftOpen}
-            <div class="draft">
-                <TextArea
-                    value={draft}
-                    label={t('inbox.draft_label')}
-                    rows={6}
-                    oninput={(value: string) => (typed = value)}
+{#snippet text()}
+    {#if thread.subject !== ''}
+        <p class="subject">{thread.subject}</p>
+    {/if}
+    {#if note.what}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        <p class="what">{@html inlineMarkdown(note.what, cardMath(note.what))}</p>
+    {/if}
+    {#if thread.snippet !== ''}
+        <p class="snippet">{thread.snippet}</p>
+    {/if}
+{/snippet}
+
+{#snippet blocks()}
+    {#if draftOpen}
+        <div class="draft">
+            <TextArea
+                value={draft}
+                label={t('inbox.draft_label')}
+                rows={6}
+                oninput={(value: string) => (typed = value)}
+            />
+            <div class="acts">
+                <ToolButton
+                    label={t('inbox.save_draft')}
+                    glyph="check"
+                    compact
+                    disabled={busy || draft === saved}
+                    onclick={() => void saveDraft()}
                 />
-                <div class="acts">
-                    <ToolButton
-                        label={t('inbox.save_draft')}
-                        glyph="check"
-                        compact
-                        disabled={busy || draft === saved}
-                        onclick={() => void saveDraft()}
-                    />
-                    <ToolButton
-                        label={t('inbox.send')}
-                        glyph="reply"
-                        compact
-                        disabled={busy || draft.trim() === ''}
-                        onclick={() => (asking = 'send')}
-                    />
-                </div>
+                <ToolButton
+                    label={t('inbox.send')}
+                    glyph="reply"
+                    compact
+                    disabled={busy || draft.trim() === ''}
+                    onclick={() => (asking = 'send')}
+                />
             </div>
-        {/if}
-    </Card>
+        </div>
+    {/if}
+{/snippet}
+
+<div class="slot" data-inbox={thread.id}>
+    <RecordCard
+        {id}
+        {cursor}
+        title={name}
+        {heading}
+        tone={kindTone(kind)}
+        {actions}
+        strip={['draft', note.triaged ? 'restore' : 'triaged', 'archive']}
+        dated={{ pick: thread.subject, projects }}
+        {onsaid}
+        {meta}
+        {text}
+        {blocks}
+    />
 </div>
 
 {#if asking === 'send'}
@@ -290,17 +329,10 @@
         font-size: var(--fs-sm);
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
-       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
-       inside it. */
-    .controls {
-        display: var(--card-at-rest, inline-flex);
-        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
-           words beside them, so a line they share stays as tall as it was at rest; on a line of
-           their own they reach no further than the gap between the lines. */
-        margin-block: min(0px, calc((1lh - 22px) / 2));
-        align-items: center;
-        gap: 6px;
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     .subject {

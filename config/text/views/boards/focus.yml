@@ -3,6 +3,7 @@ text:
     focus:
         add_deadline: + deadline
         add_followup: + follow-up
+        add_subtask: + subtask
         awaiting_response: Awaiting a response
         cards_group: Funding | positions | teaching
         career_day_ago: 1 day ago
@@ -132,9 +133,11 @@ text:
         none: '- none -'
         now_glyph: now
         order_of_work: Order of work
-        qa_cancel: Cancel
+        qa_kind: Kind
+        qa_named: '{0} ({1})'
+        qa_no_record: There is no record of this kind to write to.
         qa_project: Project
-        qa_save: Save
+        qa_record: Record
         quick_add: 'Quick add:'
         tasks:
             grp_followups_label: Follow-ups

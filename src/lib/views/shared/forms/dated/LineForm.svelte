@@ -1,9 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial under views/shared/. The one-line form of a card's line blocks: what to
-    // do, a date, Save and Cancel. views/shared/forms/dated/ListHead.svelte draws it to add a line
-    // to either block, views/shared/forms/dated/Subtasks.svelte to edit a subtask with its
-    // deadline, and views/shared/forms/dated/Followups.svelte to edit a follow-up note with the
-    // date before which it stays off the Focus board.
+    // Layer 3, view partial under views/shared/. The one-line form that edits a line of a card's
+    // line blocks in its row: what to do, a date, Save and Cancel. Subtasks.svelte beside it draws
+    // it to edit a subtask with its deadline, and Followups.svelte to edit a follow-up note with
+    // the date before which it stays off the Focus board; a new line is added through
+    // DatedForm.svelte.
     //
     // It holds what is typed, starting from the line it edits, and hands both to `onsave`; the
     // block that draws it writes them and closes it. Save is disabled while the text is empty,

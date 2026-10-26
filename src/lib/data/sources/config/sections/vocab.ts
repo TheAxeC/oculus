@@ -72,10 +72,10 @@ function textOf(row: Record<string, unknown>, field: string): string {
 
 /**
  * The keys of the clusters the Focus board draws (data/shapes/boards/focus-clusters.ts), each once,
- * and the findings of each row of `focus_clusters` that is a map with a key: one for a row whose key
- * an earlier row that reads holds, and, for any other such row, one for each `label` or `glyph`
- * naming no word of the catalog. A row that does not read is also the shape's finding, and its key
- * is no cluster.
+ * and the findings of each row of `focus_clusters` that is a map with a key: one for a row whose
+ * key an earlier row that reads holds, and, for any other such row, one for each `label` or
+ * `glyph` naming no word of the catalog. A row that does not read is also the shape's finding, and
+ * its key is no cluster.
  */
 function clusterFindings(
     config: Record<string, unknown>,

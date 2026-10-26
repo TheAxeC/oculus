@@ -1,25 +1,39 @@
 <script lang="ts">
-    // Layer 3, shared view. One paper with its metadata, links, and writes: Dismiss and Restore
-    // set the entry's `dismissed`, Delete asks first and removes the entry. Lit Watch draws it
-    // (views/feeds/radar/Radar.svelte and Bucket.svelte), where the title opens the paper's page,
-    // and so does that page (views/boards/entry/Entry.svelte), handing it `page`, where the title
-    // is words. It receives the feed entry and project map and keeps only the optional idea form
-    // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
-    // card ends, and its whole text is the line's tooltip; on the paper's page it is drawn whole. A
-    // web address in it is a link (ui/display/text/LinkedText.svelte); the note and the threat are
+    // Layer 3, shared view. One Lit Watch paper as the record card
+    // (views/shared/card/record/RecordCard.svelte): its metadata, its note, and the strip of the
+    // projects it names at the foot. Lit Watch draws it (views/feeds/radar/Radar.svelte and
+    // Bucket.svelte), where the title and the strip's Page open the paper's page, and so does that
+    // page (views/boards/entry/Entry.svelte), handing it `page`, where the title is words and the
+    // paper's subtasks and follow-ups are listed. It receives the feed entry and project map and
+    // keeps only the optional idea form locally.
+    //
+    // The strip holds Dismiss, Restore once dismissed, and Page. The menu holds Page, the paper and
+    // the projects the strip groups under none in its Open run, the Add run (entry-actions.ts
+    // `feedDated`), the Status submenu with Dismiss or Restore, which set the entry's `dismissed`,
+    // then Idea, which opens the idea form, Save to Literature, which writes the paper to the
+    // Literature collection (literature-save.svelte.ts), and Delete, which asks first and removes
+    // the entry. The actions that write the paper are disabled, the words saying why as their
+    // title, while the radar file has unsaved text in a source tab or the paper's title addresses
+    // no write.
+    //
+    // The source line (authors, venue, year) is one line, cut with an ellipsis where the card ends,
+    // and its whole text is the line's tooltip; on the paper's page it is drawn whole. A web
+    // address in it is a link (ui/display/text/LinkedText.svelte); the note and the threat are
     // inline Markdown, which links its addresses itself.
-    // A project link ends in an ellipsis where the card ends, with the whole title as its tooltip.
-    // Save to Literature writes the paper to the Literature collection (SaveToLiterature.svelte).
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
-    import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
     import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
+    import { feedDated } from '$lib/views/shared/forms/entry/entry-actions';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import {
+        pageAction,
+        statusAction,
+        type RecordAction
+    } from '$lib/views/shared/card/record/record-menu';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
@@ -30,21 +44,23 @@
         type Project,
         type RadarEntry
     } from '$lib/state/feeds/radar';
+    import { groupProjects } from '$lib/state/boards/structure/cross-links';
     import { posting } from './posting';
-    import SaveToLiterature from './SaveToLiterature.svelte';
+    import { createLiteratureSave } from './literature-save.svelte';
     import { radarPaper } from '$lib/state/feeds/literature/saved';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { entryPageState } from '$lib/state/forms/page-entry';
     import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
-    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
+    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
         layout: { openView },
         pages: { pageOf },
+        selectors: { configMap },
         source: { unsavedFile },
         writes: { writeFeedField }
     } = client;
@@ -56,7 +72,7 @@
         lastRun: unknown;
         projects: Record<string, Project>;
         dismissed?: boolean;
-        /** Drawn on the paper's own page: the title as words and the source line whole. */
+        /** On the paper's own page: the title as words, the source whole, the lines listed. */
         page?: boolean;
         onsaid: (words: string) => void;
     };
@@ -81,7 +97,7 @@
 
     const held = $derived(pageOf('radar', id));
     const file = $derived(held === null ? null : pageFile(client, held));
-    /** Why Delete is disabled: unsaved text of the radar file, or a title no write addresses. */
+    /** Why writes are disabled: unsaved text of the radar file, or a title no write addresses. */
     const blocked = $derived(
         blockedBy(
             file,
@@ -90,19 +106,136 @@
         )
     );
 
-    const text = (field: string): string => textOrNumber(entry[field]);
-    const identity = $derived(text('title'));
+    /** One field of the paper as its words. */
+    const word = (field: string): string => textOrNumber(entry[field]);
+    const identity = $derived(word('title'));
     const title = $derived(identity || t('radar.untitled'));
-    const relevance = $derived(text('relevance'));
-    const motif = $derived(text('motif'));
-    const note = $derived(text('why') || text('idea_spark'));
-    const threat = $derived(text('threatens'));
-    const found = $derived(text('found'));
+    const relevance = $derived(word('relevance'));
+    const motif = $derived(word('motif'));
+    const note = $derived(word('why') || word('idea_spark'));
+    const threat = $derived(word('threatens'));
+    const found = $derived(word('found'));
     const links = $derived(crossLinksOf(entry, projects));
-    const canSpin = $derived(text('bucket') === 'idea' || text('maps_to') === 'new-idea-candidate');
-    const sub = $derived(
-        [text('authors'), text('venue'), text('year')].filter(Boolean).join(t('venues.sep'))
+    /** The ids of the projects the strip at the foot groups, which the menu need not list. */
+    const grouped = $derived(
+        new Set(
+            groupProjects(links, configMap(), vocabOf).flatMap((group) =>
+                group.members.map((member) => member.id)
+            )
+        )
     );
+    const candidate = $derived(word('maps_to') === 'new-idea-candidate');
+    const canSpin = $derived(word('bucket') === 'idea' || candidate);
+    const sub = $derived(
+        [word('authors'), word('venue'), word('year')].filter(Boolean).join(t('venues.sep'))
+    );
+
+    const literature = createLiteratureSave(client, () => ({
+        ids: { title: identity },
+        paper: radarPaper(entry),
+        source: 'lit-watch'
+    }));
+
+    /** The paper's lines and deadline, which the card's Add run writes; none with no schema. */
+    const dated = $derived(feedDated(client, 'radar', entry, blocked, onPage));
+
+    /** An action's own words, or the words saying why it is disabled. */
+    function why(own: string): string {
+        return blocked === '' ? own : blocked;
+    }
+
+    /** The paper's page, opened from its title and Page; none on that page itself. */
+    const onpage = $derived(
+        identity === '' || onPage
+            ? undefined
+            : () => openView('entry', entryPageState('radar', id, title))
+    );
+
+    /** The paper's openers: Page, the paper, and each project the strip groups under none. */
+    const openers = $derived.by((): RecordAction[] => {
+        const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
+        const paper = posting(word('url'));
+        if (paper !== undefined) {
+            rows.push({
+                id: 'paper',
+                label: t('radar.paper'),
+                title: paper,
+                glyph: 'link',
+                run: 'open',
+                onclick: () => {
+                    window.open(paper, '_blank', 'noreferrer');
+                }
+            });
+        }
+        for (const project of links.filter((one) => !grouped.has(one.id))) {
+            rows.push({
+                id: `project:${project.id}`,
+                label: project.title,
+                glyph: 'goto',
+                run: 'open',
+                onclick: () => {
+                    openView('project', recordState(project.id, project.title));
+                }
+            });
+        }
+        return rows;
+    });
+
+    /**
+     * The card's actions: the openers, then, for a paper with a title, Dismiss or Restore, Idea,
+     * Save to Literature and Delete.
+     */
+    const actions = $derived.by((): RecordAction[] => {
+        if (identity === '') return openers;
+        const status: RecordAction = dismissed
+            ? {
+                  id: 'restore',
+                  label: t('radar.restore'),
+                  title: why(t('radar.restore_tip')),
+                  glyph: 'refresh',
+                  disabled: blocked !== '',
+                  onclick: () => mark(null)
+              }
+            : {
+                  id: 'dismiss',
+                  label: t('radar.dismiss'),
+                  title: why(t('radar.dismiss_tip')),
+                  glyph: 'dismiss',
+                  disabled: blocked !== '',
+                  onclick: () => mark(true)
+              };
+        const idea: RecordAction[] =
+            !dismissed && canSpin
+                ? [
+                      {
+                          id: 'idea',
+                          label: t('radar.idea'),
+                          title: t('radar.idea_tip'),
+                          glyph: 'spark',
+                          active: spinning,
+                          onclick: () => {
+                              spinning = !spinning;
+                          }
+                      }
+                  ]
+                : [];
+        return [
+            ...openers,
+            ...statusAction([status], blocked === '' ? undefined : blocked),
+            ...idea,
+            literature.saveAction(onsaid),
+            {
+                id: 'delete',
+                label: t('entry_form.delete'),
+                title: why(t('radar.delete_tip')),
+                glyph: t('entry_form.delete_glyph'),
+                disabled: blocked !== '',
+                onclick: () => {
+                    deleting = true;
+                }
+            }
+        ];
+    });
 
     async function mark(value: boolean | null): Promise<void> {
         const record = feedEntryId(entry);
@@ -120,68 +253,19 @@
     }
 </script>
 
-<Card
-    {id}
-    {cursor}
-    {title}
-    titleHtml={inlineMarkdown(title, cardMath(title))}
-    ontitle={identity === '' || onPage
-        ? undefined
-        : () => openView('entry', entryPageState('radar', id, title))}
-    tone={relevanceTone(relevance)}
->
-    {#snippet meta()}
-        <RootChip record={{ root: feedRoot(entry) }} />
-        {#if isNew(entry, lastRun)}
-            <Tag label={t('radar.new')} tone="violet" />
-        {/if}
-        {#if relevance !== ''}
-            <Tag label={relevance} tone={relevanceTone(relevance)} />
-        {/if}
-        {#if found !== ''}
-            <span class="date">{found}</span>
-        {/if}
-        {#if identity !== ''}
-            <span class="controls">
-                {#if dismissed}
-                    <ToolButton
-                        label={t('radar.restore')}
-                        title={t('radar.restore_tip')}
-                        glyph="refresh"
-                        compact
-                        onclick={() => mark(null)}
-                    />
-                {:else}
-                    {#if canSpin}
-                        <ToolButton
-                            label={t('radar.idea')}
-                            title={t('radar.idea_tip')}
-                            glyph="spark"
-                            compact
-                            active={spinning}
-                            onclick={() => (spinning = !spinning)}
-                        />
-                    {/if}
-                    <ToolButton
-                        label={t('radar.dismiss')}
-                        title={t('radar.dismiss_tip')}
-                        glyph="dismiss"
-                        compact
-                        onclick={() => mark(true)}
-                    />
-                {/if}
-                <ToolButton
-                    label={t('entry_form.delete')}
-                    title={blocked === '' ? t('radar.delete_tip') : blocked}
-                    disabled={blocked !== ''}
-                    glyph={t('entry_form.delete_glyph')}
-                    compact
-                    onclick={() => (deleting = true)}
-                />
-            </span>
-        {/if}
-    {/snippet}
+{#snippet meta()}
+    {#if isNew(entry, lastRun)}
+        <Tag label={t('radar.new')} tone="violet" />
+    {/if}
+    {#if relevance !== ''}
+        <Tag label={relevance} tone={relevanceTone(relevance)} />
+    {/if}
+    {#if found !== ''}
+        <span class="date">{found}</span>
+    {/if}
+{/snippet}
 
+{#snippet text()}
     {#if sub !== ''}
         <p class="sub" class:whole={onPage} title={sub}>
             <LinkedText text={sub} />
@@ -203,55 +287,55 @@
             <span>{@html t('radar.threatens', inlineMarkdown(threat, cardMath(threat)))}</span>
         </p>
     {/if}
-    {#if links.length > 0 || text('maps_to') === 'new-idea-candidate'}
-        <div class="row">
-            {#each links as project (project.id)}
-                <span class="link">
-                    <ToolButton
-                        label={project.title}
-                        title={project.title}
-                        glyph="goto"
-                        cut
-                        onclick={() => openView('project', recordState(project.id, project.title))}
-                    />
-                </span>
-            {/each}
-            {#if text('maps_to') === 'new-idea-candidate'}
-                <Tag label={t('radar.new_idea_candidate')} glyph="spark" />
-            {/if}
-        </div>
-    {/if}
-    {#if posting(text('url')) !== undefined}
+    {#if posting(word('url')) !== undefined}
         <p class="paper">
             <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-            <a href={posting(text('url'))} target="_blank" rel="noreferrer">
+            <a href={posting(word('url'))} target="_blank" rel="noreferrer">
                 <Glyph name="link" />
                 {t('radar.paper')}
             </a>
         </p>
     {/if}
-    {#if identity !== ''}
-        <div class="row">
-            <SaveToLiterature
-                ids={{ title: identity }}
-                paper={radarPaper(entry)}
-                source="lit-watch"
-            />
-        </div>
-    {/if}
+{/snippet}
+
+{#snippet blocks()}
     {#if spinning && identity !== ''}
         <NewIdeaForm
-            seed={{ ...ideaSeed(entry), title: text('title') }}
+            seed={{ ...ideaSeed(entry), title: word('title') }}
             onclose={() => (spinning = false)}
             {onsaid}
             oncreated={created}
         />
     {/if}
-</Card>
+{/snippet}
 
-{#if deleting}
-    <DeleteAsk collection="radar" {id} {onsaid} onclose={() => (deleting = false)} />
-{/if}
+{#snippet foot()}
+    {#if candidate}
+        <div class="row">
+            <Tag label={t('radar.new_idea_candidate')} glyph="spark" />
+        </div>
+    {/if}
+{/snippet}
+
+<RecordCard
+    {id}
+    {cursor}
+    {title}
+    titleHtml={inlineMarkdown(title, cardMath(title))}
+    ontitle={onpage}
+    tone={relevanceTone(relevance)}
+    record={{ root: feedRoot(entry) }}
+    {actions}
+    strip={[dismissed ? 'restore' : 'dismiss', 'page']}
+    {dated}
+    {onsaid}
+    {meta}
+    {text}
+    {blocks}
+    projects={links}
+    {foot}
+    deleting={deleting ? { collection: 'radar', id, onclose: () => (deleting = false) } : undefined}
+/>
 
 <style>
     .sub,
@@ -276,19 +360,6 @@
         white-space: normal;
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
-       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
-       inside it. */
-    .controls {
-        display: var(--card-at-rest, inline-flex);
-        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
-           words beside them, so a line they share stays as tall as it was at rest; on a line of
-           their own they reach no further than the gap between the lines. */
-        margin-block: min(0px, calc((1lh - 22px) / 2));
-        align-items: center;
-        gap: 6px;
-    }
-
     .date {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
@@ -305,15 +376,6 @@
 
     .threat {
         color: var(--c-red-txt);
-    }
-
-    /* A flex box capped at the row's width. The tooltip's wrapper around the project's button is
-       its flex item and gives way to the room left, the button fills the wrapper, and the button
-       cuts its own label, so a long title ends in an ellipsis where the card ends. */
-    .link {
-        display: flex;
-        min-width: 0;
-        max-width: 100%;
     }
 
     .paper a {

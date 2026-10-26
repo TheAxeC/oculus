@@ -371,9 +371,9 @@ export type Collection = Rooted &
         /** Absolute path of the collection file. */
         file: string;
         /**
-         * The file's own `schema:`, absent when the file has none and when what it has is not a list
-         * of field maps; the schema check (data/snapshot/schema/run.ts) reports the second case as a
-         * finding.
+         * The file's own `schema:`, absent when the file has none and when what it has is not a
+         * list of field maps; the schema check (data/snapshot/schema/run.ts) reports the second
+         * case as a finding.
          */
         schema?: SchemaField[];
         entries: Entry[];

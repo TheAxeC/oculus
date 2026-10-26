@@ -1,14 +1,16 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The head of a card's dated list and its add form:
     // the list's name, its count where it has one, the button that opens the add form, and the
-    // form itself (LineForm.svelte) while it is open. views/shared/forms/dated/Subtasks.svelte and
-    // Followups.svelte draw it, so the two lists of one card head and add alike.
+    // form itself (DatedForm.svelte, with its rule, its heading and its labels) while it is open.
+    // views/shared/forms/dated/Subtasks.svelte and Followups.svelte draw it, so the two lists of
+    // one card head and add alike.
     //
     // A list with no items draws no head (`shown` false), and the add form then opens alone, from
     // the card's own action.
 
-    import LineForm from './LineForm.svelte';
+    import DatedForm from './DatedForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import type { WriteAnswer } from '$lib/state/client/writes.svelte';
 
     type Props = {
         /** Whether the head row is drawn: the list holds at least one item. */
@@ -20,8 +22,10 @@
         /** The add button's words and its title, already translated. */
         addLabel: string;
         addTip: string;
-        /** The date field's name in the add form, already translated. */
-        dateLabel: string;
+        /** Which list the form adds a line to. */
+        kind: 'followup' | 'subtask';
+        /** The record the lines hang under, by a key that changes when the record does. */
+        record: string;
         /** Why the buttons that write are disabled, already translated; '' when they are not. */
         blocked: string;
         /** True while the add form is open. */
@@ -29,7 +33,9 @@
         /** Open or close the add form. */
         onadding: (next: boolean) => void;
         /** The add form's save: the text and the date, '' when none was given. */
-        onadd: (text: string, date: string) => void;
+        onadd: (text: string, date: string) => Promise<WriteAnswer>;
+        /** The answer of a save, while the form is drawn for its record. */
+        onanswer: (answer: WriteAnswer) => void;
     };
 
     const {
@@ -38,11 +44,13 @@
         count,
         addLabel,
         addTip,
-        dateLabel,
+        kind,
+        record,
         blocked,
         adding,
         onadding,
-        onadd
+        onadd,
+        onanswer
     }: Props = $props();
 </script>
 
@@ -64,7 +72,7 @@
 {/if}
 
 {#if adding}
-    <LineForm {dateLabel} {blocked} onsave={onadd} oncancel={() => onadding(false)} />
+    <DatedForm {kind} {record} {blocked} save={onadd} {onanswer} oncancel={() => onadding(false)} />
 {/if}
 
 <style>

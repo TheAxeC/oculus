@@ -1,20 +1,21 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count,
     // one row per line with what it says and when it is due, the buttons that move it, and the
-    // one-line form that adds another (views/shared/forms/dated/LineForm.svelte). A line's edit
-    // button turns the line into the same form, holding its text and deadline, and its save writes
-    // each of the two that changed.
+    // form that adds another (views/shared/forms/dated/DatedForm.svelte, headed "New subtask"). A
+    // line's edit button turns the line into the one-line form (LineForm.svelte), holding its text
+    // and deadline, and its save writes each of the two that changed.
     //
-    // A card with no lines draws no block at all: adding its first line is one of the card's own
-    // actions, which opens the add form here with no heading over it. So whether the add form is
-    // open is the card's, handed in, since the card's action and this block's own add control both
-    // open it. A project card on a board hands `formOnly`, and the block then draws that form
-    // alone, with no head and no line; on the project page it draws the whole list with its form.
+    // A card with no lines draws no list: adding its first line is the Subtask row of the card's
+    // menu, which opens the add form here. So whether the add form is open is the card's, handed
+    // in, since the card's menu and this block's own add control both open it. A project card on a
+    // board and a card of a record whose lines it does not list hand `formOnly`, and the block then
+    // draws that form alone, with no head and no line; on the project page it draws the whole list
+    // with its form. The form closes on a save the server took; an answer that lands after the form
+    // closed is dropped by the form.
     //
-    // Two views draw it: views/shared/card/project/ProjectCard.svelte, which hands it the `{ id }`
-    // of one manifest, and views/shared/forms/entry/card/EntryCard.svelte, which hands it the
-    // `{ id, collection }` of one entry of one collection. The host is the only difference between
-    // the two, so it is the prop, and `SubtaskTarget` is the write path's own type for it.
+    // The record card (views/shared/card/record/RecordCard.svelte) draws it, with the `{ id }` of
+    // one manifest or the `{ id, collection }` of one entry of one collection. The host is the only
+    // difference, so it is the prop, and `SubtaskTarget` is the write path's own type for it.
     //
     // Every button is one call of the write path (state/client/writes.svelte.ts) and nothing else:
     // the line the reader sees change is the watcher's next push of the portfolio, about a fifth of
@@ -121,9 +122,12 @@
     }
 
     /** The add form's save: one line, with the deadline when the form was given one. */
-    async function add(text: string, due: string): Promise<void> {
-        const fields = due === '' ? { do: text } : { do: text, deadline: due };
-        const answer = await addSubtask(target, fields);
+    function add(text: string, due: string): Promise<WriteAnswer> {
+        return addSubtask(target, due === '' ? { do: text } : { do: text, deadline: due });
+    }
+
+    /** What the add form's save answered: said, and the form closed when the server took it. */
+    function added(answer: WriteAnswer): void {
         said(answer);
         if (answer.ok) onadding(false);
     }
@@ -137,11 +141,13 @@
             count={t('project.action.n_open', open)}
             addLabel={t('project.action.add_subtask')}
             addTip={t('project.action.add_subtask_tip')}
-            dateLabel={t('project.action.subtask_deadline')}
+            kind="subtask"
+            record={`${target.collection ?? ''}:${target.id}`}
             {blocked}
             {adding}
             {onadding}
             onadd={add}
+            onanswer={added}
         />
 
         {#each lines as line (line.key)}

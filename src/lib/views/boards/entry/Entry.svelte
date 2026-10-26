@@ -314,6 +314,7 @@
                     expired={isExpired(configMap(), feedEntry, localDate(Date.now()), vocabOf)}
                     onsaid={say}
                     beside={instance.id}
+                    page
                     {blocked}
                 />
             {:else if feedEntry !== null && collectionKey === 'radar'}

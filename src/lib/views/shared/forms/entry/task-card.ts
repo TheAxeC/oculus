@@ -10,7 +10,7 @@ import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
 import { entryStatus, type Collection, type Entry } from '$lib/state/boards/collection';
 import { closesDeadline, deadlineMet } from '$lib/state/boards/focus';
 import { t } from '$lib/state/shared/words/text';
-import type { CardAction } from '../../card/CardActions.svelte';
+import type { CardAction } from '../../card/card';
 
 /**
  * The extra controls of one entry's card: Start Agent for a task the ticker lists, calling `start`

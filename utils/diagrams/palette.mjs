@@ -7,7 +7,8 @@
 // (src/lib/shell/keys/palette-page.ts) holds:
 //
 //   views     every view the build registers, as src/routes/views.ts registers them into a
-//             registry, in the words the catalog gives them;
+//             registry (the modules' views, the collection views and the project boards of
+//             `boards:`), in the words the catalog gives them;
 //   commands  commands() of src/lib/state/workbench/palette.ts, with every source tab and server
 //             assumed so that every command is listed;
 //   editor    the chords of Monaco's that the palette lists (chords.ts editorChords) with the chord
@@ -63,19 +64,31 @@ export async function paletteText(engine) {
     });
     try {
         const load = (/** @type {string} */ path) => server.ssrLoadModule(path);
-        const [source, words, choices, views, registryMod, palette, chords, life, menu, page] =
-            await Promise.all([
-                load('/src/lib/data/sources/config.ts'),
-                load('/src/lib/state/shared/words/text.ts'),
-                load('/src/lib/data/helpers/files/apps/choices.ts'),
-                load('/src/routes/views.ts'),
-                load('/src/lib/state/workbench/navigation/registry.ts'),
-                load('/src/lib/state/workbench/palette.ts'),
-                load('/src/lib/ui/controls/editor/chords.ts'),
-                load('/src/lib/state/life/present.ts'),
-                load('/src/lib/views/academic/present/acts/menu.ts'),
-                load('/src/lib/shell/keys/palette-page.ts')
-            ]);
+        const [
+            source,
+            words,
+            choices,
+            views,
+            registryMod,
+            palette,
+            chords,
+            life,
+            menu,
+            page,
+            boards
+        ] = await Promise.all([
+            load('/src/lib/data/sources/config.ts'),
+            load('/src/lib/state/shared/words/text.ts'),
+            load('/src/lib/data/helpers/files/apps/choices.ts'),
+            load('/src/routes/views.ts'),
+            load('/src/lib/state/workbench/navigation/registry.ts'),
+            load('/src/lib/state/workbench/palette.ts'),
+            load('/src/lib/ui/controls/editor/chords.ts'),
+            load('/src/lib/state/life/present.ts'),
+            load('/src/lib/views/academic/present/acts/menu.ts'),
+            load('/src/lib/shell/keys/palette-page.ts'),
+            load('/src/lib/state/boards/board/index.ts')
+        ]);
         const { config } = source.loadConfig(source.engineDir());
         const catalog = source.textCatalog(config);
         words.setCatalog(catalog);
@@ -83,9 +96,15 @@ export async function paletteText(engine) {
 
         const registry = registryMod.createRegistry({ closeInstancesOfView: () => undefined });
         views.registerAll(registry);
-        views.registerCollections(
+        const collections = source.collectionViews(config, source.unplacedGroup(config));
+        views.registerCollections(registry, collections);
+        views.registerBoards(
             registry,
-            source.collectionViews(config, source.unplacedGroup(config))
+            views.pageBoards(
+                boards.boardsSource(config, () => ''),
+                catalog,
+                collections
+            )
         );
 
         const pinItems = [false, true].flatMap((pinned) =>

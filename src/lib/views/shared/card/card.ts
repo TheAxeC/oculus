@@ -21,8 +21,8 @@ import { openPage } from '../explorer/opening';
 export type Translate = (key: string, ...args: (string | number)[]) => string;
 
 /**
- * One control a card carries (CardActions.svelte draws the row): its words, its hover words, its
- * glyph and what pressing it does.
+ * One control a card carries (record/CardActions.svelte draws the strip, record/record-menu.ts the
+ * menu): its words, its hover words, its glyph and what pressing it does.
  */
 export type CardAction = {
     /** Stable within one card, so a control keeps its measured width when it moves. */
@@ -34,10 +34,20 @@ export type CardAction = {
     /** Turn the glyph round and round while the action it started is under way. */
     turning?: boolean;
     active?: boolean;
+    /**
+     * The control is one of a set of which one is in force: its row in the menu is drawn with a
+     * check mark when true and the empty box when false.
+     */
+    checked?: boolean;
     /** Drawn disabled, with `title` saying why; pressing it does nothing. */
     disabled?: boolean;
     /** The control that opens and closes the card, which the keyboard's Enter reaches. */
     toggle?: boolean;
+    /**
+     * The controls this one stands for: in the menu a submenu, in the strip a menu opened by the
+     * control. A control with them is never a pick itself, so its `onclick` is not run.
+     */
+    items?: CardAction[];
     onclick: () => void | Promise<void>;
 };
 
@@ -193,10 +203,23 @@ export function deadline(
     translate: Translate,
     config: Record<string, unknown>
 ): { label: string; tone?: string } | null {
-    const date = project.deadline;
+    return dueBadge(project.deadline, now, translate, pausesCountdown(project, config));
+}
+
+/**
+ * The deadline badge label and tone for one date, as every card draws it: overdue in red with its
+ * days, due within `DEADLINE_SOON` days in amber with its days, the date itself otherwise or when
+ * `paused`; null for no date.
+ */
+export function dueBadge(
+    date: string | undefined,
+    now: number,
+    translate: Translate,
+    paused = false
+): { label: string; tone?: string } | null {
     if (date === undefined || date === '') return null;
     const days = daysUntil(date, now);
-    if (days === null || pausesCountdown(project, config)) return { label: date };
+    if (days === null || paused) return { label: date };
     if (days < 0) return { label: translate('project.card.overdue', -days), tone: 'red' };
     if (days <= DEADLINE_SOON) {
         return { label: translate('project.card.due_days', days), tone: 'amber' };

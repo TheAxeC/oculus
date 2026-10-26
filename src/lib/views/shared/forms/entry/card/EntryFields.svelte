@@ -1,18 +1,17 @@
 <script lang="ts">
     // Layer 3, view partial of EntryCard.svelte. The fields of an entry card under its title: the
-    // fields the file's own schema names, in its order, and the line of the projects that name the
-    // entry.
+    // fields the file's own schema names, in its order.
     //
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
-    // drawnFields() over the file's `schema:`, and which projects cross-link is crossLinks() over
-    // the registry and the flags of the entry's collection in its own hub. A field the schema draws
-    // its choices from the people registry for is the one exception in kind rather than in name: it
-    // holds a person's key, which names the person of the entry's own hub, else of the one other
-    // hub that holds the key, so the card draws the control that opens that person by their name. A
-    // Literature entry's `venue` that names a venue record is the other: it opens that venue.
+    // drawnFields() over the file's `schema:`. A field the schema draws its choices from the people
+    // registry for is the one exception in kind rather than in name: it holds a person's key, which
+    // names the person of the entry's own hub, else of the one other hub that holds the key, so the
+    // card draws the control that opens that person by their name. A Literature entry's `venue`
+    // that names a venue record is the other: it opens that venue.
     //
-    // A deadline and a date change on the card (shared/forms/InPlace.svelte) where the file has a
-    // schema to write by; `blocked` disables them as it does the card's other controls that write.
+    // Every field is drawn as its words, the deadline as a tag with the deadline glyph and the
+    // countdown and tone of a project's due (dueBadge of views/shared/card/card.ts); the card's
+    // menu and the entry's page change them.
     //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/defaults/behavior.yml names an
@@ -30,47 +29,33 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Clamp from '../../../card/Clamp.svelte';
-    import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import InPlace from '../../InPlace.svelte';
     import EntryLink from './EntryLink.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import {
-        drawnFields,
-        type Entry,
-        type Project,
-        type SchemaField
-    } from '$lib/state/boards/collection';
-    import { crossLinks } from '$lib/state/boards/structure/cross-links';
+    import { drawnFields, type Entry, type SchemaField } from '$lib/state/boards/collection';
     import { personName } from '$lib/state/boards/person';
     import { venueNamed } from '$lib/state/feeds/literature/saved';
     import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
+    import { dueBadge } from '$lib/views/shared/card/card';
     import { useState } from '$lib/state/client/use';
     import { holdersOf, resolvedId, rootOf } from '$lib/state/shared/page/hubs';
     import { recordState } from '$lib/state/shared/page/records';
-    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
         entities: { portfolio },
         layout: { openView },
-        selectors: { collectionsOfKey, configMap, namesPeople, registryKey, venues }
+        selectors: { namesPeople, registryKey, venues }
     } = client;
 
     type Props = {
         entry: Entry;
-        /** The collection key: which file the entry is in, and which cross-link rule it follows. */
+        /** The collection key: which file the entry is in. */
         collection: string;
         schema: SchemaField[] | undefined;
-        /** Every project of the snapshot, for the cross-links. */
-        projects: Project[];
         /** The root of the hub the entry is of, which every path of its fields is under. */
         root: string;
-        /** Whether the file has a schema to write by, which the in-place fields need. */
-        addressable: boolean;
-        /** Why the controls that write are disabled, '' when they are not. */
-        blocked: string;
         onsaid: (said: string) => void;
         /** Whether the long body fields are drawn whole rather than cut to their clamp. */
         more: boolean;
@@ -78,26 +63,12 @@
         onmore?: () => void;
     };
 
-    let {
-        entry,
-        collection,
-        schema,
-        projects,
-        root,
-        addressable,
-        blocked,
-        onsaid,
-        more,
-        onmore
-    }: Props = $props();
+    let { entry, collection, schema, root, onsaid, more, onmore }: Props = $props();
 
     const cardMath = createCardMath();
+    /** The moment the deadline's countdown is measured from. */
+    const now = Date.now();
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
-    /** The collection of the entry's own hub that holds it, whose entry says its cross-link rule. */
-    const held = $derived(
-        collectionsOfKey(collection).find((one) => rootOf(one) === rootOf(entry))
-    );
-    const groups = $derived(crossLinks(entry, held, projects, people, configMap(), vocabOf));
 
     /** The id of the person a person field's key names, or the key itself when it names none. */
     function personId(key: string): string {
@@ -202,10 +173,15 @@
         </div>
     {:else if drawn.kind === 'link'}
         <EntryLink field={drawn.field} value={drawn.values[0]} {root} {onsaid} />
-    {:else if addressable && (drawn.field === 'deadline' || drawn.field === 'date')}
-        <div class="field">
+    {:else if drawn.field === 'deadline'}
+        {@const due = dueBadge(drawn.values[0], now, t)}
+        <div class="row">
             <span class="label">{drawn.label}</span>
-            <InPlace field={drawn.field} {collection} {entry} {schema} {blocked} {onsaid} />
+            <Tag
+                label={due?.label ?? drawn.values[0]}
+                glyph={t('project.card.deadline_glyph')}
+                tone={due?.tone}
+            />
         </div>
     {:else}
         <div class="field">
@@ -214,13 +190,6 @@
         </div>
     {/if}
 {/each}
-
-{#if groups.length > 0}
-    <div class="row">
-        <span class="label">{t('collection.related')}</span>
-        <CrossLinks {groups} />
-    </div>
-{/if}
 
 <style>
     .sub {

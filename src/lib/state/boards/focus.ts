@@ -530,8 +530,9 @@ export type LaneFact = { kind: 'role' | 'tier' | 'venue'; label: string; whole: 
  * The facts a lane card draws after its status marks, in this order: the user's role on the
  * project unless its row of `roles:` carries `unmarked: true`, read only while the workspace names
  * a `self` (`self` not empty); the project's tier unless its word of `tiers:` carries
- * `unmarked: true`; and the venue where the stage carries `placed` in `stages`, shown by its short name
- * (`venueLabel`) with its name as its whole words. `words` are the words of the project's own hub.
+ * `unmarked: true`; and the venue where the stage carries `placed` in `stages`, shown by its short
+ * name (`venueLabel`) with its name as its whole words. `words` are the words of the project's own
+ * hub.
  */
 export function laneFacts(
     project: Project,

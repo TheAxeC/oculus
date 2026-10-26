@@ -1,11 +1,11 @@
 // Layer 1, data tests. The schema the options catalog gives the `collections:` list, as the schema
-// check reads a file against it: oculus's config/defaults/sources.yml and a hub's .oculus/config.yml
-// each a list of entries, and an entry's `ticker:` one record of a category word of
-// `ticker_categories` and an undated toggle (`holds: record` in config/options/sources.yml). A
-// ticker that is a text, names a word that is no category, or holds an undated that is no toggle is
-// a problem on the line that writes it, in the engine's file and in the hub's alike. Oculus's own
-// sources.yml passes, which config-folder.test.ts holds for every file of the folder, and so does
-// the .oculus/config.yml Make Folder a Hub writes from docs/templates.md (`hubConfigText`).
+// check reads a file against it: oculus's config/defaults/sources.yml and a hub's
+// .oculus/config.yml each a list of entries, and an entry's `ticker:` one record of a category word
+// of `ticker_categories` and an undated toggle (`holds: record` in config/options/sources.yml). A
+// ticker that is a text, names a word that is no category, or holds an undated that is no toggle
+// is a problem on the line that writes it, in the engine's file and in the hub's alike. Oculus's
+// own sources.yml passes, which config-folder.test.ts holds for every file of the folder, and so
+// does the .oculus/config.yml Make Folder a Hub writes from docs/templates.md (`hubConfigText`).
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -13,7 +13,7 @@ text:
         recover_title: Open the Recover view of this dataset beside this one
         search: Search datasets | name | modality | project ...
         size: Size
-        source: source
+        source: Source
         stated_derived: Built from {0} by {1}
         stated_library: 'Fetched by the library call: {0}'
         stated_request: 'Asked of: {0}'

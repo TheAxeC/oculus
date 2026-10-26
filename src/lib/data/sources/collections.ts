@@ -1,7 +1,8 @@
 // Layer 1, data. Reads the collection files a hub's `collections:` list names into raw entries with
 // provenance, and words the findings of the list itself. Server side only: it reads the filesystem
 // and no client module may import it. It validates nothing and resolves nothing. Every failure is a
-// Finding; nothing here throws, so a missing or broken collection costs its own entries and no more.
+// Finding; nothing here throws, so a missing or broken collection costs its own entries and no
+// more.
 //
 // A collection is a hub file of like records: datasets, statements, funding schemes, talks,
 // teaching, applications, joint work, tasks or repositories. An entry of the list says what its

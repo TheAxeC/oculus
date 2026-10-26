@@ -6,16 +6,18 @@
 // truncating writes, and all of them read them, so a reader started beside it can find a file
 // empty. The sync runs while the tests are chosen.
 //
-// - the tests that name or import a changed file at most RELATED_DEPTH imports away, and every
-//   changed test, wherever they are: under tests/checks and tagged slow included. Three vitest runs
-//   share them out as npm test, npm run test:slow and npm run test:checks would: the chosen tests
-//   outside tests/checks with their slow tests left out, the test files sharing their loaded
-//   modules (`--no-isolate`) so each file does not load them again, the config read without
-//   bundling it, and the translated modules kept on disk between runs
-//   (node_modules/.experimental-vitest-cache, where each file is written under a temporary name and
-//   renamed into place, so another test:quick run reads whole files); the slow tests of the chosen
-//   files outside tests/checks, with the slow tests' time limit; and the chosen files under
-//   tests/checks, with no time limit;
+// - the tests that name or import a changed file at most RELATED_DEPTH imports away, every changed
+//   test, and, when a file under src, tests or utils changed, every check under
+//   tests/checks/source and tests/checks/tree, which read the text of the whole tree and so reach
+//   a changed file whatever imports it; wherever they are: under tests/checks and tagged slow
+//   included. Three vitest runs share them out as npm test, npm run test:slow and npm run
+//   test:checks would: the chosen tests outside tests/checks with their slow tests left out, the
+//   test files sharing their loaded modules (`--no-isolate`) so each file does not load them
+//   again, the config read without bundling it, and the translated modules kept on disk between
+//   runs (node_modules/.experimental-vitest-cache, where each file is written under a temporary
+//   name and renamed into place, so another test:quick run reads whole files); the slow tests of
+//   the chosen files outside tests/checks, with the slow tests' time limit; and the chosen files
+//   under tests/checks, with no time limit;
 // - prettier and eslint over the changed files only, with their caches, so a file that has not
 //   changed since a green run costs nothing;
 // - svelte-check, incremental: the type check of the whole tree, the one command that reads files
@@ -27,9 +29,11 @@
 // gives its paths: `npm run test:quick -- <path> <path>`.
 //
 // What a green run does not cover is printed with it: the tests that reach no changed file within
-// RELATED_DEPTH imports, the build and the lint of files nobody changed. A file is chosen by
-// whether it imports a changed file, read from the import specifiers of src and tests, so a test
-// that reaches a changed file through a call by name and no import is not found.
+// RELATED_DEPTH imports, other than the checks under tests/checks/source and tests/checks/tree,
+// the build and the lint of files nobody changed. A file is chosen by whether it imports a changed
+// file, read from the import specifiers of src and tests, so a test that reaches a changed file
+// through a call by name and no import is not found. A change outside src, tests and utils (a
+// file under docs or .scratch alone) chooses none of the checks that read the tree's text.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -38,6 +42,12 @@ import { ASCII_GATE, BIN, ROOT, judgeAscii, runTask, seconds, show } from './run
 
 /** How many imports away from a changed file a test may be and still be chosen for it. */
 const RELATED_DEPTH = 2;
+
+/** The folders whose checks read the text of the tree, chosen for any change under SCANNED. */
+const SCANNERS = ['tests/checks/source/', 'tests/checks/tree/'];
+
+/** The folders a change under which chooses every check under SCANNERS. */
+const SCANNED = ['src/', 'tests/', 'utils/'];
 
 const VITEST = join(ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 const TEST_FILE = /\.test\.ts$/;
@@ -180,14 +190,29 @@ function relatedTests(changed, files) {
     return [...found].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
 }
 
-/** The test files to run, each with the reason it is there. */
-function chooseTests(changed, files) {
+/** Whether a test file is a check that reads the text of the tree rather than importing it. */
+function scansSource(path) {
+    return SCANNERS.some((folder) => path.startsWith(folder)) && TEST_FILE.test(path);
+}
+
+/**
+ * The test files to run, each with the reason it is there: the tests related to the existing
+ * changed files (`existing`), and, when any changed file (`changed`, deleted ones included) is
+ * under one of SCANNED, every check under SCANNERS, which reads the text of the tree and so
+ * reaches every file of it whatever imports it.
+ */
+function chooseTests(existing, changed, files) {
     const picks = new Map();
-    for (const [path, distance] of relatedTests(changed, files)) {
+    for (const [path, distance] of relatedTests(existing, files)) {
         if (distance > RELATED_DEPTH || !path.startsWith('tests/')) continue;
         if (distance === 0) picks.set(path, 'changed');
         else if (distance === 0.5) picks.set(path, 'named for a changed file');
         else picks.set(path, `imports at depth ${distance}`);
+    }
+    if (changed.some((one) => SCANNED.some((folder) => one.startsWith(folder)))) {
+        for (const path of files.filter(scansSource).sort()) {
+            if (!picks.has(path)) picks.set(path, 'scans the source text of a changed file');
+        }
     }
     return picks;
 }
@@ -231,7 +256,7 @@ if (formatted.length > 0) {
 pending.push(track(runTask('ASCII gate', 'sh', ['-c', ASCII_GATE]).then(judgeAscii)));
 
 const files = moduleFiles();
-const picks = chooseTests(existing, files);
+const picks = chooseTests(existing, changed, files);
 console.log(`test:quick: ${picks.size} test file(s)`);
 for (const [path, why] of picks) console.log(`        ${path}: ${why}`);
 
@@ -279,5 +304,7 @@ const red = results.filter((one) => !one.ok).map((one) => one.name);
 const verdict = red.length === 0 ? 'every command passed' : `failed: ${red.join(', ')}`;
 console.log(`test:quick: ${seconds(total)} s; ${verdict}`);
 console.log('test:quick: not covered: tests that reach no changed file within the import depth,');
-console.log('            the build, the lint of unchanged files');
+console.log('            other than the checks under tests/checks/source and tests/checks/tree,');
+console.log('            which run for any change under src, tests or utils; the build, the lint');
+console.log('            of unchanged files');
 process.exitCode = red.length === 0 ? 0 : 1;

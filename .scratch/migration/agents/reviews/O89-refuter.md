@@ -156,3 +156,132 @@ none. The changes beyond the path list were each judged against an item: deletin
 - Whether an entry's and a venue's deadline Tag should carry the project card's countdown tone (`deadline()` in `card.ts`): the brief says "as the project card's `due`", and the diff draws the field's words with the deadline glyph and no tone; whether "as" means the form or also the tone is the orchestrator's reading of the brief.
 
 Reviewer usage: a96110aabd9a11d96, claude-opus-5-5, 314122 tokens, 92 tool uses, 14 min 2 s.
+
+## Repair round 1, refuted
+
+```
+$ ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep | wc -l
+10        (O86's test:quick was running in .agents/worktrees/migration-O86 during these runs; no run below timed out)
+
+Round delta, read from the worktree root:
+for each path of migration-O89-round-1/files.txt: cmp, then diff -u <snapshot> <worktree>
+  changed in the round: config/text/views/boards/project.yml, docs/HELP.md, docs/diagrams/layer-views.{dot,svg}, docs/diagrams/layers.{dot,svg}, src/lib/state/boards/structure/cross-links.ts, src/lib/views/shared/card/card.ts, card/feed/LeadCard.svelte, card/feed/RadarCard.svelte, card/feed/SaveToLiterature.svelte, card/feed/literature-save.svelte.ts, card/record/RecordCard.svelte, forms/entry/card/EntryFields.svelte, forms/entry/entry-actions.ts, links/CrossLinks.svelte, sources/venues/VenueCard.svelte, structure/pillars/ArchivalCard.svelte, tests/checks/tree/allow-styling.ts
+git diff 1da23d50b for paths not in files.txt: docs/palette.md, the 12 comment-width files, src/lib/state/boards/collection/index.ts, src/lib/views/boards/entry/Entry.svelte, card/heads/FoldHead.svelte, GroupHead.svelte, tests/data/sources/config/layers/language.test.ts, tests/server/root/process/config-cache.test.ts, tests/tiers/quick.mjs; untracked, read whole: card/heads/FoldControl.svelte, tests/server/root/process/config-cache-fixture.ts
+
+Brief's "Verify before you report":
+1. npm run test:quick -- --base 1da23d50b: not rerun (declined, see below)
+2. $ sh utils/unused-exports.sh > <scratch>/o89r1-unused.txt; diff .agents/worktrees/O89-base/unused-exports.txt <scratch>/o89r1-unused.txt
+   unused exit 0; diff exit 0 (no line added)
+3. $ grep -rn "forms/InPlace\|InPlace.svelte\|card-menu\|record-card.svelte\|createRecordCard" src tests docs config --exclude=local.yml
+   grep exit 1 (prints nothing)
+4. $ wc -l of every changed or added component (largest first)
+   481 Projects.svelte, 437 ProjectCard.svelte, 425 Gallery.svelte, 412 LeadCard.svelte, 392 Entry.svelte, 387 RadarCard.svelte, 374 InboxCard.svelte, 345 record/RecordCard.svelte, 326 EntryCard.svelte, 317 Subtasks.svelte, 303 LaneCard.svelte; every one at or under 520
+   (the report's DONE row says "largest component 437"; Projects.svelte, changed in the round, is 481; no decision rests on it)
+$ sh utils/folder-check.sh
+folder-check exit 0
+
+Round case R6:
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts tests/checks/diagrams/palette.test.ts --testTimeout 0
+ Test Files  3 passed (3)
+      Tests  21 passed (21)
+
+Commands the round's report quotes as evidence:
+$ git diff --quiet 1da23d50b -- tests/checks/tree/allow-duplication.txt
+exit 0
+$ npx vitest run tests/checks/source/comment-width.test.ts --testTimeout 0
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+$ npx vitest run tests/checks/diagrams/palette.test.ts --testTimeout 0
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+$ npx vitest run tests/ui/html.dom.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+$ npx vitest run tests/data/hubs/hub-portfolio.test.ts --tagsFilter slow --testTimeout 20000
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+$ npm run test:quick -- docs/palette.md
+test:quick: 1 changed file(s), from the given paths
+test:quick: 1 test file(s)
+        tests/checks/diagrams/palette.test.ts: named for a changed file
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.2 s)
+ok      svelte-check (14.5 s): 1793047699654 COMPLETED 547 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (19.5 s): Duration  12.48s (transform 702ms, setup 0ms, import 2.51s, tests 9.86s, environment 0ms)
+test:quick: 21.7 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+$ grep -n -i "quick\|tiers" .scratch/migration/agents/guarded.md
+186 (G125), 189 (G126), 284 (G88 Quick Open): no entry names quick.mjs, so no test is called for
+$ npx eslint <the 22 code files of the round's delta>
+eslint exit 0
+$ npx prettier --check <the same files> config/text/views/boards/project.yml
+All matched files use Prettier code style!
+$ LC_ALL=C perl ASCII gate (rules file form) over src tests config, docs/HELP.md, docs/palette.md and the report
+prints nothing (exit 0)
+History words over the round's added lines and the two new files: no hit
+Word check of the comment rewraps (removed lines' words against added lines' words, per file, for the 11 rewrapped files): same words in every file
+$ wc -l of the report's spot figures: cross-links.ts 211, CrossLinks.svelte 180, ArchivalCard.svelte 78, VenueCard.svelte 302, EntryFields.svelte 260, literature-save.svelte.ts 139, SaveToLiterature.svelte 128, FoldControl.svelte 27, FoldHead.svelte 116, GroupHead.svelte 85, config-cache-fixture.ts 16, palette.md 197, HELP.md 584: all reproduce
+$ grep -n ":global" in PaletteRow.svelte, CardDocs.svelte, CrossLinks.svelte, NewIdeaForm.svelte, Ribbon.svelte
+128; 199; 163, 164, 169; 210; 258, 262 (the allow-styling.ts `why` lines name these: reproduced)
+$ git diff 1da23d50b -- docs/palette.md
+the six rows Projects, Supervision, Coauthor, Archive, Personal, Software removed, "| Track record | track_record |" added; the main checkout's docs/palette.md holds Supervision and Coauthor at lines 29-30
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. The round adds `oneOpen` to `CrossLinks.svelte:30,33,41-47`, handed through `RecordCard.svelte:111,143,300` and set only by `ArchivalCard.svelte:49`; Archival's groups are drawn by the strip with one stage open at a time; `stageGroup` (`cross-links.ts:49`) keeps the snapshot's order and `membersByStage` (`cross-links.ts:201-211`) keeps insertion order.
+- 2: holds. `record-menu.ts` is unchanged in the round.
+- 3: holds. A deadline is a Tag with the deadline glyph and the countdown tone of the project card's `due`: `dueBadge` (`card.ts:214-229`), read by `VenueCard.svelte:127,197-198` and `EntryFields.svelte:177-184` as `ProjectCard.svelte:121,358-359` reads `deadline()`. Lead and Lit Watch pages list their lines (`feedDated` `listed`, `entry-actions.ts:205-222`; `Entry.svelte:317`).
+- 4: holds. `DatedForm.svelte` buttons read `project.action.subtask_save` "Save" and `subtask_cancel` "Cancel" (`project.yml:39,42`).
+- 5: holds. `QuickAdd.svelte` and `RecordPick.svelte` are unchanged in the round.
+- 6: holds. HELP.md:281 and :301 state the tone, the lines on the lead and Lit Watch pages, Save and Cancel, and Archival's one open stage; each sentence is true against the code.
+
+Cases of the brief's "Cases":
+
+- 1, 2, 3, 4, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33: met by reading, as in the first review; the drawing of each goes to the landing look on TEST.
+- 5: met. `VenueCard.svelte:197-198` draws a Tag with no editable box; Deadline is in the Add run.
+- 11: met by reading. Archival draws its stage groups as the strip, one open at a time; the look on Pillars, first, settles the drawing.
+- 12: met, as in the first review.
+- 21: met. The `HELD` rows of the two cards are gone; every component is at or under 520.
+- 22: met. No card file of the round gains a `ContextMenu` or `<Menu`.
+- 23: met.
+
+Cases of the round brief:
+
+- R1: met by reading. `SaveToLiterature.svelte:68-77` reads `literature.collections`, which is `held` (`literature-save.svelte.ts:61`), the read the base effect made; the comments at :34-37 and :66-67 are true.
+- R2: met by reading. `project.yml:39,42` hold "Cancel" and "Save"; their only readers are `DatedForm.svelte:116,121` and `LineForm.svelte:47,52`.
+- R3: met by reading. `toggle` with `oneOpen` builds `next` from an empty set; members in `projects` order.
+- R4: met by reading. A venue 3 days ahead gets `{ label: '3d', tone: 'amber' }`, the branch `deadline()` takes for an unpaused project.
+- R5: met by reading. `Entry.svelte:317` hands `page` to `LeadCard`; `RecordCard.svelte:231-249` draws `Subtasks` and `Followups` with `formOnly` false.
+- R6: met. 3 files, 21 tests passed.
+- R7: met. `quick.mjs:46-50,193-219` adds every test under `tests/checks/source/` and `tests/checks/tree/` when a changed path starts with `src/`, `tests/` or `utils/` (ruling 467 (a)); the docs-only run chooses only `palette.test.ts`.
+
+### Findings
+
+- `docs/palette.md:28`: "| Track record | track_record |"; under Behaviour. The builder's correction of the round brief's premise is true (the base page held the six boards; the generator at this tree gives "Track record"), but the regenerated page omits the six board views the running palette lists: the page says "Every registered view is listed by its words" (:13), the app registers each key of `boards:` (`config/defaults/layout.yml:227`) through `registerBoards` (`src/routes/views.ts:123`), and `utils/diagrams/palette.mjs` calls only `registerAll` and `registerCollections`. Under ruling 468 (a) every landing regenerates the page from that generator. Failure scenario: a reader looks up "Projects" or "Supervision" in `docs/palette.md`, does not find them, and concludes the palette cannot open those boards. Verdict: none.
+- `O89-report.md`, "The list's runs"; under Standards. The rules file's "Token discipline" allows the list once after the last change; the first round run was red only on files the step does not change, changes followed it, and the list ran a second time. Failure scenario: each extra 200 s run slows the other builders' runs on the machine. Verdict: none.
+- `tests/checks/tree/allow-styling.ts:17-53`, the `why` line numbers of the rows for `PaletteRow.svelte`, `CardDocs.svelte`, `NewIdeaForm.svelte` and `Ribbon.svelte`; under Spec. No item asks for them; the new numbers match `grep -n ":global"` and the check compares only `line` (`boundaries.test.ts:644-648`), so no result changes; the report gives them as one paragraph, not one row per line with its before and after. Failure scenario: the landing takes edits to rows of four views the step never touched, read only from a summary. Verdict: none.
+- `tests/server/root/process/config-cache-fixture.ts:8`: "export const NO_HUBS: Pick<ConfigCacheDeps, 'primary' | 'others' | 'folders' | 'vocabs'> = { primary: () => null, ... };"; under Standards. The rules file's "No globals": "a shared fallback object handed to callers is frozen or built per call"; `NO_HUBS` is neither. Failure scenario: a test that assigns `NO_HUBS.primary` changes the dependencies of every later test that spreads it. Verdict: none.
+
+### Declined to judge
+
+- `npm run test:quick -- --base 1da23d50b`: part of the plan's verify list, not run; judged by reading the report's quoted output. The first round run's timeouts in `html.dom.test.ts` and `hub-portfolio.test.ts` pass alone in the reviewer's reruns.
+- `npm run docs:palette`: not rerun, since it writes `docs/palette.md`; the passing `palette.test.ts` shows the page equals what the generator gives.
+- Every case a page shows (R1 to R5, cases 1 to 20 and 24 to 33): checked by reading only; the landing look on TEST, Pillars first, settles them.
+- The report's open-items section: not rerun, since the state file changes with every orchestrator write.
+- Where the palette generator's omission of the `boards:` views is fixed: the orchestrator's call, since `utils/diagrams/palette.mjs` is outside the round's path list.
+- The generated `docs/diagrams/*.svg`: regenerated at landing.
+
+Reviewer usage: ae4b4974dbde33b60, claude-opus-5-5, 225147 tokens, 60 tool uses, 11 min 1 s.
+
+### Closed
+
+- The palette page's missing board views: fixed at landing. `utils/diagrams/palette.mjs` registers the `boards:` views as the app does (`registerBoards`), and `npm run docs:palette` regenerates the page; it is inside round item 7, which asks for a palette page that is true, and small.
+- The extra run of the list: closed at landing; the landing's own verify run stands, and the booking states the report's three runs in the step and two in the round.
+- The `why` line numbers of `allow-styling.ts`: closed at landing; kept, since each now names the line its rule is on and no result changes; the booking lists each row with its before and after.
+- `NO_HUBS` not frozen: fixed at landing with `Object.freeze`, small and inside round item 6.

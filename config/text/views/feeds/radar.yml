@@ -3,13 +3,13 @@ text:
     radar:
         count: '{0} ({1})'
         delete_tip: delete this paper (removes the entry)
-        dismiss: dismiss
+        dismiss: Dismiss
         dismiss_tip: dismiss from the radar
         dismissed_sec: Dismissed
         empty: No radar items yet; run Lit Watch from the Update tray.
         feed_error: 'Could not read {0}: {1}'
         filters: Radar filters
-        idea: idea
+        idea: Idea
         idea_tip: scaffold an idea from this spark
         intro_adjacent: adjacent
         intro_cite: cite/baseline
@@ -24,8 +24,8 @@ text:
         new_idea_candidate: new idea candidate
         no_date: '-'
         no_file: No radar file yet; run Lit Watch from the Update tray to populate `{0}`.
-        paper: paper
-        restore: restore
+        paper: Paper
+        restore: Restore
         restore_tip: restore to the radar
         search: Search radar | title | venue | project | why ...
         threatens: 'threatens: {0}'

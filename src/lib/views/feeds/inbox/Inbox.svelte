@@ -53,13 +53,17 @@
         type InboxThread
     } from '$lib/state/feeds/inbox';
     import type { HeadWords } from '$lib/state/life/accounts';
+    import { liveProjects, portfolioProjects } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 
     const {
         clock: { startMinuteClock },
+        entities: { portfolio },
         inbox: { archive, busy, refresh, refreshing, reply, split, state: plate, triage },
+        selectors: { configMap },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -78,6 +82,8 @@
     const info = $derived(inboxSearch(sections.info, held.search));
     const triaged = $derived(inboxSearch(sections.triaged, held.search));
     const liveCount = $derived(plateCount(sections));
+    /** The projects a card's Follow-up and Subtask may write to: the live ones, as Quick add's. */
+    const live = $derived(liveProjects(portfolioProjects(portfolio()), configMap(), vocabOf));
     let said: string = $state('');
     /** Whether the Add form is open, which is this view's own and no other's. */
     let adding = $state(false);
@@ -153,6 +159,7 @@
             onreply={reply}
             onarchive={archive}
             onsaid={(words: string) => (said = words)}
+            projects={live}
         />
     </Reveal>
 {/snippet}

@@ -32,16 +32,17 @@ text:
         open_person: Open this person as their own tab
         open_workbench: Open Workbench
         open_workbench_tip: open a workbench for {0}
+        open_path_workbench: 'Open Workbench: {0}'
         person_glyph: collab
         no_funding: No funding
         no_funding_sub: Active and manuscript projects with no scheme attached.
         pin_glyph: pin
         pin_to_top: Pin to Top
-        related: Named by
         reorder_hint: drag to reorder
         search: Search {0} ...
         show_in_files: Show in Files
         show_in_files_tip: select {0} in the Files view
+        show_path_in_files: 'Show in Files: {0}'
         start_agent: Start Agent
         start_agent_tip: Open the composer in this task's folder, seeded with the task
         status_facet: Status

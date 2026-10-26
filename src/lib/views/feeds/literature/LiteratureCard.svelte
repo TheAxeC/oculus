@@ -1,19 +1,21 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/literature/Literature.svelte. One paper with what every
-    // source that found it says. The title is a link to the paper's address; the authors line and
-    // the venue line are each cut with an ellipsis where the card ends and hold their whole text as
-    // the tooltip, the venue line's tooltip also giving each source's citation count. The abstract
-    // is text under a disclosure, closed until opened. Everything a source sent is drawn as text,
-    // never as markup.
+    // source that found it says, as the record card (views/shared/card/record/RecordCard.svelte).
+    // The title is a link to the paper's address; the authors line and the venue line are each cut
+    // with an ellipsis where the card ends and hold their whole text as the tooltip, the venue
+    // line's tooltip also giving each source's citation count. The abstract is text under a
+    // disclosure, closed until opened. Everything a source sent is drawn as text, never as markup.
     //
-    // Open PDF is a link and only drawn when a source named an open one. Copy BibTeX puts one entry
-    // on the clipboard and says where it came from; it writes no file. Add to Lit Watch opens the
-    // small form and reads `In Lit Watch`, not pressable, once the radar holds the paper. Save to
-    // Literature writes the paper to the Literature collection and reads `In Literature` once the
-    // collection holds it.
+    // The four actions, Open PDF, Copy BibTeX, Add to Lit Watch and Save to Literature, are drawn
+    // on the meta row at rest as well, and the card's menu holds them too, Open PDF in its Open
+    // run; the card has no strip. Open PDF is a link and only drawn when a source named an open
+    // one. Copy BibTeX puts one entry on the clipboard and says where it came from; it writes no
+    // file. Add to Lit Watch opens the small form and reads `In Lit Watch`, not pressable, once the
+    // radar holds the paper. Save to Literature writes the paper to the Literature collection and
+    // reads `In Literature` once the collection holds it
+    // (views/shared/card/feed/literature-save.svelte.ts).
 
     import { onDestroy } from 'svelte';
-    import Card from '$lib/ui/frame/Card.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -24,13 +26,17 @@
     import type { MergedHit } from '$lib/state/feeds/literature/merge';
     import { posting } from '../../shared/card/feed/posting';
     import SaveToLiterature from '../../shared/card/feed/SaveToLiterature.svelte';
+    import { createLiteratureSave } from '../../shared/card/feed/literature-save.svelte';
+    import RecordCard from '../../shared/card/record/RecordCard.svelte';
+    import type { RecordAction } from '../../shared/card/record/record-menu';
     import { hitPaper } from '$lib/state/feeds/literature/saved';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         writes: { writeToken }
-    } = useState();
+    } = client;
 
     type Props = {
         hit: MergedHit;
@@ -52,6 +58,12 @@
     let copying = $state(false);
     let closed = false;
     onDestroy(() => (closed = true));
+
+    const literature = createLiteratureSave(client, () => ({
+        ids: { doi: hit.doi, title: hit.title },
+        paper: hitPaper(hit),
+        source: 'search'
+    }));
 
     const title = $derived(hit.title === '' ? t('literature.untitled') : hit.title);
     const link = $derived(hit.url === undefined ? undefined : posting(hit.url));
@@ -79,6 +91,52 @@
             .join(t('literature.sep'))
     );
 
+    /** The menu's rows: Open PDF, Copy BibTeX, Add to Lit Watch and Save to Literature. */
+    const actions = $derived.by((): RecordAction[] => {
+        const rows: RecordAction[] = [];
+        const pdf = hit.pdf;
+        if (pdf !== undefined) {
+            rows.push({
+                id: 'pdf',
+                label: t('literature.pdf'),
+                title: pdf,
+                glyph: 'link',
+                run: 'open',
+                onclick: () => {
+                    window.open(pdf, '_blank', 'noreferrer');
+                }
+            });
+        }
+        rows.push(
+            {
+                id: 'bibtex',
+                label: t('literature.bibtex'),
+                glyph: 'copy',
+                disabled: copying,
+                onclick: copy
+            },
+            inRadar
+                ? {
+                      id: 'litwatch',
+                      label: t('literature.in_radar'),
+                      title: t('literature.in_radar_tip'),
+                      glyph: 'litwatch',
+                      disabled: true,
+                      onclick: () => undefined
+                  }
+                : {
+                      id: 'litwatch',
+                      label: t('literature.add'),
+                      title: radarMissing ? t('literature.no_radar') : t('literature.add_tip'),
+                      glyph: 'litwatch',
+                      active: adding,
+                      onclick: add
+                  },
+            literature.saveAction(onsaid)
+        );
+        return rows;
+    });
+
     async function copy(): Promise<void> {
         if (copying) return;
         copying = true;
@@ -102,24 +160,51 @@
     }
 </script>
 
-<Card {id} {cursor} {title}>
-    {#snippet heading()}
-        {#if link !== undefined}
-            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is a paper's page on another site, rather than a route id resolve() takes -->
-            <a class="title" href={link} target="_blank" rel="noreferrer">{title}</a>
-        {:else}
-            <span class="title">{title}</span>
-        {/if}
-    {/snippet}
-    {#snippet meta()}
-        {#each hit.sources as source (source)}
-            <Tag label={sourceName(source)} />
-        {/each}
-        {#if hit.oa}
-            <Tag label={t('literature.open')} tone="green" />
-        {/if}
-    {/snippet}
+{#snippet heading()}
+    {#if link !== undefined}
+        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is a paper's page on another site, rather than a route id resolve() takes -->
+        <a class="title" href={link} target="_blank" rel="noreferrer">{title}</a>
+    {:else}
+        <span class="title">{title}</span>
+    {/if}
+{/snippet}
 
+{#snippet meta()}
+    {#each hit.sources as source (source)}
+        <Tag label={sourceName(source)} />
+    {/each}
+    {#if hit.oa}
+        <Tag label={t('literature.open')} tone="green" />
+    {/if}
+    {#if hit.pdf !== undefined}
+        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is an open PDF on another site -->
+        <a class="pdf" href={hit.pdf} target="_blank" rel="noreferrer">
+            <Glyph name="link" />
+            {t('literature.pdf')}
+        </a>
+    {/if}
+    <ToolButton label={t('literature.bibtex')} glyph="copy" disabled={copying} onclick={copy} />
+    {#if inRadar}
+        <ToolButton
+            label={t('literature.in_radar')}
+            glyph="litwatch"
+            disabled
+            title={t('literature.in_radar_tip')}
+            onclick={() => undefined}
+        />
+    {:else}
+        <ToolButton
+            label={t('literature.add')}
+            glyph="litwatch"
+            active={adding}
+            title={radarMissing ? t('literature.no_radar') : t('literature.add_tip')}
+            onclick={add}
+        />
+    {/if}
+    <SaveToLiterature {literature} />
+{/snippet}
+
+{#snippet text()}
     {#if authors !== ''}
         <p class="line" title={authors}>{authors}</p>
     {/if}
@@ -131,7 +216,9 @@
             {detail}
         </p>
     {/if}
+{/snippet}
 
+{#snippet blocks()}
     <div class="row">
         <ToolButton
             label={t('literature.abstract')}
@@ -139,45 +226,16 @@
             expanded={open}
             onclick={() => (open = !open)}
         />
-        {#if hit.pdf !== undefined}
-            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is an open PDF on another site -->
-            <a class="pdf" href={hit.pdf} target="_blank" rel="noreferrer">
-                <Glyph name="link" />
-                {t('literature.pdf')}
-            </a>
-        {/if}
-        <ToolButton label={t('literature.bibtex')} glyph="copy" disabled={copying} onclick={copy} />
-        {#if inRadar}
-            <ToolButton
-                label={t('literature.in_radar')}
-                glyph="litwatch"
-                disabled
-                title={t('literature.in_radar_tip')}
-                onclick={() => undefined}
-            />
-        {:else}
-            <ToolButton
-                label={t('literature.add')}
-                glyph="litwatch"
-                active={adding}
-                title={radarMissing ? t('literature.no_radar') : t('literature.add_tip')}
-                onclick={add}
-            />
-        {/if}
-        <SaveToLiterature
-            ids={{ doi: hit.doi, title: hit.title }}
-            paper={hitPaper(hit)}
-            source="search"
-        />
     </div>
-
     {#if open}
         <p class="abstract">{hit.abstract ?? t('literature.no_abstract')}</p>
     {/if}
     {#if adding && !inRadar}
         <AddForm {hit} {buckets} {projects} onclose={() => (adding = false)} {onsaid} />
     {/if}
-</Card>
+{/snippet}
+
+<RecordCard {id} {cursor} {title} {heading} {actions} {onsaid} {meta} {text} {blocks} />
 
 <style>
     .line {

@@ -25,12 +25,7 @@ Every registered view is listed by its words.
 | Focus | focus |
 | Person | person |
 | Project | project |
-| Projects | projects |
-| Supervision | supervision |
-| Coauthor | coauthor |
-| Archive | archive |
-| Personal | personal |
-| Software | software |
+| Track record | track_record |
 | Inbox | inbox |
 | Position Leads | leads |
 | LinkedIn | linkedin |
@@ -93,6 +88,12 @@ Every registered view is listed by its words.
 | Joint work | joint-work |
 | Tasks | tasks |
 | Literature | literature |
+| Projects | projects |
+| Supervision | supervision |
+| Coauthor | coauthor |
+| Archive | archive |
+| Personal | personal |
+| Software | software |
 
 ## Colon commands
 

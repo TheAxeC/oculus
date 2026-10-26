@@ -1,16 +1,16 @@
 <script lang="ts">
-    // Layer 3, view partial of views/feeds/linkedin/Linkedin.svelte. One idea or numbered post with
-    // its metadata, snippet, promotion write, and source action. Folder and cadence rules stay
-    // outside this card. A web address written in the snippet is a link
-    // (ui/display/text/LinkedText.svelte).
+    // Layer 3, view partial of views/feeds/linkedin/Linkedin.svelte. One idea or numbered post as
+    // the record card (views/shared/card/record/RecordCard.svelte): its metadata and snippet. The
+    // strip holds Mark posted, on an idea, and Edit, which opens the post's source file; the menu
+    // holds Mark posted in its Status submenu and Edit. Folder and cadence rules stay outside this
+    // card. A web address written in the snippet is a link (ui/display/text/LinkedText.svelte).
 
     import { linkedinSourcePath, openLinkedinSource } from './post-card';
-    import Card from '$lib/ui/frame/Card.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import { statusAction, type RecordAction } from '$lib/views/shared/card/record/record-menu';
     import { rootOf } from '$lib/state/shared/page/hubs';
-    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { snippet, type LinkedinEntry } from '$lib/state/feeds/linkedin';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -38,6 +38,30 @@
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
     const path = $derived(linkedinSourcePath(folder, entry.file));
 
+    /** Mark posted, in the Status submenu while the post is an idea, then Edit. */
+    const actions = $derived.by((): RecordAction[] => [
+        ...statusAction(
+            posted
+                ? []
+                : [
+                      {
+                          id: 'posted',
+                          label: t('linkedin.markpost'),
+                          title: t('linkedin.markpost_tip'),
+                          glyph: 'done',
+                          onclick: promote
+                      }
+                  ]
+        ),
+        {
+            id: 'edit',
+            label: t('linkedin.edit'),
+            title: t('linkedin.edit_tip'),
+            glyph: 'edit',
+            onclick: edit
+        }
+    ]);
+
     function say(answer: WriteAnswer): void {
         onsaid(answerWords(answer));
     }
@@ -52,48 +76,47 @@
     }
 </script>
 
+{#snippet meta()}
+    <Tag label={posted ? number : t('linkedin.idea_tag')} />
+    {#if entry.category !== ''}
+        <Tag label={entry.category} />
+    {/if}
+    {#if entry.date !== ''}
+        <span class="date">{entry.date}</span>
+    {/if}
+{/snippet}
+
+{#snippet text()}
+    <p class="snippet"><LinkedText text={snippet(entry.body)} /></p>
+{/snippet}
+
 <div
+    class="slot"
     data-linkedin-card={entry.file}
     data-editor-view="source"
     data-editor-root={hub}
     data-editor-path={path}
 >
-    <Card {id} {cursor} title={entry.title}>
-        {#snippet meta()}
-            <RootChip record={entry} />
-            <Tag label={posted ? number : t('linkedin.idea_tag')} />
-            {#if entry.category !== ''}
-                <Tag label={entry.category} />
-            {/if}
-            {#if entry.date !== ''}
-                <span class="date">{entry.date}</span>
-            {/if}
-        {/snippet}
-
-        <p class="snippet"><LinkedText text={snippet(entry.body)} /></p>
-
-        {#snippet footer()}
-            <div class="actions">
-                {#if !posted}
-                    <ToolButton
-                        label={t('linkedin.markpost')}
-                        title={t('linkedin.markpost_tip')}
-                        glyph="done"
-                        onclick={promote}
-                    />
-                {/if}
-                <ToolButton
-                    label={t('linkedin.edit')}
-                    title={t('linkedin.edit_tip')}
-                    glyph="edit"
-                    onclick={edit}
-                />
-            </div>
-        {/snippet}
-    </Card>
+    <RecordCard
+        {id}
+        {cursor}
+        title={entry.title}
+        record={entry}
+        {actions}
+        strip={['posted', 'edit']}
+        {onsaid}
+        {meta}
+        {text}
+    />
 </div>
 
 <style>
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     .date {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
@@ -103,15 +126,5 @@
         margin: 0;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
-    }
-
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
-       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
-       inside it. */
-    .actions {
-        display: var(--card-at-rest, flex);
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 6px;
     }
 </style>

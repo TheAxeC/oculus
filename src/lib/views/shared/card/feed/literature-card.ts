@@ -10,7 +10,7 @@ import { savedEntriesFor, type Copied } from '$lib/state/feeds/literature/bibtex
 import { savedPaperOf } from '$lib/state/feeds/literature/saved';
 import type { Collection, Entry } from '$lib/state/boards/collection';
 import { t } from '$lib/state/shared/words/text';
-import type { CardAction } from '../CardActions.svelte';
+import type { CardAction } from '../card';
 
 /** What a copy says: how many entries it copied, and the keys of those it could not make. */
 function copiedWords(copied: Copied): string {

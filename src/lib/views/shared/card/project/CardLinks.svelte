@@ -20,9 +20,10 @@
     //
     // The related kind is the link between two projects, read both ways: the projects a project's
     // `related:` names and those whose `related:` names it, so a paper lists the software that
-    // implements it and a software project the papers it names. Its entries open a project tab
-    // rather than a registered view, except for an id that no project holds, which is drawn as its
-    // tag with no press.
+    // implements it and a software project the papers it names. The card's foot draws them as the
+    // project strip (views/shared/links/CrossLinks.svelte), so this line holds only those the strip
+    // leaves out (`related`): an id that no project holds, drawn as its tag with no press, and a
+    // project at a stage the strip groups under none, which opens its project tab.
     //
     // The venue kind is the venue the project's `venue_id` names, drawn only when it names one: its
     // whole text (its name with its quartile and the rest) as one tag with no press, which wraps
@@ -59,8 +60,10 @@
         waiting?: WaitedOn[];
         /** Whether one of the project's chips carries the flag `blocked`. */
         blocked?: boolean;
+        /** The related projects the card's foot strip does not draw. */
+        related?: NonNullable<LinkedItem['related']>;
     };
-    let { item, waiting = [], blocked = false }: Props = $props();
+    let { item, waiting = [], blocked = false, related = [] }: Props = $props();
 
     /** The kind of the project's venue, whose one entry is its whole text. */
     const VENUE = 'venue';
@@ -120,7 +123,7 @@
             key: RELATED,
             label: t('project.card.related'),
             glyph: t('project.card.related_glyph'),
-            tags: item.related ?? []
+            tags: related
         },
         {
             key: VENUE,

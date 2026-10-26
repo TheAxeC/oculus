@@ -13,6 +13,7 @@ import {
     languageStamp
 } from '../../../../../src/lib/server/machine/apps/routes/localization.ts';
 import { createConfigCache } from '../../../../../src/lib/server/root/process/config-cache.ts';
+import { NO_HUBS } from '../../../../server/root/process/config-cache-fixture.ts';
 import { approvedHeld, plant, PAGE } from '../../../../routes/apps/apps-fixture.ts';
 import { it } from '../../../../fixtures/scratch.ts';
 import { OCULUS, WORKSPACE_FILE as FILE, withSettings } from './layers-fixture.ts';
@@ -158,13 +159,7 @@ describe('the display language', () => {
             loadHub: () => loadConfig(engineDir()),
             language: () => languageStamp(now),
             report: () => undefined,
-            primary: () => null,
-            others: () => [],
-            folders: () => [],
-            vocabs: () => ({
-                vocabs: { primary: null, lists: {}, order: [], own: {}, ownCollections: [] },
-                files: []
-            })
+            ...NO_HUBS
         });
         expect(textCatalog(cache.read().config)['views.settings']).toBe('Instellingen');
         now = {

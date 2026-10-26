@@ -1,20 +1,22 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The follow-up block of one card: one row per note
     // of the host's `followup:` list with what it says and the date before which it stays off the
-    // Focus board, the buttons that change it or take it out once done, and the one-line form that
-    // adds another (views/shared/forms/dated/LineForm.svelte). A note's edit button turns the note
-    // into the same form, holding its text and date, and its save writes each of the two that
-    // changed.
+    // Focus board, the buttons that change it or take it out once done, and the form that adds
+    // another (views/shared/forms/dated/DatedForm.svelte, headed "New follow-up"). A note's edit
+    // button turns the note into the one-line form (LineForm.svelte), holding its text and date,
+    // and its save writes each of the two that changed.
     //
-    // A card with no notes draws no block at all: adding its first note is one of the card's own
-    // actions, which opens the add form here with no heading over it. So whether the add form is
-    // open is the card's, handed in, since the card's action and this block's own add control both
-    // open it. A project card on a board hands `formOnly`, and the block then draws that form
-    // alone, with no head and no note; on the project page it draws the whole list with its form.
+    // A card with no notes draws no list: adding its first note is the Follow-up row of the card's
+    // menu, which opens the add form here. So whether the add form is open is the card's, handed
+    // in, since the card's menu and this block's own add control both open it. A project card on a
+    // board and a card of a record whose notes it does not list hand `formOnly`, and the block then
+    // draws that form alone, with no head and no note; on the project page it draws the whole list
+    // with its form. A host whose `followup:` is not a list is refused by the server, and the
+    // refusal is said on the card's outcome line with nothing written.
     //
-    // Two views draw it, as they draw views/shared/forms/dated/Subtasks.svelte:
-    // views/shared/card/project/ProjectCard.svelte with the `{ id }` of one manifest, and
-    // views/shared/forms/entry/card/EntryCard.svelte with the `{ id, collection }` of one entry.
+    // The record card (views/shared/card/record/RecordCard.svelte) draws it, as it draws
+    // views/shared/forms/dated/Subtasks.svelte, with the `{ id }` of one manifest or the
+    // `{ id, collection }` of one entry.
     //
     // Every button is one call of the write path (state/client/writes.svelte.ts) and nothing else:
     // the note the reader sees change is the watcher's next push of the portfolio, which is why
@@ -116,9 +118,12 @@
     }
 
     /** The add form's save: one note, with its date when the form was given one. */
-    async function add(text: string, after: string): Promise<void> {
-        const fields = after === '' ? { do: text } : { do: text, after };
-        const answer = await addFollowup(target, fields);
+    function add(text: string, after: string): Promise<WriteAnswer> {
+        return addFollowup(target, after === '' ? { do: text } : { do: text, after });
+    }
+
+    /** What the add form's save answered: said, and the form closed when the server took it. */
+    function added(answer: WriteAnswer): void {
         said(answer);
         if (answer.ok) onadding(false);
     }
@@ -131,11 +136,13 @@
             label={t('project.action.followups')}
             addLabel={t('project.action.add_followup')}
             addTip={t('project.action.add_followup_tip')}
-            dateLabel={t('project.action.followup_after')}
+            kind="followup"
+            record={`${target.collection ?? ''}:${target.id}`}
             {blocked}
             {adding}
             {onadding}
             onadd={add}
+            onanswer={added}
         />
 
         {#each lines as note (note.key)}

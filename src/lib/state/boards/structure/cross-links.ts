@@ -1,8 +1,9 @@
 // Layer 2, client state. The projects that name one entry of a collection, grouped as the
-// portfolio groups projects everywhere (in flight, done, ideas), and the live projects no funding
-// scheme covers, which the Funding tab draws as one card. Pure joins of the snapshot, like the
-// Pillars and Domains joins beside it, so they are checked without a browser. A project's stage and
-// chips are read under the words of its own hub when the caller gives them (`wordsOf`).
+// portfolio groups projects everywhere (in flight, done, ideas), the projects at one stage as one
+// group (the Archival card's), and the live projects no funding scheme covers, which the Funding
+// tab draws as one card. Pure joins of the snapshot, like the Pillars and Domains joins beside it,
+// so they are checked without a browser. A project's stage and chips are read under the words of
+// its own hub when the caller gives them (`wordsOf`).
 
 import { z } from 'zod';
 import { anyWord, hasWord, wordNumber, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
@@ -18,13 +19,43 @@ const stringShape = z.string();
 /** One member of a cross-link group. Its project stage remains visible inside the broader group. */
 type CrossMember = { id: string; label: string; stage: string };
 
-/** One of the three cross-link groups the portfolio uses everywhere. */
+/**
+ * One cross-link group: one of the three the portfolio uses everywhere, or the projects at one
+ * stage (`stage`), which the Archival card draws a group of per stage that carries a `dead` number.
+ */
 export type CrossGroup = {
-    type: 'in-flight' | 'ideas' | 'done';
+    type: 'in-flight' | 'ideas' | 'done' | 'stage';
     count: number;
     members: CrossMember[];
     warn: boolean;
+    /** The stage a group of type `stage` holds: its word, and the label and glyph drawn for it. */
+    stage?: { word: string; label: string; glyph: string };
 };
+
+/** The key one group is told apart by: its type, and its stage's word for a stage's group. */
+export function groupKey(group: CrossGroup): string {
+    return group.stage === undefined ? group.type : `${group.type}:${group.stage.word}`;
+}
+
+/**
+ * The projects at one stage as one group, in the order the snapshot gives them, each named by its
+ * short name or else its title; the stage's label and glyph are the caller's, read in the words it
+ * draws them in.
+ */
+export function stageGroup(
+    stage: { word: string; label: string; glyph: string },
+    projects: Project[]
+): CrossGroup {
+    const members = projects.map((project) => {
+        const short = project.short?.trim() ?? '';
+        return {
+            id: project.id,
+            label: short === '' ? project.title : short,
+            stage: stage.word
+        };
+    });
+    return { type: 'stage', count: members.length, members, warn: false, stage };
+}
 
 /** The word a cross-link member is filed under: the project's own `stage:`, else the empty word. */
 function stageOf(project: Project): string {
@@ -73,8 +104,11 @@ export function crossLinks(
     return groupProjects(named, config, wordsOf);
 }
 
+/** The three groups the portfolio groups projects in by their stage's flags. */
+type FlagGroup = Exclude<CrossGroup['type'], 'stage'>;
+
 /** The cross-link group of a stage, read from its flags in `stages`; null for a stage in none. */
-function groupOf(stage: string, config: Record<string, unknown>): CrossGroup['type'] | null {
+function groupOf(stage: string, config: Record<string, unknown>): FlagGroup | null {
     if (wordNumber(config, 'stages', 'dead', stage) !== null) return null;
     if (hasWord(config, 'stages', 'live', stage)) return 'in-flight';
     if (hasWord(config, 'stages', 'idea', stage)) return 'ideas';
@@ -96,7 +130,7 @@ export function groupProjects(
     wordsOf?: WordsOf
 ): CrossGroup[] {
     const at = (project: Project): Record<string, unknown> => wordsOf?.(rootOf(project)) ?? config;
-    const grouped: Record<CrossGroup['type'], CrossMember[]> = {
+    const grouped: Record<FlagGroup, CrossMember[]> = {
         'in-flight': [],
         done: [],
         ideas: []

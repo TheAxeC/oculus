@@ -15,6 +15,7 @@ import { plantState, workspaceOf } from '../../../fixtures/hubs/workspace.ts';
 import { writeState } from '../../../../src/lib/server/files/workspace/state.ts';
 import { contextFixture } from '../context-fixture.ts';
 import { createConfigCache } from '../../../../src/lib/server/root/process/config-cache.ts';
+import { NO_HUBS } from './config-cache-fixture.ts';
 import type { Finding } from '../../../../src/lib/data/model/index.ts';
 
 afterEach(() => {
@@ -267,13 +268,7 @@ describe('the config cache of the server context', () => {
             load: () => ({ config: { one: 1 }, findings: [finding], from: {} }),
             loadHub: () => ({ config: {}, findings: [], from: {} }),
             report: (findings) => said.push(findings),
-            primary: () => null,
-            others: () => [],
-            folders: () => [],
-            vocabs: () => ({
-                vocabs: { primary: null, lists: {}, order: [], own: {}, ownCollections: [] },
-                files: []
-            })
+            ...NO_HUBS
         });
         cache.quiet();
         expect(said).toEqual([]);

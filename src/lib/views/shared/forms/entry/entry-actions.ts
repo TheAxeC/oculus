@@ -1,10 +1,13 @@
 // Layer 3, view helper of views/shared/forms/entry/card/EntryCard.svelte and of the registry cards.
-// The controls one entry's card carries in its meta row, from what the card knows: whether a write
-// can address the entry, why the controls that write are disabled, and the handlers the card gives
-// each. The cards of a registry (Venues, Data and the others) take Edit in File and Delete from
-// `recordActions`.
+// The actions one entry's record card carries (views/shared/card/record/RecordCard.svelte), from
+// what the card knows: whether a write can address the entry, why the actions that write are
+// disabled, and the handlers the card gives each; and what the card's Add run writes
+// (`entryDated`). The cards of a registry (Venues, Data and the others) take Edit in File and
+// Delete from `recordActions`.
 
 import {
+    entryFollowups,
+    entrySubtasks,
     hubPathsOf,
     listsAsFolder,
     pageFolder,
@@ -14,40 +17,47 @@ import {
 } from '$lib/state/boards/collection';
 import type { ClientState } from '$lib/state/client/context';
 import type { ViewSource } from '$lib/state/sessions/view-source';
+import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
 import { t } from '$lib/state/shared/words/text';
 import { editAction, type CardAction } from '../../card/card';
+import {
+    pageAction,
+    statusAction,
+    type RecordAction,
+    type RecordDated
+} from '../../card/record/record-menu';
 import { fileNameOf, openEntry } from '../entry-file';
 
-/** What the card's controls are made from. */
+/** One status a card may write: its word and its label. */
+type StatusChoice = { id: string; label: string };
+
+/** What the card's actions are made from. */
 export type EntryActionInput = {
-    /** True for an entry of a file with a schema; one without carries status buttons only. */
+    /** True for an entry of a file with a schema; one without carries its statuses only. */
     addressable: boolean;
-    /** The words saying why the controls that write are disabled, '' when they are not. */
+    /** The words saying why the actions that write are disabled, '' when they are not. */
     blocked: string;
     /** The name of the file Edit in File opens. */
     fileName: string;
     status: string | undefined;
-    /** The lifecycle statuses of a file with no schema, offered as buttons. */
-    statuses: string[];
+    /**
+     * The statuses the Status submenu offers: the schema's status options of a file with a
+     * schema, the lifecycle statuses of a file with none.
+     */
+    statuses: StatusChoice[];
     pinned: boolean;
-    /** Whether the entry has no subtask, so adding the first is a control of the card. */
-    firstSubtask: boolean;
-    addingSubtask: boolean;
-    /** Whether the entry has no follow-up note, so adding the first is a control of the card. */
-    firstFollowup: boolean;
-    addingFollowup: boolean;
-    /** The Show in Files controls and the controls the collection adds, drawn after the rest. */
+    /** The Show in Files actions and the actions the collection adds, drawn after the rest. */
     shows: CardAction[];
     extra: CardAction[];
+    /** Open the entry's page; a card handed none has no Page action. */
+    onpage?: () => void;
     onstatus: (next: string) => void;
     onpin: () => void;
     onedit: () => void;
     ondelete: () => void;
-    onsubtask: () => void;
-    onfollowup: () => void;
 };
 
-/** The control that asks before an entry is deleted; disabled, with the reason, while blocked. */
+/** The action that asks before an entry is deleted; disabled, with the reason, while blocked. */
 function deleteAction(blocked: string, ondelete: () => void): CardAction {
     return {
         id: 'delete',
@@ -59,7 +69,7 @@ function deleteAction(blocked: string, ondelete: () => void): CardAction {
     };
 }
 
-/** What the Edit in File control of a record card is made from. */
+/** What the Edit in File action of a registry card is made from. */
 export type RecordTarget = {
     client: ClientState;
     file: ViewSource | null;
@@ -71,7 +81,7 @@ export type RecordTarget = {
 };
 
 /**
- * Edit in File and Delete, the two controls of a record whose file holds it; a line the file does
+ * Edit in File and Delete, the two actions of a record whose file holds it; a line the file does
  * not hold, or a file with no schema, has neither.
  */
 export function recordActions(
@@ -88,31 +98,42 @@ export function recordActions(
     return rows;
 }
 
-/** The words of a control that writes: its own, or the ones saying why it cannot. */
+/** The words of an action that writes: its own, or the ones saying why it cannot. */
 function titled(input: EntryActionInput, own?: string): string | undefined {
     return input.blocked === '' ? own : input.blocked;
 }
 
 /**
- * The card's controls: the pin, Edit in File, Delete, while the entry has no subtask adding its
- * first, and the Show in Files controls, then the controls the collection passes in. A file with no
- * schema has no identity to write by, so its cards carry the file's other lifecycle statuses
- * instead of the first three.
+ * The Status row of an entry: a submenu of the statuses the card may write, the one in force
+ * checked, each disabled with the blocking words while the file cannot be written. Picking the one
+ * in force writes nothing.
  */
-export function entryActions(input: EntryActionInput): CardAction[] {
+function statusRows(input: EntryActionInput): RecordAction[] {
+    const items = input.statuses.map((one): CardAction => ({
+        id: `status:${one.id}`,
+        label: one.label,
+        title: titled(input, t('project.action.set_status', one.label)),
+        checked: one.id === input.status,
+        disabled: input.blocked !== '',
+        onclick: () => {
+            if (one.id !== input.status) input.onstatus(one.id);
+        }
+    }));
+    return statusAction(items, titled(input));
+}
+
+/**
+ * The card's actions: Page, the pin, Edit in File, Delete, the Status submenu, and the Show in
+ * Files actions, then the actions the collection passes in. A file with no schema has no identity
+ * to write by, so its cards carry the file's lifecycle statuses and no pin, Edit in File or Delete.
+ */
+export function entryActions(input: EntryActionInput): RecordAction[] {
+    const page: RecordAction[] = input.onpage === undefined ? [] : [pageAction(input.onpage)];
     if (!input.addressable) {
-        const buttons = input.statuses
-            .filter((one) => one !== input.status)
-            .map((one): CardAction => ({
-                id: `status:${one}`,
-                label: one,
-                title: titled(input),
-                disabled: input.blocked !== '',
-                onclick: () => input.onstatus(one)
-            }));
-        return buttons.concat(input.shows, input.extra);
+        return [...page, ...statusRows(input), ...input.shows, ...input.extra];
     }
-    const rows: CardAction[] = [
+    const rows: RecordAction[] = [
+        ...page,
         {
             id: 'pin',
             label: input.pinned ? t('collection.unpin') : t('collection.pin_to_top'),
@@ -129,34 +150,90 @@ export function entryActions(input: EntryActionInput): CardAction[] {
             glyph: t('collection.edit_glyph'),
             onclick: input.onedit
         },
-        deleteAction(input.blocked, input.ondelete)
+        deleteAction(input.blocked, input.ondelete),
+        ...statusRows(input)
     ];
-    if (input.firstSubtask) {
-        rows.push({
-            id: 'subtask',
-            label: t('project.action.add_subtask'),
-            title: titled(input, t('project.action.add_subtask_tip')),
-            glyph: t('project.action.add_subtask_glyph'),
-            active: input.addingSubtask,
-            disabled: input.blocked !== '',
-            onclick: input.onsubtask
-        });
-    }
-    if (input.firstFollowup) {
-        rows.push({
-            id: 'followup',
-            label: t('project.action.add_followup'),
-            title: titled(input, t('project.action.add_followup_tip')),
-            glyph: t('project.action.add_followup_glyph'),
-            active: input.addingFollowup,
-            disabled: input.blocked !== '',
-            onclick: input.onfollowup
-        });
-    }
-    return rows.concat(input.shows, input.extra);
+    return [...rows, ...input.shows, ...input.extra];
 }
 
-/** What the Show in Files controls of a card are made from. */
+/** A field's value as the words a box holds: its text, or its number written out. */
+function fieldText(value: unknown): string {
+    return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : '';
+}
+
+/**
+ * What the Add run of an entry's card writes: its subtasks and notes, which hang under
+ * `{ id, collection }`, and its deadline where the schema has a `deadline` field, in a date box
+ * for a field of `type: date` and a text box for another, an emptied box clearing it. A file with
+ * no schema has no identity to write by, and so no Add run. `listed` says whether the card lists
+ * the entry's lines or draws only the add forms.
+ */
+export function entryDated(
+    client: ClientState,
+    collection: string,
+    entry: Entry,
+    schema: SchemaField[] | undefined,
+    blocked: string,
+    listed: boolean
+): RecordDated | undefined {
+    if (schema === undefined) return undefined;
+    const field = schema.find((one) => one.field === 'deadline');
+    return {
+        target: { id: entry.id, collection },
+        subtasks: listed ? entrySubtasks(entry) : undefined,
+        followups: listed ? entryFollowups(entry) : undefined,
+        deadline:
+            field === undefined
+                ? undefined
+                : {
+                      held: fieldText(entry.fields.deadline),
+                      type: field.type === 'date' ? 'date' : 'text',
+                      write: (value) =>
+                          client.writes.writeEntry(collection, entry.id, { deadline: value })
+                  },
+        blocked
+    };
+}
+
+/**
+ * What the Add run of a card of a feed entry writes, a lead or a Lit Watch paper: its subtasks and
+ * notes, which hang under the entry in the file its hub keys the feed's registry by, and its
+ * deadline where the schema of the feed's file in the entry's hub has a `deadline` field. `listed`
+ * says whether the card lists the entry's lines, as on the entry's page, or draws only the add
+ * forms, as in the feed's list. A feed file with no schema, or an entry with no internal id, has
+ * no Add run.
+ */
+export function feedDated(
+    client: ClientState,
+    kind: 'leads' | 'radar',
+    entry: Record<string, unknown>,
+    blocked: string,
+    listed: boolean
+): RecordDated | undefined {
+    const record = feedEntryId(entry);
+    const root = feedRoot(entry);
+    const feed = client.feeds.feed(kind);
+    const schema = feed?.hubSchemas === undefined ? feed?.schema : feed.hubSchemas[root];
+    if (record === '' || schema === undefined) return undefined;
+    const field = schema.find((one) => one.field === 'deadline');
+    return {
+        target: { id: record, collection: client.selectors.registryKey(kind, root) },
+        subtasks: listed ? entrySubtasks({ fields: entry }) : undefined,
+        followups: listed ? entryFollowups({ fields: entry }) : undefined,
+        deadline:
+            field === undefined
+                ? undefined
+                : {
+                      held: fieldText(entry.deadline),
+                      type: field.type === 'date' ? 'date' : 'text',
+                      write: (value) =>
+                          client.writes.writeFeedField(kind, record, 'deadline', value)
+                  },
+        blocked
+    };
+}
+
+/** What the Show in Files actions of a card are made from. */
 export type ShowInput = {
     entry: Entry;
     /** The root of the hub the entry is of, which every path of its fields is under. */
@@ -172,17 +249,18 @@ export type ShowInput = {
 };
 
 /**
- * One Show in Files control per hub path the entry's `link`, `url` or `folder` names: a folder
- * opens a Files tab rooted at it and a file is selected in the page's Files tab. A folder of a
- * served hub also gets Open Workbench, with the entry's page in its documents pane when the folder
- * is the one the entry's page is for.
+ * One Show in Files action per hub path the entry's `link`, `url` or `folder` names, each naming
+ * its path: a folder opens a Files tab rooted at it and a file is selected in the page's Files tab.
+ * A folder of a served hub also gets Open Workbench, with the entry's page in its documents pane
+ * when the folder is the one the entry's page is for.
  */
-export function showActions(input: ShowInput): CardAction[] {
-    return hubPathsOf(input.entry.fields).flatMap((path): CardAction[] => {
+export function showActions(input: ShowInput): RecordAction[] {
+    return hubPathsOf(input.entry.fields).flatMap((path): RecordAction[] => {
         const folder = listsAsFolder(path, input.listed);
-        const show: CardAction = {
+        const show: RecordAction = {
             id: `files:${path}`,
             label: t('collection.show_in_files'),
+            row: t('collection.show_path_in_files', path),
             title: folder
                 ? t('folder_files.show_in_files_tip', path)
                 : t('collection.show_in_files_tip', path),
@@ -196,10 +274,17 @@ export function showActions(input: ShowInput): CardAction[] {
             {
                 id: `workbench:${path}`,
                 label: t('collection.open_workbench'),
+                row: t('collection.open_path_workbench', path),
                 title: t('collection.open_workbench_tip', path),
                 glyph: 'app_view',
                 onclick: () => input.onworkbench(path, own)
             }
         ];
     });
+}
+
+/** The id of the Open Workbench action of the folder the entry's page is for, '' for none. */
+export function ownWorkbench(input: Pick<ShowInput, 'entry' | 'listed'>): string {
+    const own = pageFolder(input.entry.fields, input.listed);
+    return own === undefined ? '' : `workbench:${own}`;
 }

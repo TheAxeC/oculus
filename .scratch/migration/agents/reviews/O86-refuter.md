@@ -212,3 +212,107 @@ none
 - Behaviour 2's dependence on which channel answers first was found by reading `memory()` and `runsHeard`. It was not run, because no case or test sends a hub added between two portfolio messages.
 
 Reviewer usage: ad0866bc88d7625f3, claude-opus-5-5, 280671 tokens, 59 tool uses, 16 min 10 s.
+
+## Repair round 1, refuted
+
+Ruling 466 (a) approves the builder's two scratch case programs and ruling 469 (a) accepts the inline python3 edit of `src/lib/data/index.ts` and the `sed -i` edit of `tests/fixtures/hubs/hub-build.ts` as made; both were read as any other change, and no finding is raised for how they were made. The round's delta: the 8 paths of `files.txt` whose bytes differ from the snapshot (`docs/templates.md`, `src/lib/data/model/index.ts`, `model-collections.ts`, `snapshot/hubs/merge.ts`, `snapshot/normalise.ts`, `schedule-words.ts`, `schedule.svelte.ts`, `notice-sources.ts`) and the 12 paths changed now that `files.txt` does not list (`docs/diagrams/writes.dot` and `writes.svg`, `src/lib/data/index.ts`, `src/lib/data/sources/clones.ts`, `src/lib/server/root/watch/build.ts`, `tests/checks/config/integrity.test.ts`, `tests/data/real-hub.probe.ts`, `tests/data/snapshot/resources.test.ts`, `tests/data/sources/manifests/clones.test.ts`, `tests/fixtures/hubs/hub-build.ts`, `tests/state/boards/board/items.test.ts`, and the ledger files `O86-round1.md` and `O86-report.md`), all read in full.
+
+```
+$ ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep
+(nothing)   uptime: load averages: 3.81 5.09 6.85
+
+$ npm run diagrams && npm run test:quick -- --base bf27e33ff     (worktree root)
+diagrams exit 0
+test:quick: 56 changed file(s), from git since bf27e33ff
+test:quick: 298 test file(s)
+ok      prettier (4.6 s): All matched files use Prettier code style!
+ok      ASCII gate (4.9 s)
+ok      svelte-kit sync (13.5 s)
+ok      eslint (83.4 s)
+ok      svelte-check (104.2 s): 1793047477392 COMPLETED 545 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (141.2 s)
+ok      vitest (206.2 s)
+ok      vitest slow (240.9 s)
+test:quick: 254.5 s; every command passed
+
+$ npx vitest run tests/routes/sessions/terminal-actions.test.ts tests/server/machine/runs/schedules/ tests/shell/rail/ tests/state/system/schedule-lines.test.ts
+ Test Files  10 passed (10)
+      Tests  58 passed (58)
+
+$ wc -l (every changed path but docs/diagrams and .scratch)
+largest source: tests/routes/sessions/terminal-actions.test.ts 878, src/lib/server/machine/runs/schedules/watch.ts 873, src/lib/state/sessions/terminals.svelte.ts 870, src/lib/data/model/index.ts 846; components: ScheduleDialog.svelte 323, UpdateTray.svelte 295, CommandCenter.svelte 271
+
+$ sh utils/unused-exports.sh, diffed with .agents/worktrees/O86-base/unused-exports.txt
+removals only (notice-sources.ts: TASK_VIEW, feedRuns, notesRuns, Task, TaskRuns no longer unused)
+
+$ grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml
+(nothing) exit 1
+
+$ the spec.md perl ASCII gate over every path of git status --short
+(nothing) exit 0
+
+$ npm run check
+1793047756236 COMPLETED 4316 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ grep -n "byHub" src/lib/data/snapshot/normalise.ts
+(nothing) exit 1
+$ npx vitest run tests/state/boards/board/items.test.ts tests/data/sources/manifests/clones.test.ts tests/data/snapshot/resources.test.ts tests/checks/config/integrity.test.ts tests/data/snapshot/ tests/data/hubs/ tests/shell/rail/ tests/state/system/schedule-lines.test.ts tests/routes/machine/schedules.test.ts tests/server/machine/runs/schedules/
+ Test Files  25 passed (25)
+      Tests  255 passed | 7 skipped (262)
+$ npx vitest run tests/routes/sessions/terminal-actions.test.ts tests/server/machine/runs/schedules/run.test.ts --reporter=verbose
+ Test Files  2 passed (2)
+      Tests  39 passed (39)    (the G35 rows hub-unknown, bad-terminal and task-file-missing among them)
+
+$ final.case.ts (approved by ruling 466 (a)), vitest scratch config
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+case R2: A and B hold inbox.md, the inbox date moves after the first reading: notices ["Inbox ran and has new results."]
+case R2: only B holds inbox.md, the inbox date moves after the first reading: notices ["Inbox ran and has new results."]
+case R2: no hub holds inbox.md, the inbox date moves after the first reading: notices []
+case R3: C added (radar 2026-08-01), schedule first then portfolio: notices []
+case R3: then C's radar to 2026-10-26: notices ["Lit Watch (C) ran and has new results."]
+case R3: C added (radar 2026-08-01), portfolio first then schedule: notices []
+case R3: then C's radar to 2026-10-26: notices ["Lit Watch (C) ran and has new results."]
+case R3: C the only hub offering litwatch, added, then its radar to 2026-10-26: notices ["Lit Watch ran and has new results."]
+case R4: B renamed to D, dates unchanged: notices []
+case R5: runs { task: litwatch, hub: A } (A primary), new time: file "- name: R\n  runs: { task: litwatch, hub: A }\n"
+case R5: runs { task: litwatch }, new time: file "- name: R\n  runs: { task: litwatch }\n"
+case R5: runs { task: litwatch }, the pair of B: file "- name: R\n  runs: { task: litwatch, hub: B }\n"
+case R5: runs { task: litwatch, hub: B }, the primary's pair A: file "- name: R\n  runs: { task: litwatch, hub: A }\n"
+diff of the non-R case lines (terminal ids masked) with the round-0 run: exit 0 (equal)
+```
+
+### Verdicts
+
+- Items 1, 2, 3, 4, 7, 9, 10, 12: hold; the round does not touch their code, and their case lines equal round 0's.
+- 5: holds, with round 1's item 4 in place of the brief's save rule for an entry that names a hub: `named` is set in `openDialog` (`schedule.svelte.ts:548`) and `rawOf` (`:619-623`) writes `{ task, hub }` when `one.named || one.hub !== primary()`; R5 met by run.
+- 6: holds. `HubSnapshot` (`model/index.ts:204-206`) types `entities.feeds` as `RawFeeds`; `normalise` returns `HubSnapshot` (`normalise.ts:613`); `feeds` returns `RawFeeds` with no `byHub`; `HubPart.snapshot` is `HubSnapshot` (`merge.ts:47`); `RawFeeds` has no `byHub`, so `part.snapshot.entities.feeds.byHub` does not type-check; `npm run check` 0 errors.
+- 8: holds. `runMemory` (`notice-sources.ts:247-262`) and `runLabel` (`:322-329`): a hub's first sighting is silent, the inbox notice carries the task's label alone; R2 to R4 met by run. Behaviour 1 is a case the round brief's literal rule leaves open.
+- 11: holds, with Standards 1.
+- Cases 1 to 46: met (by run of `final.case.ts`, equal to round 0's lines, or by reading where noted in the first review); what is drawn for 3, 12, 13, 24 to 28 and R5 goes to the look.
+- R1 to R6: met.
+
+### Findings
+
+- Proof: `O86-report.md:3` and `:17`, the "before" of R2 to R5 is given by reading the round-0 code, since the changes were made before any run of them; each "before" checks against the snapshot copies. Failure scenario: a wrongly stated "before" would go unseen; none was found. Verdict: none.
+- Proof: the report's DONE / NOT DONE row 2, a first run with `Tests  2 failed` whose failing file was not kept. The reviewer's run of the same command passed 25 of 25 files. Failure scenario: two load-dependent failures in a changed file land unnamed. Verdict: none.
+- Standards: `src/lib/data/snapshot/normalise.ts:599-606`, the doc comment of `normalise` edited by the round and not rewrapped as a whole paragraph at 100 columns (line 601 ends at 80 inside a sentence); likewise `src/lib/data/sources/clones.ts:43` (94 columns, "so a", the next word fits). Failure scenario: a ragged paragraph the rule exists to prevent. Verdict: none.
+- Standards: `src/lib/state/workbench/navigation/notice-sources.ts:241-245`, the doc comment of `runMemory` names `seen`, which `runMemory` does not have, and "each of its first message among them" is not a readable sentence. Failure scenario: a reader cannot find `seen` and cannot parse the first-sighting rule. Verdict: none.
+- Standards: the report's "Departures", the list ran twice in the round, both green, the second only because the first ran before the last change. Failure scenario: an extra 280 s run on a machine shared by up to six worktrees. Verdict: none.
+- Behaviour: `notice-sources.ts:247-262`, the run memory is keyed by the hub's name and never forgets a hub that leaves the portfolio, so a hub added under a name another hub held earlier while the page was open is not a first sighting, and its dates post as new runs; the round brief's intent is that an added hub posts nothing until one of its dates moves. Failure scenario: hub `lab` at `~/a/lab` (radar 2026-10-20) taken out and a different folder `~/b/lab` named `lab` added with radar 2026-09-01: the status bar posts "Lit Watch ran and has new results." with no run. Found by reading. Verdict: none.
+
+### Declined to judge
+
+- R2 to R5 on the tree before this round's change: would need the round-0 code back in a tree; checked by reading the snapshot copies.
+- The builder's two test:quick runs were not reproduced as such; the reviewer's one run passed every command.
+- Whether `writes.dot` and `writes.svg` were rewritten to identical bytes by `npm run diagrams`: needs a copy taken before the run.
+- What the dialog shows for R5 and every page case: the landing look on TEST.
+- Whether a hub's name can repeat across two folders in one workspace session in practice: settled by reading `OpenWorkspace.hubs` naming in `src/lib/server/files/workspace/open.ts`, not read.
+
+Reviewer usage: a30581466148faabc, claude-opus-5-5, 236475 tokens, 49 tool uses, 14 min 16 s.
+
+### Closed
+
+- The two Proof findings and the extra run of the list: closed at landing; the booking states them, and the landing's own verify run stands.
+- The `normalise` doc comment and `clones.ts:43`: rewrapped at landing, words unchanged.
+- The `runMemory` doc comment: rewritten at landing to name what the function does.
+- The run memory keyed by name: fixed at landing, inside round item 3 (a hub added posts nothing until a date moves): `runMemory` forgets every task and hub pair a message no longer carries, so a hub that leaves and a hub that later takes its name is a first sighting.

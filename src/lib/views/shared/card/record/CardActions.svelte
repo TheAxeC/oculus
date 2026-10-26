@@ -1,7 +1,7 @@
 <script module lang="ts">
     // The type lives in card.ts, a TypeScript module, so a `.svelte.ts` helper that returns
     // controls reads its fields; a component takes it from here with the component itself.
-    import type { CardAction } from './card';
+    import type { CardAction } from '../card';
 
     export type { CardAction };
 </script>
@@ -9,7 +9,8 @@
 <script lang="ts">
     // Layer 3, shared view. The row of controls a card carries in its meta row: drawn only while
     // the pointer is over the card, the keyboard is inside it or its menu is open, and kept on one
-    // line.
+    // line. A control that stands for others (`items`, the Applied of a lead with several hubs) is
+    // a menu of them, waiting while it is disabled or its action runs.
     //
     // At rest the row is not drawn and takes no room, as the hidden actions of a tree row take
     // none, so the chips have the card's width (ui/frame/Card.svelte, `--card-at-rest`); Tab
@@ -34,7 +35,8 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { actionPlace, fitActions, leastStrip, measureGate } from './card-layout';
+    import { actionPlace, fitActions, leastStrip, measureGate } from '../card-layout';
+    import { menuItem, pickAction } from './record-menu';
 
     type Props = { actions: CardAction[] };
 
@@ -140,25 +142,39 @@
     });
 
     function pick(id: string): void {
-        const action = actions.find((one) => one.id === id);
-        if (action?.disabled !== true) void action?.onclick();
+        pickAction(actions, id);
     }
 </script>
 
 <span class="actions" class:start bind:this={strip} data-card-actions>
     {#each inline as action (action.id)}
         <span class="act" data-action={action.id}>
-            <ToolButton
-                label={action.label}
-                title={action.title}
-                glyph={action.glyph}
-                turning={action.turning === true}
-                active={action.active}
-                disabled={action.disabled}
-                compact={action.glyph !== undefined}
-                dataCardToggle={action.toggle === true}
-                onclick={action.onclick}
-            />
+            {#if action.items === undefined}
+                <ToolButton
+                    label={action.label}
+                    title={action.title}
+                    glyph={action.glyph}
+                    turning={action.turning === true}
+                    active={action.active}
+                    disabled={action.disabled}
+                    compact={action.glyph !== undefined}
+                    dataCardToggle={action.toggle === true}
+                    onclick={action.onclick}
+                />
+            {:else}
+                <Menu
+                    label={action.label}
+                    title={action.title}
+                    glyph={action.glyph}
+                    compact={action.glyph !== undefined}
+                    small={action.glyph === undefined}
+                    placement="down"
+                    turning={action.turning === true}
+                    waiting={action.disabled === true || action.turning === true}
+                    items={action.items.map(menuItem)}
+                    onpick={pick}
+                />
+            {/if}
         </span>
     {/each}
     {#if rest.length > 0}
@@ -169,15 +185,7 @@
                 compact
                 placement="down"
                 align="right"
-                items={rest.map((action) => ({
-                    id: action.id,
-                    label: action.label,
-                    title: action.title,
-                    glyph: action.glyph,
-                    turning: action.turning,
-                    active: action.active,
-                    disabled: action.disabled
-                }))}
+                items={rest.map(menuItem)}
                 onpick={pick}
             />
         </span>

@@ -11,9 +11,9 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The venue catalogue: theme facets, and the venues' cards in one section per row
-    // of `venue_categories` that holds one, in the list's order, then an "other" section for the
-    // venues whose category no row names (state/sources/registries/venues.ts `venueSections`).
+    // Layer 3, view. The venue catalogue: theme facets, and the venues' cards in one section per
+    // row of `venue_categories` that holds one, in the list's order, then an "other" section for
+    // the venues whose category no row names (state/sources/registries/venues.ts `venueSections`).
     // Each section is headed by the heading every group of cards has
     // (views/shared/card/heads/GroupHead.svelte) with its count, and folds by its control, which
     // the tab keeps; a section whose row carries `ribbon: true` draws the month ribbon of its

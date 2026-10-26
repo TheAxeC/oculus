@@ -1,27 +1,27 @@
 <script lang="ts">
-    // Layer 3, Data view partial. One dataset card: its registry metadata, its folder, its notes,
-    // how it comes back, project users, Edit in File and Delete. The dataset's name opens its page.
+    // Layer 3, Data view partial. One dataset as the record card
+    // (views/shared/card/record/RecordCard.svelte): its registry metadata, its folder, its notes,
+    // how it comes back, and the strip of its project users at the foot. The dataset's name and
+    // the strip's Page open its page; the menu holds Page and Source in its Open run, the Add run,
+    // Edit in File, Recover and Delete (views/shared/forms/registry/registry-card.svelte.ts).
     //
-    // A set whose sources are all downloads has the Recover control, which opens the dataset's
+    // A set whose sources are all downloads has the Recover action, which opens the dataset's
     // Recover view beside this one for its own hub and key. A source of the kind `library`,
     // `request` or `derived` is stated on the card instead: the library call, the contact to ask,
     // or the sets it is built from and the script that builds it; a web address in it, a contact's
     // form among them, is a link. The description and the notes are inline Markdown, which links
     // its addresses itself.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
-    import RootChip from '$lib/views/shared/card/RootChip.svelte';
-    import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
+    import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
     import {
-        createRecordCard,
-        type RecordCardProps
-    } from '$lib/views/shared/forms/registry/record-card.svelte';
-    import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
+        createRegistryCard,
+        type RegistryCardProps
+    } from '$lib/views/shared/forms/registry/registry-card.svelte';
     import {
         accessTone,
         recoverKey,
@@ -31,18 +31,17 @@
     } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
 
     const client = useState();
     const {
-        layout: { openView, openBeside },
+        layout: { openBeside },
         selectors: { registryKey }
     } = client;
 
-    type Props = RecordCardProps & { dataset: Dataset };
+    type Props = RegistryCardProps & { dataset: Dataset };
 
     let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
 
@@ -52,8 +51,18 @@
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
 
-    /** Edit in File and Delete for a dataset the collection file holds. */
-    const card = createRecordCard(client, () => ({ file, entry, schema, fault, onsaid }));
+    const name = $derived(dataset.name === '' ? dataset.id : dataset.name);
+
+    /** Page, Edit in File and Delete for a dataset the collection file holds. */
+    const card = createRegistryCard(client, () => ({
+        file,
+        entry,
+        schema,
+        fault,
+        onsaid,
+        collection,
+        title: dataset.name === '' ? keyOf(dataset.id) : dataset.name
+    }));
 
     /** The kinds of the dataset's download sources, each once, in the file's order. */
     const kinds = $derived([
@@ -64,31 +73,35 @@
     const notes = $derived(dataset.notes ?? '');
 
     /**
-     * The card's controls, drawn while the card is hovered or holds the focus: Edit in File and
-     * Delete for a dataset the collection file holds, and Recover for a set whose sources are all
-     * downloads.
+     * The card's actions: Page, Edit in File and Delete for a dataset the collection file holds,
+     * Source for a dataset that names one, and Recover for a set whose sources are all downloads.
      */
-    const actions = $derived.by((): CardAction[] => {
-        if (!dataset.recover) return card.actions;
-        return card.actions.concat({
-            id: 'recover',
-            label: t('data.recover'),
-            title: t('data.recover_title'),
-            glyph: 'refresh',
-            onclick: recover
-        });
+    const actions = $derived.by((): RecordAction[] => {
+        const rows: RecordAction[] = [...card.actions];
+        const source = dataset.source;
+        if (source) {
+            rows.push({
+                id: 'source',
+                label: t('data.source'),
+                title: source,
+                glyph: 'link',
+                run: 'open',
+                onclick: () => {
+                    window.open(source, '_blank', 'noopener,noreferrer');
+                }
+            });
+        }
+        if (dataset.recover) {
+            rows.push({
+                id: 'recover',
+                label: t('data.recover'),
+                title: t('data.recover_title'),
+                glyph: 'refresh',
+                onclick: recover
+            });
+        }
+        return rows;
     });
-
-    /** The dataset's page, opened from its heading. */
-    function openPage(): void {
-        if (entry === null) return;
-        const page = pageView(
-            collection,
-            entry.id,
-            dataset.name === '' ? keyOf(dataset.id) : dataset.name
-        );
-        openView(page.view, page.state);
-    }
 
     /** The dataset's Recover view beside this one, for the hub the dataset is read from. */
     function recover(): void {
@@ -97,96 +110,94 @@
     }
 </script>
 
+{#snippet meta()}
+    {#if dataset.access}
+        <Tag label={dataset.access} tone={accessTone(dataset.access, rootOf(dataset))} />
+    {/if}
+{/snippet}
+
+{#snippet text()}
+    {#if dataset.description}
+        <p class="description">
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+            {@html inlineMarkdown(dataset.description, cardMath(dataset.description))}
+        </p>
+    {/if}
+
+    <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
+    {#if dataset.size || dataset.path || kinds.length > 0}
+        <div class="meta">
+            {#if dataset.size}
+                {@const words = `${t('data.size')} ${dataset.size}`}
+                <Tooltip text={words}>
+                    <Tag label={words} />
+                </Tooltip>
+            {/if}
+            {#if dataset.path}
+                {@const words = `${t('data.path')} ${dataset.path}`}
+                <Tooltip text={words}>
+                    <Tag label={words} />
+                </Tooltip>
+            {/if}
+            {#if kinds.length > 0}
+                {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
+                <Tooltip text={words}>
+                    <Tag label={words} />
+                </Tooltip>
+            {/if}
+        </div>
+    {/if}
+
+    {#if dataset.modality}
+        <div class="tags">
+            <Tag label={dataset.modality} />
+        </div>
+    {/if}
+
+    {#each statedSources as source, at (at)}
+        <div class="note">
+            <Glyph name="note_back" />
+            <span><LinkedText text={statedWords(source)} /></span>
+        </div>
+    {/each}
+
+    {#if notes !== ''}
+        <div class="note">
+            <Glyph name="note_back" />
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+            <span>{@html inlineMarkdown(notes, cardMath(notes))}</span>
+        </div>
+    {/if}
+
+    {#if dataset.source}
+        <div class="links">
+            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
+            <a href={dataset.source} target="_blank" rel="noopener">
+                <Glyph name="link" />
+                {t('data.source')}
+            </a>
+        </div>
+    {/if}
+{/snippet}
+
 <div class="slot" data-dataset={dataset.id}>
-    <Card
+    <RecordCard
         id={dataset.id}
         {cursor}
-        title={dataset.name === '' ? dataset.id : dataset.name}
-        titleHtml={inlineMarkdown(
-            dataset.name === '' ? dataset.id : dataset.name,
-            cardMath(dataset.name === '' ? dataset.id : dataset.name)
-        )}
-        ontitle={entry === null ? undefined : openPage}
-    >
-        {#snippet meta()}
-            <RootChip record={dataset} />
-            {#if dataset.access}
-                <Tag label={dataset.access} tone={accessTone(dataset.access, rootOf(dataset))} />
-            {/if}
-            <CardActions {actions} />
-        {/snippet}
-
-        {#if dataset.description}
-            <p class="description">
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                {@html inlineMarkdown(dataset.description, cardMath(dataset.description))}
-            </p>
-        {/if}
-
-        <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
-        {#if dataset.size || dataset.path || kinds.length > 0}
-            <div class="meta">
-                {#if dataset.size}
-                    {@const words = `${t('data.size')} ${dataset.size}`}
-                    <Tooltip text={words}>
-                        <Tag label={words} />
-                    </Tooltip>
-                {/if}
-                {#if dataset.path}
-                    {@const words = `${t('data.path')} ${dataset.path}`}
-                    <Tooltip text={words}>
-                        <Tag label={words} />
-                    </Tooltip>
-                {/if}
-                {#if kinds.length > 0}
-                    {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
-                    <Tooltip text={words}>
-                        <Tag label={words} />
-                    </Tooltip>
-                {/if}
-            </div>
-        {/if}
-
-        {#if dataset.modality}
-            <div class="tags">
-                <Tag label={dataset.modality} />
-            </div>
-        {/if}
-
-        {#each statedSources as source, at (at)}
-            <div class="note">
-                <Glyph name="note_back" />
-                <span><LinkedText text={statedWords(source)} /></span>
-            </div>
-        {/each}
-
-        {#if notes !== ''}
-            <div class="note">
-                <Glyph name="note_back" />
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <span>{@html inlineMarkdown(notes, cardMath(notes))}</span>
-            </div>
-        {/if}
-
-        {#if projects.length > 0}
-            <CrossLinks {projects} />
-        {/if}
-
-        {#if dataset.source}
-            <div class="links">
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-                <a href={dataset.source} target="_blank" rel="noopener">
-                    <Glyph name="link" />
-                    {t('data.source')}
-                </a>
-            </div>
-        {/if}
-    </Card>
+        title={name}
+        titleHtml={inlineMarkdown(name, cardMath(name))}
+        ontitle={card.onpage}
+        record={dataset}
+        {actions}
+        strip={['page']}
+        dated={card.dated}
+        {onsaid}
+        {meta}
+        {text}
+        {projects}
+        deleting={card.deleting}
+    />
 </div>
-
-{#if card.deleting && entry !== null}
-    <DeleteAsk {collection} id={entry.id} {onsaid} onclose={card.close} />
-{/if}
 
 <style>
     .meta,

@@ -5,6 +5,7 @@ text:
         card_footer: The footer is a snippet too, under a hairline.
         card_pinned: Pinned card
         card_plain: Plain card
+        card_record: Record card
         card_tone: Toned card
         cards: Cards
         chips: Chips
@@ -28,6 +29,7 @@ text:
         group_stages: Stages
         meter: Share of {0}
         meters: Meters
+        record_blocked: A sample card writes nothing.
         reset: Reset
         reset_glyph: refresh
         search: Filter the table
