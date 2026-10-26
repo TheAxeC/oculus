@@ -1,5 +1,5 @@
 In flight (3 of 6 slots in use):
-- O86 (the update tasks of every hub), repair round 1.
+- O86 (the update tasks of every hub), round 1 built, waiting on open item 469.
 - O89 (one record card, one way to add a dated line), repair round 1.
 - O84 (who the user is), building.
 
@@ -8,7 +8,7 @@ Queued (3):
 - O87 (the Focus band's positions and teaching), /spec after O86 lands.
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
 
-Waiting on a ruling: none.
+Waiting on a ruling: O86 (open item 469).
 
 Owed looks: none.
 
