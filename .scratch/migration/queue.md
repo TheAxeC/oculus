@@ -2,7 +2,8 @@ In flight (2 of 6 slots in use):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), building under the cases ruling after its first run.
 - O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031), building under the cases ruling after its first run.
 
-Queued, in order: none.
+Queued, in order:
+- O84 (who the user is: `self` out of the workspace file and into a machine file, the person in any hub; rulings 437, 438); its /spec waits on open item 439, which decides the file it reads.
 
 Owed looks: none.
 

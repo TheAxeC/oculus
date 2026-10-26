@@ -5294,3 +5294,13 @@ O81's builder ran every case on the unchanged tree and handed back three points 
 
 Where it applies: O81. Booked in `agents/briefs/O81-cases.md`.
 Builds on it: O81
+
+## Z1032 (2026-10-26, O81's review, Behaviour 1, the orchestrator, automode): the `list` field each hub's vocabulary gains on the `config` channel
+
+O81 gives each hub's vocabulary (`HubVocab`, `src/lib/data/model/model-collections.ts`) a field `list`: the hub's merged `collections:` as written and the file it was read from (`src/lib/data/index.ts:666`), which the page reads to raise case 28's finding at the entry's place (cases ruling 2). It reaches the `config` channel apps read, and `docs/apps.md:423` describes each hub's `lists` as `{ domains, venue_themes, data_themes }`, already leaving out `collections` and `words`.
+
+- Chosen: (a) keep `list`, and give `docs/apps.md:423` the lists as they are: `{ domains, venue_themes, data_themes, collections, list, words }`, `list` being the hub's `collections:` list as written with the file it was read from; the text in the report's Doc text, applied at landing.
+- Not chosen: (b) a second shape of the payload for apps with `list` taken out, a second wire shape to keep in step with the first. The lazy option is (c): landing the field with the apps guide not saying it.
+
+Where it applies: O81. Booked in `agents/briefs/O81-round1.md` item 4.
+Builds on it: O81

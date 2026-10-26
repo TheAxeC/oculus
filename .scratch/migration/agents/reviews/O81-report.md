@@ -1,6 +1,8 @@
-NOT done: everything in "What to build" (items 1 to 9). The first run found cases the brief's rules get wrong (cases 18 and 26 under item 6's rule, and case 28 under premise 13), so the step stopped before any change to the tree, as the builder prompt and the brief's Cases section require. No file of the tree is changed; the only file written in the worktree is this report.
+Everything in the brief is done.
 
-# O81 report: the first run, and the cases handed back
+The look cases are not checked by a look, since this step starts no app or page; they rest on reading the markup and on the runs quoted, and the look is on landing. They are cases 1, 6, 16 and 23, and the look parts of 2, 3, 7, 12, 14, 17, 18, 27 and 29.
+
+# O81 report
 
 ## Open items of the state file, verbatim
 
@@ -100,23 +102,213 @@ The two tests the step changes, run on the unchanged tree:
 - `npx vitest run tests/data/sources/config/layers/hub-vocab.test.ts -t "replaces the lists whose order is their meaning whole" --reporter=verbose`: `replaces the lists whose order is their meaning whole 205ms`, `Tests  1 passed | 15 skipped (16)`. The row passes with the bare word.
 - `npx vitest run tests/state/boards/board/board-rules.test.ts -t "New project on a board" --reporter=verbose`: 17 rows of the describe pass, `Tests  17 passed | 84 skipped (101)`. The record board's row cannot run on the base: no record preset exists (`case 14 record-board functions of presets.ts: []`).
 
+## The cases ruling, as built
+
+`briefs/O81-cases.md` ruled on the three points above. All three are built.
+
+1. The record take is in `BoardRule.record`. `takes.ts` `boardTakes` takes a project only when its category is a record row and the user's role on it is the board's role, and takes none with no `self`. `items.ts` and `new-project.ts` are unchanged, and `boardRuleOf` gives `null`.
+2. Case 28 gets `findings.collections.view_id` with no new word (judgment call 1).
+3. The venue form reads each row's label (case 13).
+
 ## DONE / NOT DONE
 
-| Item | State | Proof |
+Every case after the change is from `after.case.ts`; its full output is under "The case-run programs". The look cases rest on reading the markup, since this step starts no app or page.
+
+| Item or case | State | Proof |
 | --- | --- | --- |
-| First run of every case on the unchanged tree | DONE | `npx vitest run --config <scratch>/o81-cases/caserun.config.mts --disableConsoleIntercept`: `Test Files  1 passed (1)`; `case28.case.ts`: `Test Files  1 passed (1)` |
-| Items 1 to 9 | NOT DONE | stopped before any change for the cases above; `git status --short` in the worktree printed nothing before this report was written |
-| Verify checks 1 to 11 | NOT DONE | not run: no change was made |
+| First run of every case on the unchanged tree | DONE | the section above |
+| Item 1, `GroupHead` | DONE | `src/lib/views/shared/card/heads/GroupHead.svelte`. Its markup: a bare `ToolButton` named "Fold <name>"/"Unfold <name>" with the collapse or expand glyph, then the optional `Glyph`, the label at `--fs-md` in `var(--c-<tone>-txt)` or `--muted-txt`, and the count at `--fs-sm`. It holds no state. Its head comment names its users and says `FoldHead` heads a box |
+| Item 2, board sections | DONE | `Projects.svelte` draws `GroupHead` with the category's label, tone and count, and "other" with `board.section_other`; the heading stays sticky and `folded` is kept |
+| Item 3, Focus groups | DONE | `Lanes.svelte` and `Band.svelte` use `GroupHead`, `groupFold`, `hidden="until-found"` and `onbeforematch`; `grep -rn "<details\|<summary" src/lib/views/boards/focus` prints nothing |
+| Item 4, `venue_categories` rows | DONE | `hub-vocab.test.ts` 16 passed; cases 9, 10, 11, 25 and 29 below |
+| Item 5, Venues sections | DONE | cases 7, 8, 9, 12 and 24 below; grep 5 prints nothing |
+| Item 6, record board | DONE | cases 14 to 22, 26 and 27 below; `board-rules.test.ts` New project describe 20 passed |
+| Item 7, false sentences rewritten | DONE | the name grep under "Greps" |
+| Item 8, unused exports | DONE | `sh utils/unused-exports.sh \| diff .agents/worktrees/O81-base/unused-exports.txt -`: `diff exit 0` |
+| Item 9, doc text | DONE | "Doc text" below |
+| Case 1, board headings | DONE by reading; the look is on landing | `Projects.svelte` markup as item 2 |
+| Case 2, clusters | DONE | `foldOpen({"closed":["cluster:now"]}, cluster:now): false`; `cluster:parked`, `cluster:incubate`, `lane:idea`, `band`, `career`, `command` and `tasks` are true; `foldToggled({}, cluster:now): {"closed":["cluster:now"]}` |
+| Case 3, band | DONE | `foldToggled({ closed: [cluster:now] }, band): {"closed":["cluster:now","band"]}` |
+| Case 4, `{ closed: ['career'] }` | DONE | `career: false`; every cluster key, `lane:idea` and `band` true |
+| Case 5, a hub cluster keyed `career` | DONE | `groupFold(cluster, career): "cluster:career"`; folding it leaves the banner open (`true`), and folding the banner leaves it open (`true`) |
+| Case 6, find-in-page | DONE by reading; the look is on landing | `Lanes.svelte` and `Band.svelte` draw the folded content with `hidden={open ? false : 'until-found'}` and `onbeforematch={unfold}`, as `CareerPanel.svelte` does |
+| Case 7, hub venues | DONE | `["journal: Journals 46","conference: Conferences 27 ribbon","thesis: Theses 2","meeting: Meetings 1"]` |
+| Case 8, workshop and no category | DONE | `[["journal",["j1"]],["meeting",["m1"]],["",["w1","n1"]]]` |
+| Case 9 | DONE | no finding; `["conference: Conferences 1 ribbon","journal: Journals 1","(other): Other 3"]` |
+| Case 10, bare word | DONE | `venue_categories.0 must be a map` on `/scratch/lab/.oculus/config.yml`; `["(other): Other 5"]`; form options `[{"id":"journal","label":"journal"}]` |
+| Case 11 | DONE | `venue_categories.0.label must be a text`; `venue_categories.0.ribbon must be true or false` |
+| Case 12, Venues state | DONE | `parseVenuesState({ folded: [thesis] })` gives `folded: ["thesis"]`; `{ journalsOpen: false }` gives `folded: []` |
+| Case 13, form options | DONE | `[{"id":"journal","label":"Journals"},{"id":"conference","label":"Conferences"},{"id":"thesis","label":"Theses"},{"id":"meeting","label":"Meetings"}]` |
+| Case 14, row and board counts | DONE | lead, supervisor and collaborator: each row's lines equal the board's sections, line for line (lead `in-review 9, in-flight 16, publications 10, other-outputs 9` both ways); the title is `"Lead: track record"` |
+| Case 15, idea led by the user | DONE | `asthma-geo-tensor` (nascent) is not on the Lead record board: `false` |
+| Case 16, second press | DONE by run; the look is on landing | `openView('track_record', { id: 'lead', ... })` twice gives the same instance, and Supervisor gives another: `[true,true]` |
+| Case 17, search, facet, role kept | DONE | counts `[44,26,5,44]` (all, search `tensor`, one slice, cleared); the tab's state after two board writes is `{"id":"lead","label":"Lead: track record"}` |
+| Case 18, no New project, no counts, not listed | DONE | registration `listed: false`, `group: ""`, no `badge`, no `countPart`; `offersNewProject` is false for lead, supervisor, collaborator and other |
+| Case 19, `boards:` key `track_record` | DONE | `views: ["projects"]`, with the finding `boards.track_record` ("the board track_record has the key of a view oculus's modules or a collection register; the board is not registered") |
+| Case 20, two pushes | DONE | the record view is unchanged after both pushes: `{"id":"track_record","label":"views.track_record","group":"","listed":false}` |
+| Cases 21 and 22, career rows | DONE | `career:role:ghost` opens `track_record` with `{"id":"ghost","label":"Ghost: track record"}`; `career:funding` opens `funding`; no plain row |
+| Case 23, Career, Command center, Tasks | DONE by reading; the look is on landing | `grep -rln "FoldHead" src` lists `CareerPanel.svelte`, `CommandCenterView.svelte`, `Tasks.svelte` and `GroupHead.svelte` (its comment); only their import path changed |
+| Case 24, two hubs naming `journal` | DONE | the union `[{"key":"journal","label":"Journals"}]`; one section `["journal","Journals",false,["a","b"]]` |
+| Case 25 | DONE | `venue_categories.2.key is not a value this key takes`; one Journals section, then Other |
+| Case 26, no `self`, and a gone role | DONE | `trackRecord` null; Lead record board 0; role `gone` 0; message `"No entries match."` |
+| Case 27, no role | DONE | 0 projects; the message "This tab was opened for no role. Press a role of the Career banner's Track record to open its projects." |
+| Case 28, `collections:` keys of module views | DONE | `collectionRefusals` gives `findings.collections.view_id` for `debug` (`collections[0].key`) and `track_record` (`collections[1].key`) on the hub's `config.yml`; the data side's `venues` finding (`collections[2].key`) is unchanged; `registry.refused()` lists both beside the board finding, and keeps them after a push with no left-out board; the record view is unchanged |
+| Case 29, Settings | DONE by run; the look on the TEST page is on landing | the options entry has `fields` key, label and ribbon (a toggle); the write gives `changed: ["catalogs/vocab.yml:venue_categories"]`, and the read back has the three rows and no finding |
+| Verify 1, `npm run diagrams && npm run test:quick -- --base 335db1c9` | DONE | third run, after the last change: `ok ASCII gate`, `ok prettier: All matched files use Prettier code style!`, `ok svelte-kit sync`, `ok eslint`, `ok svelte-check: ... 545 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest checks`, `ok vitest`, `ok vitest slow`, `test:quick: 204.5 s; every command passed`, `verify exit 0`. It does not cover, in its own words: "tests that reach no changed file within the import depth, the build, the lint of unchanged files" |
+| Verify 2, the named test files | DONE | `hub-vocab.test.ts`: `Tests  16 passed (16)`; `config-folder.test.ts`: `Tests  28 passed \| 2 skipped (30)`; `board-rules.test.ts`: `Tests  104 passed (104)`, and its New project describe `Tests  20 passed \| 84 skipped (104)`. The record rows cannot run on the base copy, which has no `recordPreset` (first run) |
+| Verify 3, the case-run programs | DONE | before and after, under "The case-run programs" |
+| Verify 4, unused exports | DONE | `diff exit 0` |
+| Verify 5, category words in Venues code | DONE | prints nothing (`exit 1`) |
+| Verify 6, removed names | DONE | three hits, all `cards_group`, which item 3 keeps as the band's heading words: `Band.svelte:159`, `:160` and `config/text/views/boards/focus.yml:7` |
+| Verify 7, `FoldHead` | DONE | `GroupHead.svelte`, `CommandCenterView.svelte`, `Tasks.svelte`, `CareerPanel.svelte` |
+| Verify 8, `<details>` in Focus | DONE | prints nothing (`exit 1`) |
+| Verify 9, history words | DONE | prints nothing (`exit 1`) |
+| Verify 10, ASCII | DONE | the spec's perl gate over `src tests config` prints nothing (`bin` does not exist in the tree: `bfs: error: bin: No such file or directory.`); `LC_ALL=C grep -n '[^ -~]'` over this report prints nothing |
+| Verify 11, sizes | DONE | "Files" below |
 
 ## Files
 
-No file of the tree is changed. Written in the worktree: this report only. Written under the scratchpad (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/`):
+The tree after the change, from `git status --short` and `wc -l` in the worktree. Every component is at or under 520 lines and every other source file at or under 880.
+
+| File | Lines | In the brief's paths? |
+| --- | --- | --- |
+| `config/catalogs/vocab.yml` | 290 | yes |
+| `config/options/catalogs/vocab.yml` | 383 | yes |
+| `config/text/views/boards/projects.yml` | 103 | yes (also holds `views.track_record` and its glyph word) |
+| `config/text/views/sources/venues.yml` | 38 | yes |
+| `src/lib/data/helpers/hub-names.ts` | 877 | ruling 2; `readList`'s signature at `:384` is outside the ruled lines 125-165 and 400-430, since the reader takes the view ids |
+| `src/lib/data/index.ts` | 782 | no: `hubVocabOf` fills `HubVocab.list`, `listFileOf` gives the file (case 28) |
+| `src/lib/data/model/index.ts` | 837 | no: `HubVocab` gains `list` (case 28), and the hub vocabulary types moved out for the size rule |
+| `src/lib/data/model/model-collections.ts` | 396 | no: it takes `HubVocab`, `ListedCollection` and `HubVocabs` (size rule) |
+| `src/lib/data/shapes/boards/takes.ts` | 182 | ruling 1 |
+| `src/lib/data/shapes/catalog-files/vocab.ts` | 504 | yes |
+| `src/lib/data/shapes/vocab-keys.ts` | 332 | yes |
+| `src/lib/data/sources/collections.ts` | 214 | no: `collectionListFindings` calls the shared `listFindings` (case 28) |
+| `src/lib/state/boards/board/index.ts` | 81 | yes |
+| `src/lib/state/boards/board/presets.ts` | 612 | yes |
+| `src/lib/state/boards/career.ts` | 109 | yes |
+| `src/lib/state/boards/focus.ts` | 710 | yes (`FoldKey` and `groupFold`) |
+| `src/lib/state/sources/registries/venues.ts` | 231 | yes |
+| `src/lib/state/workbench/navigation/registry.ts` | 326 | ruling 2 |
+| `src/lib/views/boards/focus/Band.svelte` | 334 | yes |
+| `src/lib/views/boards/focus/CommandCenterView.svelte` | 317 | no: the `FoldHead` import path (heads folder) |
+| `src/lib/views/boards/focus/Focus.svelte` | 389 | yes |
+| `src/lib/views/boards/focus/Tasks.svelte` | 157 | no: the `FoldHead` import path (heads folder) |
+| `src/lib/views/boards/focus/career/CareerPanel.svelte` | 248 | yes |
+| `src/lib/views/boards/focus/career/career-rows.ts` | 270 | yes |
+| `src/lib/views/boards/focus/lanes/Lanes.svelte` | 395 | yes |
+| `src/lib/views/boards/projects/Projects.svelte` | 480 | yes |
+| `src/lib/views/shared/card/heads/FoldHead.svelte` | 123 | moved from `card/` with `mv`; its head comment rewritten |
+| `src/lib/views/shared/card/heads/GroupHead.svelte` | 89 | new, in `heads/` for the folder rule |
+| `src/lib/views/sources/venues/Venues.svelte` | 203 | yes |
+| `src/routes/+page.svelte` | 361 | no: raises the collections refusals (case 28) |
+| `src/routes/+page.ts` | 42 | no: hands `hubs` to `+page.svelte` for the first frame (case 28) |
+| `src/routes/views.ts` | 348 | yes, and ruling 2 |
+| `tests/checks/source/keys.test.ts` | 840 | no: the computed-key allow entry follows the `findingText` call to `hub-names.ts` |
+| `tests/data/helpers/hub-names.test.ts` | 390 | no: its `HubVocab` fixture needs the required `list` |
+| `tests/data/sources/config/layers/hub-vocab.test.ts` | 347 | yes |
+| `tests/state/boards/board/board-rules.test.ts` | 825 | yes; its shared fixtures moved out for the size rule |
+| `tests/state/boards/board/board-fixture.ts` | 75 | new: the fixtures moved from `board-rules.test.ts` (size rule) |
+| `docs/diagrams/*.dot`, `*.svg` (8 files) | generated | written by `npm run diagrams` |
+| `.scratch/migration/agents/reviews/O81-report.md` | this report | yes |
+
+The size rule applies to tests too (`tests/checks/tree/size.test.ts` measures `src`, `tests` and `utils`). The base sizes were `src/lib/data/model/index.ts` 879 and `tests/state/boards/board/board-rules.test.ts` 865 (`wc -l` in `.agents/worktrees/O81-base`).
+
+No script was written but the case-run programs. Every edit to a tree file was made with Edit and Write, and the two headings were moved with `mv`. Prettier was run with `npx prettier --write <the changed files>`; it is the formatter the verify list runs.
+
+Written under the scratchpad by the first run (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/`):
 
 - `caserun.config.mts`: the vitest config of the case-run programs (the worktree's vite config with one node project whose files are this folder's `*.case.ts`).
 - `before.case.ts`, `case28.case.ts`: the case-run programs.
 - `before.out`, `case28.out`: their output, by shell redirect.
 - `hub-vocab-before.out`, `board-rules-before.out`: the output of the two test runs above, by shell redirect.
 - `hub29/`: case 29's own copy of the scratch hub's `.oculus/config.yml` and `.oculus/data/` (no `local.yml` in it: `find ... -name local.yml | wc -l` printed 0), made with `cp`; the write into it was refused, so nothing was written there; the folder is removed (`rm -rf`) and is not there now.
+
+Written under the scratchpad after the change: `after.case.ts`, run with its output read from the terminal. Its `hub28/` and `hub29/` folders are removed at its end (`ls` of the folder after the run: `after.case.ts before.case.ts before.out board-rules-before.out case28.case.ts case28.out caserun.config.mts hub-vocab-before.out`).
+
+## Judgment calls the brief left open
+
+1. Where case 28's finding is raised (ruling 2). The server cannot know the module view ids (they are the static `registration` exports of the Svelte modules, which `moduleViewIds` reads on the page), so the finding is raised on the page, by the reader that already words `findings.collections.view_id`:
+   - `src/lib/data/helpers/hub-names.ts:384` `readList(value, words?, views?)`: with `views` given, an entry with a card list whose key `views` holds is a problem with the existing word (`:430`), beside the existing registry-view branch. `viewIdProblems(value, views)` (`hub-names.ts:443`) returns those, and `listFindings(problems, file, catalog)` (`hub-names.ts:451`) turns problems into findings; `collectionListFindings` (`src/lib/data/sources/collections.ts`) now calls `listFindings` too, so the words are made in one place.
+   - Each hub's vocabulary carries its `collections:` list as written and the file it was read from (`HubVocab.list`, `src/lib/data/model/model-collections.ts`; filled by `hubVocabOf` with `listFileOf`, `src/lib/data/index.ts`).
+   - `collectionRefusals(hubs, catalog)` (`src/routes/views.ts:194`) runs `viewIdProblems` over each hub's list with `moduleViewIds()` (no second list of ids), keeps the keys the hub lists, and gives the findings on the hub's file at the entry's place. The registry-view branch is not repeated there, since the server already gives that one.
+   - `src/routes/+page.svelte:125` and `:169` call `client.registry.refuse('collections', ...)` on the first frame and on every push that changes the collections, beside `registerCollections`.
+   - Constraint (a): `registry.refuse(source, found)` (`src/lib/state/workbench/navigation/registry.ts:312`) keeps the findings per source, and `refused()` lists every source's; `registerBoards` refuses under `'boards'` (`views.ts:124`), the page under `'collections'`, so neither replaces the other (case 28's run: the board finding is listed beside the two collection findings, and a push with no left-out board keeps the collection findings).
+   - Constraint (b): the only list of ids is `moduleViewIds()`.
+2. The record board's columns, labels and search are those of the first `boards:` row whose id is not `track_record` (`drawnBy` in `presets.ts`), so the record board draws its cards as the user's first board does. Its sections are the union's record rows and its roles the union's roles.
+3. `GroupHead.svelte` and `FoldHead.svelte` are in a new folder `src/lib/views/shared/card/heads/`, since `views/shared/card/` held ten items and a new file there would make eleven (the folder rule). Every import and comment path is updated.
+4. In Focus and Venues, `GroupHead` is drawn inside a `Surface`, so its words are read off a surface over a wallpaper as the `<summary>` was; the board's heading keeps its own sticky surface.
+5. The New project describe of `board-rules.test.ts` gains three rows (two `it.each` rows that no role's track record board offers New project, with and without `self`, and one that a role's track record board takes no project while no `self` is named), as ruling 1 asks.
+6. The size rule, 880 lines for a source file, tests included (`tests/checks/tree/size.test.ts` measures `src`, `tests` and `utils`):
+   - `src/lib/data/model/index.ts` was 879 at the base. The `list` field took it past 880, so the hub vocabulary types (`HubVocab`, `ListedCollection`, `HubVocabs`) moved with their doc comments to `model-collections.ts`, which holds the vocabulary and collection-entry types, and the facade re-exports them, so no importer changes. `src/lib/data/model/` holds ten items, so a new file there was not an option.
+   - `tests/state/boards/board/board-rules.test.ts` was 865 at the base. The ruled rows took it to 885, so its shared fixtures (the config and catalog, `SELF`, `MINE`, `NOBODY`, `CASES`, `project`, `snapshotOf`, `withBoards`) moved unchanged, each now exported, to a new `tests/state/boards/board/board-fixture.ts`. Every describe stays in `board-rules.test.ts`, so G124's Test line in `guarded.md` stays true.
+
+## Visible changes, for the look on landing
+
+1. Projects (any board with sections, Cards mode).
+   - Before: each section heading is `FoldHead`: the title in bold and the count as a badge.
+   - After: `GroupHead`: the chevron, then the category's label in its colour at `--fs-md`, then the count as plain text at `--fs-sm`. The "other" section is last, the heading stays sticky, and a fold is kept on reload.
+2. Focus, lanes.
+   - Before: Now, Parked and Incubation are `<details>` with a `<summary>`, with no count and no fold memory.
+   - After: each cluster is headed by `GroupHead` with its glyph, words and card count, in the muted colour; the Idea lane's section is headed by the lane's label in its colour with its count. Folding writes `cluster:<key>` or `lane:<key>` into the tab's `closed`, and a reload keeps it. A folded group stays findable by find-in-page, and a match unfolds it.
+3. Focus, band.
+   - Before: a `<details>` "Funding | positions | teaching" with no count.
+   - After: `GroupHead` with the card count; it folds under `band`, and the fold is kept.
+4. Venues (Registries).
+   - Before: two sections, Journals and Conferences, with the ribbon over Conferences; Theses and Meetings were drawn nowhere.
+   - After: one section per `venue_categories` row in order (Journals 46, Conferences 27 with the ribbon, Theses 2, Meetings 1 on the hub), then Other for unnamed categories. Each is headed by `GroupHead` with its count, and a fold is kept in the tab's `folded`.
+5. The venue form's Category select.
+   - Before: journal, conference, thesis, meeting.
+   - After: Journals, Conferences, Theses, Meetings; the value written stays the key.
+6. Settings, Vocabulary, `venue_categories`.
+   - Before: a list of words.
+   - After: rows with a key and label text field and a Ribbon toggle.
+7. The Career banner, Track record.
+   - Before: a role row opens the first board that takes the role; a role no board takes is a plain row.
+   - After: every role row opens a tab "<Role>: track record" (for example "Lead: track record") drawing exactly the counted projects, one section per record row. It has no New project, no tab or rail count, and is not in the view catalogue. A second press on the same role activates the open tab, and with no `self` it draws the board's empty message. Funding obtained still opens Funding.
+8. Findings.
+   - Before: a `collections:` entry keyed `debug` or `track_record` was dropped silently.
+   - After: it is listed with `findings.collections.view_id` on the hub's `config.yml` at the entry's place, beside any board finding.
+
+## What was wrong or impossible in the brief
+
+1. Item 1 places `GroupHead.svelte` in `src/lib/views/shared/card/`, which already held ten items (`ls` of the folder at the base: `card-layout.ts card.ts CardActions.svelte CardDocs.svelte Clamp.svelte feed FoldHead.svelte project Reveal.svelte RootChip.svelte`). Both headings went into `card/heads/` (judgment call 3).
+2. Case 28 (premise 13), handed back in the first run and ruled. The page lacked each hub's raw `collections:` list and its file, which the finding needs, so `HubVocab` gained `list` (judgment call 1).
+3. The size rule needed two files outside the paths: `model-collections.ts` and the new `board-fixture.ts` (judgment call 6).
+
+## Doc text
+
+Not applied; the orchestrator applies these at landing.
+
+1. `docs/HELP.md:287`, the cluster-heading sentence. Current words inside the line: "a `columns` cluster draws its lanes side by side under a heading of its `label` and `glyph` words (Now, Parked and Incubation in oculus's list), muted when its row says `muted: true`; a `full_width` cluster draws each of its lanes as a section of its own under the lane's label (the Idea lane)."
+   Replacement: "a `columns` cluster draws its lanes side by side under a heading of its `glyph` and `label` words with the count of the cards on its lanes (Now, Parked and Incubation in oculus's list), its lanes muted when its row says `muted: true`; a `full_width` cluster draws each of its lanes as a section of its own under the lane's label in the lane's colour with the lane's count (the Idea lane). Each cluster, each such lane section and the Funding | positions | teaching band, headed by its count, folds by the control before its heading, and the tab remembers it, so a reload or a move of the tab keeps it folded; a find-in-page match inside a folded one unfolds it."
+2. `docs/HELP.md:287`, the Track record sentence. Current words inside the line: "A Track record role row opens the first board of `boards:` that takes the role, so Lead opens Projects, Supervisor Supervision and Collaborator Coauthor, and Funding obtained opens the Funding view; these rows carry no button."
+   Replacement: "A Track record role row opens a tab of its own, named for the role (\"Lead: track record\"), drawing as board cards exactly the projects the row counts, one section per record row of `categories:` that holds one, each with the count the row shows; a second press on the same role brings that tab forward. The tab offers no New project, has no count on the tab or the rail and is not in the view catalogue; with no `self` it draws no project. Funding obtained opens the Funding view; these rows carry no button."
+3. `docs/HELP.md:292`, the board-heading sentence. Current words inside the line: "The cards and the list draw one section per category the board holds, in that order, each under a heading with the category's label in its colour and its count, the projects in no category under \"other\" last;"
+   Replacement: "The cards and the list draw one section per category the board holds, in that order, each under a heading of the fold control, the category's label in its colour and its count, the projects in no category under \"other\" last;"
+4. `docs/HELP.md`, a new line after `:301` (the **Data.** note), for the Venues view: "- **Venues.** The venues are drawn in one section per row of `venue_categories` in `vocab.yml`, in its order, each headed by the row's `label` and its count, then an Other section for the venues whose category no row names; a section with no venue is not drawn. A row with `ribbon: true` draws the month ribbon of its venues' deadlines and meetings over its cards (oculus sets it on Conferences). A press on a heading's fold control folds its section, and the tab keeps it folded; a folded section draws no cards and no ribbon. With several hubs the rows are the union of every hub's, each key once with the first hub's row."
+5. `docs/data-map.md:117`. Current: "venue_categories:         # the categories of venues, in order (whole)"
+   Replacement: "venue_categories:         # the categories of venues, rows { key, label, ribbon? }, in order (whole)"
+6. `docs/templates.md:335-338`. Current:
+   ```
+   # The categories a venue's category takes, in the order the Venues view offers them.
+   # venue_categories: []
+   #   example:
+   #   venue_categories: [journal, conference, workshop]
+   ```
+   Replacement:
+   ```
+   # The categories a venue's category takes, in order: `key` the word a venue's category writes,
+   # `label` the heading of its section of the Venues view and its word in the venue form, and
+   # `ribbon: true` the month ribbon over that section.
+   # venue_categories: []
+   #   example:
+   #   venue_categories:
+   #     - { key: journal, label: Journals }
+   #     - { key: conference, label: Conferences, ribbon: true }
+   #     - { key: workshop, label: Workshops, ribbon: true }
+   ```
+7. `.scratch/migration/agents/guarded.md`: nothing to change. G124's Test line names `board-rules.test.ts` and its describes, which all stay in that file.
 
 ## The case-run programs
 
@@ -488,10 +680,473 @@ case 28 collectionListFindings of an entry keyed venues: ["config.yml | collecti
 
 Both programs ran with `npx vitest run --config <scratch>/o81-cases/caserun.config.mts --disableConsoleIntercept [<file>]` from the worktree's root, `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`.
 
+### `after.case.ts` (the cases after the change)
+
+At `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/after.case.ts`. It prints and asserts nothing. It writes only two hub folders of its own under the scratchpad, `hub28/.oculus/config.yml` (case 28's `collections:` list, written by the program) and `hub29/.oculus/config.yml` (a copy of the scratch hub's settings file alone, so no `local.yml` is in it; case 29's write goes there), and removes both at its end (`ls` of the folder after the run lists neither). It reads the orchestrator's scratch hub `o81-hub` and never writes into it. Run from the worktree's root:
+
+`npx vitest run --config <scratch>/o81-cases/caserun.config.mts --disableConsoleIntercept <scratch>/o81-cases/after.case.ts`
+
+```ts
+// Case-run of O81's cases after the change, run from the scratchpad over the worktree by absolute
+// paths: prints each case's result and asserts nothing. It writes only its own two hub copies under
+// this folder (case 28's list, case 29's settings), and removes them at the end.
+import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { it } from 'vitest';
+import type {
+    HubVocabs,
+    Snapshot,
+    Venue
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/model/index.ts';
+import {
+    hubVocabOf,
+    portfolioConfigFrom
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/index.ts';
+import {
+    engineDir,
+    loadConfig,
+    textCatalog,
+    unplacedGroup
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/sources/config.ts';
+import {
+    collectionListFindings,
+    listWords
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/sources/collections.ts';
+import { catalogOf } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/sources/config/catalog/options.ts';
+import { unionWords, vocabKeys } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/shapes/vocab-keys.ts';
+import { collectionViews } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/snapshot/normalise.ts';
+import { rolesOf } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/data/shapes/boards/roles.ts';
+import * as focus from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/boards/focus.ts';
+import * as career from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/boards/career.ts';
+import {
+    RECORD_VIEW,
+    applyFilters,
+    boardItems,
+    cardSections,
+    recordPreset,
+    takeContextOf
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/boards/board/index.ts';
+import { offersNewProject } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/boards/board/new-project.ts';
+import { selfIds } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/boards/board/team.ts';
+import * as venues from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/sources/registries/venues.ts';
+import { choicesFor } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/forms/schema.ts';
+import { setCatalog, t } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/shared/words/text.ts';
+import { setVocab } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/shared/words/tones.ts';
+import {
+    findView,
+    storedState
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/state/workbench/layout/instance.ts';
+import { careerRows } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/views/boards/focus/career/career-rows.ts';
+import {
+    collectionRefusals,
+    pageBoards,
+    registerAll,
+    registerBoards,
+    registerCollections
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/routes/views.ts';
+import { createClientState } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/tests/fixtures/client.ts';
+import { writeConfigValue } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/server/edit/writes/config/config-value.ts';
+import { loadLayers } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/src/lib/server/edit/writes/config/config-place.ts';
+import { buildOneHub } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/tests/fixtures/hubs/hub-build.ts';
+import {
+    findingLines,
+    withHub
+} from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81/tests/data/sources/config/layers/layers-fixture.ts';
+
+const S =
+    '/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad';
+const HUB = `${S}/o81-hub`;
+const HUB28 = `${S}/o81-cases/hub28`;
+const HUB29 = `${S}/o81-cases/hub29`;
+const ENGINE = engineDir();
+const OCULUS = loadConfig(ENGINE).config;
+const CATALOG = textCatalog(OCULUS);
+setCatalog(CATALOG);
+setVocab({ primary: null, lists: {}, order: [], own: OCULUS });
+
+const say = (name: string, value: unknown): void => console.log(`${name}: ${JSON.stringify(value)}`);
+
+/** The scratch hub read with its workspace's `self`, given as text so no workspace file is read. */
+function scratchHub(self: boolean): { config: Record<string, unknown>; snapshot: Snapshot } {
+    const read = loadConfig(ENGINE, {
+        hub: HUB,
+        workspace: {
+            file: `${HUB}/.oculus/workspaces/research-hub.yml`,
+            text: self ? 'folders: []\nsettings:\n  self: axel-faes\n' : 'folders: []\n'
+        }
+    });
+    const snapshot = buildOneHub(HUB, portfolioConfigFrom(read.config)).snapshot;
+    return { config: read.config, snapshot };
+}
+
+function venue(id: string, category: string | undefined): Venue {
+    return { id, name: id, themes: [], ...(category === undefined ? {} : { category }) } as Venue;
+}
+
+/** The sections as `<key or other>: <label> <count> ribbon?`. */
+function shown(sections: venues.VenueSection[]): string[] {
+    return sections.map(
+        (one) =>
+            `${one.key === '' ? '(other)' : one.key}: ${one.key === '' ? t('venues.section_other') : one.label} ${one.venues.length}${one.ribbon ? ' ribbon' : ''}`
+    );
+}
+
+it('O81 after the change', () => {
+    // Cases 2 to 5: the Focus folds, every key made by the one exported function.
+    const now = focus.groupFold('cluster', 'now');
+    const saved = { closed: [now] };
+    const keys = [
+        'career',
+        'command',
+        'tasks',
+        now,
+        focus.groupFold('cluster', 'parked'),
+        focus.groupFold('cluster', 'incubate'),
+        focus.groupFold('lane', 'idea'),
+        focus.groupFold('band')
+    ] as focus.FoldKey[];
+    say('case 2/3 keys', keys);
+    for (const key of keys) say(`case 2 foldOpen(${JSON.stringify(saved)}, ${key})`, focus.foldOpen(saved, key));
+    say('case 2 foldToggled({}, cluster:now)', focus.foldToggled({}, now));
+    say('case 3 foldToggled({ closed: [cluster:now] }, band)', focus.foldToggled(saved, focus.groupFold('band')));
+    const old = { closed: ['career'] };
+    for (const key of keys) say(`case 4 foldOpen(${JSON.stringify(old)}, ${key})`, focus.foldOpen(old, key));
+    const hubCareer = focus.groupFold('cluster', 'career');
+    say('case 5 groupFold(cluster, career)', hubCareer);
+    const folded = focus.foldToggled({}, hubCareer);
+    say('case 5 fold the hub cluster career, then career banner open?', focus.foldOpen(folded, 'career'));
+    const banner = focus.foldToggled({}, 'career');
+    say('case 5 fold the banner, then cluster:career open?', focus.foldOpen(banner, hubCareer));
+
+    // Case 7: the scratch hub's venues by the section function.
+    const withSelf = scratchHub(true);
+    const hubVenues = Object.values(withSelf.snapshot.entities.venues);
+    say('case 7 venueSections', shown(venues.venueSections(hubVenues, withSelf.config)));
+
+    // Case 8: a workshop venue and one with no category.
+    const odd = [venue('j1', 'journal'), venue('m1', 'meeting'), venue('w1', 'workshop'), venue('n1', undefined)];
+    say(
+        'case 8 venueSections',
+        venues.venueSections(odd, OCULUS).map((one) => [one.key, one.venues.map((v) => v.id)])
+    );
+
+    // Cases 9, 10, 11, 25: a hub's venue_categories through the merge.
+    const mixed = [
+        venue('j1', 'journal'),
+        venue('c1', 'conference'),
+        venue('t1', 'thesis'),
+        venue('t2', 'thesis'),
+        venue('m1', 'meeting')
+    ];
+    const hubs: [string, string][] = [
+        ['case 9', 'venue_categories: [ { key: conference, label: Conferences, ribbon: true }, { key: journal, label: Journals } ]'],
+        ['case 10', 'venue_categories: [journal]'],
+        ['case 11 no label', 'venue_categories: [ { key: journal } ]'],
+        ['case 11 ribbon yes', 'venue_categories: [ { key: journal, label: Journals, ribbon: yes } ]'],
+        ['case 25', "venue_categories: [ { key: journal, label: Journals }, { key: journal, label: Again }, { key: '', label: Empty } ]"]
+    ];
+    const field = { field: 'category', type: 'select', from: 'vocab.venue_categories' } as never;
+    for (const [name, text] of hubs) {
+        const read = withHub(`${text}\n`);
+        say(`${name} findings`, findingLines(read.findings));
+        say(`${name} sections`, shown(venues.venueSections(mixed, read.config)));
+        say(`${name} vocabKeys`, vocabKeys(read.config.venue_categories));
+        say(`${name} venue form options`, choicesFor(field, null, read.config, ''));
+    }
+
+    // Case 12: a saved Venues state.
+    say('case 12 parseVenuesState({ folded: [thesis] })', venues.parseVenuesState({ folded: ['thesis'] }));
+    say('case 12 parseVenuesState({ journalsOpen: false })', venues.parseVenuesState({ journalsOpen: false }));
+
+    // Case 13: the venue form's category options from oculus's rows.
+    say('case 13 choicesFor', choicesFor(field, null, OCULUS, ''));
+
+    // Cases 14, 15: the track record and the record boards on the scratch hub.
+    const wordsOf = () => withSelf.config;
+    const record = career.trackRecord(withSelf.snapshot, withSelf.config, wordsOf);
+    say('case 14 self ids', [...selfIds(withSelf.snapshot)]);
+    for (const role of record?.roles ?? []) {
+        const preset = recordPreset(role.key, withSelf.config, wordsOf);
+        const sections = cardSections(boardItems(withSelf.snapshot, preset), preset);
+        say(`case 14 ${role.key} row`, role.lines.filter((line) => line.count > 0).map((line) => `${line.key} ${line.count}`));
+        say(`case 14 ${role.key} board`, sections.map((one) => `${one.key || '(other)'} ${one.items.length}`));
+    }
+    const lead = boardItems(withSelf.snapshot, recordPreset('lead', withSelf.config, wordsOf)).map((one) => one.id);
+    const idea = Object.values(withSelf.snapshot.entities.projects).find(
+        (one) => one.stage === 'nascent' && one.lead.includes([...selfIds(withSelf.snapshot)][0])
+    );
+    say('case 15 a nascent project the user leads', idea === undefined ? null : { id: idea.id, stage: idea.stage });
+    say('case 15 on the Lead record board', idea === undefined ? null : lead.includes(idea.id));
+
+    // Case 17: a search and a facet narrow the role's projects, clearing gives the counted set back.
+    const leadPreset = recordPreset('lead', withSelf.config, wordsOf);
+    const leadItems = boardItems(withSelf.snapshot, leadPreset);
+    const searched = applyFilters(leadItems, {}, 'tensor');
+    const slice = leadItems[0]?.slice ?? '';
+    const faceted = applyFilters(leadItems, { slice: [slice] }, '');
+    say('case 17 counts: all / search tensor / one slice / cleared', [
+        leadItems.length,
+        searched.length,
+        faceted.length,
+        applyFilters(leadItems, {}, '').length
+    ]);
+    const client = createClientState();
+    registerAll(client.registry);
+    const opened = client.layout.openView(RECORD_VIEW, { id: 'lead', label: 'Lead: track record' });
+    client.ui.setInstanceState(opened, storedState({ mode: 'list', search: 'tensor', filters: { slice: [slice] } }));
+    client.ui.setInstanceState(opened, storedState({ mode: 'cards', search: '', filters: {} }));
+    const tab = findView(client.layout.layout(), RECORD_VIEW, 'lead');
+    say('case 17 the tab state after two board writes', tab?.state ?? null);
+    const again = client.layout.openView(RECORD_VIEW, { id: 'lead', label: 'Lead: track record' });
+    const other = client.layout.openView(RECORD_VIEW, { id: 'supervisor', label: 'Supervisor: track record' });
+    say('case 16 second Lead press activates the same tab / Supervisor opens another', [again === opened, other !== opened]);
+
+    // Case 18: the registration and G124's answer.
+    const registration = client.registry.viewFor(RECORD_VIEW);
+    say('case 18 registration', {
+        id: registration?.id,
+        label: registration?.label,
+        glyph: registration?.glyph,
+        group: registration?.group,
+        listed: registration?.listed,
+        badge: registration?.badge !== undefined,
+        countPart: registration?.countPart !== undefined
+    });
+    say(
+        'case 18 offersNewProject per role, with self',
+        rolesOf(OCULUS).map((role) => {
+            const preset = recordPreset(role.key, withSelf.config, wordsOf);
+            return [role.key, offersNewProject(preset.rule, takeContextOf(preset, selfIds(withSelf.snapshot)))];
+        })
+    );
+
+    // Cases 19, 20: a boards: key of the record view's id, and two pushes.
+    const collections = collectionViews(OCULUS, unplacedGroup(OCULUS));
+    registerCollections(client.registry, collections);
+    const source = { boards: { track_record: { role: 'lead' }, projects: { role: 'lead' } }, group: 'projects', file: 'layout.yml' };
+    const taken = pageBoards(source, CATALOG, collections);
+    say('case 19 pageBoards(boards: { track_record, projects })', { views: taken.views.map((one) => one.id), findings: taken.findings });
+    registerBoards(client.registry, taken);
+    const held = (one: typeof client.registry) => {
+        const found = one.viewFor(RECORD_VIEW);
+        return found === undefined ? null : { id: found.id, label: found.label, group: found.group, listed: found.listed };
+    };
+    say('case 20 the record view after the first push', held(client.registry));
+    registerBoards(client.registry, pageBoards({ ...source, boards: { coauthor: { role: 'other' } } }, CATALOG, collections));
+    say('case 20 the record view after a second push of other boards', held(client.registry));
+
+    // Cases 21, 22: the career rows.
+    const rows = careerRows({
+        career: { title: 'c', situation: [], order: [], sections: {} } as never,
+        now: Date.parse('2026-10-26'),
+        record: {
+            roles: [
+                { key: 'lead', label: 'Lead', lines: [{ key: 'in-review', label: 'in review', count: 1 }] },
+                { key: 'ghost', label: 'Ghost', lines: [{ key: 'in-review', label: 'in review', count: 1 }] }
+            ],
+            funding: 2
+        },
+        editable: false,
+        funding: 'funding'
+    });
+    say('case 21/22 targets', rows.targets);
+    say('case 21/22 plain rows', rows.groups.flatMap((group) => group.rows.filter((row) => row.plain === true).map((row) => row.id)));
+
+    // Case 24: two hubs both naming journal.
+    const union = unionWords([
+        { venue_categories: [{ key: 'journal', label: 'Journals' }] },
+        { venue_categories: [{ key: 'journal', label: 'Journal papers', ribbon: true }] }
+    ]);
+    say('case 24 unionWords', union.venue_categories);
+    const both = [{ ...venue('a', 'journal'), root: 'hub' }, { ...venue('b', 'journal'), root: 'lab' }] as Venue[];
+    say('case 24 sections', venues.venueSections(both, union).map((one) => [one.key, one.label, one.ribbon, one.venues.map((v) => v.id)]));
+
+    // Cases 26, 27: no self, a role roles: no longer holds, no role.
+    const noSelf = scratchHub(false);
+    const noSelfWords = () => noSelf.config;
+    say('case 26 trackRecord with no self', career.trackRecord(noSelf.snapshot, noSelf.config, noSelfWords));
+    say('case 26 Lead record board with no self', boardItems(noSelf.snapshot, recordPreset('lead', noSelf.config, noSelfWords)).length);
+    say('case 26 record board of a role roles: does not hold, with self', boardItems(withSelf.snapshot, recordPreset('gone', withSelf.config, wordsOf)).length);
+    say('case 26 the empty message', t('board.empty'));
+    say('case 27 record board with no role', boardItems(withSelf.snapshot, recordPreset(null, withSelf.config, wordsOf)).length);
+    say('case 27 the message', t('board.record_no_role'));
+    say('case 14 the title word', t('board.record_title', 'Lead'));
+
+    // Case 28: collections entries keyed with module view ids, through a hub of this run's own.
+    mkdirSync(`${HUB28}/.oculus`, { recursive: true });
+    writeFileSync(
+        `${HUB28}/.oculus/config.yml`,
+        [
+            'collections:',
+            '  - { key: debug, file: notes/debug.yml }',
+            '  - { key: track_record, file: notes/record.yml }',
+            '  - { key: venues, file: notes/venues.yml }',
+            '  - { key: reading, file: notes/reading.yml }',
+            ''
+        ].join('\n')
+    );
+    const read28 = loadConfig(ENGINE, { hub: HUB28 });
+    const vocab28 = hubVocabOf(HUB28, portfolioConfigFrom(read28.config, read28.from));
+    const hubs28: HubVocabs = { primary: 'hub28', lists: { hub28: vocab28 }, order: ['hub28'], own: OCULUS, ownCollections: [] };
+    say('case 28 data-side findings of the list (unchanged reader)', collectionListFindings(read28.config.collections, listWords(read28.config), vocab28.list.file, CATALOG));
+    const refused = collectionRefusals(hubs28, CATALOG);
+    say('case 28 collectionRefusals', refused);
+    const page = createClientState();
+    registerAll(page.registry);
+    page.registry.refuse('collections', refused);
+    registerBoards(page.registry, pageBoards(source, CATALOG, collections));
+    say('case 28 registry.refused() after the boards registered', page.registry.refused());
+    registerBoards(page.registry, pageBoards({ ...source, boards: { coauthor: { role: 'other' } } }, CATALOG, collections));
+    say('case 28 registry.refused() after a push with no left-out board', page.registry.refused());
+    say('case 28 the record view after both sources refused', held(page.registry));
+
+    // Case 29: the options catalog over the key, and a write to this run's own copy of the hub.
+    const found = Object.entries(catalogOf(OCULUS)).flatMap(([file, entries]) =>
+        Object.hasOwn(entries, 'venue_categories') ? [[file, entries.venue_categories]] : []
+    );
+    say('case 29 options entry', found);
+    mkdirSync(`${HUB29}/.oculus`, { recursive: true });
+    cpSync(`${HUB}/.oculus/config.yml`, `${HUB29}/.oculus/config.yml`);
+    const rowsValue = [
+        { key: 'journal', label: 'Journals' },
+        { key: 'conference', label: 'Conferences', ribbon: true },
+        { key: 'workshop', label: 'Workshops', ribbon: true }
+    ];
+    const layers = { hub: HUB29 };
+    const before = loadLayers(ENGINE, layers).config.venue_categories;
+    const outcome = writeConfigValue(ENGINE, 'catalogs/vocab.yml', 'venue_categories', rowsValue, before, layers);
+    say('case 29 write outcome', { changed: outcome.changed, refused: outcome.refused });
+    const back = loadLayers(ENGINE, layers);
+    say('case 29 read back venue_categories', back.config.venue_categories);
+    say('case 29 read back findings', findingLines(back.findings));
+
+    rmSync(HUB28, { recursive: true, force: true });
+    rmSync(HUB29, { recursive: true, force: true });
+});
+```
+
+What it printed, from the terminal (no redirect):
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O81
+case 2/3 keys: ["career","command","tasks","cluster:now","cluster:parked","cluster:incubate","lane:idea","band"]
+case 2 foldOpen({"closed":["cluster:now"]}, career): true
+case 2 foldOpen({"closed":["cluster:now"]}, command): true
+case 2 foldOpen({"closed":["cluster:now"]}, tasks): true
+case 2 foldOpen({"closed":["cluster:now"]}, cluster:now): false
+case 2 foldOpen({"closed":["cluster:now"]}, cluster:parked): true
+case 2 foldOpen({"closed":["cluster:now"]}, cluster:incubate): true
+case 2 foldOpen({"closed":["cluster:now"]}, lane:idea): true
+case 2 foldOpen({"closed":["cluster:now"]}, band): true
+case 2 foldToggled({}, cluster:now): {"closed":["cluster:now"]}
+case 3 foldToggled({ closed: [cluster:now] }, band): {"closed":["cluster:now","band"]}
+case 4 foldOpen({"closed":["career"]}, career): false
+case 4 foldOpen({"closed":["career"]}, command): true
+case 4 foldOpen({"closed":["career"]}, tasks): true
+case 4 foldOpen({"closed":["career"]}, cluster:now): true
+case 4 foldOpen({"closed":["career"]}, cluster:parked): true
+case 4 foldOpen({"closed":["career"]}, cluster:incubate): true
+case 4 foldOpen({"closed":["career"]}, lane:idea): true
+case 4 foldOpen({"closed":["career"]}, band): true
+case 5 groupFold(cluster, career): "cluster:career"
+case 5 fold the hub cluster career, then career banner open?: true
+case 5 fold the banner, then cluster:career open?: true
+case 7 venueSections: ["journal: Journals 46","conference: Conferences 27 ribbon","thesis: Theses 2","meeting: Meetings 1"]
+case 8 venueSections: [["journal",["j1"]],["meeting",["m1"]],["",["w1","n1"]]]
+case 9 findings: []
+case 9 sections: ["conference: Conferences 1 ribbon","journal: Journals 1","(other): Other 3"]
+case 9 vocabKeys: ["conference","journal"]
+case 9 venue form options: [{"id":"conference","label":"Conferences"},{"id":"journal","label":"Journals"}]
+case 10 findings: ["/scratch/lab/.oculus/config.yml | venue_categories.0 | venue_categories.0 must be a map"]
+case 10 sections: ["(other): Other 5"]
+case 10 vocabKeys: ["journal"]
+case 10 venue form options: [{"id":"journal","label":"journal"}]
+case 11 no label findings: ["/scratch/lab/.oculus/config.yml | venue_categories.0.label | venue_categories.0.label must be a text"]
+case 11 no label sections: ["journal: journal 1","(other): Other 4"]
+case 11 no label vocabKeys: ["journal"]
+case 11 no label venue form options: [{"id":"journal","label":"journal"}]
+case 11 ribbon yes findings: ["/scratch/lab/.oculus/config.yml | venue_categories.0.ribbon | venue_categories.0.ribbon must be true or false"]
+case 11 ribbon yes sections: ["journal: Journals 1","(other): Other 4"]
+case 11 ribbon yes vocabKeys: ["journal"]
+case 11 ribbon yes venue form options: [{"id":"journal","label":"Journals"}]
+case 25 findings: ["/scratch/lab/.oculus/config.yml | venue_categories.2.key | venue_categories.2.key is not a value this key takes"]
+case 25 sections: ["journal: Journals 1","(other): Other 4"]
+case 25 vocabKeys: ["journal","journal",""]
+case 25 venue form options: [{"id":"journal","label":"Journals"},{"id":"journal","label":"Again"},{"id":"","label":"Empty"}]
+case 12 parseVenuesState({ folded: [thesis] }): {"search":"","off":[],"folded":["thesis"]}
+case 12 parseVenuesState({ journalsOpen: false }): {"search":"","off":[],"folded":[]}
+case 13 choicesFor: [{"id":"journal","label":"Journals"},{"id":"conference","label":"Conferences"},{"id":"thesis","label":"Theses"},{"id":"meeting","label":"Meetings"}]
+case 14 self ids: ["axel-faes"]
+case 14 lead row: ["in-review 9","in-flight 16","publications 10","other-outputs 9"]
+case 14 lead board: ["in-review 9","in-flight 16","publications 10","other-outputs 9"]
+case 14 supervisor row: ["in-review 4"]
+case 14 supervisor board: ["in-review 4"]
+case 14 collaborator row: ["in-review 1","in-flight 2","publications 6","other-outputs 6"]
+case 14 collaborator board: ["in-review 1","in-flight 2","publications 6","other-outputs 6"]
+case 15 a nascent project the user leads: {"id":"asthma-geo-tensor","stage":"nascent"}
+case 15 on the Lead record board: false
+case 17 counts: all / search tensor / one slice / cleared: [44,26,5,44]
+case 17 the tab state after two board writes: {"id":"lead","label":"Lead: track record"}
+case 16 second Lead press activates the same tab / Supervisor opens another: [true,true]
+case 18 registration: {"id":"track_record","label":"views.track_record","glyph":"views.track_record_glyph","group":"","listed":false,"badge":false,"countPart":false}
+case 18 offersNewProject per role, with self: [["lead",false],["supervisor",false],["collaborator",false],["other",false]]
+case 19 pageBoards(boards: { track_record, projects }): {"views":["projects"],"findings":[{"file":"layout.yml","key":"boards.track_record","message":"the board track_record has the key of a view oculus's modules or a collection register; the board is not registered"}]}
+case 20 the record view after the first push: {"id":"track_record","label":"views.track_record","group":"","listed":false}
+case 20 the record view after a second push of other boards: {"id":"track_record","label":"views.track_record","group":"","listed":false}
+case 21/22 targets: {"career:role:lead":{"kind":"view","view":"track_record","state":{"id":"lead","label":"Lead: track record"}},"career:role:ghost":{"kind":"view","view":"track_record","state":{"id":"ghost","label":"Ghost: track record"}},"career:funding":{"kind":"view","view":"funding"}}
+case 21/22 plain rows: []
+case 24 unionWords: [{"key":"journal","label":"Journals"}]
+case 24 sections: [["journal","Journals",false,["a","b"]]]
+case 26 trackRecord with no self: null
+case 26 Lead record board with no self: 0
+case 26 record board of a role roles: does not hold, with self: 0
+case 26 the empty message: "No entries match."
+case 27 record board with no role: 0
+case 27 the message: "This tab was opened for no role. Press a role of the Career banner's Track record to open its projects."
+case 14 the title word: "Lead: track record"
+case 28 data-side findings of the list (unchanged reader): [{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[2].key","message":"the key venues is the id of one of oculus's own views; the collection gets no card-list view"}]
+case 28 collectionRefusals: [{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[0].key","message":"the key debug is the id of one of oculus's own views; the collection gets no card-list view"},{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[1].key","message":"the key track_record is the id of one of oculus's own views; the collection gets no card-list view"}]
+case 28 registry.refused() after the boards registered: [{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[0].key","message":"the key debug is the id of one of oculus's own views; the collection gets no card-list view"},{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[1].key","message":"the key track_record is the id of one of oculus's own views; the collection gets no card-list view"},{"file":"layout.yml","key":"boards.track_record","message":"the board track_record has the key of a view oculus's modules or a collection register; the board is not registered"}]
+case 28 registry.refused() after a push with no left-out board: [{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[0].key","message":"the key debug is the id of one of oculus's own views; the collection gets no card-list view"},{"file":"/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o81-cases/hub28/.oculus/config.yml","key":"collections[1].key","message":"the key track_record is the id of one of oculus's own views; the collection gets no card-list view"}]
+case 28 the record view after both sources refused: {"id":"track_record","label":"views.track_record","group":"","listed":false}
+case 29 options entry: [["catalogs/vocab.yml",{"help":"The categories a venue's category takes, in the order the venue form offers them and the Venues view draws a section for each. A venue whose category no row names is drawn under Other. A hub's list replaces oculus's whole.","fields":{"key":{"help":"the word a venue's category writes","control":"text"},"label":{"help":"the words the category's section of the Venues view is headed by","control":"text"},"ribbon":{"help":"on draws the month ribbon of the venues' deadlines and meetings over the category's section","control":"toggle"}},"default":[{"key":"journal","label":"Journals"},{"key":"conference","label":"Conferences","ribbon":true},{"key":"thesis","label":"Theses"},{"key":"meeting","label":"Meetings"}],"section":"Vocabulary","heading":"boards"}]]
+case 29 write outcome: {"changed":["catalogs/vocab.yml:venue_categories"],"refused":[]}
+case 29 read back venue_categories: [{"key":"journal","label":"Journals"},{"key":"conference","label":"Conferences","ribbon":true},{"key":"workshop","label":"Workshops","ribbon":true}]
+case 29 read back findings: []
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+A run after the last change of the tree prints the same lines: `diff` of a fresh run's output (blank, `Start at` and `Duration` lines dropped) against the block above gives `diff exit 0`.
+
 ## Runs of the verify list and whole-suite commands
 
-The verify list (`npm run diagrams && npm run test:quick`) ran 0 times, since no change was made. No whole-suite command ran (`npm test`, `npm run test:checks`, `npm run test:landing`, `npm run test:slow`, or `npx vitest run` with no file named: none). Test files run: `tests/data/sources/config/layers/hub-vocab.test.ts` (one row) and `tests/state/boards/board/board-rules.test.ts` (the describe 'New project on a board'), once each, on the unchanged tree.
+The verify list's check (`npm run diagrams && npm run test:quick -- --base 335db1c9`) ran three times.
 
-## What resumes the step
+1. The first run passed (`test:quick: 352.8 s; every command passed`, `verify exit 0`). After it, the size count showed `src/lib/data/model/index.ts` at 882 and `board-rules.test.ts` at 885, so both were split (judgment call 6).
+2. The second run, after the last change of the tree, ran while the after-change case-run program ran beside it. It failed on time-outs only (`Test timed out in 5000ms` / `20000ms`, and `Timeout waiting for worker to respond` for `tests/ui/html.dom.test.ts`): `vitest` had `Tests 4 failed | 2769 passed`, `vitest slow` had `Tests 11 failed | 680 passed`, and the result was `failed: vitest, vitest slow`. The files that timed out were `hub-portfolio.test.ts`, `workspace-projects.test.ts`, `language.test.ts`, `rail.test.ts`, `file-undo.test.ts`, `hub-routing.test.ts` and `html.dom.test.ts`. Run alone by name, all seven pass: `Test Files  7 passed (7)`, `Tests  57 passed (57)`.
+3. The third run, with nothing else of mine running and no change since the second, passed. The table quotes it. No whole-suite command ran: no `npm test`, `npm run test:checks`, `npm run test:landing`, `npm run test:slow`, or `npx vitest run` with no file named.
 
-A ruling on 1 (cases 18 and 26: the record take inside `BoardRule`, with `takes.ts` added to the write list, or another mechanism) and on 2 (case 28: a new finding, its words and the paths it takes, or no finding), and, with item 4, on 3 (the venue form's option words). With those, the build runs items 1 to 9 against all 29 cases.
+Test files run by name after the change: `hub-vocab.test.ts`, `board-rules.test.ts`, `config-folder.test.ts`, `keys.test.ts` and `hub-names.test.ts` together (`Test Files  5 passed (5)`, `Tests  193 passed | 2 skipped (195)`). Then `hub-vocab.test.ts`, `config-folder.test.ts` and `board-rules.test.ts` one by one, as in the table, and `board-rules.test.ts` once more after its fixtures moved (`Tests  104 passed (104)`). On the unchanged tree, the first run ran `hub-vocab.test.ts` (one row) and `board-rules.test.ts` (the New project describe).
+
+## Greps, and the asynchronous paths
+
+- The name grep. These names were removed or moved: `roleBoard`, `boardOf`, `venuesByCategory`, `journalsOpen`, `conferencesOpen`, `venues.journals`, `venues.conferences`, `boardsGroup` (re-export), `FoldHead`'s path, and the hub vocabulary types' file. Verify grep 6 is in the table. `grep -rn "card/FoldHead\|card/GroupHead\|shared/card/heads" src tests docs utils config --exclude=local.yml` gives only the new `heads/` paths in imports and comments, each true (`Projects.svelte:72,94`, `CommandCenterView.svelte:18`, `CareerPanel.svelte:6,47`, `Tasks.svelte:18`, `Band.svelte:16,22`, `Lanes.svelte:9,29`, `Venues.svelte:18,33`). `grep -rn "FoldHead\|GroupHead\|HubVocab\|ListedCollection\|venuesByCategory\|roleBoard" docs --include='*.md'` prints nothing.
+  - Head comments rewritten, each read against its code: `FoldHead.svelte`, `GroupHead.svelte`, `Projects.svelte`, `Lanes.svelte`, `Band.svelte`, `Focus.svelte`, `Venues.svelte`, `venues.ts`, `career.ts`, `career-rows.ts`, `CareerPanel.svelte`, `takes.ts`, `presets.ts`, `model-collections.ts`, `board-rules.test.ts` and `keys.test.ts` (the `COMPUTED_FINDING_KEYS` comment).
+  - The docs' sentences are under "Doc text".
+- The history grep over the added lines (`git diff 335db1c9 -- src config tests` and the two new files, `+` lines, case-insensitive): `no longer\|used to\|previously\|formerly\|was \|were \|replaced\|replaces\|instead of\|in place of\|anymore\|any more\|\bnow\b\|\bold\b\|legacy\|ruling\|\bO[0-9][0-9]\b\|\bZ[0-9]\{3,4\}\|\bstep\b\|revert\|earlier`. Every hit is a present-tense description or a variable:
+  - "was read from" (the file a list is read from; `index.ts`, `model-collections.ts` and `views.ts` comments);
+  - "This tab was opened for no role" (the case 27 word);
+  - "that was obtained" (`career.ts`, obtained funding);
+  - "the order the sources were first refused" (`registry.ts`);
+  - "never replaces a built-in view" (`views.ts`);
+  - the prop `now` (`Band.svelte`, `Lanes.svelte`);
+  - "this page was built from" (`+page.svelte`).
+
+  No hit is history. The brief's grep 9 prints nothing.
+- The reuse grep before each new helper or type, on the base copy (`grep -rln <name> src tests` in `.agents/worktrees/O81-base`):
+  - `listFindings`, `viewIdProblems`, `listFileOf`, `groupFold`, `venueSections`, `recordPreset`, `wordsReader`, `collectionRefusals` and `board-fixture` have no hit.
+  - `drawnBy` hits `src/lib/state/workbench/layout/nested.ts:78`, an exported function over pages, unrelated; the one in `presets.ts:482` is local to its module.
+  - `GroupHead` hits only `DropdownMenu.GroupHeading`, `Command.GroupHeading` and the like.
+  - The key call `findings.collections.view_id` is worded once, at `hub-names.ts:420` on the base, so the new branch reuses that reader and its word instead of adding one.
+  - The venue row shape reuses `rowsShape` (`src/lib/data/shapes/shapes.ts:179`), with 77 calls in the base's `src`.
+- Asynchronous paths: none is added or changed. `collectionRefusals`, `registry.refuse`, `registerBoards`, `registerCollections`, `recordPreset`, `venueSections` and the fold functions are synchronous. The push handler in `+page.svelte` calls them inside `untrack`, in the same synchronous block as `registerCollections`, so a superseding push replaces the `'collections'` refusals with its own, and a closed page holds nothing. `openView` is synchronous.
