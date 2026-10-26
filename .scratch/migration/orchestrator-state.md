@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O80
-  brief_check: "running: a7ff83e77970b8a37"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O80-brief-check.md (a7ff83e77970b8a37, claude-opus-5-5, 281640 tokens, 100 tool uses, 13 min 38 s)
+  base: ee0f4259
+  worktree: .agents/worktrees/migration-O80
+  executor: agent
+  worker: claude:opus
+  session_id: a1c591e9512282600 (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O80-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -588,6 +596,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O80 launched). The brief `agents/briefs/O80.md` was checked (a7ff83e77970b8a37, claude-opus-5-5) and every finding closed in it (`agents/reviews/O80-brief-check.md`, Closed); prepared at ee0f4259; open item 423 raised (the order of `boards:` in `boardItemOf` and `roleBoard`, kind 6, outside O80's rulings). Builder a1c591e9512282600 (claude-opus-5-5) runs in `.agents/worktrees/migration-O80`. In flight (1 of 6): O80 (build). Next: the report, /refute O80, /land O80; then O81. Open items: 415, 416, 423.
 - 2026-10-26 (O79 stopped at /spec; open items 415 and 416). The premise check found that ruling 398's flag `label: true` collides with the words key `label:` of a schema field (415) and that one flagged field cannot show "short, else the full name" for the 47 venues and 20 projects with no `short` (416); both are the user's (kinds 3 and 6). Nothing in flight. Next: the rulings on 415 and 416, then /spec O79 again; O80 is next in the meantime. Open items: 415, 416.
 - 2026-10-26 (O78 landed). O78 is on main (booked under O78 in `plan.md`, `agents/reviews/O78-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 395.1 s) and on main (every one of the 166 staged paths equal under `cmp` to the gate's file). Fixes at landing: the comment paragraphs of nine files rewrapped with no word changed, one test line split, one doc comment made multi-line; G131 added to `agents/guarded.md` and the Test lines of G9, G13, G32 and G96 extended. Looked at on a two-hub scratch server (8797). Nothing in flight. Next: O79, then O80 and O81 (O81 after O80), each through /spec, the build, /refute and /land. Open items: none.
 - 2026-10-26 (O78 round 1 sent; Z1018). The review is saved in `agents/reviews/O78-refuter.md` (a4d317d58db20e950, claude-opus-5-5, 225223 tokens, 136 tool uses, 24 min 41 s): items 1 and 5 violated, every case met, findings under Proof (missing rows of 'the fields of a collections entry', the `ticker_word_unknown` finding unrun, the key check's credits) and Standards (two false comments in `model-entities.ts`, a ruling id in `model-collections.ts`, the open-badge function names). Open item 414 (the rail page key `registries` written in `registration.ts`) raised from the orchestrator's read of the diff and closed under self-rule Z1018 (a). Round 1 (`agents/briefs/O78-round1.md`, 11 items, carrying Z1017 and Z1018) copied into the worktree's ledger; snapshot `.agents/worktrees/migration-O78-round-1` with `files.txt` (132 paths); builder a584e9b15ed298b15 resumed. In flight (1 of 6): O78 (repair round 1). Next: the round's report, its review, then /land. Open items: none.
