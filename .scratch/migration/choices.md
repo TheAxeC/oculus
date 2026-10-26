@@ -5182,3 +5182,57 @@ O78's `src/lib/views/boards/collection/registration.ts:14-15` places a collectio
 - Not chosen: (b) `group:` required on every `collections:` entry, a missing one a finding, which changes case 8 of the brief and makes every hub name a group for each entry it lists; (c) the group taken from the rail entry whose `page:` is the one the Venues view's arrangement holds, which gives a meaning to where a view is pinned. The lazy option is (d) the word left in code with a comment.
 
 Where it applies: O78, its repair round 1. Booked in `plan.md` Rulings.
+
+## Z1019 (2026-10-26, O80's /spec, open item 417, where the Focus sections list lives, the orchestrator, automode): ruling 402's `focus: sections:` and the `focus:` map oculus already has
+
+Ruling 402 (a) puts a `focus: sections:` list in `layout.yml`. `config/defaults/behavior.yml:38` already holds a top-level `focus:` map (the Focus horizons, `refresh_stale_days`, `applications_open`), and oculus's config files are merged into one map where a top-level key in two files is a finding and the later file wins (`src/lib/data/sources/config/merge/merge.ts:120-124`), so a `focus:` key in `layout.yml` would be a finding on oculus's own config and would replace one of the two maps.
+
+- Chosen: (a) `sections:` is a key of the existing `focus:` map in `config/defaults/behavior.yml`, so the path is `focus: sections:` as ruled, described in `config/options/behavior.yml` beside the map's other keys.
+- Not chosen: (b) a top-level `focus_sections:` in `layout.yml`, which keeps the file the ruling names and changes the key it names; (c) the whole `focus:` map moved from `behavior.yml` to `layout.yml`, which moves keys no ruling asks to move. The lazy option is (d) the order kept in `Focus.svelte`.
+
+Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1020 (2026-10-26, O80's /spec, open item 418, the name and shape of a Focus lane's move, the orchestrator, automode): ruling 391 leaves the name open
+
+Ruling 391 (a) has a Focus lane row name what a move onto it writes, replacing "the lane's first stage or chip" (`src/lib/state/boards/focus.ts:316-318`, `:371`, `:376`), and leaves the key's name open (`move_writes:` proposed).
+
+- Chosen: (a) a `focus_lanes` row carries `move_writes:`, a map with one field: `stage: <word of stages>` for a lane with `stages`, `chip: <word of chips>` for a lane with `chips`; the move writes that word under the rules it follows today (a stage the lane holds is kept, the chips of the other chip lanes are taken off). A lane without `move_writes:` takes no move, a `move_writes:` naming a word the lane does not hold, or naming both fields, is a finding. Oculus's rows get the word each lane writes today (run `exploring`, push `in-prep`, revise `revision`, review `submitted`, blocked chip `blocked`, backburner chip `parked`, scope `scoping`, derisk `de-risking`, build `building`, idea `nascent`).
+- Not chosen: (b) `move_writes: <word>` alone, read as a stage or a chip by the lane's other key, which gives one value two meanings; (c) a key named `writes:`, shorter but less plain about when it applies. The lazy option is (d) the first word kept.
+
+Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1021 (2026-10-26, O80's /spec, open item 419, `lead_declined` on two words of oculus's own vocabulary, the orchestrator, automode): ruling 393 makes `lead_declined` single-use
+
+Ruling 393 (a) makes each single-use flag carried by two words a config finding. Oculus's own `config/catalogs/vocab.yml:163,166` gives `lead_declined: true` to `declined` and to `dismissed`, so the ruling as written makes oculus's shipped config a finding. `lead_declined` is read twice: `declinedWord` (`src/lib/data/accounts/leads.ts:41-44`), the word the decline control writes, and `isLeadDeclined` (`:51-54`), the leads the Leads view hides until asked. The hub holds no lead with status `dismissed` (`grep -c dismissed` over `.oculus/data/academic/leads.yml`: 0).
+
+- Chosen: (a) `dismissed` keeps `lead_closed: true` and loses `lead_declined`; a dismissed lead is closed and listed as done, and no longer held back with the declined ones.
+- Not chosen: (b) `lead_declined` kept on many words for the hiding, with a new single-use flag for the word the control writes, which replaces the flag ruling 393 names (a reversal, the user's); (c) `dismissed` removed from the vocabulary, which turns any hub's dismissed lead into a finding. The lazy option is (d) the finding left on oculus's own config.
+
+Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1022 (2026-10-26, O80's /spec, open item 420, the words of a project board registered from `boards:`, the orchestrator, automode): a board's label and glyph
+
+Ruling 388 (a) registers the board views from `layout.yml` `boards:` in its order. Each board's tab words and glyph are looked up today by keys built from its id (`views.${id}`, `views.${id}_glyph`, `src/lib/views/boards/projects/Projects.svelte:11-12`), so a board added in `boards:` draws a raw key.
+
+- Chosen: (a) a `boards:` entry carries `label:` and `glyph:`, each the dotted key of a text-catalog word, as a `collections:` entry does under Z1011; oculus's six boards name today's words (`views.projects`, `views.projects_glyph` and so on); a board naming none, or a key the catalog lacks, is a finding and is drawn with its key and the glyph `paper`.
+- Not chosen: (b) the words written on the entry, which leaves them untranslated (ruling 396 (a) keeps reader words in text words); (c) the key-built lookup kept. The lazy option is (c).
+
+Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1023 (2026-10-26, O80's /spec, open item 421, what the Idea cluster does beyond its layout, the orchestrator, automode): the cluster rows of ruling 389 and the two behaviours tied to the cluster `idea`
+
+Ruling 389 (a) gives a `focus_clusters:` row a key, label, glyph, muted and layout (`columns` or `full_width`). Two more behaviours hang on the word `idea` in code: a lane of the Idea cluster is sorted by title, every other lane by deadline then title (`src/lib/state/boards/focus.ts:303`), and the awaiting-a-response box counts only the projects on lanes of the three clusters of `CLUSTERS` (`:483-510`).
+
+- Chosen: (a) a cluster row also carries `sort: title` (a row without it sorts by deadline, then title) and `awaiting: true` (the awaiting box counts the projects on its lanes, as a `collections:` entry's `awaiting:` flag counts its entries); oculus's rows: `now`, `parked`, `incubate` with `awaiting: true`, `idea` with `sort: title` and `layout: full_width`. A lane naming a cluster no row has is a finding.
+- Not chosen: (b) both behaviours tied to `layout: full_width`, which gives a layout word a meaning beyond layout; (c) the title sort dropped and every cluster counted, which changes the board. The lazy option is (d) `IDEA` kept in code for the two behaviours.
+
+Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1024 (2026-10-26, O80's /spec, open item 422, the view group of the project boards, the orchestrator, automode): the rail page key `projects` written in code
+
+The project boards are registered in the group `'projects'` (`src/lib/views/boards/projects/Projects.svelte:13`) and the career panel opens a board in the group `BOARD_GROUP = 'projects'` (`src/lib/views/boards/focus/career/CareerPanel.svelte:85`): the rail page key of `config/defaults/layout.yml:10` written in code, which ruling 388 (a) and the rule that no config word is written in code end, as Z1018 ended `'registries'` for collection views.
+
+- Chosen: (a) a rail entry carries `project_boards: true` (set on the Projects entry), described in `config/options/layout.yml`; the boards are registered in that entry's group in the order of `boards:`, and the career panel reads the same group; no entry carrying it, or two, is a finding (`unplacedGroup`'s findings in `src/lib/data/sources/config/rail.ts` are the pattern), and with none the boards are in no group.
+- Not chosen: (b) a `group:` on each `boards:` entry, which lets one board stray from the others with nothing gained; (c) the group taken from the arrangement that pins the `projects` view. The lazy option is (d) the word left in code.
+
+Where it applies: O80. Booked in `plan.md` Rulings.

@@ -24,6 +24,8 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
+- step: O80
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -173,6 +175,12 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 422 (2026-10-26, O80's /spec, the rail page key `projects` written in code as the boards' group): written in full in `choices.md` Z1024 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
+- 421 (2026-10-26, O80's /spec, the title sort and the awaiting count tied to the Idea cluster in code, ruling 389): written in full in `choices.md` Z1023 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
+- 420 (2026-10-26, O80's /spec, the label and glyph of a board registered from `boards:`, ruling 388): written in full in `choices.md` Z1022 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
+- 419 (2026-10-26, O80's /spec, `lead_declined` on two words of oculus's own vocabulary under ruling 393): written in full in `choices.md` Z1021 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
+- 418 (2026-10-26, O80's /spec, the name and shape of the word a Focus lane's move writes, ruling 391): written in full in `choices.md` Z1020 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
+- 417 (2026-10-26, O80's /spec, where ruling 402's Focus sections list lives, `focus:` being a top-level key of behavior.yml already): written in full in `choices.md` Z1019 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
 - 414 (2026-10-26, O78's review, the rail page of a collection view whose entry names no group, raised by the orchestrator's read of O78's diff): written in full in `choices.md` Z1018 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O78's line.
 - 413 (2026-10-26, O78's build, the options description of the map fields `ticker:` and `dissemination_skip:`, raised by O78's builder): written in full in `choices.md` Z1017 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O78's line.
 - 410 (2026-10-26, O78's /spec, where a collection's ticker lines come from, raised by O78's brief check): written in full in `choices.md` Z1014 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O78's line.
