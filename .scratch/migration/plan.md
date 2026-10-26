@@ -2856,6 +2856,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 465 (2026-10-26): (a), a new guarded entry G133 for who the user is, tested in `tests/data/hubs/self.test.ts` within O84; (b), no entry, was the lazy option (Axel: "465 (a)") (the user).
 - Open item 466 (2026-10-26): (a), O86's two scratch case programs (`scratchpad/cases/first.case.ts`, `final.case.ts`) approved as programs that compute facts, their runs counting as the cases' runs; (b), their outputs discarded, was the lazy option (Axel: "466 (a)") (the user).
 - Open item 467 (2026-10-26): (a), `npm run test:quick` (`tests/tiers/quick.mjs`) counts the checks that scan source text, under `tests/checks/source` and `tests/checks/tree`, as related to every changed file under `src`, `tests` or `utils`, so each landing runs them; built in O89's repair round 1 with the Z1047 fixes; (b), a run at each preparation commit, and (c), no change, the lazy option, not chosen (Axel: "467 (a)") (the user).
+- Open item 468 (2026-10-26): (a), each landing regenerates the palette page: `verify_landing` becomes `npm run diagrams && npm run docs:palette && npm run test:quick`; (b), `test:quick` choosing the palette check, and (c), no change, the lazy option, not chosen (Axel: "468 (a)") (the user).
 
 ## Agents
 

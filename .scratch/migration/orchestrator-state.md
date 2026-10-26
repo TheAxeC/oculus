@@ -5,8 +5,8 @@ The orchestrator's own catch-up note for the cockpit-to-oculus migration. Rewrit
 ```yaml
 verify:                      # the quick list (Z351, Z421): from the repository root in the worktree, by builders and reviewers; a reviewer adds `-- --base <base>`.
 - npm run test:quick
-verify_landing:              # the landing list (standing demand "Only related tests at a landing", rulings 240 (a) and 241 (b)): by the orchestrator at each landing, in the gate worktree.
-- npm run diagrams && npm run test:quick
+verify_landing:              # the landing list (standing demand "Only related tests at a landing", rulings 240 (a), 241 (b) and 468 (a)): by the orchestrator at each landing, in the gate worktree.
+- npm run diagrams && npm run docs:palette && npm run test:quick
 worktree_root: .agents/worktrees
 standards: [.scratch/migration/agents/spec.md]
 executor: agent
@@ -176,7 +176,7 @@ dispatch:          # steps in flight, up to six (Z632)
 
 ## The pause
 
-In force from 2026-10-26, Axel: "Can you pause the 3 agents?". The three builders were stopped through the stop tool: O86's (a932a66494c50d411) mid repair round 1, O89's (a6462cf6ae75f9bfa) mid repair round 1 (it was at item 7, the palette page), and O84's (a6b9bb9efcca75eff) mid its first build. Each worktree keeps its partial edits; each builder can be resumed by message with its context. Nothing is dispatched, refuted, landed or prepared until Axel says go.
+Lifted 2026-10-26 by Axel: "Please resume the builders". O86's, O89's and O84's builders are resumed by message with their context. Before it, from 2026-10-26, Axel: "Can you pause the 3 agents?". The three builders were stopped through the stop tool: O86's (a932a66494c50d411) mid repair round 1, O89's (a6462cf6ae75f9bfa) mid repair round 1 (it was at item 7, the palette page), and O84's (a6b9bb9efcca75eff) mid its first build. Each worktree keeps its partial edits; each builder can be resumed by message with its context.
 
 Lifted 2026-10-12 by Axel's go ("Please continue orchestration", with 58 (a), 59 (a), 60 (a)). Before it, from 2026-10-12, Axel: "Can you pause the builder". D68's builder (a3e55090e05050b84) was stopped mid round 1 through the stop tool; its worktree keeps the round's partial edits. Nothing is resumed, dispatched, refuted or landed until he says go; on his go the same builder is resumed with the round-1 message.
 
@@ -204,9 +204,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 468 (2026-10-26, O89's review): `docs/palette.md`, the generated page of the palette's commands and views, is stale on main (`npx vitest run tests/checks/diagrams/palette.test.ts --testTimeout 0` on main fails: the page lists "Track record" where the palette gives the project boards). Ruling 467 (a) brings only `tests/checks/source` and `tests/checks/tree` into a landing; this check lives in `tests/checks/diagrams`, imports no source file, and is slow (35 s on main), so no landing runs it, and a step that changes a view or a command leaves the page stale. O89's round regenerates it once (Z1047); this item is about keeping it current. Options: (a) the landing list regenerates the page as it regenerates the diagrams: `verify_landing` becomes `npm run diagrams && npm run docs:palette && npm run test:quick`, and a changed page lands with the step. (b) `test:quick` chooses `palette.test.ts` whenever a file under `src` or `config` changed, so a stale page fails the landing and is regenerated there by hand. (c) No change: the lazy option. Pros and cons: (a) ends the cause, since the page is written from the tree at each landing, at the cost of the palette build at each landing (its test ran 27 s, the build is the bulk of it); it changes the landing's command. (b) detects but does not fix, and costs the same build time; it changes the selection script. (c) leaves the page wrong for any reader of the Help page and the check red. Recommended: (a). Kind: a change to the landing's command (self-rule kind 3).
-
 ## Closed items
+- 468 (2026-10-26): ruled by Axel, (a); `verify_landing` is `npm run diagrams && npm run docs:palette && npm run test:quick`, so each landing regenerates the palette page; booked in `plan.md` Rulings.
 - 467 (2026-10-26): ruled by Axel, (a); `test:quick` counts the source-scanning tree checks as related to every changed file under `src`, `tests` or `utils`; booked in `plan.md` Rulings, built in O89's repair round 1.
 - 466 (2026-10-26): ruled by Axel, (a); O86's two scratch case programs are approved as programs that compute facts, booked in `plan.md` Rulings; the reviewer of O86 was told.
 - 465 (2026-10-26): ruled by Axel, (a); guarded entry G133 written in `agents/guarded.md`, booked in `plan.md` Rulings; O84 is prepared again with its test.
