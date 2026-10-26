@@ -11,7 +11,7 @@ Queued, in order:
 Owed looks: none.
 
 Landed, newest first:
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a), Z1038), 2026-10-26; the hub rewrite committed in the hub (dd97f7ec0).
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a), Z1038), 2026-10-26, 153f4f0b; the hub rewrite committed in the hub (dd97f7ec0).
 - O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031, Z1032), 2026-10-26, 4e0fbd48.
 - O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 9961e0d5.
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.

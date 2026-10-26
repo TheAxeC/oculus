@@ -5366,3 +5366,43 @@ The review over round 1 (`agents/reviews/O79-refuter.md`, "Repair round 1, refut
 
 Where it applies: O79's landing.
 Builds on it: O79
+
+## Z1039 (2026-10-26, /spec O86, the orchestrator, automode): the schedule key that names a task's hub
+
+O86's line asks that "a schedule or a request runs the task of the hub it names", and names no key. A schedule's `runs` holds `task:` alone for an update task (`RUNS_KEYS` in `src/lib/data/helpers/run/schedules.ts`), and the server starts every scheduled task in the primary (`runEntry` in `src/lib/server/machine/runs/schedules/run.ts`). A board's `hub:` key in `config/options/layout.yml` already names a hub by its name.
+
+- Chosen: (a) `hub:` in `runs` beside `task:`, the hub's name; absent is the primary; a value not text is `hub-wrong`, a name no hub holds `hub-unknown`, and such an entry does not run; the dialog writes `hub:` only for a hub other than the primary.
+- Not chosen: (b) a `folder:` path for the task's hub, which ties the schedule to one machine's folder and gives `folder: hub` a second meaning; (c) every schedule left on the primary's task, the lazy option, which leaves the line unbuilt.
+
+Where it applies: O86. Booked in `plan.md` Rulings, open item 458.
+Builds on it: O86
+
+## Z1040 (2026-10-26, /spec O86, the orchestrator, automode): each hub's last run of a task
+
+The tray's last-run cell, the Focus board's refresh line and the "updated" notice read the feeds summary, which keeps only the latest run over the hubs (`feedsOf` in `src/lib/data/snapshot/hubs/merge.ts:241-264`). With a row per task and hub, a hub whose own run is old would show another hub's date.
+
+- Chosen: (a) the feeds summary carries `byHub`, one row `{ hub, radar, scout, linkedin }` per hub in the hubs' order, written in `docs/apps.md`; the tray row, the refresh line and the notice read the row's hub, each named by its hub when two hubs hold the task; the Inbox row reads the machine's one `notesRun`.
+- Not chosen: (b) every hub's row showing the latest over all hubs, which shows a stale hub as fresh; (c) no last run, refresh line or notice for a second hub's task, the lazy option.
+
+Where it applies: O86. Booked in `plan.md` Rulings, open item 459.
+Builds on it: O86
+
+## Z1041 (2026-10-26, /spec O86, the orchestrator, automode): the update tasks in a workspace with no primary
+
+Today a workspace with no primary offers no update task and refuses a press with `no-primary` (`tasksWithFile` and `startUpdateTask` in `src/lib/server/machine/runs/schedules/task.ts`), only because the task was a file of the primary. Ruling 441 offers the task of every hub that holds its file.
+
+- Chosen: (a) with no primary, each hub's tasks are offered in the folders' order and a press runs the task in its hub; a schedule save stays refused, since `schedules.yml` is the primary's; the tray says no hub holds a task file, or that the workspace holds no hub.
+- Not chosen: (b) every task refused with no primary as now, the lazy option, a narrower reading of ruling 441.
+
+Where it applies: O86. Booked in `plan.md` Rulings, open item 460.
+Builds on it: O86
+
+## Z1042 (2026-10-26, O85's review, the orchestrator, automode): a Reset of a settings file's last key beside a comment
+
+O85's builder added `keptAsMap` (`src/lib/server/edit/writes/config/config-reset.ts`), which no item asks for: on main a Reset of the last key of a hub's `.oculus/config.yml` that also holds a comment is refused with "is not a map of keys" and nothing is written; with it, the key comes out and the file keeps its comments and `{}`, which the next write replaces. It holds for the primary's file and for a second hub's, which O85's Reset into any hub reaches.
+
+- Chosen: (a) kept, booked at landing as a visible change with its before and after.
+- Not chosen: (b) taken out, which leaves a Reset of such a file refused for every hub; (c) kept unbooked, the lazy option.
+
+Where it applies: O85. Booked in `agents/briefs/O85-round-1.md`, "Ruled, no change".
+Builds on it: O85

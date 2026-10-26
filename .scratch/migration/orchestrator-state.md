@@ -35,10 +35,15 @@ dispatch:          # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O85-report.md
   builder_usage: 334254 tokens, 82 tool uses, 14 min 23 s (first run, handed back at case 16 and the draft question); build under the cases ruling: 328209 tokens, 596 tool uses, 111 min 4 s
   cases_ruling: .scratch/migration/agents/briefs/O85-cases.md (Z1035, Z1036)
+  reviewer_report: .scratch/migration/agents/reviews/O85-refuter.md (a0e17faa413580c97, claude-opus-5-5, 107756 tokens, 105 tool uses, 26 min 59 s)
   shared_paths: with O79, simple merges, each in separate lines: `src/lib/state/client/writes.svelte.ts` (O79 the comment at line 435, O85 lines 560-630), `src/lib/server/edit/writes.ts` (O79 near line 218 and its write bodies, O85 the head comment at line 29), `src/lib/server/edit/writes/undo.ts` (O79 near lines 259-341, 495 and 587, O85 lines 90-140), `config/text/server.yml` (O79 `server.edit.*`, O85 new keys under `server.workspace.*`); `docs/HELP.md` and `docs/data-map.md` take O85's Doc text at landing. None with O81.
-  round: 0
+  round: 1
   landing: not-started
 - step: O86
+  brief_check: "running: a3bd147e859e9ce7f"
+  landing: preparing
+- step: O88
+  brief_check: "running: ab3a4af18b70f6cab"
   landing: preparing
 ```
 
@@ -181,6 +186,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 2026-10-26: Open items 458 to 460 (/spec O86): 458 the schedule key `hub:` naming a task's hub, closed under self-rule, Z1039; 459 each hub's run dates as `byHub` on the feeds summary, read by the tray, the refresh line and the notice, closed under self-rule, Z1040; 460 the update tasks offered with no primary, closed under self-rule, Z1041.
 - 2026-10-26: Open item 457, `key_fault?` in the snapshot and the apps payload (O79 repair round 1): closed under self-rule, Z1037.
 - 456 (2026-10-26): ruled by Axel, (a2): the record card covers project, entry, venue, dataset, domain, pillar line, lead, Lit Watch paper, LinkedIn post, inbox thread, Literature search hit, Archival, Orphans and No funding; Gallery shows it among its samples; the Focus lane card and band items, the Slides tiles and the Usage cards stay outside; booked in `plan.md` Rulings and on O89's line.
 - 447 to 455 (2026-10-26): ruled by Axel, 447 (a), 448 (a), 449 (b), 450 (a), 451 (a), 452 (a), 453 (a), 454 (a), 455 (a); booked in `plan.md` Rulings; steps O88 (one heading) and O89 (one record card) booked before O86, ruling 446 folded into O87's line; O89's kinds wait on open item 456.
