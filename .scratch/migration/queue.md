@@ -1,17 +1,23 @@
 In flight (1 of 6 slots in use):
 - O84 (who the user is), building.
 
-Queued (3):
-- O88 (one grouping heading), /spec next.
+Queued (9):
+- O88 (one grouping heading, and the app theme that failed to load), /spec next.
 - O87 (the Focus band's positions and teaching), /spec next.
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
+- O91 (people and their projects), /spec after O84 lands.
+- O92 (a collection's Add asks its fields), /spec after O90.
+- O93 (the dated lines and their Focus rows), /spec after O87.
+- O94 (the Focus Pillar filter and the waiting line), /spec after O93.
+- O95 (the collection bar as the board's), /spec after O92.
+- O96 (LinkedIn's Mark posted), /spec when a slot is free.
 
 Waiting on a ruling: none.
 
 Owed looks: none.
 
 Landed, newest first:
-- O86 (the update tasks of every hub), 2026-10-26, the landing commit.
+- O86 (the update tasks of every hub), 2026-10-26, bf60e137.
 - O89 (one record card, one way to add a dated line), 2026-10-26, 7f7249ab.
 - O85 (a hub's own settings for any hub), 2026-10-26, 467be69c.
 - O79 (primary and foreign keys), 2026-10-26, 153f4f0b; hub dd97f7ec0.
