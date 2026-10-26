@@ -37,8 +37,6 @@ dispatch:          # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O80-refuter.md (af6579c090daa182a, claude-opus-5-5, 101917 tokens, 175 tool uses, 35 min 13 s)
   round: 1
   landing: not-started
-- step: O83
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,7 +175,15 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- none.
+- 432 (2026-10-26, O83's brief check, `agents/reviews/O83-brief-check.md` "Implied inputs" and "Dictated text"; changes Z1027, ruling 431, so it is Axel's): two points of the HPC view's stale mark.
+  - Part 1, a full failure after a partial poll. Ruling 431 puts `stale` only on a poll whose `squeue` answered. After a partial poll at 10:00 (Recent kept from 9:40), a poll where `squeue` itself fails publishes the last rows with no `stale`, and the head bar says "last reached 10:00", so the Recent table looks as of 10:00 while its rows are from 9:40.
+    - (a) Every failed poll carries `stale` for each table older than the queue, so the mark stays on Recent ("stale, from 9:40") until `sacct` answers again. Pros: the view never shows an old table as current. Cons: `stale` is no longer only on a poll whose `squeue` answered; the apps guide's sentence changes with it. Recommended.
+    - (b) Keep ruling 431 as written: no mark on a full failure. Pros: nothing changes. Cons: during a full failure after a partial one, Recent or Capacity looks newer than it is. This is the lazy option.
+  - Part 2, the mark of a table never read. Ruling 431 fixes the box's sentence "The cluster answered for the queue, and Slurm did not answer for the tables marked stale." and the mark "not read since the server started" for a table no poll has filled; that mark does not contain the word "stale", so the sentence points at a mark that does not say it.
+    - (a) The mark becomes "stale, not read since the server started". Pros: every mark the sentence points at says "stale". Cons: a longer mark. Recommended.
+    - (b) The sentence becomes "The cluster answered for the queue, and Slurm did not answer for the tables marked below." Pros: the short mark stays. Cons: "marked below" is vaguer.
+    - (c) Keep both as ruling 431 wrote them. Pros: nothing changes. Cons: the sentence and the mark disagree. This is the lazy option.
+  - O83 waits at /spec for the ruling; its brief check's other findings are closed in the brief when /spec runs again.
 
 
 ## Closed items
@@ -603,6 +609,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O83 stopped at /spec; open item 432). O83's brief was written and checked (`agents/reviews/O83-brief-check.md`, af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s); two of its findings change Z1027 (ruling 431), a reversal of a Rulings bullet, so they go to Axel as open item 432 and O83 stops: its dispatch entry is removed and its brief deleted (the draft kept in the scratchpad as `o83-brief-v1.md`); the other findings are closed in the brief at the next /spec. In flight (1 of 6): O80 (repair round 1). Next: Axel's ruling on 432, then /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: 432.
 - 2026-10-26 (430 ruled; O83 booked). Axel ruled 430 (a): a new step O83, booked in `plan.md` Rulings and the step list after O82, tagged (ruling 430); its paths (the HPC poll and view) are disjoint from O80's, so it is prepared now. In flight (1 of 6): O80 (repair round 1). Next: /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: none.
 - 2026-10-26 (O80 round 1 sent). The review is saved in `agents/reviews/O80-refuter.md` (af6579c090daa182a, claude-opus-5-5, 101917 tokens, 175 tool uses, 35 min 13 s): item 10 violated, case 18 not verifiable (the look on landing), every other item holding and case met; findings under Spec (the removal of a word reaching a collection's `ticker`), Proof (held predicates that cannot tell the hubs apart, rows with no failing base run, no chip lane whose `move_writes` chip is not its first, two report rows, two first-of-list hits unnamed), Standards (a comment cut to keep `context.ts` at 880, paragraphs not rewrapped, the `tiers` example, the builder's runs and `git ls-files`) and Behaviour (a cluster row that does not read hiding its lanes). Round 1 (`agents/briefs/O80-round1.md`, 9 items) copied into the worktree's ledger; snapshot `.agents/worktrees/migration-O80-round-1` with `files.txt`; builder a1c591e9512282600 resumed. In flight (1 of 6): O80 (repair round 1). Next: the round's report, its review, /land O80; then /spec O79 and O81. Open items: 430.
 - 2026-10-26 (O82 landed; open item 430). O82 is on main (booked under O82 in `plan.md`, `agents/reviews/O82-landing.md`), checked by `land.sh` on main (`npm run test:quick`, every command passed) and in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed on the second run; the first failed only a 20 s timeout in `tests/data/hubs/hub-portfolio.test.ts`, which passed alone 16 of 16) and on main (every one of the 21 paths equal under `cmp` to the gate's file). Fixes at landing: `slurmHint`'s time-limit fallback, `splitSections` reading a marker glued to a partial row, the `SQUEUE_SECS` comment. Looked at on TEST (8790), the Live HPC view in its good state; the failure states not on screen. Open item 430 raised (a `sacct` or `sinfo` failure alone freezes the queue and Recover). In flight (1 of 6): O80 (review running, af6579c090daa182a). Next: O80's review, its repair round if any, /land O80; then /spec O79 and O81. Open items: 430.
