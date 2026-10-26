@@ -45,6 +45,7 @@ dispatch:          # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O86
   executor: agent
   worker: claude:opus
+  session_id: a932a66494c50d411 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O86-report.md
   shared_paths: with O89, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O89, regenerated at each landing.
