@@ -5254,3 +5254,12 @@ Ruling 428 has the HPC poll tell three failures apart: ssh not connecting, Slurm
 - Not chosen: (b) `error` kept with a new key `cause: ssh | slurm` beside it, which an app must read two keys for. The lazy option is (c), `unreachable` kept for both with only the hint telling them apart, which leaves an app unable to tell them apart.
 
 Where it applies: O82. Booked in `plan.md` Rulings and in `agents/briefs/O82.md`.
+
+## Z1028 (2026-10-26, O83's /spec, open item 433, how the HPC payload says its queue is this poll's, the orchestrator, automode): the liveness of the queue in the HPC payload
+
+Ruling 432 puts `stale` on every failed poll whose Recent or Capacity table is older than its queue, so `stale` no longer tells a poll whose `squeue` answered (queue live, Recover reading) from one whose `squeue` failed too (queue kept). The page (the counts, the pill, the badge, the live controls, the status bar) and Recover's `recover()` must tell them apart, and apps read the payload (`docs/apps.md:421`).
+
+- Chosen: (a) A poll whose `squeue` answered publishes `lastOk` and `updated` with the same time, and every failed poll whose `squeue` did not answer publishes its own `updated`, later than `lastOk`; the queue is this poll's when the status is `ok`, or when `lastOk` equals `updated`. `docs/apps.md` says so. Pros: no new key; `lastOk` keeps its meaning, the time the cluster last answered for the queue. Cons: an app compares two strings.
+- Not chosen: (b) A new key `queueLive?: true` on a poll whose `squeue` answered. Pros: explicit. Cons: a third new public key beside `stale`, carrying what `lastOk` already says. The lazy option is (c), reading `stale` as the queue being live, which ruling 432 makes false: a full failure after a partial poll would show a frozen queue as live and send Recover's command to a cluster whose Slurm does not answer.
+
+Where it applies: O83. Booked in `plan.md` Rulings and in `agents/briefs/O83.md`.

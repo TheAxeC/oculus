@@ -37,6 +37,9 @@ dispatch:          # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O80-refuter.md (af6579c090daa182a, claude-opus-5-5, 101917 tokens, 175 tool uses, 35 min 13 s)
   round: 1
   landing: not-started
+- step: O83
+  brief_check: .scratch/migration/agents/reviews/O83-brief-check.md (af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -179,6 +182,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 433 (2026-10-26, O83's /spec, how the HPC payload says its queue is this poll's once ruling 432 puts `stale` on a failed poll whose queue is kept too, a public shape of the HPC payload): written in full in `choices.md` Z1028 with its options and the lazy option named; closed in automode with (a) `lastOk` equal to `updated`, booked in `plan.md` Rulings and on O83's line.
 - 432 (2026-10-26, two points of the HPC view's stale mark): ruled Part 1 (a) and Part 2 (a) by Axel, replacing Open item 431; booked in `plan.md` Rulings and on O83's line.
 - 2026-10-26: Z1027: replaced by 432.
 - 431 (2026-10-26, O83's /spec, how the HPC payload marks a table kept from an earlier poll while the queue is live, a public shape of the HPC payload): written in full in `choices.md` Z1027 with its options and the lazy option named; closed in automode with (a) `stale`, booked in `plan.md` Rulings and on O83's line.
@@ -603,6 +607,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O83 at /spec; Z1028). /spec O83 run again; its preparing entry written with the brief check already run; open item 433 (how the payload says the queue is live) closed under self-rule as Z1028 (a). In flight (2 of 6): O80 (repair round 1), O83 (preparing). Open items: none.
 - 2026-10-26 (432 ruled). Axel ruled 432 Part 1 (a) and Part 2 (a), booked in `plan.md` Rulings as the bullet of 432, which replaces 431 (Z1027, removed from `choices.md`); O83's line is tagged (ruling 430) (ruling 432). In flight (1 of 6): O80 (repair round 1). Next: /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: none.
 - 2026-10-26 (O83 stopped at /spec; open item 432). O83's brief was written and checked (`agents/reviews/O83-brief-check.md`, af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s); two of its findings change Z1027 (ruling 431), a reversal of a Rulings bullet, so they go to Axel as open item 432 and O83 stops: its dispatch entry is removed and its brief deleted (the draft kept in the scratchpad as `o83-brief-v1.md`); the other findings are closed in the brief at the next /spec. In flight (1 of 6): O80 (repair round 1). Next: Axel's ruling on 432, then /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: 432.
 - 2026-10-26 (430 ruled; O83 booked). Axel ruled 430 (a): a new step O83, booked in `plan.md` Rulings and the step list after O82, tagged (ruling 430); its paths (the HPC poll and view) are disjoint from O80's, so it is prepared now. In flight (1 of 6): O80 (repair round 1). Next: /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: none.
