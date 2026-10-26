@@ -1815,3 +1815,225 @@ The verify list ran four times; no whole-suite command ran.
 4. After the last change: quoted under check 1, every stage ok but the slow tier, where one case of `tests/data/hubs/hub-portfolio.test.ts` timed out at 20 s.
 
 Test files run alone while working: scoped `npx vitest run tests/<file>` runs, all in the background or with a time limit; `tests/checks/config/integrity.test.ts` over the scratch hub for case 15.
+
+## Repair round 1
+
+Repair round 1: all five items of `O79-round-1.md` are built, and `npm run test:quick -- --base a11f9f14` passed every command after the last change (`test:quick: 293.6 s; every command passed`).
+
+One decision is for the orchestrator. The snapshot's `Collection` and `FeedData` now carry `key_fault?`, the cause of a missing primary key. The card line runs in the page, and item 2 asks it to read the one computed cause, so the cause has to travel in the snapshot. That makes `key_fault?` part of the apps payload's `collections` record, and `docs/apps.md` documents it. The alternative is a card line that only points to the Audit finding, which item 2 rules out.
+
+### Item 1: one primary-key rule
+
+- `src/lib/data/model/model-collections.ts:83-135`: `primaryKeyOf` reads `KeyedField` (`field`, `type` and `primary_key` of a schema field), so the project form's `FormField` list goes through it unchanged.
+- `src/lib/state/forms/schema.ts:113-119`: `writableField` returns `field !== primaryKeyOf(fields)`. `manifestKey` is gone. A flag on an unkeyed type gives no key in the project form, as it does in every other reader.
+- Test: `tests/state/forms/form-draft.test.ts:119`, 'writes every field of a manifest form whose flag is on a tags field, as no reader keys by it'. It asserts:
+  - `primaryKeyOf` gives null for a flag on `tags`;
+  - `writableField` is true for both fields under that flag;
+  - with the flag on a `text` field, the flagged field is not writable.
+
+### Item 2: the refusal names its cause
+
+**The cause, computed once.**
+- `keyFaultOf` (`model-collections.ts:104-118`) gives `KeyFault` (`:91-96`), one of:
+  - `none`;
+  - `two` with `fields`;
+  - `unkeyed` with `field` and `type`;
+  - `beside` with `named` and `field`;
+  - `missing`.
+- `primaryKeyOf` (`:128-135`) is null exactly when `keyFaultOf` gives a cause, and it reads the cause from `keyFaultOf`, so the rule is written once.
+
+**Every reader keys a file alike.**
+- `keyedSchema` (`src/lib/data/snapshot/schema/field.ts:170-177`) reads a file's schema for its primary key:
+  - undefined when the file has no `schema:`;
+  - the fields when the schema reads;
+  - `[]` when it does not read.
+- Every reader of a file's primary key goes through it:
+  - `normalise.ts:551-562`;
+  - `validate.ts:441`;
+  - `schema/lists.ts:195`;
+  - `sources/registries.ts:106`;
+  - `sources/documents/feeds.ts:88`;
+  - `schema/run.ts:139`, and `:504` (`HubFileRead.keyed`, read by `references/build.ts:196`);
+  - `server/files/fs/collections.ts:131-140`;
+  - `server/edit/feeds/feeds.ts:125-138`;
+  - `server/edit/feeds/literature.ts:110-118`.
+- Without it, a file whose `schema:` did not read was keyed by its `collections:` entry's named key in the snapshot, but had no key in the server writers. The card's cause and the server's refusal could then disagree.
+
+**The causes the refusals and the card read.**
+- The server's `Collection.fault` is set at `server/files/fs/collections.ts:77,142`.
+- `FeedRead.key_fault` is set at `server/edit/feeds/feeds.ts:138`.
+- The snapshot's `Collection.key_fault` is set at `normalise.ts:562`.
+
+**The words.**
+- Five keys under `server.entries` in `config/text/server.yml:294-298`, lowercase with no full stop: `no_primary_key_none`, `_two`, `_unkeyed`, `_beside`, `_missing`.
+- Five keys under `collection` in `config/text/views/boards/collection.yml:21-25`, in the "Writes are off: ..." form of their neighbours.
+- `no_primary_key` is gone from both catalogs.
+
+**The server refusals.**
+- `noPrimaryKey` (`server/edit/writes/entries.ts:253-280`) gives the sentence of a cause.
+- It is read by:
+  - `unkeyed` (`entries.ts:243-246`);
+  - the feeds' `unkeyed` (`feeds.ts:79-82`);
+  - the Literature save (`literature.ts:154-155`).
+
+**The card line and the placement refusal.**
+- `noPrimaryKeyLine` (`src/lib/state/sessions/source/draft-entry.ts:82-95`) gives the line of a cause.
+- It is read by:
+  - `blockedBy` (`views/shared/forms/entry-file.ts:162`);
+  - the refusal to place an entry (`draft-entry.ts:55-75`).
+- `placeEntry` and `placeInFile` take the collection (`Keyed`, `draft-entry.ts:39`) where they took a primary key; `lead-apply.ts:69` passes `held`.
+- `IdentityFault` gains `cause` (`state/boards/collection/index.ts:619-625`), and `identityFaults` takes it as a third argument (`:636-648`). The callers pass `key_fault`:
+  - `Collection.svelte:133`;
+  - `Entry.svelte:143-147`;
+  - `page-file.ts:59`;
+  - `registry-file.svelte.ts:69`.
+- `KeyFault` reaches `state/` through `data/model/index.ts:41`.
+
+**Tests.**
+- `tests/server/edit/writes-collection.test.ts:368-414`, 'refuses every write to a file with %s, naming the cause (G8)'. Each row asserts its cause's own sentence: two flags gives `_two`, a flag on tags gives `_unkeyed`, `primary_key: "yes"` gives `_none`, an entry key beside the flag gives `_beside`, and no schema and no named key gives `_missing`, which is a new row.
+- The other rows that refuse for a cause assert `_none`:
+  - writes-collection, 'refuses an edit, a reorder, an Add and a remove of a file with no primary key';
+  - `writes.test.ts:561`;
+  - `feeds.test.ts:205-209`.
+- `tests/data/snapshot/normalise.test.ts:263` checks the snapshot's `key_fault`: `missing` for a file with no schema, `two` with both fields, and none for venues.
+- `tests/state/sessions/source/draft-entry.test.ts` (new, 78 lines) checks:
+  - each cause's card line;
+  - `identityFaults` carrying the cause;
+  - `placeEntry` refusing with the cause's line, for each of the five causes.
+
+**Docs.** `docs/HELP.md:274`, `docs/data-map.md:56` and `docs/apps.md:410` (the collections row) name the causes.
+
+### Item 3: the Position Leads Add refusals in their group's style
+
+- New key `server.feeds.entry_key_taken`, "An entry with this {0} is in the file already." (`config/text/server.yml:322`). It is read by:
+  - the Leads Add (`feeds.ts:396`);
+  - the put-back of a deleted feed entry (`feeds.ts:499`);
+  - the Literature save (`literature.ts:203`).
+- `server.entries.key_taken` stays with the entry writes (`entries.ts:583`).
+- Test: `tests/server/edit/feeds.test.ts:194-202` asserts the refusal and its exact words.
+
+### Item 4: a new entry in the schema's order
+
+- `renderEntry` (`src/lib/server/edit/entry-edit/render.ts:15-26`) writes the fields in the schema's order, the first on the `- ` line. The primary key goes first only when the schema does not name it, as in a file with no schema.
+- `tests/server/edit/writes.test.ts:567-574` expects the base's order again: `- name: New V` then `id: newv`. The row is now titled 'writes a venue from its name and its id, in the order its schema lists them'.
+
+### Item 5: case 21 run
+
+Each test puts a collection keyed `projects` beside a field with `foreign_key: projects`:
+
+- `tests/data/snapshot/schema-rules.test.ts:675`, 'reads a foreign key naming projects as the manifests beside a collection keyed projects'.
+  - The collection's file holds `alpha`, the id of a manifest, and `only-here`, which no manifest has.
+  - The tasks entry's `related: [alpha, only-here]` gives one finding: `findings.schema.no_key` on `entries[0].related[1]` naming `projects`.
+  - In the reference index, `alpha` resolves to `projects/active/alpha/project.yml` alone, and `only-here` resolves to nothing.
+- `tests/state/forms/choices.test.ts:182`, 'offers the projects for a key naming projects, and nothing of a collection keyed projects (G132)': `choicesFor` offers `[{ id: 'alpha', label: 'Alpha' }]` and no entry of that collection.
+
+### Host- or user-visible changes of this round
+
+1. **Leads Add with an empty title.**
+   - Before (base): "A lead needs a title."
+   - After: "An entry needs a title." This is `server.feeds.entry_needs_key`, unchanged this round.
+2. **Leads Add with a title already in the file.**
+   - Before (base): "A lead with this title is in the file already."
+   - After: "An entry with this title is in the file already."
+3. **The Literature view's save of a paper whose key is in the file.** The base had no such refusal. It is now refused with "An entry with this key is in the file already."
+4. **A refused write to a file with no primary key** names the cause and what takes it away. For example, a people file whose collections entry names `key` beside the schema's flag on `key` is refused with ".oculus/data/people/people.yml has no primary key, so no entry of it can be addressed: its collections entry names key beside the flag on key in its schema, and a file has only one; take the primary_key out of its collections entry".
+5. **The card line of such a file**, and the refusal to place a lead's application in it, give the same cause in the "Writes are off: ..." form. For example: "Writes are off: people.yml has no primary key, as its schema flags role, a tags field, whose value names no one entry; flag a field that holds one value".
+6. **A new entry's field order.** It is written in the schema's order. A venue Add on the hub's `venues.yml`, whose schema lists `name` before `id`, writes `- name:` first, as the base did.
+7. **The apps payload.** The `collections` record carries `key_fault?`. This is the decision above.
+8. **The project form with a manifest schema that flags a field of a list type** writes that field and the project's id like any other field, since the form has no primary key. Before, the form left the flagged field unwritten. No shipped schema flags such a field.
+
+### Judgment calls
+
+- **`keyedSchema` at every reader.** A file carrying a `schema:` that does not read now has no primary key in every reader, with the cause `none`. Without it, the snapshot readers keyed such a file by the named key while the server refused its writes. The schema run already reports such a schema as a finding.
+- **`keyFindings` keeps its own walk.** `keyFindings` in `schema/run.ts` reads the raw schema rows: a `primary_key` that is not `true`, a flag in a records field, and the row paths a finding is placed at. `keyFaultOf` reads parsed fields. The two cannot share one walk.
+- **The literature key and the feed put-back use the feeds key.** The Literature save's taken key and the feed put-back's taken key use `server.feeds.entry_key_taken`, the sentence-case group their neighbours (`server.literature`, `server.feeds`) are in. `server.entries.key_taken` would have put a lowercase sentence beside those neighbours.
+- **`primary_key: "yes"` reads as no flag.** It gives the cause `none`, whose words say no field is flagged `primary_key: true`. The schema finding `key_not_true` names the value.
+
+### Greps the rules file asks for
+
+**History words.** Command: `git diff a11f9f14 -U0` over `src`, `tests`, `config` and `docs`, plus the untracked files, keeping the added comment and title lines, then `grep -i` for the rules file's words. It found 11 hits. Each one is about time within a run or the order of fields, not about history:
+
+- `before: z.string()`: code.
+- "goes back over what it left when the file still": the state of the file at an undo.
+- "as it was before the write": the bytes before a write.
+- "still names its entry": what a record names at undo.
+- "the feed no longer": an entry gone at read time.
+- "before it writes it": the order of a read and a write.
+- "holds it still": the file at lookup time.
+- "gone before it answers" and "discarded before it answers": the order of a control and an answer.
+- "written before the `id`": field order.
+- "still holds it there": the file at undo time.
+
+**Reuse.** Command: `git grep -n -E "<name>" a11f9f14 -- src tests`, run for `keyFault`, `KeyFault`, `keyedSchema`, `noPrimaryKey`, `noPrimaryKeyLine` and `type Keyed\b`. Each prints nothing. A grep for `no primary key|noPrimary` finds only the primary-hub `noPrimary` of accounts and settings, which is a different concern.
+
+**Unused exports.** Command: `diff <(sh utils/unused-exports.sh 2>&1) .agents/worktrees/O79-base/unused-exports.txt`, run after the last change. Its `<` lines are the same as under check 3: no new unused export.
+
+### Runs this round
+
+**Scoped runs while working.**
+- `npx vitest run` over the 8 changed test files: `Tests 182 passed (182)`.
+- `npx vitest run` over 23 related files: keys, catalog-file-keys, literature, references, rename, undo, hub-writes, manifest-fields, new-entry, page-entry, registries, collections, record-fields, relation-shapes, resources, compose, changes, html.dom, board-rules, manifests, entry-save, record-values and referrers. Result: `Tests 549 passed (549)`.
+- `npx vitest run tests/checks/tree/boundaries.test.ts tests/state/sessions/source/draft-entry.test.ts`: `Tests 18 passed (18)`.
+- `npx svelte-check`: `0 ERRORS 0 WARNINGS`.
+
+**The verify list.** `npm run diagrams && npm run test:quick -- --base a11f9f14` ran twice.
+1. The first run was red on one check: `tests/checks/tree/boundaries.test.ts`, with "state/boards/collection/index.ts imports data/model/model-collections" and "state/sessions/source/draft-entry.ts imports data/model/model-collections". The fix re-exports `KeyFault` from `data/model/index.ts:41` and imports it from there.
+2. After that fix, which was the last change:
+
+```
+test:quick: 140 changed file(s), from git since a11f9f14
+test:quick: 309 test file(s)
+ok      ASCII gate (1.0 s)
+ok      prettier (1.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.4 s)
+ok      eslint (13.0 s)
+ok      svelte-check (41.9 s): 1793028857535 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (164.7 s)
+ok      vitest (242.1 s)
+ok      vitest slow (291.1 s)
+test:quick: 293.6 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+```
+
+### Files written this round
+
+All files were written in the worktree by Edit or Write. `npm run diagrams` rewrote `docs/diagrams/channels.svg`, `writes.dot` and `writes.svg`. No file was written outside the worktree.
+
+- **Code:**
+  - `src/lib/data/model/model-collections.ts` (451 lines);
+  - `src/lib/data/model/index.ts` (879);
+  - `src/lib/state/forms/schema.ts`;
+  - `src/lib/data/snapshot/schema/field.ts`;
+  - `src/lib/data/snapshot/schema/run.ts` (573);
+  - `src/lib/data/snapshot/references/build.ts`;
+  - `src/lib/data/sources/registries.ts`;
+  - `src/lib/data/snapshot/schema/lists.ts`;
+  - `src/lib/data/sources/documents/feeds.ts`;
+  - `src/lib/data/snapshot/validate.ts`;
+  - `src/lib/data/snapshot/normalise.ts` (672);
+  - `src/lib/server/files/fs/collections.ts`;
+  - `src/lib/server/edit/writes/entries.ts` (641);
+  - `src/lib/server/edit/feeds/feeds.ts` (675);
+  - `src/lib/server/edit/feeds/literature.ts` (297);
+  - `src/lib/server/edit/entry-edit/render.ts`;
+  - `src/lib/state/sessions/source/draft-entry.ts` (169);
+  - `src/lib/state/boards/collection/index.ts` (765);
+  - `src/lib/views/shared/forms/entry-file.ts`;
+  - `src/lib/views/shared/card/feed/lead-apply.ts`;
+  - `src/lib/views/shared/forms/entry/edit/page-file.ts`;
+  - `src/lib/views/shared/forms/registry/registry-file.svelte.ts`;
+  - `src/lib/views/boards/collection/Collection.svelte` (520);
+  - `src/lib/views/boards/entry/Entry.svelte` (391).
+- **Catalogs:** `config/text/server.yml` and `config/text/views/boards/collection.yml`.
+- **Docs:** `docs/HELP.md`, `docs/data-map.md` and `docs/apps.md`.
+- **Tests:**
+  - `tests/state/forms/form-draft.test.ts` (343);
+  - `tests/state/sessions/source/draft-entry.test.ts` (new, 78; the folder holds 6 items);
+  - `tests/state/forms/choices.test.ts` (211);
+  - `tests/data/snapshot/normalise.test.ts` (370);
+  - `tests/server/edit/writes-collection.test.ts` (414);
+  - `tests/server/edit/writes.test.ts` (861);
+  - `tests/server/edit/feeds.test.ts` (455);
+  - `tests/data/snapshot/schema-rules.test.ts` (732).
+- **This report.**

@@ -2839,6 +2839,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 453 (2026-10-26): (a), the add form of a follow-up or subtask has a line above it, a heading and visible labels "What", "Not before" or "Deadline"; (c), no change, was the lazy option (Axel: "453 (a)") (the user).
 - Open item 454 (2026-10-26): (a), one record card: the same head, menu and body order for every kind, each kind adding its own facts and actions; which kinds is open item 456; (b), only the menu, was not chosen; (c), no change, was the lazy option (Axel: "454 (a) Are we clear on what every kind is?") (the user).
 - Open item 455 (2026-10-26): (a), two new steps after the steps in flight and before O86 and O87, built side by side: O88 one heading (448, 449) and O89 one record card and one way to add a dated line (450 to 454); ruling 446 goes into O87; (b), one step per item, was not chosen; (c), nothing scheduled, was the lazy option (Axel: "455 (a)") (the user).
+- Open item 457 (2026-10-26, O79 repair round 1, the orchestrator, automode): (a), the cause of a missing primary key travels in the snapshot as `key_fault?` on `Collection` and `FeedData` and in the apps payload, documented in `docs/apps.md`, so the card line reads the one computed cause; unblocks O79's landing; recomputing the cause in the page was the lazy option (self-rule).
 
 ## Agents
 

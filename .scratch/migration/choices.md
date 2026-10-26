@@ -5346,3 +5346,13 @@ Case 16 of O85 asked a second hub's row to say its file's state "as the primary'
 
 Where it applies: O85. Booked in `agents/briefs/O85-cases.md`, ruling 1.
 Builds on it: O85
+
+## Z1037 (2026-10-26, O79's repair round 1, the orchestrator, automode): the cause of a missing primary key travels in the snapshot
+
+Item 2 of O79's round asks the card line to read the one computed cause of a file having no primary key. The card line runs in the page, so the cause travels in the snapshot's `Collection` and `FeedData` as `key_fault?`, which makes it a field of the apps payload's `collections` record, written in `docs/apps.md:410` beside `primary_key?` (as Z1032 added `list` to the `config` channel).
+
+- Chosen: (a) `key_fault?` on the snapshot's `Collection` and `FeedData` and in the apps payload, absent when the file has a primary key, documented in the apps guide.
+- Not chosen: (b) the card line pointing to the Audit finding instead of naming the cause, which item 2 rules out; (c) the cause computed again in the page from the raw schema, a second copy of the rule item 1 removes, the lazy option.
+
+Where it applies: O79. Booked in `plan.md` Rulings, open item 457.
+Builds on it: O79

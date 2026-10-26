@@ -33,7 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aed0feff241baf1c1 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O79-report.md
-  builder_usage: 119528 tokens, 125 tool uses, 21 min 28 s (first run, handed back at case 15); build under the cases ruling: 411377 tokens, 1501 tool uses, 170 min 19 s
+  builder_usage: 119528 tokens, 125 tool uses, 21 min 28 s (first run, handed back at case 15); build under the cases ruling: 411377 tokens, 1501 tool uses, 170 min 19 s; repair round 1: 330723 tokens, 230 tool uses, 35 min 3 s
   reviewer_report: .scratch/migration/agents/reviews/O79-refuter.md (a3d077e13c109e0ab, claude-opus-5-5, 247539 tokens, 121 tool uses, 31 min 26 s)
   shared_paths: `docs/apps.md` (O79 the `collections` row at line 410, O83 the `hpc` row at line 421), `docs/HELP.md` (O79 the paragraphs on a schema's fields and an entry's identity, O83 the Live HPC paragraph at line 320), `src/lib/data/model/index.ts` (O79 the exports of model-collections.ts, O83 the exports of model-sessions.ts), and the generated `docs/diagrams/` files, each with migration step O83; simple, since the hunks are apart and the diagrams are regenerated with `npm run diagrams` at each landing; with migration step O81 also `src/lib/data/helpers/hub-names.ts` (both change `readList`), `src/lib/data/model/model-collections.ts` (O81 moves `HubVocab`, `ListedCollection` and `HubVocabs` into it), `src/lib/data/index.ts`, `src/lib/data/sources/collections.ts` and `src/lib/data/model/index.ts`, found by O81's review (Spec 2): O81 lands first, and O79's landing resolves the overlapping hunks and splits `hub-names.ts`, which O79's lines take past the size limit (843 at the base, 877 after O81, about 908 with both)
   round: 1
@@ -196,6 +196,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 2026-10-26: Open item 457, `key_fault?` in the snapshot and the apps payload (O79 repair round 1): closed under self-rule, Z1037.
 - 447 to 455 (2026-10-26): ruled by Axel, 447 (a), 448 (a), 449 (b), 450 (a), 451 (a), 452 (a), 453 (a), 454 (a), 455 (a); booked in `plan.md` Rulings; steps O88 (one heading) and O89 (one record card) booked before O86, ruling 446 folded into O87's line; O89's kinds wait on open item 456.
 - 446 (2026-10-26): ruled (a) by Axel; booked in `plan.md` Rulings; scheduling waits on open item 447.
 - 445 (2026-10-26): ruled (a) by Axel; step O87 booked in `plan.md` after O86, tagged (ruling 445).
