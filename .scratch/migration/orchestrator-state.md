@@ -41,9 +41,8 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: not-started
 - step: O86
   brief_check: .scratch/migration/agents/reviews/O86-brief-check.md (a3bd147e859e9ce7f, claude-opus-5-5, 259309 tokens, 95 tool uses, 10 min 43 s)
-  landing: preparing
-- step: O88
-  brief_check: "running: ab3a4af18b70f6cab"
+  base: bf27e33ff
+  worktree: .agents/worktrees/migration-O86
   landing: preparing
 - step: O84
   landing: preparing
@@ -185,6 +184,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 461 (2026-10-26, O88's brief check, `agents/reviews/O88-brief-check.md` 5.4, stopped at /spec O88): which headings O88 draws with `GroupHead`. Ruling 448 (a) makes `GroupHead` the only heading code, and O88's line lists the Projects boards, the Focus clusters and band, Venues, Lit Watch, Position Leads, Audit and Slides. The tree has grouping headings of their own in views the line does not list: card groups drawn as a `Surface` with an `h3` over cards, the construct O88 converts in Lanes and Venues (Inbox's four sections at `Inbox.svelte:164` and its Triaged fold at 219-226, LinkedIn's Ideas and Posted at `Linkedin.svelte:216,246`, Pillars' two sections at `Pillars.svelte:112,144`); and list headings of side panes and pages, an `h3` over rows with no `Surface` (the session groups at `SessionWorkspace.svelte:204`, the Terminals group at `TerminalRows.svelte:104`, the Catalogue groups at `Catalogue.svelte:241`, the Keys sections at `Keys.svelte:125`, the Person page's blocks at `Person.svelte:246-328`).
+  - (a) O88 also draws the card-group headings (Inbox, LinkedIn, Pillars) with `GroupHead`; the list headings keep their own `h3`. Pros: every heading over cards looks and folds alike, with the construct O88 already converts. Cons: two heading kinds stay, which "the only heading code" does not allow read strictly; Pillars' headings change before your look at Pillars for 456.
+  - (b) O88 draws every heading named here with `GroupHead`, each group folding with the circled-minus control. Pros: one heading code, as 448 (a) says. Cons: the compact list headings of the session list, Catalogue, Keys and Person gain the strip, the stickiness and a fold they do not have today, in views you have not looked at.
+  - (c) O88 as listed. The lazy option: Inbox, LinkedIn and Pillars keep heading code of their own, against 448 (a).
+  - Recommendation: (b), by your words "1 heading", though the evidence does not settle whether a side pane's list heading is a grouping heading in your sense; a look at the session list and the Catalogue with the strip would settle it. Left open as kind 6, no clear recommendation.
 
 
 ## Closed items
