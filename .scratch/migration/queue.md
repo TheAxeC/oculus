@@ -1,16 +1,18 @@
-In flight (2 of 6 slots in use):
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), built under the cases ruling; review running.
-- O85 (a hub's own settings set in Settings for any hub of the workspace, the primary first and chosen; rulings 440, 443, 444, Z1033, Z1034), handed back after its first run at case 16; its cases ruling is next.
+In flight (3 of 6 slots in use):
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), built under the cases ruling; reviewed, repair round 1 running.
+- O85 (a hub's own settings set in Settings for any hub of the workspace, the primary first and chosen; rulings 440, 443, 444, Z1033, Z1034), building under its cases ruling (Z1035, Z1036).
+- O86 (the update tasks of every hub), its /spec under way.
 
 Queued, in order:
+- O88 (one heading: `GroupHead` the only grouping heading, owning its strip, rounding, margin and fold control; rulings 448, 449 (b), 455), built beside O89.
+- O89 (one record card and one way to add a dated line, Quick add included; rulings 450 to 455); its kinds wait on open item 456.
 - O84 (who the user is: `self` out of the workspace file and into the primary hub's `.oculus/local.yml`, the person in any hub; rulings 437, 438); `self` read from the primary hub's `.oculus/local.yml` (ruling 439 (b)); waits for O79 to land, since both change `normalise.ts`, `validate.ts`, `data/index.ts`, `config/options/sources.yml` and the same line of `config/defaults/sources.yml`.
-- O86 (the update tasks of every hub, named by their hub when two hold one; rulings 441, 443).
-- O87 (the Focus band's positions and teaching by stages, as Funding; ruling 445); its /spec can run now that O81 has landed; O81 changed the same files: `vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts` and `Band.svelte`.
+- O87 (the Focus band's positions and teaching by stages, as Funding, and the dated subtasks and due follow-ups in Tasks; rulings 445, 446, 447); its /spec can run now that O81 has landed; O81 changed the same files: `vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts` and `Band.svelte`.
 
 Owed looks: none.
 
 Landed, newest first:
-- O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031, Z1032), 2026-10-26.
+- O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031, Z1032), 2026-10-26, 4e0fbd48.
 - O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 9961e0d5.
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.
 - O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
