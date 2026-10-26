@@ -143,9 +143,12 @@ text:
             show_in_files: Show in Files
             show_in_files_tip: select the project folder in the Files view
             xlink_done: done
+            xlink_done_glyph: published
             xlink_idea: idea
+            xlink_idea_glyph: idea
             xlink_ideas: ideas
             xlink_in_flight: in flight
+            xlink_in_flight_glyph: active
         latex:
             heading: LaTeX
             open_view: TeX view

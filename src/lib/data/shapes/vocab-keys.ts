@@ -101,6 +101,21 @@ export function wordsWith(config: Record<string, unknown>, key: string, flag: st
 }
 
 /**
+ * The one word of a vocabulary map of the merged config that carries a single-use flag (`new_idea`
+ * of `stages`, `default_task` of `statuses`, `default` of `tiers`), or none: none when no word
+ * carries it, and none when two or more do, which is a finding of the vocabulary
+ * (data/sources/config/sections/vocab.ts), so no place in the map decides which word is written.
+ */
+export function oneWordWith(
+    config: Record<string, unknown>,
+    key: string,
+    flag: string
+): string | undefined {
+    const words = wordsWith(config, key, flag);
+    return words.length === 1 ? words[0] : undefined;
+}
+
+/**
  * Whether a word, compared as written, carries a flag of a vocabulary map: a project's stage of
  * `stages`. A record that holds no word carries none.
  */

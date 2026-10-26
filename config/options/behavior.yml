@@ -101,6 +101,12 @@ options:
                 help: the forms the row holds, compared with the project's form as written
                 control: multi
                 from: project_forms
+    focus.sections:
+        heading: boards
+        section: Focus board
+        help: "The sections the Focus board draws, in drawing order: career (the career panel), command_center, tasks, quick_add, awaiting (the awaiting box), band (the Funding, Jobs and Teaching columns) and lanes (the Focus lanes, with the message of a board with no project). A section not listed is not drawn, and the line saying what a quick add did is drawn after quick_add, or at the top of the board without it. A word that is no section and a section listed twice are findings, and the rest is drawn once each; a value that is no list is a finding, and every section is drawn in this list's order."
+        control: multi
+        options: [career, command_center, tasks, quick_add, awaiting, band, lanes]
     focus.stale_lag_days:
         heading: boards
         section: Audit checks

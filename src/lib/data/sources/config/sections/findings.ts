@@ -21,6 +21,7 @@ import { boardsFindings, categoriesFindings } from './boards.ts';
 import { countsFindings } from './counts.ts';
 import { languageFindings } from './languages.ts';
 import { themeFindings } from './themes.ts';
+import { vocabFindings } from './vocab.ts';
 
 /** One reader: the findings of a merged configuration, given where its values were read from. */
 export type ReaderFindings = (where: ConfigWhere, config: Record<string, unknown>) => Finding[];
@@ -46,5 +47,6 @@ export const READER_FINDINGS: readonly ReaderFindings[] = [
     (where, config) => railFindings(config, filesOf(where), textCatalog(config)),
     (where, config) => boardsFindings(config, filesOf(where), textCatalog(config)),
     (where, config) => categoriesFindings(config, filesOf(where), textCatalog(config)),
+    (where, config) => vocabFindings(config, filesOf(where), textCatalog(config)),
     (where, config) => countsFindings(config, keyFile(where, 'counts'), textCatalog(config))
 ];

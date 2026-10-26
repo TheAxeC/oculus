@@ -76,6 +76,7 @@ export const SOURCES = [
     'chip_flags',
     'entry_statuses',
     'ticker_categories',
+    'focus_clusters',
     'slide_tags',
     'code_themes',
     'views',

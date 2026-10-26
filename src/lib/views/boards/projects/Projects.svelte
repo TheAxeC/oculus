@@ -1,39 +1,33 @@
 <script module lang="ts">
-    // Layer 3, view registration. One board component owns the six portfolio board registrations,
-    // the Projects page's group. A board's tab counts its cards and, in the row's tone, its cards
-    // in each row of `categories` in config/catalogs/vocab.yml that holds one; the rail, where the
-    // board's row of `counts` says `rail: true`, gets the count of its cards in the rows carrying
-    // `rail: true`, in the tone of the first such row, and 0 when none is in such a row.
+    // Layer 3, view registration. One board component draws every project board view: the page
+    // reads the views out of the merged config's `boards:` (state/boards/board/presets.ts
+    // `boardViews`) and registers them with this component (routes/views.ts `registerBoards`),
+    // which gives each its count hooks here. A board's tab counts its cards and, in the row's tone,
+    // its cards in each row of `categories` in config/catalogs/vocab.yml that holds one; the rail,
+    // where the board's row of `counts` says `rail: true`, gets the count of its cards in the rows
+    // carrying `rail: true`, in the colour `rail_color` of vocab.yml gives, and 0 when none is in
+    // such a row.
+    import type { BoardView } from '$lib/state/boards/board';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
-    const boardRegistration = (id: string, order: number): ViewRegistration => ({
-        id,
-        label: `views.${id}`,
-        glyph: `views.${id}_glyph`,
-        group: 'projects',
-        order,
-        badge: (client) => client.railBadges.boardBadge(id),
-        badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
-        badgeCells: (client) => client.railBadges.boardCells(id),
-        countPart: (client) => client.railBadges.boardRail(id)
-    });
-
-    export const registration: ViewRegistration[] = [
-        boardRegistration('projects', 1),
-        boardRegistration('supervision', 2),
-        boardRegistration('coauthor', 3),
-        boardRegistration('archive', 4),
-        boardRegistration('personal', 5),
-        boardRegistration('software', 6)
-    ];
+    /** The registrations of the board views given, each with its count hooks. */
+    export function boardRegistration(views: readonly BoardView[]): ViewRegistration[] {
+        return views.map((view) => ({
+            ...view,
+            badge: (client) => client.railBadges.boardBadge(view.id),
+            badgeTitle: (client) => client.railBadges.boardBadgeTitle(view.id),
+            badgeCells: (client) => client.railBadges.boardCells(view.id),
+            countPart: (client) => client.railBadges.boardRail(view.id)
+        }));
+    }
 </script>
 
 <script lang="ts">
     // Layer 3, view. The project board: cards or a list, under a bar of two lines and a header. It
-    // is registered six times, as `projects`, `supervision`, `coauthor`, `archive`, `personal` and
-    // `software`, and reads which board it is from the instance it was mounted as, so the six board
-    // tabs are one component here. A board holds every project its keys in `boards:` meet, so one
-    // project may be on several.
+    // is registered once per key of `boards:`, and reads which board it is from the instance it was
+    // mounted as, so every board tab is one component here, titled by the name its registration
+    // carries. A board holds every project its keys in `boards:` meet, so one project may be on
+    // several.
     //
     // The header holds New project, Cards and List, the one in force pressed, Full titles, pressed
     // while the board draws full titles, and, in list mode, Columns, a menu that shows or hides
@@ -91,6 +85,7 @@
         facets,
         filterGroups,
         listCells,
+        newProjectTier,
         offersMine,
         parseBoardState,
         pickCell,
@@ -102,13 +97,14 @@
     } from '$lib/state/boards/board';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
-    import { lookup, t } from '$lib/state/shared/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { toneOf } from '$lib/state/shared/words/tones';
-    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
         fs: { primary, roots },
+        registry,
         selectors: { board, boardPreset, boardStats, offersNewProject, selfNamed, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -219,9 +215,10 @@
         });
     }
 
-    /** The board's own name, the key the registry names it by. */
+    /** The board's own name, the one its registration carries, read from its `label:`. */
     function title(): string {
-        return lookup(`views.${preset.id}`);
+        const registered = registry.viewFor(instance.view);
+        return registered === undefined ? instance.view : registrationLabel(registered);
     }
 
     /** The label a card and a row carry: the short handle in short mode, else the full title. */
@@ -359,7 +356,8 @@
     <div class="board" data-instance={instance.id} data-board={preset.id}>
         {#if adding && offersNew}
             <NewIdea
-                tier={preset.rule.tiers?.at(0)}
+                tierOf={(hub: string) =>
+                    newProjectTier(preset.rule, preset.words(hub === '' ? undefined : hub).config)}
                 roles={preset.rule.roles}
                 takes={(hub: string) => offersNewProject(preset, hub)}
                 onclose={() => (adding = false)}

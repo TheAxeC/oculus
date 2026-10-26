@@ -98,7 +98,9 @@ describe('the hub an Add writes to', () => {
                 choices: [
                     { id: PRIMARY, label: PRIMARY },
                     { id: 'lab', label: 'lab' }
-                ]
+                ],
+                empty: t('entry_form.add_hub_none'),
+                required: true
             }
         ]);
         expect(await ask.submit(['https://example.org/notes', 'lab'])).toBe('');

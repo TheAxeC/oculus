@@ -20,6 +20,7 @@ import type { InboxStore } from '../../feeds/inbox.svelte.ts';
 import { splitPosts } from '../../feeds/linkedin.ts';
 import { needsInput, sessionRows } from '../../sessions/folds.ts';
 import { findingsCount as listedFindings } from '../navigation/status.ts';
+import type { RegistryStore } from '../navigation/registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusTone, toneOf } from '../../shared/words/tones.ts';
 import { countRow, countText, leadsDue, linkedinOverdue, matchedEntries } from './rail-badges.ts';
@@ -75,7 +76,7 @@ export type RailBadgesStore = {
     boardBadge: (view: string) => string;
     /**
      * The count a board gives the rail: its projects in the rows of `categories` carrying
-     * `rail: true`, in the tone of the first such row, and 0 when it has none there.
+     * `rail: true`, in the tone of the colour `rail_color` gives, and 0 when it has none there.
      */
     boardRail: (view: string) => RailPart;
     collectionCount: (key: string) => number;
@@ -140,7 +141,8 @@ export function createRailBadges(
     inbox: InboxStore,
     audit: AuditStore,
     problems: Pick<ProblemsStore, 'total'>,
-    selectors: BadgeSelectors
+    selectors: BadgeSelectors,
+    registry: Pick<RegistryStore, 'refused'>
 ): RailBadgesStore {
     /** Where one view's count is drawn: its `counts` row's `tab` and `rail`, false without one. */
     function countFlags(view: string): CountFlags {
@@ -154,18 +156,21 @@ export function createRailBadges(
     }
 
     /**
-     * The count a board gives the rail: its projects in the rows of `categories` of their own
-     * hub's words carrying `rail: true` (`railCount`), in the tone of the first such row of every
-     * hub's rows; 0, drawn as no count, when none of its projects is in such a row.
+     * The count a board gives the rail: its projects in the rows of `categories` of their own hub's
+     * words carrying `rail: true` (`railCount`), in the tone of the colour `rail_color` gives: in
+     * the words of the board's hub for a board naming `hub:`, whose projects are all of that hub,
+     * and in the merged config otherwise; 0, drawn as no count, when none of its projects is in
+     * such a row.
      */
     function boardRail(view: string): RailPart {
         const preset = selectors.boardPreset(view);
         const projects = selectors.board(preset).map((item) => item.project);
+        const hub = preset.rule.hub;
         const rail = railCount(
             projects,
             preset.categories,
-            preset.config,
-            (hub) => preset.words(hub).config
+            hub === null ? preset.config : preset.words(hub).config,
+            (root) => preset.words(root).config
         );
         return rail.color === ''
             ? { count: rail.count }
@@ -203,10 +208,13 @@ export function createRailBadges(
 
     /**
      * The findings the Findings view lists, the one count of those rows the status bar's item reads
-     * too: the snapshot's, the config channel's and the apps channel's.
+     * too: the snapshot's, the config channel's, the apps channel's and the page's own (the
+     * registry's `refused`).
      */
     function findingsCount(): number {
-        return listedFindings(entities.portfolio(), entities.config(), entities.apps());
+        return listedFindings(entities.portfolio(), entities.config(), entities.apps(), {
+            findings: registry.refused()
+        });
     }
 
     /**

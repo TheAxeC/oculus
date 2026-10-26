@@ -5,10 +5,10 @@
 # ===========================================================================
 
 
-# The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. Each page is also a group of the view catalogue, which lists the page's views and documents under the button's `label`, so a button renamed renames its group: `chord` is the group's one-letter keyboard prefix, the letter then a digit for the entry's place in the group, its views first and its documents after them, and `group_glyph` the glyph of the group's heading, one no view of the group carries, so the heading does not read as one of its entries. A page with no `chord` is counted under `direct_chord`, and one with no `group_glyph` takes the glyph of its first view; a chord that is not one lowercase letter, or a group glyph glyphs.yml does not hold, is a finding and is not used. The one entry with `unplaced_collections: true` holds in its group every collection view whose `collections:` entry names no `group:`, after the group's placed collection views; no such entry, or two, is a finding, and with none such a view is in no group. The Settings view edits this list.
+# The rail: one button per page, drawn in this order, the digits 1 to 9 showing the first nine. `label` is the button's words, `glyph` a name in config/catalogs/glyphs.yml, and `page` a key of `arrangements:` below, which is what the page is first made from and what the saved page stays tied to, so a button renamed keeps its page. A page key named twice, or naming no arrangement, draws no second button and is a finding. Each page is also a group of the view catalogue, which lists the page's views and documents under the button's `label`, so a button renamed renames its group: `chord` is the group's one-letter keyboard prefix, the letter then a digit for the entry's place in the group, its views first and its documents after them, and `group_glyph` the glyph of the group's heading, one no view of the group carries, so the heading does not read as one of its entries. A page with no `chord` is counted under `direct_chord`, and one with no `group_glyph` takes the glyph of its first view; a chord that is not one lowercase letter, or a group glyph glyphs.yml does not hold, is a finding and is not used. The one entry with `unplaced_collections: true` holds in its group every collection view whose `collections:` entry names no `group:`, after the group's placed collection views; no such entry, or two, is a finding, and with none such a view is in no group. The one entry with `project_boards: true` holds in its group the project boards of `boards:` below, in their order; no such entry, or two, is a finding, and with none the boards are in no group. The Settings view edits this list.
 rail:
   - { label: "Focus", glyph: compass, page: focus, chord: f, group_glyph: focus }
-  - { label: "Projects", glyph: paper, page: projects, chord: p, group_glyph: paper }
+  - { label: "Projects", glyph: paper, page: projects, chord: p, group_glyph: paper, project_boards: true }
   - { label: "Incoming", glyph: email, page: incoming, chord: e, group_glyph: email }
   - { label: "Sessions", glyph: live, page: sessions, chord: m, group_glyph: live }
   - { label: "Explorer", glyph: folder, page: explorer, chord: s, group_glyph: folder }
@@ -223,9 +223,11 @@ floats:
   - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
-# The project boards, by view id, in the order a project opened from anywhere is placed by: it opens on the first board that takes it, and on the first board when none does. A project is on every board whose keys it meets, and a board meets a key only when every list it names holds. `tier` is a word of `tiers` in config/catalogs/vocab.yml, or a list of them. `role` is a key of `roles` there, or a list: the user's role on the project, the first row whose field holds the person the workspace setting `self` names; with no `self` the key is not applied. `stages`, `chips` and `forms` are blocks held against the project's `stage:`, its `status.chips` and its `form:`, each with the lists `words` (one of its words is listed), `not_words` (none is), `flags` (one of its words carries one of these flags of the vocabulary) and `not_flags` (none does); `forms` takes no flags. `hub` is the root of one hub of the workspace, whose projects alone the board takes. `match` maps a manifest field (domain, pillars, funding, datasets, venue, compute, related, lead, collaborators, supervisors, tags, year, tier, stage, form, chips) to the values one of which the field must hold, a record by its key. `columns` are the columns its list mode draws until the viewer picks others in its Columns menu, each the `cell` it draws (title, stage, venue, lane, next, with, domain, pillar or funding) under the heading `label`, the cell's name when it has none; the menu offers every cell, Project always shown. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the Full titles button in the board's header overrides it for the viewer; the full title is always on hover. `cards` is how the cards and the list are laid out: `sections` (the default) one section per category of `categories` in vocab.yml that holds a project, in that list's order, headed by the category's label and count in its colour, which a press folds, with the projects in no category last; `grid` one section of every project with no heading. A board draws the categories its projects are in, in its sections, the slices of its bar and its tab's counts, and names none of its own. A key here that is no board view is never shown.
+# The project boards, by view id, in the order a project opened from anywhere is placed by: it opens on the first board that takes it, and on the first board when none does. Each key is registered as a board view, in this order, in the group of the rail entry carrying `project_boards: true`; a key that is the id of a view a module registers, or a collection's key, is a finding and is not registered. `label` and `glyph` are the dotted keys of the text-catalog words the board's view is named by and draws; a board naming neither, or a key the catalog lacks, is a finding and is drawn with its key and `views.board_glyph`. A project is on every board whose keys it meets, and a board meets a key only when every list it names holds. `tier` is a word of `tiers` in config/catalogs/vocab.yml, or a list of them. `role` is a key of `roles` there, or a list: the user's role on the project, the first row whose field holds the person the workspace setting `self` names; with no `self` the key is not applied. `stages`, `chips` and `forms` are blocks held against the project's `stage:`, its `status.chips` and its `form:`, each with the lists `words` (one of its words is listed), `not_words` (none is), `flags` (one of its words carries one of these flags of the vocabulary) and `not_flags` (none does); `forms` takes no flags. `hub` is the root of one hub of the workspace, whose projects alone the board takes. `match` maps a manifest field (domain, pillars, funding, datasets, venue, compute, related, lead, collaborators, supervisors, tags, year, tier, stage, form, chips) to the values one of which the field must hold, a record by its key. `columns` are the columns its list mode draws until the viewer picks others in its Columns menu, each the `cell` it draws (title, stage, venue, lane, next, with, domain, pillar or funding) under the heading `label`, the cell's name when it has none; the menu offers every cell, Project always shown. `search` is the placeholder of its search box. `label_mode` is how it names a project when it opens: `short` draws a manifest's `short:` and the full title where there is none, `full` always the full title, any other value counts as short, and the Full titles button in the board's header overrides it for the viewer; the full title is always on hover. `cards` is how the cards and the list are laid out: `sections` (the default) one section per category of `categories` in vocab.yml that holds a project, in that list's order, headed by the category's label and count in its colour, which a press folds, with the projects in no category last; `grid` one section of every project with no heading. A board draws the categories its projects are in, in its sections, the slices of its bar and its tab's counts, and names none of its own.
 boards:
   projects:
+    label: views.projects
+    glyph: views.projects_glyph
     tier: research
     role: lead
     stages: { not_flags: [terminal] }
@@ -239,6 +241,8 @@ boards:
     search: "Search title | eli5 | results | ideas | doc text ..."
     label_mode: short
   supervision:
+    label: views.supervision
+    glyph: views.supervision_glyph
     tier: research
     role: supervisor
     columns:
@@ -251,6 +255,8 @@ boards:
     search: "Search supervision | title | eli5 | outcome | doc text ..."
     label_mode: short
   coauthor:
+    label: views.coauthor
+    glyph: views.coauthor_glyph
     tier: research
     role: [collaborator, other]
     columns:
@@ -263,6 +269,8 @@ boards:
     search: "Search coauthor | title | eli5 | outcome | doc text ..."
     label_mode: short
   archive:
+    label: views.archive
+    glyph: views.archive_glyph
     tier: research
     role: lead
     stages: { flags: [terminal] }
@@ -276,6 +284,8 @@ boards:
     search: "Search archive | title | eli5 | outcome | doc text ..."
     label_mode: short
   personal:
+    label: views.personal
+    glyph: views.personal_glyph
     tier: personal
     columns:
       - { cell: title,   label: Project }
@@ -287,6 +297,8 @@ boards:
     search: "Search personal | title | eli5 | next | doc text ..."
     label_mode: short
   software:
+    label: views.software
+    glyph: views.software_glyph
     tier: software
     columns:
       - { cell: title,   label: Software }
@@ -299,7 +311,7 @@ boards:
     label_mode: short
 
 
-# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour of the first such row, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
+# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour `rail_color` of config/catalogs/vocab.yml gives, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
 counts:
   projects:     { tab: true, rail: true }
   supervision:  { tab: true, rail: true }

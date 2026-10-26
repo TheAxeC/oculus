@@ -622,7 +622,7 @@ const RESEARCH_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.
 
 /**
  * The manifest `createIdea` writes for a project named `new-idea`, from the lines that differ: its
- * `stage` is the first stage carrying `new_idea`, and with none the manifest names no stage.
+ * `stage` is the one stage carrying `new_idea`, and with none or two the manifest names no stage.
  */
 function ideaManifest(
     tier: string,
@@ -690,19 +690,23 @@ describe('adding an idea', () => {
         expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(row.readme);
     });
 
-    /** The shipped configuration with the `new_idea` flag of `stages:` on the stage `on` alone. */
-    function newIdeaOn(on: string | null): PortfolioConfig {
+    /** The shipped configuration with the `new_idea` flag of `stages:` on the stages `on` alone. */
+    function newIdeaOn(on: readonly string[]): PortfolioConfig {
         const config = configFor();
         const shipped = (config.merged.stages ?? {}) as Record<string, Record<string, unknown>>;
         const stages = Object.fromEntries(
-            Object.entries(shipped).map(([word, row]) => [word, { ...row, new_idea: word === on }])
+            Object.entries(shipped).map(([word, row]) => [
+                word,
+                { ...row, new_idea: on.includes(word) }
+            ])
         );
         return { ...config, merged: { ...config.merged, stages } };
     }
 
     const NEW_IDEA_ROWS = [
-        { name: 'the stage scoping', on: 'scoping', stage: 'scoping' },
-        { name: 'no stage', on: null, stage: null }
+        { name: 'the stage scoping', on: ['scoping'], stage: 'scoping' },
+        { name: 'no stage', on: [], stage: null },
+        { name: 'no stage when two stages carry it', on: ['nascent', 'scoping'], stage: null }
     ];
 
     it.each(NEW_IDEA_ROWS)(
@@ -719,6 +723,14 @@ describe('adding an idea', () => {
     );
 
     const NONE = { ...configFor(), newProjectDir: {} };
+
+    /** The shipped configuration with `default: true` on the tiers research and personal. */
+    function twoDefaultTiers(): PortfolioConfig {
+        const config = configFor();
+        const shipped = (config.merged.tiers ?? {}) as Record<string, Record<string, unknown>>;
+        const tiers = { ...shipped, personal: { ...shipped.personal, default: true } };
+        return { ...config, merged: { ...config.merged, tiers } };
+    }
 
     const REFUSALS = [
         {
@@ -763,6 +775,13 @@ describe('adding an idea', () => {
             fields: { ...FORM, tier: 'nonsense' },
             field: 'tier',
             reason: 'a new project cannot have the tier nonsense'
+        },
+        {
+            name: 'case 7: a write naming no tier when two tiers carry default',
+            fields: FORM,
+            config: twoDefaultTiers(),
+            field: 'tier',
+            reason: 'a new project names no tier, and no one word of tiers carries default'
         }
     ];
 

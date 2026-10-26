@@ -79,7 +79,8 @@ export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
 /**
  * One new entry of one collection, and one new idea folder, each in the hub `root` names (when it
- * is absent, the primary, else for the page the first hub).
+ * is absent, the primary, else for the page the one hub of the workspace, `homeOf` of
+ * writes/hubs.ts).
  */
 export type NewEntryWrite = {
     kind: 'new-entry';
@@ -113,8 +114,11 @@ export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
 
-/** One paper appended to the Lit Watch radar from the literature search. */
-export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown> };
+/**
+ * One paper appended to the Lit Watch radar, from the literature search or Lit Watch's Add, in the
+ * hub `root` names, or with none named in the hub a write naming none goes to.
+ */
+export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown>; root?: string };
 
 /** Where a paper saved to the Literature collection came from: its `source` field's options. */
 const LITERATURE_SAVE_SOURCES = ['search', 'lit-watch', 'hand'] as const;
@@ -365,7 +369,8 @@ const leadAddShape = z.object({
 
 const radarAddShape = z.object({
     kind: z.literal('radar-add'),
-    fields: mapShape
+    fields: mapShape,
+    root: z.string().optional()
 }) satisfies z.ZodType<RadarAddWrite>;
 
 const literatureSaveShape = z.object({
@@ -458,8 +463,8 @@ const auditMuteShape = z.object({
 }) satisfies z.ZodType<AuditMuteWrite>;
 
 /**
- * A row of the rail keeps its five strings, the last two empty when not sent, and its flag, false
- * when not sent, and no other key.
+ * A row of the rail keeps its five strings, the last two empty when not sent, and its two flags,
+ * each false when not sent, and no other key.
  */
 const railShape = z.object({
     kind: z.literal('rail'),
@@ -470,7 +475,8 @@ const railShape = z.object({
             page: z.string(),
             chord: z.string().default(''),
             group_glyph: z.string().default(''),
-            unplaced_collections: z.boolean().default(false)
+            unplaced_collections: z.boolean().default(false),
+            project_boards: z.boolean().default(false)
         })
     )
 }) satisfies z.ZodType<RailWrite>;

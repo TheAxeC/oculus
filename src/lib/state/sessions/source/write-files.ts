@@ -9,14 +9,16 @@
 // overrides, the open workspace's folders and the git, open and deposit endpoints. A write that
 // names a record changes the file of the hub the record's id names, as the server routes it
 // (server/edit/writes/hubs.ts), the primary's as any other, and an id that names no hub names no
-// file. A write that adds a record and names no hub changes the file of the hub the server gives
-// it: the primary's, else the first hub's in the folders' order, and for Save to Literature the
-// first of those that holds the Literature collection, under each hub's key of the `literature`
-// registry. A Settings write lands where the server
-// places it (server/edit/writes/config/config-place.ts): a key of the hub list in the primary hub's
-// settings file, any other option, the rail and the audit's mute list in the open workspace file,
-// which is named under the workspace folder of its hub, so the unsaved workspace and a workspace
-// file outside every folder name none.
+// file. A write that adds a record and names no hub changes the file of the hub the server gives it
+// (`chosenHub` of state/shared/page/hubs.ts, the rule of `homeOf` in server/edit/writes/hubs.ts):
+// the primary's, else the workspace's one hub's, and for Save to Literature the primary's when it
+// holds the Literature collection, else the one other hub's that does, under each hub's key of the
+// `literature` registry; with several hubs and none chosen it names no file, and the server refuses
+// the write with the sentence asking which hub. A Settings write lands where the server places it
+// (server/edit/writes/config/config-place.ts): a key of the hub list in the primary hub's settings
+// file, any other option, the rail and the audit's mute list in the open workspace file, which is
+// named under the workspace folder of its hub, so the unsaved workspace and a workspace file
+// outside every folder name none.
 
 import { fields } from '../../../data/helpers/guards.ts';
 import {
@@ -29,6 +31,7 @@ import {
 } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
+import { chosenHub } from '../../shared/page/hubs.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
@@ -154,27 +157,33 @@ export function writtenFile(
     // The file of the collection `name` that holds the entry of the id `id` in the portfolio.
     const holding = (name: unknown, id: unknown): ViewSource | null =>
         collection(addressOfId(text(id)).hub, name);
-    // The hub a write that adds a record names, else the primary's, else the first hub's.
+    // The hub a write that adds a record names, else the primary's, else the one hub's, and none
+    // with several hubs and no primary, a write the server refuses.
     const home = (root: unknown): string =>
-        text(root) || (look.primary() ?? look.hubs().at(0) ?? '');
+        text(root) || (look.primary() ?? chosenHub(look.hubs(), null) ?? '');
     // The Literature collection of a hub: the file of its key of the `literature` registry.
     const literature = (hub: string): ViewSource | null => {
         const key = look.registryKey(hub, 'literature');
         return key === '' ? null : collection(hub, key);
     };
     // The hub a Literature save that names no hub goes to: the primary's when it holds the
-    // collection, else the first other hub's that does, else `home`'s.
+    // collection, else the one other hub's that does, none when several do, and `home`'s when none
+    // does.
     const literatureHome = (): string => {
         const primary = look.primary();
         if (primary !== null && literature(primary) !== null) return primary;
-        return look.hubs().find((hub) => hub !== primary && literature(hub) !== null) ?? home('');
+        const holding = look.hubs().filter((hub) => hub !== primary && literature(hub) !== null);
+        if (holding.length === 0) return home('');
+        return chosenHub(holding, null) ?? '';
     };
-    // The file of the feed `kind` a write that adds to it changes: the primary's, as its
-    // configuration names it, else the first hub's.
-    const added = (kind: 'leads' | 'radar'): ViewSource | null => {
+    // The file of the feed `kind` a write that adds to it changes: the hub's it names, else the
+    // primary's, as its configuration names it, else the one hub's, and none with several hubs and
+    // no primary.
+    const added = (kind: 'leads' | 'radar', root: unknown): ViewSource | null => {
         const primary = look.primary();
-        if (primary !== null) return viewSourceFile(kind, merged, primary);
-        return feedFileOf(kind, look.hubs().at(0) ?? '', look.feeds());
+        const hub = home(root);
+        if (hub !== '' && hub === primary) return viewSourceFile(kind, merged, primary);
+        return feedFileOf(kind, hub, look.feeds());
     };
     switch (body.kind) {
         case 'manifest':
@@ -205,9 +214,9 @@ export function writtenFile(
             return feedFileOf(feed, addressOfId(text(body.id)).hub, look.feeds());
         }
         case 'lead-add':
-            return added('leads');
+            return added('leads', undefined);
         case 'radar-add':
-            return added('radar');
+            return added('radar', body.root);
         case 'linkedin-post': {
             const { hub, key } = addressOfId(text(body.id));
             const folder = feedFileOf('linkedin', hub, look.feeds());

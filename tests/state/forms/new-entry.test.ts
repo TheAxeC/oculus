@@ -1,13 +1,14 @@
 // Layer 2, client-state tests. What a new entry is made of: the fields the Add box asks, the hub a
-// task is added to (the one chosen, else the first that could take it, the primary when it holds
-// tasks), the task `:task-add` makes of a title, and what `addTask` says when the title, the key,
-// the collection or the write refuses. The write is a stub that records the call. Each tasks
-// collection carries its hub's name, `research` unless another is given.
+// task or a person is added to (the one chosen, else the one hub that could take it, else the
+// primary when it holds the collection, else none, said by asking which), the task `:task-add`
+// makes of a title, and what `addTask` says when the title, the key, the collection or the write
+// refuses. The write is a stub that records the call. Each tasks collection carries its hub's name,
+// `research` unless another is given.
 
 import { describe, expect, it } from 'vitest';
 import type { Collection, Entry, SchemaField } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { addTask, askFields } from '../../../src/lib/state/forms/new-entry.ts';
+import { addPerson, addTask, askFields } from '../../../src/lib/state/forms/new-entry.ts';
 import type { WriteAnswer } from '../../../src/lib/state/shared/stores/shapes.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 
@@ -108,14 +109,6 @@ describe('the hub a task is added to', () => {
             'review'
         ],
         [
-            'the first hub when there is no primary',
-            [other, own],
-            null,
-            undefined,
-            'second',
-            'review-2'
-        ],
-        [
             'the one hub holding tasks when the primary holds none',
             [other],
             'research',
@@ -138,6 +131,59 @@ describe('the hub a task is added to', () => {
     it('is none for a hub chosen that holds no tasks collection, said by its name', async () => {
         expect(await addedTo([other, own], 'research', 'nowhere')).toBe(
             t('app.palette.task_hub_collection', 'nowhere')
+        );
+    });
+
+    it.each([
+        ['there is no primary', null],
+        ['the primary holds no tasks collection', 'third']
+    ])(
+        'is none with two hubs holding tasks when %s, said by asking which (G8)',
+        async (_name, primary) => {
+            expect(await addedTo([other, own], primary)).toBe(t('app.palette.task_add_which_hub'));
+        }
+    );
+});
+
+describe('the hub a person is added to', () => {
+    const PEOPLE_SCHEMA: SchemaField[] = [
+        { field: 'key', type: 'text' },
+        { field: 'name', type: 'text' }
+    ];
+    const people = (root: string): Collection => ({
+        id: 'people',
+        title: 'People',
+        file: '/hub/.oculus/data/academic/people.yml',
+        schema: PEOPLE_SCHEMA,
+        entries: [],
+        root
+    });
+
+    /** The hub the write is given for a person, or the sentence said. */
+    async function addedTo(collections: Collection[], hub: string | null): Promise<string> {
+        const written: string[] = [];
+        const added = await addPerson('Ada Lovelace', collections, hub, (_c, one, root) => {
+            written.push(root);
+            return Promise.resolve({
+                ok: true,
+                changed: [],
+                refused: [],
+                id: `${root}:${String(one.key)}`
+            });
+        });
+        return written.at(0) ?? added.said;
+    }
+
+    it.each([
+        ['the hub named', [people('research'), people('second')], 'second', 'second'],
+        ['the one hub holding people when none is named', [people('second')], null, 'second']
+    ])('is %s (G8)', async (_name, collections, hub, root) => {
+        expect(await addedTo(collections, hub)).toBe(root);
+    });
+
+    it('is none with two hubs holding people and none named, said by asking which (G8)', async () => {
+        expect(await addedTo([people('research'), people('second')], null)).toBe(
+            t('editor.add_person_which_hub')
         );
     });
 });

@@ -135,7 +135,8 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `categories:` and the user's role on a project or a collection entry of `roles:`: the boards, the
 // rail, the Pillars view and the collections on the page, and the audit and the New project write
 // on the server, read them through it, so a board, a category and a role are one rule on both
-// sides.
+// sides. It holds the Focus board's sections of `focus.sections` too, which the Focus view draws
+// and the config check words its findings from.
 //
 // `data/prose/markdown/**` is in the primitives' row, the one folder of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the

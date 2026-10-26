@@ -12,7 +12,7 @@
 // Nothing here knows what a lead looks like. It answers over a status value and the merged config;
 // the ordering, the fit tone and the drawing are state/feeds/leads.ts's and the view's.
 
-import { wordFlag, wordsWith } from '../shapes/vocab-keys.ts';
+import { oneWordWith, wordFlag } from '../shapes/vocab-keys.ts';
 import { scalar } from '../helpers/guards.ts';
 
 /** The merged config a lead's status is read through. */
@@ -23,9 +23,13 @@ function leadFlag(config: Config, status: unknown, flag: string): boolean {
     return wordFlag(config, 'lead_statuses', scalar(status), flag);
 }
 
-/** The first word of `lead_statuses` carrying a flag, the word a control writes, or empty text. */
+/**
+ * The one word of `lead_statuses` carrying a flag, the word a control writes, or the empty text
+ * when no word carries it or more than one does (`oneWordWith`), which leaves the control nothing
+ * to write.
+ */
 function wordOf(config: Config, flag: string): string {
-    return wordsWith(config, 'lead_statuses', flag).at(0) ?? '';
+    return oneWordWith(config, 'lead_statuses', flag) ?? '';
 }
 
 /** The status a new lead gets and a reopened one goes back to: the word carrying `default_lead`. */
@@ -33,12 +37,12 @@ export function openWord(config: Config): string {
     return wordOf(config, 'default_lead');
 }
 
-/** The status the apply control writes: the first word carrying `lead_applied`. */
+/** The status the apply control writes: the one word carrying `lead_applied`. */
 export function appliedWord(config: Config): string {
     return wordOf(config, 'lead_applied');
 }
 
-/** The status the decline control writes: the first word carrying `lead_declined`. */
+/** The status the decline control writes: the one word carrying `lead_declined`. */
 export function declinedWord(config: Config): string {
     return wordOf(config, 'lead_declined');
 }

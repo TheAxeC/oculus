@@ -50,8 +50,15 @@ import {
     type DocEntry,
     type NavGroup
 } from '../../../src/lib/state/workbench/navigation/catalogue.ts';
-// Importing the route loader registers views; collection registrations use sources.yml keys.
-import { registerAll, registerCollections } from '../../../src/routes/views.ts';
+import { boardsSource } from '../../../src/lib/state/boards/board/presets.ts';
+// Importing the route loader registers views; collection registrations use sources.yml keys, and
+// the board registrations the keys of layout.yml's boards.
+import {
+    pageBoards,
+    registerAll,
+    registerBoards,
+    registerCollections
+} from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { treeFiles } from '../walk.ts';
@@ -219,6 +226,7 @@ describe("oculus's own config directory", () => {
             'chips',
             'statuses',
             'lead_statuses',
+            'focus_clusters',
             'focus_lanes',
             'fund_stages',
             'focus_lane_tones',
@@ -228,6 +236,7 @@ describe("oculus's own config directory", () => {
             'research_audit',
             'roles',
             'categories',
+            'rail_color',
             'data_access',
             'venue_categories',
             'venue_tiers',
@@ -529,10 +538,18 @@ describe("oculus's own config directory", () => {
         expect(Object.keys(iconSet(inherited))).toEqual(['pin']);
     });
 
+    /** Every view oculus's config registers: the modules', the collections' and the boards'. */
+    function registerOculus(config: Record<string, unknown>): void {
+        registerAll(client.registry);
+        const collections = collectionViews(config, unplacedGroup(config));
+        registerCollections(client.registry, collections);
+        const source = boardsSource(config, () => 'layout.yml');
+        registerBoards(client.registry, pageBoards(source, textCatalog(config), collections));
+    }
+
     it('gives every group a chord and a glyph, and no letter a key the workbench binds', async () => {
         const { config } = loadConfig(engineDir());
-        registerAll(client.registry);
-        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
+        registerOculus(config);
         const groups: NavGroup[] = readGroups(config);
         const sections = arrange(
             views().filter((view) => view.listed !== false),
@@ -576,8 +593,7 @@ describe("oculus's own config directory", () => {
 
     it('names a configured group and a nonnegative order in every listed registration', () => {
         const { config } = loadConfig(engineDir());
-        registerAll(client.registry);
-        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
+        registerOculus(config);
         const groups = new Set(readGroups(config).map((group) => group.id));
         const invalid = views()
             .filter((view) => view.listed !== false)
@@ -692,9 +708,10 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 12 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, 1 tier
-        // flag (`unmarked`), the 3 keys of a roles row and the 6 keys of a categories row.
-        expect(keys).toHaveLength(35);
+        // 12 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, 2 tier
+        // flags (`unmarked`, `default`), the 3 keys of a roles row and the 6 keys of a categories
+        // row.
+        expect(keys).toHaveLength(36);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

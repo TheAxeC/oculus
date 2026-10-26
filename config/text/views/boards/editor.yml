@@ -3,6 +3,7 @@ text:
     editor:
         add_person: 'Add person {0}'
         add_person_collection: The hub has no people collection, so no person can be added.
+        add_person_which_hub: Several hubs hold a people collection and the record names none of them, so name the hub to add the person to.
         add_person_name: add a person by name
         clean: nothing changed
         dirty: '{0} changed'

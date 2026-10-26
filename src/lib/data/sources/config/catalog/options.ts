@@ -550,6 +550,7 @@ const FROM_CONFIG: readonly Source[] = [
     'chip_flags',
     'entry_statuses',
     'ticker_categories',
+    'focus_clusters',
     'bundle_ids'
 ];
 
@@ -622,6 +623,8 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return coloredWords(config.statuses);
         case 'ticker_categories':
             return keysAt(config.ticker_categories);
+        case 'focus_clusters':
+            return keysOfRows(config.focus_clusters);
         default: {
             const open = isMap(config.open) ? config.open : {};
             const programs = isMap(open.program_ext) ? Object.values(open.program_ext) : [];

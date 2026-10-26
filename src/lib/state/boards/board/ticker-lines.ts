@@ -1,25 +1,18 @@
 // Layer 2, client state. The lines the ticker is made of, and the builders that make them: the
-// shape of a line, the glyphs of an overdue line, a follow-up and a subtask, the follow-ups that
-// are due and the pending lines of one checklist. The projects' and entries' lines are built in
-// ticker.ts out of these builders.
+// shape of a line, the follow-ups that are due and the pending lines of one checklist. The
+// projects' and entries' lines are built in ticker.ts out of these builders. A subtask's line is
+// drawn with the glyph the word `focus.command.glyph_subtask` names, as ticker.ts draws an overdue
+// line and a follow-up with the glyphs of `focus.command.glyph_overdue` and
+// `focus.command.glyph_followup`, and a dated line of a category with its word's glyph
+// (`ticker_categories`).
 
 import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
 import { z } from 'zod';
 import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
+import { t } from '../../shared/words/text.ts';
 import { snoozed } from '../focus.ts';
 import { daysUntil } from './index.ts';
-
-/**
- * The glyph an overdue line, a follow-up and a subtask are drawn with, by the names of
- * config/catalogs/glyphs.yml; a dated line of a category is drawn with its word's glyph
- * (`ticker_categories`).
- */
-export const GLYPHS: Record<string, string> = {
-    overdue: 'overdue',
-    followup: 'followup',
-    subtask: 'pin'
-};
 
 /**
  * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
@@ -173,7 +166,7 @@ export function subtaskLines(
     for (const row of rows) {
         if (row.done) continue;
         const days = daysUntil(row.deadline ?? '', now);
-        const line = item(kind, GLYPHS.subtask, `${parent}: ${row.do}`, days, {
+        const line = item(kind, t('focus.command.glyph_subtask'), `${parent}: ${row.do}`, days, {
             ...over,
             subtaskDo: row.do,
             target: { ...target, subtask: row.key }

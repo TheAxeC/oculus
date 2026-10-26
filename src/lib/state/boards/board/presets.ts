@@ -1,14 +1,17 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
 // configuration changes independently of items, filters and statistics. What each board is (the
-// keys that say which projects it takes, its list columns, its search words, its label mode and
-// how its cards are laid out) is its row of `boards` in config/defaults/layout.yml; the categories
-// its cards are filed under and the roles are config/catalogs/vocab.yml's, read through
+// keys that say which projects it takes, its list columns, its search words, its label mode and how
+// its cards are laid out) is its row of `boards` in config/defaults/layout.yml; the categories its
+// cards are filed under and the roles are config/catalogs/vocab.yml's, read through
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
 // of its own hub, and draws its sections, slices, facets and stage order from the union of every
-// hub's words. This module holds no table of boards.
+// hub's words. This module holds no table of boards: the board views the page registers are read
+// from the same rows (`boardViews`), each named and drawn by the words its row names.
 
 import { z } from 'zod';
-import type { Id, Project, Resource, Venue } from '../../../data/model/index.ts';
+import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/index.ts';
+import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
+import { boardsGroup } from '../../../data/sources/config/rail.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
 import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
@@ -366,6 +369,87 @@ const columnsShape = rowsShape(columnShape) satisfies z.ZodType<BoardColumn[]>;
 /** The board view ids `boards` of the merged config names, in its order. */
 export function boardIds(config: Record<string, unknown>): string[] {
     return boardRows(config).map(([id]) => id);
+}
+
+/** The glyph word of a board whose `glyph:` names no word of the text catalog. */
+const BOARD_GLYPH = 'views.board_glyph';
+
+/**
+ * One project board's view as the page registers it: its view id, the catalog key of its name or,
+ * when it names none, its key as `words` beside the empty label, the catalog key of its glyph, the
+ * group of the view catalogue it sits in and its place there.
+ */
+export type BoardView = {
+    id: string;
+    label: string;
+    words?: string;
+    glyph: string;
+    group: string;
+    order: number;
+};
+
+/** The views of the project boards the page registers, and the findings of those it leaves out. */
+export type BoardViews = { views: BoardView[]; findings: Finding[] };
+
+/** The dotted key a board's field names when the text catalog holds it, else the empty text. */
+function boardWord(row: Record<string, unknown>, field: string, catalog: TextCatalog): string {
+    const key = str(row[field]);
+    return key !== '' && Object.hasOwn(catalog, key) ? key : '';
+}
+
+/**
+ * What the board views are read from, which the page is handed with its data and reads out of each
+ * config push: the merged config's `boards:`, the group of the rail entry carrying `project_boards`
+ * (`boardsGroup`, null when no entry carries it), and the file `boards:` was read from.
+ */
+export type BoardsSource = { boards: unknown; group: string | null; file: string };
+
+/** The source of the board views of a merged config, `fileOf` giving the file of a key. */
+export function boardsSource(
+    config: Record<string, unknown>,
+    fileOf: (key: string) => string
+): BoardsSource {
+    return { boards: config.boards, group: boardsGroup(config), file: fileOf('boards') };
+}
+
+/**
+ * The views of the project boards of a merged config's `boards:`, one per board in the map's order,
+ * numbered 1, 2, ... there, in the group of the rail entry carrying `project_boards` (in no group
+ * when no entry carries it). A board is named by the word its `label:` names, else by its key, and
+ * draws the glyph of the word its `glyph:` names, else of BOARD_GLYPH; the config check reports a
+ * board naming no such word (data/sources/config/sections/boards.ts). A board whose key is in
+ * `taken`, the ids of the views the modules register and the keys of the collection views, is left
+ * out and gives a finding naming it, filed in the file `boards:` was read from, so no board
+ * replaces another view.
+ */
+export function boardViews(
+    source: BoardsSource,
+    catalog: TextCatalog,
+    taken: ReadonlySet<string>
+): BoardViews {
+    const group = source.group ?? '';
+    const rows = boardRows({ boards: source.boards });
+    const findings = rows
+        .filter(([id]) => taken.has(id))
+        .map(([id]) => ({
+            file: source.file,
+            key: `boards.${id}`,
+            message: findingText(catalog, 'findings.config.boards_view', id)
+        }));
+    const views = rows
+        .filter(([id]) => !taken.has(id))
+        .map(([id, row], at): BoardView => {
+            const label = boardWord(row, 'label', catalog);
+            const glyph = boardWord(row, 'glyph', catalog);
+            return {
+                id,
+                ...(label === '' ? { label: '', words: id } : { label }),
+                glyph: glyph === '' ? BOARD_GLYPH : glyph,
+                group,
+                order: at + 1
+            };
+        });
+    return { views, findings };
 }
 
 /** A board row's `cards`: `grid` when it says so, else `sections`. */

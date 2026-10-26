@@ -157,6 +157,7 @@ text:
             task_hub_collection: 'The hub {0} holds no tasks collection, so no task can be added to it.'
             task_add_key: 'The title gives no key: it needs a letter from A to Z or a digit.'
             task_add_title: Type a title for the task.
+            task_add_which_hub: Several hubs hold a tasks collection and none of them is the primary hub, so name the hub to add the task to.
             task_added: 'Added the task {0}'
             task_hub_title: 'Which hub takes the task {0}?'
             task_open: Open

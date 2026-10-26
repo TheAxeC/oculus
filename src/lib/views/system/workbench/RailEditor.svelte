@@ -3,10 +3,11 @@
     // file's entries laid over it by page) as the Settings view edits it: one row per button with
     // its label, icon and page, the chord and heading glyph of its group in the view catalogue,
     // whose heading is the label, the tick that makes the group the one taking the collection views
-    // whose entry names no group, the controls that move a row and take it away, and Save, which
-    // writes the list through the `rail` write of api/write into the workspace file's `settings:`.
-    // The watcher pushes the file back within a second, and the rail redraws from that push, so
-    // the rail always shows the list in force.
+    // whose entry names no group, the tick that makes it the one taking the project boards, the
+    // controls that move a row and take it away, and Save, which writes the list through the `rail`
+    // write of api/write into the workspace file's `settings:`. The watcher pushes the file back
+    // within a second, and the rail redraws from that push, so the rail always shows the list in
+    // force.
     //
     // The rows are drawn under a disclosure line (editors/Fold.svelte) with the row's title and
     // their number, folded at first past five rows; the problems and the actions stay drawn under a
@@ -127,6 +128,7 @@
             return t('workbench.rail_why_group_glyph_unknown', place);
         }
         if (problem.why === 'unplaced') return t('workbench.rail_why_unplaced', place);
+        if (problem.why === 'boards') return t('workbench.rail_why_boards', place);
         return t('workbench.rail_why_repeated', place);
     }
 
@@ -235,6 +237,15 @@
                         onchange={(value: boolean) => change(at, 'unplaced_collections', value)}
                     />
                 </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_boards')}</span>
+                    <Checkbox
+                        checked={row.project_boards}
+                        label={t('workbench.rail_boards_of', at + 1)}
+                        bare
+                        onchange={(value: boolean) => change(at, 'project_boards', value)}
+                    />
+                </span>
                 <ToolButton
                     label={t('workbench.rail_up', at + 1)}
                     glyph="collapse"
@@ -278,7 +289,8 @@
                         page: '',
                         chord: '',
                         group_glyph: '',
-                        unplaced_collections: false
+                        unplaced_collections: false,
+                        project_boards: false
                     }
                 ])}
         />

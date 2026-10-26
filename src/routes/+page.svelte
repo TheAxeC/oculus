@@ -42,7 +42,15 @@
     import { provideState } from '$lib/state/client/use';
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { pushedCollections, registerAll, registerApps, registerCollections } from './views.ts';
+    import {
+        pageBoards,
+        pushedBoards,
+        pushedCollections,
+        registerAll,
+        registerApps,
+        registerBoards,
+        registerCollections
+    } from './views.ts';
     import type { PageData } from './$types';
 
     let { data }: { data: PageData } = $props();
@@ -99,18 +107,19 @@
         return mark === null ? null : { ...problemWords(mark), tone: mark.tone };
     });
 
-    // The views, and the collection views one per key of the `collections:` option, which
-    // the load function shipped with the catalog. It runs here in the script body rather than on
-    // mount: the pane tabs and the catalogue draw what the registry holds on the first render, and
-    // a collection registered after it would be missing from that frame. The write token goes in
-    // with them, so the first write and the socket's first subscription both carry it, and so does
-    // the configuration this page was built from, which the socket keeps until a newer push, and
-    // the page state the load read, which the first frame's arrangement and view states come from.
-    // The page data is read once and not tracked; untrack says so, and is what keeps the read out
-    // of any effect.
+    // The views, the collection views one per key of the `collections:` option and the project
+    // board views one per key of `boards:`, which the load function shipped with the catalog. It
+    // runs here in the script body rather than on mount: the pane tabs and the catalogue draw what
+    // the registry holds on the first render, and a view registered after it would be missing from
+    // that frame. The write token goes in with them, so the first write and the socket's first
+    // subscription both carry it, and so does the configuration this page was built from, which the
+    // socket keeps until a newer push, and the page state the load read, which the first frame's
+    // arrangement and view states come from. The page data is read once and not tracked; untrack
+    // says so, and is what keeps the read out of any effect.
     untrack(() => {
         registerAll(client.registry);
         registerCollections(client.registry, data.collections);
+        registerBoards(client.registry, pageBoards(data.boards, data.text, data.collections));
         setToken(data.token);
         pageState.install(data.pageState);
         seedConfig(data.seed.payload, data.seed.through);
@@ -137,11 +146,11 @@
     });
 
     /*
-     * A push may name a different set of collections, so the registry follows the pushed config:
-     * the effect reads the configuration's generation and the config and hubs the push carries,
-     * and registers the collection views they name, which drops the views of the keys they no
-     * longer name. The first frame is the untracked call above; this runs after it, and returns
-     * until the first push has landed.
+     * A push may name a different set of collections or boards, so the registry follows the pushed
+     * config: the effect reads the configuration's generation and the config and hubs the push
+     * carries, and registers the collection views and the board views they name, which drops the
+     * views of the keys they no longer name. The first frame is the untracked call above; this runs
+     * after it, and returns until the first push has landed.
      */
     $effect(() => {
         configGeneration();
@@ -150,6 +159,13 @@
         // would close every collection tab on every page; the registry follows a real list only.
         const keys = pushedCollections(pushed?.config, pushed?.hubs ?? null);
         if (keys !== null) untrack(() => registerCollections(client.registry, keys));
+        // The boards follow the push the same way, a `boards:` that is no map naming none.
+        const boards = pushedBoards(pushed);
+        if (pushed === null || boards === null) return;
+        untrack(() => {
+            const collections = keys ?? data.collections;
+            registerBoards(client.registry, pageBoards(boards, pushed.text, collections));
+        });
     });
 
     // The apps' views follow the rows of the `apps` channel: a push moves a badge, a title, an app
@@ -203,7 +219,12 @@
     const status = $derived(
         statusWords(socketStatus(), usage(), hpc(), sessions(), {
             host: config()?.host ?? null,
-            findings: findingsCount(portfolio(), config(), { findings: appFindings() }),
+            findings: findingsCount(
+                portfolio(),
+                config(),
+                { findings: appFindings() },
+                { findings: client.registry.refused() }
+            ),
             problems: problems.total(),
             repo: repoStatus(
                 {

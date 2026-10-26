@@ -89,7 +89,8 @@ function world() {
                 icons: {},
                 codeThemeClasses: [],
                 host: { name: 'host', address: '' },
-                findings: []
+                findings: [],
+                from: {}
             });
         }
         return config;

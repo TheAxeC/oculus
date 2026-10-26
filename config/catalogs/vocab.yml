@@ -1,7 +1,7 @@
 # ===========================================================================
 # vocab.yml
 # oculus's own configuration: the words of its vocabularies, their colours, and the flags that say what each word decides: the palette every hex maps onto, the project stages, forms and chips, the statuses of collection entries and of Position Leads, the project tiers, the user's roles, the categories a project is filed under, and the lane and bucket words the surfaces group by. A decision the code makes on a stage, a chip, a status, a role or a category is a flag on its word here or a list here or under `focus:` of behavior.yml, never a word written in the code. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
-# A hub lays its own vocabulary over these words in its .oculus/config.yml, every key of this file by its shape (src/lib/data/sources/config/merge/in-place.ts), and its records are read under the result: a map (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, data_access, and leads_fit, which oculus ships none of) merges by word, a word the hub names replacing oculus's row in oculus's place, a new word coming after oculus's words and `<word>: null` taking one out; `categories` merges by `key` the same way, `{ key: <key>, removed: true }` taking a row out; focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning. A word a hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole, is also taken out of every word list that names it (the categories' stage and form words, the Focus lanes' stages and chips, the funding stages' statuses, the boards' tier and role, research_audit's skip_tiers): in oculus's own values a row left with no word stays and a single word becomes an empty list, and in a list the hub writes itself each such word is a finding naming the hub's file. A list drawn over the records of several hubs holds every hub's words, each once, the primary's first.
+# A hub lays its own vocabulary over these words in its .oculus/config.yml, every key of this file by its shape (src/lib/data/sources/config/merge/in-place.ts), and its records are read under the result: a map (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, data_access, and leads_fit, which oculus ships none of) merges by word, a word the hub names replacing oculus's row in oculus's place, a new word coming after oculus's words and `<word>: null` taking one out; `categories` merges by `key` the same way, `{ key: <key>, removed: true }` taking a row out; focus_clusters, focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning; and the hub's `rail_color` replaces oculus's. A word a hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole, is also taken out of every word list that names it (the categories' stage and form words, the Focus lanes' stages and chips and the words of their `move_writes`, the funding stages' statuses, the boards' tier and role, research_audit's skip_tiers): in oculus's own values a row left with no word stays and a single word becomes an empty list, and in a list the hub writes itself each such word is a finding naming the hub's file. A list drawn over the records of several hubs holds every hub's words, each once, the primary's first.
 # ===========================================================================
 
 
@@ -59,7 +59,7 @@ palette:
 # - `public`, `negative`, `dead_end`: the publication kind a stage gives in the audit of the website's publications, whose sections are the rows of `audit.website.kinds` in the hub's .oculus/config.yml.
 # - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue.
 # - `deadline_met`: a stage that ends a project's own deadline, which then leaves the deadline radar.
-# - `new_idea`: the stage a new idea is made with; the first such stage is written, and with none the new manifest names no stage.
+# - `new_idea`: the stage a new idea is made with, carried by one stage at most; with none the new manifest names no stage, and two stages carrying it are a finding naming both, under which the new manifest names no stage either.
 stages:
   nascent:      { label: "nascent (concept)", icon: white, color: "#7c5cff", idea: true, on_map: true, new_idea: true }
   scoping:      { label: "scoping (lit-check and framing)", icon: yellow, color: "#0891b2", idea: true, on_map: true }
@@ -103,8 +103,8 @@ chips:
 # - `live_subtasks`: a status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case (`wordFlag`).
 # - `waiting`: an entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case, untrimmed.
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
-# - `default_application`: the status of the Applications entry a Position Lead's apply control makes; the first such word is written, and nothing is compared with it.
-# - `default_task`: the status of a task added from the palette; the first such word is written, and nothing is compared with it.
+# - `default_application`: the status of the Applications entry a Position Lead's apply control makes, carried by one word at most; that word is written, two words carrying it are a finding naming both and the entry is then made with no status, and nothing is compared with it.
+# - `default_task`: the status of a task added from the palette, carried by one word at most; that word is written, two words carrying it are a finding naming both and the task is then added with no status, and nothing is compared with it.
 # - `obtained`: the status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case (`wordFlag`).
 statuses:
   submitted:     { color: "#b45309", deadline_met: true, waiting: true }
@@ -156,29 +156,38 @@ statuses:
 
 # The statuses a Position Lead's `status` takes, each with the `color` it is drawn in where it has one, and the flags that say what it decides; a status the list does not hold is a finding naming the closest word when that word is within half the written status's length in single-letter changes, rounded down. Every flag is compared trimmed and in lower case (`wordFlag`):
 # - `lead_closed`: a Position Lead that is closed, counted and listed as done.
-# - `lead_declined`: a Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes.
-# - `lead_applied`: a Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes.
+# - `lead_declined`: a Position Lead the reader declined, which the Leads view hides until asked, and the word the decline control writes.
+# - `lead_applied`: a Position Lead the reader applied to, which offers no apply control, and the word the apply control writes.
 # - `default_lead`: the status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on.
+# Each of `lead_declined`, `lead_applied` and `default_lead` is carried by one word at most; two words carrying one are a finding naming both, and its control is then drawn disabled.
 lead_statuses:
   declined:  { color: "#ea580c", lead_closed: true, lead_declined: true }
   applied:   { color: "#0891b2", lead_closed: true, lead_applied: true }
   closed:    { lead_closed: true }
-  dismissed: { lead_closed: true, lead_declined: true }
+  dismissed: { lead_closed: true }
   open:      { default_lead: true }
 
 
-# Focus lanes form one lifecycle, grouped into current, parked and incubating work, with the Idea lane under them. A row's `icon` is the glyph name drawn before the lane's label on a project card and in the lane's heading on the Focus board (a key of glyphs.yml); a row naming none, or a name glyphs.yml lacks, is drawn with the glyph `focus`. A project sits on the first lane, in this order, whose `chips` holds one of the project's `status.chips` while its stage does not carry `terminal`, else on the first lane whose `stages` holds its `stage`, else on none; a row names `stages` or `chips` and never both, and a stage word is held by one row only. A move onto a lane with `stages` keeps the project's stage when the lane holds it and writes the lane's first stage otherwise, and takes off the chips of every lane with `chips`; a move onto a lane with `chips` adds the lane's first chip and takes off the chips of the other lanes with `chips`, leaving the stage as it is. The lanes of the cluster `idea` are drawn full width under the three clusters and take a project of any tier at a stage they list. With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Idea lane. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the Idea lane in mocha and everforest.
+# The clusters the Focus board groups its lanes into, in drawing order. `label` names the text-catalog word of the cluster's heading and `glyph` the word holding the glyph name drawn before it, each by its dotted key; a row may name neither, and a key the catalog lacks is a finding and reads as absent. `muted: true` draws the cluster in muted colours. `layout` is `columns`, the cluster's lanes side by side under its heading, or `full_width`, each of its lanes a full-width section headed by the lane's own label. `sort: title` orders a lane's cards by title; with no `sort` they go by deadline, then title. `awaiting: true` counts the projects on the cluster's lanes in the awaiting box. A key held by two rows, a `layout` or `sort` that is no word of these, and a field of the wrong kind are findings naming the row.
+focus_clusters:
+  - { key: now,      label: focus.cluster_now,      glyph: focus.now_glyph,   muted: false, layout: columns,    awaiting: true }
+  - { key: parked,   label: focus.cluster_parked,                             muted: true,  layout: columns,    awaiting: true }
+  - { key: incubate, label: focus.cluster_incubate, glyph: focus.ideas_glyph, muted: true,  layout: columns,    awaiting: true }
+  - { key: idea,                                    glyph: focus.ideas_glyph, muted: true,  layout: full_width, sort: title }
+
+
+# Focus lanes form one lifecycle, grouped by `cluster`, the key of a row of `focus_clusters`; a lane naming no cluster, or one no readable row has, is a finding naming the lane and is not drawn. A row's `icon` is the glyph name drawn before the lane's label on a project card and in the lane's heading on the Focus board (a key of glyphs.yml); a row naming none, or a name glyphs.yml lacks, is drawn with the glyph `focus`. A project sits on the first lane, in this order, whose `chips` holds one of the project's `status.chips` while its stage does not carry `terminal`, else on the first lane whose `stages` holds its `stage`, else on none; a row names `stages` or `chips` and never both, and a stage word is held by one row only. `move_writes` says what a move onto the lane writes, with one field: `stage`, a word of the lane's `stages`, or `chip`, a word of its `chips`. A move onto a lane with `stages` keeps the project's stage when the lane holds it and writes `move_writes.stage` otherwise, and takes off the chips of every lane with `chips`; a move onto a lane with `chips` adds `move_writes.chip` when the project carries none of the lane's chips and takes off the chips of the other lanes with `chips`, leaving the stage as it is. A lane without `move_writes` takes no move; a `move_writes` naming a word the lane does not list, or no word of the vocabulary, both fields, or the field of the other kind of lane is a finding naming the lane. The lanes of a `full_width` cluster take a project of any tier at a stage they list. With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Idea lane. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the Idea lane in mocha and everforest.
 focus_lanes:
-  - { key: run,        label: Run,        icon: live,    sub: "experiments / getting the numbers", color: "#16a34a", cluster: now,      stages: [exploring] }
-  - { key: push,       label: Push,       icon: draft,   sub: "drafting toward first submission",  color: "#2563eb", cluster: now,      stages: [in-prep, submit-ready] }
-  - { key: revise,     label: Revise,     icon: edit,    sub: "back from a venue (R&R or reject)",  color: "#b45309", cluster: now,      stages: [revision] }
-  - { key: review,     label: Review,     icon: stale,   sub: "under peer review, hands off",       color: "#475569", cluster: parked,   stages: [submitted] }
-  - { key: blocked,    label: Blocked,    icon: overdue, sub: "waiting on you / coauthor",          color: "#dc2626", cluster: parked,   chips: [blocked] }
-  - { key: backburner, label: Backburner, icon: snooze,  sub: "deprioritized, not being worked",    color: "#9ca3af", cluster: parked,   chips: [parked] }
-  - { key: scope,      label: Scope,      icon: compass, sub: "shaping + novelty check",            color: "#0e7490", cluster: incubate, stages: [scoping] }
-  - { key: derisk,     label: De-risk,    icon: flag,    sub: "Tier-0 go / no-go pilot",            color: "#f59e0b", cluster: incubate, stages: [de-risking] }
-  - { key: build,      label: Build,      icon: build,   sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate, stages: [building] }
-  - { key: idea,       label: Idea,       icon: idea,    sub: "ideas not started yet: drag onto a lane to start, or drop here to make it an idea again", color: "#b5638a", cluster: idea,     stages: [nascent] }
+  - { key: run,        label: Run,        icon: live,    sub: "experiments / getting the numbers", color: "#16a34a", cluster: now,      stages: [exploring],              move_writes: { stage: exploring } }
+  - { key: push,       label: Push,       icon: draft,   sub: "drafting toward first submission",  color: "#2563eb", cluster: now,      stages: [in-prep, submit-ready],  move_writes: { stage: in-prep } }
+  - { key: revise,     label: Revise,     icon: edit,    sub: "back from a venue (R&R or reject)",  color: "#b45309", cluster: now,      stages: [revision],               move_writes: { stage: revision } }
+  - { key: review,     label: Review,     icon: stale,   sub: "under peer review, hands off",       color: "#475569", cluster: parked,   stages: [submitted],              move_writes: { stage: submitted } }
+  - { key: blocked,    label: Blocked,    icon: overdue, sub: "waiting on you / coauthor",          color: "#dc2626", cluster: parked,   chips: [blocked],                 move_writes: { chip: blocked } }
+  - { key: backburner, label: Backburner, icon: snooze,  sub: "deprioritized, not being worked",    color: "#9ca3af", cluster: parked,   chips: [parked],                  move_writes: { chip: parked } }
+  - { key: scope,      label: Scope,      icon: compass, sub: "shaping + novelty check",            color: "#0e7490", cluster: incubate, stages: [scoping],                move_writes: { stage: scoping } }
+  - { key: derisk,     label: De-risk,    icon: flag,    sub: "Tier-0 go / no-go pilot",            color: "#f59e0b", cluster: incubate, stages: [de-risking],             move_writes: { stage: de-risking } }
+  - { key: build,      label: Build,      icon: build,   sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate, stages: [building],               move_writes: { stage: building } }
+  - { key: idea,       label: Idea,       icon: idea,    sub: "ideas not started yet: drag onto a lane to start, or drop here to make it an idea again", color: "#b5638a", cluster: idea,     stages: [nascent], move_writes: { stage: nascent } }
 
 
 # Funding stages stacked inside the Focus Funding column (label / colour / the statuses each matches).
@@ -190,7 +199,7 @@ fund_stages:
 # Collection lane bars are independent of the stage colours inside Funding. The three hues follow the Idea lane above them and each other under the same distance rule as `focus_lanes`.
 focus_lane_tones: { funding: gold, jobs: grey-d, teaching: teal }
 
-# The command center's deadline categories, in the order it groups its dated lines. A collection's entry in `collections:` (config/defaults/sources.yml) names its category in `ticker: { category }`, the entries of the funding, leads and venues registries giving the category of the schemes, the leads and the venues' calls, and `manifests: true` marks the category of the project manifests' deadlines (the first word carrying it). Each field names a word of the text catalog by its dotted key: `label` the group's heading, `glyph` the word holding the glyph name its lines are drawn with, `noun` the word a line of an entry or a lead is named by ("task in 3d"), and `overdue_noun` the word of such a line once overdue, `noun` when absent. A field naming no word of the catalog is a finding and reads as absent: the heading is `focus.command.kind_other` and the lines carry no glyph.
+# The command center's deadline categories, in the order it groups its dated lines. A collection's entry in `collections:` (config/defaults/sources.yml) names its category in `ticker: { category }`, the entries of the funding, leads and venues registries giving the category of the schemes, the leads and the venues' calls, and `manifests: true` marks the category of the project manifests' deadlines, carried by one word at most (two words carrying it are a finding naming both, and the manifests' deadlines then have no category). Each field names a word of the text catalog by its dotted key: `label` the group's heading, `glyph` the word holding the glyph name its lines are drawn with, `noun` the word a line of an entry or a lead is named by ("task in 3d"), and `overdue_noun` the word of such a line once overdue, `noun` when absent. A field naming no word of the catalog is a finding and reads as absent: the heading is `focus.command.kind_other` and the lines carry no glyph.
 ticker_categories:
   paper:      { label: focus.command.dlcat_paper,       glyph: focus.command.glyph_paper,      noun: focus.command.word_paper, manifests: true }
   funding:    { label: focus.command.dlcat_funding,     glyph: focus.command.glyph_funding,    noun: focus.command.word_funding }
@@ -219,9 +228,9 @@ facet_tones:
   year: slate
 
 
-# The kinds of project a manifest's `tier` names, each with the words it is drawn with, in the order the project form offers them; `unmarked: true` leaves a tier off a Focus lane card's tags, on any number of tiers or none. A board takes projects by their tier (its `tier:` in layout.yml), and a new project whose form names no tier gets the first word.
+# The kinds of project a manifest's `tier` names, each with the words it is drawn with, in the order the project form offers them; `unmarked: true` leaves a tier off a Focus lane card's tags, on any number of tiers or none. A board takes projects by their tier (its `tier:` in layout.yml). `default: true` marks the default tier, carried by one word at most (two words carrying it are a finding naming both, and there is then no default tier): a new project whose write names no tier gets it, and with no default tier such a write is refused; a board naming one tier makes New project in it, a board naming several makes it in the default tier when that is among them and offers no New project otherwise, and a board naming none makes it in the default tier, offering no New project without one.
 tiers:
-  research: { label: Research, unmarked: true }
+  research: { label: Research, unmarked: true, default: true }
   personal: { label: Personal }
   software: { label: Software }
 
@@ -238,18 +247,21 @@ roles:
   - { key: other,        label: Other }
 
 
-# The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. A row without `color` is drawn in the colour of the first stage of `stages:` its `stages:` block takes, and a row with neither is a finding. The flags:
+# The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. Every row names the `color` it is drawn in; a row without one is a finding naming the row, and is drawn in no colour. The flags:
 # - `record`: the row is a record of the work's output.
-# - `rail`: a board gives the rail the count of its projects in such rows, in the colour of the first such row.
+# - `rail`: a board gives the rail the count of its projects in such rows, drawn in `rail_color` below.
 # - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card and a pillar's and a domain's members leave it out.
 categories:
-  - { key: in-review,     label: "in review",     stages: { words: [submitted] }, record: true }
-  - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, record: true, rail: true }
-  - { key: idea,          label: idea,            stages: { words: [nascent, scoping] } }
+  - { key: in-review,     label: "in review",     stages: { words: [submitted] }, color: "#0ea5e9", record: true }
+  - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, color: "#16a34a", record: true, rail: true }
+  - { key: idea,          label: idea,            stages: { words: [nascent, scoping] }, color: "#7c5cff" }
   - { key: publications,  label: publications,    stages: { words: [published] }, forms: { words: [journal, conference] }, color: "#db2777", record: true }
   - { key: other-outputs, label: "other outputs", stages: { words: [published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea", record: true }
-  - { key: released,      label: released,        stages: { words: [released] } }
+  - { key: released,      label: released,        stages: { words: [released] }, color: "#0d9488" }
   - { key: dead-ends,     label: dead-ends,       stages: { flags: [dead] }, color: "#9ca3af", archival: true }
+
+# The colour a project board's rail count is drawn in, the count of its projects in the `rail: true` rows of `categories:`, written `#rrggbb`. A hub's value replaces oculus's: the primary hub's on every board, and another hub's on a board whose `hub:` names it; a value of another form is a finding naming the file, and oculus's value stands.
+rail_color: "#16a34a"
 
 
 # Dataset access -> chip colour.

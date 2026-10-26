@@ -393,29 +393,38 @@ export function chosenState(
 }
 
 /**
- * How many findings the Findings view lists, which is what the findings item counts: everything
- * the build found wrong in the hub's YAML, the snapshot's, in config/, the config channel's, and in
- * the apps folders, the apps channel's. The problems item counts the Problems view's list, the
- * rows of the language servers, the commands and the LaTeX builds.
+ * How many findings the Findings view lists, which is what the findings item counts: everything the
+ * build found wrong in the hub's YAML, the snapshot's, in config/, the config channel's, in the
+ * apps folders, the apps channel's, and in the config the page registers its views from, the page's
+ * own. The problems item counts the Problems view's list, the rows of the language servers, the
+ * commands and the LaTeX builds.
  */
 export function findingsCount(
     snapshot: { findings?: readonly unknown[] } | null,
     config: { findings?: readonly unknown[] } | null,
-    apps: { findings?: readonly unknown[] } | null = null
+    apps: { findings?: readonly unknown[] } | null = null,
+    page: { findings?: readonly unknown[] } | null = null
 ): number {
-    return allFindings(snapshot, config, apps).length;
+    return allFindings(snapshot, config, apps, page).length;
 }
 
 /**
- * Every finding the page knows of: the portfolio's, then the configuration's, then the apps'. The
+ * Every finding the page knows of: the portfolio's, then the configuration's, then the apps', then
+ * the page's own findings of the config it registers its views from (the registry's `refused`). The
  * Findings view lists them and the status bar counts them, so both read one list.
  */
 export function allFindings<T>(
     snapshot: { findings?: readonly T[] } | null,
     config: { findings?: readonly T[] } | null,
-    apps: { findings?: readonly T[] } | null = null
+    apps: { findings?: readonly T[] } | null = null,
+    page: { findings?: readonly T[] } | null = null
 ): T[] {
-    return [...(snapshot?.findings ?? []), ...(config?.findings ?? []), ...(apps?.findings ?? [])];
+    return [
+        ...(snapshot?.findings ?? []),
+        ...(config?.findings ?? []),
+        ...(apps?.findings ?? []),
+        ...(page?.findings ?? [])
+    ];
 }
 
 /** The words the page hands the status bar at once. */

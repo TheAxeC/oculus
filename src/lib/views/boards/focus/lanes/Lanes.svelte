@@ -1,6 +1,10 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes: three clusters of three,
-    // the cards on them, and the Idea lane under them, drawn full width. A card is
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes, grouped by the clusters
+    // of `focus_clusters` in their order (state/boards/focus.ts `clusters`), and the cards on them:
+    // a `columns` cluster draws its lanes side by side under its heading, the words and glyph its
+    // row names (its key when it names no words), muted when its row says so; a `full_width`
+    // cluster draws each of its lanes as a section of its own headed by the lane's label and the
+    // cluster's glyph. A lane naming no cluster of the list is drawn in none. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
     // facts (state/boards/focus.ts `laneFacts`), its deadline, the people it waits on or that it is
     // blocked, and its move menu. The projects on each lane are the ones the Focus filter keeps,
@@ -25,8 +29,7 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
     import {
-        CLUSTERS,
-        IDEA,
+        clusters,
         focusLabel,
         laneFacts,
         laneMarks,
@@ -37,6 +40,7 @@
         hubMoveOnto,
         pausesCountdown,
         projectLane,
+        type Cluster,
         type Id,
         type Lane,
         type Project,
@@ -80,6 +84,8 @@
 
     const config = $derived(configMap());
     const board = $derived(lanes(vocabOf()));
+    /** The clusters the lanes are drawn in, in drawing order, from the same words as the lanes. */
+    const shown = $derived(clusters(vocabOf()));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
     let over = $state<string | null>(null);
@@ -229,43 +235,44 @@
     </div>
 {/snippet}
 
-{#each CLUSTERS as cluster (cluster)}
-    {@const inCluster = lanesIn(board, cluster)}
-    {#if inCluster.length > 0}
-        <details class="cluster" class:muted={cluster !== 'now'} open>
-            <summary>
-                <Surface inline>
-                    {#if cluster === 'now'}
-                        <Glyph name={t('focus.now_glyph')} />{t('focus.cluster_now')}
-                    {:else if cluster === 'parked'}
-                        {t('focus.cluster_parked')}
-                    {:else}
-                        <Glyph name={t('focus.ideas_glyph')} />{t('focus.cluster_incubate')}
-                    {/if}
-                </Surface>
-            </summary>
-            <div class="lanes">
-                {#each inCluster as one (one.key)}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render lane(one, items[one.key] ?? [], false)}
-                {/each}
-            </div>
-        </details>
-    {/if}
-{/each}
+{#snippet heading(cluster: Cluster, words: string)}
+    <summary>
+        <Surface inline>
+            {#if cluster.glyph !== ''}
+                <Glyph name={t(cluster.glyph)} />
+            {/if}
+            {words}
+        </Surface>
+    </summary>
+{/snippet}
 
-{#each lanesIn(board, IDEA) as one (one.key)}
-    <details class="cluster muted" open>
-        <summary>
-            <Surface inline>
-                <Glyph name={t('focus.ideas_glyph')} />{one.label}
-            </Surface>
-        </summary>
-        <div class="lanes one">
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render lane(one, items[one.key] ?? [], true)}
-        </div>
-    </details>
+{#each shown as cluster (cluster.key)}
+    {@const inCluster = lanesIn(board, cluster.key)}
+    {#if cluster.layout === 'columns'}
+        {#if inCluster.length > 0}
+            <details class="cluster" class:muted={cluster.muted} open>
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render heading(cluster, cluster.label === '' ? cluster.key : t(cluster.label))}
+                <div class="lanes">
+                    {#each inCluster as one (one.key)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render lane(one, items[one.key] ?? [], false)}
+                    {/each}
+                </div>
+            </details>
+        {/if}
+    {:else}
+        {#each inCluster as one (one.key)}
+            <details class="cluster" class:muted={cluster.muted} open>
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render heading(cluster, one.label)}
+                <div class="lanes one">
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render lane(one, items[one.key] ?? [], true)}
+                </div>
+            </details>
+        {/each}
+    {/if}
 {/each}
 
 <style>

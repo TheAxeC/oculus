@@ -3,11 +3,7 @@
 // documented computed lookup. The finding sentences of config/text/findings.yml are held to the
 // source by their literals alone: every `findings.` string literal under src is a key of that file
 // and every key of it is such a literal, whatever expression the formatter is handed the catalog
-// through. The gate covers the catalog files' keys too: every top-level key of a file under
-// config/catalogs/ is named outside a comment by a module or component under src, as a property or
-// a quoted string, the catalog files' shapes left out since they name every key, or is drawn as a
-// `from: vocab.<key>` list by a shipped schema or a template of docs/templates.md. A key whose name
-// is a common word is read by any property of that name, which a check by name cannot tell apart.
+// through. The catalog files' keys are catalog-file-keys.test.ts's.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { registered } from '../../../src/lib/state/shared/words/languages.ts';
@@ -35,7 +31,7 @@ import { collectionFiles } from '../../../src/lib/data/sources/collections.ts';
 import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus/palette-table.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { vocabKeys } from '../../../src/lib/data/shapes/vocab-keys.ts';
-import { boardIds } from '../../../src/lib/state/boards/board/presets.ts';
+import { boardsSource } from '../../../src/lib/state/boards/board/presets.ts';
 import { REFUSALS } from '../../../src/lib/server/edit/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
@@ -45,7 +41,13 @@ import {
 } from '../../../src/lib/data/prose/markdown/note-names.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
 import { platformText } from '../../../src/lib/data/places/platform.ts';
-import { registerAll, registerApps, registerCollections } from '../../../src/routes/views.ts';
+import {
+    pageBoards,
+    registerAll,
+    registerApps,
+    registerBoards,
+    registerCollections
+} from '../../../src/routes/views.ts';
 import { fixtureApp } from '../../fixtures/entities-fixture.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -60,8 +62,11 @@ beforeEach(() => {
     client = createClientState();
     ({ views } = client.registry);
     registerAll(client.registry);
-    // Oculus's collection views.
-    registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
+    // Oculus's collection views and project boards.
+    const collections = collectionViews(config, unplacedGroup(config));
+    registerCollections(client.registry, collections);
+    const source = boardsSource(config, () => 'layout.yml');
+    registerBoards(client.registry, pageBoards(source, catalog, collections));
     registerApps(client.registry, [
         fixtureApp({ name: 'draft', approved: false, key: '' }),
         fixtureApp({ name: 'kept', kept: true }),
@@ -224,6 +229,27 @@ function collectionWords(field: 'label' | 'glyph' | 'about'): string[] {
 /** The collection views' registration, which reads the label and glyph words of each entry. */
 const COLLECTION_REGISTRATION = 'lib/views/boards/collection/registration.ts';
 
+/** The module that reads the label and glyph words of each board of `boards:`. */
+const BOARD_VIEWS = 'lib/state/boards/board/presets.ts';
+
+/** The catalog keys one field of the boards of oculus's `boards:` map names. */
+function boardWords(field: 'label' | 'glyph'): string[] {
+    const boards = loadConfig(engineDir()).config.boards as Record<string, Record<string, unknown>>;
+    return Object.values(boards).flatMap((row) => {
+        const key = row[field];
+        return typeof key === 'string' ? [key] : [];
+    });
+}
+
+/** The catalog keys one field of the rows of oculus's `focus_clusters` names. */
+function clusterWords(field: 'label' | 'glyph'): string[] {
+    const rows = loadConfig(engineDir()).config.focus_clusters as Record<string, unknown>[];
+    return rows.flatMap((row) => {
+        const key = row[field];
+        return typeof key === 'string' ? [key] : [];
+    });
+}
+
 /**
  * The value of a string constant `name` the file at `rel` under src declares, read from its
  * source as the check reads any literal key, or nothing when it declares none.
@@ -299,9 +325,29 @@ const COMPUTED_PREFIXES = [
         keys: () => [...Object.values(KEY_ROWS).map((row) => row.word), PREFIX_ROWS.command.word]
     },
     {
-        file: 'lib/views/boards/projects/Projects.svelte',
-        start: 'lookup(`views.${preset.id}`',
-        keys: () => boardIds(loadConfig(engineDir()).config).map((id) => `views.${id}`)
+        // A project board is named by the word its `label:` names, handed to the registry as the
+        // registration's label key.
+        file: BOARD_VIEWS,
+        start: "boardWord(row, 'label', catalog)",
+        keys: () => boardWords('label')
+    },
+    {
+        // It draws the glyph its `glyph:` names, else the word of the literal BOARD_GLYPH.
+        file: BOARD_VIEWS,
+        start: "boardWord(row, 'glyph', catalog)",
+        keys: () => [...boardWords('glyph'), ...literalConstant(BOARD_VIEWS, 'BOARD_GLYPH')]
+    },
+    {
+        // A Focus cluster's heading is the word its row of `focus_clusters` names in `label`.
+        file: 'lib/views/boards/focus/lanes/Lanes.svelte',
+        start: 't(cluster.label)',
+        keys: () => clusterWords('label')
+    },
+    {
+        // Its glyph is the word the row names in `glyph`.
+        file: 'lib/views/boards/focus/lanes/Lanes.svelte',
+        start: 't(cluster.glyph)',
+        keys: () => clusterWords('glyph')
     },
     {
         // The words a new project of each tier gets are keyed by the tier itself, so a tier added
@@ -790,60 +836,5 @@ describe('text keys', () => {
             "words(textCatalog(config), 'server.chat.' + name);",
             'words(catalog);'
         ]);
-    });
-});
-
-/** The folder of the catalog files' shapes, relative to src, whose keys name every catalog key. */
-const SHAPES_DIR = 'lib/data/shapes/catalog-files/';
-
-/**
- * The code of every module and component under src that may read a catalog file's key, the shapes
- * left out, each with its comments turned to spaces, so a key named only in a comment is not read.
- */
-function keyReaderCode(): string[] {
-    return treeFiles(SRC)
-        .filter((rel) => /\.(ts|svelte|js|mjs|cjs)$/.test(rel) && !rel.startsWith(SHAPES_DIR))
-        .map((rel) => codeOf(join(SRC, rel)));
-}
-
-/**
- * The text of the shipped schemas and of the templates a hub's schemas are copied from, comment
- * lines left out: a field there draws a vocabulary list as `from: vocab.<key>`, read through the
- * vocabulary file's keys with no code naming the key.
- */
-function schemaFilesText(): string {
-    const dir = join(engineDir(), 'config', SCHEMAS);
-    const files = [
-        ...readdirSync(dir)
-            .filter((name) => name.endsWith('.yml'))
-            .map((name) => join(dir, name)),
-        join(engineDir(), 'docs', 'templates.md')
-    ];
-    return files
-        .flatMap((file) => readFileSync(file, 'utf8').split('\n'))
-        .filter((line) => !line.trimStart().startsWith('#'))
-        .join('\n');
-}
-
-describe('catalog file keys', () => {
-    it('has a reader for every top-level key of every catalog file', () => {
-        const dir = join(engineDir(), 'config', CATALOGS);
-        const code = keyReaderCode();
-        const schemas = schemaFilesText();
-        const read = (key: string): boolean => {
-            const name = RegExp.escape(key);
-            const named = new RegExp(`\\.${name}\\b|['"]${name}['"]`);
-            const drawn = new RegExp(`from:\\s*vocab\\.${name}\\b`);
-            return drawn.test(schemas) || code.some((text) => named.test(text));
-        };
-        const orphaned = readdirSync(dir)
-            .filter((name) => name.endsWith('.yml'))
-            .sort()
-            .flatMap((name) =>
-                Object.keys(parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>)
-                    .filter((key) => !read(key))
-                    .map((key) => `${name}: ${key}`)
-            );
-        expect(orphaned).toEqual([]);
     });
 });

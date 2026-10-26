@@ -77,7 +77,7 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 47 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; and `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips, a funding stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 49 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; `focus_clusters`, `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole; and `rail_color` by the hub's value in place of oculus's. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                     # the folders projects are found in
@@ -101,7 +101,8 @@ forms:                    # the forms of a project's output (by word)
 chips:                    # the chips of projects, with their labels and glyphs (by word)
 statuses:                 # the statuses of collection entries, with their colours and roles (by word)
 lead_statuses:            # the statuses of Position Leads, with their roles (by word)
-focus_lanes:              # the Focus lanes, in order (whole)
+focus_clusters:           # the clusters the Focus lanes are grouped in, in drawing order (whole)
+focus_lanes:              # the Focus lanes, in order, with what a move onto each writes (whole)
 fund_stages:              # the stages stacked in the Focus Funding column, in order (whole)
 focus_lane_tones:         # the colour of each collection lane bar of Focus (by word)
 ticker_categories:        # the command center's deadline groups, with their words (by word)
@@ -109,7 +110,8 @@ facet_tones:              # the colour of each filter group of a project board's
 tiers:                    # the kinds of project a manifest's tier names (by word)
 research_audit:           # the tiers the audit's research rules skip (by word)
 roles:                    # the roles a person holds on a project, in order (whole)
-categories:               # the categories a project is filed under (by key)
+categories:               # the categories a project is filed under, each with its colour (by key)
+rail_color:               # the colour of a project board's rail count (the hub's value)
 leads_fit:                # the fit colours of the Position Leads (by word)
 data_access:              # the colour of a dataset's access chip (by word)
 venue_categories:         # the categories of venues, in order (whole)

@@ -463,6 +463,7 @@ text:
             idea_status_research: 'New idea: scope and novelty check open.'
             idea_status_software: New project.
             idea_tier: 'a new project cannot have the tier {0}'
+            idea_tier_none: 'a new project names no tier, and no one word of tiers carries default'
             idea_unparsed: the scaffold did not parse; nothing was written
             list_not_strings: the list holds something not a string
             map_field: a map field is not written by the form
@@ -515,6 +516,7 @@ text:
         workspace:
             no_hub: The workspace lists no hub, so there is no .oculus folder to write in; add a folder that holds .oculus/config.yml first
             no_hub_named: The workspace has no hub named {0}
+            which_hub: The workspace has several hubs and none of those that take this is the primary hub, so the write names no hub to go to; pick the hub to write it in, or name a hub as primary in the workspace file
             no_primary: The workspace has no primary hub, so there is nowhere to keep this; name a hub as primary in the workspace file
             no_primary_doc: The workspace has no primary hub, so there is no hub document to show
             restart_key: '{0} is set to another value in the workspace just opened; the running server keeps its own value, and a restart takes the new one'

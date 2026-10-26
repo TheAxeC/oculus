@@ -50,11 +50,11 @@
         return t('project.helper.xlink_ideas');
     }
 
-    /** The glyph vocabulary name for one group. */
+    /** The glyph of one group, the name its catalogued word beside the group's label holds. */
     function glyph(group: CrossGroup): string {
-        if (group.type === 'in-flight') return 'active';
-        if (group.type === 'done') return 'published';
-        return 'idea';
+        if (group.type === 'in-flight') return t('project.helper.xlink_in_flight_glyph');
+        if (group.type === 'done') return t('project.helper.xlink_done_glyph');
+        return t('project.helper.xlink_idea_glyph');
     }
 </script>
 

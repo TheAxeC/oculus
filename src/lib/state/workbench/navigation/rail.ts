@@ -93,7 +93,8 @@ export function sameRail(left: readonly RailEntry[], right: readonly RailEntry[]
                 entry.page === right[at].page &&
                 entry.chord === right[at].chord &&
                 entry.group_glyph === right[at].group_glyph &&
-                entry.unplaced_collections === right[at].unplaced_collections
+                entry.unplaced_collections === right[at].unplaced_collections &&
+                entry.project_boards === right[at].project_boards
         )
     );
 }

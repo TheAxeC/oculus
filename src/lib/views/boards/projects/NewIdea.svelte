@@ -8,8 +8,11 @@
     type Props = {
         onclose: () => void;
         onsaid: (said: string) => void;
-        /** The board's tier, the first word of its `tier:`; none for a board naming no tier. */
-        tier?: string;
+        /**
+         * The tier the board writes in the hub given: its one tier, else the default tier of
+         * `tiers` when the board names none or names it among several.
+         */
+        tierOf?: (hub: string) => string | undefined;
         /**
          * The board's `role:` keys, which the user is named by in the new manifest; null for a
          * board naming no `role:`, which names the user in the field of the first row of `roles:`.
@@ -21,7 +24,7 @@
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, tier, roles, takes, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tierOf, roles, takes, seed, oncreated }: Props = $props();
 </script>
 
-<NewIdeaForm {onclose} {onsaid} {tier} {roles} {takes} {seed} {oncreated} />
+<NewIdeaForm {onclose} {onsaid} {tierOf} {roles} {takes} {seed} {oncreated} />

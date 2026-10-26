@@ -50,6 +50,7 @@ text:
         new_idea_eli5: in one line
         new_idea_folder: folder
         new_idea_hub: hub
+        new_idea_hub_none: (pick a hub)
         new_idea_id: project id
         new_idea_save: save
         new_idea_short: short handle
@@ -85,6 +86,7 @@ text:
     views:
         archive: Archive
         archive_glyph: archived
+        board_glyph: paper
         coauthor: Coauthor
         coauthor_glyph: author
         personal: Personal

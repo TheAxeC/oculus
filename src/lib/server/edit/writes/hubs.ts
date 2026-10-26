@@ -182,34 +182,39 @@ export function rootedHome(
 /**
  * The target for a write that names no record and needs a hub (the career file, a new project or a
  * new entry with no root, a lead, a Lit Watch paper and a LinkedIn idea, and `homeOfLiterature`
- * when no hub holds the collection): the primary's, else, for the page, the first hub of the
- * workspace, and null when the workspace lists no hub, or for an app when it has no primary.
+ * when no hub holds the collection): the primary's, else, for the page, the workspace's one hub
+ * when it lists one, and null when it lists none or several, since no order of the hubs decides
+ * where a record goes, or for an app when it has no primary.
  */
 export function homeOf(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
     const own = primaryOf(into);
     if (own !== null || app !== null) return own;
-    const first = (into.hubs ?? []).at(0);
-    return first === undefined ? null : within(into, first);
+    const hubs = into.hubs ?? [];
+    return hubs.length === 1 ? within(into, hubs[0]) : null;
 }
 
 /**
- * The refusal of a write that needs a hub when `homeOf` gives none: the workspace lists no hub, or
- * an app writes to a workspace with no primary.
+ * The refusal of a write that needs a hub when `homeOf` or `homeOfLiterature` gives none: an app
+ * writes to a workspace with no primary, the workspace lists several hubs and the write names none
+ * of them, or it lists no hub.
  */
 export function noHub(into: WriteTarget, app: HeldApp | null): Response {
+    const text = into.config.text;
     const error =
-        app === null
-            ? words(into.config.text, 'server.workspace.no_hub')
-            : words(into.config.text, 'server.workspace.no_primary');
+        app !== null
+            ? words(text, 'server.workspace.no_primary')
+            : hubKeysOf(into).length > 1
+              ? words(text, 'server.workspace.which_hub')
+              : words(text, 'server.workspace.no_hub');
     return json({ error }, { status: 409 });
 }
 
 /**
  * The target for a write to the Literature collection that names no hub: the primary's when it
- * holds the collection, else the first hub's that does, else `homeOf`'s; for an app, the
- * primary's alone. A hub holds it when an entry of its `collections:` names the `literature`
- * registry, or when its list leaves it to oculus's entry and it holds the file there
- * (`literatureFile`, the file Save to Literature writes).
+ * holds the collection, else the one other hub's that does when one does, null when several do, and
+ * `homeOf`'s when none does; for an app, the primary's alone. A hub holds it when an entry of its
+ * `collections:` names the `literature` registry, or when its list leaves it to oculus's entry and
+ * it holds the file there (`literatureFile`, the file Save to Literature writes).
  */
 export function homeOfLiterature(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
     if (app !== null) return primaryOf(into);
@@ -219,10 +224,11 @@ export function homeOfLiterature(into: WriteTarget, app: HeldApp | null): Primar
         (enginePath !== undefined && literatureFile(hub, config, enginePath) !== null);
     const own = primaryOf(into);
     if (own !== null && holds(own.hub, own.config)) return own;
-    const one = (into.hubs ?? []).find(
+    const holding = (into.hubs ?? []).filter(
         (held) => held.key !== into.primary && holds(held.hub, held.config)
     );
-    return one === undefined ? homeOf(into, null) : within(into, one);
+    if (holding.length === 0) return homeOf(into, null);
+    return holding.length === 1 ? within(into, holding[0]) : null;
 }
 
 /** A subtask write's target, and the record it names by the keys inside the hub. */

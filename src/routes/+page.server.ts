@@ -10,7 +10,8 @@ import { platformText } from '$lib/data/places/platform';
 import { pageStateRead } from '$lib/server/files/workspace/page-state/routes';
 import { payloadOf } from '$lib/server/machine/apps/read/held';
 import { firstAppThemes } from '$lib/server/machine/apps/routes/theme';
-import { configSeed } from '$lib/server/root/config-seed';
+import { configSeed, keyFiles } from '$lib/server/root/config-seed';
+import { boardsSource } from '$lib/state/boards/board';
 import type { PageServerLoad } from './$types';
 
 // The catalog, the glyph vocabulary of names and ASCII stand-ins, and the tone vocabulary are read
@@ -40,10 +41,13 @@ import type { PageServerLoad } from './$types';
 // of waiting for that route. The page's first HTML is sent with the same theme already drawn
 // (hooks.server.ts), and that first draw keeps it.
 //
-// The collection views ride with them for the same reason, each with the place, label and glyph
-// its entry gives: the page registers the collection view once per key before it renders, and the
+// The collection views ride with them for the same reason, each with the place, label and glyph its
+// entry gives: the page registers the collection view once per key before it renders, and the
 // registry is filled in the page's script body rather than from a fetch, so the view catalogue and
-// the pane tabs draw every collection on the first frame.
+// the pane tabs draw every collection on the first frame. The project boards ride with them the
+// same way, as the `boards:` map, the rail group the boards are placed in and the file the map was
+// read from (state/boards/board/presets.ts `boardsSource`), which the page turns into the board
+// views beside the ids of the views it registers.
 //
 // The apps ride with them too, the held rows and findings and the apps folders, with the version of
 // the `apps` channel they are at least as new as, so the registry holds the apps' views before the
@@ -61,6 +65,11 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ locals }) => {
     const read = locals.config();
     const { config } = read;
+    const from = keyFiles({
+        engine: locals.server.engine,
+        hub: locals.server.workspace.open().primaryDir,
+        from: read.from
+    });
     const text = platformText(textCatalog(config));
     const icons = locals.server.icons.set;
     const hubs = locals.server.configCache.vocab();
@@ -74,12 +83,14 @@ export const load: PageServerLoad = ({ locals }) => {
         codeThemeClasses,
         appThemes: firstAppThemes(locals.server.apps.held(), config),
         collections: workspaceCollectionViews(config, hubs, unplacedGroup(config)),
+        boards: boardsSource(config, (key) => from[key] ?? ''),
         seed: configSeed(locals.server.hub, read, {
             hubs,
             text,
             icons,
             codeThemeClasses,
-            host: locals.server.host
+            host: locals.server.host,
+            from
         }),
         apps: {
             ...payloadOf(locals.server.apps.held()),

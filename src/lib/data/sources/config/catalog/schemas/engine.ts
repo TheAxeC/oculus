@@ -138,6 +138,7 @@ function orNull(schema: unknown): JsonSchema {
  * `removed: true`; or a list replaced whole.
  */
 function shapedSchema(schema: JsonSchema, shape: InPlace): JsonSchema {
+    if (shape.kind === 'colour') return schema;
     const { items, additionalProperties, properties, ...rest } = schema;
     if (shape.kind === 'map') {
         const named = (properties ?? {}) as Record<string, unknown>;

@@ -9,7 +9,7 @@
 
 import { ISO_DATE } from '../../data/helpers/dates.ts';
 import { readAs, textOrNumberShape } from '../../data/shapes/shapes.ts';
-import { wordsWith } from '../../data/shapes/vocab-keys.ts';
+import { oneWordWith } from '../../data/shapes/vocab-keys.ts';
 import type { LeadEntry } from './leads.ts';
 
 /** The feed a lead is written through, the key the feed writes name it by. */
@@ -22,8 +22,9 @@ function text(entry: LeadEntry, field: string): string {
 
 /**
  * The Applications fields a lead fills, by field name. A field the lead lacks, a deadline that is
- * not a date, and a status no word of the config carries the flag for, is left out, so the entry
- * places that field as it would for any new entry.
+ * not a date, and a status when no word of the config carries `default_application` or more than
+ * one does (`oneWordWith`), is left out, so the entry places that field as it would for any new
+ * entry.
  */
 export function applicationFromLead(
     entry: LeadEntry,
@@ -34,7 +35,7 @@ export function applicationFromLead(
         sub: text(entry, 'inst'),
         url: text(entry, 'url'),
         deadline: text(entry, 'deadline'),
-        status: wordsWith(config, 'statuses', 'default_application').at(0) ?? ''
+        status: oneWordWith(config, 'statuses', 'default_application') ?? ''
     };
     return Object.fromEntries(
         Object.entries(fields).filter(

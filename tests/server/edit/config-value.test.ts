@@ -218,7 +218,12 @@ describe("a hub's word written into the hub's settings file", { tags: ['slow'] }
         const idea = (inForce(one, 'categories') as { key: string }[]).find(
             (row) => row.key === 'idea'
         );
-        expect(idea).toEqual({ key: 'idea', label: 'idea', stages: { words: ['scoping'] } });
+        expect(idea).toEqual({
+            key: 'idea',
+            label: 'idea',
+            color: '#7c5cff',
+            stages: { words: ['scoping'] }
+        });
         expect(readFileSync(one.workspace, 'utf8')).not.toContain('stages');
     });
 

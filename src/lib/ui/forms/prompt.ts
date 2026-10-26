@@ -4,13 +4,16 @@
 /**
  * One line a prompt asks for, already translated, and what it holds to begin with. A field with
  * `choices` is a pick from them instead of a typed line, and `value` is the id selected to begin
- * with.
+ * with. `empty` gives such a pick an empty choice with those words, and a pick the prompt
+ * `required` keeps the yes off while it holds the empty choice.
  */
 export type PromptField = {
     label: string;
     value: string;
     placeholder?: string;
     choices?: { id: string; label: string }[];
+    empty?: string;
+    required?: boolean;
 };
 
 /** One question with its fields; `act` is handed each field's text in the order given. */

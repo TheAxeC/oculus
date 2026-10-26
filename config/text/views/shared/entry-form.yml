@@ -38,6 +38,7 @@ text:
         row_value: 'Value of {0}'
         row_value_placeholder: value
         add_hub: Hub
+        add_hub_none: (pick a hub)
         add_literature_ask: 'Add a paper to Literature by its DOI or its address, or leave it empty to give its key yourself'
         add_literature_value: DOI or address
         add_literature_failed: 'No source answered ({0}), so nothing was saved; try again'

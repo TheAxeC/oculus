@@ -394,9 +394,9 @@ export function createWrites(
 
     /**
      * Add one entry to a collection of the hub `root` names, else of the hub the server picks (the
-     * primary, else the first). The answer's `id` is the new entry's id in the portfolio, the hub
-     * the server wrote and the key it gave the entry, which its page is opened with and the entry
-     * is shown by until the snapshot holds it.
+     * primary, else the one hub of the workspace). The answer's `id` is the new entry's id in the
+     * portfolio, the hub the server wrote and the key it gave the entry, which its page is opened
+     * with and the entry is shown by until the snapshot holds it.
      */
     async function newEntry(
         collection: string,
@@ -419,8 +419,8 @@ export function createWrites(
     }
 
     /**
-     * Add one position lead to the leads feed of the primary hub, else the first. The answer's `id`
-     * is the new lead's internal id, the hub the server wrote and its title, which the lead is
+     * Add one position lead to the leads feed of the primary hub, else the one hub. The answer's
+     * `id` is the new lead's internal id, the hub the server wrote and its title, which the lead is
      * shown by until the feed holds it.
      */
     async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
@@ -461,21 +461,28 @@ export function createWrites(
     }
 
     /**
-     * Add one paper to the Lit Watch radar of the primary hub, else the first. The answer's `id` is
-     * the new paper's internal id, which it is shown by until the feed holds it.
+     * Add one paper to the Lit Watch radar of the hub `root` names, else of the hub the server
+     * picks for a write naming none (`homeOf` of server/edit/writes/hubs.ts: the primary, else the
+     * one hub of the workspace). The answer's `id` is the new paper's internal id, which it is
+     * shown by until the feed holds it.
      */
-    async function addRadarEntry(fields: Record<string, unknown>): Promise<WriteAnswer> {
+    async function addRadarEntry(
+        fields: Record<string, unknown>,
+        root?: string
+    ): Promise<WriteAnswer> {
         const seq = settle.begin();
-        const answer = await send({ kind: 'radar-add', fields });
+        const answer = await send(
+            root === undefined ? { kind: 'radar-add', fields } : { kind: 'radar-add', fields, root }
+        );
         if (answer.ok && answer.id !== undefined) settle.added('radar', answer.id, fields, seq);
         return answer;
     }
 
     /**
      * Save one paper to the Literature collection of the hub `root` names, else of the primary when
-     * it names the collection, else of the first hub that does. The answer's `id` is the paper's
-     * id in the portfolio: the hub the server wrote and the key it gave the paper; the page holds
-     * the paper under that hub's key of the `literature` registry until the snapshot does.
+     * it names the collection, else of the one other hub that does. The answer's `id` is the
+     * paper's id in the portfolio: the hub the server wrote and the key it gave the paper; the page
+     * holds the paper under that hub's key of the `literature` registry until the snapshot does.
      */
     async function saveLiterature(
         source: 'search' | 'lit-watch' | 'hand',
@@ -496,8 +503,9 @@ export function createWrites(
     }
 
     /**
-     * Add one LinkedIn idea stub through the configured folder of the primary hub, else the first.
-     * The answer's `id` is the idea's internal id: the hub the server wrote and the file's name.
+     * Add one LinkedIn idea stub through the configured folder of the primary hub, else the one
+     * hub. The answer's `id` is the idea's internal id: the hub the server wrote and the file's
+     * name.
      */
     async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
         return send({
@@ -629,7 +637,7 @@ export function createWrites(
 
     /**
      * Scaffold one new project: a manifest and a README under `<folder>/<id>`, in the hub `root`
-     * names, else in the hub the server picks (the primary, else the first). `tier` and `folder`
+     * names, else in the hub the server picks (the primary, else the one hub). `tier` and `folder`
      * are the board's; a call that names no folder is made under the `new_project_dir` of its tier,
      * the tier `projects` when it names none, in the settings of the hub written to.
      */

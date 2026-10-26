@@ -35,7 +35,8 @@ const configShape = unchangedAs<Payloads['config']>(
         icons: mapShape,
         codeThemeClasses: listShape,
         host: mapShape,
-        findings: listShape
+        findings: listShape,
+        from: mapShape
     })
 );
 

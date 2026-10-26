@@ -3,16 +3,17 @@
 // oculus's lists without copying the rest and oculus's order stays the order every list is drawn
 // in.
 //
-// A map is merged by its keys: a key named replaces oculus's entry of that key in oculus's place,
-// a new key comes after oculus's keys in the order it is written, and `<key>: null` takes oculus's
+// A map is merged by its keys: a key named replaces oculus's entry of that key in oculus's place, a
+// new key comes after oculus's keys in the order it is written, and `<key>: null` takes oculus's
 // entry out. A list of rows told apart by a field (`categories` by `key`, `latex_unimath` by
 // `command`) is merged the same way, `{ <field>: x, removed: true }` taking oculus's row `x` out.
-// Any other list is replaced whole, since its order is its meaning. What cannot be applied is a
-// problem and oculus's entry stands: a null or a removal naming an entry oculus does not hold,
-// `removed` holding anything but true, and two rows naming one key (none of the two is applied). A
-// row with no key to tell it by comes after oculus's rows as it is, and the reader of the list
-// says what is wrong with it. The hub layer (hub-layer.ts) also takes a word the hub's values no
-// longer give out of the lists that name it.
+// Any other list is replaced whole, since its order is its meaning, and a colour (`rail_color`)
+// replaces oculus's when it is written `#rrggbb`. What cannot be applied is a problem and oculus's
+// entry stands: a null or a removal naming an entry oculus does not hold, `removed` holding
+// anything but true, and two rows naming one key (none of the two is applied). A row with no key to
+// tell it by comes after oculus's rows as it is, and the reader of the list says what is wrong with
+// it. The hub layer (hub-layer.ts) also takes a word the hub's values no longer give out of the
+// lists that name it.
 //
 // The inverse is here too: the value a settings file holds for a value the reader sees, so the
 // merge over oculus's value gives the seen value back. It holds only the entries the reader
@@ -23,20 +24,31 @@
 import { isEqual } from 'lodash-es';
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
+import { HEX_COLOUR } from '../../../shapes/catalog-files/common.ts';
 import type { Merged, OverrideProblem } from './keyed.ts';
 import type { PendingFinding } from './text.ts';
 
 /** The field a row of a keyed list is taken out with. */
 const REMOVED = 'removed';
 
-/** How one key is laid over oculus's value: a map by its keys, rows by a field, or whole. */
-export type InPlace = { kind: 'map' } | { kind: 'rows'; field: string } | { kind: 'whole' };
+/**
+ * How one key is laid over oculus's value: a map by its keys, rows by a field, a list whole, or a
+ * colour that replaces oculus's.
+ */
+export type InPlace =
+    { kind: 'map' } | { kind: 'rows'; field: string } | { kind: 'whole' } | { kind: 'colour' };
+
+/** The kind of value a key's shape takes, named by a value that is not of it. */
+export type WrongKind = 'map' | 'list' | 'colour';
 
 /** A map merged by its keys. */
 const MAP: InPlace = { kind: 'map' };
 
 /** A list replaced whole. */
 const WHOLE: InPlace = { kind: 'whole' };
+
+/** A colour, written `#rrggbb`, that replaces oculus's. */
+const COLOUR: InPlace = { kind: 'colour' };
 
 /**
  * The keys of config/catalogs/vocab.yml a hub's settings file sets, every key of the file, each
@@ -49,6 +61,7 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     chips: MAP,
     statuses: MAP,
     lead_statuses: MAP,
+    focus_clusters: WHOLE,
     focus_lanes: WHOLE,
     fund_stages: WHOLE,
     focus_lane_tones: MAP,
@@ -57,6 +70,7 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     research_audit: MAP,
     roles: WHOLE,
     categories: { kind: 'rows', field: 'key' },
+    rail_color: COLOUR,
     leads_fit: MAP,
     data_access: MAP,
     venue_categories: WHOLE,
@@ -114,12 +128,14 @@ export function wrongKindFinding(
     file: string,
     key: string,
     name: string,
-    wrong: 'map' | 'list'
+    wrong: WrongKind
 ): PendingFinding {
     const kind = (catalog: TextCatalog): string =>
         wrong === 'map'
             ? findingText(catalog, 'findings.shape.is_map')
-            : findingText(catalog, 'findings.shape.is_list');
+            : wrong === 'list'
+              ? findingText(catalog, 'findings.shape.is_list')
+              : findingText(catalog, 'findings.shape.is_colour');
     return {
         file,
         key,
@@ -208,14 +224,19 @@ function mergeRowsInPlace(
 }
 
 /**
- * A value laid over oculus's by its shape, or `wrong` naming the kind of value the shape takes
- * when the value is not of it: a map for a map, a list for rows and for a list replaced whole.
+ * A value laid over oculus's by its shape, or `wrong` naming the kind of value the shape takes when
+ * the value is not of it: a map for a map, a list for rows and for a list replaced whole, a colour
+ * written `#rrggbb` for a colour.
  */
 export function layInPlace(
     shape: InPlace,
     oculus: unknown,
     value: unknown
-): Merged<unknown> | { wrong: 'map' | 'list' } {
+): Merged<unknown> | { wrong: WrongKind } {
+    if (shape.kind === 'colour') {
+        const written = typeof value === 'string' && HEX_COLOUR.test(value);
+        return written ? { value, problems: [] } : { wrong: 'colour' };
+    }
     if (shape.kind === 'map') {
         if (!isMap(value)) return { wrong: 'map' };
         return mergeMapInPlace(isMap(oculus) ? oculus : {}, value);

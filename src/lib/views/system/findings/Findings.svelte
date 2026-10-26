@@ -17,13 +17,15 @@
 
 <script lang="ts">
     // Layer 3, view. Everything the build found wrong, in one list: the snapshot's findings, which
-    // come from validate over the hub's YAML, and the config channel's own, which come from reading
-    // config/. A finding is reported and never repaired, so this view is where a bad manifest edit
-    // shows up within a second of being saved. The list is drawn straight into the pane, so the
-    // pane asks for the tint; a clear list is said with the Empty primitive. A row names its file
-    // relative to the folder of the root that holds it (its hub's, or a repository's), as VS Code's
-    // Problems view names a file relative to the workspace, on one line cut with an ellipsis at
-    // its end, the whole path in its tooltip; a file no root holds is named by its whole path.
+    // come from validate over the hub's YAML, the config channel's own, which come from reading
+    // config/, the apps channel's, and the page's own, a project board the page left out of the
+    // registry (the registry's `refused`). A finding is reported and never repaired, so this view
+    // is where a bad manifest edit shows up within a second of being saved. The list is drawn
+    // straight into the pane, so the pane asks for the tint; a clear list is said with the Empty
+    // primitive. A row names its file relative to the folder of the root that holds it (its hub's,
+    // or a repository's), as VS Code's Problems view names a file relative to the workspace, on one
+    // line cut with an ellipsis at its end, the whole path in its tooltip; a file no root holds is
+    // named by its whole path.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -36,12 +38,20 @@
     const {
         apps: { findings: appFindings },
         entities: { config, portfolio },
-        fs: { primary, roots }
+        fs: { primary, roots },
+        registry
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const found = $derived(allFindings(portfolio(), config(), { findings: appFindings() }));
+    const found = $derived(
+        allFindings(
+            portfolio(),
+            config(),
+            { findings: appFindings() },
+            { findings: registry.refused() }
+        )
+    );
 
     /** A finding's file under the root that holds it, with its line when it names one. */
     function named(file: string, line: number | undefined): string {

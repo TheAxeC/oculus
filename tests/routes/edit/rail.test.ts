@@ -49,7 +49,8 @@ function railOf(into: PrimaryTarget): Entry[] {
         page: row.page ?? '',
         chord: row.chord ?? '',
         group_glyph: row.group_glyph ?? '',
-        unplaced_collections: row.unplaced_collections === true
+        unplaced_collections: row.unplaced_collections === true,
+        project_boards: row.project_boards === true
     }));
 }
 

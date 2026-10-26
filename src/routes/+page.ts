@@ -7,10 +7,12 @@ import type { PageLoad } from './$types';
 // later change reaches the page as a push on the `config` channel instead.
 //
 // The collection keys are not installed anywhere: they are handed to the page, which registers one
-// view per key in the registry of the client it builds. The seed of the `config` channel is handed
-// on the same way, since the channel belongs to that client's socket; so are the apps the server
-// holds, which the page seeds its `apps` channel and registers the apps' views from, and so is the
-// page state of this machine, which the page's client holds the arrangement and the view states in.
+// view per key in the registry of the client it builds; so are the `boards:` map the project board
+// views are made from and the catalog their `label:` and `glyph:` words are checked against, which
+// the page registers the board views from. The seed of the `config` channel is handed on the same
+// way, since the channel belongs to that client's socket; so are the apps the server holds, which
+// the page seeds its `apps` channel and registers the apps' views from, and so is the page state of
+// this machine, which the page's client holds the arrangement and the view states in.
 //
 // The files of the app themes the `theme` and `app_theme` options name are handed on the same way:
 // the page hands them to its workbench, whose first draw of such a theme is made from them, the
@@ -26,6 +28,8 @@ export const load: PageLoad = ({ data }) => {
     installPageConfig(data);
     return {
         collections: data.collections,
+        boards: data.boards,
+        text: data.text,
         seed: data.seed,
         apps: data.apps,
         pageState: data.pageState,

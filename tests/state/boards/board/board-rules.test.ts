@@ -1,13 +1,15 @@
 // Layer 2, client-state tests. Which boards a project is on, its category and the user's role on
-// it, read from the shipped vocabulary and boards: a project is on every board whose keys it
-// meets (data/shapes/boards/takes.ts), in the category of the first row of `categories:` holding
-// it (categories.ts), and its role is the first row of `roles:` whose field holds the person the
+// it, read from the shipped vocabulary and boards: a project is on every board whose keys it meets
+// (data/shapes/boards/takes.ts), in the category of the first row of `categories:` holding it
+// (categories.ts), and its role is the first row of `roles:` whose field holds the person the
 // workspace setting `self` names (roles.ts). One table per unit: the boards that take a project,
 // the category, the role with the Lead badge and Mine only, the board items with the Mine only
 // filter and the Role facet, the card sections, the rail count, the Archival band with the real
-// projects and the Orphans card, the Focus lanes, the audit's placement findings, the board keys
-// with the config check, a saved slice filter, and the roles of a collection. The projects are
-// synthetic; the collection is planted in a scratch hub and built through buildOneHub.
+// projects and the Orphans card, the Focus lanes with their clusters and the moves onto them, the
+// audit's placement findings, the board keys with the config check, a saved slice filter, New
+// project with the tier it writes, and the roles of a collection. The projects are synthetic; the
+// collection is planted in a scratch hub and built through buildOneHub. The board views registered
+// from `boards:` are board-views.test.ts's.
 //
 // It does not cover the views drawing the toggle, the badge, the facet or the sections, which the
 // look does.
@@ -64,9 +66,18 @@ import {
 } from '../../../../src/lib/state/boards/board/index.ts';
 import {
     newProjectPerson,
+    newProjectTier,
     offersNewProject
 } from '../../../../src/lib/state/boards/board/new-project.ts';
-import { projectLane, unplaced } from '../../../../src/lib/state/boards/focus.ts';
+import {
+    clusters,
+    hubMovable,
+    hubMoveOnto,
+    lanes,
+    lanesIn,
+    projectLane,
+    unplaced
+} from '../../../../src/lib/state/boards/focus.ts';
 import { archival, orphans } from '../../../../src/lib/state/boards/structure/lines.ts';
 import { realProjects } from '../../../../src/lib/state/sources/registries/venues.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -181,6 +192,15 @@ describe('the boards a project is on', () => {
 });
 
 describe('the category of a project', () => {
+    it('reads a row naming no color with no colour', () => {
+        const config = { ...CONFIG, categories: [{ key: 'x', stages: { words: ['exploring'] } }] };
+        const categories = categoriesOf(config);
+        expect(categories.map((one) => [one.key, one.color])).toEqual([['x', '']]);
+        expect(categoryOf(project('c1', { stage: 'exploring' }), categories, config)?.key).toBe(
+            'x'
+        );
+    });
+
     /** The shipped `categories:` without the row `dead-ends`. */
     const NO_DEAD_ENDS = {
         ...CONFIG,
@@ -337,6 +357,27 @@ describe('the rail count of a board', () => {
             color: '#16a34a'
         });
     });
+
+    it.each([
+        { name: 'case 14: a rail_color of #2563eb', color: '#2563eb', drawn: '#2563eb' },
+        { name: 'a rail_color that is no #rrggbb', color: 'green', drawn: '' },
+        { name: 'no rail_color', color: undefined, drawn: '' }
+    ])('is drawn in the colour rail_color gives, $name', (row) => {
+        const config = { ...CONFIG, rail_color: row.color };
+        const one = [project('c1')];
+        expect(railCount(one, categoriesOf(config), config)).toEqual({
+            count: 1,
+            color: row.drawn
+        });
+    });
+
+    it('takes no colour from the rows carrying rail: true', () => {
+        const categories = (CONFIG.categories as Record<string, unknown>[]).map((row) =>
+            row.rail === true ? { ...row, color: '#dc2626' } : row
+        );
+        const config = { ...CONFIG, categories };
+        expect(railCount([project('c1')], categoriesOf(config), config).color).toBe('#16a34a');
+    });
 });
 
 describe('the Archival band, the real projects and the Orphans card', () => {
@@ -371,6 +412,101 @@ describe('the Focus lanes', () => {
         const one = project(row.id);
         expect(projectLane(one, () => CONFIG)?.key).toEqual(row.lane);
         expect(unplaced([one], CONFIG)).toEqual([]);
+    });
+
+    /** The shipped config with the lane `key` of `focus_lanes` given the fields `over`. */
+    function withLane(key: string, over: Record<string, unknown>): Record<string, unknown> {
+        const rows = (CONFIG.focus_lanes as Record<string, unknown>[]).map((row) => {
+            if (row.key !== key) return row;
+            const fields = Object.entries({ ...row, ...over });
+            return Object.fromEntries(fields.filter(([, value]) => value !== undefined));
+        });
+        return { ...CONFIG, focus_lanes: rows };
+    }
+
+    it.each([
+        {
+            name: 'case 10: a project at exploring is written the stage of move_writes',
+            from: { stage: 'exploring' },
+            writes: { stage: 'submit-ready' }
+        },
+        {
+            name: 'case 10: a project at in-prep is on the lane already and is written nothing',
+            from: { stage: 'in-prep' },
+            writes: null
+        },
+        {
+            name: 'a blocked project at in-prep keeps its stage and loses its chip',
+            from: { stage: 'in-prep', chips: ['blocked'] },
+            writes: { 'status.chips': [] }
+        }
+    ])('moves onto a stage lane by its move_writes: $name', (row) => {
+        const config = withLane('push', {
+            stages: ['in-prep', 'submit-ready'],
+            move_writes: { stage: 'submit-ready' }
+        });
+        const moved = project('m', { tier: 'research', chips: [], ...row.from });
+        expect(hubMoveOnto(moved, { key: 'push' }, () => config)).toEqual(row.writes);
+    });
+
+    it.each([
+        {
+            name: 'adds the chip of move_writes and takes off the chip of the other chip lane',
+            chips: ['parked'],
+            writes: { 'status.chips': ['blocked'] }
+        },
+        {
+            name: "keeps a chip of the lane's own and writes nothing",
+            chips: ['blocked'],
+            writes: null
+        }
+    ])('case 11: moves onto a chip lane, $name', (row) => {
+        const moved = project('m', { tier: 'research', stage: 'exploring', chips: row.chips });
+        expect(hubMoveOnto(moved, { key: 'blocked' }, () => CONFIG)).toEqual(row.writes);
+    });
+
+    it("case 11: a move onto a chip lane listing two chips adds the chip of move_writes, not the lane's first", () => {
+        const config = withLane('blocked', {
+            chips: ['admin-prep', 'blocked'],
+            move_writes: { chip: 'blocked' }
+        });
+        const moved = project('m', { tier: 'research', stage: 'exploring', chips: [] });
+        expect(hubMoveOnto(moved, { key: 'blocked' }, () => config)).toEqual({
+            'status.chips': ['blocked']
+        });
+    });
+
+    it('takes no move onto a lane without move_writes', () => {
+        const config = withLane('review', { move_writes: undefined });
+        const moved = project('m', { tier: 'research', stage: 'exploring', chips: [] });
+        expect(hubMovable(moved, { key: 'review' }, () => config)).toBe(false);
+        expect(hubMoveOnto(moved, { key: 'review' }, () => config)).toBeNull();
+        expect(hubMovable(moved, { key: 'revise' }, () => config)).toBe(true);
+    });
+
+    it('case 5: a cluster added after incubate is a fourth columns cluster drawn after it, holding the lane naming it', () => {
+        const later = {
+            key: 'later',
+            label: 'focus.cluster_parked',
+            muted: true,
+            layout: 'columns'
+        };
+        const rows = CONFIG.focus_clusters as Record<string, unknown>[];
+        const config = {
+            ...withLane('review', { cluster: 'later' }),
+            focus_clusters: [...rows.slice(0, 3), later, ...rows.slice(3)]
+        };
+        expect(clusters(config).map((one) => [one.key, one.layout, one.muted])).toEqual([
+            ['now', 'columns', false],
+            ['parked', 'columns', true],
+            ['incubate', 'columns', true],
+            ['later', 'columns', true],
+            ['idea', 'full_width', true]
+        ]);
+        expect(clusters(config)[3].label).toBe('focus.cluster_parked');
+        const board = lanes(config);
+        expect(lanesIn(board, 'later').map((lane) => lane.key)).toEqual(['review']);
+        expect(lanesIn(board, 'parked').map((lane) => lane.key)).toEqual(['blocked', 'backburner']);
     });
 });
 
@@ -443,10 +579,13 @@ describe("the audit's placement findings", () => {
 
 describe("a board's keys", () => {
     const ECG = project('ecg', { tier: 'research', lead: [SELF], stage: 'exploring' });
+    /** The words a board's view is named by and draws, which every board names. */
+    const WORDS = { label: 'views.projects', glyph: 'views.projects_glyph' };
     const KEYED = {
-        hubbed: { tier: 'research', hub: 'look-hub2' },
-        matched: { tier: 'research', match: { domain: ['ecg'] } },
+        hubbed: { ...WORDS, tier: 'research', hub: 'look-hub2' },
+        matched: { ...WORDS, tier: 'research', match: { domain: ['ecg'] } },
         blocked: {
+            ...WORDS,
             tier: ['research', 'personal'],
             chips: { not_words: ['parked'] },
             forms: { words: ['journal'] }
@@ -514,6 +653,64 @@ describe('New project on a board', () => {
             offersNewProject(presetFor(id, CONFIG).rule, takeContext(CONFIG, row.self))
         );
         expect(offered).toEqual(['projects', 'supervision', 'coauthor', 'personal', 'software']);
+    });
+
+    /** The shipped config with the tiers of `tiers` carrying `default`, and coauthor's `tier`. */
+    function withTiers(defaults: string[], tier: unknown): Record<string, unknown> {
+        const tiers = Object.fromEntries(
+            Object.entries(CONFIG.tiers as Record<string, Record<string, unknown>>).map(
+                ([word, row]) => [word, { ...row, default: defaults.includes(word) }]
+            )
+        );
+        const boards = CONFIG.boards as Record<string, Record<string, unknown>>;
+        const coauthor: Record<string, unknown> = { ...boards.coauthor, tier };
+        if (tier === undefined) delete coauthor.tier;
+        return { ...CONFIG, tiers, boards: { ...boards, coauthor } };
+    }
+
+    it.each([
+        {
+            name: 'case 8: several tiers with the default among them write the default',
+            defaults: ['research'],
+            tier: ['research', 'personal'],
+            writes: 'research'
+        },
+        {
+            name: 'case 8: several tiers without the default offer no New project',
+            defaults: ['research'],
+            tier: ['personal', 'software'],
+            writes: undefined
+        },
+        {
+            name: 'one tier writes it whatever the default',
+            defaults: [],
+            tier: 'personal',
+            writes: 'personal'
+        },
+        {
+            name: 'no tier writes the default',
+            defaults: ['research'],
+            tier: undefined,
+            writes: 'research'
+        },
+        {
+            name: 'no tier and no default offer no New project',
+            defaults: [],
+            tier: undefined,
+            writes: undefined
+        },
+        {
+            name: 'no tier and two defaults offer no New project',
+            defaults: ['research', 'personal'],
+            tier: undefined,
+            writes: undefined
+        }
+    ])('$name', (row) => {
+        const config = withTiers(row.defaults, row.tier);
+        const rule = presetFor('coauthor', config).rule;
+        expect(newProjectTier(rule, config)).toEqual(row.writes);
+        const offered = offersNewProject(rule, takeContext(config, MINE));
+        expect(offered).toBe(row.writes !== undefined);
     });
 
     it.each([

@@ -8,7 +8,8 @@
 
 import { z } from 'zod';
 import type { Rooted } from '../../model/index.ts';
-import { mapShape, readAs, rowsShape } from '../shapes.ts';
+import { HEX_COLOUR } from '../catalog-files/common.ts';
+import { readAs, rowsShape } from '../shapes.ts';
 import { recordWords, type WordsOf } from '../vocab-keys.ts';
 import { blockHolds, blockOf, wordList, type WordBlock } from './words.ts';
 
@@ -17,10 +18,7 @@ export type Category = {
     key: string;
     /** The words the row is drawn with: its `label`, or its key when it names none. */
     label: string;
-    /**
-     * The row's `color`, or the colour of the first stage, in the order of `stages:`, that its
-     * `stages:` block takes; the empty text when it has neither.
-     */
+    /** The row's `color`, the empty text when it names none. */
     color: string;
     stages: WordBlock | null;
     forms: WordBlock | null;
@@ -38,22 +36,12 @@ export type Filed = { stage?: string; form?: string };
 /** One row of `categories:` as written: a map with a key, its other fields read by `rowOf`. */
 const rowShape = z.looseObject({ key: z.string().min(1) });
 
-/** The colour of a stage of `stages:` in the merged config, or the empty text. */
-function stageColour(stages: unknown, word: string): string {
-    const row = readAs(mapShape, readAs(mapShape, stages)?.[word]);
-    const colour = row?.color;
-    return typeof colour === 'string' ? colour : '';
-}
-
-/** The row's own colour, else the colour of the first stage its `stages:` block takes. */
-function colourOf(own: unknown, block: WordBlock | null, config: Record<string, unknown>): string {
-    if (typeof own === 'string' && own.trim() !== '') return own;
-    if (block === null) return '';
-    const stages = config.stages;
-    const first = Object.keys(readAs(mapShape, stages) ?? {}).find((word) =>
-        blockHolds(block, [word], stages)
-    );
-    return first === undefined ? '' : stageColour(stages, first);
+/**
+ * The row's own colour, the empty text when it names none; the config check reports such a row
+ * (data/sources/config/sections/boards.ts `categoriesFindings`).
+ */
+function colourOf(own: unknown): string {
+    return typeof own === 'string' ? own.trim() : '';
 }
 
 /**
@@ -72,7 +60,7 @@ export function categoriesOf(config: Record<string, unknown>): Category[] {
         categories.push({
             key: row.key,
             label,
-            color: colourOf(row.color, stages, config),
+            color: colourOf(row.color),
             stages,
             forms: blockOf(row.forms),
             record: row.record === true,
@@ -133,8 +121,8 @@ export function isArchival(
 /**
  * What a board gives the rail: how many of its projects are in a row carrying `rail: true`, each
  * project filed under its own hub's words when `wordsOf` gives them and under `config` and
- * `categories` without it, and the colour of the first such row of `categories`, the empty text
- * when the list has none.
+ * `categories` without it, and the colour `rail_color` of `config` gives, the empty text when it
+ * gives none written `#rrggbb`.
  */
 export function railCount(
     projects: readonly (Filed & Rooted)[],
@@ -147,5 +135,6 @@ export function railCount(
         const own = wordsOf === undefined ? { words: config, categories } : filed(project);
         return categoryOf(project, own.categories, own.words)?.rail === true;
     }).length;
-    return { count, color: categories.find((category) => category.rail)?.color ?? '' };
+    const color = config.rail_color;
+    return { count, color: typeof color === 'string' && HEX_COLOUR.test(color) ? color : '' };
 }

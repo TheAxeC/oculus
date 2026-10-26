@@ -1,17 +1,17 @@
 // Layer 2, client state. What a new entry is made of before it is written: the fields the Add box
 // of a collection asks for, the task that `:task-add <title>` writes, in the tasks collection of
-// the hub chosen, or with none chosen of the first hub that could take it (`hubsTaking` of
-// state/shared/page/hubs.ts: the primary when it holds tasks, else the one that does), and the
-// person a person picker's Add person writes. A task and a person get their key from their words
-// by one rule (`freeKey`). Pure, so the rules are tested without a browser; the refusals of a
-// value the file holds and of a value that is empty are the server's
+// the hub chosen, or with none chosen of the hub the hub rule gives (`chosenHub` of
+// state/shared/page/hubs.ts: the one hub holding tasks, else the primary when it holds them, else
+// none), and the person a person picker's Add person writes. A task and a person get their key from
+// their words by one rule (`freeKey`). Pure, so the rules are tested without a browser; the
+// refusals of a value the file holds and of a value that is empty are the server's
 // (server/edit/writes/entries.ts), and are shown as it words them.
 
 import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
 import { bareId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
-import { hubsTaking } from '../shared/page/hubs.ts';
-import { wordsWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
+import { chosenHub, hubsTaking } from '../shared/page/hubs.ts';
+import { oneWordWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
@@ -64,8 +64,10 @@ function takenKeys(collection: Collection): Set<string> {
  * that hub's key of the collection, or why it adds nothing.
  */
 type TaskFields =
-    | { fields: Record<string, unknown>; hub: string; collection: string }
-    | { refusal: 'title' | 'key' | 'collection' };
+    { fields: Record<string, unknown>; hub: string; collection: string } | { refusal: Refusal };
+
+/** Why a title adds no task: its words, its key, no tasks collection, or no hub chosen. */
+type Refusal = 'title' | 'key' | 'collection' | 'hub';
 
 /**
  * The task a title makes in `home`, the collection flagged `tasks` of the hub it is added to. The
@@ -74,7 +76,7 @@ type TaskFields =
  * empty title, a title that gives no key (no ASCII letter or digit after the accents are taken off)
  * and no tasks collection give a refusal and no fields. The task's status is the word of `statuses`
  * carrying `default_task` in `config`, the words of the hub it is added to, and none when no word
- * does.
+ * or more than one does (`oneWordWith`).
  */
 function taskFields(
     title: string,
@@ -87,7 +89,7 @@ function taskFields(
     const identity = identityField(home.schema);
     const key = freeKey(words, takenKeys(home));
     if (key === '') return { refusal: 'key' };
-    const status = wordsWith(config, 'statuses', 'default_task').at(0);
+    const status = oneWordWith(config, 'statuses', 'default_task');
     return {
         fields: { [identity]: key, title: words, ...(status === undefined ? {} : { status }) },
         hub: rootOf(home),
@@ -96,9 +98,10 @@ function taskFields(
 }
 
 /** The sentence that says why a title adds no task. */
-function refusalWords(refusal: 'title' | 'key' | 'collection'): string {
+function refusalWords(refusal: Refusal): string {
     if (refusal === 'title') return t('app.palette.task_add_title');
     if (refusal === 'key') return t('app.palette.task_add_key');
+    if (refusal === 'hub') return t('app.palette.task_add_which_hub');
     return t('app.palette.task_add_collection');
 }
 
@@ -131,10 +134,11 @@ export type TaskAdded =
  * Add the task a title makes (`taskFields`) with `write`, which is the `new-entry` write of the
  * tasks collection of the hub it names. `collections` are the tasks collections of the hubs, each
  * carrying its hub's name in `root`; the task goes to the hub `hub` names, or, with none named, to
- * the first that could take it, the primary when it holds one. A refusal of the title, of the key
- * or of the collection, and a refusal of the write, come back as the sentence to say; a hub named
- * that holds no tasks collection is said by its name, and no hub holding one by the workspace.
- * The status is read in the words of that hub, given as `wordsOf`, and in `config` without it.
+ * the hub `chosenHub` gives: the one hub holding tasks, else the primary when it holds them. A
+ * refusal of the title, of the key or of the collection, and a refusal of the write, come back as
+ * the sentence to say; a hub named that holds no tasks collection is said by its name, no hub
+ * holding one by the workspace, and several holding one with none chosen by asking which. The
+ * status is read in the words of that hub, given as `wordsOf`, and in `config` without it.
  */
 export async function addTask(
     title: string,
@@ -149,7 +153,11 @@ export async function addTask(
     hub?: string,
     wordsOf?: WordsOf
 ): Promise<TaskAdded> {
-    const chosen = hub ?? taskHubOrder(collections, primary).at(0);
+    const offered = taskHubOrder(collections, primary);
+    const chosen = hub ?? chosenHub(offered, primary);
+    if (chosen === undefined && offered.length > 1) {
+        return { id: '', label: '', said: refusalWords('hub') };
+    }
     const home = collections.find((one) => rootOf(one) === chosen);
     const words = home === undefined ? config : (wordsOf?.(rootOf(home)) ?? config);
     const made = taskFields(title, home, words);
@@ -194,11 +202,12 @@ export type PersonAdded = { key: string; said: '' } | { key: ''; said: string };
 
 /**
  * Add the person `name` names to the people registry of the hub `hub`, the hub of the record being
- * edited (the primary's, else the first hub's, when it is null), with `write`, the `new-entry`
- * write of that hub's people collection. `name` is the words `personToAdd` offered, which give a
- * key. The key is made from the name as a task's is from its title (`freeKey`), `-2` and on while
- * that registry holds it; the name is the words trimmed. A hub with no people collection and a
- * refusal of the write come back as the sentence to say.
+ * edited, with `write`, the `new-entry` write of that hub's people collection. With `hub` null the
+ * registry is the one hub's when one hub holds a people collection, and none when several do, since
+ * no primary names one of them. `name` is the words `personToAdd` offered, which give a key. The
+ * key is made from the name as a task's is from its title (`freeKey`), `-2` and on while that
+ * registry holds it; the name is the words trimmed. A hub with no people collection, several with
+ * none named, and a refusal of the write come back as the sentence to say.
  */
 export async function addPerson(
     name: string,
@@ -211,7 +220,12 @@ export async function addPerson(
     ) => Promise<WriteAnswer>
 ): Promise<PersonAdded> {
     const words = name.trim();
-    const home = hub === null ? collections.at(0) : collections.find((one) => rootOf(one) === hub);
+    const offered = hubsTaking(collections, null);
+    const named = hub ?? chosenHub(offered, null);
+    if (named === undefined && offered.length > 1) {
+        return { key: '', said: t('editor.add_person_which_hub') };
+    }
+    const home = collections.find((one) => rootOf(one) === named);
     if (home?.schema === undefined) {
         return { key: '', said: t('editor.add_person_collection') };
     }

@@ -224,6 +224,19 @@ const ROWS: {
         files: ['.oculus/data/academic/leads.yml']
     },
     {
+        name: 'a Lit Watch paper added in the hub its root names',
+        body: {
+            kind: 'radar-add',
+            root: 'lab',
+            fields: {
+                title: 'A lab paper',
+                url: 'https://example.org/lab-paper',
+                bucket: 'preemption'
+            }
+        },
+        files: ['.oculus/data/literature/radar.yml']
+    },
+    {
         name: 'a Lit Watch deletion',
         body: { kind: 'feed-delete', feed: 'radar', id: 'lab:Paper' },
         files: ['.oculus/data/literature/radar.yml']
@@ -602,13 +615,13 @@ describe('a write that makes a record', () => {
         expect(((await response.json()) as { id?: string }).id).toBe(id);
     });
 
-    it('answers a lead made in a workspace with no primary with the id of the first hub, which it wrote', async () => {
+    it('answers a lead made in a workspace of one hub and no primary with the id of that hub, which it wrote (G8)', async () => {
         const { into, first, lab } = twoHubs();
         const open: WriteTarget = {
             ...into,
             hub: null,
             primary: null,
-            hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])]
+            hubs: [{ key: 'one', hub: first, config: into.config }]
         };
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
@@ -623,6 +636,34 @@ describe('a write that makes a record', () => {
         ]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
+
+    it.each([
+        ['a lead', { kind: 'lead-add', fields: { title: 'A new lead' } }],
+        ['a new entry', { kind: 'new-entry', collection: 'tasks', fields: { title: 'A task' } }],
+        [
+            'a paper saved to Literature',
+            { kind: 'literature-save', source: 'hand', paper: { url: 'https://example.org/p' } }
+        ]
+    ])(
+        'refuses %s naming no hub in a workspace of two hubs and no primary, asking which, and writes no byte (G8)',
+        async (_name, body) => {
+            const { into, first, lab } = twoHubs();
+            const open: WriteTarget = {
+                ...into,
+                hub: null,
+                primary: null,
+                hubs: [{ key: 'one', hub: first, config: into.config }, ...(into.hubs ?? [])]
+            };
+            const before = { first: filesOf(first), lab: filesOf(lab) };
+            const response = await handleWrite(request(body), TOKEN, open);
+            expect(response.status).toBe(409);
+            expect(await response.json()).toEqual({
+                error: words(into.config.text, 'server.workspace.which_hub')
+            });
+            expect(differing(before.first, filesOf(first))).toEqual([]);
+            expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        }
+    );
 });
 
 describe('the hub a new project is written to', () => {

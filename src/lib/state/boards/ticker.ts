@@ -27,13 +27,12 @@ import {
     type RegistryWord
 } from '../../data/helpers/hub-names.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
-import { hasGlyph, hasText, lookup } from '../shared/words/text.ts';
+import { hasGlyph, hasText, lookup, t } from '../shared/words/text.ts';
 import { entryFollowups } from './collection/index.ts';
-import { hasWord, type WordsOf } from '../../data/shapes/vocab-keys.ts';
+import { hasWord, oneWordWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
 import {
-    GLYPHS,
     dueFollowups,
     item,
     rootMark,
@@ -67,10 +66,9 @@ export { dueFollowups, type TickerItem, type TickerTarget };
 /**
  * One deadline category of `ticker_categories` (config/catalogs/vocab.yml): its word, the dotted
  * keys of the text-catalog words its group is headed by (`label`) and a line of an entry or a lead
- * is named by (`noun`, and `overdueNoun` once overdue, the noun when the word names none), the
- * glyph name its lines are drawn with, and whether it is the category of the project manifests'
- * deadlines. A field naming no word of the catalog is absent, and so is a glyph whose word holds no
- * glyph name.
+ * is named by (`noun`, and `overdueNoun` once overdue, the noun when the word names none), and the
+ * glyph name its lines are drawn with. A field naming no word of the catalog is absent, and so is a
+ * glyph whose word holds no glyph name.
  */
 export type TickerCategory = {
     key: string;
@@ -78,7 +76,6 @@ export type TickerCategory = {
     glyph?: string;
     noun?: string;
     overdueNoun?: string;
-    manifests: boolean;
 };
 
 /** A field of a category word: the dotted key of a text-catalog word, or nothing. */
@@ -89,8 +86,7 @@ const categoryShape = z.object({
     label: wordKey,
     glyph: wordKey,
     noun: wordKey,
-    overdue_noun: wordKey,
-    manifests: z.boolean().optional().catch(undefined)
+    overdue_noun: wordKey
 });
 
 /**
@@ -113,8 +109,7 @@ export function tickerCategories(words: Record<string, unknown>): TickerCategory
                 label: held(read.label),
                 glyph: hasGlyph(name) ? name : undefined,
                 noun,
-                overdueNoun: held(read.overdue_noun) ?? noun,
-                manifests: read.manifests === true
+                overdueNoun: held(read.overdue_noun) ?? noun
             }
         ];
     });
@@ -200,7 +195,11 @@ export function ticker(
     const projects = Object.values(snapshot.entities.projects);
     const liveProjects = projects.filter((one) => hasWord(at(one), 'stages', 'live', one.stage));
     const collections = snapshot.entities.collections;
-    const categories = tickerCategories(wordsOf?.() ?? config);
+    const union = wordsOf?.() ?? config;
+    const categories = tickerCategories(union);
+    /** The glyphs an overdue line and a follow-up are drawn with, by the words naming them. */
+    const overdueGlyph = t('focus.command.glyph_overdue');
+    const followupGlyph = t('focus.command.glyph_followup');
     const words = categories.map((one) => one.key);
     /** The entry the hub of `record` reads the registry by. */
     const entryOf = (record: Rooted, registry: RegistryWord): CollectionEntry | undefined =>
@@ -224,11 +223,12 @@ export function ticker(
      * A project's own deadline, for a project of any tier: overdue behind it, on the paper group
      * before it. It stops only at a stage whose word of `stages` carries `deadline_met`. A deadline
      * that is no date is open work and is a task line. A line that shows folds its conference into
-     * itself, so the call is not listed a second time below. The category is the first word of
-     * `ticker_categories` carrying `manifests`; with none no project deadline is read.
+     * itself, so the call is not listed a second time below. The category is the one word of
+     * `ticker_categories` carrying `manifests`; with none, or with two or more carrying it, no
+     * project deadline is read.
      */
     const folded = new Set<string>();
-    const paper = categories.find((one) => one.manifests)?.key;
+    const paper = oneWordWith(union, 'ticker_categories', 'manifests');
     for (const project of projects) {
         const deadline = (project.deadline ?? '').trim();
         if (paper === undefined || deadline === '' || settled(project, at(project))) continue;
@@ -248,7 +248,7 @@ export function ticker(
             continue;
         }
         if (days < 0) {
-            overdue.push({ ...line, glyph: GLYPHS.overdue });
+            overdue.push({ ...line, glyph: overdueGlyph });
             continue;
         }
         const venue =
@@ -290,7 +290,7 @@ export function ticker(
             asleep.push({ ...line, snoozed: true });
             continue;
         }
-        if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
+        if (days < 0) overdue.push({ ...line, glyph: overdueGlyph });
         else dated.push({ category: grant, line });
     }
 
@@ -327,7 +327,7 @@ export function ticker(
                 continue;
             }
             if (days === null) openEntries.push(line);
-            else if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
+            else if (days < 0) overdue.push({ ...line, glyph: overdueGlyph });
             else dated.push({ category, line });
         }
     }
@@ -398,7 +398,7 @@ export function ticker(
                 days,
                 line: item(
                     'followup',
-                    GLYPHS.followup,
+                    followupGlyph,
                     `${focusLabel(project, labelMode)} - ${note.do}`,
                     days,
                     {
@@ -418,7 +418,7 @@ export function ticker(
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
                 days,
-                line: item('followup', GLYPHS.followup, `${scheme.title} - ${note.do}`, days, {
+                line: item('followup', followupGlyph, `${scheme.title} - ${note.do}`, days, {
                     entry: key,
                     ...rootMark(scheme),
                     target: { kind: 'followup', id: scheme.id, collection: key, note: note.key }
@@ -441,7 +441,7 @@ export function ticker(
             for (const { note, days } of dueFollowups(held, now)) {
                 notes.push({
                     days,
-                    line: item('followup', GLYPHS.followup, `${entry.title} - ${note.do}`, days, {
+                    line: item('followup', followupGlyph, `${entry.title} - ${note.do}`, days, {
                         entry: key,
                         ...rootMark(entry),
                         target: { kind: 'followup', id: entry.id, collection: key, note: note.key }

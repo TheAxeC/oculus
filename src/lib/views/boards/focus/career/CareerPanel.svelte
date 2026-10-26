@@ -49,6 +49,7 @@
     import { openFound } from '../../../shared/forms/entry-file';
     import { careerRows, EDIT, linkOf } from './career-rows';
     import { roleBoard, trackRecord } from '$lib/state/boards/career';
+    import { boardsGroup } from '$lib/state/boards/board';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { findCareer } from '$lib/state/sessions/source/draft-entry';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
@@ -81,10 +82,12 @@
 
     let { instance, now, open, ontoggle, onsaid }: Props = $props();
 
-    /** The view group the board views are registered in (views/boards/projects/Projects.svelte). */
-    const BOARD_GROUP = 'projects';
-
     const config = $derived(configMap());
+    /**
+     * The view group the board views are registered in, the page of the rail entry carrying
+     * `project_boards`, and no group when none carries it (routes/views.ts `registerBoards`).
+     */
+    const boardGroup = $derived(boardsGroup(config) ?? '');
     const snapshot = $derived(portfolio());
     const career = $derived(snapshot?.entities.career ?? null);
 
@@ -105,7 +108,7 @@
                   record: trackRecord(snapshot, config, vocabOf),
                   editable: page !== null,
                   boardOf: (role) =>
-                      roleBoard(config, role, (view) => viewFor(view)?.group === BOARD_GROUP),
+                      roleBoard(config, role, (view) => viewFor(view)?.group === boardGroup),
                   funding: registryKey('funding')
               })
     );

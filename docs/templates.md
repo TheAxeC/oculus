@@ -186,9 +186,14 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # word by word: a word named here replaces oculus's in oculus's place, a new word comes after
 # oculus's, and `<word>: null` takes oculus's word out. Only the words that differ are written.
 # A word taken out, or left out of a list replaced whole here such as `roles`, also leaves every
-# list that names it (a category's stages, a Focus lane's stages and chips, a funding stage's
-# statuses, a count's match, a board's tier and role, whose one word leaves an empty list); in a
-# list written here, each such word is a finding at its place in this file, and it is not read.
+# list that names it (a category's stages, a Focus lane's stages and chips and the words of its
+# move_writes, a funding stage's statuses, a count's match, a board's tier and role, whose one word
+# leaves an empty list); in a list written here, each such word is a finding at its place in this
+# file, and it is not read. A flag a word carries for one use (`new_idea` of stages,
+# `default_task` and `default_application` of statuses, `lead_declined`, `lead_applied` and
+# `default_lead` of lead_statuses, `manifests` of ticker_categories, `default` of tiers) is carried
+# by one word at most: two words carrying it are a finding naming both, and the flag then gives no
+# word.
 
 # The hex each palette token stands for.
 # palette: {}
@@ -246,11 +251,16 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   facet_tones: { form: teal }
 
-# The kinds of project a manifest's `tier` names, each with its label.
+# The kinds of project a manifest's `tier` names, each with its label. A tier named here replaces
+# oculus's row of that key whole, so a row of oculus's the hub names is written with every field it
+# keeps. `default: true` marks the tier a new project takes on a board naming no tier, or naming
+# several with this one among them; one tier carries it at most, so a hub that moves it writes
+# oculus's `research` row without it.
 # tiers: {}
 #   example:
 #   tiers:
-#     teaching: { label: Teaching }
+#     teaching: { label: Teaching, default: true }
+#     research: { label: Research, unmarked: true }
 
 # The tiers the audit's research rules leave alone, and whose projects the Orphans card leaves out.
 # research_audit: {}
@@ -263,7 +273,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   data_access: { embargoed: "#7c3aed" }
 
 # The command center's deadline groups, in the order it draws them, each with the dotted keys of the
-# words of its heading, its glyph and the noun of a line's due and overdue sentences; the word
+# words of its heading, its glyph and the noun of a line's due and overdue sentences; the one word
 # `manifests: true` marks is the group of the projects' own deadlines. A collection's `ticker:`
 # names the group its lines carry.
 # ticker_categories: {}
@@ -271,24 +281,42 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   ticker_categories:
 #     report: { label: views.statements, glyph: views.statements_glyph, noun: focus.command.word_task }
 
-# The categories this hub's projects are filed under, each a row with its `key`. A row named here
-# replaces oculus's row of that key in oculus's place, a new row comes after oculus's, and
+# The categories this hub's projects are filed under, each a row with its `key` and its `color`; a
+# row naming no colour is a finding and is drawn with none. A row named here replaces oculus's row
+# of that key in oculus's place, a new row comes after oculus's, and
 # `{ key: <key>, removed: true }` takes oculus's row out.
 # categories: []
 #   example:
 #   categories:
-#     - { key: idea, label: "early ideas", stages: { words: [nascent, scoping] } }
+#     - { key: idea, label: "early ideas", color: "#7c5cff", stages: { words: [nascent, scoping] } }
 #     - { key: released, removed: true }
+
+# The colour this hub's project boards draw their rail count in, written #rrggbb, in place of
+# oculus's: the primary hub's on every board, another hub's on a board whose `hub:` names it.
+# rail_color: "#16a34a"
 
 # The lists below are replaced whole, since their order is their meaning: set here, the list is
 # this hub's in full.
 
-# The Focus lanes, in the order they are drawn, each with the stages or chips it takes.
+# The clusters the Focus board groups its lanes in, in drawing order, each with the dotted keys of
+# the words of its heading (`label`) and its glyph (`glyph`), whether it is drawn muted, its
+# `layout` (`columns`, its lanes side by side under its heading, or `full_width`, each lane a
+# section of its own under the lane's label), `sort: title` to order its cards by title, and
+# `awaiting: true` to count its lanes' projects in the awaiting box.
+# focus_clusters: []
+#   example:
+#   focus_clusters:
+#     - { key: now, label: focus.cluster_now, glyph: focus.now_glyph, muted: false, layout: columns, awaiting: true }
+#     - { key: idea, glyph: focus.ideas_glyph, muted: true, layout: full_width, sort: title }
+
+# The Focus lanes, in the order they are drawn, each with the cluster it is drawn in, the stages or
+# chips it takes, and what a move onto it writes (`move_writes`, a `stage` of its stages or a
+# `chip` of its chips); a lane without `move_writes` takes no move.
 # focus_lanes: []
 #   example:
 #   focus_lanes:
-#     - { key: run, label: Run, sub: "getting the numbers", color: "#16a34a", cluster: now, stages: [exploring] }
-#     - { key: idea, label: Idea, sub: "ideas not started yet", color: "#b5638a", cluster: idea, stages: [nascent] }
+#     - { key: run, label: Run, sub: "getting the numbers", color: "#16a34a", cluster: now, stages: [exploring], move_writes: { stage: exploring } }
+#     - { key: idea, label: Idea, sub: "ideas not started yet", color: "#b5638a", cluster: idea, stages: [nascent], move_writes: { stage: nascent } }
 
 # The stages stacked inside the Focus Funding column, each with the statuses it matches.
 # fund_stages: []
@@ -453,7 +481,9 @@ primary: my-hub
 # `page`, floats by `view`, themes, latex.recipes and latex.tools by `name`,
 # code_themes.vscode by `class`, code_themes.shiki by `id`) overrides oculus's entry with the
 # same key, and `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
-# overrides by its keys, and a key set to null takes oculus's key out.
+# overrides by its keys, and a key set to null takes oculus's key out. A rail entry's
+# `project_boards: true` places the project boards of `boards` in that entry's group, and a board
+# added here, with its `label` and `glyph` words, is a view of its own in that group.
 # The six catalogs, `agents`, `patterns` (file nesting), `glyphs`, `icons`, `latex_editing` and
 # `latex_unimath`, are laid over oculus's in oculus's place: an entry named here replaces oculus's
 # where it stands, a new entry comes after oculus's, `<name>: null` takes one out, and a Unicode

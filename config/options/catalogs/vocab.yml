@@ -1,7 +1,7 @@
 # ===========================================================================
 # options/catalogs/vocab.yml
 # Every list of catalogs/vocab.yml a hub sets, described once. loadConfig() reads it into the merged map under `options`, named catalogs/vocab.yml, each entry carrying as its `default` the value catalogs/vocab.yml holds at its key. The shape of an entry is the one the head of options/appearance.yml gives.
-# A hub sets these keys in its own .oculus/config.yml, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts). A map family (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, leads_fit and data_access) merges by word: a word the hub names replaces oculus's row of that word in oculus's place, a new word comes after oculus's words in the hub's order, and `<word>: null` takes one of oculus's words out. `categories` merges by `key`: a row naming oculus's key replaces it in place, a new key comes after oculus's rows, and `{ key: <key>, removed: true }` takes one out. focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole (roles), is also taken out of every word list that names it, each field described below or in another options file with a `from` naming that list (a board's tier or role among them): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. The defaults Settings shows lose the word the same way. The Settings view writes the hub file as the inverse of the merge and offers no reorder of a word or a category, since the merge keeps oculus's order.
+# A hub sets these keys in its own .oculus/config.yml, and lays its value over oculus's by shape (src/lib/data/sources/config/merge/in-place.ts). A map family (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, leads_fit and data_access) merges by word: a word the hub names replaces oculus's row of that word in oculus's place, a new word comes after oculus's words in the hub's order, and `<word>: null` takes one of oculus's words out. `categories` merges by `key`: a row naming oculus's key replaces it in place, a new key comes after oculus's rows, and `{ key: <key>, removed: true }` takes one out. focus_clusters, focus_lanes, fund_stages, roles, venue_categories, venue_tiers and radar_buckets are replaced whole, since their order is their meaning, and rail_color, a colour written #rrggbb, replaces oculus's. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole (roles), is also taken out of every word list that names it, each field described below or in another options file with a `from` naming that list (a board's tier or role among them): in oculus's own values a row left with no word stays, a single word of a field that takes a list becomes an empty list and a word of a lane's move_writes is taken out of it, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. The defaults Settings shows lose the word the same way. The Settings view writes the hub file as the inverse of the merge and offers no reorder of a word or a category, since the merge keeps oculus's order.
 # ===========================================================================
 
 options:
@@ -61,7 +61,7 @@ options:
                 help: a stage that ends a project's own deadline, which then leaves the deadline radar
                 control: toggle
             new_idea:
-                help: the stage a new idea is made with, the first stage carrying it
+                help: the stage a new idea is made with; one stage carries it at most, and two carrying it are a finding under which a new idea names no stage
                 control: toggle
     forms:
         heading: boards
@@ -111,10 +111,10 @@ options:
                 help: a funding entry a manuscript acknowledges, so it needs a statement
                 control: toggle
             default_application:
-                help: the status of the Applications entry a Position Lead's apply control makes, the first word carrying it
+                help: the status of the Applications entry a Position Lead's apply control makes; one word carries it at most, and two carrying it are a finding under which the entry gets no status
                 control: toggle
             default_task:
-                help: the status of a task added from the palette, the first word carrying it
+                help: the status of a task added from the palette; one word carries it at most, and two carrying it are a finding under which the task gets no status
                 control: toggle
             obtained:
                 help: funding obtained, which the career banner's track record counts
@@ -132,18 +132,45 @@ options:
                 help: a lead that is closed, counted and listed as done
                 control: toggle
             lead_declined:
-                help: a lead the reader declined, which the Leads view hides until asked
+                help: a lead the reader declined, which the Leads view hides until asked, and the word the decline control writes; one word carries it at most, and two carrying it are a finding under which the control is drawn disabled
                 control: toggle
             lead_applied:
-                help: a lead the reader applied to, which offers no apply control
+                help: a lead the reader applied to, which offers no apply control, and the word the apply control writes; one word carries it at most, and two carrying it are a finding under which the control is drawn disabled
                 control: toggle
             default_lead:
-                help: the status a new lead gets and a reopened one goes back to
+                help: the status a new lead gets and a reopened one goes back to; one word carries it at most, and two carrying it are a finding under which a new lead gets no status
+                control: toggle
+    focus_clusters:
+        heading: boards
+        section: Vocabulary
+        help: "The clusters the Focus board groups its lanes into, in drawing order, each with its heading words and glyph, whether it is muted, its layout, the order of its cards and whether the awaiting box counts its lanes. A hub's list replaces oculus's whole."
+        fields:
+            key: the word a lane's cluster names
+            label:
+                help: 'the dotted key of the text-catalog word the cluster is headed by; with none the cluster has no heading words'
+                control: text
+            glyph:
+                help: "the dotted key of the text-catalog word holding the glyph drawn before the cluster's heading; with none it is drawn with no glyph"
+                control: text
+            muted:
+                help: on draws the cluster in muted colours
+                control: toggle
+            layout:
+                help: "columns draws the cluster's lanes side by side under its heading; full_width draws each of its lanes as a full-width section headed by the lane's label"
+                control: choice
+                options: [columns, full_width]
+            sort:
+                help: title orders a lane's cards by title; with none they go by deadline, then title
+                control: choice
+                options: [title]
+                empty: true
+            awaiting:
+                help: on counts the projects on the cluster's lanes in the Focus board's awaiting box
                 control: toggle
     focus_lanes:
         heading: boards
         section: Vocabulary
-        help: "The lanes of the Focus board, in their order, each with its words, glyph, colour and cluster and the stages or the chips that put a project on it. A hub's list replaces oculus's whole."
+        help: "The lanes of the Focus board, in their order, each with its words, glyph, colour and cluster, the stages or the chips that put a project on it, and what a move onto it writes. A hub's list replaces oculus's whole."
         fields:
             key: the word the lane is named by
             label: the words the lane is drawn with
@@ -155,9 +182,9 @@ options:
                 help: the colour of the lane's header
                 control: colour
             cluster:
-                help: the group the lane belongs to on the board
+                help: 'the cluster of focus_clusters the lane is drawn in; a lane naming none, or one no readable row has, is not drawn'
                 control: choice
-                options: [now, parked, incubate, idea]
+                from: focus_clusters
             stages:
                 help: 'the stages whose projects sit on the lane; a row names stages or chips, never both'
                 control: multi
@@ -166,6 +193,18 @@ options:
                 help: 'the chips that put a project on the lane whatever its stage; a row names stages or chips, never both'
                 control: multi
                 from: status_chips
+            move_writes:
+                help: 'what a move onto the lane writes, with one field: stage for a lane with stages, chip for a lane with chips, a word the lane lists; a lane without it takes no move'
+                holds: record
+                fields:
+                    stage:
+                        help: "the stage a move writes when the project's stage is none of the lane's; the chips of every chip lane are taken off"
+                        control: choice
+                        from: project_stages
+                    chip:
+                        help: "the chip a move adds when the project carries none of the lane's chips; the chips of the other chip lanes are taken off and the stage stays"
+                        control: choice
+                        from: status_chips
     fund_stages:
         heading: boards
         section: Vocabulary
@@ -191,7 +230,7 @@ options:
     ticker_categories:
         heading: boards
         section: Vocabulary
-        help: "The command center's deadline categories, in the order it groups its dated lines, each with the dotted keys of the text-catalog words it is drawn with. A collections entry names its category in ticker: { category }, the entries of the funding, leads and venues registries naming the category of the schemes, the leads and the venues' calls; the first word with manifests: true is the category of the project manifests' deadlines. A field naming no word of the text catalog is a finding and is not read: the group's heading is then other and its lines carry no glyph."
+        help: "The command center's deadline categories, in the order it groups its dated lines, each with the dotted keys of the text-catalog words it is drawn with. A collections entry names its category in ticker: { category }, the entries of the funding, leads and venues registries naming the category of the schemes, the leads and the venues' calls; the one word with manifests: true is the category of the project manifests' deadlines. A field naming no word of the text catalog is a finding and is not read: the group's heading is then other and its lines carry no glyph."
         fields:
             key: the word a collections entry's ticker category names
             label:
@@ -207,7 +246,7 @@ options:
                 help: the dotted key of the word an overdue line of an entry is named by; with none, the noun
                 control: text
             manifests:
-                help: the category of the project manifests' deadlines, the first word carrying it
+                help: the category of the project manifests' deadlines; one word carries it at most, and two carrying it are a finding under which those deadlines have no category
                 control: toggle
     facet_tones:
         heading: boards
@@ -221,12 +260,15 @@ options:
     tiers:
         heading: boards
         section: Vocabulary
-        help: "The kinds of project a manifest's tier names, each with its words; the first is the tier of a new project whose form names none."
+        help: "The kinds of project a manifest's tier names, each with its words; the default tier is the tier of a new project whose write names none, and with no default tier such a write is refused."
         fields:
             key: the word a manifest's tier writes
             label: the words the tier is drawn with in the project form
             unmarked:
                 help: on leaves the tier off a Focus lane card's tags
+                control: toggle
+            default:
+                help: 'the default tier: a new project whose write names no tier gets it, and a board naming several tiers makes New project in it when it is one of them; one tier carries it at most, and two carrying it are a finding under which there is no default tier'
                 control: toggle
     research_audit:
         heading: boards
@@ -259,7 +301,7 @@ options:
             key: the word the category is named by, which a board filter stores
             label: the words the category is drawn with
             color:
-                help: the colour the category is drawn in
+                help: the colour the category is drawn in; a row without one is a finding and is drawn in no colour
                 control: colour
             stages:
                 help: "the block a project's stage is held against"
@@ -273,11 +315,16 @@ options:
                 help: the row is a record of the work's output
                 control: toggle
             rail:
-                help: a board gives the rail the count of its projects in such rows, in the colour of the first
+                help: a board gives the rail the count of its projects in such rows, drawn in rail_color
                 control: toggle
             archival:
                 help: the Pillars view's Archival band; such a project is left out of the use counts and the members of a pillar and a domain
                 control: toggle
+    rail_color:
+        heading: boards
+        section: Vocabulary
+        help: "The colour a project board's rail count is drawn in, the count of its projects in the rows of categories that carry rail, written #rrggbb. A hub's value replaces oculus's: the primary hub's on every board, and another hub's on a board whose hub names it; a value of another form is a finding, and oculus's value stands."
+        control: colour
     leads_fit:
         heading: boards
         section: Vocabulary

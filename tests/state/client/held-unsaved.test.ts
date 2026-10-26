@@ -19,8 +19,8 @@
 // the undo of a recorded change, which names its file by absolute path, is refused the same way.
 //
 // In a workspace with no primary, a write that adds a record and names no hub is checked against
-// the file of the hub the server writes: the first hub's, and for Save to Literature the first hub
-// that holds the Literature collection.
+// the file of the hub the server writes: the one hub's, and for Save to Literature the one hub that
+// holds the Literature collection; with two hubs it names no file, and the server answers it.
 //
 // What this does NOT cover: the disabled controls a view draws for the same file, and the source
 // store's own answer to which tab holds unsaved text (tests/state/sessions/source/source.test.ts).
@@ -240,7 +240,8 @@ describe('a Settings write over a file a source tab holds unsaved text of', () =
             page: 'files',
             chord: '',
             group_glyph: '',
-            unplaced_collections: true
+            unplaced_collections: true,
+            project_boards: false
         }
     ];
 
@@ -407,29 +408,17 @@ describe('a write that adds a record and names no hub, in a workspace with no pr
             leads: { hubFiles: { one: 'leads.md', two: 'leads.md' } },
             radar: { hubFiles: { one: 'radar.yml', two: 'radar.yml' } }
         }) as unknown as FeedsPayload;
-    it.each([
-        [
-            'an Add Lead',
-            { root: 'one', path: 'leads.md' },
-            (w: Writes) => w.addLead({ title: 'L' })
-        ],
-        [
-            'an Add to Lit Watch',
-            { root: 'one', path: 'radar.yml' },
-            (w: Writes) => w.addRadarEntry({ title: 'P' })
-        ],
-        [
-            'an Add to Tasks',
-            { root: 'one', path: '.oculus/data/academic/tasks.yml' },
-            (w: Writes) => w.newEntry('tasks', { do: 'it' })
-        ],
-        [
-            'a Save to Literature, whose hub is the first that holds the collection',
-            { root: 'two', path: 'literature.yml' },
-            (w: Writes) => w.saveLiterature('hand', { title: 'P' })
-        ]
-    ])('refuses %s over the file of the hub the server writes', async (_name, file, send) => {
-        const posted: unknown[] = [];
+    /** A file of a hub: the hub's key and the file's path in it. */
+    type HubFile = { root: string; path: string };
+    /**
+     * The page's writes over the hubs `hubs`, the files `held` answers true for held unsaved, each
+     * body sent recorded.
+     */
+    function writesOver(
+        hubs: string[],
+        posted: unknown[],
+        held: (file: HubFile) => boolean
+    ): Writes {
         vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
             posted.push(JSON.parse(String(init?.body)));
             return Promise.resolve({
@@ -438,24 +427,66 @@ describe('a write that adds a record and names no hub, in a workspace with no pr
                 json: () => Promise.resolve({ ok: true, changed: [], refused: [] })
             });
         });
-        const writes = createWrites(
-            () => CONFIG,
-            (held) => held.root === file.root && held.path === file.path,
-            {
-                ...NO_LOOKUPS,
-                hubs: () => ['one', 'two'],
-                feeds,
-                registryKey: (_hub, registry) => (registry === 'literature' ? 'papers' : ''),
-                collectionFile: (hub, name) =>
-                    name === 'tasks' && hub === 'one'
-                        ? { root: hub, path: '.oculus/data/academic/tasks.yml' }
-                        : name === 'papers' && hub === 'two'
-                          ? { root: hub, path: 'literature.yml' }
-                          : null
-            }
-        );
-        const answer = await send(writes);
+        return createWrites(() => CONFIG, held, {
+            ...NO_LOOKUPS,
+            hubs: () => hubs,
+            feeds,
+            registryKey: (_hub, registry) => (registry === 'literature' ? 'papers' : ''),
+            collectionFile: (hub, name) =>
+                name === 'tasks'
+                    ? { root: hub, path: '.oculus/data/academic/tasks.yml' }
+                    : name === 'papers' && hub === 'two'
+                      ? { root: hub, path: 'literature.yml' }
+                      : null
+        });
+    }
+
+    it.each([
+        [
+            'an Add Lead',
+            ['one'],
+            { root: 'one', path: 'leads.md' },
+            (w: Writes) => w.addLead({ title: 'L' })
+        ],
+        [
+            'an Add to Lit Watch',
+            ['one'],
+            { root: 'one', path: 'radar.yml' },
+            (w: Writes) => w.addRadarEntry({ title: 'P' })
+        ],
+        [
+            'an Add to Lit Watch naming the hub two',
+            ['one', 'two'],
+            { root: 'two', path: 'radar.yml' },
+            (w: Writes) => w.addRadarEntry({ title: 'P' }, 'two')
+        ],
+        [
+            'an Add to Tasks',
+            ['one'],
+            { root: 'one', path: '.oculus/data/academic/tasks.yml' },
+            (w: Writes) => w.newEntry('tasks', { do: 'it' })
+        ],
+        [
+            'a Save to Literature, whose hub is the one hub that holds the collection',
+            ['one', 'two'],
+            { root: 'two', path: 'literature.yml' },
+            (w: Writes) => w.saveLiterature('hand', { title: 'P' })
+        ]
+    ])('refuses %s over the file of the hub the server writes', async (_name, hubs, file, send) => {
+        const posted: unknown[] = [];
+        const held = (one: HubFile): boolean => one.root === file.root && one.path === file.path;
+        const answer = await send(writesOver(hubs, posted, held));
         expect(posted).toEqual([]);
         expect(answer.error).toBe(t('app.file_unsaved', file.path.split('/').at(-1) ?? ''));
+    });
+
+    it.each([
+        ['an Add Lead', (w: Writes) => w.addLead({ title: 'L' })],
+        ['an Add to Lit Watch', (w: Writes) => w.addRadarEntry({ title: 'P' })],
+        ['an Add to Tasks', (w: Writes) => w.newEntry('tasks', { do: 'it' })]
+    ])('names no file for %s with two hubs, so the server answers it (G8)', async (_name, send) => {
+        const posted: unknown[] = [];
+        await send(writesOver(['one', 'two'], posted, () => true));
+        expect(posted).toHaveLength(1);
     });
 });

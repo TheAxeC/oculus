@@ -5,14 +5,14 @@
 // their meaning whole. A word the hub's values no longer give, taken out with `<word>: null` or by
 // a list replaced whole, also leaves every word list that names it, each option and each field of
 // an option's rows the options catalog describes with a `from` naming that list: in oculus's own
-// values, a row left with no word stays and a board's one-word `tier` or `role` becomes an empty
-// list; in a list or row the hub wrote, each such word is one finding naming the hub's file at the
-// word's place there. The options' defaults lose the word the same way. `manifest_fields`, the
-// fields the hub adds to the project form, is read row by row here: a row is a field of
-// `manifest_schema` under the key `field` it adds to project.yml, and a row that would change a
-// field oculus's form has, that the form cannot draw, or whose `from` names no registry, `projects`
-// or vocab list once the hub's own values are laid in, is left out. Every other key replaces
-// oculus's value whole.
+// values, a row left with no word stays, a board's one-word `tier` or `role` becomes an empty list
+// and a Focus lane's `move_writes` loses the word; in a list or row the hub wrote, each such word
+// is one finding naming the hub's file at the word's place there. The options' defaults lose the
+// word the same way. `manifest_fields`, the fields the hub adds to the project form, is read row by
+// row here: a row is a field of `manifest_schema` under the key `field` it adds to project.yml, and
+// a row that would change a field oculus's form has, that the form cannot draw, or whose `from`
+// names no registry, `projects` or vocab list once the hub's own values are laid in, is left out.
+// Every other key replaces oculus's value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -146,6 +146,37 @@ function lostOf(
 }
 
 /**
+ * The fields of a row, by the option that holds the rows, whose record (`holds: record`) loses a
+ * word the hub's values no longer give: a Focus lane's `move_writes`, so a lane of oculus's whose
+ * word is gone takes no move rather than a move its lane does not list. A collection's `ticker`
+ * keeps its word, which the collections reader words as a category the hub's words do not hold.
+ */
+const WORD_RECORDS: ReadonlyMap<string, string> = new Map([['focus_lanes', 'move_writes']]);
+
+/**
+ * A Focus lane's `move_writes` (`WORD_RECORDS`) without the words of `lost` its fields name: a
+ * field that takes one word and holds a lost word is left out of the record, and every other field
+ * is taken as `fieldWithout` takes a row's.
+ */
+function recordWithout(
+    fields: Record<string, unknown>,
+    record: Record<string, unknown>,
+    lost: ReadonlyMap<Source, ReadonlySet<string>>
+): Record<string, unknown> {
+    let kept = { ...record };
+    for (const [name, spec] of Object.entries(fields)) {
+        if (!Object.hasOwn(kept, name)) continue;
+        const one = kept[name];
+        if (typeof one === 'string' && !takesList(spec) && lostOf(spec, kept, lost).has(one)) {
+            kept = Object.fromEntries(Object.entries(kept).filter(([key]) => key !== name));
+        } else {
+            kept[name] = fieldWithout(spec, kept, name, lost);
+        }
+    }
+    return kept;
+}
+
+/**
  * The value of the field `field` of the row `row` without the words of `lost` its spec names: a
  * list of words or a word block when the spec has a `from`, and, for a field described as a map
  * of `key` to `value` (a board's word block, keyed by `words`, `not_words`, `flags` and
@@ -255,7 +286,12 @@ function prunedValue(
         const kept = { ...row };
         for (const [field, spec] of Object.entries(fields)) {
             if (!Object.hasOwn(kept, field)) continue;
-            const next = fieldWithout(spec, kept, field, lost);
+            const one = kept[field];
+            const record = WORD_RECORDS.get(path) === field && isMap(spec) ? spec.fields : null;
+            const next =
+                isMap(record) && isMap(one)
+                    ? recordWithout(record, one, lost)
+                    : fieldWithout(spec, kept, field, lost);
             if (place !== null) say?.(`${place}.${field}`, kept[field], next);
             kept[field] = next;
         }
@@ -276,16 +312,18 @@ function prunedValue(
 
 /**
  * The words a hub's values no longer give, taken out of every word list that names words of that
- * list: each option, and each field of an option's rows, that the options catalog
- * (config/options/) describes with a `from` naming the list, the vocabulary's own rows among them
+ * list: each option, and each field of an option's rows, that the options catalog (config/options/)
+ * describes with a `from` naming the list, the vocabulary's own rows among them
  * (config/options/catalogs/vocab.yml). A field that takes a word or a list of words (`control:
- * multi`, a board's `tier` or `role`) and holds the one word taken out is left an empty list, and a
- * field that takes one word alone is left as it is. A row of oculus's left with no word stays with
- * its other fields. A word taken out of a list or a row the hub's file wrote is one finding naming
- * the hub's file `file` and the word's place there, so no reader words it again at the merged
- * place. `hub` holds the values of the hub's file the merge applied. Each option's `default` loses
- * the words the same way, so the Settings view compares a value with oculus's as this hub reads
- * it. The machine's own options (local.yml) hold no value of the merge and are not read.
+ * multi`, a board's `tier` or `role`) and holds the one word taken out is left an empty list, a
+ * field of a Focus lane's `move_writes` (`WORD_RECORDS`) that takes one word is taken out of the
+ * record, and any other field that takes one word alone is left as it is. A row of oculus's left
+ * with no word stays with its other fields. A word taken out of a list or a row the hub's file
+ * wrote is one finding naming the hub's file `file` and the word's place there, so no reader words
+ * it again at the merged place. `hub` holds the values of the hub's file the merge applied. Each
+ * option's `default` loses the words the same way, so the Settings view compares a value with
+ * oculus's as this hub reads it. The machine's own options (local.yml) hold no value of the merge
+ * and are not read.
  */
 function dropRemovedWords(
     config: Record<string, unknown>,

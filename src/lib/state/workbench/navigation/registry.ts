@@ -10,9 +10,13 @@
 // reads through t() at the call site that draws it, the glyph key's value is a name in
 // config/catalogs/glyphs.yml, and the mark words are what a badge that is a mark says on hover. A
 // view is therefore renamed or re-iconed in config.
+//
+// The registry also holds the config findings of the views the page left out of it, which the
+// Findings view and its count read beside the findings of the channels.
 
 import type { Component } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
+import type { Finding } from '../../../data/model/index.ts';
 import type { Dock, Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
 import type { BadgeCell, RailBadgesStore, RailPart } from '../rail-badges/rail-badges.svelte.ts';
@@ -243,6 +247,13 @@ export type RegistryStore = {
     dropView: (id: ViewId) => void;
     viewFor: (id: ViewId) => Registration | undefined;
     views: () => Registration[];
+    /**
+     * The config findings of the views the page left out of the registry, a project board whose key
+     * is the id of another view among them, which the Findings view lists with the others.
+     */
+    refused: () => Finding[];
+    /** Replace those findings, as the page does each time it registers the views they are of. */
+    refuse: (found: readonly Finding[]) => void;
 };
 
 export function createRegistry(layout: LayoutStore): RegistryStore {
@@ -290,5 +301,23 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
         return [...registry.values()];
     }
 
-    return { registerView, registerComponent, unregisterView, dropView, viewFor, views };
+    /** The findings of the views the page left out, by their place in the last `refuse`. */
+    const refusals = new SvelteMap<number, Finding>();
+
+    /** Replace the findings of the views the page left out. */
+    function refuse(found: readonly Finding[]): void {
+        refusals.clear();
+        found.forEach((finding, at) => refusals.set(at, finding));
+    }
+
+    return {
+        registerView,
+        registerComponent,
+        unregisterView,
+        dropView,
+        viewFor,
+        views,
+        refused: () => [...refusals.values()],
+        refuse
+    };
 }

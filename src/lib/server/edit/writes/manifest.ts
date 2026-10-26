@@ -35,7 +35,7 @@ import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
-import { vocabKeys, wordsWith } from '../../../data/shapes/vocab-keys.ts';
+import { oneWordWith, vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { roleFields, rolesOf } from '../../../data/shapes/boards/roles.ts';
 import { setFields } from '../yaml/yaml-edit.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
@@ -588,16 +588,17 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 
 /**
  * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
- * the project's `id`, its `tier`, as its `stage` the first word of `stages` carrying `new_idea` (no
- * `stage` line when no word carries it) and no chip, so a project of any tier starts on the Focus
- * board's Idea lane when that lane holds the stage, as the shipped lanes do. Its status line, its
- * `next` and its README are the words of config/text/server.yml for that tier
+ * the project's `id`, its `tier`, as its `stage` the one word of `stages` carrying `new_idea` (no
+ * `stage` line when no word carries it, or several do) and no chip, so a project of any tier starts
+ * on the Focus board's Idea lane when that lane holds the stage, as the shipped lanes do. Its
+ * status line, its `next` and its README are the words of config/text/server.yml for that tier
  * (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no `next` word gets no `next`).
  * `fields.tier` is the tier of the board that sent the form and `fields.folder` the folder it was
- * made in; a write that names neither is made in the first word of `tiers` under that tier's
- * `new_project_dir`. `fields.role_field` is the field of the first of the board's `role:` keys
- * that has one, or of the first row of `roles:` that has one for a board naming no `role:` and for
- * Lit Watch, and `fields.self` the key of the person the workspace setting `self` names: the
+ * made in; a write that names neither is made in the default tier, the one word of `tiers` carrying
+ * `default`, under that tier's `new_project_dir`, and is refused as naming no tier when no word
+ * carries it or several do. `fields.role_field` is the field of the first of the board's `role:`
+ * keys that has one, or of the first row of `roles:` that has one for a board naming no `role:` and
+ * for Lit Watch, and `fields.self` the key of the person the workspace setting `self` names: the
  * manifest names that person in that field (`lead: [<self>]` on a lead board). A board offers the
  * write only when its rule takes the project it makes, so the new project is on the board it was
  * made on. A bad id, an id a project already holds, a tier that is no word of `tiers` or has no
@@ -622,11 +623,17 @@ export function createIdea(
     }
     const vocab = config.merged;
     const tiers = vocabKeys(vocab.tiers);
-    const tier = tierOf(fields.tier === undefined ? tiers.at(0) : form.tier, tiers);
+    const tier = tierOf(
+        fields.tier === undefined ? oneWordWith(vocab, 'tiers', 'default') : form.tier,
+        tiers
+    );
     const statusText =
         tier === undefined
             ? undefined
             : byKey(catalog, `server.manifest_write.idea_status_${tier}`);
+    if (fields.tier === undefined && tier === undefined) {
+        return ideaRefusal('tier', words(catalog, 'server.manifest_write.idea_tier_none'));
+    }
     if (tier === undefined || statusText === undefined) {
         return ideaRefusal('tier', words(catalog, 'server.manifest_write.idea_tier', form.tier));
     }
@@ -680,7 +687,7 @@ export function createIdea(
     const nextText = byKey(catalog, `server.manifest_write.idea_next_${tier}`);
     const title = form.title || id;
     const eli5 = form.eli5 || title;
-    const stage = wordsWith(vocab, 'stages', 'new_idea').at(0);
+    const stage = oneWordWith(vocab, 'stages', 'new_idea');
     const lines = [`id: ${id}`, `tier: ${tier}`];
     if (stage !== undefined) lines.push(`stage: ${renderScalar(stage)}`);
     const { short, domain } = form;

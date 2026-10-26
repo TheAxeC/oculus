@@ -4,6 +4,8 @@
 export {
     DEADLINE_SOON,
     boardIds,
+    boardViews,
+    boardsSource,
     FACETS,
     NONE,
     SESSIONS_LIVE,
@@ -25,6 +27,9 @@ export type {
     BoardState,
     BoardStats,
     BoardTag,
+    BoardView,
+    BoardViews,
+    BoardsSource,
     Facet,
     FacetValue,
     LabelMode,
@@ -70,4 +75,6 @@ export {
     offersMine,
     parseBoardState
 } from './state.ts';
+export { newProjectTier } from './new-project.ts';
+export { boardsGroup } from '../../../data/sources/config/rail.ts';
 export { entryRoles } from '../../../data/shapes/boards/roles.ts';

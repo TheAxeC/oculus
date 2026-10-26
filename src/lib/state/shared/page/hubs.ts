@@ -7,8 +7,9 @@
 // It also holds the one rule for which hubs could take a new record, which every path that makes
 // one reads (a collection's Add, Literature's Add, Save to Literature, Add Task, the apply control
 // of a lead and New Project), so the hub is asked the same way everywhere: with more than one, the
-// path asks which, the primary first; with one, it writes there, primary or not. The hubs a Hub
-// list offers to filter by come in the same order (`hubList`).
+// path asks which, the primary first and chosen when it is among them, and none chosen otherwise
+// (`chosenHub`); with one, it writes there, primary or not. The hubs a Hub list offers to filter by
+// come in the same order (`hubList`).
 
 import { rootOf } from '../../../data/helpers/hub-names.ts';
 
@@ -39,6 +40,18 @@ export function hubsTaking(
     const unique = [...new Set(names.filter((name) => name !== ''))];
     const own = unique.filter((name) => name === primary);
     return [...own, ...unique.filter((name) => name !== primary)];
+}
+
+/**
+ * The hub a new record goes to before the reader picks one, among the hubs `offered` that could
+ * take it: the one hub when one is offered, the primary when several are and it is among them, and
+ * none otherwise, so the form's Add stays off until a hub is picked and no order of the hubs
+ * decides where a record goes. The server picks a write that names no hub by the same rule
+ * (`homeOf` of server/edit/writes/hubs.ts).
+ */
+export function chosenHub(offered: readonly string[], primary: string | null): string | undefined {
+    if (offered.length === 1) return offered[0];
+    return primary !== null && offered.includes(primary) ? primary : undefined;
 }
 
 /**

@@ -39,29 +39,83 @@ import {
 export type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 export { setting } from './board/index.ts';
+import {
+    FOCUS_CLUSTERS,
+    drawnClusterRows,
+    type ClusterRow
+} from '../../data/shapes/boards/focus-clusters.ts';
+import { FOCUS_SECTIONS, focusSections } from '../../data/shapes/boards/focus-sections.ts';
+import { catalogOf, type CatalogEntry } from '../../data/sources/config/catalog/options.ts';
 import { rolesOf } from '../../data/shapes/boards/roles.ts';
 import { projectRole } from '../../data/shapes/boards/takes.ts';
 import { projectStatusWords, toneOf } from '../shared/words/tones.ts';
+import { hasText } from '../shared/words/text.ts';
 import { waitingLabel } from './waiting.ts';
 
 /**
- * The clusters of `focus_lanes` the board draws as clusters, top to bottom: your move, then on
- * others, then idea to project.
+ * The Focus board's sections drawn, in drawing order, as `focus.sections` lists them, read against
+ * the options-catalog entry that names the sections the board draws.
  */
-export const CLUSTERS = ['now', 'parked', 'incubate'];
+export function drawnSections(config: Record<string, unknown>): string[] {
+    const entries: Partial<Record<string, CatalogEntry>> = catalogOf(config)['behavior.yml'] ?? {};
+    return focusSections(config, entries[FOCUS_SECTIONS]).sections;
+}
 
 /**
- * The cluster of the Idea lane: a lane of it is drawn full width under the three clusters and takes
- * a project of any tier at a stage it lists.
+ * How a cluster lays its lanes out: side by side under its heading, or each lane a full-width
+ * section headed by the lane's own label.
  */
-export const IDEA = 'idea';
+type ClusterLayout = ClusterRow['layout'];
 
 /**
- * One lane of the board: its key, its words, its glyph name, its hue and its cluster, and what puts
- * a project on it, the stages of `stages` or the chips of `chips` its row names, each empty when
- * the row names none. The glyph name is the row's `icon` as written, the empty string when the row
- * names none; a view draws it through views/shared/card/card.ts `laneGlyph`, which draws the glyph
- * `focus` for a name the glyph vocabulary lacks.
+ * One row of `focus_clusters`, the clusters the board groups its lanes into, in drawing order: its
+ * key, the catalog keys of its heading's words and glyph (each empty when the row names none or a
+ * key the catalog lacks), whether it is drawn muted, how it lays its lanes out, whether its lanes'
+ * cards sort by title rather than by deadline then title, and whether the awaiting box counts the
+ * projects on its lanes.
+ */
+export type Cluster = {
+    key: string;
+    label: string;
+    glyph: string;
+    muted: boolean;
+    layout: ClusterLayout;
+    byTitle: boolean;
+    awaiting: boolean;
+};
+
+/**
+ * The clusters of `focus_clusters` the board draws, in the config's order, by the rule the config
+ * check reads them with (data/shapes/boards/focus-clusters.ts `drawnClusterRows`): a row of another
+ * `layout` or `sort` is no cluster, and a key a row before it holds is read from that row alone.
+ */
+export function clusters(config: Record<string, unknown>): Cluster[] {
+    return drawnClusterRows(config[FOCUS_CLUSTERS]).map((row): Cluster => ({
+        key: row.key,
+        label: hasText(row.label) ? row.label : '',
+        glyph: hasText(row.glyph) ? row.glyph : '',
+        muted: row.muted,
+        layout: row.layout,
+        byTitle: row.sort === 'title',
+        awaiting: row.awaiting
+    }));
+}
+
+/**
+ * The one word a move onto a lane writes, from its row's `move_writes`: a stage of a lane with
+ * `stages` or a chip of a lane with `chips`, a word the lane lists. A `move_writes` naming both, a
+ * field of the other kind of lane or a word the lane does not list writes none, and the config
+ * check reports it.
+ */
+type LaneMove = { kind: 'stage' | 'chip'; word: string };
+
+/**
+ * One lane of the board: its key, its words, its glyph name, its hue and its cluster, what puts a
+ * project on it, the stages of `stages` or the chips of `chips` its row names, each empty when the
+ * row names none, and the word a move onto it writes (`LaneMove`), null when it takes no move. The
+ * glyph name is the row's `icon` as written, the empty string when the row names none; a view draws
+ * it through views/shared/card/card.ts `laneGlyph`, which draws the glyph `focus` for a name the
+ * glyph vocabulary lacks.
  */
 export type Lane = {
     key: string;
@@ -72,6 +126,7 @@ export type Lane = {
     cluster: string;
     stages: string[];
     chips: string[];
+    move: LaneMove | null;
 };
 
 /** A label with a count, and the registry id when the tally names one venue. */
@@ -149,10 +204,29 @@ export function snoozed(value: unknown, now: number): boolean {
     return days !== null && days > 0;
 }
 
+/** A row's `move_writes` as written: a stage, a chip, each absent when the map names none. */
+const moveShape = z.object({ stage: z.string().optional(), chip: z.string().optional() }).catch({});
+
+/** The word a lane's `move_writes` gives it to write, under the rule of `LaneMove`. */
+function moveOf(
+    move: { stage?: string; chip?: string },
+    stages: readonly string[],
+    chips: readonly string[]
+): LaneMove | null {
+    const { stage, chip } = move;
+    if (stage !== undefined && chip === undefined && stages.includes(stage)) {
+        return { kind: 'stage', word: stage };
+    }
+    if (chip !== undefined && stage === undefined && chips.includes(chip)) {
+        return { kind: 'chip', word: chip };
+    }
+    return null;
+}
+
 /**
  * One row of `focus_lanes`: a map with a key; its label is the key when it names none, its `icon`
- * the empty string when it names none, and its `stages` and `chips` are lists of words, empty when
- * the row leaves them out.
+ * the empty string when it names none, its `stages` and `chips` are lists of words, empty when the
+ * row leaves them out, and its `move_writes` gives the word a move onto it writes.
  */
 const laneShape = z
     .object({
@@ -163,7 +237,8 @@ const laneShape = z
         color: wordShape,
         cluster: wordShape,
         stages: stringItemsShape.catch([]),
-        chips: stringItemsShape.catch([])
+        chips: stringItemsShape.catch([]),
+        move_writes: moveShape.optional()
     })
     .transform((row): Lane => ({
         key: row.key,
@@ -173,7 +248,8 @@ const laneShape = z
         tone: toneOf(row.color),
         cluster: row.cluster,
         stages: row.stages,
-        chips: row.chips
+        chips: row.chips,
+        move: moveOf(row.move_writes ?? {}, row.stages, row.chips)
     }));
 
 const lanesShape = rowsShape(laneShape);
@@ -193,7 +269,7 @@ function laneOrder(a: Project, b: Project): number {
     return titleOrder(a, b);
 }
 
-/** A project of the Idea lane sorts by its title alone. */
+/** A project of a lane whose cluster sorts by title sorts by its title alone. */
 function titleOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
@@ -279,11 +355,21 @@ export function projectLane(
     return laneOf(project, lanes(words), words);
 }
 
+/** The keys of the clusters of `config` whose `flag` holds, the board's clusters by `clusters`. */
+function clusterKeys(config: Record<string, unknown>, flag: 'byTitle' | 'awaiting'): Set<string> {
+    return new Set(
+        clusters(config)
+            .filter((one) => one[flag])
+            .map((one) => one.key)
+    );
+}
+
 /**
  * What sits on each lane of `all`, by lane key: each project on the lane of its own hub's lanes
  * `laneOf` gives it, put in the lane of `all` of the same key, and on none when it gives none. A
- * lane of the cluster `idea` is sorted by title, every other lane by deadline first and then
- * title.
+ * lane of a cluster whose `sort` is `title` is sorted by title, every other lane by deadline first
+ * and then title; the clusters are those of the union of every hub's words with `wordsOf`, the
+ * words the board's lanes are read from, and of `config` without it.
  */
 export function laneItems(
     projects: Project[],
@@ -299,24 +385,22 @@ export function laneItems(
         const lane = laneOf(project, held.lanes, held.words);
         if (lane !== undefined) byKey(out, lane.key)?.push(project);
     }
+    const byTitle = clusterKeys(wordsOf?.() ?? config, 'byTitle');
     for (const lane of all)
-        byKey(out, lane.key)?.sort(lane.cluster === IDEA ? titleOrder : laneOrder);
+        byKey(out, lane.key)?.sort(byTitle.has(lane.cluster) ? titleOrder : laneOrder);
     return out;
 }
 
 /**
- * Whether the board may move a project onto a lane: the lane may hold it (`holds`), and the word a
- * move writes is a word of the vocabulary, the lane's first chip a word of `chips` for a lane with
- * `chips`, its first stage a word of `stages` otherwise. A lane that names neither takes no move.
- * So a move's write is never refused in part, and a project at a `terminal` stage is never sent to
- * a chip lane, which would leave it off the board.
+ * Whether the board may move a project onto a lane: the lane may hold it (`holds`), it takes a move
+ * (`Lane.move`), and the word the move writes is a word of the vocabulary, of `chips` for a chip
+ * and of `stages` for a stage. So a move's write is never refused in part, and a project at a
+ * `terminal` stage is never sent to a chip lane, which would leave it off the board.
  */
 function movable(project: Project, lane: Lane, config: Record<string, unknown>): boolean {
-    if (!holds(lane, project, config)) return false;
-    const chip = lane.chips.at(0);
-    if (chip !== undefined) return vocabKeys(config.chips).includes(chip);
-    const stage = lane.stages.at(0);
-    return stage !== undefined && vocabKeys(config.stages).includes(stage);
+    if (!holds(lane, project, config) || lane.move === null) return false;
+    const vocabulary = lane.move.kind === 'chip' ? config.chips : config.stages;
+    return vocabKeys(vocabulary).includes(lane.move.word);
 }
 
 /**
@@ -347,13 +431,13 @@ export function hubMoveOnto(
 
 /**
  * The manifest fields a move of a project onto a lane writes in one write, or null when it writes
- * nothing: a lane `movable` refuses, or the lane the project sits on. Onto a lane with `chips`, the
- * lane's first chip is added when the project carries none of the lane's chips and the chips of
+ * nothing: a lane `movable` refuses, or the lane the project sits on. Onto a lane whose move writes
+ * a chip, that chip is added when the project carries none of the lane's chips and the chips of
  * every other lane with `chips` are taken off, so the card sits where it was dropped, and `stage`
- * is not written. Onto any other lane, `stage` is the project's own when the lane's `stages` holds
- * it and the lane's first stage otherwise, written only when it differs, and the chips of every
- * lane with `chips` are taken off. The other chips stay in their order, and `status.chips` is
- * written only when it changes.
+ * is not written. Onto a lane whose move writes a stage, `stage` is the project's own when the
+ * lane's `stages` holds it and the stage of the move otherwise, written only when it differs, and
+ * the chips of every lane with `chips` are taken off. The other chips stay in their order, and
+ * `status.chips` is written only when it changes.
  */
 function moveOnto(
     project: Project,
@@ -361,19 +445,20 @@ function moveOnto(
     all: Lane[],
     config: Record<string, unknown>
 ): Record<string, unknown> | null {
-    if (!movable(project, lane, config)) return null;
+    const move = lane.move;
+    if (move === null || !movable(project, lane, config)) return null;
     if (laneOf(project, all, config)?.key === lane.key) return null;
     const fields: Record<string, unknown> = {};
     let chips: string[];
-    if (lane.chips.length > 0) {
+    if (move.kind === 'chip') {
         const others = all.filter((one) => one.key !== lane.key).flatMap((one) => one.chips);
         chips = project.chips.filter((chip) => lane.chips.includes(chip) || !others.includes(chip));
-        if (!chips.some((chip) => lane.chips.includes(chip))) chips.push(lane.chips[0]);
+        if (!chips.some((chip) => lane.chips.includes(chip))) chips.push(move.word);
     } else {
         const laned = all.flatMap((one) => one.chips);
         chips = project.chips.filter((chip) => !laned.includes(chip));
         const stage = project.stage ?? '';
-        const next = lane.stages.includes(stage) ? stage : lane.stages[0];
+        const next = lane.stages.includes(stage) ? stage : move.word;
         if (next !== stage) fields.stage = next;
     }
     const same =
@@ -479,16 +564,17 @@ export function laneFacts(
 }
 
 /**
- * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of the
- * three clusters of `CLUSTERS`, so a project on no lane or on the Idea lane is in none. For each,
- * the people named in `waiting-on:` first, then the venue holding it when its stage carries
- * `pauses_countdown` in `stages` (submitted). The blocked tally counts the projects on a lane that
- * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
- * `waiting-on:` value is a people key or another project's id, drawn by waiting.ts. The
- * applications are the entries of the collections flagged `awaiting` whose status is in
- * `applications_sent` under `focus:` of config/defaults/behavior.yml. A waited-on project is named
- * from `known`, every project of the portfolio, when the snapshot holds only the projects a filter
- * keeps, and from the snapshot's own projects without it.
+ * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of a
+ * cluster carrying `awaiting: true`, so a project on no lane or on a lane of another cluster (the
+ * Idea lane's, with oculus's clusters) is in none. For each, the people named in `waiting-on:`
+ * first, then the venue holding it when its stage carries `pauses_countdown` in `stages`
+ * (submitted). The blocked tally counts the projects on a lane that carry a chip with `blocked` in
+ * `chips`, whatever else the project is waiting for. A `waiting-on:` value is a people key or
+ * another project's id, drawn by waiting.ts. The applications are the entries of the collections
+ * flagged `awaiting` whose status is in `applications_sent` under `focus:` of
+ * config/defaults/behavior.yml. A waited-on project is named from `known`, every project of the
+ * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
+ * projects without it.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -503,9 +589,10 @@ export function waiting(
         wordsOf?.(rootOf(record)) ?? config;
     const board = lanes(wordsOf?.() ?? config);
     const items = laneItems(Object.values(projects), board, config, wordsOf);
+    const counted = clusterKeys(wordsOf?.() ?? config, 'awaiting');
     const onLanes = new Set(
         board
-            .filter((lane) => CLUSTERS.includes(lane.cluster))
+            .filter((lane) => counted.has(lane.cluster))
             .flatMap((lane) => items[lane.key] ?? [])
             .map((project) => project.id)
     );

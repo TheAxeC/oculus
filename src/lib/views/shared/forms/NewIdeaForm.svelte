@@ -3,25 +3,28 @@
     // A new project could go to any hub of the workspace (`hubsTaking` of
     // state/shared/page/hubs.ts), and on a board to each hub under whose words the board's rule
     // takes the project (`takes`): with more than one, the form draws a Hub field, the primary
-    // first and chosen; with one, it draws none. The write names the hub chosen. A board gives its
-    // tier, and the form then offers a Folder field and sends the tier and the folder with the
-    // write; Lit Watch gives none, and the server creates the project in the first word of `tiers`.
-    // A board gives its `role:` keys too, null when it names none, and the write names the user,
-    // the person the workspace setting `self` names, in the field of the first of them that has
-    // one; a board naming no `role:` and Lit Watch name the user in the field of the first row of
-    // `roles:` with one, its lead. The roles are those of the hub chosen: the page holds each hub's
-    // lists, and the server writes the hub's first stage carrying `new_idea`. A board draws the
-    // form only when its rule takes the project this write makes in some hub, so the new project is
-    // on the board it was made on. With no `self`, no person is named. The Folder starts with the
-    // tier's `new_project_dir` entry of the primary while the primary is chosen, and empty for
-    // another hub, whose `new_project_dir` the page does not hold, being a setting and not a list;
-    // an empty Folder sends no folder, so the server takes the `new_project_dir` of the tier in the
-    // settings of the hub written to, and a hub that names none for it refuses, said here. A change
-    // of hub starts the Folder again from that hub's value and clears a Domain the hub's registry
-    // does not hold: the Domain choices are the chosen hub's own, so the key written resolves in
-    // that hub. Optional seed values let a radar spark pre-fill the same form without duplicating
-    // its write. Escape closes it only while it is on screen: a pane keeps the view of a tab it
-    // hides mounted, and a key pressed in another tab is not one this form was asked to answer.
+    // first and chosen when it is among them, and none chosen otherwise, save off until a hub is
+    // picked (`chosenHub`); with one, it draws none. The write names the hub chosen. A board gives
+    // the tier it writes in each hub (its one tier, else the hub's default tier), and the form then
+    // offers a Folder field and sends the tier of the hub chosen and the folder with the write; Lit
+    // Watch gives none, and the server creates the project in the default tier, the one word of
+    // `tiers` carrying `default`. A board gives its `role:` keys too, null when it names none, and
+    // the write names the user, the person the workspace setting `self` names, in the field of the
+    // first of them that has one; a board naming no `role:` and Lit Watch name the user in the
+    // field of the first row of `roles:` with one, its lead. The roles are those of the hub chosen:
+    // the page holds each hub's lists, and the server writes the hub's one stage carrying
+    // `new_idea`. A board draws the form only when its rule takes the project this write makes in
+    // some hub, so the new project is on the board it was made on. With no `self`, no person is
+    // named. The Folder starts with the tier's `new_project_dir` entry of the primary while the
+    // primary is chosen, and empty for another hub, whose `new_project_dir` the page does not hold,
+    // being a setting and not a list; an empty Folder sends no folder, so the server takes the
+    // `new_project_dir` of the tier in the settings of the hub written to, and a hub that names
+    // none for it refuses, said here. A change of hub starts the Folder again from that hub's value
+    // and clears a Domain the hub's registry does not hold: the Domain choices are the chosen hub's
+    // own, so the key written resolves in that hub. Optional seed values let a radar spark pre-fill
+    // the same form without duplicating its write. Escape closes it only while it is on screen: a
+    // pane keeps the view of a tab it hides mounted, and a key pressed in another tab is not one
+    // this form was asked to answer.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -30,7 +33,7 @@
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
     import { selectChoices } from '$lib/state/forms/schema';
-    import { hubsTaking } from '$lib/state/shared/page/hubs';
+    import { chosenHub, hubsTaking } from '$lib/state/shared/page/hubs';
     import { answerWords } from './answer-words';
 
     const {
@@ -42,8 +45,8 @@
     type Props = {
         onclose: () => void;
         onsaid: (said: string) => void;
-        /** The tier of the board that opened the form; none for Lit Watch. */
-        tier?: string;
+        /** The tier the board that opened the form writes in the hub given; none for Lit Watch. */
+        tierOf?: (hub: string) => string | undefined;
         /** The `role:` keys of the board that opened the form; null for a board naming none. */
         roles?: readonly string[] | null;
         /** Whether the board's rule takes the project in the hub given; none for Lit Watch. */
@@ -52,7 +55,7 @@
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, tier, roles, takes, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tierOf, roles, takes, seed, oncreated }: Props = $props();
 
     /**
      * The hubs a new project can be written to: every hub of the workspace the board's rule takes
@@ -68,16 +71,23 @@
     );
     /** The hub picked in the Hub field, the empty text while none is picked. */
     let picked = $state('');
-    /** The hub the project is written to: the one picked, else the first of the list. */
-    const hub = $derived(picked === '' ? (hubs.at(0) ?? '') : picked);
+    /**
+     * The hub the project is written to: the one picked, else the one hub, else the primary when it
+     * is among them, and the empty text otherwise, which keeps save off while several hubs are
+     * drawn.
+     */
+    const hub = $derived(picked === '' ? (chosenHub(hubs, primary()) ?? '') : picked);
+    /** The tier the write names in the hub chosen; none for Lit Watch. */
+    const tier = $derived(tierOf?.(hub));
 
     /**
      * The folder the form starts with for the hub `at`: the tier's `new_project_dir` entry of the
      * primary while the primary is chosen (or no hub is read yet), and empty for another hub.
      */
     function startFolder(at: string): string {
-        if (tier === undefined) return '';
-        return at === '' || at === primary() ? newProjectFolder(tier) : '';
+        const named = tierOf?.(at);
+        if (named === undefined) return '';
+        return at === '' || at === primary() ? newProjectFolder(named) : '';
     }
 
     let folder = $state(untrack(() => startFolder(hub)));
@@ -88,6 +98,8 @@
     let eli5 = $state(untrack(() => seed?.eli5 ?? ''));
     const choices = $derived(selectChoices(domainChoices(hub)));
     let box: HTMLDivElement | undefined = $state();
+    /** Whether several hubs are drawn and none is chosen, which keeps save off. */
+    const unpicked = $derived(hubs.length > 1 && hub === '');
 
     /**
      * Choose the hub: the Folder starts again, and a Domain its registry does not hold is cleared.
@@ -103,7 +115,7 @@
     }
 
     async function save(): Promise<void> {
-        if (id.trim() === '') return;
+        if (id.trim() === '' || unpicked) return;
         const named = folder.trim();
         const person = newProjectPerson(roles ?? null, hub === '' ? undefined : hub);
         const answer = await newIdea(
@@ -135,6 +147,7 @@
         <Select
             value={hub}
             label={t('board.new_idea_hub')}
+            empty={hub === '' ? t('board.new_idea_hub_none') : undefined}
             choices={hubs.map((one) => ({ id: one, label: one }))}
             onchange={choose}
         />
@@ -178,7 +191,7 @@
         placeholder={t('board.new_idea_eli5')}
         oninput={(next: string) => (eli5 = next)}
     />
-    <ToolButton label={t('board.new_idea_save')} onclick={save} />
+    <ToolButton label={t('board.new_idea_save')} disabled={unpicked} onclick={save} />
     <ToolButton label={t('board.new_idea_cancel')} onclick={onclose} />
 </div>
 

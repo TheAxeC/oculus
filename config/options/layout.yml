@@ -30,6 +30,9 @@ options:
             unplaced_collections:
                 help: the page's group holds every collection view whose collections entry names no group, after the group's placed collection views; one entry carries it, and none or two is a finding, the first read
                 control: toggle
+            project_boards:
+                help: the page's group holds the project boards of boards, in their order; one entry carries it, and none or two is a finding, the first read, and with none the boards are in no group
+                control: toggle
     nav_groups:
         heading: rail
         section: View catalogue
@@ -123,12 +126,17 @@ options:
     boards:
         heading: boards
         section: Boards
-        help: "The project boards, by view id. A project is on every board whose keys it meets, a board meeting a key only when every list it names holds; a project opened from anywhere opens on the first board that takes it, and on the first board when none does. A key that is no board view is never shown. A workspace file's settings: overrides a board by its view id, adds a board, and takes one of oculus's out with <view id>: null."
+        help: "The project boards, by view id, each registered as a board view in this order in the group of the rail entry carrying project_boards. A project is on every board whose keys it meets, a board meeting a key only when every list it names holds; a project opened from anywhere opens on the first board that takes it, and on the first board when none does. A key that is the id of a view a module registers, or a collection's key, is a finding and is not registered. A workspace file's settings: overrides a board by its view id, adds a board, and takes one of oculus's out with <view id>: null."
         fields:
             key:
-                help: the view id of the board, projects, supervision, coauthor, archive, personal or software
-                control: choice
-                options: [projects, supervision, coauthor, archive, personal, software]
+                help: the view id of the board, which its tab and its row of counts name
+                control: text
+            label:
+                help: the dotted key of the text-catalog word the board's view is named by; with none, or a key the catalog lacks, the board is named by its key and the config check reports it
+                control: text
+            glyph:
+                help: the dotted key of the text-catalog word holding the glyph the board's view draws; with none, or a key the catalog lacks, it draws views.board_glyph and the config check reports it
+                control: text
             tier:
                 help: the tier, or the list of tiers, whose projects the board takes
                 control: multi
@@ -245,7 +253,7 @@ options:
     counts:
         heading: boards
         section: Tab badges
-        help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of vocab.yml and gives the rail the count of its projects in the categories whose rail flag is set, in the colour of the first such category; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
+        help: The views that draw a count, by view id, and where. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of vocab.yml and gives the rail the count of its projects in the categories whose rail flag is set, in the colour rail_color of vocab.yml gives; a collection counts the entries whose status is one of its match; Applications counts the applications open, in green; Position Leads counts the open leads due within its days, in amber.
         fields:
             key:
                 help: the view id of a view that draws a count

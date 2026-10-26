@@ -1,14 +1,23 @@
 // Layer 3, routes. Discover view modules and register their exported metadata with each module's
-// default component. The route layer owns discovery so the view boundary does not import views.
+// default component. The route layer owns discovery so the view boundary does not import views. The
+// views a config names (the collection views and the project boards) are registered from the page
+// data on the first frame and again from each config push.
 
 import type { Component } from 'svelte';
 import { z } from 'zod';
 import { appActive, appViewId } from '$lib/data/helpers/files/apps/apps';
 import { EDITOR_VIEW, PANEL_VIEW, contributedViewId } from '$lib/data/helpers/files/apps/views';
-import type { AppRow, HubVocabs, ListedCollection } from '$lib/data/model';
+import type { AppRow, ConfigPayload, HubVocabs, ListedCollection } from '$lib/data/model';
 import { workspaceCollectionViews, type CollectionViews } from '$lib/data/snapshot/normalise';
 import { unplacedGroup } from '$lib/data/sources/config/rail';
 import { itemsShape, mapShape, readAs } from '$lib/data/shapes/shapes';
+import {
+    boardViews,
+    boardsSource,
+    type BoardView,
+    type BoardViews,
+    type BoardsSource
+} from '$lib/state/boards/board';
 import { viewOffers, type ViewOffer } from '$lib/state/system/apps/shell/contributions';
 import type {
     RegistryStore,
@@ -62,6 +71,67 @@ export function registerAll(registry: RegistryStore): void {
     registerModules(registry, viewModules);
 }
 
+/** The ids of the views the discovered modules register as their own, each module's list. */
+function moduleViewIds(): string[] {
+    return Object.values(viewModules).flatMap((unknownModule) => {
+        const source = (unknownModule as ViewModule).registration;
+        return source === undefined || typeof source === 'function'
+            ? []
+            : definitions(source).map((registration) => registration.id);
+    });
+}
+
+/**
+ * The board views of a source with the findings of the boards left out: every view id a module
+ * registers and every collection view's key is taken, so a board of such a key is not registered.
+ */
+export function pageBoards(
+    source: BoardsSource,
+    catalog: Record<string, string>,
+    collections: Pick<CollectionViews, 'views'>
+): BoardViews {
+    const taken = new Set([...moduleViewIds(), ...collections.views.map((entry) => entry.key)]);
+    return boardViews(source, catalog, taken);
+}
+
+/**
+ * The source of the board views a pushed configuration names, the file `boards:` was read from
+ * taken from the push's `from`; null when its `boards:` is not a map, which names no board.
+ */
+export function pushedBoards(pushed: ConfigPayload | null): BoardsSource | null {
+    const config = pushed?.config;
+    if (config === undefined || readAs(mapShape, config.boards) === null) return null;
+    return boardsSource(config, (key) => pushed?.from[key] ?? '');
+}
+
+/** A module that draws the project board views: the one exporting `boardRegistration`. */
+type BoardModule = ViewModule & {
+    boardRegistration: (views: readonly BoardView[]) => ViewRegistration[];
+};
+
+/**
+ * Register the project board views given with the component that exports `boardRegistration`
+ * (views/boards/projects/Projects.svelte), which gives each its count hooks, and unregister the
+ * board views it drew that they no longer hold, closing their tabs, so a board taken out of
+ * `boards:` leaves the rail, the catalogue and the panes with the push that took it out. The
+ * findings of the boards left out are the registry's `refused`, which the Findings view lists.
+ */
+export function registerBoards(registry: RegistryStore, given: BoardViews): void {
+    registry.refuse(given.findings);
+    const drawer = Object.values(viewModules).find(
+        (one) => typeof (one as Partial<BoardModule>).boardRegistration === 'function'
+    ) as BoardModule | undefined;
+    if (drawer === undefined) return;
+    const wanted = drawer.boardRegistration(given.views);
+    const ids = new Set(wanted.map((registration) => registration.id));
+    for (const registration of registry.views()) {
+        if (registration.component === drawer.default && !ids.has(registration.id)) {
+            registry.unregisterView(registration.id);
+        }
+    }
+    registry.registerComponent(drawer.default, wanted);
+}
+
 /**
  * The collection views a pushed configuration names with the hubs it was pushed with: those
  * `workspaceCollectionViews` reads from its `collections` list and the hubs' lists, none for an
@@ -90,14 +160,7 @@ export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): Coll
  * keeping a second record of them anywhere.
  */
 export function registerCollections(registry: RegistryStore, given: CollectionViews): void {
-    const builtIn = new Set(
-        Object.values(viewModules).flatMap((unknownModule) => {
-            const source = (unknownModule as ViewModule).registration;
-            return source === undefined || typeof source === 'function'
-                ? []
-                : definitions(source).map((registration) => registration.id);
-        })
-    );
+    const builtIn = new Set(moduleViewIds());
     const free = given.views.filter((entry) => !builtIn.has(entry.key));
     for (const unknownModule of Object.values(viewModules)) {
         const module = unknownModule as ViewModule;

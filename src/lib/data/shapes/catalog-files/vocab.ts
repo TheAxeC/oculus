@@ -6,7 +6,7 @@
 // oculus ships none.
 
 import { z } from 'zod';
-import { colour, flag, text, textMap } from './common.ts';
+import { HEX_COLOUR, colour, flag, text, textMap } from './common.ts';
 
 /** One row of a keyed list: its `key` and the words it is drawn with. */
 const keyed = z.strictObject({
@@ -24,9 +24,27 @@ const keyed = z.strictObject({
 });
 
 /**
- * One row of `focus_lanes`: a lane's words, glyph, colour and cluster, and the stages or the chips
- * that put a project on it. A row names `stages` or `chips`, never both and never neither, so a
- * move onto the lane has one defined write.
+ * What a move onto a Focus lane writes: one field, the stage a lane of `stages` writes or the chip
+ * a lane of `chips` adds, a word the lane lists (data/sources/config/sections/vocab.ts says what
+ * else is wrong with it).
+ */
+const moveWrites = z.strictObject({
+    stage: text
+        .optional()
+        .describe(
+            "The stage a move onto a lane of `stages` writes when the project's stage is none of the lane's, a word of the lane's `stages`."
+        ),
+    chip: text
+        .optional()
+        .describe(
+            "The chip a move onto a lane of `chips` adds when the project carries none of the lane's chips, a word of the lane's `chips`."
+        )
+});
+
+/**
+ * One row of `focus_lanes`: a lane's words, glyph, colour and cluster, the stages or the chips that
+ * put a project on it, and what a move onto it writes. A row names `stages` or `chips`, never both
+ * and never neither.
  */
 const laneRow = z
     .strictObject({
@@ -42,19 +60,24 @@ const laneRow = z
         cluster: text
             .optional()
             .describe(
-                'The group the lane belongs to on the board: now, parked or incubate, drawn as three clusters, or idea, a lane drawn full width under them that takes a project of any tier at a stage it lists.'
+                'The key of the row of `focus_clusters` the lane is drawn in; a lane naming none, or one no readable row has, is not drawn.'
             ),
         stages: z
             .array(text)
             .optional()
             .describe(
-                "The stages of `stages` whose projects sit on the lane, compared with a project's stage as written; a move onto the lane keeps a stage the list holds and writes its first stage otherwise."
+                "The stages of `stages` whose projects sit on the lane, compared with a project's stage as written; a move onto the lane keeps a stage the list holds and writes `move_writes.stage` otherwise."
             ),
         chips: z
             .array(text)
             .optional()
             .describe(
-                "The chips of `chips` that put a project on the lane whatever its stage, unless its stage carries `terminal`, compared with its chips as written, which decide before any lane's `stages` do; a move onto the lane adds its first chip."
+                "The chips of `chips` that put a project on the lane whatever its stage, unless its stage carries `terminal`, compared with its chips as written, which decide before any lane's `stages` do; a move onto the lane adds `move_writes.chip` when the project carries none of them."
+            ),
+        move_writes: moveWrites
+            .optional()
+            .describe(
+                'What a move onto the lane writes, `stage` for a lane of `stages` or `chip` for a lane of `chips`; a lane without it takes no move.'
             )
     })
     .refine((row) => {
@@ -72,6 +95,42 @@ const laneRows = z.array(laneRow).superRefine((rows, context) => {
             seen.add(stage);
         }
     });
+});
+
+/**
+ * One row of `focus_clusters`, a group the Focus board draws its lanes in: the dotted keys of the
+ * text-catalog words it is headed by, and how it is drawn.
+ */
+const clusterRow = z.strictObject({
+    key: text.describe("The word the cluster is named by, which a lane's `cluster` names."),
+    label: text
+        .optional()
+        .describe(
+            'The dotted key of the text-catalog word the cluster is headed by; with none the cluster has no heading words.'
+        ),
+    glyph: text
+        .optional()
+        .describe(
+            "The dotted key of the text-catalog word holding the glyph drawn before the cluster's heading; with none it is drawn with no glyph."
+        ),
+    muted: z.boolean().optional().describe('true draws the cluster in muted colours.'),
+    layout: z
+        .enum(['columns', 'full_width'])
+        .describe(
+            "columns draws the cluster's lanes side by side under its heading; full_width draws each of its lanes as a full-width section headed by the lane's label."
+        ),
+    sort: z
+        .enum(['title'])
+        .optional()
+        .describe(
+            "title orders a lane's cards by title; with none they go by deadline, then title."
+        ),
+    awaiting: z
+        .boolean()
+        .optional()
+        .describe(
+            "true counts the projects on the cluster's lanes in the Focus board's awaiting box."
+        )
 });
 
 /** One stage of `stages`: its words, glyph and colour, and the flags the code reads. */
@@ -122,7 +181,7 @@ const stageWord = z.strictObject({
         "A stage that ends a project's own deadline, which then leaves the deadline radar."
     ),
     new_idea: flag(
-        'The stage a new idea is made with: the first stage carrying it is written, and with none the new manifest names no stage.'
+        'The stage a new idea is made with, carried by one stage at most: with none, or with two carrying it (a finding), the new manifest names no stage.'
     )
 });
 
@@ -166,10 +225,10 @@ const statusWord = z.strictObject({
         "A funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written."
     ),
     default_application: flag(
-        "The status of the Applications entry a Position Lead's apply control makes: the first word carrying it is written."
+        "The status of the Applications entry a Position Lead's apply control makes, carried by one word at most: with two carrying it (a finding) the entry is made with no status."
     ),
     default_task: flag(
-        'The status of a task added from the palette: the first word carrying it is written.'
+        'The status of a task added from the palette, carried by one word at most: with two carrying it (a finding) the task is added with no status.'
     ),
     obtained: flag(
         "The status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case."
@@ -184,13 +243,13 @@ const leadStatusWord = z.strictObject({
     color: colour.optional().describe('The colour the status is drawn in.'),
     lead_closed: flag('A Position Lead that is closed, counted and listed as done.'),
     lead_declined: flag(
-        'A Position Lead the reader declined, which the Leads view hides until asked; the first such word is what the decline control writes.'
+        'A Position Lead the reader declined, which the Leads view hides until asked, and the word the decline control writes, carried by one word at most: with two carrying it (a finding) the control is drawn disabled.'
     ),
     lead_applied: flag(
-        'A Position Lead the reader applied to, which offers no apply control; the first such word is what the apply control writes.'
+        'A Position Lead the reader applied to, which offers no apply control, and the word the apply control writes, carried by one word at most: with two carrying it (a finding) the control is drawn disabled.'
     ),
     default_lead: flag(
-        'The status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on.'
+        'The status a new Position Lead gets and a reopened one goes back to, and the one status the decline control is offered on, carried by one word at most: with two carrying it (a finding) neither is read for it.'
     )
 });
 
@@ -202,7 +261,10 @@ const tierWord = z.strictObject({
         .optional()
         .describe(
             "true leaves the tier off a Focus lane card's tags; any number of tiers may carry it, or none."
-        )
+        ),
+    default: flag(
+        'The default tier, carried by one tier at most: a new project whose write names no tier gets it, and a board naming several tiers makes New project in it when it is one of them; with none, or two carrying it (a finding), such a write is refused.'
+    )
 });
 
 /** The tiers the audit's research rules leave alone. */
@@ -256,13 +318,13 @@ const categoryRow = z.strictObject({
     color: colour
         .optional()
         .describe(
-            'The colour the category is drawn in; absent, the colour of the first stage its `stages` block takes.'
+            'The colour the category is drawn in; a row without one is a finding and is drawn in no colour.'
         ),
     stages: wordBlock.optional().describe("The block a project's `stage` is held against."),
     forms: wordBlock.optional().describe("The block a project's `form` is held against."),
     record: flag("The row is a record of the work's output."),
     rail: flag(
-        'A board gives the rail the count of its projects in such rows, in the colour of the first.'
+        'A board gives the rail the count of its projects in such rows, drawn in `rail_color`.'
     ),
     archival: flag(
         "The Pillars view's Archival band: such a project is no real work, left out of a venue's use counts, the Orphans card and a pillar's and a domain's members."
@@ -301,7 +363,7 @@ const tickerWord = z.strictObject({
             'The dotted key of the word an overdue line of an entry is named by; absent, the `noun`.'
         ),
     manifests: flag(
-        "The category of the project manifests' deadlines: the first word carrying it is read."
+        "The category of the project manifests' deadlines, carried by one word at most: with two carrying it (a finding) those deadlines have no category."
     )
 });
 
@@ -342,10 +404,16 @@ export const vocabFileShape = z.strictObject({
         .describe(
             "The statuses a Position Lead's `status` takes, each with its colour and the flags that say what it decides."
         ),
+    focus_clusters: z
+        .array(clusterRow)
+        .optional()
+        .describe(
+            'The clusters the Focus board groups its lanes into, in drawing order, each with its heading words and glyph and how it is drawn.'
+        ),
     focus_lanes: laneRows
         .optional()
         .describe(
-            'The lanes of the Focus board, in their order, each with its words, colour and cluster and the stages or the chips that put a project on it.'
+            'The lanes of the Focus board, in their order, each with its words, colour and cluster, the stages or the chips that put a project on it, and what a move onto it writes.'
         ),
     fund_stages: z
         .array(fundStage)
@@ -373,7 +441,7 @@ export const vocabFileShape = z.strictObject({
         .record(z.string(), tierWord)
         .optional()
         .describe(
-            "The kinds of project a manifest's `tier` names, each with its words; the first is the tier of a new project whose form names none."
+            "The kinds of project a manifest's `tier` names, each with its words; the one carrying `default` is the tier of a new project whose write names none."
         ),
     research_audit: researchAudit
         .optional()
@@ -389,6 +457,12 @@ export const vocabFileShape = z.strictObject({
         .optional()
         .describe(
             'The categories a project is filed under on every board: the first row whose blocks it meets.'
+        ),
+    rail_color: text
+        .regex(HEX_COLOUR)
+        .optional()
+        .describe(
+            "The colour a project board's rail count is drawn in, written #rrggbb; a hub's value replaces oculus's."
         ),
     leads_fit: textMap.optional().describe("The colour of a Position Lead's fit chip, by its fit."),
     data_access: textMap

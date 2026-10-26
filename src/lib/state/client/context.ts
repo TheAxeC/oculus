@@ -66,7 +66,8 @@ import { createSchedule } from '../system/machine/schedules/schedule.svelte.ts';
 import { createInbox } from '../feeds/inbox.svelte.ts';
 import { instanceMap, isInstanceOf, stateId, tabsOf } from '../workbench/layout/instance.ts';
 import { fileOfTab } from '../workbench/navigation/pages.ts';
-import { paneAt, type TabMemory } from '../workbench/layout/index.ts';
+import type { TabMemory } from '../workbench/layout/index.ts';
+import { terminalHost } from '../workbench/layout/tabs/terminal-host.ts';
 import { pageOpen } from '../workbench/layout/saved/storage.ts';
 import { createLatexActions } from '../sessions/latex/actions.ts';
 import { createLatex, type LatexStore } from '../sessions/latex/latex.svelte.ts';
@@ -128,7 +129,6 @@ import { createSource, type SaveRules } from '../sessions/source/source.svelte.t
 import { manifestOfProject } from '../sessions/source/write-files.ts';
 import { createTerminals, terminalLabel } from '../sessions/terminals.svelte.ts';
 import { createCommands } from '../sessions/terminal/commands.svelte.ts';
-import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts } from '../sessions/transcript.svelte.ts';
 import { createUi } from '../workbench/ui.svelte.ts';
 import {
@@ -246,38 +246,13 @@ export function createClientState(
     const clock = createClock();
     const changes = withQueries('changes', createChanges(queries, entities));
     const selection = createSelection();
-    // A terminal belongs to exactly one Terminal tab, on whichever page or float it is, and a
-    // hidden page mounts no view, so the terminals store is handed the Terminal tabs of every page
-    // and float and the layout's ways to change them, and keeps the ownership itself: a terminal
-    // shown, moved or ended changes the tabs of any page. A tab it opens is opened on the page it
-    // names; its state carries an identity of its own, so the layout opens it rather than
-    // activating another Terminal tab. The page of a popped-out window closes no tab for an ended
-    // terminal: the main window's page does, once for every tab.
+    // The terminals store is handed the Terminal tabs of every page and float and the layout's ways
+    // to change them (state/workbench/layout/tabs/terminal-host.ts), and keeps which tab owns which
+    // terminal itself. The page of a popped-out window closes no tab for an ended terminal: the
+    // main window's page does, once for every tab.
     const terminals = createTerminals(entities, socket, writes, {
         upkeep: float === null,
-        tabs: () =>
-            layout.hosts().flatMap((host) =>
-                tabsOf(host.workbench.root)
-                    .filter((tab) => tab.view === TERMINAL_VIEW)
-                    .map((tab) => ({
-                        id: tab.id,
-                        page: host.id,
-                        view: tab.view,
-                        state: tab.state
-                    }))
-            ),
-        restate: (id, _page, state) => layout.restateInstance(id, state),
-        activate: (id, page) => layout.activateInstance(id, page),
-        switchPage: (page) => layout.switchPage(page),
-        currentPage: () => layout.currentPage().id,
-        activeTab: (page) => {
-            const active = layout.activeInstance(page);
-            return active?.view === TERMINAL_VIEW ? active.id : null;
-        },
-        open: (page, state, document) => layout.openView(TERMINAL_VIEW, state, page, { document }),
-        close: (id, page) => layout.closeInstance(id, page),
-        instanceState: (id) => ui.instanceState(id),
-        setInstanceState: (id, state) => ui.setInstanceState(id, state),
+        ...terminalHost(layout, ui),
         selected: selection.selected,
         select: selection.select,
         hubRoot: () => selectors.hubRoot(),
@@ -285,14 +260,7 @@ export function createClientState(
             const read = await fs.workspacesNow();
             const own = read.folders.find((one) => one.key === read.primary);
             return own?.dir ?? read.home;
-        },
-        paneTab: (page, path) => {
-            const pane = paneAt(layout.workbench(page).root, path);
-            if (pane === null) return null;
-            const active = pane.tabs.find((tab) => tab.id === pane.active);
-            return active?.view === TERMINAL_VIEW ? active.id : null;
-        },
-        openIn: (page, path, state) => layout.openInPane(TERMINAL_VIEW, state, page, path)
+        }
     });
     // A closed Terminal tab, pane or page, and a page reset that removes a tab, end the running
     // terminals the tab lists; the layout and the close questions ask the ui store, which asks the
@@ -644,6 +612,7 @@ export function createClientState(
     problems.register(commandProblems(commands, servedRoots));
     problems.register(latexProblems(latex));
     problems.register(lintProblems(lint));
+    const registry = createRegistry(layout);
     const railBadges = createRailBadges(
         entities,
         feeds,
@@ -652,7 +621,8 @@ export function createClientState(
         inbox,
         audit,
         problems,
-        selectors
+        selectors,
+        registry
     );
     const debug = withQueries(
         'debug',
@@ -716,7 +686,6 @@ export function createClientState(
     entities.afterReceive(sources.heard);
     writes.onUnwritten(sources.unwritten);
     pageState.onRefused(sources.stateRefused);
-    const registry = createRegistry(layout);
     // A view registered with no catalogue group is one opened for something (a project, a
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.

@@ -57,7 +57,8 @@ function tabs(saving: (methods: Methods) => Promise<unknown> = () => Promise.res
             icons: {},
             codeThemeClasses: [],
             host: { name: 'host', address: '' },
-            findings: []
+            findings: [],
+            from: {}
         }
     });
     const pane = {

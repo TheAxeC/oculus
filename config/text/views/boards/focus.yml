@@ -49,9 +49,12 @@ text:
             glyph_collab: collab
             glyph_conference: conference
             glyph_event: events
+            glyph_followup: followup
             glyph_funding: coin
+            glyph_overdue: overdue
             glyph_paper: paper
             glyph_position: scout
+            glyph_subtask: pin
             glyph_task: tasks
             glyph_teaching: teaching
             grp_attention_glyph: attention

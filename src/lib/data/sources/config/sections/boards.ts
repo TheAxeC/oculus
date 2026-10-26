@@ -4,11 +4,11 @@
 // is no map, a board row that is no map, a field a board does not take, a value its entry of the
 // options catalog refuses (a tier `tiers` does not hold, a role `roles` does not hold, a word or a
 // flag a block's vocabulary does not hold, a list of columns that is no list of records, a column
-// with no cell). For `categories`: a row with no key or a key an earlier row holds, a row naming
-// neither `stages` nor `color`, and a block's word or flag its vocabulary does not hold, read by
-// the same entries of the catalog as a board's blocks. The page reads both itself
-// (data/shapes/boards/) and passes over what it cannot read, so each finding says what is not
-// read. They are worded from the merged catalog.
+// with no cell), and a `label:` or `glyph:` that is absent or names no word of the text catalog.
+// For `categories`: a row with no key or a key an earlier row holds, a row naming no `color`, and a
+// block's word or flag its vocabulary does not hold, read by the same entries of the catalog as a
+// board's blocks. The page reads both itself (data/shapes/boards/) and passes over what it cannot
+// read, so each finding says what is not read. They are worded from the merged catalog.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
@@ -32,6 +32,9 @@ const CATEGORIES = 'categories';
 
 /** The block fields of a category, read by the board entry's fields of the same name. */
 const CATEGORY_BLOCKS = ['stages', 'forms'];
+
+/** The fields of a board naming the text-catalog words its view is named by and draws. */
+const BOARD_WORDS = ['label', 'glyph'];
 
 /** The field of each list of records a record cannot do without; a record lacking it is dropped. */
 const NEEDS: Record<string, string> = { columns: 'cell' };
@@ -131,12 +134,13 @@ function recordFindings(
 }
 
 /**
- * One finding for a `boards` that is not a map, and for each board row that is not a map (the
- * board is not read); for each field of a row the catalog's `boards` entry does not describe, and
- * each value of a field its spec refuses (the field is not read); inside a block or `match`, for
- * each key and value their specs refuse; and inside `columns`, for each record that is not a map
- * or lacks its cell, each field of a record its spec does not describe, and each other field its
- * spec refuses.
+ * One finding for a `boards` that is not a map, and for each board row that is not a map (the board
+ * is not read); for each field of a row the catalog's `boards` entry does not describe, and each
+ * value of a field its spec refuses (the field is not read); inside a block or `match`, for each
+ * key and value their specs refuse; inside `columns`, for each record that is not a map or lacks
+ * its cell, each field of a record its spec does not describe, and each other field its spec
+ * refuses; and for each `label:` and `glyph:` a board does not name or names a key the text catalog
+ * lacks.
  */
 export function boardsFindings(
     config: Record<string, unknown>,
@@ -179,15 +183,42 @@ export function boardsFindings(
                 }
             }
         }
+        wordFindings(board, key, row, note, catalog);
     }
     return found;
 }
 
 /**
- * The findings of `categories`: a list that is no list, a row that is no map, a row with no key
- * or one whose key an earlier row holds (the row is not read), a row naming neither `stages` nor
- * `color` (it has no colour), and inside its `stages` and `forms` blocks each list and word the
- * board entry's fields of the same name refuse.
+ * One finding for each of a board's `label:` and `glyph:` that is absent or empty, and one for each
+ * naming a key the text catalog lacks; a value that is no text is the value check's finding. The
+ * board is then drawn with its key and the glyph of a board naming none.
+ */
+function wordFindings(
+    board: string,
+    key: string,
+    row: Record<string, unknown>,
+    note: Note,
+    catalog: TextCatalog
+): void {
+    for (const field of BOARD_WORDS) {
+        const word = row[field];
+        const at = `${key}.${field}`;
+        if (word === undefined || word === '') {
+            note(at, findingText(catalog, 'findings.config.boards_word_none', board, field));
+        } else if (typeof word === 'string' && !Object.hasOwn(catalog, word)) {
+            note(
+                at,
+                findingText(catalog, 'findings.config.boards_word_unknown', board, field, word)
+            );
+        }
+    }
+}
+
+/**
+ * The findings of `categories`: a list that is no list, a row that is no map, a row with no key or
+ * one whose key an earlier row holds (the row is not read), a row naming no `color` (it is drawn in
+ * no colour), and inside its `stages` and `forms` blocks each list and word the board entry's
+ * fields of the same name refuse.
  */
 export function categoriesFindings(
     config: Record<string, unknown>,
@@ -216,7 +247,7 @@ export function categoriesFindings(
         }
         seen.add(key);
         const fields = isMap(row) ? row : {};
-        if (!Object.hasOwn(fields, 'stages') && !Object.hasOwn(fields, 'color')) {
+        if (!Object.hasOwn(fields, 'color')) {
             note(at, findingText(catalog, 'findings.config.categories_colour', at));
         }
         for (const name of CATEGORY_BLOCKS) {

@@ -126,8 +126,8 @@ export function feedRoute(
 
     const radar = radarAddWrite(body);
     if (radar !== null) {
-        const home = homeOf(into, app);
-        if (home === null) return noHub(into, app);
+        const home = rootedHome(into, radar.root, app, () => homeOf(into, app));
+        if (home instanceof Response) return home;
         const buckets = radarBucketKeys(home.config.merged);
         const outcome = addRadarEntry(home.hub, home.config, radar.fields, buckets);
         if (!outcome.found) return refused(words(text, 'server.write_route.no_radar_file'), 404);

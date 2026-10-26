@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O80
-  brief_check: .scratch/migration/agents/reviews/O80-brief-check.md (a7ff83e77970b8a37, claude-opus-5-5, 281640 tokens, 100 tool uses, 13 min 38 s)
-  base: ee0f4259
-  worktree: .agents/worktrees/migration-O80
-  executor: agent
-  worker: claude:opus
-  session_id: a1c591e9512282600 (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O80-report.md
-  builder_usage: first run of the cases, handed back on case 17: 281008 tokens, 75 tool uses, 16 min 58 s; the build after the cases ruling: 131306 tokens, 1114 tool uses, 150 min 8 s
-  reviewer_report: .scratch/migration/agents/reviews/O80-refuter.md (af6579c090daa182a, claude-opus-5-5, 101917 tokens, 175 tool uses, 35 min 13 s)
-  round: 1
-  landing: not-started
 - step: O83
   brief_check: .scratch/migration/agents/reviews/O83-brief-check.md (af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s)
   base: 4614443b
@@ -46,6 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aba67cb9db035ffee (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O83-report.md
+  builder_usage: 223645 tokens, 210 tool uses, 51 min 17 s
   shared_paths: `src/lib/state/client/shapes/payloads.ts` (O83 lines 52-68, O80 lines 35-40), `src/lib/state/workbench/navigation/status.ts` (O83 lines 179-198, O80 lines 394-430), `docs/apps.md` (O83 line 421, O80 line 452), each with migration step O80; simple, since the hunks are apart and neither changes the other's lines
   round: 0
   landing: not-started
@@ -616,6 +604,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O80 landed). O80 (Focus and the boards from config) landed on main, its booking and four agents in `plan.md`, the landing report `agents/reviews/O80-landing.md`; the review over round 1 closed under its Closed heading (the builder's rewrap programs under the ruling "Unapproved builder scripts", the `focus_clusters` checks fixed at landing); G13 and G124 gain the step's test titles in `agents/guarded.md`; the look on a scratch server on 8797 (cases 12 and 18) put back and stopped. O83's builder reported (`agents/reviews/O83-report.md`, usage under builder_usage). In flight (1 of 6): O83 (built, review next). Next: /refute O83; /spec O79 (its premises re-checked against O80 on main), then O81. Open items: none.
+- 2026-10-26 (O80 round 1 under review). O80's builder finished repair round 1 (report section "# Repair round 1" saved in `agents/reviews/O80-report.md`, usage under builder_usage); the run of /refute over the round started on reviewer a3e9023399798e534 (ordo-high, served claude-opus-5-5). In flight (2 of 6): O80 (round 1 under review), O83 (building). Next: the round's refutation, its findings fixed at landing or raised to Axel, /land O80. Open items: none.
 - 2026-10-26 (O83 launched). O83's brief `agents/briefs/O83.md` rewritten under rulings 430, 432 and 433, the brief check's findings closed under its Closed heading; preparation commit 4614443b is the base; worktree `.agents/worktrees/migration-O83` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O83-base` with `unused-exports.txt` (341 lines); builder aba67cb9db035ffee launched on ordo-high, served claude-opus-5-5. Shared paths with O80, simple to merge: `payloads.ts`, `status.ts`, `docs/apps.md`. In flight (2 of 6): O80 (repair round 1), O83 (building). Next: each builder's report, /refute, /land; then /spec O79 after O80's landing, and O81. Open items: none.
 - 2026-10-26 (O83 at /spec; Z1028). /spec O83 run again; its preparing entry written with the brief check already run; open item 433 (how the payload says the queue is live) closed under self-rule as Z1028 (a). In flight (2 of 6): O80 (repair round 1), O83 (preparing). Open items: none.
 - 2026-10-26 (432 ruled). Axel ruled 432 Part 1 (a) and Part 2 (a), booked in `plan.md` Rulings as the bullet of 432, which replaces 431 (Z1027, removed from `choices.md`); O83's line is tagged (ruling 430) (ruling 432). In flight (1 of 6): O80 (repair round 1). Next: /spec O83; O80's round report, its review, /land O80; then /spec O79 and O81. Open items: none.

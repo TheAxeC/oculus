@@ -4,7 +4,8 @@
     // and is modal as ui/controls/Confirm.svelte is: focus on the first field, Enter answers yes,
     // Escape cancels, Tab stays inside, and a press on the ground behind it cancels. The fields are
     // TextInput.svelte beside it, so the prompt holds only what has been typed until it answers,
-    // and nothing once it is gone.
+    // and nothing once it is gone. A pick the request marks required keeps the yes off, and Enter
+    // answering nothing, while it holds its empty choice.
 
     import Modal from '../frame/Modal.svelte';
     import Select from './choice/Select.svelte';
@@ -25,8 +26,14 @@
     // svelte-ignore state_referenced_locally
     let values = $state(request.fields.map((field) => field.value));
 
+    /** Whether a pick the prompt requires holds the empty choice, which keeps the yes off. */
+    const unanswered = $derived(
+        request.fields.some((field, at) => field.required === true && values[at] === '')
+    );
+
     function answered(event: SubmitEvent): void {
         event.preventDefault();
+        if (unanswered) return;
         request.act([...values]);
     }
 </script>
@@ -46,6 +53,7 @@
                             <Select
                                 value={values[at]}
                                 label={field.label}
+                                empty={field.empty}
                                 choices={field.choices}
                                 onchange={(next: string) => (values[at] = next)}
                             />
@@ -61,7 +69,9 @@
                 {/each}
                 <div class="row">
                     <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
-                    <button type="submit" class="yes">{request.verb}</button>
+                    <button type="submit" class="yes" disabled={unanswered}>
+                        {request.verb}
+                    </button>
                 </div>
             </form>
         </div>
@@ -133,6 +143,12 @@
     .row .yes {
         border-color: var(--accent);
         color: var(--accent-txt, var(--accent));
+    }
+
+    .row .yes:disabled {
+        border-color: var(--line);
+        color: var(--muted-txt, var(--muted));
+        cursor: default;
     }
 
     .row button:focus-visible {

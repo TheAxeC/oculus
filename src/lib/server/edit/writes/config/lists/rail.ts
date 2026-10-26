@@ -31,7 +31,7 @@ export type RailOutcome = ConfigKeyOutcome | { error: 'invalid' };
 
 /**
  * One entry as the file holds it: its chord and group glyph only when it has them, and its
- * `unplaced_collections` only when it carries it.
+ * `unplaced_collections` and `project_boards` only when it carries each.
  */
 function written(entry: RailEntry): Record<string, string | boolean> {
     return {
@@ -40,7 +40,8 @@ function written(entry: RailEntry): Record<string, string | boolean> {
         page: entry.page,
         ...(entry.chord === '' ? {} : { chord: entry.chord }),
         ...(entry.group_glyph === '' ? {} : { group_glyph: entry.group_glyph }),
-        ...(entry.unplaced_collections ? { unplaced_collections: true } : {})
+        ...(entry.unplaced_collections ? { unplaced_collections: true } : {}),
+        ...(entry.project_boards ? { project_boards: true } : {})
     };
 }
 

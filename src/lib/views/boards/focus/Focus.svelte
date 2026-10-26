@@ -12,10 +12,15 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The landing board, one page, top to bottom: the career banner, the command
-    // center of everything with a date, the tasks section of the open work that carries none, the
-    // quick add, the box of what is out for an answer, the band of durable work that is not a
-    // project, the lanes each project's stage and chips put it on, and the Idea lane.
+    // Layer 3, view. The landing board, one page of sections drawn top to bottom in the order
+    // `focus.sections` of config/defaults/behavior.yml lists them (`drawnSections`), each of the
+    // board's own words for the sections it knows how to draw: `career` the career banner,
+    // `command_center` the command center of everything with a date, `tasks` the tasks section of
+    // the open work that carries none, `quick_add` the quick add, `awaiting` the box of what is out
+    // for an answer, `band` the band of durable work that is not a project, and `lanes` the lanes
+    // each project's stage and chips put it on, with the message of a board with no project. A
+    // section the list leaves out is not drawn. The said line is drawn after the quick add, and at
+    // the top of the board when the list leaves the quick add out.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
     // state/boards/focus.ts, state/boards/focus/filter.ts, state/feeds/feeds.ts and
@@ -53,6 +58,7 @@
     import { recordState } from '$lib/state/shared/page/records';
     import { hubList, keyOf } from '$lib/state/shared/page/hubs';
     import {
+        drawnSections,
         foldOpen,
         foldToggled,
         labelOf,
@@ -100,6 +106,8 @@
     const snapshot = $derived(portfolio());
     const projects = $derived(portfolioProjects(snapshot));
     const board = $derived(lanes(vocabOf()));
+    /** The sections the board draws, in drawing order, as `focus.sections` lists them. */
+    const sections = $derived(drawnSections(config));
 
     /** The tab's folded sections and its filter, which its instance state keeps. */
     const folds = $derived(instanceState(instance.id));
@@ -225,81 +233,91 @@
         </Toolbar>
     {/snippet}
     <div class="focus" data-instance={instance.id}>
-        <CareerPanel
-            instance={instance.id}
-            {now}
-            open={foldOpen(folds, 'career')}
-            ontoggle={() => fold('career')}
-            onsaid={(text: string) => (said = text)}
-        />
-
-        <CommandCenter
-            {week}
-            snapshot={page?.snapshot ?? null}
-            hidden={page?.hidden.command ?? 0}
-            {now}
-            open={foldOpen(folds, 'command')}
-            ontoggle={() => fold('command')}
-            onproject={openProject}
-            onsaid={(text: string) => (said = text)}
-        />
-
-        <Tasks
-            {week}
-            hidden={page?.hidden.tasks ?? 0}
-            {now}
-            open={foldOpen(folds, 'tasks')}
-            ontoggle={() => fold('tasks')}
-            onproject={openProject}
-            onsaid={(text: string) => (said = text)}
-        />
-
-        <QuickAdd projects={live} onsaid={(text: string) => (said = text)} />
-
-        {#if said !== ''}
-            <Surface>
-                <p class="said">{said}</p>
-            </Surface>
+        {#snippet saidLine()}
+            {#if said !== ''}
+                <Surface>
+                    <p class="said">{said}</p>
+                </Surface>
+            {/if}
+        {/snippet}
+        {#if !sections.includes('quick_add')}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render saidLine()}
         {/if}
-
-        {#if awaiting.length > 0 || (page?.hidden.awaiting ?? 0) > 0}
-            <Surface fitted>
-                <section class="waitroll">
-                    <p class="wait-head">
-                        {t('focus.awaiting_response')}
-                        {#if (page?.hidden.awaiting ?? 0) > 0}
-                            <span class="wait-hidden">
-                                {t('focus.hidden', page?.hidden.awaiting ?? 0)}
-                            </span>
-                        {/if}
-                    </p>
-                    {#each awaiting as row (row.key)}
-                        <span class="wait-lbl">{row.label}</span>
-                        <span class="wait-names" class:blocked={row.key === 'blocked'}
-                            >{row.names.join(', ')}</span
-                        >
-                    {/each}
-                </section>
-            </Surface>
-        {/if}
-
-        {#if page !== null}
-            <Band {now} cards={page.sections.band} hidden={page.hidden.band} />
-        {/if}
-
-        {#if board.length === 0 || projects.length === 0}
-            <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
-        {/if}
-
-        <Lanes
-            {now}
-            {cursor}
-            items={page?.sections.lanes ?? {}}
-            hidden={page?.hidden.lanes ?? {}}
-            {known}
-            onproject={openProject}
-            onsaid={(text: string) => (said = text)}
-        />
+        {#each sections as section (section)}
+            {#if section === 'career'}
+                <CareerPanel
+                    instance={instance.id}
+                    {now}
+                    open={foldOpen(folds, 'career')}
+                    ontoggle={() => fold('career')}
+                    onsaid={(text: string) => (said = text)}
+                />
+            {:else if section === 'command_center'}
+                <CommandCenter
+                    {week}
+                    snapshot={page?.snapshot ?? null}
+                    hidden={page?.hidden.command ?? 0}
+                    {now}
+                    open={foldOpen(folds, 'command')}
+                    ontoggle={() => fold('command')}
+                    onproject={openProject}
+                    onsaid={(text: string) => (said = text)}
+                />
+            {:else if section === 'tasks'}
+                <Tasks
+                    {week}
+                    hidden={page?.hidden.tasks ?? 0}
+                    {now}
+                    open={foldOpen(folds, 'tasks')}
+                    ontoggle={() => fold('tasks')}
+                    onproject={openProject}
+                    onsaid={(text: string) => (said = text)}
+                />
+            {:else if section === 'quick_add'}
+                <QuickAdd projects={live} onsaid={(text: string) => (said = text)} />
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render saidLine()}
+            {:else if section === 'awaiting'}
+                {#if awaiting.length > 0 || (page?.hidden.awaiting ?? 0) > 0}
+                    <Surface fitted>
+                        <section class="waitroll">
+                            <p class="wait-head">
+                                {t('focus.awaiting_response')}
+                                {#if (page?.hidden.awaiting ?? 0) > 0}
+                                    <span class="wait-hidden">
+                                        {t('focus.hidden', page?.hidden.awaiting ?? 0)}
+                                    </span>
+                                {/if}
+                            </p>
+                            {#each awaiting as row (row.key)}
+                                <span class="wait-lbl">{row.label}</span>
+                                <span class="wait-names" class:blocked={row.key === 'blocked'}
+                                    >{row.names.join(', ')}</span
+                                >
+                            {/each}
+                        </section>
+                    </Surface>
+                {/if}
+            {:else if section === 'band'}
+                {#if page !== null}
+                    <Band {now} cards={page.sections.band} hidden={page.hidden.band} />
+                {/if}
+            {:else if section === 'lanes'}
+                {#if board.length === 0 || projects.length === 0}
+                    <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
+                {/if}
+                <Lanes
+                    {now}
+                    {cursor}
+                    items={page?.sections.lanes ?? {}}
+                    hidden={page?.hidden.lanes ?? {}}
+                    {known}
+                    onproject={openProject}
+                    onsaid={(text: string) => (said = text)}
+                />
+            {/if}
+        {/each}
     </div>
 </Pane>
 

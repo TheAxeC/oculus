@@ -101,7 +101,8 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(row(stage.config, 'categories', 'idea')).toEqual({
                 key: 'idea',
                 label: 'idea',
-                stages: { words: ['scoping'] }
+                stages: { words: ['scoping'] },
+                color: '#7c5cff'
             });
             expect(stage.from.categories).toBe('catalogs/vocab.yml');
             const lane = withHub('stages: { exploring: null }\n');
@@ -122,7 +123,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(boards.projects.tier).toEqual([]);
             expect(boards.software.tier).toBe('software');
             const own = withHub(
-                'stages: { nascent: null }\ncategories: [ { key: idea, label: idea, stages: { words: [nascent] } } ]\n'
+                'stages: { nascent: null }\ncategories: [ { key: idea, label: idea, color: "#7c5cff", stages: { words: [nascent] } } ]\n'
             );
             expect(everything(own)).toEqual([
                 `${FILE} | categories[0].stages.words | categories[0].stages.words names nascent, which the hub's words no longer hold; it is not read`
@@ -130,6 +131,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(row(own.config, 'categories', 'idea')).toEqual({
                 key: 'idea',
                 label: 'idea',
+                color: '#7c5cff',
                 stages: { words: [] }
             });
         }
@@ -177,7 +179,8 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(shipped.find((one) => one.key === 'idea')).toEqual({
                 key: 'idea',
                 label: 'idea',
-                stages: { words: ['scoping'] }
+                stages: { words: ['scoping'] },
+                color: '#7c5cff'
             });
         }
     );
@@ -203,6 +206,34 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.venue_categories).toEqual(['journal']);
         expect(rowKeys(read.config, 'venue_tiers')).toEqual(['core']);
         expect(rowKeys(read.config, 'radar_buckets')).toEqual(['idea']);
+    });
+
+    it("replaces oculus's Focus clusters whole", () => {
+        const read = withHub(
+            [
+                'focus_clusters:',
+                '  - { key: now, label: focus.cluster_now, muted: false, layout: columns }',
+                '  - { key: later, label: focus.cluster_parked, muted: true, layout: full_width }',
+                ''
+            ].join('\n')
+        );
+        expect(said(read)).toEqual([]);
+        expect(read.config.focus_clusters).toEqual([
+            { key: 'now', label: 'focus.cluster_now', muted: false, layout: 'columns' },
+            { key: 'later', label: 'focus.cluster_parked', muted: true, layout: 'full_width' }
+        ]);
+        expect(read.from.focus_clusters).toBe(HUB_FILE);
+    });
+
+    it("case 14: takes the hub's rail colour, and words one that is no colour, oculus's standing", () => {
+        const read = withHub('rail_color: "#2563eb"\n');
+        expect(said(read)).toEqual([]);
+        expect(read.config.rail_color).toBe('#2563eb');
+        const wrong = withHub('rail_color: 3\n');
+        expect(said(wrong)).toEqual([
+            `${FILE} | rail_color | rail_color must be a colour written #rrggbb; oculus's value stands`
+        ]);
+        expect(wrong.config.rail_color).toBe(OCULUS.rail_color);
     });
 
     it("lays the categories over oculus's by key: one replaced in its place, one taken out, one added last", () => {

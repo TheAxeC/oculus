@@ -333,7 +333,7 @@ export type WritesStore = {
     /** Set the changed sections of the career file, a section cleared by null. */
     writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /**
-     * Add one entry to a collection of the hub `root` names, the primary (else the first) when it
+     * Add one entry to a collection of the hub `root` names, the primary (else the one hub) when it
      * is absent; the answer's `id` is the new entry's id in the portfolio.
      */
     newEntry: (
@@ -355,11 +355,16 @@ export type WritesStore = {
     ) => Promise<WriteAnswer>;
     /** Delete one feed entry, named by its internal id. */
     deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
-    addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    /**
+     * Add one paper to the Lit Watch radar of the hub `root` names, the primary (else the one hub)
+     * when it is absent.
+     */
+    addRadarEntry: (fields: Record<string, unknown>, root?: string) => Promise<WriteAnswer>;
     /**
      * Save one paper to the Literature collection of the hub `root` names, else of the primary when
-     * it names the collection, else of the first hub that does; the answer's `id` is the paper's id
-     * in the portfolio, the key the server made under the name of the hub it was saved in.
+     * it names the collection, else of the one other hub that does; the answer's `id` is the
+     * paper's id in the portfolio, the key the server made under the name of the hub it was saved
+     * in.
      */
     saveLiterature: (
         source: 'search' | 'lit-watch' | 'hand',

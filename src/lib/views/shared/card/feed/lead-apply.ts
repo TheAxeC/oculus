@@ -1,17 +1,17 @@
 // Layer 3, view helper of views/shared/card/feed/LeadCard.svelte. A lead's `applied` hand-off,
 // which the Leads view and the lead's own page both offer through the card: the Applications file
-// of a hub, the file of its collection flagged `lead_applications`, opened beside the view the
-// card is drawn in, with an entry filled from the lead
-// (state/feeds/lead-application.ts) placed in its unsaved text, and then the lead set to the status
-// carrying `lead_applied` in `lead_statuses` of the lead's own hub. The entry's status is the word
-// carrying `default_application` in `statuses` of the hub that takes it. The hubs it offers are
-// those that could take a new entry of Applications (`hubsTaking` of state/shared/page/hubs.ts):
-// with more than one, the card asks which by a menu from the control, the primary first; with one,
-// it opens that hub's file, primary or not. The file is the hub's own (`Collection.file` under that
-// hub's root, the primary's as the configuration names it), and the entry is placed by that hub's
-// schema. A lead is named as the feed write names it, by the title as the file holds it. A refused
-// placement writes nothing to the lead, and a refused write of the lead leaves the entry in the
-// text.
+// of a hub, the file of its collection flagged `lead_applications`, opened beside the view the card
+// is drawn in, with an entry filled from the lead (state/feeds/lead-application.ts) placed in its
+// unsaved text, and then the lead set to the one status carrying `lead_applied` in `lead_statuses`
+// of the lead's own hub. The entry's status is the one word carrying `default_application` in
+// `statuses` of the hub that takes it, and none when no word or more than one carries it. The hubs
+// it offers are those that could take a new entry of Applications (`hubsTaking` of
+// state/shared/page/hubs.ts): with more than one, the card asks which by a menu from the control,
+// the primary first; with one, it opens that hub's file, primary or not. The file is the hub's own
+// (`Collection.file` under that hub's root, the primary's as the configuration names it), and the
+// entry is placed by that hub's schema. A lead is named as the feed write names it, by the title as
+// the file holds it. A refused placement writes nothing to the lead, and a refused write of the
+// lead leaves the entry in the text.
 
 import type { ClientState } from '$lib/state/client/context';
 import { appliedWord, type LeadEntry } from '$lib/state/feeds/leads';

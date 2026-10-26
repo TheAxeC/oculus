@@ -10,9 +10,15 @@ import {
     unplacedGroup
 } from '../../../../src/lib/data/sources/config.ts';
 import { collectionViews } from '../../../../src/lib/data/snapshot/normalise.ts';
+import { boardsSource } from '../../../../src/lib/state/boards/board/presets.ts';
 import { registrationGlyph } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
-import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
+import {
+    pageBoards,
+    registerAll,
+    registerBoards,
+    registerCollections
+} from '../../../../src/routes/views.ts';
 import { createClientState } from '../../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
@@ -21,7 +27,10 @@ const drawn = new Set(Object.keys(config.glyphs ?? {}));
 
 const client = createClientState();
 registerAll(client.registry);
-registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
+const collections = collectionViews(config, unplacedGroup(config));
+registerCollections(client.registry, collections);
+const source = boardsSource(config, () => 'layout.yml');
+registerBoards(client.registry, pageBoards(source, textCatalog(config), collections));
 const views = client.registry.views().map((view) => [view.id, view] as const);
 
 describe('the glyph of every registered view', () => {

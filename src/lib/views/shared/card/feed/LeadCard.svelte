@@ -5,17 +5,19 @@
     // page opener and its title is words. Feed rules stay in state and server modules.
     //
     // The `applied` control opens the Applications file of a hub beside the view the card is drawn
-    // in, with an entry filled from the lead, and the lead is set to the status carrying
+    // in, with an entry filled from the lead, and the lead is set to the one status carrying
     // `lead_applied` once that entry is placed (views/shared/card/feed/lead-apply.ts). With more
     // than one hub holding Applications, the control is a menu of those hubs, the primary first,
     // and the hub picked takes the entry; with one, a press opens that hub's file. While the entry
     // is being placed the control waits, and a second press or pick does nothing. The controls that
     // write the lead are disabled, `blocked` as their title, while the leads file has unsaved text
     // in a source tab. The `decline` control is a status write like reopen: it sets the lead's
-    // status to the word carrying `lead_declined` in the hub's file, so the change log records it
-    // and reopen puts the word carrying `default_lead` back. It is offered on an open lead alone,
-    // so a decline never writes over an outcome. Each flag is a word's of `statuses`, and the fit's
-    // colour a word of `leads_fit` and `palette`, in the words of the lead's own hub.
+    // status to the one word carrying `lead_declined` in the hub's file, so the change log records
+    // it and reopen puts the one word carrying `default_lead` back. It is offered on an open lead
+    // alone, so a decline never writes over an outcome. A control whose flag no word of the hub's
+    // `lead_statuses` carries, or two or more do, is drawn disabled with a title saying so, since
+    // it has no word to write. Each flag is a word's of `statuses`, and the fit's colour a word of
+    // `leads_fit` and `palette`, in the words of the lead's own hub.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -26,6 +28,7 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
+        appliedWord,
         declinedWord,
         fitKey,
         fitTone,
@@ -39,6 +42,7 @@
     import { posting } from './posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
+    import { chosenHub } from '$lib/state/shared/page/hubs';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -98,9 +102,28 @@
         expired ? (isClosed(vocab, status) ? status : t('leads.expired')) : ''
     );
 
+    /**
+     * The status each control writes, in the lead's own hub's words: the one word carrying its
+     * flag, the empty text when no word or more than one does, which draws the control disabled.
+     */
+    const writes = $derived({
+        applied: appliedWord(vocab),
+        declined: declinedWord(vocab),
+        open: openWord(vocab)
+    });
+
     /** A control's own words, or the words saying why it is disabled. */
     function why(own: string): string {
         return blocked === '' ? own : blocked;
+    }
+
+    /**
+     * The words of a control that writes `word`: why it is disabled, `none` when no one word
+     * carries its flag and the blocking words while the leads file is blocked, and its own words
+     * otherwise.
+     */
+    function whyWriting(own: string, word: string, none: string): string {
+        return blocked === '' && word === '' ? none : why(own);
     }
 
     function say(answer: WriteAnswer): void {
@@ -163,39 +186,55 @@
                     {#if !isApplied(vocab, status) && hubs.length > 1}
                         <Menu
                             label={t('leads.action.applied')}
-                            title={why(t('leads.action.applied_hub_tip'))}
+                            title={whyWriting(
+                                t('leads.action.applied_hub_tip'),
+                                writes.applied,
+                                t('leads.action.applied_none')
+                            )}
                             small
                             placement="down"
-                            waiting={blocked !== '' || applying}
+                            waiting={blocked !== '' || applying || writes.applied === ''}
                             items={hubs.map((hub) => ({ id: hub, label: hub }))}
                             onpick={(hub: string) => void apply(hub)}
                         />
                     {:else if !isApplied(vocab, status)}
                         <ToolButton
                             label={t('leads.action.applied')}
-                            title={why(t('leads.action.applied_tip'))}
+                            title={whyWriting(
+                                t('leads.action.applied_tip'),
+                                writes.applied,
+                                t('leads.action.applied_none')
+                            )}
                             small
-                            disabled={blocked !== ''}
+                            disabled={blocked !== '' || writes.applied === ''}
                             waiting={applying}
-                            onclick={() => apply(hubs.at(0) ?? '')}
+                            onclick={() => apply(chosenHub(hubs, client.fs.primary()) ?? '')}
                         />
                     {/if}
                     {#if isOpen(vocab, status)}
                         <ToolButton
                             label={t('leads.action.decline')}
-                            title={why(t('leads.action.decline_tip'))}
+                            title={whyWriting(
+                                t('leads.action.decline_tip'),
+                                writes.declined,
+                                t('leads.action.decline_none')
+                            )}
                             small
-                            disabled={blocked !== ''}
-                            onclick={() => mark(declinedWord(vocab))}
+                            disabled={blocked !== '' || writes.declined === ''}
+                            onclick={() => mark(writes.declined)}
                         />
                     {/if}
                     {#if isClosed(vocab, status)}
                         <ToolButton
                             label={t('leads.action.reopen')}
-                            title={why(t('leads.action.reopen_tip'))}
+                            title={whyWriting(
+                                t('leads.action.reopen_tip'),
+                                writes.open,
+                                t('leads.action.reopen_none')
+                            )}
                             small
-                            disabled={blocked !== ''}
-                            onclick={() => mark(openWord(vocab))}
+                            disabled={blocked !== '' || writes.open === ''}
+                            onclick={() => mark(writes.open)}
                         />
                     {/if}
                     <ToolButton

@@ -14,11 +14,30 @@ import { categoriesOf, categoryOf } from '../../../../src/lib/data/shapes/boards
 const SHIPPED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(SHIPPED);
 
+/** The words a board's view is named by and draws, which every board names. */
+const WORDS = { label: 'views.projects', glyph: 'views.projects_glyph' };
+
 /** The findings over the shipped config with `boards` replaced, each as its key and sentence. */
-function said(boards: unknown): string[] {
+function saidOf(boards: unknown): string[] {
     return boardsFindings({ ...SHIPPED, boards }, () => 'layout.yml', CATALOG).map(
         (one) => `${one.key}: ${one.message}`
     );
+}
+
+/**
+ * The findings of `saidOf` with every board that is a map given WORDS first, so a row shows the
+ * findings of its own fields alone.
+ */
+function said(boards: unknown): string[] {
+    if (boards === null || typeof boards !== 'object' || Array.isArray(boards)) {
+        return saidOf(boards);
+    }
+    const rows = Object.entries(boards as Record<string, unknown>);
+    const named = rows.map(([key, row]): [string, unknown] => [
+        key,
+        row !== null && typeof row === 'object' && !Array.isArray(row) ? { ...WORDS, ...row } : row
+    ]);
+    return saidOf(Object.fromEntries(named));
 }
 
 describe('boardsFindings', () => {
@@ -126,6 +145,37 @@ describe('boardsFindings', () => {
     ])('words the boards %j', (boards, expected) => {
         expect(said(boards)).toEqual(expected);
     });
+
+    it.each([
+        [
+            'case 3: a board naming no label',
+            { theses: { tier: 'research', glyph: 'views.projects_glyph' } },
+            [
+                'boards.theses.label: the board theses names no label; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names'
+            ]
+        ],
+        [
+            'a board naming no glyph',
+            { theses: { tier: 'research', label: 'views.projects' } },
+            [
+                'boards.theses.glyph: the board theses names no glyph; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names'
+            ]
+        ],
+        [
+            'a board naming words the catalog lacks',
+            { theses: { tier: 'research', label: 'views.nosuch', glyph: 'views.nosuch_glyph' } },
+            [
+                'boards.theses.label: the label of the board theses names views.nosuch, which the text catalog lacks; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names',
+                'boards.theses.glyph: the glyph of the board theses names views.nosuch_glyph, which the text catalog lacks; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names'
+            ]
+        ]
+    ])('words %s', (_, boards, expected) => {
+        expect(saidOf(boards)).toEqual(expected);
+    });
+
+    it('gives no finding for a board keyed as a view id, which the page reports', () => {
+        expect(saidOf({ focus: { ...WORDS, tier: 'research' } })).toEqual([]);
+    });
 });
 
 /** The shipped `categories` with rows added after them. */
@@ -146,7 +196,12 @@ describe('categoriesFindings', () => {
     });
 
     it('reads a row added after dead-ends with no finding, the first row still holding a project', () => {
-        const config = withRows({ key: 'x', label: 'x', stages: { words: ['building'] } });
+        const config = withRows({
+            key: 'x',
+            label: 'x',
+            color: '#16a34a',
+            stages: { words: ['building'] }
+        });
         expect(categoriesSaid(config)).toEqual([]);
         expect(categoryOf({ stage: 'building' }, categoriesOf(config), config)?.key).toBe(
             'in-flight'
@@ -156,12 +211,14 @@ describe('categoriesFindings', () => {
     it.each([
         [
             [{ key: 'y', label: 'y', forms: { words: ['poster'] } }],
-            [
-                'categories[7]: categories[7] names neither stages nor color, so it is drawn in no colour'
-            ]
+            ['categories[7]: categories[7] names no color, so it is drawn in no colour']
         ],
         [
-            [{ key: 'y', stages: { words: ['nonsense'] } }],
+            [{ key: 'y', label: 'y', stages: { words: ['submitted'] } }],
+            ['categories[7]: categories[7] names no color, so it is drawn in no colour']
+        ],
+        [
+            [{ key: 'y', color: '#9ca3af', stages: { words: ['nonsense'] } }],
             [
                 'categories[7].stages.words: categories[7].stages.words must be one of the items of the list project_stages; it is not read'
             ]

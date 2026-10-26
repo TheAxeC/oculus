@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    boardsGroup,
     railFindings,
     readRail,
     unplacedGroup
@@ -24,7 +25,7 @@ const ROWS = [
     { label: 'A', glyph: 'g', page: 'a' },
     { label: 'A2', glyph: 'g', page: 'a' },
     { label: 'B', glyph: 'nope', page: 'b' },
-    { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true }
+    { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true, project_boards: true }
 ];
 
 describe('railFindings', () => {
@@ -64,7 +65,10 @@ describe('railFindings', () => {
             { label: 'E', glyph: 'g', page: 'e', chord: '' }
         ];
         const config = {
-            rail: [...rows.slice(0, 4), { ...rows[4], unplaced_collections: true }],
+            rail: [
+                ...rows.slice(0, 4),
+                { ...rows[4], unplaced_collections: true, project_boards: true }
+            ],
             arrangements: { a: 1, b: 1, c: 1, d: 1, e: 1 }
         };
         const chord = (page: string) =>
@@ -90,7 +94,7 @@ describe('railFindings', () => {
 
     it('words a rail with no entry flagged unplaced_collections, and reads no group from it', () => {
         const rows = [
-            { label: 'A', glyph: 'g', page: 'a' },
+            { label: 'A', glyph: 'g', page: 'a', project_boards: true },
             { label: 'B', glyph: 'g', page: 'b', unplaced_collections: false }
         ];
         const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
@@ -106,7 +110,7 @@ describe('railFindings', () => {
     it('words a rail with two entries flagged, and reads the first', () => {
         const rows = [
             { label: 'A', glyph: 'g', page: 'a', unplaced_collections: true },
-            { label: 'B', glyph: 'g', page: 'b' },
+            { label: 'B', glyph: 'g', page: 'b', project_boards: true },
             { label: 'C', glyph: 'g', page: 'c', unplaced_collections: true }
         ];
         const config = { rail: rows, arrangements: { a: 1, b: 1, c: 1 }, glyphs: { g: 'x' } };
@@ -122,7 +126,7 @@ describe('railFindings', () => {
     it('words a flag that is not true or false, and keeps the button without it', () => {
         const rows = [
             { label: 'A', glyph: 'g', page: 'a', unplaced_collections: 'yes' },
-            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true }
+            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true, project_boards: true }
         ];
         const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
         expect(find(config)).toStrictEqual([
@@ -138,5 +142,56 @@ describe('railFindings', () => {
         const own = loadConfig(engineDir()).config;
         expect(find(own)).toStrictEqual([]);
         expect(unplacedGroup(own)).toBe('registries');
+    });
+
+    it("case 4: reads oculus's rail as one entry carrying project_boards, Projects", () => {
+        expect(boardsGroup(loadConfig(engineDir()).config)).toBe('projects');
+    });
+
+    it('case 4: words a rail with no entry carrying project_boards, and reads no group from it', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', unplaced_collections: true },
+            { label: 'B', glyph: 'g', page: 'b', project_boards: false }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail',
+                'no rail button carries project_boards; the project boards are in no group of the view catalogue'
+            )
+        ]);
+        expect(boardsGroup(config)).toBe(null);
+    });
+
+    it('case 4: words a rail with two entries carrying project_boards, and reads the first', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', project_boards: true },
+            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true },
+            { label: 'C', glyph: 'g', page: 'c', project_boards: true }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1, c: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail',
+                'the rail button for c carries project_boards, as the one for a does; the project boards go in the group of a'
+            )
+        ]);
+        expect(boardsGroup(config)).toBe('a');
+    });
+
+    it('words a project_boards that is not true or false, and keeps the button without it', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', project_boards: 'yes' },
+            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true, project_boards: true }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail[0]',
+                'the rail button for a has a project_boards that is not true or false; its group does not take the project boards'
+            )
+        ]);
+        expect(boardsGroup(config)).toBe('b');
+        expect(readRail(rows, ['a', 'b']).entries.map((one) => one.page)).toEqual(['a', 'b']);
     });
 });

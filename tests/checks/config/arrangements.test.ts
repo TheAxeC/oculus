@@ -6,11 +6,22 @@
 // `pinned:` of another value, which makes the arrangement not add up.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, unplacedGroup } from '../../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    loadConfig,
+    textCatalog,
+    unplacedGroup
+} from '../../../src/lib/data/sources/config.ts';
 import { collectionViews } from '../../../src/lib/data/snapshot/normalise.ts';
+import { boardsSource } from '../../../src/lib/state/boards/board/presets.ts';
 import { parseArrangement } from '../../../src/lib/state/workbench/navigation/arrangement.ts';
 import { tabsOf } from '../../../src/lib/state/workbench/layout/index.ts';
-import { registerAll, registerCollections } from '../../../src/routes/views.ts';
+import {
+    pageBoards,
+    registerAll,
+    registerBoards,
+    registerCollections
+} from '../../../src/routes/views.ts';
 import { createClientState } from '../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
@@ -26,7 +37,10 @@ describe('the arrangements of config/defaults/layout.yml', () => {
     it.each(pages)('the %s page parses and names only views the catalogue knows', (_page, node) => {
         const client = createClientState();
         registerAll(client.registry);
-        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
+        const collections = collectionViews(config, unplacedGroup(config));
+        registerCollections(client.registry, collections);
+        const source = boardsSource(config, () => 'layout.yml');
+        registerBoards(client.registry, pageBoards(source, textCatalog(config), collections));
         const known = new Set(client.registry.views().map((view) => view.id));
         const built = parseArrangement(node);
         expect(built).not.toBeNull();

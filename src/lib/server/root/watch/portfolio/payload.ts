@@ -1,7 +1,7 @@
-// Layer 2, server. What one rebuild of the portfolio watcher publishes on the `config` channel:
-// the primary's merged config, the vocabulary of every hub of the workspace, the text catalog in
-// the display language the config was read in, the icon drawings, the code theme classes, the
-// machine and the findings.
+// Layer 2, server. What one rebuild of the portfolio watcher publishes on the `config` channel: the
+// primary's merged config, the vocabulary of every hub of the workspace, the text catalog in the
+// display language the config was read in, the icon drawings, the code theme classes, the machine,
+// the findings and the file each top-level key was read from.
 //
 // The vocabulary is each hub's own: the domains and theme words of its registry files, and the
 // words of config/catalogs/vocab.yml and `manifest_fields` under its own settings, the primary's
@@ -33,6 +33,7 @@ import { allHubs } from '../../../files/roots.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 import { workspaceFindings } from '../../../files/workspace/words.ts';
 import { readerFindings } from '../../process/context/findings.ts';
+import { keyFiles } from '../../config-seed.ts';
 import type { WatchPaths } from './portfolio.ts';
 
 /** One parse of the config folder. */
@@ -83,6 +84,7 @@ export function configPayload(
         icons: parts.icons,
         codeThemeClasses: vscodeRuleIds(paths.engine),
         host: paths.host,
+        from: keyFiles({ engine: paths.engine, hub: primaryDir, from }),
         findings: [
             ...findings,
             ...others.flatMap((one) => one.findings),

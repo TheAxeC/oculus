@@ -62,6 +62,9 @@ text:
             unplaced: the rail button for {0} has an unplaced_collections that is not true or false; its group does not take the collection views no entry places
             unplaced_none: no rail button carries unplaced_collections; a collection view whose entry names no group is in no group of the view catalogue
             unplaced_twice: the rail button for {0} carries unplaced_collections, as the one for {1} does; the collection views no entry places go in the group of {1}
+            boards: the rail button for {0} has a project_boards that is not true or false; its group does not take the project boards
+            boards_none: no rail button carries project_boards; the project boards are in no group of the view catalogue
+            boards_twice: the rail button for {0} carries project_boards, as the one for {1} does; the project boards go in the group of {1}
         appearance:
             glyph: the theme {0} names no glyph; it is offered with its words alone
             glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
@@ -183,6 +186,18 @@ text:
             setting_field: '{0} must be {1}; the field is not read'
             focus_block: 'focus must be a map; none of its keys is read'
             focus_value: '{0} must be {1}; it is not read'
+            focus_sections: 'focus.sections must be a list of the sections of the Focus board; every section is drawn in the order the options list them'
+            focus_section_unknown: 'focus.sections names {0}, which is no section of the Focus board; it is not drawn'
+            focus_section_twice: 'focus.sections names {0} more than once; it is drawn once'
+            flag_twice: '{1} each carry {0}, which one word carries at most; none of them is read for it'
+            cluster_none: 'the Focus lane {0} names no cluster; the lane is not drawn'
+            cluster_unknown: 'the Focus lane {0} names the cluster {1}, which no readable row of focus_clusters has; the lane is not drawn'
+            cluster_repeated: 'a second row of focus_clusters has the key {0}; the row is not read'
+            cluster_word: 'the {1} of the Focus cluster {0} names {2}, which the text catalog lacks; it reads as absent'
+            move_unlisted: 'the move_writes of the Focus lane {0} names {1}, which the lane does not list; the lane takes no move'
+            move_unknown: 'the move_writes of the Focus lane {0} names {1}, which is no word of {2}; the lane takes no move'
+            move_both: 'the move_writes of the Focus lane {0} names both a stage and a chip; the lane takes no move'
+            move_kind: 'the move_writes of the Focus lane {0} names a {1}, and the lane is placed by its {2}; the lane takes no move'
             counts_block: 'counts must be a map; no view draws a count'
             counts_view: '{0} names no view that draws a count; the row is not read'
             counts_field: '{0} is not a field this row takes; it is not read'
@@ -192,9 +207,12 @@ text:
             boards_field: '{0} is not a field a board takes; it is not read'
             boards_value: '{0} must be {1}; it is not read'
             boards_record: '{0} must be a map holding its cell; it is not read'
+            boards_word_none: 'the board {0} names no {1}; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names'
+            boards_word_unknown: 'the {1} of the board {0} names {2}, which the text catalog lacks; a board with no label word is drawn with its key, and one with no glyph word with the glyph views.board_glyph names'
+            boards_view: "the board {0} has the key of a view oculus's modules or a collection register; the board is not registered"
             categories_block: 'categories must be a list of maps; no category is read'
             categories_row: '{0} must be a map with a key no earlier row holds; the row is not read'
-            categories_colour: '{0} names neither stages nor color, so it is drawn in no colour'
+            categories_colour: '{0} names no color, so it is drawn in no colour'
             local_row: '{0} must be {1}; the row is not read'
             local_repeat: '{0} repeats the value of an earlier row; the row is not read'
             local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"
@@ -271,6 +289,7 @@ text:
             is_null: 'null'
             is_list: a list
             is_map: a map
+            is_colour: 'a colour written #rrggbb'
             is_other: a {0}
         schema:
             not_declared: 'key {0} is not declared by the schema of this file'

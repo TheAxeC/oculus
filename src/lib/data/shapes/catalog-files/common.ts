@@ -1,6 +1,6 @@
 // Layer 1, data. The pieces every whole-file shape of oculus's own config files is built from: a
-// text, a map of texts, a colour, a flag of a vocabulary word with its description, and the
-// predicate that tells a key a file's own reader words itself.
+// text, a map of texts, a colour and the `#rrggbb` form of one, a flag of a vocabulary word with
+// its description, and the predicate that tells a key a file's own reader words itself.
 
 import { z } from 'zod';
 
@@ -12,6 +12,9 @@ export const textMap = z.record(z.string(), text);
 
 /** A colour written as a hex string, or any other text a stylesheet takes. */
 export const colour = text;
+
+/** The form of a colour that must be written `#rrggbb`. */
+export const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 
 /**
  * A flag of a vocabulary word, true where the word carries it and absent where it does not, with

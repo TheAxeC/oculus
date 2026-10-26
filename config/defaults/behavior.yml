@@ -34,8 +34,11 @@ audit:
 
 
 # === The Focus board =========================================================
-# Its horizons, thresholds and cadences, and the lists of statuses its command center and its columns read.
+# The sections it draws, its horizons, thresholds and cadences, and the lists of statuses its command center and its columns read.
 focus:
+  # The sections the Focus board draws, in drawing order, each one of career, command_center, tasks, quick_add, awaiting, band and lanes; a section not listed is not drawn. The line saying what a quick add did is drawn after quick_add, or at the top of the board without it, and the message of a board with no project is part of lanes.
+  sections: [career, command_center, tasks, quick_add, awaiting, band, lanes]
+
   # A manifest is stale when its `updated` date trails the newest project content by this many days.
   stale_lag_days: 1
 
