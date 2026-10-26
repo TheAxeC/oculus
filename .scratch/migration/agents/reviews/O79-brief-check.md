@@ -200,4 +200,27 @@ Agent usage: a1f2ea95e545e0ba6, claude-opus-5-5, 286519 tokens, 102 tool uses, 1
 
 ## Closed
 
-None closed in the brief. The check's section 4 finding on cases 2 and 5 and item 6's row (a field's choices have no entry of `agents/guarded.md` and no test) is the user's under the rules file, so O79 stopped at open item 425 and its brief was not kept. The next /spec of O79 writes the brief again from main against every finding above.
+The brief was written again from main at 39b7b688 (O80 and O82 landed) against every finding above, with open item 425 ruled (a), 426 settled and 427 ruled (a). Each finding and the change that closes it:
+
+- Section 1, the further copies of the identity rule (`normalise.ts:512,539`, `model-collections.ts:73-89`, `page-file.ts:43,48`, `FEED_IDENTITY` with `FEED_RULES`, `collection-text.ts:279-280`, `identityValue`): premise 1 names each, item 1 removes each, and the paths list holds each file.
+- Section 1, `NOT_WRITTEN` (`schema.ts:79` on main): premise 1 and item 1 (it becomes the manifest schema's primary key field).
+- Section 1, the `'people'` comparisons, `NAME_FIELD` and the resource glyph: premise 2a and item 2 (the target collection's registry word; `addPerson` writes the people schema's `display: 1` field; the glyph stays for a collection carrying the registry `resources`, decision 9).
+- Section 1, the bookmarks scaffold and the hub's `.oculus/bookmarks.yml`: premise 4, item 1 (the `SCAFFOLD` flags `label`), item 4 (the hub file flagged), case 17.
+- Section 1 and section 3 P3, `server/edit/writes/manifest.ts` (`sourced`): premise 3, item 2, the paths list (lines 95-130).
+- Section 1, the files made false outside the paths (`docs/apps.md:410`, `normalise.test.ts:202`, `new-entry.test.ts`, `record-fields.test.ts`, the flagless test fixtures, the demo hub's `config.yml`, `config/defaults/sources.yml:50-51`, `docs/templates.md` as scaffolds): premises 2b, 4, 7 and 9, items 3 and 6, cases 12 and 18, the paths list.
+- Section 1, G66 and G128 made false: item 6 says the orchestrator rewords G56, G66 and G128 at landing.
+- Section 1, the shared paths with O80: O80 has landed; the brief is checked against main with O80 in it.
+- Section 2, the hub's `research/data.yml:60` `from: datasets`: premise 6 and item 4 (`foreign_key: data`).
+- Section 2, "no registry key ... in `schema.ts`" (`picksPeople`, `NOT_WRITTEN`, `resourceChoices`): item 2 and item 1.
+- Section 3, P1 count, P4 hub counts and `sources.yml:192`, P6, P7: premises 1, 4, 5, 6 and 7 corrected; the counts rechecked on main at 39b7b688 (`git grep -c "from:"`), where `tests/checks/source/keys.test.ts`'s `from: vocab.<key>` check now lives in `tests/checks/source/catalog-file-keys.test.ts` (premise 4, item 6, paths).
+- Section 3 P8 and section 6, the seven workspace-repository manifests with no `short`: Conventions says they are shown by `title`, ranked 2; ruling 416 names the hub's 47 venues and 20 tracked projects.
+- Section 4, cases 2 and 5 and item 6's choices row with no guarded entry: ruling 425 (a), G132, `tests/state/forms/choices.test.ts`, cases 2, 5, 20 and 22.
+- Section 4, G56's text covering schema-level rules: item 6 (the orchestrator extends G56 at landing).
+- Section 4, case 10's lead: case 10 rewritten (a person keyed `key` and displayed by `name`; a lead written through the feed writer by its `collections:` entry's `primary_key:`, with `FEED_IDENTITY` keeping only `linkedin`).
+- Section 4, case 12: premise 2b and case 12 state today's Add form (`name` and `id`), and item 1 says what it asks after.
+- Section 4, case 15's test: case 15 names `tests/checks/config/integrity.test.ts` 'validates with no findings' and adds a case-run program over the scratch hub.
+- Section 4, verify 5's greps: verify 5 greps `\bfrom:` over the schemas, the demo hub and the templates.
+- Section 4, the port-8798 line: removed; "Where you work" names no server.
+- Section 5, cases and items that could pass with the rule still in code: case 2 ranks `name` 1 and keys the venues registry as `journals`; case 11 keys `journals`; case 15 checks the scratch hub's keys; verify 4 greps every removed name, `NOT_WRITTEN` and `FEED_IDENTITY` among them.
+- Section 6, the implied inputs: the Add form (item 1, case 12); the files the rule covers (item 1, decision 13); an entry's `primary_key:` beside a flag, a flag on a list or tags field, a flag not `true` (item 1, case 19); `foreign_key:` empty or naming a collection with no primary key (item 2, case 20); a collection keyed `projects` or `vocab.<x>` (item 2, case 21); two hubs keying one registry differently (item 2, case 22); one source name per target in the reference index (item 2); one finding for an empty venue `id` (item 1, case 23); the visible card and picker changes (the report's before and after); `SchemaField.from` in the apps payload (ruling 427 (a), item 2); a new hub from the templates (item 3, case 18); the bookmarks (case 17); leads and radar's `collections:` entries (item 3); file sizes (Conventions).
+- Declined to judge, ruling 404's reading: settled by Axel at open item 426. The resource glyph: item 2 keeps it by the registry word. `FEED_IDENTITY` and `FEED_RULES`: inside O79, item 1.

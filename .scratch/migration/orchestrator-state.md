@@ -37,6 +37,8 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: `src/lib/state/client/shapes/payloads.ts` (O83 lines 52-68, O80 lines 35-40), `src/lib/state/workbench/navigation/status.ts` (O83 lines 179-198, O80 lines 394-430), `docs/apps.md` (O83 line 421, O80 line 452), each with migration step O80; simple, since the hunks are apart and neither changes the other's lines
   round: 0
   landing: not-started
+- step: O79
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)

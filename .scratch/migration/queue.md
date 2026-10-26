@@ -1,15 +1,15 @@
-In flight (1 of 6 slots in use):
-- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), built, review next.
+In flight (2 of 6 slots in use):
+- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), built, under review.
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), prepared, builder next.
 
-Queued, in order (2 steps):
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), next to prepare, O80 having landed; rulings 425 (a), 426 and 427 (a) given.
+Queued, in order (1 step):
 - O81 (the grouping heading and the Venues view; rulings 395, 399 to 401, 403, 423), after O80, which has landed.
 
 Owed looks:
 - none.
 
 Landed, newest first:
-- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, the landing commit, its hash written at the next resume point.
+- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.
 - O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
 - O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.
 - O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 385, Z1007), 2026-10-25, a374362d.
