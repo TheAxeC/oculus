@@ -792,3 +792,299 @@ console.log(`--- case 31: route file exists: ${existsSync(join(TREE, 'src/routes
 
 rmSync(scratch, { recursive: true, force: true });
 ```
+
+## Repair round 1
+
+All five items of `O85-round-1.md` are built, and `npm run diagrams && npm run test:quick -- --base 8d52965c`, run once after the last change, exited 0 with every command passed.
+
+Nothing of the round is left undone. Problems the round leaves, each stated in full under "Problems the round leaves" below: the `primary_only` sentence a workspace-file key now gets is not true of that key; Edit in file on a blocked row opens nothing, including a row blocked because B's own file does not parse; vitest cuts the printed title of an `it.each` row at 40 characters, so two rows of `config-key.test.ts` share one printed title.
+
+vitest prints a passed test with a check mark and a cut title with an ellipsis glyph; both are written here as `(passed)` and `...`, so this report stays ASCII.
+
+### Item 1: a row with B chosen while B's settings are being read or failed
+
+The change:
+
+- `src/lib/state/system/config/rows.ts:128-133`: `ConfigRow` gains `unread?: true`, set while the settings of the hub chosen on the row are being read or could not be read.
+- `src/lib/state/system/config/view/hub-settings.svelte.ts:167-200`: the new `unreadRow` gives the row `value`, `default` and `line` undefined, `own: false`, `state: 'missing'`, `modified: false`, `mismatch: false`, the place `{ layer: 'hub', root: <B>, path: '.oculus/config.yml', present: <B's file present> }`, `hub`, `blocked` (`settings_hub_loading`, or `settings_hub_failed` with the error) and `unread: true`. `hubRow` returns it for the `loading` and `failed` reads in place of the primary's row. So `placeOf` gives `{ root: <B>, file: '.oculus/config.yml' }` and `placeName` gives `<B>/.oculus/config.yml`, and `EditLink` opens through `placeOf`, so all three name B's file. The head comment (lines 14-19) says so. The import of `HUB_FILE` (line 26) and of `Message` (line 38) were added.
+- `src/lib/views/system/workbench/settings/Item.svelte:327`: `<Control>` (and with it `Editor`, `EditLink` and the box of a single value) is not drawn for an `unread` row. Line 154: the "not set" sentence of a missing written-whole row is not said for it. With `modified` false no bar is drawn; with `default` undefined no default line; with `own` false no line link and no Reset in the gear (`gearEntries`, `view/gear.ts:17`). The row draws its title, description, Hub select and B's sentence. Head comment lines 35-37.
+- `src/lib/views/system/workbench/settings/EditLink.svelte:56-61`: `edit()` returns on `row.blocked` before it opens anything; head comment lines 14-15.
+- The draft or typed text held for B: `Editor` and `Control` are not mounted for an `unread` row, so nothing compares the draft with a value, nothing draws it as stale and no Discard is offered; it stays in the tab's instance state under B's slot, and the effect in `Settings.svelte` that ends drafts on a push skips blocked rows (`Settings.svelte:332`). Once B's slice is read the row is B's again and the editor draws the draft as it was.
+- Test fixture: `tests/state/system/settings/fixture.ts` now holds the lab case the two test files share (`text`, `LAB_STAGES`, `LAB_FILE`, `LAB_SLICE`, `LAB_READ`, `STAGES`, `LAB_CHOSEN`, `HubCase`, `hubRowOf`), moved from `chosen-hub.test.ts`, with `primaryFile` added to the case.
+
+The tests, each run on the tree before the change with `npx vitest run tests/state/system/settings/chosen-hub.test.ts tests/state/system/settings/editor-saved.test.ts -t "while lab's settings|lab chosen after lab's settings could not be read|lab chosen while lab's settings are being read|a draft held for lab while"`, exit 1, `Tests  3 failed | 23 skipped (26)`:
+
+- `chosen-hub.test.ts` "holds no value, default or line of the primary, and names lab's file, while lab's settings 'are being read'" and "... 'could not be read'" (the primary's file sets `stages` on line 1; the row with lab chosen must hold `[value, default, modified, own, line]` = `[undefined, undefined, false, false, undefined]`, `unread` true, B's sentence with its arguments, and `placeOf`/`placeName` naming `lab/.oculus/config.yml`). Before the change, both failed at `tests/state/system/settings/chosen-hub.test.ts:238:79` with `AssertionError: expected [ { nascent: { ...(6) }, ...(12) }, ...(4) ] to deeply equal [ undefined, undefined, false, ...(2) ]`: the received list was the primary's stages, the primary's stages, `false`, `true`, `1`.
+- `chosen-hub.test.ts` ROWS gains the row "lab chosen after lab's settings could not be read" (`blocked` `workbench.settings_hub_failed`).
+- `editor-saved.test.ts` "a draft held for lab while lab's settings are read > is kept, not drawn stale nor offered for discard, and drawn again once they are read": a draft of the stages with lab chosen is put in the tab's instance state under lab's slot, and the row's item is rendered on the server (`drawnItem`, `tests/views/system/workbench/workbench-fixture.ts`). While lab's settings are being read the markup must hold "Reading the settings of the hub lab..." and none of the stale sentence, "Discard" and `data-editor=`, and the draft must still be held. Once read, the item must draw Discard and no stale sentence. Before the change it failed at `tests/state/system/settings/editor-saved.test.ts:164:33` with `AssertionError: expected '<!--[--><div class="item svelte-82eo7...' not to contain 'The file changed since this edit was ...'`. The received markup drew the editor (`data-editor="records"`), the sentence "The file changed since this edit was started, so it was not saved.", Save disabled, Discard, and under them "Reading the settings of the hub lab...".
+- After the change, `npx vitest run tests/state/system/settings/chosen-hub.test.ts tests/state/system/settings/editor-saved.test.ts -t "holds no value, default or line|a draft held for lab while" --reporter verbose`: the three tests passed, `Tests  3 passed | 23 skipped (26)`.
+
+### Item 2: `from` out of the hub-settings answer
+
+No reader needs it: `grep -rn "slice\.\|\.slice\b" src/lib/state/system/config/view/hub-settings.svelte.ts src/lib/views/system/workbench/Settings.svelte` shows the one read of the slice, `read.slice.config` (`hub-settings.svelte.ts:71`), and the grep of `src/lib/state/system/config` and `src/lib/views/system/workbench` for `.from` finds no read of the answer's `from`. The change:
+
+- `src/lib/server/files/source/hub-settings.ts:36`: the answer is `{ hub, config }`. The `sliced` helper and the import of `OWN_HUB_KEYS` are gone, and the head comment (lines 1-7) no longer names `from`.
+- `src/lib/state/system/config/view/hub-settings.svelte.ts:42`: `hubSliceShape` is `z.object({ hub, config })`.
+- `tests/state/system/settings/chosen-hub.test.ts:352`: the route test asserts the answer's keys are `['hub', 'config']`. `LAB_SLICE` in the fixture holds no `from`.
+
+The test that shows it is the route test "answers lab's slice as lab's merge gives it, keeps a stage the primary removes, and refuses another name", run alone below under the slow tests (passed). The run that shows it is the round's case-run program (source and output at the end of this section): `--- route, B: status 200; top-level keys of the answer ["hub","config"]`. The main report's case 31 line, quoted in "The after-change case-run program, as run" with its `from {...}`, is the answer before this round.
+
+### Item 3: the `not_hub_key` branch out
+
+The change:
+
+- `src/lib/server/edit/writes/config/config-write.ts`: the line `if (hubFileOf(key) !== file) return refuse(words(text, 'server.workspace.not_hub_key', key));` is removed from `landing`, so line 116 `if (!readPerHub(file, key))` refuses every key outside the 37; `hubFileOf` is dropped from the import at line 32.
+- `config/text/server.yml`: the key `server.workspace.not_hub_key` (line 523 before) is removed.
+- `tests/server/edit/config-key.test.ts`: the row "a key of the open workspace file, refused for lab" is removed.
+
+`grep -rn "not_hub_key" . --exclude-dir=node_modules --exclude-dir=.svelte-kit` finds it only in the round brief and in this report. The run is the round's case-run program, `node round1-run.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O85` from the scratchpad's `caserun` folder, exit 0. Its output for a body naming B on `appearance.yml` `code_theme`, a key of the open workspace file, sent as each of the three kinds:
+
+```
+--- config-key, appearance.yml code_theme, root B
+changed: []; refused: [{"field":"appearance.yml:code_theme","reason":"code_theme is read from the primary hub's settings file alone, so it is not set for the hub B"}]; records: 0
+A same as before: true; B same as before: true; B now: "{}\n"
+--- config-value, appearance.yml code_theme, root B
+changed: []; refused: [{"field":"appearance.yml:code_theme","reason":"code_theme is read from the primary hub's settings file alone, so it is not set for the hub B"}]; records: 0
+A same as before: true; B same as before: true; B now: "{}\n"
+--- config-reset, appearance.yml code_theme, root B
+changed: []; refused: [{"field":"appearance.yml:code_theme","reason":"code_theme is read from the primary hub's settings file alone, so it is not set for the hub B"}]; records: 0
+A same as before: true; B same as before: true; B now: "{}\n"
+--- route, B: status 200; top-level keys of the answer ["hub","config"]
+```
+
+The refusal comes from `landing`, before any file is read for a write (`config-write.ts:164`, `180` and `195` call it first in the three writers), so the open workspace file is not reached either. `git status --short | wc -l` in the worktree printed `61` after the run, and `git status --short | grep -v "^ M"` listed only the step's own new files.
+
+### Item 4: the tooltip
+
+`config/text/views/system/workbench.yml:221`: `settings_hub_choice_tip: 'The hub whose .oculus/config.yml this setting is read from and written to'`, with no full stop.
+
+### Item 5: corrections to the report
+
+- The two tests the "New tests" table marked audit are proofs: each fails without the code it checks, as the review reads it. Their runs by title follow. vitest prints an `it.each` row of `$row` with its title cut at 40 characters, so "a key read from the primary alone, with no primary and no hub named, refused" prints as `'a key read from the primary alone, wi...'`, the same as the row before it, "a key read from the primary alone, with no primary and lab named, refused". Both rows were therefore run with `-t "a key read from the primary alone, wi"` and told apart by their order in `NAMED` and by the failure message.
+  - After the change, `npx vitest run tests/server/edit/config-key.test.ts -t "a key read from the primary alone, wi" --testTimeout 20000 --reporter verbose`: both `(passed)`, `Tests  2 passed | 22 skipped (24)`.
+  - On the unchanged tree (the scratch copy of the base's `src`, `config` and `utils`, with the step's test files laid over it, at `scratchpad/unchanged`): the same command exits 1, `Tests  1 failed | 1 passed | 23 skipped (25)`. The failed one is the row with lab named: `Error: text key not in config: server.workspace.primary_only` at `tests/server/edit/config-key.test.ts:456:52`, the `primary_only` sentence that row expects. The passed one is "a key read from the primary alone, with no primary and no hub named, refused", which expects `no_primary`.
+  - "writes the primary alike for a body naming it and a body naming no hub": after the change `npx vitest run tests/server/edit/config-key.test.ts -t "writes the primary alike for a body naming it and a body naming no hub" --testTimeout 20000` gives `Tests  1 passed | 23 skipped (24)`. On the unchanged tree the same command gives `Tests  1 passed | 24 skipped (25)`: it passes there because the base's parser drops `root`, so both bodies are the body with no hub.
+- Every test tagged slow that the step adds, each group run alone with `--testTimeout 20000 --reporter verbose`, all exit 0:
+  - `npx vitest run tests/server/edit/config-key.test.ts -t "a write that names a hub"`: `Tests  13 passed | 11 skipped (24)`. The describe "a write that names a hub" (`{ tags: ['slow'] }`) holds these 13 tests, all passed:
+    - 'a folder of lab written into lab\'s s...'
+    - 'a hub no workspace folder carries, re...'
+    - 'an empty hub name, refused'
+    - 'a hub name that is a path, refused'
+    - 'a key read from the primary alone, re...'
+    - 'lab whose settings file is gone, refu...'
+    - 'lab whose settings file does not pars...'
+    - 'a folder of lab in a workspace with n...'
+    - 'a key read from the primary alone, wi...' (twice)
+    - 'Edit in a file with lab named: lab\'s...'
+    - "writes the primary alike for a body naming it and a body naming no hub"
+    - "refuses lab's settings file that is a link to a hub's .oculus/local.yml, and writes nothing"
+  - `npx vitest run tests/server/edit/config-value.test.ts -t "a list or family written into the hub the write names"`: `Tests  6 passed | 17 skipped (23)`. The describe "a list or family written into the hub the write names" (`{ tags: ['slow'] }`) holds these 6 tests, all passed:
+    - "writes 'a changed row of categories, by its k...' into lab's settings file and leaves the primary's"
+    - the same title for 'a field added to the project form', 'a scan folder that lab\'s folder alon...' and 'a file every project of lab must hold...'
+    - "refuses a base lab's merge does not give, and a lab file that does not parse"
+    - "resets a key lab's file sets, and answers a key it does not set with nothing changed"
+  - `npx vitest run tests/state/system/settings/chosen-hub.test.ts -t "the route that answers the settings of a hub"`: `Tests  1 passed | 18 skipped (19)`. The describe of that name (`{ tags: ['slow'] }`) holds one test, "answers lab's slice as lab's merge gives it, keeps a stage the primary removes, and refuses another name", passed.
+  - `npx vitest run tests/routes/edit/undo/hub-settings.test.ts`: `Tests  3 passed (3)`. The file is `@module-tag slow` and holds "taking back a Settings write to a hub other than the primary >" with these three tests, all passed:
+    - "puts lab's settings file back and leaves the primary's as it was"
+    - "refuses as moved a write whose stage another hand changed since in lab's file"
+    - "answers gone for a write of a hub that has left the workspace, and writes nothing"
+- DONE row 1 said `data/shapes/hub-keys.ts` is "imported by `config-place.ts`". It is not: `config-place.ts` names `data/shapes/hub-keys.ts` in its head comment (line 5) and imports nothing from it (its imports, lines 17-34, are `node:fs`, `node:path`, `yaml`, `hub-names.ts`, `config.ts`, `manifests.ts`, `options.ts`, `workspace-layer.ts`, `words.ts`, `machine-file.ts`, `open.ts`, `yaml-edit.ts` and `changes.ts`). After item 2, `server/files/source/hub-settings.ts` does not import it either. `grep -rln "from '[./]*.*shapes/hub-keys.ts'" src` lists the four modules that import it: `server/edit/writes/undo.ts`, `server/edit/writes/config/config-write.ts`, `state/system/config/view/hub-settings.svelte.ts` and `data/sources/config/settings/hub-slice.ts`.
+- Judgment calls 3, 4 and 5 of the main report no longer hold. The answer carries no `from` (item 2). A key outside the hub list is refused with `primary_only` (item 3). A row whose hub's settings are being read or failed shows no value of the primary (item 1).
+- Host- and user-visible changes. The following replace, or add to, the bullets of the main report:
+  - Request bodies: a hub other than the primary named on any key outside the 37 is refused with `<key> is read from the primary hub's settings file alone, so it is not set for the hub <root>`. The `not_hub_key` sentence does not exist.
+  - Route `GET /api/hub-settings?hub=<name>`: 200 with `{ hub, config }`.
+  - The Settings view: while B's settings are being read, or after their read failed, a row with B chosen draws its title, description, the Hub select and "Reading the settings of the hub B..." (or "The settings of the hub B could not be read, so nothing is written: <error>"). It draws no control, value, editor, Modified bar, default line, line link or Reset. A draft or typed text kept for B is drawn again as it was once B's settings are read. The tooltip of the Hub select ends without a full stop.
+  - Edit in file on any row that says why it writes nothing opens nothing (`EditLink.svelte:56-57`).
+  - Reset of the last key of a hub settings file that also holds a comment (`keptAsMap`, `config-reset.ts:58-66`, applied at line 141 for the hub layer). Before: on the base, the Reset is refused with "is not a map of keys" and the file is left as it was. After: the key comes out and the file holds its comments and `{}`, for the primary's file as for B's, and the next write replaces the `{}`. The round's program `round1-reset.ts` (source at the end of this section) shows it. On the unchanged tree, `node round1-reset.ts <scratchpad>/unchanged`:
+
+```
+--- reset rail_color, no root (the primary A)
+changed: []; refused: [{"field":"catalogs/vocab.yml:rail_color","reason":"is not a map of keys"}]
+file now: "# the rail colour of this hub\nrail_color: \"#123456\"\n"
+--- then rail_color #dc2626 written, no root
+changed: ["catalogs/vocab.yml:rail_color"]; refused: []
+file now: "# the rail colour of this hub\nrail_color: \"#dc2626\"\n"
+```
+
+    After the change, `node round1-reset.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O85 withRoot`:
+
+```
+--- reset rail_color, no root (the primary A)
+changed: ["catalogs/vocab.yml:rail_color"]; refused: []
+file now: "# the rail colour of this hub\n{}\n"
+--- then rail_color #dc2626 written, no root
+changed: ["catalogs/vocab.yml:rail_color"]; refused: []
+file now: "# the rail colour of this hub\nrail_color: \"#dc2626\"\n"
+--- reset rail_color, root B
+changed: ["catalogs/vocab.yml:rail_color"]; refused: []
+file now: "# the rail colour of this hub\n{}\n"
+--- then rail_color #dc2626 written, root B
+changed: ["catalogs/vocab.yml:rail_color"]; refused: []
+file now: "# the rail colour of this hub\nrail_color: \"#dc2626\"\n"
+```
+
+### Changed lines of existing assertions
+
+- `tests/state/system/settings/chosen-hub.test.ts:352`: `expect(body.hub).toBe('lab')` became `expect([Object.keys(body), body.hub]).toEqual([['hub', 'config'], 'lab'])`, a stricter check.
+- `tests/server/edit/config-key.test.ts`: the `not_hub_key` row is removed (item 3).
+- `tests/state/system/settings/editor-saved.test.ts`: the local `text` helper is replaced by the fixture's, which takes the same first argument and an optional `loading`. No assertion of the base changed.
+
+### Problems the round leaves
+
+- The sentence a body naming B on a key of the open workspace file gets is `code_theme is read from the primary hub's settings file alone, so it is not set for the hub B`. `code_theme` is read from the open workspace file, so the first half is false of it. The page never sends such a body, since `root` is sent only on a row of the 37 keys, so only a hand-made request gets it. The round brief ruled this branch out.
+- With `blocked` checked first, Edit in file opens nothing on any blocked row. That includes a row with B chosen whose own `.oculus/config.yml` does not parse or is cut, where the link named B's file. The brief asks for this order.
+- The two `config-key.test.ts` rows that share the printed title `'a key read from the primary alone, wi...'` cannot be selected apart by `-t`. The cut is vitest's formatting of `$row`, the same for every `it.each` of `$row` in the repository.
+- Read in `close-hooks.ts:117-127`, not verified by a run: while B's settings are being read, the editor of a B draft is not mounted and registers no save. So the Save of a close question finds nothing to save for that draft and the tab is answered as still unsaved. The draft is kept, not written.
+
+### Files changed in this round, with line counts (`wc -l`)
+
+`src/lib/state/system/config/rows.ts` 510, `src/lib/state/system/config/view/hub-settings.svelte.ts` 259, `src/lib/server/files/source/hub-settings.ts` 37, `src/lib/server/edit/writes/config/config-write.ts` 211, `src/lib/views/system/workbench/settings/Item.svelte` 487, `src/lib/views/system/workbench/settings/EditLink.svelte` 110, `config/text/server.yml` 537, `config/text/views/system/workbench.yml` 282, `tests/state/system/settings/fixture.ts` 92, `tests/state/system/settings/chosen-hub.test.ts` 381, `tests/state/system/settings/editor-saved.test.ts` 193, `tests/server/edit/config-key.test.ts` 534, and the `docs/diagrams` files `npm run diagrams` rewrote. Every change to a worktree file was made with the Edit or Write tools.
+
+### Verify lines
+
+- `npm run diagrams && npm run test:quick -- --base 8d52965c`, run once in this round, after the last change, exit 0:
+  - `test:quick: 61 changed file(s), from git since 8d52965c`
+  - `test:quick: 131 test file(s)`
+  - `ok      ASCII gate (0.7 s)`
+  - `ok      prettier (3.7 s): All matched files use Prettier code style!`
+  - `ok      svelte-kit sync (4.2 s)`
+  - `ok      eslint (16.8 s)`
+  - `ok      svelte-check (83.3 s): 1793035807089 COMPLETED 545 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+  - `ok      vitest checks (203.2 s)`
+  - `ok      vitest (219.5 s)`
+  - `ok      vitest slow (258.8 s)`
+  - `test:quick: 263.1 s; every command passed`
+  - What it does not cover, as it prints it: "tests that reach no changed file within the import depth, the build, the lint of unchanged files".
+- No whole-suite command was run. Besides the named runs quoted above, one run of named files was made while working: `npx vitest run tests/state/system/settings tests/server/edit/config-key.test.ts tests/server/edit/config-value.test.ts tests/routes/edit/undo/hub-settings.test.ts tests/state/client/held-unsaved.test.ts tests/checks/source/keys.test.ts tests/checks/config/config-folder.test.ts tests/checks/tree/boundaries.test.ts tests/checks/imports` gave `Tests  1 failed | 221 passed | 2 skipped (224)`. The one red line was `tests/checks/imports/cycles.test.ts` "holds no cycle", `Error: Test timed out in 5000ms.`, because that command left out the `--testTimeout 0` the checks run with. Rerun alone, `npx vitest run tests/checks/imports/cycles.test.ts --testTimeout 0` gave `Tests  7 passed (7)`.
+- `npx svelte-check --tsconfig ./tsconfig.json --output machine`: `COMPLETED 4319 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, exit 0.
+- `npx eslint` over the ten changed source and test files: exit 0.
+- The ASCII gate of `spec.md`, `LC_ALL=C perl -ne '...' $(find src tests bin config -type f ! -name local.yml)`, printed nothing (`find` reports that `bin` does not exist).
+- `sh utils/folder-check.sh`: exit 0.
+- `sh utils/size-check.sh`: exit 0.
+- `sh utils/unused-exports.sh`: exit 0. Its output compared with `diff /Users/axelfaes/workspace/oculus/.agents/worktrees/O85-base/unused-exports.txt <output>` printed nothing, `diff exit 0`.
+- `grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml`: nothing, exit 1.
+- No comment line over 100 columns in the changed files (`awk` over each).
+- `pgrep -fl "vitest|svelte-check" | grep migration-O85`: nothing, exit 1. Nothing this round started is running.
+
+### The round's case-run programs, as run
+
+`round1-run.ts`, run as `node round1-run.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O85` from the scratchpad's `caserun` folder; output quoted under item 3:
+
+```ts
+// Case-run program of O85 repair round 1: a body naming the hub B on a key of the open workspace
+// file (appearance.yml code_theme), sent as a config-key write, a config-value write and a reset,
+// each answer printed with whether A's and B's settings files are as before; and the route's
+// answer for B, printed as its top-level keys. It writes nothing into the worktree.
+
+import { mkdirSync, mkdtempSync, readFileSync, existsSync, rmSync, writeFileSync, cpSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const TREE = process.argv[2];
+const { configWrite } = await import(`${TREE}/src/lib/server/edit/writes/config/config-write.ts`);
+const { loadConfig, textCatalog } = await import(`${TREE}/src/lib/data/sources/config.ts`);
+const { hubSettingsAnswer } = await import(`${TREE}/src/lib/server/files/source/hub-settings.ts`);
+
+const HUB_FILE = '.oculus/config.yml';
+const scratch = mkdtempSync(join(tmpdir(), 'o85-round1-run-'));
+const engine = join(scratch, 'engine');
+cpSync(join(TREE, 'config'), join(engine, 'config'), { recursive: true });
+const TEXT = textCatalog(loadConfig(engine, {}).config);
+
+const a = join(scratch, 'A');
+const b = join(scratch, 'B');
+for (const [dir, text] of [[a, 'code_theme: nord\n'], [b, '{}\n']]) {
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(join(dir, HUB_FILE), text);
+}
+const read = (dir: string): string | null =>
+    existsSync(join(dir, HUB_FILE)) ? readFileSync(join(dir, HUB_FILE), 'utf8') : null;
+const into = {
+    hub: a,
+    primary: 'A',
+    engine,
+    config: { text: TEXT },
+    projects: () => [],
+    glyphs: [],
+    hubs: [{ key: 'B', hub: b, config: {} }]
+};
+
+type Answer = { outcome?: { changed?: unknown; refused?: unknown; records?: unknown[] } };
+const BODIES: [string, Record<string, unknown>][] = [
+    ['config-key', { kind: 'config-key', file: 'appearance.yml', key: 'code_theme', value: 'nord', root: 'B' }],
+    ['config-value', { kind: 'config-value', file: 'appearance.yml', key: 'code_theme', value: 'nord', base: 'vscode-dark-2026', root: 'B' }],
+    ['config-reset', { kind: 'config-reset', file: 'appearance.yml', key: 'code_theme', root: 'B' }]
+];
+for (const [label, body] of BODIES) {
+    const beforeA = read(a);
+    const beforeB = read(b);
+    const answer = configWrite(body, into as never) as Answer;
+    console.log(`--- ${label}, appearance.yml code_theme, root B`);
+    console.log(`changed: ${JSON.stringify(answer.outcome?.changed)}; refused: ${JSON.stringify(answer.outcome?.refused)}; records: ${answer.outcome?.records?.length ?? 0}`);
+    console.log(`A same as before: ${read(a) === beforeA}; B same as before: ${read(b) === beforeB}; B now: ${JSON.stringify(read(b))}`);
+}
+const open = { hubs: [{ name: 'A', dir: a }, { name: 'B', dir: b }] };
+const settings = (dir: string) => loadConfig(engine, { hub: dir });
+const answer = hubSettingsAnswer('B', open, settings, TEXT) as { status: number; body: Record<string, unknown> };
+console.log(`--- route, B: status ${answer.status}; top-level keys of the answer ${JSON.stringify(Object.keys(answer.body))}`);
+
+rmSync(scratch, { recursive: true, force: true });
+```
+
+`round1-reset.ts`, run as quoted under item 5; outputs quoted there:
+
+```ts
+// Case-run program of O85 repair round 1: Reset of the last key of a hub settings file that also
+// holds a comment, on the tree named, for the primary's file (no root) and, when `withRoot` is
+// given, for B's (root B), then a write of the same key into the file the reset left. It writes
+// nothing into the tree.
+
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const TREE = process.argv[2];
+const withRoot = process.argv[3] === 'withRoot';
+const { configWrite } = await import(`${TREE}/src/lib/server/edit/writes/config/config-write.ts`);
+const { loadConfig, textCatalog } = await import(`${TREE}/src/lib/data/sources/config.ts`);
+
+const HUB_FILE = '.oculus/config.yml';
+const START = '# the rail colour of this hub\nrail_color: "#123456"\n';
+const scratch = mkdtempSync(join(tmpdir(), 'o85-round1-reset-'));
+const engine = join(scratch, 'engine');
+cpSync(join(TREE, 'config'), join(engine, 'config'), { recursive: true });
+const TEXT = textCatalog(loadConfig(engine, {}).config);
+const a = join(scratch, 'A');
+const b = join(scratch, 'B');
+for (const dir of [a, b]) {
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(join(dir, HUB_FILE), START);
+}
+const into = {
+    hub: a,
+    primary: 'A',
+    engine,
+    config: { text: TEXT },
+    projects: () => [],
+    glyphs: [],
+    hubs: [{ key: 'B', hub: b, config: {} }]
+};
+const read = (dir: string): string => readFileSync(join(dir, HUB_FILE), 'utf8');
+
+type Answer = { outcome?: { changed?: unknown; refused?: unknown } };
+function send(label: string, body: Record<string, unknown>, dir: string): void {
+    const answer = configWrite(body, into as never) as Answer;
+    console.log(`--- ${label}`);
+    console.log(`changed: ${JSON.stringify(answer.outcome?.changed)}; refused: ${JSON.stringify(answer.outcome?.refused)}`);
+    console.log(`file now: ${JSON.stringify(read(dir))}`);
+}
+
+const VOCAB = 'catalogs/vocab.yml';
+send('reset rail_color, no root (the primary A)', { kind: 'config-reset', file: VOCAB, key: 'rail_color' }, a);
+send('then rail_color #dc2626 written, no root', { kind: 'config-key', file: VOCAB, key: 'rail_color', value: '#dc2626' }, a);
+if (withRoot) {
+    send('reset rail_color, root B', { kind: 'config-reset', file: VOCAB, key: 'rail_color', root: 'B' }, b);
+    send('then rail_color #dc2626 written, root B', { kind: 'config-key', file: VOCAB, key: 'rail_color', value: '#dc2626', root: 'B' }, b);
+}
+rmSync(scratch, { recursive: true, force: true });
+```
