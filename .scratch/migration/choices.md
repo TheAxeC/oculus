@@ -5406,3 +5406,13 @@ O85's builder added `keptAsMap` (`src/lib/server/edit/writes/config/config-reset
 
 Where it applies: O85. Booked in `agents/briefs/O85-round-1.md`, "Ruled, no change".
 Builds on it: O85
+
+## Z1043 (2026-10-26, O86's brief check, the orchestrator, automode): a schedule save naming a hub the workspace does not hold
+
+O86's brief check found that the save route refuses every entry with a disk problem (`checkSave` in `src/lib/server/machine/runs/schedules/routes.ts:150-161`), while the brief's case 25 kept a save of `hub: nope`.
+
+- Chosen: (a) the save is refused `hub-unknown` and writes nothing, as every disk problem is now; the dialog keeps the pair chosen and labelled with its hub, so nothing moves silently, and a save after choosing an offered pair goes through.
+- Not chosen: (b) a save that keeps an unknown hub, which needs an exception in `checkSave` for one problem word; (c) the dialog moving the entry to the primary's pair, which changes a schedule without the reader choosing it.
+
+Where it applies: O86. Booked in `agents/briefs/O86.md`, "Decisions taken in this brief" 7.
+Builds on it: O86
