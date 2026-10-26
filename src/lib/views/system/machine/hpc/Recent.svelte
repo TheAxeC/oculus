@@ -1,19 +1,26 @@
 <script lang="ts">
     // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones
     // with an on-demand log action, drawn while the pointer is over the row or the focus is inside
-    // it.
+    // it. Rows older than the queue carry the stale mark in the heading, which is drawn even with
+    // no rows, so the mark shows; with no rows the section holds no table.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { efficiencyTone, type HpcRecent } from '$lib/state/system/machine/hpc/hpc';
+    import { efficiencyTone, staleWords, type HpcRecent } from '$lib/state/system/machine/hpc/hpc';
     import { t } from '$lib/state/shared/words/text';
     let {
         rows,
+        stale,
         live,
         onlog
     }: {
         rows: HpcRecent[];
+        /**
+         * The time the rows came from when they are older than the queue, null when no poll has
+         * read them since the server started, and undefined when they are the queue's.
+         */
+        stale?: string | null;
         /**
          * Whether the cluster is answering; a control that would run a doomed ssh command is shown
          * and not pressable.
@@ -84,12 +91,19 @@
         {cellText(row[column.key])}
     {/if}
 {/snippet}
-{#if rows.length}
+{#if rows.length || stale !== undefined}
     <details>
-        <summary>{t('hpc.recent_summary', rows.length)}</summary>
-        <div class="scroll">
-            <Table {columns} rows={tableRows} rowKey="id" {cell} />
-        </div>
+        <summary>
+            {t('hpc.recent_summary', rows.length)}
+            {#if stale !== undefined}
+                <span class="stale">{staleWords(stale)}</span>
+            {/if}
+        </summary>
+        {#if rows.length}
+            <div class="scroll">
+                <Table {columns} rows={tableRows} rowKey="id" {cell} />
+            </div>
+        {/if}
     </details>
 {/if}
 
@@ -106,6 +120,13 @@
     summary:focus-visible {
         outline: 1px solid var(--accent);
         outline-offset: 1px;
+    }
+
+    /* The mark of rows older than the queue, in the failure tone and in its own words' case. */
+    .stale {
+        margin-inline-start: 6px;
+        color: var(--c-red-d-txt);
+        text-transform: none;
     }
 
     /* A table wider than the pane scrolls inside its own box. */

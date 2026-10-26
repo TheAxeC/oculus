@@ -69,6 +69,7 @@ text:
         hpc_polling: polling
         hpc_live: '{0} running, {1} pending'
         hpc_tip: '{0}. Open Live HPC.'
+        hpc_tip_ended: '{0} Open Live HPC.'
         usage_ok: ok
         usage_down: down
         usage_refreshing: refreshing

@@ -22,9 +22,16 @@
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
     // jobs, quota, oculus's Recover sessions on the login node (Login.svelte), and one selected
     // log. The refresh control is in the bar while the poll answers, and is the retry of the error
-    // box while it fails; the box says which of the three failures it is. A hub whose settings
-    // name no cluster (`unconfigured`) shows the sentence that says so alone, in no error tone and
-    // with no retry, since there is nothing to ask.
+    // box while it fails; the box says which of the three failures it is, or, when the cluster
+    // answered for the queue and Slurm did not for a table, that the tables marked stale are older
+    // than the queue. While the queue is this poll's the queue's controls, the log and the Login
+    // node section stay live. While the queue is not this poll's, Capacity, Quota, Jobs and Recent
+    // are each drawn only when they hold kept rows or, for Capacity and Recent, when the payload
+    // names them in `stale`, so no empty queue is shown for a cluster that did not answer. A table
+    // the payload names in `stale` carries its mark in its heading, and with no rows it draws its
+    // heading and mark alone, whatever the status. A hub whose settings name no cluster
+    // (`unconfigured`) shows the sentence that says so alone, in no error tone and with no retry,
+    // since there is nothing to ask.
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Head from './Head.svelte';
@@ -41,6 +48,7 @@
     import {
         failureWords,
         parseHpcState,
+        queueIsCurrent,
         type HpcPayload,
         type HpcViewState
     } from '$lib/state/system/machine/hpc/hpc';
@@ -51,6 +59,8 @@
     } = useState();
     let { instance }: ViewProps = $props();
     const data = $derived(queue());
+    /** Whether the queue on screen is this poll's, so the controls asking the cluster are live. */
+    const live = $derived(data !== null && queueIsCurrent(data));
     /** The capacity folds as this pane holds them. */
     const held = $derived(parseHpcState(instanceState(instance.id)));
     /** Keep the folds' new state in this pane's instance state, which goes when the tab closes. */
@@ -68,7 +78,7 @@
     function failureMessage(payload: HpcPayload): string {
         const { hint, host } = payload;
         if (host === '' && hint !== undefined && hint !== '') return hint;
-        const sentence = failureWords(payload.status)?.sentence ?? '';
+        const sentence = failureWords(payload)?.sentence ?? '';
         return hint === undefined || hint === ''
             ? sentence
             : t('hpc.unreachable_detail', sentence, hint);
@@ -107,21 +117,25 @@
                 {/snippet}
             </Empty>
         {/if}
-        {#if data && (data.status === 'ok' || data.sinfo.length > 0 || data.quota.length > 0)}
-            <Capacity rows={data.sinfo} {held} onheld={keepHeld} />
+        {#if data && (live || data.sinfo.length > 0 || data.stale?.sinfo !== undefined)}
+            <Capacity rows={data.sinfo} stale={data.stale?.sinfo} {held} onheld={keepHeld} />
+        {/if}
+        {#if data && (live || data.quota.length > 0)}
             <Quota rows={data.quota} />
         {/if}
-        {#if data && (data.status === 'ok' || data.jobs.length > 0 || data.recent.length > 0)}
-            <Jobs rows={data.jobs} live={data.status === 'ok'} onlog={showLog} oncancel={cancel} />
-            <Recent rows={data.recent} live={data.status === 'ok'} onlog={showLog} />
+        {#if data && (live || data.jobs.length > 0)}
+            <Jobs rows={data.jobs} {live} onlog={showLog} oncancel={cancel} />
+        {/if}
+        {#if data && (live || data.recent.length > 0 || data.stale?.recent !== undefined)}
+            <Recent rows={data.recent} stale={data.stale?.recent} {live} onlog={showLog} />
         {/if}
         {#if data && data.status !== 'unconfigured' && data.status !== 'starting'}
-            <Login reason={data.status === 'ok' ? '' : failureMessage(data)} />
+            <Login reason={live ? '' : failureMessage(data)} />
         {/if}
         {#if logId}
             <Log
                 id={logId}
-                live={data?.status === 'ok'}
+                {live}
                 status={logStatus}
                 output={logOutput}
                 onrefresh={() => showLog(logId)}

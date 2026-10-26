@@ -5,6 +5,7 @@ import { fields, text as textOf } from '../../../../data/helpers/guards.ts';
 import type { SubmitPlan } from '../../../../data/model/index.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.ts';
+import { queueIsCurrent } from './hpc.ts';
 import { jobOf, planOf, type JobResult, type PlanResult } from './submit.ts';
 
 /** One client's reader of the Live HPC queue, its one command and the two requests of Submit. */
@@ -28,14 +29,14 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
 
     function counts(): { running: number; pending: number } {
         const value = entities.hpc();
-        return value?.status === 'ok'
+        return value !== null && queueIsCurrent(value)
             ? { running: value.running, pending: value.pending }
             : { running: 0, pending: 0 };
     }
 
     function pillText(): string {
         const value = entities.hpc();
-        return value?.status === 'ok' && value.total > 0
+        return value !== null && queueIsCurrent(value) && value.total > 0
             ? (value.running === 1
                   ? t('hpc.pill_running_one')
                   : t('hpc.pill_running', value.running)) +
@@ -45,7 +46,9 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
 
     function badgeText(): string {
         const value = entities.hpc();
-        return value?.status === 'ok' && value.total > 0 ? `${value.running} ${value.pending}` : '';
+        return value !== null && queueIsCurrent(value) && value.total > 0
+            ? `${value.running} ${value.pending}`
+            : '';
     }
 
     /**

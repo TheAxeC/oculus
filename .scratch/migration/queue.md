@@ -1,5 +1,4 @@
-In flight (3 of 6 slots in use):
-- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), round 1 refuted, landing next.
+In flight (2 of 6 slots in use):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), building under the cases ruling after its first run.
 - O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031), building under the cases ruling after its first run.
 
@@ -9,6 +8,7 @@ Owed looks:
 - none.
 
 Landed, newest first:
+- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 09a1d663.
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.
 - O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
 - O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.

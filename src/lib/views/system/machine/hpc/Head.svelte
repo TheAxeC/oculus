@@ -2,14 +2,19 @@
     // Layer 3, view partial. The Live HPC bar presents the connection states at its end and
     // keeps refresh as an explicit server action. While a poll fails (ssh not connecting, Slurm
     // not answering or another error, each with its own word), the refresh control is the retry of
-    // the error box (Hpc.svelte) and the bar holds the status words alone. With no cluster named
-    // (`unconfigured`) the bar holds its words alone too, in the plain tone, with no "as of" time
-    // and no stale mark.
+    // the error box (Hpc.svelte) and the bar holds the failure word, the time the cluster last
+    // answered and the retry. A failed poll whose queue is this poll's holds the failure word, the
+    // queue, its time and the retry. With no cluster named (`unconfigured`) the bar holds its words
+    // alone, in the plain tone, with no "as of" time and no overdue mark.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
-    import { failureWords, type HpcPayload } from '$lib/state/system/machine/hpc/hpc';
+    import {
+        failureWords,
+        queueIsCurrent,
+        type HpcPayload
+    } from '$lib/state/system/machine/hpc/hpc';
     import { useState } from '$lib/state/client/use';
 
     /**
@@ -29,7 +34,7 @@
     const now = $derived(minuteNow());
 
     /** The words of the poll's failure, which the error box in the body says in full, or null. */
-    const failure = $derived(data === null ? null : failureWords(data.status));
+    const failure = $derived(data === null ? null : failureWords(data));
     const failed = $derived(failure !== null);
 
     function status(): string {
@@ -46,33 +51,43 @@
         return Number.isFinite(updated) && now - updated > (data.pollMin + LATE_GRACE_MIN) * 60000;
     }
 
-    /** The meta parts after the state word; the stale one carries the failure tone. */
+    /** The queue's words: empty, or its counts. */
+    function queue(payload: HpcPayload): string {
+        return payload.jobs.length === 0
+            ? t('hpc.queue_empty')
+            : t('hpc.queue_summary', payload.running, payload.pending, payload.total);
+    }
+
+    /** The meta parts after the state word; the overdue one carries the failure tone. */
     function parts(): { text: string; late: boolean }[] {
         if (data === null) return [];
-        if (failed)
+        if (failed) {
+            const retry =
+                data.retryMin === undefined
+                    ? []
+                    : [{ text: t('hpc.retrying', data.retryMin), late: false }];
+            if (queueIsCurrent(data))
+                return [
+                    { text: queue(data), late: false },
+                    { text: t('hpc.as_of', clock(data.updated)), late: false },
+                    ...retry
+                ];
             return [
                 ...(data.lastOk
                     ? [{ text: t('hpc.last_ok', clock(data.lastOk)), late: false }]
                     : []),
-                ...(data.retryMin === undefined
-                    ? []
-                    : [{ text: t('hpc.retrying', data.retryMin), late: false }])
+                ...retry
             ];
+        }
         if (data.status !== 'ok') return [];
-        const stale = late();
+        const overdue = late();
         return [
+            { text: queue(data), late: false },
             {
-                text:
-                    data.jobs.length === 0
-                        ? t('hpc.queue_empty')
-                        : t('hpc.queue_summary', data.running, data.pending, data.total),
-                late: false
-            },
-            {
-                text: stale
+                text: overdue
                     ? t('hpc.as_of_late', clock(data.updated))
                     : t('hpc.as_of', clock(data.updated)),
-                late: stale
+                late: overdue
             },
             { text: t('hpc.every', data.pollMin), late: false }
         ];

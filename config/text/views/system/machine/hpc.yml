@@ -88,6 +88,9 @@ text:
         retrying: retrying every {0}m
         slurm_down: Slurm down
         slurm_down_msg: The cluster was reached over ssh, and Slurm did not answer.
+        slurm_partial_msg: The cluster answered for the queue, and Slurm did not answer for the tables marked stale.
+        stale_from: stale, from {0}
+        stale_never: stale, not read since the server started
         tail: tail
         toolbar: Live HPC controls
         unconfigured: no cluster

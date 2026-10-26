@@ -638,7 +638,6 @@ export type {
     HpcPayload,
     HpcQuotaItem,
     HpcRecent,
-    HpcStatus,
     HubNotes,
     NoteEntry,
     NoteLinkRow,
@@ -666,7 +665,7 @@ export type {
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export { BRANCH_NOT_MERGED } from './model-sessions.ts';
+export { BRANCH_NOT_MERGED, queueIsCurrent } from './model-sessions.ts';
 
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';

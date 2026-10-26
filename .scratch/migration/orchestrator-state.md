@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O83
-  brief_check: .scratch/migration/agents/reviews/O83-brief-check.md (af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s)
-  base: 4614443b
-  worktree: .agents/worktrees/migration-O83
-  executor: agent
-  worker: claude:opus
-  session_id: aba67cb9db035ffee (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O83-report.md
-  builder_usage: 223645 tokens, 210 tool uses, 51 min 17 s; round 1: 360398 tokens, 87 tool uses, 23 min 41 s
-  reviewer_report: .scratch/migration/agents/reviews/O83-refuter.md (ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s); over round 1: a6221f55f7830ecdd, claude-opus-5-5, 211425 tokens, 41 tool uses, 11 min 40 s
-  shared_paths: `src/lib/state/client/shapes/payloads.ts` (O83 lines 52-68, O80 lines 35-40), `src/lib/state/workbench/navigation/status.ts` (O83 lines 179-198, O80 lines 394-430), `docs/apps.md` (O83 line 421, O80 line 452), each with migration step O80; simple, since the hunks are apart and neither changes the other's lines
-  round: 1
-  landing: not-started
 - step: O79
   brief_check: .scratch/migration/agents/reviews/O79-brief-check.md (a1f2ea95e545e0ba6, claude-opus-5-5, 286519 tokens, 102 tool uses, 15 min 30 s)
   base: a11f9f14
@@ -632,6 +618,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O83 landed). O83 (one Slurm table failing alone) is on main, booked under O83 in `plan.md` with its four agents, the landing report `agents/reviews/O83-landing.md`; the review over round 1 closed under its Closed heading, four fixes at landing (the Capacity and Recent gates of `Hpc.svelte` per ruling 432, its head comment, G115's good-then-`squeue`-failed row, a `for-of` loop); gate green but for a 40 s timeout in `languages.test.ts`, which passed alone. In flight (2 of 6): O79 building under its cases ruling; O81 building under its cases ruling (Z1031). Open items: none.
 - 2026-10-26 (O83 round 1 refuted; O81 cases ruled; Z1031). The review over O83's round 1 (a6221f55f7830ecdd, claude-opus-5-5) is appended to `agents/reviews/O83-refuter.md` and recorded under reviewer_report; its findings go to the landing. O81's builder handed back cases 18, 26 and 28 at its first run, before any change (report saved in `agents/reviews/O81-report.md`, usage under builder_usage); ruled inside the step in `agents/briefs/O81-cases.md` under Z1031 (automode), copied into the worktree, and the same builder resumed. O79 building. Open items: none.
 - 2026-10-26 (O80 landed). O80 (Focus and the boards from config) landed on main, its booking and four agents in `plan.md`, the landing report `agents/reviews/O80-landing.md`; the review over round 1 closed under its Closed heading (the builder's rewrap programs under the ruling "Unapproved builder scripts", the `focus_clusters` checks fixed at landing); G13 and G124 gain the step's test titles in `agents/guarded.md`; the look on a scratch server on 8797 (cases 12 and 18) put back and stopped. O83's builder reported (`agents/reviews/O83-report.md`, usage under builder_usage). In flight (1 of 6): O83 (built, review next). Next: /refute O83; /spec O79 (its premises re-checked against O80 on main), then O81. Open items: none.
 - 2026-10-26 (O80 round 1 under review). O80's builder finished repair round 1 (report section "# Repair round 1" saved in `agents/reviews/O80-report.md`, usage under builder_usage); the run of /refute over the round started on reviewer a3e9023399798e534 (ordo-high, served claude-opus-5-5). In flight (2 of 6): O80 (round 1 under review), O83 (building). Next: the round's refutation, its findings fixed at landing or raised to Axel, /land O80. Open items: none.

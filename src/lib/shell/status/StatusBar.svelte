@@ -64,6 +64,7 @@
     import { sourceKept } from '$lib/state/workbench/navigation/editor-status.svelte';
     import {
         NO_GIT,
+        hpcTip,
         type StatusGit,
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
@@ -288,7 +289,7 @@
                     <ToolButton
                         label={status.hpc.short}
                         glyph="hpc"
-                        title={t('statusbar.hpc_tip', status.hpc.long)}
+                        title={hpcTip(status.hpc.long)}
                         status
                         onclick={() => openView('hpc')}
                     />

@@ -618,7 +618,7 @@ export type HubNotes = {
  * there is nothing to ask, so nothing is polled and the payload carries the sentence that says so
  * as `hint`.
  */
-export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'slurm_down' | 'error' | 'unconfigured';
+type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'slurm_down' | 'error' | 'unconfigured';
 export type HpcJob = {
     id: string;
     name: string;
@@ -665,8 +665,20 @@ export type HpcPayload = {
     sinfo: HpcPartition[];
     quota: HpcQuotaItem[];
     updated: string;
-    /** When the cluster last answered, so a failed poll can say how old the rows under it are. */
+    /**
+     * When the cluster last answered for the queue, so a failed poll can say how old the queue
+     * under it is. A payload whose `lastOk` equals `updated` has this poll's queue.
+     */
     lastOk?: string;
+    /**
+     * Present on a failed poll whose Recent or Capacity table is older than its queue, which is a
+     * poll whose `squeue` answered and whose `sacct` or `sinfo` did not, and every later failed
+     * poll while a table kept so is still older than the queue. It names each such table with the
+     * time (ISO) of the poll its rows came from, or `null` when no poll has answered for that table
+     * since the server started (its rows then empty). A payload of a good poll, of `starting`, of
+     * `unconfigured`, and of a failed poll whose tables are as old as its queue carries none.
+     */
+    stale?: { recent?: string | null; sinfo?: string | null };
     pollMin: number;
     /**
      * Minutes between attempts while the cluster is not answering; absent while the status is
@@ -675,6 +687,17 @@ export type HpcPayload = {
     retryMin?: number;
     host: string;
 };
+
+/**
+ * Whether a payload's queue is this poll's: a good poll, or a failed one in which the cluster
+ * answered for the queue (`lastOk` equal to `updated`). The server reads Recover's section and the
+ * page reads the queue as live by it.
+ */
+export function queueIsCurrent(
+    payload: Pick<HpcPayload, 'status' | 'lastOk' | 'updated'>
+): boolean {
+    return payload.status === 'ok' || payload.lastOk === payload.updated;
+}
 
 /** What Submit will do with a job script, computed by the server and confirmed by the reader. */
 export type SubmitPlan = {

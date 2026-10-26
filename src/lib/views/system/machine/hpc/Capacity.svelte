@@ -1,12 +1,15 @@
 <script lang="ts">
     // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated
     // segments while retaining the full source table. The meters and the table fold as one section,
-    // and the table folds again inside it; both folds stand as the pane holds them.
+    // and the table folds again inside it; both folds stand as the pane holds them. Rows older than
+    // the queue carry the stale mark in the heading, which is drawn even with no rows, so the mark
+    // shows; with no rows the section holds no meters and no sinfo table.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import type { Column } from '$lib/ui/display/table/table-rows';
     import {
         partitionMeters,
+        staleWords,
         toggledHpcState,
         type HpcPartition,
         type HpcViewState
@@ -14,10 +17,16 @@
     import { t } from '$lib/state/shared/words/text';
     let {
         rows,
+        stale,
         held,
         onheld
     }: {
         rows: HpcPartition[];
+        /**
+         * The time the rows came from when they are older than the queue, null when no poll has
+         * read them since the server started, and undefined when they are the queue's.
+         */
+        stale?: string | null;
         /** The folds as this pane holds them. */
         held: HpcViewState;
         /** Keep the folds' new state in the pane's instance state. */
@@ -61,31 +70,38 @@
 
 <!-- A grid of small meters, several to a row, so twenty partitions do not push the queue off the
      screen: the queue is what the view is opened for, and the capacity is the glance above it. -->
-{#if meters.length}
+{#if meters.length || stale !== undefined}
     <details class="capacity" open={held.capacity} ontoggle={(event) => toggled('capacity', event)}>
-        <summary class="title">{title(meters.length)}</summary>
-        <div class="meters">
-            {#each meters as meter (meter.name)}
-                <div class="meter">
-                    <span class="name">{meter.name}</span>
-                    {#if meter.gpu}
-                        <Tag label={t('hpc.gpu')} tone="violet" />
-                    {/if}
-                    <span class="bar" aria-label={t('hpc.capacity_label', meter.name)}>
-                        <i class="idle" style={`flex:${meter.idle}`}></i>
-                        <i class="mixed" style={`flex:${meter.mixed}`}></i>
-                        <i class="allocated" style={`flex:${meter.allocated}`}></i>
-                    </span>
-                    <span class="count">{t('hpc.idle_count', meter.idle)}</span>
-                </div>
-            {/each}
-        </div>
-        <details class="sinfo" open={held.sinfo} ontoggle={(event) => toggled('sinfo', event)}>
-            <summary>{summary(rows.length)}</summary>
-            <div class="scroll">
-                <Table {columns} rows={tableRows} rowKey="key" />
+        <summary class="title">
+            {title(meters.length)}
+            {#if stale !== undefined}
+                <span class="stale">{staleWords(stale)}</span>
+            {/if}
+        </summary>
+        {#if rows.length}
+            <div class="meters">
+                {#each meters as meter (meter.name)}
+                    <div class="meter">
+                        <span class="name">{meter.name}</span>
+                        {#if meter.gpu}
+                            <Tag label={t('hpc.gpu')} tone="violet" />
+                        {/if}
+                        <span class="bar" aria-label={t('hpc.capacity_label', meter.name)}>
+                            <i class="idle" style={`flex:${meter.idle}`}></i>
+                            <i class="mixed" style={`flex:${meter.mixed}`}></i>
+                            <i class="allocated" style={`flex:${meter.allocated}`}></i>
+                        </span>
+                        <span class="count">{t('hpc.idle_count', meter.idle)}</span>
+                    </div>
+                {/each}
             </div>
-        </details>
+            <details class="sinfo" open={held.sinfo} ontoggle={(event) => toggled('sinfo', event)}>
+                <summary>{summary(rows.length)}</summary>
+                <div class="scroll">
+                    <Table {columns} rows={tableRows} rowKey="key" />
+                </div>
+            </details>
+        {/if}
     </details>
 {/if}
 
@@ -146,6 +162,12 @@
         font-weight: 700;
         text-transform: uppercase;
         color: var(--muted-txt, var(--muted));
+    }
+    /* The mark of rows older than the queue, in the failure tone and in its own words' case. */
+    .stale {
+        margin-inline-start: 6px;
+        color: var(--c-red-d-txt);
+        text-transform: none;
     }
     summary:focus-visible {
         outline: 1px solid var(--accent);

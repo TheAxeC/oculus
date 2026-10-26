@@ -48,7 +48,7 @@ import {
 } from '../../sources/repositories/repositories.ts';
 import type { RunningAction } from '../../sources/repositories/repositories.svelte.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
-import { failureWords } from '../../system/machine/hpc/hpc.ts';
+import { failureWords, queueIsCurrent } from '../../system/machine/hpc/hpc.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
@@ -178,9 +178,10 @@ export function usageWords(usage: UsagePayload | null): string {
 
 /**
  * The Live HPC poll: the state in the words its own head uses, and once it is live the running and
- * pending counts for the bar and the whole queue for the tooltip. A failed poll shows its failure's
- * word, and its failure's sentence in the tooltip. A hub that names no cluster shows its sentence
- * in the tooltip, with no failure word.
+ * pending counts for the bar and the whole queue for the tooltip. A failed poll whose queue is this
+ * poll's shows the counts too, and the tooltip adds its failure's sentence after the queue. Any
+ * other failed poll shows its failure's word, and its failure's sentence in the tooltip. A hub that
+ * names no cluster shows its sentence in the tooltip, with no failure word.
  */
 export function hpcWords(data: HpcPayload | null): HpcWords {
     if (data === null || data.status === 'starting') {
@@ -189,12 +190,21 @@ export function hpcWords(data: HpcPayload | null): HpcWords {
     if (data.status === 'unconfigured') {
         return { short: t('hpc.unconfigured'), long: data.hint ?? '' };
     }
-    const failed = failureWords(data.status);
-    if (failed !== null) return { short: failed.word, long: failed.sentence };
-    return {
-        short: t('statusbar.hpc_live', data.running, data.pending),
-        long: t('hpc.queue_summary', data.running, data.pending, data.total)
-    };
+    const failed = failureWords(data);
+    const short = t('statusbar.hpc_live', data.running, data.pending);
+    const queue = t('hpc.queue_summary', data.running, data.pending, data.total);
+    if (failed === null) return { short, long: queue };
+    if (!queueIsCurrent(data)) return { short: failed.word, long: failed.sentence };
+    return { short, long: [queue, failed.sentence].join(` ${t('sessions.meta_sep')} `) };
+}
+
+/**
+ * The HPC item's tooltip: the poll's long words, then where a press goes. Words that end a sentence
+ * already (a failure's sentence, "polling cluster...") take no full stop of their own; the queue
+ * summary and a hub's reason for naming no cluster do.
+ */
+export function hpcTip(long: string): string {
+    return /[.?!]$/.test(long) ? t('statusbar.hpc_tip_ended', long) : t('statusbar.hpc_tip', long);
 }
 
 /** How many sessions the sessions channel holds live. */

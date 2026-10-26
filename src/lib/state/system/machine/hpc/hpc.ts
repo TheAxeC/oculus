@@ -1,9 +1,16 @@
 // Layer 2, client state. Pure formatting, tone and word choices for the Live HPC view and the
 // status bar's HPC item keep display policy out of their components.
-import type { HpcJob, HpcPartition, HpcStatus } from '../../../../data/model/index.ts';
+import {
+    queueIsCurrent,
+    type HpcJob,
+    type HpcPartition,
+    type HpcPayload
+} from '../../../../data/model/index.ts';
 import { z } from 'zod';
 import { readAs } from '../../../../data/shapes/shapes.ts';
+import { clock } from '../../../shared/words/format.ts';
 import { t } from '../../../shared/words/text.ts';
+export { queueIsCurrent } from '../../../../data/model/index.ts';
 export type {
     HpcJob,
     HpcPartition,
@@ -32,19 +39,35 @@ export function walltimeFraction(job: HpcJob): number | null {
     return used === null || !limit ? null : Math.min(1, used / limit);
 }
 /**
- * The words of a failed poll, one pair per failure: the short word of the head's pill and the
- * status bar, and the sentence of the error box, the Login node section and the status bar's
- * tooltip. Null for a status that is not a failure.
+ * The words of a failed poll: the short word of the head's pill and the status bar, and the
+ * sentence of the error box, the Login node section and the status bar's tooltip. A failed poll
+ * whose queue is this poll's (`queueIsCurrent`) is Slurm not answering for some of its tables, with
+ * the sentence that says the queue answered; every other failure has the pair of its status. Null
+ * for a status that is not a failure.
  */
-export function failureWords(status: HpcStatus): { word: string; sentence: string } | null {
+export function failureWords(
+    payload: Pick<HpcPayload, 'status' | 'lastOk' | 'updated'>
+): { word: string; sentence: string } | null {
+    const { status } = payload;
+    if (status === 'starting' || status === 'ok' || status === 'unconfigured') return null;
+    if (queueIsCurrent(payload)) {
+        return { word: t('hpc.slurm_down'), sentence: t('hpc.slurm_partial_msg') };
+    }
     if (status === 'unreachable') {
         return { word: t('hpc.unreachable'), sentence: t('hpc.unreachable_msg') };
     }
     if (status === 'slurm_down') {
         return { word: t('hpc.slurm_down'), sentence: t('hpc.slurm_down_msg') };
     }
-    if (status === 'error') return { word: t('hpc.error'), sentence: t('hpc.error_msg') };
-    return null;
+    return { word: t('hpc.error'), sentence: t('hpc.error_msg') };
+}
+
+/**
+ * The mark of a table older than its queue: the time its rows came from, or that no poll has read
+ * it since the server started (`null`).
+ */
+export function staleWords(time: string | null): string {
+    return time === null ? t('hpc.stale_never') : t('hpc.stale_from', clock(time));
 }
 
 export function stateTone(state: string): string {

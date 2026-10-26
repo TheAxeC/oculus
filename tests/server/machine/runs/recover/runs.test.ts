@@ -16,9 +16,11 @@ import type { RecoverLive, RecoverLiveRun } from '../../../../../src/lib/data/mo
 import type { HpcPayload } from '../../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../../src/lib/server/core/channels.ts';
 import {
+    SEC_CONNECTED,
     SEC_RC,
     SEC_RECOVER,
     SEC_SACCT,
+    SEC_SACCT_RC,
     SEC_SINFO
 } from '../../../../../src/lib/server/machine/hpc/parse.ts';
 import { watchHpc } from '../../../../../src/lib/server/machine/hpc/poll.ts';
@@ -476,14 +478,33 @@ describe('a Recover run on the cluster', () => {
     });
 
     it("runs Recover's section alone with the queue while Live HPC's last poll was answered, and nothing otherwise", async () => {
-        const batch = `${SEC_RC}0\n${SEC_SACCT}\n${SEC_SINFO}\n`;
+        const batch = { stdout: `${SEC_RC}0\n${SEC_SACCT}\n${SEC_SINFO}\n`, stderr: '', code: 0 };
         const job =
             '123|research-hub-mitdb-verify|main|RUNNING|0:10|1:00:00|1|1|N/A|4G|100|N/A|node1';
         const alone = `${job}\n${SEC_RC}0\n${SEC_RECOVER}\n@@oculus:session research-hub-mitdb\n`;
-        const ask = async (answered: boolean) => {
+        // ssh connected and `squeue` answered, and `sacct` exited 1: the queue is this poll's.
+        const partial = {
+            stdout: `${SEC_CONNECTED}\n${job}\n${SEC_RC}0\n${SEC_SACCT}\n${SEC_SACCT_RC}1\n${SEC_SINFO}\n`,
+            stderr: '',
+            code: 0
+        };
+        // ssh connected and `squeue` exited 1: the status is `slurm_down`, as in the partial
+        // answer, and the queue is not this poll's, so Slurm is not asked again.
+        const squeueFailed = {
+            stdout: `${SEC_CONNECTED}\n${SEC_RC}1\n${SEC_SACCT}\n${SEC_SACCT_RC}1\n${SEC_SINFO}\n`,
+            stderr: '',
+            code: 0
+        };
+        const unreachable = { stdout: '', stderr: 'no route', code: 255 };
+        // The polls take the answers in order, the watcher's own first poll the first, and the last
+        // answer repeats; recover() reads the payload of the last poll. The clock moves a minute
+        // before each refresh, so a later poll's `updated` is never an earlier poll's `lastOk`.
+        const ask = async (...answers: { stdout: string; stderr: string; code: number }[]) => {
             const calls: string[] = [];
+            let polls = 0;
             const take = vi.fn();
             const hub = new Hub();
+            vi.useFakeTimers({ toFake: ['Date'] });
             const watcher = watchHpc(hub, {
                 host: 'cluster',
                 days: 1,
@@ -497,18 +518,16 @@ describe('a Recover run on the cluster', () => {
                     if (command.startsWith('quota')) {
                         return Promise.resolve({ stdout: '', stderr: '', code: 1 });
                     }
-                    if (command.includes(SEC_SACCT)) {
-                        return Promise.resolve(
-                            answered
-                                ? { stdout: batch, stderr: '', code: 0 }
-                                : { stdout: '', stderr: 'no route', code: 255 }
-                        );
-                    }
+                    if (command.includes(SEC_SACCT))
+                        return Promise.resolve(answers[Math.min(polls++, answers.length - 1)]);
                     return Promise.resolve({ stdout: alone, stderr: '', code: 0 });
                 }
             });
             try {
-                await watcher.refresh();
+                for (const _answer of answers) {
+                    vi.setSystemTime(Date.now() + 60000);
+                    await watcher.refresh();
+                }
                 take.mockClear();
                 const before = calls.length;
                 await watcher.recover();
@@ -516,22 +535,36 @@ describe('a Recover run on the cluster', () => {
                 return { status, sent: calls.slice(before), take: take.mock.calls };
             } finally {
                 watcher.close();
+                vi.useRealTimers();
             }
         };
 
-        const good = await ask(true);
-        expect(good.status).toBe('ok');
-        expect(good.sent).toHaveLength(1);
-        expect(good.sent[0]).toContain('squeue --me');
-        expect(good.sent[0]).toContain('echo section');
-        expect(good.sent[0]).not.toContain('sacct');
-        expect(good.take).toHaveLength(1);
-        expect(good.take[0][0]).toBe('@@oculus:session research-hub-mitdb\n');
-        expect(good.take[0][1]).toMatchObject([{ id: '123', state: 'RUNNING' }]);
+        // After a good poll, a poll whose `squeue` exited 1 keeps that poll's queue: `lastOk` is
+        // the earlier poll's and `updated` this one's, so the queue is not this poll's either.
+        for (const [answers, status] of [
+            [[squeueFailed], 'slurm_down'],
+            [[unreachable], 'unreachable'],
+            [[batch, squeueFailed], 'slurm_down']
+        ] as const) {
+            const read = await ask(...answers);
+            expect(read.status).toBe(status);
+            expect(read.sent).toEqual([]);
+            expect(read.take).toEqual([]);
+        }
 
-        const down = await ask(false);
-        expect(down.status).toBe('unreachable');
-        expect(down.sent).toEqual([]);
-        expect(down.take).toEqual([]);
+        for (const [answer, status] of [
+            [batch, 'ok'],
+            [partial, 'slurm_down']
+        ] as const) {
+            const read = await ask(answer);
+            expect(read.status).toBe(status);
+            expect(read.sent).toHaveLength(1);
+            expect(read.sent[0]).toContain('squeue --me');
+            expect(read.sent[0]).toContain('echo section');
+            expect(read.sent[0]).not.toContain('sacct');
+            expect(read.take).toHaveLength(1);
+            expect(read.take[0][0]).toBe('@@oculus:session research-hub-mitdb\n');
+            expect(read.take[0][1]).toMatchObject([{ id: '123', state: 'RUNNING' }]);
+        }
     });
 });

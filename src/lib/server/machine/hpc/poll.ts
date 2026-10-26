@@ -4,8 +4,12 @@
 // which it hands back to Recover's watcher; Recover asks for that section alone, with the queue,
 // once a minute while a run on the cluster is followed (`recover`). A failed poll is published as
 // one of three: ssh did not connect (`unreachable`), ssh connected and one of `squeue`, `sacct` and
-// `sinfo` did not answer (`slurm_down`), or anything else (`error`), each over the last good rows.
-import type { HpcJob, HpcPayload } from '../../../data/model/index.ts';
+// `sinfo` did not answer (`slurm_down`), or anything else (`error`), each over the rows earlier
+// polls left. A poll in which `squeue` answered and only `sacct` or `sinfo` did not is `slurm_down`
+// with this poll's queue and every table whose command answered, so the queue and Recover's
+// reading stay live; the table whose command failed keeps the rows of the last poll in which that
+// command answered, and the payload names it in `stale` with the time they came from.
+import { queueIsCurrent, type HpcJob, type HpcPayload } from '../../../data/model/index.ts';
 import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
@@ -74,15 +78,18 @@ export type HpcWatcher = {
     refresh(): Promise<void>;
     /**
      * Run Recover's section alone, with the queue, on the host the polls ask, and hand the answer
-     * to Recover as a poll does. It runs only while the last poll had the cluster's answer, so a
-     * cluster that does not answer gets no command but the polls' own.
+     * to Recover as a poll does. It runs only while the last poll had the cluster's answer for the
+     * queue (`queueIsCurrent`), so a cluster that does not answer gets no command but the polls'
+     * own.
      */
     recover(): Promise<void>;
     /**
      * Take new settings. A period moves the next run to the sooner of the one waiting and the new
-     * period from now; a changed host, a changed sentence for having none, or a changed window
-     * drops what the old one answered and polls now. Settings that name no cluster publish
-     * `unconfigured` and stop the polling; settings that name a cluster again poll at once.
+     * period from now; a changed host or a changed sentence for having none drops what the old one
+     * answered, the rows and the time each came from included, and polls now; a changed window
+     * drops the answers in flight and polls now, keeping the rows and their times. Settings that
+     * name no cluster publish `unconfigured` and stop the polling; settings that name a cluster
+     * again poll at once.
      */
     set(settings: HpcSettings): void;
     close(): void;
@@ -178,12 +185,13 @@ function slurmHint(
 }
 
 /**
- * How a poll's answer fails, or null when it holds the cluster's answer. An answer with the Slurm
- * sections and the code 0 of `squeue`, `sacct` and `sinfo` is the cluster's answer, the connected
- * marker or not, unless ssh broke after it connected. Without the marker, ssh's 255 is ssh not
- * connecting, with its stderr as the hint. With the marker, a code other than 0 of any of the three
- * is Slurm not answering, with the hint `slurmHint` gives. Anything else is an error, with ssh's
- * stderr or its exit code as the hint.
+ * How a poll's answer fails, or null when it holds the cluster's whole answer. An answer with the
+ * Slurm sections and the code 0 of `squeue`, `sacct` and `sinfo` is the cluster's answer, the
+ * connected marker or not, unless ssh broke after it connected. Without the marker, ssh's 255 is
+ * ssh not connecting, with its stderr as the hint. With the marker, a code other than 0 of any of
+ * the three is Slurm not answering, with the hint `slurmHint` gives; `partialAnswer` says whether
+ * such an answer holds this poll's queue. Anything else is an error, with ssh's stderr or its exit
+ * code as the hint.
  */
 function answerFailure(
     result: RunResult,
@@ -203,6 +211,21 @@ function answerFailure(
         return { status: 'slurm_down', hint: slurmHint(failed, words) };
     }
     return { status: 'error', hint: said };
+}
+
+/**
+ * Whether a failed poll's answer holds this poll's queue: ssh connected and did not break,
+ * `squeue` answered (code 0), and `sacct` or `sinfo` did not. The tables whose command answered are
+ * this poll's too. A runner's rejection is never such an answer: the runner's limit is past the
+ * three commands' own, so a rejection after `squeue` answered is ssh or the remote shell hanging.
+ */
+function partialAnswer(result: RunResult, parts: ReturnType<typeof splitSections>): boolean {
+    return (
+        parts.connected &&
+        result.code !== SSH_FAILED &&
+        parts.squeueCode === 0 &&
+        (parts.sacctCode !== 0 || parts.sinfoCode !== 0)
+    );
 }
 
 /**
@@ -230,11 +253,20 @@ const quotaCommand = `quota -s 2>/dev/null; echo "---df---"; df -h "$HOME" 2>/de
 export const RETRY_MIN = 2;
 
 /**
- * The rows of one good answer, kept so a failed poll shows the last known queue rather than
- * nothing.
+ * The queue of the last good or partial poll (`partialAnswer`), and each table of the last such
+ * poll in which its own command answered, kept so a failed poll shows them rather than nothing. A
+ * poll in which `squeue` answered but whose ssh exit says the cluster was not reached keeps the
+ * old queue.
  */
 type Rows = Pick<HpcPayload, 'jobs' | 'running' | 'pending' | 'total' | 'recent' | 'sinfo'>;
 const NO_ROWS: Rows = { jobs: [], running: 0, pending: 0, total: 0, recent: [], sinfo: [] };
+
+/**
+ * The time (ISO) of the poll each table's rows came from, or null while no poll has answered for
+ * that table. A table whose time is not the queue's (`lastOk`) is older than the queue.
+ */
+type Times = { recent: string | null; sinfo: string | null };
+const NO_TIMES: Times = { recent: null, sinfo: null };
 
 export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     let current: HpcSettings = {
@@ -259,12 +291,18 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     const timeout = options.timeoutMs ?? 40000;
     let quota: HpcPayload['quota'] = [];
     let rows: Rows = NO_ROWS;
+    let times: Times = NO_TIMES;
+    /**
+     * The time of the last good or partial poll (`partialAnswer`), the last answer for the queue,
+     * or empty while there has been none.
+     */
     let lastOk = '';
     let closed = false;
     /**
-     * Whether the rows of a good poll are waiting for the prewarm. A poll that failed clears it, so
-     * the prewarm only ever runs against the rows of the poll that set it and never against rows
-     * kept from an earlier one.
+     * Whether the Recent rows of the last poll are waiting for the prewarm. A good or partial poll
+     * (`partialAnswer`) whose `sacct` answered sets it while `prewarm` is on, and every other poll
+     * clears it, so the prewarm only ever runs against the Recent rows of the poll that set it and
+     * never against rows kept from an earlier one.
      */
     let prewarmDue = false;
     /** The prewarm in flight, if there is one: one at a time, and nothing waits on it. */
@@ -275,20 +313,42 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
      */
     const stopped = (): boolean => closed;
     /**
-     * A publish of a poll that failed: the state word and its hint over the last good rows and the
-     * time they came from, so a page shows what the queue was rather than an empty one.
+     * Each table whose rows are older than the queue, with the time they came from, or undefined
+     * when every table is as old as the queue.
      */
-    const degraded = (status: HpcPayload['status'], hint?: string): HpcPayload => ({
-        status,
-        ...(hint ? { hint } : {}),
-        ...rows,
-        quota,
-        updated: new Date().toISOString(),
-        ...(lastOk ? { lastOk } : {}),
-        pollMin: current.pollMin,
-        retryMin: RETRY_MIN,
-        host: current.host
-    });
+    const staleTables = (): HpcPayload['stale'] => {
+        const queue = lastOk === '' ? null : lastOk;
+        const stale: NonNullable<HpcPayload['stale']> = {};
+        if (times.recent !== queue) stale.recent = times.recent;
+        if (times.sinfo !== queue) stale.sinfo = times.sinfo;
+        return stale.recent === undefined && stale.sinfo === undefined ? undefined : stale;
+    };
+    /**
+     * A publish of a poll that failed: the state word and its hint over the rows as they stand and
+     * the time the queue came from, so a page shows what the queue was rather than an empty one,
+     * with each table older than the queue named in `stale`. `updated` is the time of a partial
+     * poll (`partialAnswer`), which is its `lastOk` too, and the time of the publish otherwise, a
+     * poll in which `squeue` answered but whose ssh exit says the cluster was not reached included.
+     */
+    const degraded = (
+        status: HpcPayload['status'],
+        hint?: string,
+        updated = new Date().toISOString()
+    ): HpcPayload => {
+        const stale = staleTables();
+        return {
+            status,
+            ...(hint ? { hint } : {}),
+            ...rows,
+            quota,
+            updated,
+            ...(lastOk ? { lastOk } : {}),
+            ...(stale === undefined ? {} : { stale }),
+            pollMin: current.pollMin,
+            retryMin: RETRY_MIN,
+            host: current.host
+        };
+    };
     /** The answer of a hub that names no cluster: the sentence, no rows and no retry. */
     const unconfigured = (): HpcPayload => ({
         status: 'unconfigured',
@@ -355,37 +415,49 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
             const failure = answerFailure(result, parts, current.words);
-            if (failure !== null) {
+            if (failure !== null && !partialAnswer(result, parts)) {
                 prewarmDue = false;
                 const payload = degraded(failure.status, failure.hint);
                 hub.publish('hpc', payload);
                 console.log(`hpc publish: ${payload.status}`);
                 return;
             }
+            // The queue is this poll's, and so is each table whose command answered.
+            const now = new Date().toISOString();
             const jobs = parseSqueue(parts.squeue);
+            const recentRead = parts.sacctCode === 0;
+            const sinfoRead = parts.sinfoCode === 0;
             rows = {
                 jobs,
                 running: jobs.filter((job) => job.state === 'RUNNING').length,
                 pending: jobs.filter((job) => job.state === 'PENDING').length,
                 total: jobs.length,
-                recent: parseSacct(parts.sacct),
-                sinfo: parseSinfo(parts.sinfo)
+                recent: recentRead ? parseSacct(parts.sacct) : rows.recent,
+                sinfo: sinfoRead ? parseSinfo(parts.sinfo) : rows.sinfo
+            };
+            times = {
+                recent: recentRead ? now : times.recent,
+                sinfo: sinfoRead ? now : times.sinfo
             };
             options.recover?.take(parts.recover, jobs);
-            lastOk = new Date().toISOString();
-            good = true;
-            prewarmDue = current.prewarm;
-            hub.publish('hpc', {
-                status: 'ok',
-                ...rows,
-                quota,
-                updated: lastOk,
-                lastOk,
-                pollMin: current.pollMin,
-                retryMin: RETRY_MIN,
-                host: current.host
-            });
-            console.log('hpc publish: ok');
+            lastOk = now;
+            good = failure === null;
+            prewarmDue = current.prewarm && recentRead;
+            const payload: HpcPayload =
+                failure === null
+                    ? {
+                          status: 'ok',
+                          ...rows,
+                          quota,
+                          updated: now,
+                          lastOk,
+                          pollMin: current.pollMin,
+                          retryMin: RETRY_MIN,
+                          host: current.host
+                      }
+                    : degraded(failure.status, failure.hint, now);
+            hub.publish('hpc', payload);
+            console.log(`hpc publish: ${payload.status}`);
         } catch (error) {
             prewarmDue = false;
             if (stopped() || began !== asking) return;
@@ -438,12 +510,13 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         }
     };
     /**
-     * The prewarm the last good poll asked for, started behind the page and joined by nothing: not
-     * the poll gate below, not the promise a Refresh press waits on. A press that asked for a
-     * refresh would otherwise wait on a directory walk whose cost is the cluster's to set, so a
-     * poll may run beside a prewarm and the watcher holds three connections at most: one poll, one
-     * quota read and one prewarm, each with its own budget. A prewarm still running when the next
-     * good poll lands is left to finish, and that poll's rows get their turn when it does.
+     * The prewarm the last poll whose `sacct` answered asked for, started behind the page and
+     * joined by nothing: not the poll gate below, not the promise a Refresh press waits on. A press
+     * that asked for a refresh would otherwise wait on a directory walk whose cost is the cluster's
+     * to set, so a poll may run beside a prewarm and the watcher holds three connections at most:
+     * one poll, one quota read and one prewarm, each with its own budget. A prewarm still running
+     * when the next such poll lands is left to finish, and that poll's rows get their turn when it
+     * does.
      */
     const startPrewarm = (): void => {
         if (prewarming !== null || !prewarmDue || stopped()) return;
@@ -497,7 +570,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         const section = options.recover;
         if (stopped() || section === undefined || current.host === '') return;
         const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
-        if (held?.status !== 'ok') return;
+        if (held === undefined || !queueIsCurrent(held)) return;
         const began = asking;
         try {
             const result = await runner(current.host, recoverCommand(section.command()), timeout);
@@ -532,6 +605,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 asking += 1;
                 hosts += 1;
                 rows = NO_ROWS;
+                times = NO_TIMES;
                 lastOk = '';
                 quota = [];
                 prewarmDue = false;

@@ -63,6 +63,12 @@ const hpcShape = unchangedAs<Payloads['hpc']>(
         quota: listShape,
         updated: z.string(),
         lastOk: z.string().optional(),
+        stale: z
+            .object({
+                recent: z.string().nullable().optional(),
+                sinfo: z.string().nullable().optional()
+            })
+            .optional(),
         pollMin: anyNumberShape,
         retryMin: anyNumberShape.optional(),
         host: z.string()
