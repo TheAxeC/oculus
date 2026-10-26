@@ -1,14 +1,14 @@
-In flight (1 of 6 slots in use):
-- O84 (who the user is), repair round 1.
+In flight (3 of 6 slots in use):
+- O84 (who the user is), repair round 1 being built.
+- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), /spec: brief check done, its findings being closed in the brief.
+- O94 (LinkedIn's Mark posted), /spec: brief check done, its findings being closed in the brief.
 
-Queued (7):
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec next.
-- O87 (the Focus band's positions and teaching), /spec next.
+Queued (5):
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec next after O87's and O94's dispatch (487 ruled (b)).
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec after O84 lands.
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
 - O93 (Focus and the dated lines), /spec after O87.
-- O94 (LinkedIn's Mark posted), /spec when a slot is free.
 
 Waiting on a ruling: none.
 

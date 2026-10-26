@@ -38,7 +38,11 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: with O86, simple merges in separate lines: `src/lib/data/snapshot/hubs/merge.ts` (O86 lines 16-19 and `feedsOf`; O84 a new paragraph after line 19 or a new file), `normalise.ts` (O86 41 and 588-597; O84 360-395, 601, 620-635), `src/lib/data/model/index.ts` (O86 725; O84 43), `model-collections.ts` (O86 411-450; O84 490-510), `src/lib/server/root/context.ts` (O86 383-390 and 810-816; O84 295-330), `docs/templates.md` (O86 530-548; O84 372-512 and 1055-1065); with O89, `config/defaults/sources.yml` (O89 line 34; O84 lines 5 and 82); the generated `docs/diagrams/*` with O86 and O89, regenerated at each landing.
   round: 1
   landing: not-started
-- step: O88
+- step: O87
+  brief_check: .scratch/migration/agents/reviews/O87-brief-check.md (a6e177511c7ad4a33, claude-opus-5-5, 234620 tokens, 75 tool uses, 10 min 4 s)
+  landing: preparing
+- step: O94
+  brief_check: "running: a0b48bbc141e6efce"
   landing: preparing
 ```
 
@@ -179,6 +183,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
 
 ## Closed items
 - 486 (2026-10-26): ruled by Axel, (a); the Map's bar as the board's, built within O92; booked in `plan.md` Rulings and on O92's line.
