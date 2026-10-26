@@ -58,8 +58,12 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a842e39268dc6aed0 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O94-report.md
+  round: 0 (cases ruled, agents/briefs/O94-cases.md: case 7 dropped, read-back with uniqueKeys false)
+  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s
   shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
+- step: O88
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)

@@ -1,10 +1,10 @@
-In flight (3 of 6 slots in use):
-- O84 (who the user is), repair round 1 reported; its review over the round next.
+In flight (4 of 6 slots in use):
+- O84 (who the user is), review over repair round 1 running.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), building.
-- O94 (LinkedIn's Mark posted), building.
+- O94 (LinkedIn's Mark posted), building after its two cases were ruled (case 7 dropped, the read-back allows a key written twice).
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec: brief being written (487 ruled (b)).
 
-Queued (5):
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec next after O87's and O94's dispatch (487 ruled (b)).
+Queued (4):
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec after O84 lands.
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
