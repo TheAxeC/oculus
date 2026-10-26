@@ -33,8 +33,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aba67cb9db035ffee (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O83-report.md
-  builder_usage: 223645 tokens, 210 tool uses, 51 min 17 s
-  reviewer_report: .scratch/migration/agents/reviews/O83-refuter.md (ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s)
+  builder_usage: 223645 tokens, 210 tool uses, 51 min 17 s; round 1: 360398 tokens, 87 tool uses, 23 min 41 s
+  reviewer_report: .scratch/migration/agents/reviews/O83-refuter.md (ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s); over round 1: running: a6221f55f7830ecdd, claude-opus-5-5
   shared_paths: `src/lib/state/client/shapes/payloads.ts` (O83 lines 52-68, O80 lines 35-40), `src/lib/state/workbench/navigation/status.ts` (O83 lines 179-198, O80 lines 394-430), `docs/apps.md` (O83 line 421, O80 line 452), each with migration step O80; simple, since the hunks are apart and neither changes the other's lines
   round: 1
   landing: not-started

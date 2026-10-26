@@ -876,3 +876,503 @@ Asynchronous paths (case 11 runs each):
 - A poll superseded by a window change: dropped the same way; the rows and their times stay, and the next poll's `stale` names the kept table with its first time (case 12).
 - `recover()` in flight: its own `stopped() || began !== asking` check after the await is unchanged.
 - The quota read and a `pollMin` change republish the payload last published (`poll.ts:588`, `{ ...held, pollMin }`), so `stale`, `lastOk` and `updated` carry over (case 2's quota line).
+
+# Repair round 1
+
+Everything in the round is done. Line numbers in the sections above are those of the first build; after this round `poll.ts` is 7 lines longer above `:588` (now `:595`), and `runs.test.ts`'s row is at `:480-556`.
+
+Two things for the orchestrator. The verify list ran twice in this round: the first run was red in `vitest checks` on this round's own key (fixed, below) and in `vitest slow` on two time-outs in `tests/data/hubs/hub-portfolio.test.ts`, a file the step does not change. And two places outside the round's widened list changed: `status.ts:200-208` (a blank line and the new `hpcTip` at `:201-208`, right after `hpcWords`, far from O80's 394-430) and `config/text/statusbar.yml:72` (the new key beside `:71`), which item 7 needs.
+
+## Items
+
+| Item | State | Proof (command, output after the last change) |
+|---|---|---|
+| 1. Commands and files outside the brief | DONE | section "Commands and files outside the brief" below, from the transcript's commands and `ls -la` of the scratchpad |
+| 2. G115's row for a `slurm_down` whose `squeue` exited 1 | DONE | base copy: the new row passes and the run stops at the partial row, `:548`; after: `Tests  16 passed (16)` (both quoted below) |
+| 3. The poll's doc comments | DONE | `poll.ts:255-260` (`Rows`), `:295-298` (`lastOk`), `:301-306` (`prewarmDue`), `:326-332` (`degraded`); `awk 'length > 100'` over `poll.ts` prints only `:129` (188), a code line that is 188 wide on the base too (`O83-base/.../poll.ts:122: 188`) |
+| 4. `docs/apps.md:421` and `null` | DONE | `git diff -U0 -- docs/apps.md`: one hunk, `@@ -421 +421 @@`, ending "...with the time its rows came from, or `null` when none of its polls has answered since the server started)" |
+| 5. `docs/HELP.md:320` completed | DONE | one hunk `@@ -320 +320 @@`; the sentence now ends "...or "stale, not read since the server started"; the mark stays on that table through later failed polls while the table is older than the queue." |
+| 6 (a). No empty queue or empty table while the queue is not this poll's | DONE | case program, item 6 (a), before and after below |
+| 6 (b). A table at 0 rows under its mark draws no body | DONE | case program, item 6 (b), before and after below |
+| 7. One full stop per sentence in the tooltip | DONE | case program, item 7, before and after below; `npx vitest run tests/checks/source/keys.test.ts`: `Tests  11 passed (11)` |
+
+What changed, by item:
+
+- Item 2: `tests/server/machine/runs/recover/runs.test.ts` gains the answer `squeueFailed` (`SEC_CONNECTED`, `SEC_RC` 1, `sacct` exit 1, no `sinfo` code) and a table of the answers Recover is not read after: `[squeueFailed, 'slurm_down']` and `[unreachable, 'unreachable']`, each asserting the status, `sent` equal to `[]` and `take` equal to `[]`. The `unreachable` row's three assertions moved into that table unchanged. The table stands before the `ok` and partial table, so on the base copy, where the partial row fails, the new row runs first. The test's title is unchanged, so G115's entry still names it.
+- Item 3: the four doc comments say "the last good or partial poll (`partialAnswer`)", that a poll in which `squeue` answered but whose ssh exit says the cluster was not reached keeps the old queue (`Rows`) and gets the time of the publish (`degraded`), and that `prewarmDue` is set "while `prewarm` is on". Each paragraph is rewrapped whole.
+- Item 6 (a): `Hpc.svelte` draws Capacity, Quota, Jobs and Recent each on its own gate: while the queue is this poll's always, and otherwise only when that section has kept rows (`data.sinfo.length`, `data.quota.length`, `data.jobs.length`, `data.recent.length`). The gate on the `stale` names is gone, so a failure with no kept queue draws no "No jobs in the queue for you right now." and no empty Recent. Capacity is gated the same way as Recent (a judgment call: the item names Recent, and Capacity at 0 rows under a failure is the same empty table). Jobs and Quota draw what they drew. `Jobs.svelte` needs no change.
+- Item 6 (b): `Recent.svelte` draws its table only when it has rows; `Capacity.svelte` draws its meters grid and its sinfo fold only when it has rows. Both keep the heading and the mark at 0 rows. Head comments of the three views say so.
+- Item 7: `status.ts` exports `hpcTip(long)`. It returns `statusbar.hpc_tip` ("{0}. Open Live HPC.") for words that end in no sentence mark (the queue summary, a hub's reason for naming no cluster), and the new `statusbar.hpc_tip_ended` ("{0} Open Live HPC.") for words that end in `.`, `?` or `!` (a failure's sentence, the partial sentence, "polling cluster..."). `StatusBar.svelte:292` uses it. Each key is read by a literal `t(...)`, as `tests/checks/source/keys.test.ts` asks.
+
+## The test row, on the base copy and after
+
+On the base copy's source: the worktree's test file run with a config that reads every `src/lib/...` import of the test from `.agents/worktrees/O83-base/src/lib/` (`base.config.mts`, quoted below). Command, from the worktree's root: `npx vitest run --config <scratchpad>/o83/base.config.mts tests/server/machine/runs/recover/runs.test.ts -t "runs Recover's section alone"`. Output, with the `hpc publish` lines, the `stdout |` headers, the empty lines, vitest's box-drawing separators, the caret line under `:548`, the two source lines after it and the start and duration lines left out:
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83
+ <HEAVY RIGHT-POINTING ANGLE QUOTATION MARK ORNAMENT> |base| tests/server/machine/runs/recover/runs.test.ts (16 tests | 1 failed | 15 skipped) 9ms
+     <MULTIPLICATION SIGN> runs Recover's section alone with the queue while Live HPC's last poll was answered, and nothing otherwise 8ms
+ FAIL  |base| tests/server/machine/runs/recover/runs.test.ts > a Recover run on the cluster > runs Recover's section alone with the queue while Live HPC's last poll was answered, and nothing otherwise
+AssertionError: expected [] to have a length of 1 but got +0
+- Expected
++ Received
+- 1
++ 0
+ <HEAVY RIGHT-POINTING ANGLE QUOTATION MARK ORNAMENT> tests/server/machine/runs/recover/runs.test.ts:548:31
+    546|             const read = await ask(answer);
+    547|             expect(read.status).toBe(status);
+    548|             expect(read.sent).toHaveLength(1);
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 skipped (16)
+```
+
+The new table (`:532-540`) runs first and every assertion of it holds on the base, where `recover()` returns on any status other than `ok`. The run stops at `:548`, the partial row, which is the base's known failure of item 7. A gate `held.status !== 'ok' && held.status !== 'slurm_down'` would send on `squeueFailed` and fail at `:538`, `expect(read.sent).toEqual([])`. This is a judgment from reading; no such gate was written.
+
+After the change, `npx vitest run tests/server/machine/runs/recover/runs.test.ts`:
+
+```
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+```
+
+## The case-run program, before and after
+
+Three files in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o83/`, with `node_modules` there a symbolic link to the worktree's `node_modules` (made with `ln -s`). The link lets the program's bare imports resolve. They are deleted before this report is handed back. Command, from the worktree's root: `npx vitest run --config <that folder>/cases.config.mts cases.test.ts --disableConsoleIntercept --testTimeout 60000`, its output piped through `grep -v "^hpc publish"` and written to no file.
+
+`cases.config.mts`:
+
+```ts
+// O83 round 1 case-run program's config: the worktree's own config with one project that holds
+// only the case file of this folder.
+import base from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/vite.config.ts';
+
+const DIR = '/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o83';
+
+export default (env: { mode: string; command: 'build' | 'serve' }) => {
+    const config = base(env as never) as Record<string, any>;
+    const { projects: _projects, ...test } = config.test;
+    return {
+        ...config,
+        root: '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83',
+        test: { ...test, name: 'cases', environment: 'node', dir: DIR, include: ['tests/cases.test.ts'] }
+    };
+};
+```
+
+`base.config.mts`:
+
+```ts
+// O83 round 1: runs the worktree's tests/server/machine/runs/recover/runs.test.ts against the
+// source of the base copy (.agents/worktrees/O83-base): every import of the test that names
+// `src/lib/...` by a relative path is read from the base copy's src/lib instead.
+import base from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/vite.config.ts';
+
+const BASE_LIB = '/Users/axelfaes/workspace/oculus/.agents/worktrees/O83-base/src/lib/';
+
+export default (env: { mode: string; command: 'build' | 'serve' }) => {
+    const config = base(env as never) as Record<string, any>;
+    const { projects: _projects, ...test } = config.test;
+    return {
+        ...config,
+        root: '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83',
+        resolve: {
+            ...(config.resolve ?? {}),
+            alias: [{ find: /^(\.\.\/)+src\/lib\//, replacement: BASE_LIB }]
+        },
+        test: {
+            ...test,
+            name: 'base',
+            environment: 'node',
+            include: ['tests/server/machine/runs/recover/runs.test.ts']
+        }
+    };
+};
+```
+
+`tests/cases.test.ts`:
+
+```ts
+// O83 round 1 case-run program. It prints, for items 6 and 7 of the round, the Live HPC page's
+// sections drawn from each payload and the status bar's HPC tooltip, and asserts nothing about
+// them. Run from the worktree's root:
+//   npx vitest run --config <this folder>/cases.config.mts cases.test.ts --disableConsoleIntercept
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { expect, it, vi } from 'vitest';
+import { render } from 'svelte/server';
+import { parse } from 'yaml';
+import { Hub } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/server/core/channels.ts';
+import * as P from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/server/machine/hpc/parse.ts';
+import { watchHpc, type HpcSettings } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/server/machine/hpc/poll.ts';
+import type { RunResult } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/server/machine/hpc/ssh.ts';
+import type { HpcPayload } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/data/model/index.ts';
+import { setCatalog, t } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/state/shared/words/text.ts';
+import { flattenText } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/data/sources/config/merge/text.ts';
+import * as status from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/state/workbench/navigation/status.ts';
+import { emptyClient, clientContext } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/tests/fixtures/client.ts';
+import Hpc from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83/src/lib/views/system/machine/hpc/Hpc.svelte';
+
+const WT = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O83';
+
+// The text catalog, read from config/text alone (no other config file is read).
+function textFiles(dir: string): string[] {
+    return readdirSync(dir).flatMap((name) => {
+        const path = join(dir, name);
+        return statSync(path).isDirectory() ? textFiles(path) : name.endsWith('.yml') ? [path] : [];
+    });
+}
+const catalog: Record<string, string> = {};
+for (const file of textFiles(join(WT, 'config/text'))) {
+    Object.assign(catalog, flattenText((parse(readFileSync(file, 'utf8')) as { text: unknown }).text));
+}
+setCatalog(catalog);
+
+const T1 = '2026-10-26T10:00:00.000Z';
+const T2 = '2026-10-26T10:01:00.000Z';
+const DB = 'sacct: error: Problem talking to the database: Connection refused';
+const JOB = (id: number, state: string): string =>
+    `${id}|job${id}|main|${state}|0:10|1:00:00|1|1|N/A|4G|100|N/A|node1`;
+const REC = (id: number): string =>
+    `${id}|run${id}|COMPLETED|0:0|00:01:00|2026-10-26T09:${String(id % 60).padStart(2, '0')}:00|4G||00:00:30|1|1|60`;
+const PART = (name: string, state: string, nodes: number): string => `${name}|up|${nodes}|${state}|gpu:1`;
+
+type Cmd = { code?: number; rows?: string[]; err?: string };
+function answer(o: { squeue?: Cmd; sacct?: Cmd; sinfo?: Cmd }): RunResult {
+    const sq = { code: 0, rows: [], err: '', ...o.squeue };
+    const sa = { code: 0, rows: [], err: '', ...o.sacct };
+    const si = { code: 0, rows: [], err: '', ...o.sinfo };
+    const lines = [
+        P.SEC_CONNECTED,
+        ...sq.rows,
+        `${P.SEC_RC}${sq.code}`,
+        P.SEC_SQUEUE_ERR,
+        ...(sq.err ? [sq.err] : []),
+        P.SEC_SACCT,
+        ...sa.rows,
+        `${P.SEC_SACCT_RC}${sa.code}`,
+        P.SEC_SACCT_ERR,
+        ...(sa.err ? [sa.err] : []),
+        P.SEC_SINFO,
+        ...si.rows,
+        `${P.SEC_SINFO_RC}${si.code}`,
+        P.SEC_SINFO_ERR,
+        ...(si.err ? [si.err] : []),
+        P.SEC_RECOVER,
+        'section'
+    ];
+    return { stdout: `${lines.join('\n')}\n`, stderr: '', code: 0 };
+}
+
+const Q_B = [JOB(201, 'RUNNING'), JOB(202, 'RUNNING'), JOB(203, 'PENDING')];
+const GOOD = answer({ squeue: { rows: Q_B }, sacct: { rows: [REC(501), REC(502)] }, sinfo: { rows: [PART('pa', 'idle', 4)] } });
+const SACCT_FAIL = answer({ squeue: { rows: Q_B }, sacct: { code: 1, err: DB }, sinfo: { rows: [PART('pb', 'mix', 8)] } });
+const NO_JOBS_SACCT_FAIL = answer({ squeue: { rows: [] }, sacct: { code: 1, err: DB }, sinfo: { rows: [PART('pb', 'mix', 8)] } });
+const SINFO_LATE = answer({ squeue: { rows: Q_B }, sacct: { rows: [REC(601)] }, sinfo: { code: 124 } });
+const SQUEUE_FAIL = answer({
+    squeue: { code: 1, err: 'slurm_load_jobs error: Unable to contact slurm controller' },
+    sacct: { code: 1, err: DB },
+    sinfo: { code: 1, err: 'slurm_load_partitions: Unable to contact slurm controller' }
+});
+const UNREACH: RunResult = { stdout: '', stderr: 'ssh: connect to host cluster port 22: No route to host', code: 255 };
+const ERROR: RunResult = { stdout: '', stderr: 'bash: squeue: command not found', code: 127 };
+
+const WORDS = { sshExited: 'ssh exited {0}', slurmLate: 'no answer within the time limit', overrun: 'overrun' };
+const SETTINGS: HpcSettings = { host: 'cluster', days: 1, pollMin: 20, quotaMin: 60, prewarm: false, words: WORDS };
+
+/** The payloads the watcher publishes for these answers, one poll at T1 and the next at T2. */
+async function payloadAfter(answers: (RunResult | 'defer')[], settings: HpcSettings = SETTINGS): Promise<HpcPayload> {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.setSystemTime(new Date(T1));
+    const hub = new Hub();
+    const runner = (_host: string, command: string): Promise<RunResult> => {
+        if (command.includes(P.SEC_SACCT)) {
+            const next = answers.shift() ?? UNREACH;
+            return next === 'defer' ? new Promise(() => undefined) : Promise.resolve(next);
+        }
+        return Promise.resolve({ stdout: '', stderr: '', code: 1 });
+    };
+    const watcher = watchHpc(hub, { ...settings, logPaths: new Map(), runner });
+    for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setImmediate(resolve));
+    if (answers.length > 0) {
+        vi.setSystemTime(new Date(T2));
+        await watcher.refresh();
+        for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setImmediate(resolve));
+    }
+    const payload = structuredClone(hub.latest('hpc')?.payload as HpcPayload);
+    watcher.close();
+    vi.useRealTimers();
+    return payload;
+}
+
+function strip(html: string): string {
+    return html.replace(/<!--[^]*?-->/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function page(label: string, p: HpcPayload): void {
+    const client = emptyClient();
+    client.entities.receive({ channel: 'hpc', version: 1, payload: p });
+    const html = render(Hpc, {
+        props: { instance: { id: 'hpc-1', view: 'hpc', state: null } },
+        context: clientContext(client)
+    }).body;
+    // Recent's fold holds no other fold; Capacity's ends at the second closing tag after its start
+    // when the sinfo fold opens inside it, and at the first otherwise.
+    const recentAt = html.indexOf('Recent (finished)');
+    const recent =
+        recentAt < 0
+            ? ''
+            : html.slice(html.lastIndexOf('<details', recentAt), html.indexOf('</details>', recentAt));
+    const capacityAt = html.indexOf('class="capacity');
+    const firstClose = html.indexOf('</details>', capacityAt);
+    const inner = html.indexOf('class="sinfo', capacityAt);
+    const capacity =
+        capacityAt < 0
+            ? ''
+            : html.slice(
+                  html.lastIndexOf('<details', capacityAt),
+                  inner >= 0 && inner < firstClose
+                      ? html.indexOf('</details>', firstClose + 1)
+                      : firstClose
+              );
+    const stale = JSON.stringify(p.stale ?? null);
+    console.log(`  ${label}: status=${p.status} jobs=${p.jobs.length} recent=${p.recent.length} sinfo=${p.sinfo.length} stale=${stale} lastOk==updated=${p.lastOk === p.updated}`);
+    console.log(`    headings: ${JSON.stringify([...html.matchAll(/<summary[^>]*>([^]*?)<\/summary>/g)].map((m) => strip(m[1])))}`);
+    console.log(`    empty-queue sentence: ${html.includes(t('hpc.no_jobs'))}`);
+    console.log(`    Recent section: ${recent !== ''}, tables in it: ${(recent.match(/<table/g) ?? []).length}`);
+    console.log(`    Capacity section: ${capacity !== ''}, meters grid: ${capacity.includes('class="meters')}, sinfo fold: ${capacity.includes('class="sinfo')}, tables in it: ${(capacity.match(/<table/g) ?? []).length}`);
+}
+
+/** The status bar's HPC tooltip as StatusBar.svelte builds it on this tree. */
+function tooltip(p: HpcPayload | null): string {
+    const words = status.hpcWords(p);
+    const built = (status as Record<string, unknown>).hpcTip as ((long: string) => string) | undefined;
+    return built === undefined ? t('statusbar.hpc_tip', words.long) : built(words.long);
+}
+
+it('round 1, items 6 and 7', async () => {
+    console.log('ITEM 6 (a): the first poll answers squeue with no jobs and sacct exit 1, then ssh drops');
+    page('t2 unreachable', await payloadAfter([NO_JOBS_SACCT_FAIL, UNREACH]));
+    console.log('ITEM 6 (a): the same with jobs kept, then ssh drops');
+    page('t2 unreachable', await payloadAfter([SACCT_FAIL, UNREACH]));
+    console.log('ITEM 6 (b): the queue current, a table at 0 rows under its mark');
+    page("case 5's payload", await payloadAfter([SACCT_FAIL]));
+    page('stale sinfo null, sinfo []', await payloadAfter([SINFO_LATE]));
+    console.log('ITEM 7: the status bar tooltip');
+    const states: [string, HpcPayload | null][] = [
+        ['ok', await payloadAfter([GOOD])],
+        ['partial (case 2)', await payloadAfter([GOOD, SACCT_FAIL])],
+        ['slurm_down', await payloadAfter([SQUEUE_FAIL])],
+        ['unreachable', await payloadAfter([UNREACH])],
+        ['error', await payloadAfter([ERROR])],
+        ['starting', await payloadAfter(['defer'])],
+        [
+            'unconfigured',
+            await payloadAfter([], { ...SETTINGS, host: '', missing: t('hpc.host_no_cluster'), unconfigured: true })
+        ],
+        ['no payload yet', null]
+    ];
+    for (const [label, p] of states) console.log(`  ${label} (${p?.status ?? 'null'}): ${JSON.stringify(tooltip(p))}`);
+    expect(true).toBe(true);
+});
+```
+
+The tooltip function picks the new `hpcTip` when `status.ts` has it, which is what `StatusBar.svelte` calls on each tree. "Before" is the tree as the first build left it. The same program ran once with an earlier way of finding the Recent and Capacity folds, whose Recent search found none; that output is not used. Before:
+
+```
+ITEM 6 (a): the first poll answers squeue with no jobs and sacct exit 1, then ssh drops
+  t2 unreachable: status=unreachable jobs=0 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=false
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Recent (finished) - 0 stale, not read since the server started","Login node"]
+    empty-queue sentence: true
+    Recent section: true, tables in it: 1
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+ITEM 6 (a): the same with jobs kept, then ssh drops
+  t2 unreachable: status=unreachable jobs=3 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=false
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Recent (finished) - 0 stale, not read since the server started","Login node"]
+    empty-queue sentence: false
+    Recent section: true, tables in it: 1
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+ITEM 6 (b): the queue current, a table at 0 rows under its mark
+  case 5's payload: status=slurm_down jobs=3 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=true
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Recent (finished) - 0 stale, not read since the server started","Login node"]
+    empty-queue sentence: false
+    Recent section: true, tables in it: 1
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+  stale sinfo null, sinfo []: status=slurm_down jobs=3 recent=1 sinfo=0 stale={"sinfo":null} lastOk==updated=true
+    headings: ["Cluster capacity (0 partitions) stale, not read since the server started","sinfo table (0 rows)","Recent (finished) - 1","Login node"]
+    empty-queue sentence: false
+    Recent section: true, tables in it: 1
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+ITEM 7: the status bar tooltip
+  ok (ok): "2 running | 1 pending | 3 total. Open Live HPC."
+  partial (case 2) (slurm_down): "2 running | 1 pending | 3 total | The cluster answered for the queue, and Slurm did not answer for the tables marked stale.. Open Live HPC."
+  slurm_down (slurm_down): "The cluster was reached over ssh, and Slurm did not answer.. Open Live HPC."
+  unreachable (unreachable): "The cluster did not answer over ssh. Is this Mac on the UT network or on EduVPN?. Open Live HPC."
+  error (error): "The poll of the cluster failed.. Open Live HPC."
+  starting (starting): "polling cluster.... Open Live HPC."
+  unconfigured (unconfigured): "the settings of this hub name no cluster (slurm.resource in .oculus/config.yml). Open Live HPC."
+  no payload yet (null): "polling cluster.... Open Live HPC."
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+After (the run after the last change):
+
+```
+ITEM 6 (a): the first poll answers squeue with no jobs and sacct exit 1, then ssh drops
+  t2 unreachable: status=unreachable jobs=0 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=false
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Login node"]
+    empty-queue sentence: false
+    Recent section: false, tables in it: 0
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+ITEM 6 (a): the same with jobs kept, then ssh drops
+  t2 unreachable: status=unreachable jobs=3 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=false
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Login node"]
+    empty-queue sentence: false
+    Recent section: false, tables in it: 0
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+ITEM 6 (b): the queue current, a table at 0 rows under its mark
+  case 5's payload: status=slurm_down jobs=3 recent=0 sinfo=1 stale={"recent":null} lastOk==updated=true
+    headings: ["Cluster capacity (1 partition)","sinfo table (1 row)","Recent (finished) - 0 stale, not read since the server started","Login node"]
+    empty-queue sentence: false
+    Recent section: true, tables in it: 0
+    Capacity section: true, meters grid: true, sinfo fold: true, tables in it: 1
+  stale sinfo null, sinfo []: status=slurm_down jobs=3 recent=1 sinfo=0 stale={"sinfo":null} lastOk==updated=true
+    headings: ["Cluster capacity (0 partitions) stale, not read since the server started","Recent (finished) - 1","Login node"]
+    empty-queue sentence: false
+    Recent section: true, tables in it: 1
+    Capacity section: true, meters grid: false, sinfo fold: false, tables in it: 0
+ITEM 7: the status bar tooltip
+  ok (ok): "2 running | 1 pending | 3 total. Open Live HPC."
+  partial (case 2) (slurm_down): "2 running | 1 pending | 3 total | The cluster answered for the queue, and Slurm did not answer for the tables marked stale. Open Live HPC."
+  slurm_down (slurm_down): "The cluster was reached over ssh, and Slurm did not answer. Open Live HPC."
+  unreachable (unreachable): "The cluster did not answer over ssh. Is this Mac on the UT network or on EduVPN? Open Live HPC."
+  error (error): "The poll of the cluster failed. Open Live HPC."
+  starting (starting): "polling cluster... Open Live HPC."
+  unconfigured (unconfigured): "the settings of this hub name no cluster (slurm.resource in .oculus/config.yml). Open Live HPC."
+  no payload yet (null): "polling cluster... Open Live HPC."
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+Reading of the two runs:
+- Item 6 (a):
+  - The reviewer's scenario lost the empty-queue sentence and the Recent heading at 0 under the `unreachable` box.
+  - With a kept queue and no Recent rows, Jobs stays and Recent goes.
+  - Capacity, which has a kept row, stays.
+- Item 6 (b):
+  - Recent at 0 rows under its mark keeps its heading and mark, and its table count goes from 1 to 0.
+  - Capacity at 0 rows under its mark keeps its heading and mark; the meters grid, the "sinfo table (0 rows)" fold and the table go.
+- Item 7: every state reads one sentence mark before "Open Live HPC.", and no word of a sentence changed.
+
+## Commands and files outside the brief (item 1)
+
+Times are local (UTC+1), from the first build's transcript timestamps and `ls -la` of the scratchpad.
+
+- The first build's case-run program, deleted from the scratchpad after its source was quoted in the report:
+  - `scratchpad/o83/cases.config.mts`, the vitest config that limits the run to the one case file;
+  - `scratchpad/o83/tests/cases.test.ts`, the case program;
+  - `scratchpad/o83/node_modules`, a symbolic link to the worktree's `node_modules`, which resolves the program's bare imports.
+- The two whole-suite runs, both on the unchanged tree, before any change, each stopped by hand. Their output was not used.
+  - About 11:17: `npx vitest run --dir <scratchpad>/o83 --project unit --disableConsoleIntercept 2>&1 | tail -150`. It ran the worktree's whole `unit` project, whose `include` applies under the worktree's root.
+  - About 11:22: the same command with `--testTimeout 60000`, its output written to `o83-run1.log` (file time 11:27).
+- Files written by shell redirect, all in the scratchpad:
+  - `o83-run1.log` (11:27): the second whole-suite run.
+  - `o83-first-run.log` (11:29): the cases' first run, `npx vitest run --config <scratchpad>/o83/cases.config.mts --disableConsoleIntercept --testTimeout 60000`.
+  - `o83-after-run.log` (11:37): the cases after the change, the same command.
+  - `o83-unused-after.txt` (11:37): `sh utils/unused-exports.sh`, compared with the base's list.
+  - `o83-verify.log` (11:43): the first verify list, `npm run diagrams` then `npm run test:quick -- --base 4614443b`.
+  - `o83-verify2.log` (11:48): the second verify list, the same commands.
+  - `o83-final-run.log` (11:48): the cases after the last change.
+  - `o83-unused-final.txt` (11:48): `sh utils/unused-exports.sh` after the last change.
+- This round:
+  - It writes no file by redirect. Every command's output reached the transcript through a pipe.
+  - It made `scratchpad/o83/` with `mkdir -p`, the `node_modules` link with `ln -s`, and the three program files with the Write and Edit tools; all are deleted before the report is handed back.
+  - It ran no whole-suite command. Each `npx vitest run` named one file, or `cases.test.ts` under a config whose `include` names that one file.
+- Other scratchpad files: `o83-brief-v1.md` (11:03) is named in the orchestrator's prompt as its own draft. `o83-diff.txt` (12:09) is dated after the first report and is not in the first build's commands. Neither is the builder's.
+
+## Files this round changes, with line counts (`wc -l`)
+
+| File | Lines | In the round's list |
+|---|---|---|
+| `src/lib/server/machine/hpc/poll.ts` | 639 | yes (item 3) |
+| `src/lib/state/workbench/navigation/status.ts` | 615 | `:200-208`, after the brief's 179-198, for item 7 |
+| `src/lib/shell/status/StatusBar.svelte` | 452 | yes (item 7), `:67` and `:292` |
+| `config/text/statusbar.yml` | 247 | `:72` added beside `:71` (item 7) |
+| `src/lib/views/system/machine/hpc/Hpc.svelte` | 162 | yes |
+| `src/lib/views/system/machine/hpc/Recent.svelte` | 160 | yes |
+| `src/lib/views/system/machine/hpc/Capacity.svelte` | 181 | yes |
+| `tests/server/machine/runs/recover/runs.test.ts` | 557 | yes |
+| `docs/apps.md` | 847 | yes, `:421` |
+| `docs/HELP.md` | 570 | yes, `:320` |
+| `src/lib/views/system/machine/hpc/Jobs.svelte` | 155 | widened for the round, unchanged |
+
+## Verify list runs and other checks
+
+The verify list ran twice in this round. No whole-suite command was run.
+
+First run, `(npm run diagrams && npm run test:quick -- --base 4614443b) 2>&1 | grep -E '^(ok|FAILED)|test:quick|Tests |Test Files| FAIL |Error:'`:
+
+```
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.4 s)
+ok      svelte-check (148.8 s): 1793014919497 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (152.1 s)
+FAILED  vitest checks (189.7 s)
+<BOX DRAWINGS rule> Failed Tests 2 <BOX DRAWINGS rule>
+ FAIL  |unit| tests/checks/source/keys.test.ts > text keys > uses literals except at the documented computed prefixes
+AssertionError: expected [ Array(1) ] to deeply equal []
+ FAIL  |unit| tests/checks/source/keys.test.ts > text keys > has a reader for every catalog key
+AssertionError: expected [ 'statusbar.hpc_tip', <HORIZONTAL ELLIPSIS>(1) ] to deeply equal []
+ Test Files  1 failed | 8 passed (9)
+      Tests  2 failed | 195 passed | 9 skipped (206)
+ok      vitest (247.5 s): Duration  237.44s (transform 196.09s, setup 0ms, import 491.34s, tests 340.04s, environment 53.10s)
+FAILED  vitest slow (285.2 s)
+<BOX DRAWINGS rule> Failed Tests 2 <BOX DRAWINGS rule>
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > resolves a value its hub cannot resolve in the primary hub that holds it, the field keeping the key its file holds (G32)
+Error: Test timed out in 20000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > keeps a primary-hub id that begins with the name of a hub folder and a colon as a record of the primary, with no finding
+Error: Test timed out in 20000ms.
+ Test Files  1 failed | 74 passed (75)
+      Tests  2 failed | 680 passed | 215 skipped (897)
+test:quick: 287.9 s; failed: vitest checks, vitest slow
+test:quick: not covered: tests that reach no changed file within the import depth,
+```
+
+The `<BOX DRAWINGS rule>` lines stand for vitest's separator of box-drawing characters. The first three lines the grep printed, `> oculus@0.1.0 test:quick`, `test:quick: 25 changed file(s), from git since 4614443b` and `test:quick: 273 test file(s)`, are the same in both runs.
+
+- The keys check is this round's defect: `hpcTip` chose its key by a ternary inside one `t(...)`, and the check reads only literal keys. It now calls `t('statusbar.hpc_tip_ended', long)` and `t('statusbar.hpc_tip', long)` in the two branches. `npx vitest run tests/checks/source/keys.test.ts` then gives `Tests  11 passed (11)`.
+- `tests/data/hubs/hub-portfolio.test.ts` is a file the step does not change. Run alone (`npx vitest run tests/data/hubs/hub-portfolio.test.ts`), it gives `Tests  16 passed (16)`.
+
+Second run, after the last change, same command:
+
+```
+test:quick: 25 changed file(s), from git since 4614443b
+test:quick: 273 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.3 s)
+ok      svelte-kit sync (2.9 s)
+ok      eslint (16.7 s)
+ok      svelte-check (17.7 s): 1793015199990 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (180.7 s): Duration  167.55s (transform 77.56s, setup 0ms, import 300.20s, tests 316.51s, environment 3ms)
+ok      vitest (208.2 s): Duration  197.73s (transform 140.41s, setup 0ms, import 319.92s, tests 404.41s, environment 14.18s)
+ok      vitest slow (275.3 s): Duration  264.84s (transform 20.44s, setup 0ms, import 260.71s, tests 782.34s, environment 17ms)
+test:quick: 278.4 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+```
+
+The brief's checks 4 to 8 after the last change:
+- Check 4: `diff ../O83-base/unused-exports.txt <(sh utils/unused-exports.sh 2>&1)` gives "diff exit 0", with `Unused exports (230)`.
+- Check 5: the five hits are the same as before, with `Hpc.svelte:110` now at `:112`. Each reads `ok` for the reason given above.
+- Check 6: `grep -n 'stale' Head.svelte` gives exit 1.
+- Check 7: the history-id grep gives exit 1.
+- Check 8: `LC_ALL=C grep -n '[^ -~]'` over every changed file and this report gives exit 1.
+
+Other greps:
+- The history-word grep of the added lines gives the same three hits as before, none of them added by this round.
+- Reuse grep: `grep -rn "hpcTip\|hpc_tip_ended" O83-base/src O83-base/tests O83-base/config --exclude=local.yml` gives exit 1.
+- After the change, `hpcTip` is read at `StatusBar.svelte:67,292`, and `hpc_tip_ended` at `status.ts:207`.
+
+Async paths: this round changes none. The poll edits are comments, and the views read the payload they are given.
