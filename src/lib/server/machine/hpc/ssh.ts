@@ -38,9 +38,25 @@ export const SSH_PROGRAM = 'ssh';
 export const KILL_GRACE_MS = 2000;
 
 /**
+ * The rejection of a run whose timeout fired: its message is `timeout`, and it carries what the
+ * remote command had printed by then, so a caller can tell how far the command got.
+ */
+export class RunTimeout extends Error {
+    /** What the remote command had written to stdout when the timeout fired. */
+    readonly stdout: string;
+
+    constructor(stdout: string) {
+        super('timeout');
+        this.name = 'RunTimeout';
+        this.stdout = stdout;
+    }
+}
+
+/**
  * Run one remote command. The timeout and the `signal` end the child the same way: SIGTERM, and
  * SIGKILL `KILL_GRACE_MS` later when it has not ended. A signal that is already aborted starts no
- * child. The timeout rejects with `timeout` and an abort with `aborted`.
+ * child. The timeout rejects with a `RunTimeout`, whose message is `timeout`, and an abort with
+ * `aborted`.
  */
 export function run(
     host: string,
@@ -59,15 +75,15 @@ export function run(
         let force: ReturnType<typeof setTimeout> | null = null;
         child.stdout.on('data', (part) => (stdout += String(part)));
         child.stderr.on('data', (part) => (stderr += String(part)));
-        const stop = (reason: string): void => {
+        const stop = (error: Error): void => {
             child.kill('SIGTERM');
             force = setTimeout(() => {
                 if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
             }, KILL_GRACE_MS);
-            reject(new Error(reason));
+            reject(error);
         };
-        const timer = setTimeout(() => stop('timeout'), timeoutMs);
-        const aborted = (): void => stop('aborted');
+        const timer = setTimeout(() => stop(new RunTimeout(stdout)), timeoutMs);
+        const aborted = (): void => stop(new Error('aborted'));
         signal?.addEventListener('abort', aborted, { once: true });
         const done = (): void => {
             clearTimeout(timer);

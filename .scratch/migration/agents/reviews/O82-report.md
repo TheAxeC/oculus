@@ -713,3 +713,439 @@ Both were run in the base copy and printed nothing (`rc=1`). `grep -rn "extends 
 - The six catalog keys are new in the group `hpc` (`grep` above).
 - The shell variable `oculus_err` is not used by Recover's section (`batch.ts`, which uses `s`).
 - Values from the cluster reach the page only as hint text, which `Empty` draws through `CodeText` as characters.
+
+# Repair round 1
+
+Everything in round 1 is done: both items are built, cases R1 to R7 give what the round brief asks, and every command of the round's "Verify before you report" passed after the last change. Nothing is left undone.
+
+## Items
+
+| Item | State | Proof |
+|---|---|---|
+| 1. A `sacct` or `sinfo` stopped by its limit, or failing, is Slurm not answering | DONE | `batchCommand` (`poll.ts:113-134`) prints a return code line directly after each timed command (`echo "@@oculus:sacct_rc=$?"` at `:123`, `echo "@@oculus:sinfo_rc=$?"` at `:128`), with no pipe or subshell, and each command's stderr in a section of its own (`@@oculus:sacct_err@@`, `@@oculus:sinfo_err@@`) through the one `mktemp` file, removed after the last section (`:131`). `splitSections` (`parse.ts:201-251`) reads `sacctCode` and `sinfoCode`, each 0 when its line is absent, and `sacctError` and `sinfoError`. `answerFailure` (`poll.ts:187-205`) gives `slurm_down` with the marker and any of the three codes not 0; `slurmHint` (`poll.ts:164-178`) gives `hint_slurm_late` when the first failing command's code is 124, and otherwise the first stderr line that is not empty, in the order `squeue`, `sacct`, `sinfo`. Cases R1 to R4 and R6 below. `recoverCommand` is unchanged (case 11's `recoverCommand('x')` output is the same before and after). The doc comments of `batchCommand`, `answerFailure` and `splitSections` and the poll's head comment (`poll.ts:1-7`) name all three commands. |
+| 2. `words` is required | DONE | `HpcSettings.words: PollWords` (`poll.ts:54`) has no `?`, the options are typed by `HpcSettings`, and `watchHpc` sets `words: options.words` (`poll.ts:247`). `answerFailure`, `rejectionFailure` and `slurmHint` take `words: PollWords` and hold no `undefined` branch. The G115 fixture gains one line and nothing else (below). `npx vitest run tests/server/machine/runs/recover/runs.test.ts`: `Test Files  1 passed (1)` / `Tests  16 passed (16)`. |
+
+**What a cluster with accounting off would show:** a cluster whose `sacct` exits non-zero on every call is published `slurm_down` on every poll, with `sacct`'s own error line as the hint and the Queue, Recent and Capacity tables of the last good poll kept, so on such a cluster the view never shows a fresh queue.
+
+## The G115 fixture
+
+`tests/server/machine/runs/recover/runs.test.ts`, inside `watchHpc(hub, { ... })`. Before (`git show HEAD:tests/server/machine/runs/recover/runs.test.ts`, lines 492-493):
+
+```
+                prewarm: false,
+                recover: { command: () => 'echo section', take },
+```
+
+After (lines 492-494 of the worktree):
+
+```
+                prewarm: false,
+                words: { sshExited: 'ssh exited {0}', slurmLate: 'late', overrun: 'overrun' },
+                recover: { command: () => 'echo section', take },
+```
+
+`git diff --stat` shows `tests/server/machine/runs/recover/runs.test.ts | 1 +`: neither fake and no assertion changed.
+
+## Cases
+
+The programs live in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o82-build/`, outside the worktree. They print and change no file of the tree; `shell-cases.ts` writes its stand-in commands into a `shell/` folder of that directory, which was removed before this report. Each "before" run is on the worktree as the first build left it, each "after" run on the worktree after this round's change.
+
+### R1 to R5: `rcases.ts`, run with `node rcases.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O82`
+
+Each case runs a good poll, then the case's answer, and prints both publishes. `lastOk=kept` means the second publish carries the first poll's `lastOk`; `stamped anew` means a new one.
+
+```ts
+// O82 repair round 1 case-run program: cases R1 to R5 through watchHpc with an injected runner.
+// Each case runs a good poll, then the case's answer, and prints both publishes. Writes nothing.
+// Run: node rcases.ts <tree root>
+const ROOT = process.argv[2];
+const poll = await import(`${ROOT}/src/lib/server/machine/hpc/poll.ts`);
+const { SEC_RC, SEC_SACCT, SEC_SINFO } = await import(`${ROOT}/src/lib/server/machine/hpc/parse.ts`);
+const { Hub } = await import(`${ROOT}/src/lib/server/core/channels.ts`);
+
+const words = {
+    sshExited: 'ssh exited {0}',
+    slurmLate: 'no answer within the time limit',
+    overrun: 'Slurm answered, and the rest of the poll ran past its time limit'
+};
+const MARK = '@@oculus:connected@@';
+const SQ_ERR = '@@oculus:squeue_err@@';
+const SA_RC = '@@oculus:sacct_rc=';
+const SA_ERR = '@@oculus:sacct_err@@';
+const SI_RC = '@@oculus:sinfo_rc=';
+const SI_ERR = '@@oculus:sinfo_err@@';
+const JOB = '123|job-a|main|RUNNING|0:10|1:00:00|1|1|N/A|4G|100|N/A|node1';
+const DONE = '9|done-a|COMPLETED|0:0|00:01|2026-10-26T10:00:00|4G|1G|00:01|1|1|60';
+const PART = 'main|up|4|idle|gpu:1';
+
+type Answer = { stdout: string; stderr: string; code: number };
+/** One batch answer in the round's format, each part given or left at its good value. */
+function answer(p: {
+    sq?: [number, string];
+    sa?: [number, string];
+    si?: [number, string];
+}): Answer {
+    const [sqc, sqe] = p.sq ?? [0, ''];
+    const [sac, sae] = p.sa ?? [0, ''];
+    const [sic, sie] = p.si ?? [0, ''];
+    const lines = [
+        MARK,
+        ...(sqc === 0 ? [JOB] : []),
+        `${SEC_RC}${sqc}`,
+        SQ_ERR,
+        ...(sqe ? [sqe] : []),
+        SEC_SACCT,
+        ...(sac === 0 ? [DONE] : []),
+        `${SA_RC}${sac}`,
+        SA_ERR,
+        ...(sae ? [sae] : []),
+        SEC_SINFO,
+        ...(sic === 0 ? [PART] : []),
+        `${SI_RC}${sic}`,
+        SI_ERR,
+        ...(sie ? [sie] : [])
+    ];
+    return { stdout: `${lines.join('\n')}\n`, stderr: '', code: 0 };
+}
+
+async function scenario(label: string, second: Answer): Promise<void> {
+    const hub = new Hub();
+    const answers = [answer({}), second];
+    let at = 0;
+    const watcher = poll.watchHpc(hub, {
+        host: 'cluster',
+        days: 7,
+        pollMin: 20,
+        quotaMin: 60,
+        prewarm: false,
+        words,
+        runner: (_host: string, command: string) => {
+            if (command.startsWith('quota')) return Promise.resolve({ stdout: '', stderr: '', code: 1 });
+            const next = answers[Math.min(at, answers.length - 1)];
+            at += 1;
+            return Promise.resolve(next);
+        }
+    });
+    const lines: string[] = [];
+    try {
+        await new Promise((r) => setTimeout(r, 0));
+        const first = hub.latest('hpc')?.payload as any;
+        lines.push(show(first, ''));
+        await watcher.refresh();
+        lines.push(show(hub.latest('hpc')?.payload, first.lastOk));
+    } finally {
+        watcher.close();
+    }
+    console.log(`${label}\n  ${lines.join('\n  ')}`);
+}
+function show(p: any, firstOk: string): string {
+    const ok = p.lastOk === undefined ? 'none' : firstOk === '' ? 'set' : p.lastOk === firstOk ? 'kept' : 'stamped anew';
+    return `status=${p.status} hint=${JSON.stringify(p.hint)} jobs=${p.jobs.length} recent=${p.recent.length} sinfo=${p.sinfo.length} lastOk=${ok}`;
+}
+
+await scenario('R1 (sacct stopped by its limit, 124)', answer({ sa: [124, ''] }));
+await scenario('R2 (sinfo stopped by its limit, 124)', answer({ si: [124, ''] }));
+await scenario(
+    'R3 (sacct exits 1 with its error)',
+    answer({ sa: [1, 'sacct: error: Problem talking to the database: Connection refused'] })
+);
+await scenario(
+    'R4 (squeue and sacct both fail with their own lines)',
+    answer({
+        sq: [1, 'slurm_load_jobs error: Unable to contact slurm controller (connect failure)'],
+        sa: [1, 'sacct: error: Problem talking to the database: Connection refused']
+    })
+);
+await scenario('R5 (G115 good fake, no sacct or sinfo code line)', {
+    stdout: `${SEC_RC}0\n${SEC_SACCT}\n${SEC_SINFO}\n`,
+    stderr: '',
+    code: 0
+});
+```
+
+Before the change:
+
+```
+R1 (sacct stopped by its limit, 124)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=ok hint=undefined jobs=1 recent=0 sinfo=1 lastOk=stamped anew
+R2 (sinfo stopped by its limit, 124)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=ok hint=undefined jobs=1 recent=1 sinfo=0 lastOk=stamped anew
+R3 (sacct exits 1 with its error)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=ok hint=undefined jobs=1 recent=0 sinfo=1 lastOk=stamped anew
+R4 (squeue and sacct both fail with their own lines)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 recent=1 sinfo=1 lastOk=kept
+R5 (G115 good fake, no sacct or sinfo code line)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=ok hint=undefined jobs=0 recent=0 sinfo=0 lastOk=stamped anew
+```
+
+After the change:
+
+```
+R1 (sacct stopped by its limit, 124)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=slurm_down hint="no answer within the time limit" jobs=1 recent=1 sinfo=1 lastOk=kept
+R2 (sinfo stopped by its limit, 124)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=slurm_down hint="no answer within the time limit" jobs=1 recent=1 sinfo=1 lastOk=kept
+R3 (sacct exits 1 with its error)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=slurm_down hint="sacct: error: Problem talking to the database: Connection refused" jobs=1 recent=1 sinfo=1 lastOk=kept
+R4 (squeue and sacct both fail with their own lines)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 recent=1 sinfo=1 lastOk=kept
+R5 (G115 good fake, no sacct or sinfo code line)
+  status=ok hint=undefined jobs=1 recent=1 sinfo=1 lastOk=set
+  status=ok hint=undefined jobs=0 recent=0 sinfo=0 lastOk=stamped anew
+```
+
+R1 and R2 keep the first poll's Recent and Capacity rows and its `lastOk`; R3 has `sacct`'s line as hint; R4 has `squeue`'s. R5's answer is G115's good fake, which carries no rows, so `ok` with empty tables and a new `lastOk` is the expected result. R5's test half: `npx vitest run tests/server/machine/runs/recover/runs.test.ts` after the change printed `Test Files  1 passed (1)` and `Tests  16 passed (16)`.
+
+### R6: `shell-cases.ts`, run with `node shell-cases.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O82 <scratch dir>/shell`
+
+It runs the poll's own `batchCommand` in a local `/bin/sh` (no ssh) with stand-ins for `squeue`, `sacct`, `sinfo` and `timeout`. The fourth run, "timeout stops sacct (124)", is the one this round adds. Each run is a single poll, so there are no earlier rows to keep.
+
+```ts
+// O82 case-run program: runs the poll's own batchCommand in a local `sh` (no ssh) with stand-ins
+// for squeue, sacct, sinfo and timeout in a scratch bin folder, through watchHpc's injected runner,
+// and prints what is published and what the scratch tmp folder holds afterwards.
+// Run: node shell-cases.ts <tree root> <scratch dir>
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, readdirSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
+import { join } from 'node:path';
+
+const [ROOT, SCRATCH] = process.argv.slice(2);
+const poll = await import(`${ROOT}/src/lib/server/machine/hpc/poll.ts`);
+const { Hub } = await import(`${ROOT}/src/lib/server/core/channels.ts`);
+
+const words = { sshExited: 'ssh exited {0}', slurmLate: 'LATE', overrun: 'OVERRUN' };
+
+function stub(bin: string, name: string, body: string): void {
+    writeFileSync(join(bin, name), `#!/bin/sh\n${body}\n`);
+    chmodSync(join(bin, name), 0o755);
+}
+
+async function run(label: string, squeue: string, timeout: string): Promise<void> {
+    const dir = join(SCRATCH, label.replace(/\W+/g, '-'));
+    rmSync(dir, { recursive: true, force: true });
+    const bin = join(dir, 'bin');
+    const tmp = join(dir, 'tmp');
+    mkdirSync(bin, { recursive: true });
+    mkdirSync(tmp, { recursive: true });
+    stub(bin, 'squeue', squeue);
+    stub(bin, 'timeout', timeout);
+    stub(bin, 'sacct', 'echo "1|a|COMPLETED|0:0|00:01|2026-10-26T10:00:00|4G|1G|00:01|1|1|60"');
+    stub(bin, 'sinfo', 'echo "main|up|4|idle|gpu:1"');
+    const hub = new Hub();
+    const watcher = poll.watchHpc(hub, {
+        host: 'local',
+        days: 7,
+        pollMin: 20,
+        quotaMin: 60,
+        prewarm: false,
+        words,
+        runner: (_host: string, command: string) => {
+            if (command.startsWith('quota')) return Promise.resolve({ stdout: '', stderr: '', code: 1 });
+            const done = spawnSync('/bin/sh', ['-c', command], {
+                env: { PATH: `${bin}:/usr/bin:/bin`, TMPDIR: tmp, USER: 'me' },
+                encoding: 'utf8'
+            });
+            return Promise.resolve({ stdout: done.stdout, stderr: done.stderr, code: done.status ?? 1 });
+        }
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    watcher.close();
+    const p = hub.latest('hpc')?.payload as { status: string; hint?: string; jobs: unknown[]; recent: unknown[] };
+    console.log(
+        `${label}: status=${p.status} hint=${JSON.stringify(p.hint)} jobs=${p.jobs.length} recent=${p.recent.length} tmp left=${JSON.stringify(readdirSync(tmp))}`
+    );
+}
+
+const passThrough = 'shift; exec "$@"';
+await run('squeue answers', 'echo "123|job-a|main|RUNNING|0:10|1:00:00|1|1|N/A|4G|100|N/A|node1"; echo "squeue: warning: a note" >&2', passThrough);
+await run('squeue fails with Slurm message', 'echo "slurm_load_jobs error: Unable to contact slurm controller (connect failure)" >&2; exit 1', passThrough);
+await run('timeout stops squeue (124)', 'echo never', 'case "$2" in squeue) exit 124;; esac; shift; exec "$@"');
+await run(
+    'timeout stops sacct (124)',
+    'echo "123|job-a|main|RUNNING|0:10|1:00:00|1|1|N/A|4G|100|N/A|node1"',
+    'case "$2" in sacct) exit 124;; esac; shift; exec "$@"'
+);
+```
+
+Before the change:
+
+```
+squeue answers: status=ok hint=undefined jobs=1 recent=1 tmp left=[]
+squeue fails with Slurm message: status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=0 recent=0 tmp left=[]
+timeout stops squeue (124): status=slurm_down hint="LATE" jobs=0 recent=0 tmp left=[]
+timeout stops sacct (124): status=ok hint=undefined jobs=1 recent=0 tmp left=[]
+```
+
+After the change:
+
+```
+squeue answers: status=ok hint=undefined jobs=1 recent=1 tmp left=[]
+squeue fails with Slurm message: status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=0 recent=0 tmp left=[]
+timeout stops squeue (124): status=slurm_down hint="LATE" jobs=0 recent=0 tmp left=[]
+timeout stops sacct (124): status=slurm_down hint="LATE" jobs=0 recent=0 tmp left=[]
+```
+
+No file is left in the tmp folder on any of the four runs.
+
+### R7: cases 1 to 13 of the brief
+
+Cases 1 to 11 were rerun with `cases.ts`, whose source is quoted under "The case-run programs" above and is unchanged, as `node cases.ts /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O82`, before and after this round's change. Case 12 was rerun after the change with `client-cases.mjs` (source above, unchanged). Case 13 is the G115 file run.
+
+`diff` of the two `cases.ts` outputs (before, after) prints only case 11's `batchCommand` text, which is the change item 1 asks for; every other case, case 11's `recoverCommand('x')` included, is the same as in the first build's after run:
+
+```
+58d57
+< [ "$oculus_err" = /dev/null ] || rm -f "$oculus_err"
+60c59,62
+< timeout 8 sacct -u "$USER" -S DATE -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn
+---
+> timeout 8 sacct -u "$USER" -S DATE -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn 2>"$oculus_err"
+> echo "@@oculus:sacct_rc=$?"
+> echo "@@oculus:sacct_err@@"
+> cat "$oculus_err"
+62c64,68
+< timeout 5 sinfo -h -o '%P|%a|%D|%t|%G'
+---
+> timeout 5 sinfo -h -o '%P|%a|%D|%t|%G' 2>"$oculus_err"
+> echo "@@oculus:sinfo_rc=$?"
+> echo "@@oculus:sinfo_err@@"
+> cat "$oculus_err"
+> [ "$oculus_err" = /dev/null ] || rm -f "$oculus_err"
+```
+
+The whole `cases.ts` output after the change (the output before the change is the same text with lines 51 to 68 as the `<` side of the diff above gives them):
+
+```
+case 1 (good, then 255 no marker)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=unreachable hint="ssh: connect to host x port 22: Operation timed out" jobs=1 lastOk=kept retryMin=2
+case 2 (good, then marker, squeue rc 1, Slurm line in its own section)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 lastOk=kept retryMin=2
+case 3 (good, then marker, squeue rc 124)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="no answer within the time limit" jobs=1 lastOk=kept retryMin=2
+case 4a (runner timeout, marker only in stdout)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="no answer within the time limit" jobs=1 lastOk=kept retryMin=2
+case 4b (runner timeout after SEC_SINFO, Recover section slow)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=error hint="Slurm answered, and the rest of the poll ran past its time limit" jobs=1 lastOk=kept retryMin=2
+case 5a (runner timeout, empty stdout)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=unreachable hint="timeout" jobs=1 lastOk=kept retryMin=2
+case 5b (plain new Error('timeout'))
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=unreachable hint="timeout" jobs=1 lastOk=kept retryMin=2
+case 6 (spawn ssh ENOENT)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=error hint="spawn ssh ENOENT" jobs=1 lastOk=kept retryMin=2
+case 7 (code 0, rc 0, no SEC_SACCT)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=error hint="ssh exited 0" jobs=1 lastOk=kept retryMin=2
+case 7 (code 255, marker, rc 1)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 lastOk=kept retryMin=2
+case 7 (code 255, marker, rc 0)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=error hint="Connection to x closed by remote host." jobs=1 lastOk=kept retryMin=2
+case 7a (ssh warning on stderr before Slurm line)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 lastOk=kept retryMin=2
+case 7b (cancel, log with a runner timeout)
+  cancel="rejected with message \"timeout\"" log={"status":"timeout","log":"","path":""}
+case 7c (slurm_down answer after the host changed)
+  published: starting@cluster, starting@other batch calls=2
+case 8 (good, case 2, good)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 lastOk=kept retryMin=2
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+case 9 (no host)
+  status=unreachable hint="the cluster x has no host" jobs=0 lastOk=none retryMin=2
+case 10 (recover() after case 2)
+  status=ok hint=undefined jobs=1 lastOk=kept retryMin=2
+  status=slurm_down hint="slurm_load_jobs error: Unable to contact slurm controller (connect failure)" jobs=1 lastOk=kept retryMin=2
+  recover() sent 0 commands
+case 11 batchCommand(7, "") with its date replaced:
+echo "@@oculus:connected@@"
+oculus_err=$(mktemp 2>/dev/null) || oculus_err=/dev/null
+timeout 12 squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R' 2>"$oculus_err"
+echo "@@oculus:squeue_rc=$?"
+echo "@@oculus:squeue_err@@"
+cat "$oculus_err"
+echo "@@oculus:sacct@@"
+timeout 8 sacct -u "$USER" -S DATE -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn 2>"$oculus_err"
+echo "@@oculus:sacct_rc=$?"
+echo "@@oculus:sacct_err@@"
+cat "$oculus_err"
+echo "@@oculus:sinfo@@"
+timeout 5 sinfo -h -o '%P|%a|%D|%t|%G' 2>"$oculus_err"
+echo "@@oculus:sinfo_rc=$?"
+echo "@@oculus:sinfo_err@@"
+cat "$oculus_err"
+[ "$oculus_err" = /dev/null ] || rm -f "$oculus_err"
+case 11 recoverCommand('x'):
+echo "@@oculus:connected@@"
+timeout 12 squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'
+echo "@@oculus:squeue_rc=$?"
+echo "@@oculus:recover@@"
+x
+```
+
+Case 12, `node client-cases.mjs /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O82` after the change, the same as the first build's after run:
+
+```
+case 12 hpcWords(unreachable): short="unreachable" long="The cluster did not answer over ssh. Is this Mac on the UT network or on EduVPN?"
+case 12 hpcWords(slurm_down): short="Slurm down" long="The cluster was reached over ssh, and Slurm did not answer."
+case 12 hpcWords(error): short="error" long="The poll of the cluster failed."
+```
+
+Case 13: `npx vitest run tests/server/machine/runs/recover/runs.test.ts`: `Test Files  1 passed (1)` / `Tests  16 passed (16)`.
+
+## Verify before you report
+
+All run from the worktree's root after the last change, with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`.
+
+| Check | State | Lines it printed |
+|---|---|---|
+| `npm run diagrams && npm run test:quick -- --base 4959cb90` | DONE | `test:quick: 23 changed file(s), from git since 4959cb90`; `ok prettier`, `ok ASCII gate`, `ok svelte-kit sync`, `ok eslint (104.6 s)`, `ok vitest (125.1 s)`, `ok svelte-check (125.7 s): ... 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest slow (140.1 s)`, `ok vitest checks (140.4 s)`; `test:quick: 143.2 s; every command passed`; `test:quick: not covered: tests that reach no changed file within the import depth, the build, the lint of unchanged files`. |
+| `npx vitest run tests/server/machine/runs/recover/runs.test.ts` | DONE | `Test Files  1 passed (1)` / `Tests  16 passed (16)` |
+| `sh utils/unused-exports.sh` compared with `.agents/worktrees/O82-base/unused-exports.txt` | DONE | `diff` prints two changed lines, each the removal of `HpcStatus` from `src/lib/data/model/index.ts` and `src/lib/data/model/model-sessions.ts`, as in the first build. No line is added: the five new markers of `parse.ts` are each imported by `poll.ts`. |
+| Verify 4, `git grep -n "unreachable_msg" -- src` | DONE | `src/lib/state/system/machine/hpc/hpc.ts:41:        return { word: t('hpc.unreachable'), sentence: t('hpc.unreachable_msg') };`, reached only under `status === 'unreachable'` (`hpc.ts:40`). |
+| Verify 5, `grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml` | DONE | nothing (`rc=1`) |
+| History-word grep of added lines, `git diff -U0 \| grep '^+' \| grep -v '^+++' \| grep -n -i -w "before\|still\|no longer\|used to\|always has been\|always had\|as before\|previously\|the step adds\|after this package lands\|now\|today"` | DONE | two hits, the same two as in the first build, now at `poll.ts:209-210` in the doc comment of `rejectionFailure`: "A timeout before the connected marker" and "after the marker and before the last Slurm section began". Both say where in the command's output the timeout fell, not an earlier state of the code. The round adds no test title. |
+| Character set, `LC_ALL=C grep -n '[^ -~]'` over every changed file but the four svg files, and this report | DONE | nothing (`rc=1`); `LC_ALL=C grep -c '[^ -~]'` gives 0 for each svg file. |
+
+## What this round changes in the first build's sections above
+
+- **Judgment call 2:** the one `mktemp` file now carries the stderr of `squeue`, `sacct` and `sinfo` in turn, and is removed after `sinfo`'s section is printed (`poll.ts:116-131`). A poll killed during those 25 s leaves the empty file in the login node's `/tmp`. R6 shows `tmp left=[]` on all four local runs.
+- **Judgment call 3:** `words` is required; the poll has no path without the hint sentences.
+- **Judgment call 6:** a `sinfo` that fails is now `slurm_down` (R2), not `ok`. The batch's own exit code is now that of its last line, the `rm` line or Recover's section.
+- **Judgment call 7:** a `slurm_down` whose failing commands all have a code other than 124 first and an empty stderr section has no hint, for any of the three commands.
+- **Judgment call 8:** the hint of `slurm_down` is the first line that is not empty of a failing command's stderr, as item 1 of this round says, and no longer the whole trimmed `squeue` section. A Slurm message of several lines therefore shows only its first line. Cases 2 and 7a, each one line, are unchanged.
+- **Limitations, first bullet:** a `sacct` or `sinfo` stopped by its limit or failing is now `slurm_down` over the last good rows (R1 to R3); the bullet no longer holds.
+- **"Item 2 says 25 s together":** the `mktemp`, `cat` and `rm` that carry the three commands' stderr stay outside those 25 s.
+- **New ids:** `SEC_SACCT_RC` (`@@oculus:sacct_rc=`), `SEC_SINFO_RC` (`@@oculus:sinfo_rc=`), `SEC_SACCT_ERR` (`@@oculus:sacct_err@@`) and `SEC_SINFO_ERR` (`@@oculus:sinfo_err@@`) are distinct from every other marker, and none is a prefix of another that `splitSections` tests (`parse.ts:222-235`). `SEC_SACCT` (`@@oculus:sacct@@`) is not a substring of `@@oculus:sacct_rc=` or `@@oculus:sacct_err@@`, so `answerFailure`'s `result.stdout.includes(SEC_SACCT)` reads only the section marker. Two of them contain `sacct`; `recoverCommand` prints none of them (case 11), so G115's `expect(good.sent[0]).not.toContain('sacct')` (`runs.test.ts:527`) reads the same command as before.
+
+## Files changed in this round, with line counts
+
+Measured with `wc -l` on the worktree; the first number is the count after the first build (the "Files with line counts" table above, or `git show HEAD:<path>` for the test file).
+
+| File | Lines |
+|---|---|
+| `src/lib/server/machine/hpc/poll.ts` | 534 -> 564 |
+| `src/lib/server/machine/hpc/parse.ts` | 221 -> 251 |
+| `tests/server/machine/runs/recover/runs.test.ts` | 536 -> 537 (in the round's widened path list, lines 485-495) |
+| `tests/checks/tree/allow-duplication.txt` | 21 -> 21. The reason of the `parse.ts` and `hpc.ts` entry reads "the same 7 lines at 40 and 21" (it read "at 29 and 21" after the first build), since the clone's first line in `parse.ts` moved to line 40; the mark `8ead1c0cdafe` is unchanged. |
+| `.scratch/migration/agents/reviews/O82-report.md` | this section |
+
+`npm run diagrams` rewrote the eight diagram files with the same content as after the first build (`git diff docs/diagrams/*.dot` shows the same four edge labels as the first build's table); no other file changed in this round.

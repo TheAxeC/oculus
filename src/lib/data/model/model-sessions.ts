@@ -613,10 +613,12 @@ export type HubNotes = {
 
 // ------------------------------------------------------------------ hpc
 /**
- * `unconfigured` is a hub whose settings name no cluster: there is nothing to ask, so nothing is
- * polled and the payload carries the sentence that says so as `hint`.
+ * A failed poll is `unreachable` (ssh did not connect), `slurm_down` (ssh connected and Slurm did
+ * not answer) or `error` (anything else). `unconfigured` is a hub whose settings name no cluster:
+ * there is nothing to ask, so nothing is polled and the payload carries the sentence that says so
+ * as `hint`.
  */
-export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error' | 'unconfigured';
+export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'slurm_down' | 'error' | 'unconfigured';
 export type HpcJob = {
     id: string;
     name: string;

@@ -48,6 +48,7 @@ import {
 } from '../../sources/repositories/repositories.ts';
 import type { RunningAction } from '../../sources/repositories/repositories.svelte.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
+import { failureWords } from '../../system/machine/hpc/hpc.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
@@ -177,8 +178,9 @@ export function usageWords(usage: UsagePayload | null): string {
 
 /**
  * The Live HPC poll: the state in the words its own head uses, and once it is live the running and
- * pending counts for the bar and the whole queue for the tooltip. A hub that names no cluster shows
- * its sentence in the tooltip, with no failure word.
+ * pending counts for the bar and the whole queue for the tooltip. A failed poll shows its failure's
+ * word, and its failure's sentence in the tooltip. A hub that names no cluster shows its sentence
+ * in the tooltip, with no failure word.
  */
 export function hpcWords(data: HpcPayload | null): HpcWords {
     if (data === null || data.status === 'starting') {
@@ -187,10 +189,8 @@ export function hpcWords(data: HpcPayload | null): HpcWords {
     if (data.status === 'unconfigured') {
         return { short: t('hpc.unconfigured'), long: data.hint ?? '' };
     }
-    if (data.status === 'unreachable') {
-        return { short: t('hpc.unreachable'), long: t('hpc.unreachable_msg') };
-    }
-    if (data.status === 'error') return { short: t('hpc.error'), long: t('hpc.error') };
+    const failed = failureWords(data.status);
+    if (failed !== null) return { short: failed.word, long: failed.sentence };
     return {
         short: t('statusbar.hpc_live', data.running, data.pending),
         long: t('hpc.queue_summary', data.running, data.pending, data.total)

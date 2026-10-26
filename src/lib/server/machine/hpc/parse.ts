@@ -6,6 +6,21 @@ export const SEC_SACCT = '@@oculus:sacct@@';
 export const SEC_SINFO = '@@oculus:sinfo@@';
 export const SEC_RC = '@@oculus:squeue_rc=';
 export const SEC_RECOVER = '@@oculus:recover@@';
+/** The first line a poll's remote command prints, so its answer says that ssh connected. */
+export const SEC_CONNECTED = '@@oculus:connected@@';
+/**
+ * The return code line of `sacct` and of `sinfo`, each printed directly after its command as
+ * `SEC_RC` is after `squeue`.
+ */
+export const SEC_SACCT_RC = '@@oculus:sacct_rc=';
+export const SEC_SINFO_RC = '@@oculus:sinfo_rc=';
+/**
+ * The sections holding what `squeue`, `sacct` and `sinfo` wrote to their stderr, apart from ssh's
+ * own stderr.
+ */
+export const SEC_SQUEUE_ERR = '@@oculus:squeue_err@@';
+export const SEC_SACCT_ERR = '@@oculus:sacct_err@@';
+export const SEC_SINFO_ERR = '@@oculus:sinfo_err@@';
 
 /**
  * The day an accounting query starts from, as many days back as asked, which sacct reads as a date.
@@ -171,23 +186,73 @@ export function parseQuota(raw: string): HpcQuotaItem[] {
     return quota.length ? quota : disk;
 }
 
-/** The sections of one batch answer; `recover` is Recover's part (runs/recover/live/batch.ts). */
+/** Every marker a poll's answer holds, which `splitSections` reads wherever it starts on a line. */
+const MARKERS = [
+    SEC_CONNECTED,
+    SEC_RC,
+    SEC_SACCT_RC,
+    SEC_SINFO_RC,
+    SEC_SQUEUE_ERR,
+    SEC_SACCT_ERR,
+    SEC_SINFO_ERR,
+    SEC_SACCT,
+    SEC_SINFO,
+    SEC_RECOVER
+];
+
+/** The code a return code line carries after its marker, or 0 when it carries no number. */
+function codeOf(line: string, marker: string): number {
+    return Number(line.slice(marker.length).replace(/@+$/, '').trim()) || 0;
+}
+
+/**
+ * The sections of one batch answer; `recover` is Recover's part (runs/recover/live/batch.ts).
+ * `squeueCode`, `sacctCode` and `sinfoCode` are each 0 when the answer holds no return code line
+ * of that command. `squeueError`, `sacctError` and `sinfoError` are what each command wrote to its
+ * stderr, `connected` whether the connected marker was printed and `sinfoBegun` whether the last
+ * Slurm section had begun, so an answer cut short says how far it got.
+ */
 export function splitSections(raw: string): {
     squeue: string;
     sacct: string;
     sinfo: string;
     recover: string;
     squeueCode: number;
+    sacctCode: number;
+    sinfoCode: number;
+    squeueError: string;
+    sacctError: string;
+    sinfoError: string;
+    connected: boolean;
+    sinfoBegun: boolean;
 } {
-    const parts: string[][] = [[], [], [], []];
+    const parts: string[][] = [[], [], [], [], [], [], []];
     let at = 0;
     let squeueCode = 0;
-    for (const line of raw.split('\n')) {
-        if (line.startsWith(SEC_RC))
-            squeueCode = Number(line.slice(SEC_RC.length).replace(/@+$/, '').trim()) || 0;
+    let sacctCode = 0;
+    let sinfoCode = 0;
+    let connected = false;
+    let sinfoBegun = false;
+    for (const whole of raw.split('\n')) {
+        // A marker is printed after a command whose output may end with no newline, as when
+        // `timeout` stops it mid-row, so it can sit at the end of that output's last line: the
+        // text before it stays in the section it was printed in, and the marker is read from there.
+        const glued = MARKERS.map((marker) => whole.indexOf(marker)).filter((one) => one > 0);
+        const cut = glued.length === 0 ? 0 : Math.min(...glued);
+        if (cut > 0) parts[at].push(whole.slice(0, cut));
+        const line = whole.slice(cut);
+        if (line.startsWith(SEC_CONNECTED)) connected = true;
+        else if (line.startsWith(SEC_RC)) squeueCode = codeOf(line, SEC_RC);
+        else if (line.startsWith(SEC_SACCT_RC)) sacctCode = codeOf(line, SEC_SACCT_RC);
+        else if (line.startsWith(SEC_SINFO_RC)) sinfoCode = codeOf(line, SEC_SINFO_RC);
+        else if (line.startsWith(SEC_SQUEUE_ERR)) at = 4;
+        else if (line.startsWith(SEC_SACCT_ERR)) at = 5;
+        else if (line.startsWith(SEC_SINFO_ERR)) at = 6;
         else if (line.startsWith(SEC_SACCT)) at = 1;
-        else if (line.startsWith(SEC_SINFO)) at = 2;
-        else if (line.startsWith(SEC_RECOVER)) at = 3;
+        else if (line.startsWith(SEC_SINFO)) {
+            at = 2;
+            sinfoBegun = true;
+        } else if (line.startsWith(SEC_RECOVER)) at = 3;
         else parts[at].push(line);
     }
     return {
@@ -195,6 +260,13 @@ export function splitSections(raw: string): {
         sacct: parts[1].join('\n'),
         sinfo: parts[2].join('\n'),
         recover: parts[3].join('\n'),
-        squeueCode
+        squeueCode,
+        sacctCode,
+        sinfoCode,
+        squeueError: parts[4].join('\n'),
+        sacctError: parts[5].join('\n'),
+        sinfoError: parts[6].join('\n'),
+        connected,
+        sinfoBegun
     };
 }

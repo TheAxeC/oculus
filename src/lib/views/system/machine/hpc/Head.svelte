@@ -1,14 +1,15 @@
 <script lang="ts">
     // Layer 3, view partial. The Live HPC bar presents the connection states at its end and
-    // keeps refresh as an explicit server action. While the cluster does not answer, the refresh
-    // control is the retry of the error box (Hpc.svelte) and the bar holds the status words alone.
-    // With no cluster named (`unconfigured`) the bar holds its words alone too, in the plain tone,
-    // with no "as of" time and no stale mark.
+    // keeps refresh as an explicit server action. While a poll fails (ssh not connecting, Slurm
+    // not answering or another error, each with its own word), the refresh control is the retry of
+    // the error box (Hpc.svelte) and the bar holds the status words alone. With no cluster named
+    // (`unconfigured`) the bar holds its words alone too, in the plain tone, with no "as of" time
+    // and no stale mark.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
-    import type { HpcPayload } from '$lib/state/system/machine/hpc/hpc';
+    import { failureWords, type HpcPayload } from '$lib/state/system/machine/hpc/hpc';
     import { useState } from '$lib/state/client/use';
 
     /**
@@ -27,13 +28,13 @@
     $effect(startMinuteClock);
     const now = $derived(minuteNow());
 
-    /** Whether the cluster is not answering, which the error box in the body says in words. */
-    const failed = $derived(data?.status === 'unreachable' || data?.status === 'error');
+    /** The words of the poll's failure, which the error box in the body says in full, or null. */
+    const failure = $derived(data === null ? null : failureWords(data.status));
+    const failed = $derived(failure !== null);
 
     function status(): string {
         if (data === null || data.status === 'starting') return t('hpc.polling');
-        if (data.status === 'unreachable') return t('hpc.unreachable');
-        if (data.status === 'error') return t('hpc.error');
+        if (failure !== null) return failure.word;
         if (data.status === 'unconfigured') return t('hpc.unconfigured');
         return t('hpc.live');
     }
@@ -48,7 +49,7 @@
     /** The meta parts after the state word; the stale one carries the failure tone. */
     function parts(): { text: string; late: boolean }[] {
         if (data === null) return [];
-        if (data.status === 'unreachable' || data.status === 'error')
+        if (failed)
             return [
                 ...(data.lastOk
                     ? [{ text: t('hpc.last_ok', clock(data.lastOk)), late: false }]
@@ -84,10 +85,7 @@
         <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
     {/if}
     <p class="meta">
-        <span
-            class:ok={data?.status === 'ok'}
-            class:bad={data?.status === 'error' || data?.status === 'unreachable'}
-        >
+        <span class:ok={data?.status === 'ok'} class:bad={failed}>
             {status()}
         </span>
         {#each parts() as part (part.text)}

@@ -490,6 +490,7 @@ describe('a Recover run on the cluster', () => {
                 pollMin: 20,
                 quotaMin: 60,
                 prewarm: false,
+                words: { sshExited: 'ssh exited {0}', slurmLate: 'late', overrun: 'overrun' },
                 recover: { command: () => 'echo section', take },
                 runner: (_host, command) => {
                     calls.push(command);

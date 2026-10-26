@@ -1,8 +1,9 @@
-// Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy
-// out of its components.
-import type { HpcJob, HpcPartition } from '../../../../data/model/index.ts';
+// Layer 2, client state. Pure formatting, tone and word choices for the Live HPC view and the
+// status bar's HPC item keep display policy out of their components.
+import type { HpcJob, HpcPartition, HpcStatus } from '../../../../data/model/index.ts';
 import { z } from 'zod';
 import { readAs } from '../../../../data/shapes/shapes.ts';
+import { t } from '../../../shared/words/text.ts';
 export type {
     HpcJob,
     HpcPartition,
@@ -30,6 +31,22 @@ export function walltimeFraction(job: HpcJob): number | null {
     const limit = seconds(job.limit);
     return used === null || !limit ? null : Math.min(1, used / limit);
 }
+/**
+ * The words of a failed poll, one pair per failure: the short word of the head's pill and the
+ * status bar, and the sentence of the error box, the Login node section and the status bar's
+ * tooltip. Null for a status that is not a failure.
+ */
+export function failureWords(status: HpcStatus): { word: string; sentence: string } | null {
+    if (status === 'unreachable') {
+        return { word: t('hpc.unreachable'), sentence: t('hpc.unreachable_msg') };
+    }
+    if (status === 'slurm_down') {
+        return { word: t('hpc.slurm_down'), sentence: t('hpc.slurm_down_msg') };
+    }
+    if (status === 'error') return { word: t('hpc.error'), sentence: t('hpc.error_msg') };
+    return null;
+}
+
 export function stateTone(state: string): string {
     return state === 'RUNNING' ? 'green' : state === 'PENDING' ? 'amber' : 'slate';
 }

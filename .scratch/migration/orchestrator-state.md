@@ -33,22 +33,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a1c591e9512282600 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O80-report.md
-  builder_usage: first run of the cases, handed back on case 17: 281008 tokens, 75 tool uses, 16 min 58 s
+  builder_usage: first run of the cases, handed back on case 17: 281008 tokens, 75 tool uses, 16 min 58 s; the build after the cases ruling: 131306 tokens, 1114 tool uses, 150 min 8 s
   round: 0
-  landing: not-started
-- step: O82
-  brief_check: .scratch/migration/agents/reviews/O82-brief-check.md (ae57906ed63a7f9f2, claude-opus-5-5, 171305 tokens, 41 tool uses, 6 min 43 s)
-  base: 4959cb90
-  worktree: .agents/worktrees/migration-O82
-  executor: agent
-  worker: claude:opus
-  session_id: aef746e492419e883 (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O82-report.md
-  builder_usage: 326906 tokens, 135 tool uses, 28 min 57 s
-  reviewer_report: .scratch/migration/agents/reviews/O82-refuter.md (a2050ca41ab3495b9, claude-opus-5-5, 289965 tokens, 81 tool uses, 23 min 25 s)
-  shared_paths: "docs/apps.md with O80 of this plan: O82 changes line 421, the hpc row's status words, and O80 changes other rows, so the merge is simple"
-  round: 1
   landing: not-started
 ```
 
@@ -187,6 +173,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 430 (2026-10-26, O82's review over round 1, Behaviour 1): what the HPC view does when `squeue` answers and only `sacct` (the Recent table) or `sinfo` (the Capacity table) fails, for example when Slurm's accounting database is down while the controller answers. As built under ruling 428's words ("a timeout after the connection is made while a Slurm command runs" is Slurm not answering, "the last good poll kept on screen"), any of the three commands failing makes the whole poll `slurm_down`: the queue, Recent and Capacity all stay as the last good poll left them, Recover's reading of the cluster stops (a download's bytes, rate and end freeze), the log prewarm stops, and a server started during such an outage shows no queue at all. This is not a reversal of 428 either way; changing it needs a new step, which only Axel schedules.
+  - (a) A new step: when `squeue` answers, the queue and Recover's reading stay live from that poll; only the table whose command failed is kept from the last good poll, marked as stale with its own time; the status is `slurm_down` with the failing command's message. Pros: the view never shows a frozen queue while jobs run, and a Recover download keeps being followed during an accounting outage. Cons: one more step; a mixed state (live queue, stale Recent or Capacity) needs its own words and a time per table.
+  - (b) Keep it as built: one failed Slurm command freezes the whole view. Pros: one simple state, matching 428's words exactly; nothing more to build. Cons: during an accounting-only outage the queue looks frozen while jobs start and end, and Recover silently stops following a download. This is the lazy option.
+  - Recommendation: (a). O82 lands as built meanwhile, since it is correct under ruling 428 and better than main, which says "The cluster did not answer over ssh" for every one of these failures.
 
 
 ## Closed items
@@ -610,6 +601,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O82 landed; open item 430). O82 is on main (booked under O82 in `plan.md`, `agents/reviews/O82-landing.md`), checked by `land.sh` on main (`npm run test:quick`, every command passed) and in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed on the second run; the first failed only a 20 s timeout in `tests/data/hubs/hub-portfolio.test.ts`, which passed alone 16 of 16) and on main (every one of the 21 paths equal under `cmp` to the gate's file). Fixes at landing: `slurmHint`'s time-limit fallback, `splitSections` reading a marker glued to a partial row, the `SQUEUE_SECS` comment. Looked at on TEST (8790), the Live HPC view in its good state; the failure states not on screen. Open item 430 raised (a `sacct` or `sinfo` failure alone freezes the queue and Recover). In flight (1 of 6): O80 (review running, af6579c090daa182a). Next: O80's review, its repair round if any, /land O80; then /spec O79 and O81. Open items: 430.
 - 2026-10-26 (O82 round 1 sent). O82's builder reported (`agents/reviews/O82-report.md`); its red line, a timeout in `hub-portfolio.test.ts`, did not reproduce in the review. The refutation (a2050ca41ab3495b9, `agents/reviews/O82-refuter.md`): every item holds and every case is met; Spec 1 (a `sacct` or `sinfo` stopped by its limit published `ok` with an empty table) and Standards 1 (`words` optional only for a test) sent back in `agents/briefs/O82-round1.md`. In flight (2 of 6): O80 (build), O82 (round 1). Next: O82's round report and the review over it, /land O82; O80's report. Open items: none.
 - 2026-10-26 (O82 launched). O82's brief `agents/briefs/O82.md` written and checked (`agents/reviews/O82-brief-check.md`, ae57906ed63a7f9f2, claude-opus-5-5), every finding closed in the brief under the report's Closed heading; O82's line in `plan.md` narrowed to ruling 428's words (a timeout while a Slurm command runs). Preparation commit 4959cb90 is the base; worktree `.agents/worktrees/migration-O82` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O82-base` with `unused-exports.txt` (341 lines); the builder aef746e492419e883 launched on claude-opus-5-5. Shared path with O80: `docs/apps.md` (O82 line 421, O80 line 452). In flight (2 of 6): O80 and O82 (building). Next: each builder's report, /refute, /land; then /spec O79 after O80's landing, and O81. Open items: none.
 - 2026-10-26 (428 ruled). Axel ruled 428 (a): step O82 added after O81 (the HPC poll's three failures). In flight (1 of 6): O80 (build). Next: O80's report, review and landing; then /spec O79, O81, O82. Open items: none.

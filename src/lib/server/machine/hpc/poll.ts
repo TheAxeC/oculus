@@ -2,8 +2,11 @@
 // on its slower independent cadence. Its one ssh command per poll also carries Recover's section
 // (the sessions on the socket `oculus-recover`, their folders' bytes and the logs Recover follows),
 // which it hands back to Recover's watcher; Recover asks for that section alone, with the queue,
-// once a minute while a run on the cluster is followed (`recover`).
+// once a minute while a run on the cluster is followed (`recover`). A failed poll is published as
+// one of three: ssh did not connect (`unreachable`), ssh connected and one of `squeue`, `sacct` and
+// `sinfo` did not answer (`slurm_down`), or anything else (`error`), each over the last good rows.
 import type { HpcJob, HpcPayload } from '../../../data/model/index.ts';
+import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {
@@ -12,18 +15,32 @@ import {
     parseSacct,
     parseSinfo,
     parseSqueue,
+    SEC_CONNECTED,
     SEC_RC,
     SEC_RECOVER,
     SEC_SACCT,
+    SEC_SACCT_ERR,
+    SEC_SACCT_RC,
     SEC_SINFO,
+    SEC_SINFO_ERR,
+    SEC_SINFO_RC,
+    SEC_SQUEUE_ERR,
     splitSections
 } from './parse.ts';
 import { isFinished, PREWARM_MAX, prewarmLogs } from './prewarm.ts';
-import { run, type Runner } from './ssh.ts';
+import { run, RunTimeout, type Runner, type RunResult } from './ssh.ts';
+
+/**
+ * The sentences of the text catalog a failed poll's hint is made of: `sshExited` takes the exit
+ * code as `{0}`, `slurmLate` is Slurm not answering within its limit, and `overrun` is the poll
+ * running past its limit after Slurm answered.
+ */
+export type PollWords = { sshExited: string; slurmLate: string; overrun: string };
 
 /**
  * What the poller is told: the ssh alias to query, or the empty host and the sentence for why there
- * is none (the resolver in host.ts), and the cadences and the window.
+ * is none (the resolver in host.ts), the cadences and the window, and the sentences a failed poll's
+ * hint is made of.
  */
 export type HpcSettings = {
     host: string;
@@ -34,6 +51,7 @@ export type HpcSettings = {
     pollMin: number;
     quotaMin: number;
     prewarm: boolean;
+    words: PollWords;
 };
 
 /**
@@ -70,27 +88,136 @@ export type HpcWatcher = {
     close(): void;
 };
 
-/** The one command of a poll; `recover` is the commands of Recover's section, last. */
+/** The queue of this user, one job per line, which a poll and Recover's reading both ask for. */
+const SQUEUE = `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`;
+
+/**
+ * Seconds the cluster's `timeout` gives each Slurm command, 25 together. A controller that does not
+ * answer then ends the poll with Slurm's own answer inside the runner's 40 s, which keeps 15 s for
+ * ssh's connect (`ConnectTimeout=8`, ssh.ts) and Recover's section. `squeue` gets the most, since
+ * the queue's counts lead the view's head bar and the status bar.
+ */
+const SQUEUE_SECS = 12;
+const SACCT_SECS = 8;
+const SINFO_SECS = 5;
+
+/**
+ * The one command of a poll. It prints the connected marker first, so an answer cut short says
+ * whether ssh connected. Each Slurm command (`squeue`, `sacct`, `sinfo`) runs under the cluster's
+ * `timeout`, and a return code line follows each timed command directly, so it holds that
+ * command's code or `timeout`'s 124. Each command's stderr goes through one file, written anew by
+ * each and removed after the last, into a section of its own, so Slurm's messages are read apart
+ * from ssh's warnings and a login banner; where no such file can be made they are dropped.
+ * `recover` is the commands of Recover's section, last.
+ */
 export function batchCommand(days: number, recover = ''): string {
     return [
-        `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`,
+        `echo "${SEC_CONNECTED}"`,
+        `oculus_err=$(mktemp 2>/dev/null) || oculus_err=/dev/null`,
+        `timeout ${SQUEUE_SECS} ${SQUEUE} 2>"$oculus_err"`,
         `echo "${SEC_RC}$?"`,
+        `echo "${SEC_SQUEUE_ERR}"`,
+        `cat "$oculus_err"`,
         `echo "${SEC_SACCT}"`,
-        `sacct -u "$USER" -S ${dateFrom(days)} -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn`,
+        `timeout ${SACCT_SECS} sacct -u "$USER" -S ${dateFrom(days)} -o JobID,JobName%60,State,ExitCode,Elapsed,End,ReqMem,MaxRSS,TotalCPU,AllocCPUS,NNodes,ElapsedRaw -Pn 2>"$oculus_err"`,
+        `echo "${SEC_SACCT_RC}$?"`,
+        `echo "${SEC_SACCT_ERR}"`,
+        `cat "$oculus_err"`,
         `echo "${SEC_SINFO}"`,
-        `sinfo -h -o '%P|%a|%D|%t|%G'`,
+        `timeout ${SINFO_SECS} sinfo -h -o '%P|%a|%D|%t|%G' 2>"$oculus_err"`,
+        `echo "${SEC_SINFO_RC}$?"`,
+        `echo "${SEC_SINFO_ERR}"`,
+        `cat "$oculus_err"`,
+        `[ "$oculus_err" = /dev/null ] || rm -f "$oculus_err"`,
         ...(recover === '' ? [] : [`echo "${SEC_RECOVER}"`, recover])
     ].join('\n');
 }
 
-/** Recover's section alone, after the queue it reads a job's state from. */
+/**
+ * Recover's section alone, after the queue it reads a job's state from, with the poll's connected
+ * marker and `squeue`'s limit.
+ */
 export function recoverCommand(recover: string): string {
     return [
-        `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`,
+        `echo "${SEC_CONNECTED}"`,
+        `timeout ${SQUEUE_SECS} ${SQUEUE}`,
         `echo "${SEC_RC}$?"`,
         `echo "${SEC_RECOVER}"`,
         recover
     ].join('\n');
+}
+
+/** The code ssh exits with when it could not connect, or the connection broke. */
+const SSH_FAILED = 255;
+
+/** The code the cluster's `timeout` exits with when it stopped the command it ran. */
+const TIMED_OUT = 124;
+
+/** A failed poll: its status word and the hint the page shows under that status's sentence. */
+type Failure = { status: 'unreachable' | 'slurm_down' | 'error'; hint?: string };
+
+/**
+ * The hint of a poll Slurm did not answer, from its Slurm commands whose code is not 0, in the
+ * order `squeue`, `sacct`, `sinfo`: the sentence for Slurm's limit when `timeout` stopped the
+ * first of them, and otherwise the first line one of them wrote to its stderr that is not empty,
+ * and that sentence again when none wrote one and `timeout` stopped any of them.
+ */
+function slurmHint(
+    failed: { code: number; error: string }[],
+    words: PollWords
+): string | undefined {
+    if (failed[0]?.code === TIMED_OUT) return words.slurmLate;
+    for (const one of failed) {
+        const line = one.error
+            .split('\n')
+            .map((text) => text.trim())
+            .find((text) => text !== '');
+        if (line !== undefined) return line;
+    }
+    return failed.some((one) => one.code === TIMED_OUT) ? words.slurmLate : undefined;
+}
+
+/**
+ * How a poll's answer fails, or null when it holds the cluster's answer. An answer with the Slurm
+ * sections and the code 0 of `squeue`, `sacct` and `sinfo` is the cluster's answer, the connected
+ * marker or not, unless ssh broke after it connected. Without the marker, ssh's 255 is ssh not
+ * connecting, with its stderr as the hint. With the marker, a code other than 0 of any of the three
+ * is Slurm not answering, with the hint `slurmHint` gives. Anything else is an error, with ssh's
+ * stderr or its exit code as the hint.
+ */
+function answerFailure(
+    result: RunResult,
+    parts: ReturnType<typeof splitSections>,
+    words: PollWords
+): Failure | null {
+    const broke = result.code === SSH_FAILED;
+    const failed = [
+        { code: parts.squeueCode, error: parts.squeueError },
+        { code: parts.sacctCode, error: parts.sacctError },
+        { code: parts.sinfoCode, error: parts.sinfoError }
+    ].filter((one) => one.code !== 0);
+    if (result.stdout.includes(SEC_SACCT) && failed.length === 0 && !broke) return null;
+    const said = result.stderr.trim() || fillPlaceholders(words.sshExited, [result.code]);
+    if (!parts.connected && broke) return { status: 'unreachable', hint: said };
+    if (parts.connected && failed.length > 0) {
+        return { status: 'slurm_down', hint: slurmHint(failed, words) };
+    }
+    return { status: 'error', hint: said };
+}
+
+/**
+ * How a poll whose runner rejected fails. A rejection that is not the runner's timeout is an error
+ * with its message. A timeout before the connected marker is ssh not connecting, with the word
+ * `timeout`; one after the marker and before the last Slurm section began is Slurm not answering;
+ * one after it is the rest of the command, Recover's section, running past the limit.
+ */
+function rejectionFailure(error: unknown, words: PollWords): Failure {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.toLowerCase().includes('timeout')) return { status: 'error', hint: message };
+    const parts = splitSections(error instanceof RunTimeout ? error.stdout : '');
+    if (!parts.connected) return { status: 'unreachable', hint: message };
+    if (!parts.sinfoBegun) return { status: 'slurm_down', hint: words.slurmLate };
+    return { status: 'error', hint: words.overrun };
 }
 
 const quotaCommand = `quota -s 2>/dev/null; echo "---df---"; df -h "$HOME" 2>/dev/null`;
@@ -117,7 +244,8 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         days: options.days,
         pollMin: options.pollMin,
         quotaMin: options.quotaMin,
-        prewarm: options.prewarm
+        prewarm: options.prewarm,
+        words: options.words
     };
     /**
      * Counts the changes of host, sentence or window. A poll, quota read or prewarm that began
@@ -147,9 +275,8 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
      */
     const stopped = (): boolean => closed;
     /**
-     * A publish the cluster did not answer: the state word and its hint over the last good rows and
-     * the time they came from, so an off-VPN page shows what the queue was rather than an empty
-     * one.
+     * A publish of a poll that failed: the state word and its hint over the last good rows and the
+     * time they came from, so a page shows what the queue was rather than an empty one.
      */
     const degraded = (status: HpcPayload['status'], hint?: string): HpcPayload => ({
         status,
@@ -227,12 +354,10 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             const result = await runner(current.host, command, timeout);
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
-            if (!result.stdout.includes(SEC_SACCT) || parts.squeueCode !== 0) {
+            const failure = answerFailure(result, parts, current.words);
+            if (failure !== null) {
                 prewarmDue = false;
-                const payload = degraded(
-                    'unreachable',
-                    result.stderr.trim() || `ssh exited ${result.code}`
-                );
+                const payload = degraded(failure.status, failure.hint);
                 hub.publish('hpc', payload);
                 console.log(`hpc publish: ${payload.status}`);
                 return;
@@ -264,11 +389,8 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         } catch (error) {
             prewarmDue = false;
             if (stopped() || began !== asking) return;
-            const hint = error instanceof Error ? error.message : String(error);
-            const payload = degraded(
-                hint.toLowerCase().includes('timeout') ? 'unreachable' : 'error',
-                hint
-            );
+            const failure = rejectionFailure(error, current.words);
+            const payload = degraded(failure.status, failure.hint);
             hub.publish('hpc', payload);
             console.log(`hpc publish: ${payload.status}`);
         } finally {

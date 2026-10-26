@@ -21,10 +21,10 @@
 <script lang="ts">
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
     // jobs, quota, oculus's Recover sessions on the login node (Login.svelte), and one selected
-    // log. The refresh control is in the bar while the cluster
-    // answers, and is the retry of the error box while it does not. A hub whose settings name no
-    // cluster (`unconfigured`) shows the sentence that says so alone, in no error tone and with no
-    // retry, since there is nothing to ask.
+    // log. The refresh control is in the bar while the poll answers, and is the retry of the error
+    // box while it fails; the box says which of the three failures it is. A hub whose settings
+    // name no cluster (`unconfigured`) shows the sentence that says so alone, in no error tone and
+    // with no retry, since there is nothing to ask.
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Head from './Head.svelte';
@@ -38,7 +38,12 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import { parseHpcState, type HpcViewState } from '$lib/state/system/machine/hpc/hpc';
+    import {
+        failureWords,
+        parseHpcState,
+        type HpcPayload,
+        type HpcViewState
+    } from '$lib/state/system/machine/hpc/hpc';
 
     const {
         hpc: { command, jobLog, queue },
@@ -56,14 +61,17 @@
     let logStatus = $state('');
     let logOutput = $state('');
     /**
-     * The error box's words: the sentence, and the ssh line under it as code when there is one.
-     * While there is no host to ask, the hint is the sentence for why and stands alone.
+     * The words of a failed poll, for the error box and the Login node section: the failure's own
+     * sentence, and the hint under it as code when there is one (ssh's line, Slurm's message or the
+     * poll's). While there is no host to ask, the hint is the sentence for why and stands alone.
      */
-    function unreachable(hint: string | undefined, host: string): string {
+    function failureMessage(payload: HpcPayload): string {
+        const { hint, host } = payload;
         if (host === '' && hint !== undefined && hint !== '') return hint;
+        const sentence = failureWords(payload.status)?.sentence ?? '';
         return hint === undefined || hint === ''
-            ? t('hpc.unreachable_msg')
-            : t('hpc.unreachable_detail', t('hpc.unreachable_msg'), hint);
+            ? sentence
+            : t('hpc.unreachable_detail', sentence, hint);
     }
     async function refresh(): Promise<void> {
         await command({ action: 'refresh' });
@@ -93,7 +101,7 @@
         {:else if data?.status === 'unconfigured'}
             <Empty message={data.hint ?? ''} />
         {:else if data && data.status !== 'ok'}
-            <Empty error message={unreachable(data.hint, data.host)}>
+            <Empty error message={failureMessage(data)}>
                 {#snippet action()}
                     <ToolButton small label={t('hpc.refresh_now')} onclick={refresh} />
                 {/snippet}
@@ -108,7 +116,7 @@
             <Recent rows={data.recent} live={data.status === 'ok'} onlog={showLog} />
         {/if}
         {#if data && data.status !== 'unconfigured' && data.status !== 'starting'}
-            <Login reason={data.status === 'ok' ? '' : unreachable(data.hint, data.host)} />
+            <Login reason={data.status === 'ok' ? '' : failureMessage(data)} />
         {/if}
         {#if logId}
             <Log

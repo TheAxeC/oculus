@@ -11,10 +11,11 @@ import { bareId, holdersOf, resolvedId } from '../../../data/helpers/hub-names.t
 import type { Id, Resource, Snapshot } from '../../../data/model/index.ts';
 import { slurmSettings, textCatalog, type SlurmSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
-import type { HpcSettings } from './poll.ts';
+import type { HpcSettings, PollWords } from './poll.ts';
 
 /**
- * The sentences for having no host. Each takes the resource key as `{0}`, except the first two.
+ * The sentences of the Live HPC settings: those for having no host, each taking the resource key as
+ * `{0}` except the first two, and in `poll` the sentences a failed poll's hint is made of.
  */
 export type HostWords = {
     notRead: string;
@@ -23,6 +24,7 @@ export type HostWords = {
     notCluster: string;
     noHost: string;
     badHost: string;
+    poll: PollWords;
 };
 
 /**
@@ -59,9 +61,9 @@ function hpcHostOf(input: {
 }
 
 /**
- * The settings the poller is handed: the cadences of `slurm:` and the host resolved from the
- * machine's `hpc_host`, the resources of the latest portfolio snapshot (null while there is none)
- * and the sentences for having no host.
+ * The settings the poller is handed: the cadences of `slurm:`, the host resolved from the machine's
+ * `hpc_host`, the resources of the latest portfolio snapshot (null while there is none) and the
+ * sentences for having no host, and the sentences of a failed poll's hint.
  */
 export function hpcSettingsOf(
     slurm: SlurmSettings,
@@ -77,7 +79,8 @@ export function hpcSettingsOf(
             resources,
             words
         }),
-        ...cadences
+        ...cadences,
+        words: words.poll
     };
 }
 
@@ -121,13 +124,18 @@ export function hpcRouteHost(input: {
     });
 }
 
-/** The five sentences out of a merged configuration's text catalog; a throw names a bad key. */
+/** The sentences out of a merged configuration's text catalog; a throw names a bad key. */
 export function hostWordsOf(config: Record<string, unknown>): HostWords {
     const word = (sentence: unknown, key: string): string => {
         if (typeof sentence !== 'string') throw new Error(`text catalog: ${key} must be a string`);
         return sentence;
     };
     return {
+        poll: {
+            sshExited: word(textCatalog(config)['hpc.hint_ssh_exited'], 'hpc.hint_ssh_exited'),
+            slurmLate: word(textCatalog(config)['hpc.hint_slurm_late'], 'hpc.hint_slurm_late'),
+            overrun: word(textCatalog(config)['hpc.hint_overrun'], 'hpc.hint_overrun')
+        },
         notRead: word(textCatalog(config)['hpc.host_not_read'], 'hpc.host_not_read'),
         noCluster: word(textCatalog(config)['hpc.host_no_cluster'], 'hpc.host_no_cluster'),
         unknown: word(textCatalog(config)['hpc.host_unknown'], 'hpc.host_unknown'),
