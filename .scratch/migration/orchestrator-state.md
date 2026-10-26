@@ -49,6 +49,8 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: `docs/apps.md` (O79 the `collections` row at line 410, O83 the `hpc` row at line 421), `docs/HELP.md` (O79 the paragraphs on a schema's fields and an entry's identity, O83 the Live HPC paragraph at line 320), `src/lib/data/model/index.ts` (O79 the exports of model-collections.ts, O83 the exports of model-sessions.ts), and the generated `docs/diagrams/` files, each with migration step O83; simple, since the hunks are apart and the diagrams are regenerated with `npm run diagrams` at each landing
   round: 0
   landing: not-started
+- step: O81
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -191,6 +193,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 434 (2026-10-26, O81's /spec, the shape of a `venue_categories` word that carries the month-ribbon flag of ruling 399, a config key shape): written in full in `choices.md` Z1029 with its options and the lazy option named; closed in automode with (a) rows `{ key, label, ribbon? }`, booked in `plan.md` Rulings and on O81's line.
 - 433 (2026-10-26, O83's /spec, how the HPC payload says its queue is this poll's once ruling 432 puts `stale` on a failed poll whose queue is kept too, a public shape of the HPC payload): written in full in `choices.md` Z1028 with its options and the lazy option named; closed in automode with (a) `lastOk` equal to `updated`, booked in `plan.md` Rulings and on O83's line.
 - 432 (2026-10-26, two points of the HPC view's stale mark): ruled Part 1 (a) and Part 2 (a) by Axel, replacing Open item 431; booked in `plan.md` Rulings and on O83's line.
 - 2026-10-26: Z1027: replaced by 432.

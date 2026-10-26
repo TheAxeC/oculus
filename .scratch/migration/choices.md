@@ -5264,3 +5264,13 @@ Ruling 432 puts `stale` on every failed poll whose Recent or Capacity table is o
 
 Where it applies: O83. Booked in `plan.md` Rulings and in `agents/briefs/O83.md`.
 Builds on it: O83
+
+## Z1029 (2026-10-26, O81's /spec, open item 434, the shape of a `venue_categories` word that carries the ribbon flag, the orchestrator, automode): the rows of `venue_categories`
+
+Ruling 399 (a) puts a flag on a `venue_categories` word that draws its Venues section's month ribbon, its name open with `ribbon` proposed, set on `conference`. Today `venue_categories` is a list of bare words (`config/catalogs/vocab.yml:272`, `[journal, conference, thesis, meeting]`), which holds no flag; the Venues view's two headings are the catalog words `venues.journals` and `venues.conferences` (`config/text/views/sources/venues.yml:8,17`), and `thesis` and `meeting` have none. The hub writes no `venue_categories` (`grep -n venue_categories ~/workspace/research-hub/.oculus/config.yml` prints nothing); its venues are 46 journals, 27 conferences, 2 theses and 1 meeting, and the theses and the meeting are drawn in no section today.
+
+- Chosen: (a) `venue_categories` becomes a list of rows `{ key, label, ribbon? }`, the shape of `venue_tiers` beside it: `label` the words of the word's section, `ribbon: true` the flag, set on `conference`. A venue whose category no word names is drawn in an "other" section last, as a board draws its projects in no category row. Pros: one shape for the two venue lists; every word carries its heading words in the vocabulary, so a hub that adds a category gives its words with it. Cons: the shape of the key changes for a hub that writes it, which no hub does.
+- Not chosen: (c) the bare word list kept, each heading read from a catalog key made from the word (`venues.category_<word>`). Cons: a word a hub adds has no heading words, and a catalog key is built from a config word in code. The lazy option is (b), the bare word list kept and a second key `venue_ribbon: [conference]` beside it: two lists kept in step by hand, and no heading words for the theses and the meeting.
+
+Where it applies: O81. Booked in `plan.md` Rulings and in `agents/briefs/O81.md`.
+Builds on it: O81
