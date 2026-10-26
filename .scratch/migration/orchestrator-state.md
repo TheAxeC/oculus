@@ -47,6 +47,7 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O85-report.md
   builder_usage: 334254 tokens, 82 tool uses, 14 min 23 s (first run, handed back at case 16 and the draft question)
+  cases_ruling: .scratch/migration/agents/briefs/O85-cases.md (Z1035, Z1036)
   shared_paths: with O79, simple merges, each in separate lines: `src/lib/state/client/writes.svelte.ts` (O79 the comment at line 435, O85 lines 560-630), `src/lib/server/edit/writes.ts` (O79 near line 218 and its write bodies, O85 the head comment at line 29), `src/lib/server/edit/writes/undo.ts` (O79 near lines 259-341, 495 and 587, O85 lines 90-140), `config/text/server.yml` (O79 `server.edit.*`, O85 new keys under `server.workspace.*`); `docs/HELP.md` and `docs/data-map.md` take O85's Doc text at landing. None with O81.
   round: 0
   landing: not-started

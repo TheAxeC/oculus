@@ -5326,3 +5326,23 @@ O85's brief check (`agents/reviews/O85-brief-check.md`) found places the step's 
 
 Where it applies: O85. Booked in `agents/briefs/O85.md` (decisions 4, 7 and 8) and the brief check's "Closed" heading.
 Builds on it: O85
+
+## Z1035 (2026-10-26, O85's first run, the orchestrator, automode): a draft and a typed text kept by hub
+
+O85's builder found that a Settings draft and the text typed in a box are kept by file and key alone (`src/lib/state/system/config/editors/slots.ts:90-96`, `src/lib/state/system/config/typed.ts`), so a draft made with a second hub chosen would be drawn on the primary's row and written there, against item 4 of the brief.
+
+- Chosen: (a) a draft and a typed text made with a hub other than the primary chosen are kept under file, key and that hub's name, one for the primary under file and key alone as now; the write list gains `slots.ts`, `typed.ts`, `views/system/workbench/editors/Editor.svelte` and `settings/Control.svelte`.
+- Not chosen: (b) holding the hub choice still while a draft is held, the lazy option; (c) dropping the draft on a switch, which loses the reader's work (G28).
+
+Where it applies: O85. Booked in `agents/briefs/O85-cases.md`, ruling 2.
+Builds on it: O85
+
+## Z1036 (2026-10-26, O85's first run, the orchestrator, automode): a second hub's row says when its file is being read or does not parse
+
+Case 16 of O85 asked a second hub's row to say its file's state "as the primary's row does", but the primary's row draws no such sentence and sends its write whatever the file's state (`Item.svelte:117-141`, `write.ts:93-114`); the sentence is on the group's line, which stays the primary's (decision 6).
+
+- Chosen: (a) a row with a hub other than the primary chosen, whose file is being read, could not be read, is cut or does not parse, draws that file's sentence (`loading`, `unreadable`, `cut`, `unparsed`) and sends nothing; the primary's rows stay as they are.
+- Not chosen: (b) the same for the primary's rows too, a change no item of the brief names; (c) saying nothing and leaving it to the server's `not_parsed`, the lazy option.
+
+Where it applies: O85. Booked in `agents/briefs/O85-cases.md`, ruling 1.
+Builds on it: O85
