@@ -9,29 +9,39 @@
 // of the merged portfolio, each the record's hub and its key, so a reference names the record it
 // resolved to in its own hub or in the one other hub that holds its key, and a record of one hub is
 // never taken for the record of the same key in another. A collection whose entries nothing refers
-// to (a statement, an event) has no referrers.
+// to (a statement, an event) has no referrers. Which kind of record an entry is comes from the
+// registry its collection's entry names in its hub's `collections:` list, and the joint work from
+// the collections flagged `joint_work`.
 
 import { byKey, isMap } from '../../data/helpers/guards.ts';
-import { bareId, joinedEntries } from '../../data/helpers/hub-names.ts';
-import type { Project, Snapshot } from '../../data/model/index.ts';
-
-/** The collection key of the joint work, whose entries each name one person. */
-export const JOINT_WORK = 'joint-work';
+import {
+    addressOfId,
+    bareId,
+    flaggedCollections,
+    hubId,
+    type RegistryWord
+} from '../../data/helpers/hub-names.ts';
+import type { Collection, Project, Snapshot } from '../../data/model/index.ts';
 
 /** The settings of behavior.yml that name a resource. */
 const RESOURCE_SETTINGS: { key: string; field: string }[] = [{ key: 'slurm', field: 'resource' }];
 
-/** The collections whose entries other records refer to, so their pages list the referrers. */
-export const REFERRED = [
+/** The registries whose entries other records refer to, so their pages list the referrers. */
+const REFERRED: readonly RegistryWord[] = [
     'pillars',
     'domains',
     'venues',
-    'data',
+    'datasets',
     'funding',
     'people',
     'organisations',
     'resources'
 ];
+
+/** Whether the pages of a collection's entries list their referrers: its entry names a registry. */
+export function listsReferrers(collection: Pick<Collection, 'registry'> | null): boolean {
+    return collection?.registry !== undefined && REFERRED.includes(collection.registry);
+}
 
 /** One thing that refers to a record, and what opens it. */
 export type Referrer = {
@@ -71,14 +81,17 @@ function settingOf(config: Record<string, unknown>, key: string, field: string):
 function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
     const person = byKey(snapshot.entities.people, id);
     const joint = new Set(person?.jointWorkIds ?? []);
-    const entries = joinedEntries(snapshot.entities.collections, JOINT_WORK)
-        .filter((entry) => joint.has(entry.id))
-        .map((entry): Referrer => ({
-            kind: 'entry',
-            id: entry.id,
-            label: entry.title === '' ? bareId(entry) : entry.title,
-            collection: JOINT_WORK
-        }));
+    const entries = flaggedCollections(snapshot.entities.collections, 'joint_work').flatMap(
+        (collection) =>
+            collection.entries
+                .filter((entry) => joint.has(entry.id))
+                .map((entry): Referrer => ({
+                    kind: 'entry',
+                    id: entry.id,
+                    label: entry.title === '' ? bareId(entry) : entry.title,
+                    collection: bareId(collection)
+                }))
+    );
     const projects = projectsWhere(
         snapshot,
         (project) =>
@@ -110,8 +123,9 @@ function organisationReferrers(snapshot: Snapshot, id: string): Referrer[] {
 }
 
 /**
- * What refers to the entry `id` of the collection `collection`. `config` is the merged
- * configuration, whose settings can name a resource.
+ * What refers to the entry `id` of the collection `collection`, by the registry the collection's
+ * entry names in the hub of the entry's id. `config` is the merged configuration, whose settings
+ * can name a resource.
  */
 export function referrersOf(
     snapshot: Snapshot,
@@ -119,14 +133,16 @@ export function referrersOf(
     collection: string,
     id: string
 ): Referrer[] {
-    if (collection === 'pillars') return projectsWhere(snapshot, (p) => p.pillarIds.includes(id));
-    if (collection === 'domains') return projectsWhere(snapshot, (p) => p.domainIds.includes(id));
-    if (collection === 'venues') return projectsWhere(snapshot, (p) => p.venueId === id);
-    if (collection === 'data') return projectsWhere(snapshot, (p) => p.datasetIds.includes(id));
-    if (collection === 'funding') return projectsWhere(snapshot, (p) => p.fundingIds.includes(id));
-    if (collection === 'people') return personReferrers(snapshot, id);
-    if (collection === 'organisations') return organisationReferrers(snapshot, id);
-    if (collection !== 'resources') return [];
+    const held = byKey(snapshot.entities.collections, hubId(addressOfId(id).hub, collection));
+    const registry = held?.registry;
+    if (registry === 'pillars') return projectsWhere(snapshot, (p) => p.pillarIds.includes(id));
+    if (registry === 'domains') return projectsWhere(snapshot, (p) => p.domainIds.includes(id));
+    if (registry === 'venues') return projectsWhere(snapshot, (p) => p.venueId === id);
+    if (registry === 'datasets') return projectsWhere(snapshot, (p) => p.datasetIds.includes(id));
+    if (registry === 'funding') return projectsWhere(snapshot, (p) => p.fundingIds.includes(id));
+    if (registry === 'people') return personReferrers(snapshot, id);
+    if (registry === 'organisations') return organisationReferrers(snapshot, id);
+    if (registry !== 'resources') return [];
     const settings = RESOURCE_SETTINGS.filter(
         (one) => settingOf(config, one.key, one.field) === id
     ).map((one): Referrer => ({

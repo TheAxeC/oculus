@@ -17,7 +17,7 @@
 
 import { z } from 'zod';
 import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
-import { movedOrder } from '../boards/collection.ts';
+import { movedOrder } from '../boards/collection/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { DeckGroup, DeckOrderEntry } from '../../data/model/index.ts';
 

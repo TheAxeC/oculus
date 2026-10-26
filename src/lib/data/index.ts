@@ -21,11 +21,12 @@ import {
     wordsWith
 } from './shapes/vocab-keys.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
-import { REGISTRY_LIST_KEYS, readRegistries, registryFiles } from './sources/registries.ts';
+import { REGISTRY_NAMES, readRegistries, registryFiles } from './sources/registries.ts';
 import {
-    LITERATURE_KEY,
     collectionFiles,
+    collectionListFindings,
     engineDefaults,
+    listWords,
     readCollections,
     unnamedCollection,
     type EngineDefaults
@@ -34,7 +35,19 @@ import { readCareer } from './sources/documents/career.ts';
 import { readFeeds } from './sources/documents/feeds.ts';
 import { projectDocs } from './sources/documents/docs.ts';
 import type { TextCatalog } from './helpers/finding-text.ts';
-import { DATA_FOLDER, HUB_FILE, fromHubFile, tierOf } from './helpers/hub-names.ts';
+import {
+    DATA_FOLDER,
+    FEED_REGISTRIES,
+    HUB_FILE,
+    fromHubFile,
+    hasCardList,
+    isFeedEntry,
+    tierOf,
+    type FeedRegistry,
+    type RegistryWord
+} from './helpers/hub-names.ts';
+import { engineDir } from './places/engine-dir.ts';
+import { engineFile } from './sources/config/folder.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog, type loadConfig } from './sources/config.ts';
@@ -47,12 +60,7 @@ import {
     scanRules
 } from './sources/config/settings/scan.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
-import {
-    FEED_COLLECTION_KEYS,
-    isFeedCollection,
-    normalise,
-    selfKey
-} from './snapshot/normalise.ts';
+import { normalise, selfKey } from './snapshot/normalise.ts';
 import { sortFindings, validate, withoutValidated } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
@@ -77,18 +85,18 @@ import {
 import type { ReferenceIndex } from './snapshot/references/model.ts';
 import { domainColorOf, optionKeys, optionLabel } from './model/index.ts';
 import type {
-    CollectionFile,
+    CollectionEntry,
     DocPresence,
     FeedFiles,
     Finding,
     HubVocab,
     HubVocabs,
     Id,
+    ListedCollection,
     PortfolioConfig,
     RawDeck,
     RawManifest,
     RawPortfolio,
-    RegistryName,
     RepositoryRoot,
     Snapshot,
     Vocabulary
@@ -137,9 +145,6 @@ export function sourcesFindings(
     ];
 }
 
-/** A key of the `collections:` list that names a YAML feed's file. */
-type FeedKey = (typeof FEED_COLLECTION_KEYS)[number];
-
 /** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */
 function tagTones(defaults: unknown): Record<string, string> {
     const held = isMap(defaults) && isMap(defaults.tag_tones) ? defaults.tag_tones : {};
@@ -155,12 +160,12 @@ const pathShape = z.string();
 
 /**
  * The portfolio's half of the merged config. The `collections:` list gives the eight registry
- * paths, each registry being the first entry of the list under its fixed key
- * (`REGISTRY_LIST_KEYS`), and the two YAML feeds' paths, under the keys `leads` and `radar`, which
- * are no collection. A registry, feed or career file the merged config does not name is read from
- * oculus's own path in config/defaults/sources.yml (`engineDefaults`, read only then), so a config
- * that leaves one of them out builds. The text catalog travels with it, since every reader
- * words its findings from config/text/findings.yml.
+ * paths, each registry being the entry of the list whose `registry:` names it, and the two YAML
+ * feeds' paths, the entries naming `leads` and `radar`, which are no collection. A registry, feed
+ * or career file the merged config does not name is read from oculus's own entry of it in
+ * config/defaults/sources.yml (`engineDefaults`, read only then), so a config that leaves one of
+ * them out builds. The text catalog travels with it, since every reader words its findings from
+ * config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
@@ -168,21 +173,23 @@ export function portfolioConfigFrom(
 ): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
-    const listed = collectionFiles(merged.collections);
+    const listed = collectionFiles(merged.collections, listWords(merged));
     const unnamed = from === undefined ? undefined : unnamedBy(from, listed);
     let engine: EngineDefaults | undefined;
     const defaults = (): EngineDefaults => (engine ??= engineDefaults());
-    const engineFile = (key: string): CollectionFile[] =>
+    const engineEntry = (registry: RegistryWord): CollectionEntry[] =>
         defaults()
-            .collections.filter((file) => file.key === key)
+            .collections.filter((file) => file.registry === registry)
             .slice(0, 1);
     const collections = [
-        ...listed.filter((file) => !isFeedCollection(file.key)),
-        ...(unnamed?.literature === true ? engineFile(LITERATURE_KEY) : [])
+        ...listed.filter((file) => !isFeedEntry(file)),
+        ...(unnamed?.literature === true ? engineEntry('literature') : [])
     ];
     const registries = registryFiles(collections, () => defaults().collections);
-    const feedFile = (key: FeedKey): string =>
-        listed.find((file) => file.key === key)?.file ?? engineFile(key).at(0)?.file ?? '';
+    const feedFile = (registry: FeedRegistry): string =>
+        listed.find((file) => file.registry === registry)?.file ??
+        engineEntry(registry).at(0)?.file ??
+        '';
 
     const vocab: Vocabulary = {
         statuses: coloredWords(merged.statuses),
@@ -233,20 +240,19 @@ function named(from: Readonly<Partial<Record<string, string>>>, key: string): bo
 
 /**
  * What the hub's own settings file leaves to the engine's defaults, see `PortfolioConfig.unnamed`.
- * A registry is named when the hub's `collections:` list holds its key.
+ * A registry or a feed is named when an entry of the hub's `collections:` list names it in
+ * `registry:`.
  */
 function unnamedBy(
     from: Readonly<Partial<Record<string, string>>>,
-    collections: readonly CollectionFile[]
+    collections: readonly CollectionEntry[]
 ): NonNullable<PortfolioConfig['unnamed']> {
     const listed = named(from, 'collections');
-    const registries = (Object.keys(REGISTRY_LIST_KEYS) as RegistryName[]).filter(
-        (name) => !listed || !collections.some((file) => file.key === REGISTRY_LIST_KEYS[name])
-    );
-    const feeds = FEED_COLLECTION_KEYS.filter(
-        (key) => !listed || !collections.some((file) => file.key === key)
-    );
-    const literature = listed && !collections.some((file) => file.key === LITERATURE_KEY);
+    const names = (registry: RegistryWord): boolean =>
+        listed && collections.some((file) => file.registry === registry);
+    const registries = REGISTRY_NAMES.filter((name) => !names(name));
+    const feeds = FEED_REGISTRIES.filter((feed) => !names(feed));
+    const literature = listed && !names('literature');
     return {
         registries,
         feeds,
@@ -373,15 +379,27 @@ export function readHub(
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
     const unnamed = heldUnnamed(hub, config.unnamed);
     const registries = readRegistries(hub, config.registries, config.text, unnamed?.registries);
-    // The engine's Literature, which the hub's list does not name, is read once the hub holds it.
+    // Oculus's Literature entry, which the hub's list does not name, is read once the hub holds it.
     const read = config.collections.filter(
         (file) =>
-            file.key !== LITERATURE_KEY ||
+            file.registry !== 'literature' ||
             unnamed?.literature !== true ||
             existsSync(join(hub, file.file))
     );
-    const collections = readCollections(hub, read, config.text, (key) =>
-        unnamedCollection(unnamed, key)
+    const collections = readCollections(hub, read, config.text, (entry) =>
+        unnamedCollection(unnamed, entry)
+    );
+    // The list's own findings are on the file it was read from: the hub's settings file when it
+    // names a list, oculus's sources.yml otherwise.
+    const listFile =
+        config.unnamed?.collections === true
+            ? engineFile(engineDir(), 'sources.yml')
+            : join(hub, HUB_FILE);
+    const listed = collectionListFindings(
+        config.merged.collections,
+        listWords(config.merged),
+        listFile,
+        config.text
     );
     const feeds = readFeeds(hub, config.feeds, config.text, config.merged, unnamed?.feeds);
     const career =
@@ -401,6 +419,7 @@ export function readHub(
         findings: [
             ...manifests.findings,
             ...registries.findings,
+            ...listed,
             ...collections.findings,
             ...feeds.findings,
             ...career.findings,
@@ -623,32 +642,56 @@ function hubWords(merged: Readonly<Record<string, unknown>>): Record<string, unk
 /**
  * The words one hub gives its own records, read from its own files: its domains (`hubDomainsOf`)
  * and the `themes` options of its venue and dataset registries. A file that does not read gives
- * none; its reader reports why. Its collections are the keys its own `collections:` names; a hub
- * whose settings name no list has the engine's list, and lists every key of it when it holds the
- * `.oculus/data/` folder, else the keys whose file it holds. Its `words` are those of the hub's
- * merged config (`hubWords`).
+ * none; its reader reports why. Its collections are the entries its own `collections:` names; a
+ * hub whose settings name no list has the engine's list, and lists every entry of it when it holds
+ * the `.oculus/data/` folder, else the entries whose file it holds. An entry that names no label
+ * word carries its file's `title:`. Its `words` are those of the hub's merged config (`hubWords`).
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
     const unnamed = heldUnnamed(hub, config.unnamed);
     const held = config.collections.filter(
-        (file) => !unnamedCollection(unnamed, file.key) || existsSync(join(hub, file.file))
+        (file) => !unnamedCollection(unnamed, file) || existsSync(join(hub, file.file))
     );
     return {
         domains: hubDomainsOf(hub, config),
         venue_themes: themeRows(hubMap(hub, config.registries.venues, config.text)),
         data_themes: themeRows(hubMap(hub, config.registries.datasets, config.text)),
-        collections: held.map((file) => file.key),
+        collections: held.map((file) => listedCollection(hub, file, config.text)),
         words: hubWords(config.merged)
     };
 }
 
 /**
- * The files `hubVocabOf` reads for one hub, absolute, with the `.oculus/data/` folder and the
- * collection files whose presence says what a hub that names no `collections:` list lists.
+ * Whether an entry's view is named by its file's `title:`: a card list whose entry names no label.
+ */
+function titled(entry: CollectionEntry): boolean {
+    return entry.label === undefined && hasCardList(entry);
+}
+
+/**
+ * One entry of a hub's list as the page reads it: its fields, and, for a card list with no label,
+ * its file's `title:` when the file holds one.
+ */
+function listedCollection(
+    hub: string,
+    entry: CollectionEntry,
+    catalog: TextCatalog
+): ListedCollection {
+    if (!titled(entry)) return entry;
+    const title = str(hubMap(hub, entry.file, catalog)?.title);
+    return title === undefined || title === '' ? entry : { ...entry, title };
+}
+
+/**
+ * The files `hubVocabOf` reads for one hub, absolute, with the `.oculus/data/` folder, the
+ * collection files whose presence says what a hub that names no `collections:` list lists, and
+ * the files of the card lists that name no label, whose `title:` names their view.
  */
 function hubVocabFiles(hub: string, config: PortfolioConfig): string[] {
     const { domains, venues, datasets } = config.registries;
-    const looked = config.collections.filter((file) => unnamedCollection(config.unnamed, file.key));
+    const looked = config.collections.filter(
+        (file) => unnamedCollection(config.unnamed, file) || titled(file)
+    );
     const folder = config.unnamed?.collections === true ? [DATA_FOLDER] : [];
     return [domains, venues, datasets, ...folder, ...looked.map((one) => one.file)].map((file) =>
         join(hub, file)
@@ -672,7 +715,7 @@ export type VocabPlaces = {
  * `order` is the primary, then the other hubs in the workspace's order, and with no primary each
  * folder that is no hub at its place among them, since its records carry the folder's name; with a
  * primary such a folder's records are the primary's; a hub no folder names comes last. `own` is
- * oculus's own words.
+ * oculus's own words, and `ownCollections` oculus's own `collections:` list.
  */
 export function hubVocabs(
     places: VocabPlaces,
@@ -688,7 +731,13 @@ export function hubVocabs(
     );
     const named = [...(primary !== null && primaryVocab !== null ? [primary] : []), ...rest];
     const order = [...named, ...Object.keys(lists).filter((name) => !named.includes(name))];
-    return { primary, lists, order, own: hubWords(places.own) };
+    return {
+        primary,
+        lists,
+        order,
+        own: hubWords(places.own),
+        ownCollections: collectionFiles(places.own.collections)
+    };
 }
 
 /**

@@ -7,9 +7,16 @@
 //
 // The page is the one source of these files, so the template a reader copies by hand and the file
 // a control writes are the same text. A collection is one line of the commented `collections:`
-// list of the config.yml block, `#   - { key: <key>, file: "<path>" }`, and its template is the
-// block under the heading `### <path>`; a line whose heading the page lacks is no collection the
-// controls offer. The page is read by the caller and handed in, so this module touches no disk.
+// list of the config.yml block, `#   - { key: <key>, file: "<path>", ... }`, a YAML flow map read
+// with every field it sets (the registry, the flags, the ticker and the words, as
+// data/helpers/hub-names.ts's `collectionFiles` reads an entry), and its template is the block
+// under the heading `### <path>`; a line whose heading the page lacks is no collection the controls
+// offer. A new hub's list writes each chosen line as the page has it. The page is read by the
+// caller and handed in, so this module touches no disk.
+
+import { parse } from 'yaml';
+import { collectionFiles } from '../../helpers/hub-names.ts';
+import type { CollectionEntry } from '../../model/index.ts';
 
 /** The page of templates, relative to oculus's folder. */
 export const TEMPLATES_PAGE = 'docs/templates.md';
@@ -20,14 +27,17 @@ const CONFIG_HEADING = '## config.yml';
 /** The heading of the project manifest's template. */
 const PROJECT_HEADING = '## project.yml';
 
-/** The commented list line of one collection in the config.yml block. */
-const COLLECTION_LINE = /^# {3}- \{ key: ([a-z][a-z0-9-]*), +file: "([^"]+)" \}$/;
+/** The commented list line of one collection in the config.yml block: its flow map. */
+const COLLECTION_LINE = /^# {3}- (\{ key: .*\})$/;
 
 /** The line that opens the commented collection list in the config.yml block. */
 const COLLECTIONS_OPEN = '# collections:';
 
-/** A collection the controls offer: its key, its default data file and that file's template. */
-export type CollectionTemplate = { key: string; file: string; body: string };
+/**
+ * A collection the controls offer: its entry with every field its line sets, the line's flow map
+ * as the page writes it, and the template of its data file.
+ */
+export type CollectionTemplate = CollectionEntry & { line: string; body: string };
 
 /**
  * The first fenced block under the line of the page that reads exactly `heading`, whatever its
@@ -44,31 +54,40 @@ function templateBlock(page: string, heading: string): string | null {
     return `${lines.slice(open + 1, close).join('\n')}\n`;
 }
 
+/** The entry one list line's flow map names, or null for a map that names no key and file. */
+function entryOf(line: string): CollectionEntry | null {
+    let value: unknown;
+    try {
+        value = parse(line);
+    } catch {
+        return null;
+    }
+    return collectionFiles([value]).at(0) ?? null;
+}
+
 /** The collections the config.yml block lists that have a template, in the block's order. */
 export function collectionTemplates(page: string): CollectionTemplate[] {
     const block = templateBlock(page, CONFIG_HEADING) ?? '';
-    return block.split('\n').flatMap((line) => {
-        const found = COLLECTION_LINE.exec(line);
-        if (found === null) return [];
-        const body = templateBlock(page, `### ${found[2]}`);
-        return body === null ? [] : [{ key: found[1], file: found[2], body }];
+    return block.split('\n').flatMap((text) => {
+        const found = COLLECTION_LINE.exec(text);
+        const entry = found === null ? null : entryOf(found[1]);
+        if (found === null || entry === null) return [];
+        const body = templateBlock(page, `### ${entry.file}`);
+        return body === null ? [] : [{ ...entry, line: found[1], body }];
     });
 }
 
 /**
  * The config.yml of a new hub: the page's block, every other key left commented at its default,
- * with the commented collection list replaced by a list of the chosen collections, an empty list
- * when none is chosen.
+ * with the commented collection list replaced by a list of the chosen collections, each line as
+ * the page writes it, an empty list when none is chosen.
  */
 export function hubConfigText(page: string, chosen: readonly CollectionTemplate[]): string {
     const lines = (templateBlock(page, CONFIG_HEADING) ?? '').split('\n');
     const list =
         chosen.length === 0
             ? ['collections: []']
-            : [
-                  'collections:',
-                  ...chosen.map((one) => `  - { key: ${one.key}, file: "${one.file}" }`)
-              ];
+            : ['collections:', ...chosen.map((one) => `  - ${one.line}`)];
     const start = lines.indexOf(COLLECTIONS_OPEN);
     if (start < 0) return [...lines, ...list, ''].join('\n');
     let end = start + 1;

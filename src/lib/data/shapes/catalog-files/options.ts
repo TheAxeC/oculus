@@ -5,7 +5,7 @@
 // (data/sources/config/catalog/options.ts) words its own refusals; `readSpecWords` names them.
 
 import { z } from 'zod';
-import { CONTROLS, FORMS, HEADINGS, SOURCES } from '../catalog-words.ts';
+import { CONTROLS, FORMS, HEADINGS, HOLDS, SOURCES } from '../catalog-words.ts';
 import { text, type Owned } from './common.ts';
 
 /** The words one control or field of an options file may carry. */
@@ -62,6 +62,14 @@ const optionWords = {
         )
 };
 
+/** What `holds:` says of a family. */
+const holdsWord = z
+    .enum(HOLDS)
+    .optional()
+    .describe(
+        'lists marks a key/value family whose every key holds a list of values or one value; record marks a family field with no key field that holds one record of its fields.'
+    );
+
 /** One field of a family: a help line alone, or the words of a control. */
 type OptionField = string | Record<string, unknown>;
 
@@ -74,7 +82,10 @@ const optionField: z.ZodType<OptionField> = z.lazy(() =>
                 fields: z
                     .record(z.string(), optionField)
                     .optional()
-                    .describe('The fields of a nested list of records, by name.')
+                    .describe(
+                        'The fields of a nested family by name: a list of records, a map from a key to a value, or one record.'
+                    ),
+                holds: holdsWord
             })
         ])
         .describe('One field of the records: its help line alone, or its control and words.')
@@ -92,10 +103,7 @@ const optionEntry = z.strictObject({
         .optional()
         .describe('The subject the Settings view lists the option under.'),
     section: text.optional().describe('The group inside the heading the option is listed in.'),
-    holds: z
-        .literal('lists')
-        .optional()
-        .describe('lists marks a key/value family whose every key holds a list of values.'),
+    holds: holdsWord,
     key: text
         .optional()
         .describe(
@@ -120,10 +128,10 @@ export const optionsFileShape = z.strictObject({
 
 /**
  * The keys of an options file that readSpec (data/sources/config/catalog/options.ts) words itself:
- * a control, a source, a form, a heading, a `whole`, a list of slots, a help line, a key field or
- * a group line it refuses.
+ * a control, a source, a form, a heading, a `whole`, a list of slots, a help line, a key field, a
+ * `holds` or a group line it refuses.
  */
 export const readSpecWords: Owned = (key) =>
     key === 'groups' ||
     key.startsWith('groups.') ||
-    /(^|\.)(control|from|form|heading|whole|slots|help|key)(\.|$)/.test(key);
+    /(^|\.)(control|from|form|heading|whole|slots|help|key|holds)(\.|$)/.test(key);

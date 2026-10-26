@@ -16,6 +16,11 @@
 // that is not one lowercase letter, or a group glyph the vocabulary does not hold, is a problem
 // too, and the entry is kept without it: the button is drawn and the group has no chord or takes
 // the glyph of its first view.
+//
+// One entry carries `unplaced_collections: true`: its page's group is where a collection view
+// whose `collections:` entry names no `group:` is placed. A flag that is not true or false is a
+// problem and the entry is kept without it; no flagged entry, or more than one, is a finding on the
+// rail, the first flagged entry the one read and, with none, such a view in no group.
 
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
@@ -24,7 +29,8 @@ import { itemsShape, mapShape, readAs, text } from '../../shapes/shapes.ts';
 
 /**
  * One button of the rail: its words, its glyph name, the arrangement key of its page, and the chord
- * letter and heading glyph of the page's group in the view catalogue, each empty when it has none.
+ * letter and heading glyph of the page's group in the view catalogue, each empty when it has none,
+ * and whether the page's group takes the collection views whose entry names no group.
  */
 export type RailEntry = {
     label: string;
@@ -32,11 +38,13 @@ export type RailEntry = {
     page: string;
     chord: string;
     group_glyph: string;
+    unplaced_collections: boolean;
 };
 
 /**
- * Why one entry of the list is not a rail page, or, for `chord` and `group_glyph_unknown`, why
- * the page's group goes without its chord or its heading glyph.
+ * Why one entry of the list is not a rail page, or, for `chord`, `group_glyph_unknown` and
+ * `unplaced`, why the page's group goes without its chord, its heading glyph or the collection
+ * views no entry places.
  */
 export type RailWhy =
     | 'shape'
@@ -47,7 +55,8 @@ export type RailWhy =
     | 'page_unknown'
     | 'repeated'
     | 'chord'
-    | 'group_glyph_unknown';
+    | 'group_glyph_unknown'
+    | 'unplaced';
 
 /** A chord letter: one lowercase letter. */
 const chordShape = z.string().regex(/^[a-z]$/);
@@ -67,10 +76,11 @@ function word(value: unknown): string | null {
 }
 
 /**
- * A rail list as rows of five strings, whether or not the rule keeps each one: a field that is not
- * a string, and an item that is not a map, reads as empty strings. Null for anything that is not a
- * list. This is what the Settings view lists for the reader to mend, what a Settings tab holds
- * while it is typed in, and what the server records before and after a write.
+ * A rail list as rows of five strings and the flag, whether or not the rule keeps each one: a field
+ * that is not a string, and an item that is not a map, reads as empty strings, and a flag that is
+ * not true as false. Null for anything that is not a list. This is what the Settings view lists for
+ * the reader to mend, what a Settings tab holds while it is typed in, and what the server records
+ * before and after a write.
  */
 export function railRows(raw: unknown): RailEntry[] | null {
     const list = readAs(itemsShape, raw);
@@ -82,7 +92,8 @@ export function railRows(raw: unknown): RailEntry[] | null {
             glyph: text(one.glyph),
             page: text(one.page),
             chord: text(one.chord),
-            group_glyph: text(one.group_glyph)
+            group_glyph: text(one.group_glyph),
+            unplaced_collections: one.unplaced_collections === true
         };
     });
 }
@@ -148,9 +159,9 @@ function written(value: unknown): boolean {
 }
 
 /**
- * The chord and the heading glyph of a kept entry's group: each as written, or empty when it is
- * missing, and empty with a problem when the chord is no lowercase letter or the glyph is no
- * string or no name of the vocabulary.
+ * The chord, the heading glyph and the flag of a kept entry's group: each as written, or empty or
+ * false when it is missing, and empty or false with a problem when the chord is no lowercase
+ * letter, the glyph is no string or no name of the vocabulary, or the flag is not true or false.
  */
 function groupOf(
     held: Record<string, unknown>,
@@ -158,7 +169,7 @@ function groupOf(
     page: string,
     glyphs: string[] | undefined,
     problems: RailProblem[]
-): { chord: string; group_glyph: string } {
+): { chord: string; group_glyph: string; unplaced_collections: boolean } {
     let chord = text(held.chord);
     if (written(held.chord) && !chordShape.safeParse(held.chord).success) {
         problems.push({ index, why: 'chord', page });
@@ -170,13 +181,35 @@ function groupOf(
         problems.push({ index, why: 'group_glyph_unknown', page });
         group = '';
     }
-    return { chord, group_glyph: group };
+    const flag = held.unplaced_collections;
+    if (flag !== undefined && typeof flag !== 'boolean') {
+        problems.push({ index, why: 'unplaced', page });
+    }
+    return { chord, group_glyph: group, unplaced_collections: flag === true };
+}
+
+/**
+ * The page of the first kept entry carrying `unplaced_collections`, whose group takes the
+ * collection views no entry places, or null when no entry carries it.
+ */
+function unplacedPage(entries: readonly RailEntry[]): string | null {
+    return entries.find((entry) => entry.unplaced_collections)?.page ?? null;
+}
+
+/**
+ * The group of a merged config's rail that takes the collection views no entry places: the page of
+ * its first kept entry carrying the flag, or null.
+ */
+export function unplacedGroup(config: Record<string, unknown>): string | null {
+    const read = readRail(config.rail, arrangementKeys(config.arrangements), glyphNames(config));
+    return unplacedPage(read.entries);
 }
 
 /**
  * The rail list's problems as findings, one per entry the rail leaves out and one for a `rail:`
  * that is not a list, each naming the file `fileOf` gives for its key (the open workspace file when
- * its `settings:` sets the rail, else config/defaults/layout.yml). Each is reported and never
+ * its `settings:` sets the rail, else config/defaults/layout.yml), then one on the rail when no
+ * kept entry carries `unplaced_collections` or more than one does. Each is reported and never
  * repaired: a hand edit that breaks an entry shows up in the Findings view rather than as a button
  * that is not there.
  */
@@ -197,10 +230,22 @@ export function railFindings(
         ];
     }
     const read = readRail(raw, arrangementKeys(config.arrangements), glyphNames(config));
-    return read.problems.map((problem) => {
+    const found = read.problems.map((problem) => {
         const key = `rail[${problem.index}]`;
         return { file: fileOf(key), key, message: whyText(catalog, problem) };
     });
+    const flagged = read.entries.filter((entry) => entry.unplaced_collections);
+    if (flagged.length === 1) return found;
+    const message =
+        flagged.length === 0
+            ? findingText(catalog, 'findings.rail.unplaced_none')
+            : findingText(
+                  catalog,
+                  'findings.rail.unplaced_twice',
+                  flagged[1].page,
+                  flagged[0].page
+              );
+    return [...found, { file: fileOf('rail'), key: 'rail', message }];
 }
 
 /** The finding sentence for one reason an entry is left out, naming the page it gave. */
@@ -216,6 +261,7 @@ function whyText(catalog: TextCatalog, problem: RailProblem): string {
     if (problem.why === 'group_glyph_unknown') {
         return findingText(catalog, 'findings.rail.group_glyph_unknown', page);
     }
+    if (problem.why === 'unplaced') return findingText(catalog, 'findings.rail.unplaced', page);
     if (problem.why === 'page') return findingText(catalog, 'findings.rail.page');
     if (problem.why === 'page_unknown') {
         return findingText(catalog, 'findings.rail.page_unknown', page);

@@ -3,7 +3,6 @@
 
 import type { AppContributes } from './apps/model-apps.ts';
 import type {
-    CollectionFile,
     Dataset,
     DocPresence,
     Domain,
@@ -15,7 +14,6 @@ import type {
     Person,
     Pillar,
     Project,
-    RawCollection,
     RawManifest,
     RawRegistry,
     RegistryFiles,
@@ -29,10 +27,12 @@ import type {
 import type {
     Career,
     Collection,
+    CollectionEntry,
     FeedData,
     FeedKind,
     Feeds,
     RawFeeds,
+    ReadCollection,
     SchemaField,
     Vocabulary
 } from './model-collections.ts';
@@ -54,7 +54,7 @@ export type RawDeck = {
 export type RawPortfolio = {
     manifests: RawManifest[];
     registries: Record<RegistryName, RawRegistry>;
-    collections: Record<string, RawCollection>;
+    collections: Record<string, ReadCollection>;
     /** What the four feed files hold, from sources/documents/feeds.ts. */
     feeds: RawFeeds;
     /** The career file as it was parsed, and null when the hub holds no such file. */
@@ -87,7 +87,8 @@ export type PortfolioConfig = {
     /** The folder a new project of each tier is made in, `new_project_dir:` of sources.yml. */
     newProjectDir: Partial<Record<string, string>>;
     registries: RegistryFiles;
-    collections: CollectionFile[];
+    /** The hub's `collections:` list minus its feeds, each entry with every field it sets. */
+    collections: CollectionEntry[];
     /** The four generated feed files, hub-relative. */
     feeds: FeedFiles;
     /** The configured interval between LinkedIn posts. */
@@ -111,19 +112,22 @@ export type PortfolioConfig = {
     tagTones: Record<string, string>;
     /**
      * What the hub's own `.oculus/config.yml` does not name, so that its value came from the
-     * engine's defaults: the registries and the YAML feeds (`leads`, `radar`) whose key is absent
-     * from its `collections:` list, whether the list is, and whether `portfolio_deck:` is. A hub
-     * reports only what it names, so a file in this list that is missing is no finding, except
-     * that a hub naming no list which holds the `.oculus/data/` folder reports a missing file of
-     * the list as it reports a named one (the build reads it so, `heldUnnamed` of data/index.ts).
-     * Absent for a config read without knowing where each key came from, where every file counts
-     * as named.
+     * engine's defaults: the registries and the YAML feeds (`leads`, `radar`) no entry of its
+     * `collections:` list names in `registry:`, whether the list is, and whether `portfolio_deck:`
+     * is. A hub reports only what it names, so a file in this list that is missing is no finding,
+     * except that a hub naming no list which holds the `.oculus/data/` folder reports a missing
+     * file of the list as it reports a named one (the build reads it so, `heldUnnamed` of
+     * data/index.ts). Absent for a config read without knowing where each key came from, where
+     * every file counts as named.
      */
     unnamed?: {
         registries: RegistryName[];
         feeds: ('leads' | 'radar')[];
         collections: boolean;
-        /** Whether its list names no Literature file, so the engine's path of it is read. */
+        /**
+         * Whether its list names no entry of the `literature` registry, so oculus's own entry of it
+         * is read.
+         */
         literature: boolean;
         deck: boolean;
     };
@@ -277,18 +281,27 @@ export type ConfigPayload = {
  * key of its domains registry to the entry's colour and title as `label`; a colour not written
  * `#rrggbb` is left out), and `venue_themes` and `data_themes`, the `{ key, label }` options of the
  * `themes` field of its venue and dataset registries (a plain word is its own label), and the
- * `collections` it lists: the keys its own `collections:` names, or, when its settings name no
- * list, the keys of the engine's list whose file the hub holds at the engine's path. `words` is
- * the merged value of each key of config/catalogs/vocab.yml a hub sets and of `manifest_fields`,
- * under this hub's own settings: oculus's value with the hub's `.oculus/config.yml` laid over it.
+ * `collections` it lists: the entries its own `collections:` names, or, when its settings name no
+ * list, the entries of the engine's list whose file the hub holds at the engine's path, each with
+ * every field it sets and, when its `label:` names no word of the catalog, its file's `title:`
+ * (`ListedCollection`). `words` is the merged value of each key of config/catalogs/vocab.yml a hub
+ * sets and of `manifest_fields`, under this hub's own settings: oculus's value with the hub's
+ * `.oculus/config.yml` laid over it.
  */
 export type HubVocab = {
     domains: Record<string, { color?: string; label: string }>;
     venue_themes: { key: string; label: string }[];
     data_themes: { key: string; label: string }[];
-    collections: string[];
+    collections: ListedCollection[];
     words: Record<string, unknown>;
 };
+
+/**
+ * One entry of a hub's `collections:` list as the page reads it: the entry's fields, and the
+ * `title:` of its file when its entry names no label word, which the view catalogue names its view
+ * by then.
+ */
+export type ListedCollection = CollectionEntry & { title?: string };
 
 /**
  * The vocabulary of every hub the workspace holds, by the hub's name, and the name of the primary
@@ -296,13 +309,15 @@ export type HubVocab = {
  * a list drawn over several hubs reads them: the primary, then the other hubs in the workspace's
  * order, and in a workspace with no primary each folder that is no hub at its place among them.
  * `own` is oculus's own words (the same keys as `words`), which the records of a folder that is no
- * hub are read under.
+ * hub are read under, and `ownCollections` oculus's own `collections:` list
+ * (config/defaults/sources.yml), whose entry of a registry a hub's list that names none is read by.
  */
 export type HubVocabs = {
     primary: string | null;
     lists: Record<string, HubVocab>;
     order: string[];
     own: Record<string, unknown>;
+    ownCollections: CollectionEntry[];
 };
 
 /**
@@ -471,7 +486,6 @@ export type FeedsPayload = Record<
 export type {
     Chip,
     CodeAvailability,
-    CollectionFile,
     Dataset,
     DocFlag,
     DocPresence,
@@ -533,11 +547,16 @@ export type {
 export type {
     Career,
     Collection,
+    CollectionEntry,
+    CollectionFlag,
+    CollectionTraits,
     Entry,
     Feeds,
     FromPicked,
     Lead,
     RawFeeds,
+    ReadCollection,
+    RegistryWord,
     SchemaField,
     SchemaOption,
     When
@@ -647,14 +666,9 @@ export { BRANCH_NOT_MERGED } from './model-sessions.ts';
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export { domainColorOf } from './model-entities.ts';
-export {
-    FILTERED_TYPES,
-    entryIdOf,
-    entryTitleOf,
-    optionKey,
-    optionKeys,
-    optionLabel
-} from './model-collections.ts';
+export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
+export { entryIdOf, entryTitleOf } from './model-collections.ts';
+export { optionKey, optionKeys, optionLabel } from './model-collections.ts';
 export type {
     AgentAccount,
     AgentChoice,

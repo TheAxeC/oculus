@@ -64,7 +64,7 @@
         layout: { openView },
         pages: { pageNamed },
         registry: { viewFor },
-        selectors: { configMap }
+        selectors: { configMap, registryKey }
     } = client;
 
     type Props = {
@@ -105,7 +105,8 @@
                   record: trackRecord(snapshot, config, vocabOf),
                   editable: page !== null,
                   boardOf: (role) =>
-                      roleBoard(config, role, (view) => viewFor(view)?.group === BOARD_GROUP)
+                      roleBoard(config, role, (view) => viewFor(view)?.group === BOARD_GROUP),
+                  funding: registryKey('funding')
               })
     );
 

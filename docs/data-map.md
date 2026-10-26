@@ -29,31 +29,31 @@ Make Folder a Hub..., in the Files view's menu of a folder, writes `.oculus/conf
 
 ## Data files
 
-Each data file is named by its entry in `collections:` of `.oculus/config.yml`, a key and a file relative to the hub; the file below is the default path the templates and Make Folder a Hub use. Each file lists its entries under `entries:` (the `data` file under `datasets:`) and opens with a `schema:` block that declares every field. A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
+Each data file is named by its entry in `collections:` of `.oculus/config.yml`, a key and a file relative to the hub, and the entry's fields say what the file is: `registry:` the registry or feed it is, the flags of the features that read it, `ticker:` the category of its command center lines, and `group:`, `order:`, `label:`, `glyph:` and `about:` where its view sits and the words it is drawn with. A hub keys its files as it likes. The table gives oculus's own list (`config/defaults/sources.yml`): the key and default file the templates and Make Folder a Hub use, and the registry each entry names. Each file lists its entries under `entries:` (the `data` file under `datasets:`) and opens with a `schema:` block that declares every field. A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
 
-| Key | Default file | One entry is | Primary key | View |
-|---|---|---|---|---|
-| `venues` | `.oculus/data/research/venues.yml` | a journal or conference | `id` | Venues |
-| `data` | `.oculus/data/research/data.yml` | a dataset | `key` | Data |
-| `pillars` | `.oculus/data/pillars/pillars.yml` | a research line | `key` | Pillars, Map |
-| `domains` | `.oculus/data/pillars/domains.yml` | an application domain | `key` | Domains |
-| `people` | `.oculus/data/people/people.yml` | a person | `key` | People, Person |
-| `organisations` | `.oculus/data/people/organisations.yml` | a university, hospital, funder or company | `key` | Organisations |
-| `resources` | `.oculus/data/research/resources.yml` | a cluster, machine or storage | `key` | Resources, Live HPC |
-| `statements` | `.oculus/data/research/statements.yml` | a reusable manuscript statement | `key` | Statements |
-| `funding` | `.oculus/data/academic/funding.yml` | a grant application or programme | `key` | Funding |
-| `events` | `.oculus/data/academic/events.yml` | a talk, visit or conference | `key` | Talks & Events |
-| `joint-work` | `.oculus/data/academic/joint-work.yml` | a piece of work with one person | `key` | Joint work, Person |
-| `education` | `.oculus/data/academic/education.yml` | a course, supervision or service role | `key` | Education & Service |
-| `applications` | `.oculus/data/academic/applications.yml` | a position application | `key` | Applications |
-| `tasks` | `.oculus/data/academic/tasks.yml` | a task | `key` | Tasks |
-| `literature` | `.oculus/data/literature/literature.yml` | a paper kept for reading and citing | `key`, its citation key | Literature |
-| `leads` | `.oculus/data/academic/leads.yml` | an opening the scout found | `title` | Position Leads |
-| `radar` | `.oculus/data/literature/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
+| Key | Registry | Default file | One entry is | Primary key | View |
+|---|---|---|---|---|---|
+| `venues` | `venues` | `.oculus/data/research/venues.yml` | a journal or conference | `id` | Venues |
+| `data` | `datasets` | `.oculus/data/research/data.yml` | a dataset | `key` | Data |
+| `pillars` | `pillars` | `.oculus/data/pillars/pillars.yml` | a research line | `key` | Pillars, Map |
+| `domains` | `domains` | `.oculus/data/pillars/domains.yml` | an application domain | `key` | Domains |
+| `people` | `people` | `.oculus/data/people/people.yml` | a person | `key` | People, Person |
+| `organisations` | `organisations` | `.oculus/data/people/organisations.yml` | a university, hospital, funder or company | `key` | Organisations |
+| `resources` | `resources` | `.oculus/data/research/resources.yml` | a cluster, machine or storage | `key` | Resources, Live HPC |
+| `statements` | none | `.oculus/data/research/statements.yml` | a reusable manuscript statement | `key` | Statements |
+| `funding` | `funding` | `.oculus/data/academic/funding.yml` | a grant application or programme | `key` | Funding |
+| `events` | none | `.oculus/data/academic/events.yml` | a talk, visit or conference | `key` | Talks & Events |
+| `joint-work` | none | `.oculus/data/academic/joint-work.yml` | a piece of work with one person | `key` | Joint work, Person |
+| `education` | none | `.oculus/data/academic/education.yml` | a course, supervision or service role | `key` | Education & Service |
+| `applications` | none | `.oculus/data/academic/applications.yml` | a position application | `key` | Applications |
+| `tasks` | none | `.oculus/data/academic/tasks.yml` | a task | `key` | Tasks |
+| `literature` | `literature` | `.oculus/data/literature/literature.yml` | a paper kept for reading and citing | `key`, its citation key | Literature |
+| `leads` | `leads` | `.oculus/data/academic/leads.yml` | an opening the scout found | `title` | Position Leads |
+| `radar` | `radar` | `.oculus/data/literature/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
 
 Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus's career banner, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
 
-A duplicate or empty primary key is a finding. A venue is written by its `name` and linked to by its `id`. The `leads` and `radar` keys name the two feed files. The `domains` file gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates, follow-ups and subtasks of every file of `collections:` and the open leads, and every entry has a page with an editor built from its schema.
+A duplicate or empty primary key is a finding. A venue is written by its `name` and linked to by its `id`. The entries whose `registry:` is `leads` and `radar` name the two feed files. The domains registry gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates of every file whose entry sets `ticker:`, under the deadline group its `ticker:` names, the follow-ups and subtasks of every file of `collections:`, and the open leads, and every entry has a page with an editor built from its schema.
 
 ## Views that draw these files
 
@@ -77,12 +77,12 @@ A duplicate or empty primary key is a finding. A venue is written by its `name` 
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 46 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; and `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips, a funding stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 47 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; and `focus_lanes`, `fund_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips, a funding stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                     # the folders projects are found in
 portfolio_deck:           # the hub's own deck
-collections:              # the data files and the two feeds (leads, radar), one { key, file } each
+collections:              # the data files and the two feeds, each a key, a file and the fields of what it is
 chat_context:             # the collections whose files a chat's index holds for the hub
 new_project_dir:          # the folder a new project is made in, per tier
 linkedin_dir:             # a website's LinkedIn folder
@@ -104,6 +104,7 @@ lead_statuses:            # the statuses of Position Leads, with their roles (by
 focus_lanes:              # the Focus lanes, in order (whole)
 fund_stages:              # the stages stacked in the Focus Funding column, in order (whole)
 focus_lane_tones:         # the colour of each collection lane bar of Focus (by word)
+ticker_categories:        # the command center's deadline groups, with their words (by word)
 facet_tones:              # the colour of each filter group of a project board's bar (by word)
 tiers:                    # the kinds of project a manifest's tier names (by word)
 research_audit:           # the tiers the audit's research rules skip (by word)

@@ -1,9 +1,10 @@
 // Layer 3, shared view support. The file a registry view (Venues, Data, Pillars, Domains) is drawn
-// from, and what its Add, Delete and Edit in File controls need of it: the collection read from
-// the file, the file's source address, the identities a write cannot address, the sentence the last
-// Delete or Edit in File answered, and the Add box. A view makes one at its start and reads it by
-// property. An entry of a hub other than the primary is read from that hub's own registry file, so
-// its card edits that file with that file's schema and identities; Add writes the primary's.
+// from, and what its Add, Delete and Edit in File controls need of it: the collection of the entry
+// of each hub's list whose `registry:` names the view's registry, the file's source address, the
+// identities a write cannot address, the sentence the last Delete or Edit in File answered, and the
+// Add box. A view makes one at its start and reads it by property. An entry of a hub other than the
+// primary is read from that hub's own registry file, so its card edits that file with that file's
+// schema and identities; Add writes the primary's.
 
 import type { ClientState } from '$lib/state/client/context';
 import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
@@ -47,16 +48,19 @@ export type RegistryFile = {
 };
 
 /**
- * The file of the registry view of `kind`, whose entries are the collection `key`. Called while a
- * component initialises, since it makes deriveds.
+ * The file of the registry view of `kind`, whose entries are the collection of each hub whose
+ * entry names that registry, under the key its own list gives it. Called while a component
+ * initialises, since it makes deriveds.
  */
-export function registryFile(client: ClientState, kind: RegistryKind, key: string): RegistryFile {
-    const { collectionOf, collectionsOfKey, configMap } = client.selectors;
-    const collection = $derived(collectionOf(key));
+export function registryFile(client: ClientState, kind: RegistryKind): RegistryFile {
+    const { configMap, registryCollections, registryKey } = client.selectors;
+    /** The registry's collection of each hub that holds one, the primary hub's first. */
+    const held = $derived(registryCollections(kind));
+    const collection = $derived(held.find((one) => rootOf(one) === client.fs.primary()) ?? null);
     const source = $derived(viewSourceFile(kind, configMap(), client.fs.primary()));
     /** The registry file of each hub that holds one, the primary hub's first. */
     const parts = $derived(
-        collectionsOfKey(key).map((one) => ({
+        held.map((one) => ({
             collection: one,
             file:
                 rootOf(one) === client.fs.primary()
@@ -94,7 +98,9 @@ export function registryFile(client: ClientState, kind: RegistryKind, key: strin
             return entry === null ? undefined : part?.faults.get(entry.index);
         },
         add: () => {
-            asking = collectionAsk(client, key, collection?.schema, collection?.title ?? key);
+            const key = registryKey(kind);
+            const title = collection?.title ?? key;
+            asking = collectionAsk(client, key, collection?.schema, title, undefined, held);
         },
         closeAsk: () => {
             asking = null;

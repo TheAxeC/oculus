@@ -19,7 +19,8 @@ export {
     holdersOf,
     keyOf,
     resolvedId,
-    rootOf
+    rootOf,
+    type RegistryWord
 } from '../../../data/helpers/hub-names.ts';
 export { placeOf } from '../../../data/snapshot/place.ts';
 

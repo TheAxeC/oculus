@@ -1,7 +1,8 @@
 // Layer 1, data. The JSON Schema of one defaults file of oculus (its `config/defaults/*.yml`), made
 // from its options file (`config/options/*.yml`): each entry's control says what its key may hold,
 // the entry's `help` is the key's description, a group of dotted options takes its help line from
-// the file's `groups:`, and a family describes the records of a list or the values of a map once.
+// the file's `groups:`, and a family describes the records of a list, the values of a map or the
+// one record of a field marked `holds: record` once.
 // The same schema, with every option of every defaults file, describes a workspace file's
 // `settings:`, where a keyed list also takes a row `{ <key>: x, removed: true }` and a map family
 // a key set to null (merge/keyed.ts).
@@ -14,7 +15,14 @@
 // else, so a choice drawn from one is any text.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
-import { blockFlags, flagSources, hueNames, listedSources, pickedSources } from '../options.ts';
+import {
+    blockFlags,
+    flagSources,
+    hueNames,
+    isPairs,
+    listedSources,
+    pickedSources
+} from '../options.ts';
 import { BLOCK_LISTS } from '../../../../shapes/boards/words.ts';
 import { glyphNames } from '../../rail.ts';
 import { FORM_PATTERNS } from '../value-rule.ts';
@@ -210,11 +218,7 @@ export function withoutKey(fields: Record<string, FieldSpec>): Record<string, Fi
     return Object.fromEntries(Object.entries(fields).filter(([name]) => name !== 'key'));
 }
 
-/** Whether a family is a map from a key to one value: fields `key` and `value` and no more. */
-export function isPairs(fields: Record<string, FieldSpec>): boolean {
-    const names = Object.keys(fields);
-    return names.length === 2 && names.includes('key') && names.includes('value');
-}
+export { isPairs };
 
 /**
  * The value schema of each key of a map from a key to a value whose source the key picks (a
@@ -235,9 +239,13 @@ function pickedByKey(
     );
 }
 
-/** The schema of a family: a list of its records, or a map from a key to a record or a value. */
+/**
+ * The schema of a family: a list of its records, a map from a key to a record or a value, or for
+ * a field that holds one record (`holds: record`) that record.
+ */
 function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): JsonSchema {
     const fields = entry.fields ?? {};
+    if (entry.holds === 'record') return recordSchema(fields, lists, loose);
     const keyed = 'key' in fields;
     if (loose && !keyed) return recordSchema(fields, lists, true);
     const rows = recordSchema(fields, lists, loose);

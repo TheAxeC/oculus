@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { glyphNames } from '../../../src/lib/data/sources/config/rail.ts';
+import { glyphNames, type RailEntry } from '../../../src/lib/data/sources/config/rail.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { loadLayers, layersOf } from '../../../src/lib/server/edit/writes/config/config-place.ts';
@@ -29,7 +29,7 @@ import {
 } from './write-fixture.ts';
 
 /** One rail entry as the page sends it. */
-type Entry = { label: string; glyph: string; page: string; chord: string; group_glyph: string };
+type Entry = RailEntry;
 
 /**
  * A target over a scratch engine with a saved workspace open, its file ending in `settings`, and
@@ -48,7 +48,8 @@ function railOf(into: PrimaryTarget): Entry[] {
         glyph: row.glyph ?? '',
         page: row.page ?? '',
         chord: row.chord ?? '',
-        group_glyph: row.group_glyph ?? ''
+        group_glyph: row.group_glyph ?? '',
+        unplaced_collections: row.unplaced_collections === true
     }));
 }
 

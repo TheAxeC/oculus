@@ -174,26 +174,6 @@ options:
         section: Thresholds and horizons
         help: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
         control: number
-    focus.ticker_categories:
-        heading: boards
-        section: Command center
-        help: The command center's deadline groups, in the order it lists them. A category no row of `focus.ticker_sources` gives draws no group, and a dated line whose category this list does not hold is not listed.
-        control: list
-    focus.ticker_sources:
-        heading: boards
-        section: Command center
-        help: "Where the command center's dated lines come from, in the order they are read: each row a source and the category its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub. A source no row names is not read. A workspace file's settings: overrides a row by its collection, adds a row for a new collection, and takes one of oculus's rows out with { collection: <source>, removed: true }; the rows it names are read first, in its order."
-        key: collection
-        fields:
-            collection:
-                help: the source, projects, funding, leads, venues or the key of a collection of the hub
-                control: text
-            category:
-                help: the category of `focus.ticker_categories` the source's lines carry
-                control: text
-            undated:
-                help: true when an undated entry of the collection is open work, listed among the tasks; an undated entry of any other source is left out
-                control: toggle
     focus.applications_open:
         heading: boards
         section: Command center
@@ -815,7 +795,7 @@ options:
 groups:
     audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, the folders a project at a stage is kept under, and the website's publications feed."
     audit.website: The website's publications feed the audit checks the hub's projects against, the keys it is read by and the sections a project is expected in.
-    focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, which statuses count as open or sent, and where the dated lines come from.
+    focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.
     slurm: The Live HPC poller, the cluster it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.

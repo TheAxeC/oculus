@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial. The rail list in force (oculus's `rail:` with the open workspace
     // file's entries laid over it by page) as the Settings view edits it: one row per button with
-    // its label, icon and page and the chord and heading glyph of its group in the view catalogue,
-    // whose heading is the label, the controls that move a row and take it away, and Save, which
+    // its label, icon and page, the chord and heading glyph of its group in the view catalogue,
+    // whose heading is the label, the tick that makes the group the one taking the collection views
+    // whose entry names no group, the controls that move a row and take it away, and Save, which
     // writes the list through the `rail` write of api/write into the workspace file's `settings:`.
     // The watcher pushes the file back within a second, and the rail redraws from that push, so
     // the rail always shows the list in force.
@@ -34,6 +35,7 @@
     // (settings/Item.svelte), whose title is the heading. The rail's Settings choice opens that row
     // (Settings.svelte).
 
+    import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -107,7 +109,7 @@
     }
 
     /** One field of one row changed. */
-    function change(at: number, field: keyof RailEntry, value: string): void {
+    function change(at: number, field: keyof RailEntry, value: string | boolean): void {
         edit(rows.map((row, index) => (index === at ? { ...row, [field]: value } : row)));
     }
 
@@ -124,6 +126,7 @@
         if (problem.why === 'group_glyph_unknown') {
             return t('workbench.rail_why_group_glyph_unknown', place);
         }
+        if (problem.why === 'unplaced') return t('workbench.rail_why_unplaced', place);
         return t('workbench.rail_why_repeated', place);
     }
 
@@ -223,6 +226,15 @@
                         onchange={(value: string) => change(at, 'group_glyph', value)}
                     />
                 </span>
+                <span class="field">
+                    <span class="word" aria-hidden="true">{t('workbench.rail_unplaced')}</span>
+                    <Checkbox
+                        checked={row.unplaced_collections}
+                        label={t('workbench.rail_unplaced_of', at + 1)}
+                        bare
+                        onchange={(value: boolean) => change(at, 'unplaced_collections', value)}
+                    />
+                </span>
                 <ToolButton
                     label={t('workbench.rail_up', at + 1)}
                     glyph="collapse"
@@ -258,7 +270,17 @@
             label={t('workbench.rail_add')}
             glyph="add"
             onclick={() =>
-                edit([...rows, { label: '', glyph: '', page: '', chord: '', group_glyph: '' }])}
+                edit([
+                    ...rows,
+                    {
+                        label: '',
+                        glyph: '',
+                        page: '',
+                        chord: '',
+                        group_glyph: '',
+                        unplaced_collections: false
+                    }
+                ])}
         />
         <ToolButton
             label={t('workbench.rail_save')}

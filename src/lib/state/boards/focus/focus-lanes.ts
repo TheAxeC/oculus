@@ -6,9 +6,15 @@
 // row of the grant's hub its status falls in; the band's columns are those of every hub's words.
 
 import { z } from 'zod';
-import type { Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
+import type { Collection, Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
-import { joinedEntries, rootOf } from '../../../data/helpers/hub-names.ts';
+import {
+    bareId,
+    flaggedCollections,
+    registryCollections,
+    rootOf,
+    type CollectionFlag
+} from '../../../data/helpers/hub-names.ts';
 import { hasWord, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
     anyValueShape,
@@ -61,7 +67,7 @@ export function unplacedRow(missing: Project[]): Unplaced | null {
 export type BandItem = {
     id: string;
     title: string;
-    /** The collection view key, including funding, whose entry the card reveals. */
+    /** The key, in the entry's own hub, of the collection view whose entry the card reveals. */
     entry: string;
     deadline?: string;
     /**
@@ -167,12 +173,18 @@ function bandItem(entry: Entry, key: string, words: Record<string, unknown>): Ba
     return card;
 }
 
+/** The entries of the collections given, each with the key its collection has in its hub. */
+function keyedEntries(held: readonly Collection[]): { entry: Entry; key: string }[] {
+    return held.flatMap((one) => one.entries.map((entry) => ({ entry, key: bareId(one) })));
+}
+
 /**
- * The band above the lanes: the durable work that is not a project. Grants stack by the stage their
- * status names, a stage of `fund_stages` of every hub's words holding the grants whose status the
- * row of the same label of their own hub's words names; positions are the applications whose
- * status is in `applications_open` under `focus:`, and teaching the education entries whose status
- * is in `education_open` there.
+ * The band above the lanes: the durable work that is not a project. Grants, the entries of each
+ * hub's collection whose entry names the `funding` registry, stack by the stage their status names,
+ * a stage of `fund_stages` of every hub's words holding the grants whose status the row of the
+ * same label of their own hub's words names; positions are the entries of the collections flagged
+ * `band_positions` whose status is in `applications_open` under `focus:`, and teaching those of
+ * the collections flagged `band_teaching` whose status is in `education_open` there.
  */
 export function collectionLanes(
     snapshot: Snapshot,
@@ -180,7 +192,7 @@ export function collectionLanes(
     wordsOf?: WordsOf
 ): Band {
     const collections = snapshot.entities.collections;
-    const grants = joinedEntries(collections, 'funding');
+    const grants = keyedEntries(registryCollections(collections, 'funding'));
     const funding: BandStage[] = [];
     const read = new Map<string, ReturnType<typeof fundStages>>();
     const stagesOf = (hub: string): ReturnType<typeof fundStages> => {
@@ -193,26 +205,24 @@ export function collectionLanes(
     const wordsAt = (entry: Entry): Record<string, unknown> => wordsOf?.(rootOf(entry)) ?? config;
     for (const stage of fundStages(words)) {
         const items = grants
-            .filter((entry) => {
+            .filter(({ entry }) => {
                 const own = stagesOf(rootOf(entry)).find((one) => one.label === stage.label);
                 return (own?.statuses ?? []).includes(
                     str(entry.fields.status).trim().toLowerCase()
                 );
             })
-            .map((entry) => bandItem(entry, 'funding', wordsAt(entry)))
+            .map(({ entry, key }) => bandItem(entry, key, wordsAt(entry)))
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
     }
-    const open = focusWords(config, 'applications_open');
-    const applications = joinedEntries(collections, 'applications')
-        .filter((entry) => open.includes(str(entry.fields.status).trim().toLowerCase()))
-        .map((entry) => bandItem(entry, 'applications', wordsAt(entry)))
-        .sort(bandOrder);
-    const running = focusWords(config, 'education_open');
-    const education = joinedEntries(collections, 'education')
-        .filter((entry) => running.includes(str(entry.fields.status).trim().toLowerCase()))
-        .map((entry) => bandItem(entry, 'education', wordsAt(entry)))
-        .sort(bandOrder);
+    /** The cards of the entries of the collections flagged `flag` whose status `statuses` holds. */
+    const column = (flag: CollectionFlag, statuses: string[]): BandItem[] =>
+        keyedEntries(flaggedCollections(collections, flag))
+            .filter(({ entry }) => statuses.includes(str(entry.fields.status).trim().toLowerCase()))
+            .map(({ entry, key }) => bandItem(entry, key, wordsAt(entry)))
+            .sort(bandOrder);
+    const applications = column('band_positions', focusWords(config, 'applications_open'));
+    const education = column('band_teaching', focusWords(config, 'education_open'));
     const tones = readAs(tonesShape, words.focus_lane_tones) ?? {
         funding: '',
         jobs: '',

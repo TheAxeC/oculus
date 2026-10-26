@@ -29,9 +29,6 @@ import { inside, realPath } from '../../../core/paths.ts';
 import { words } from '../../../core/words.ts';
 import { NAME_MAX } from '../../pty/sessions.ts';
 
-/** The collection whose entries name their folder in `link:`. */
-const FUNDING = 'funding';
-
 /** What a task reference is answered with. */
 export type SeedAnswer =
     | { ok: true; seed: string; cwd: string; name: string }
@@ -125,10 +122,14 @@ function linkFolder(hub: string, link: unknown): string | null {
     return inside(folder, top) ? join(hub, relative(top, folder)) : null;
 }
 
-/** The folder the agent starts in: the project's, the scheme's, or the hub root. */
+/**
+ * The folder the agent starts in: the project's, the scheme's (the entries of the collection whose
+ * entry names the `funding` registry name their folder in `link:`), or the hub root.
+ */
 function folderOf(ref: TaskRef, host: Host, hub: string, config: PortfolioConfig): string {
     if (host.folder !== '') return host.folder;
-    if (ref.collection === FUNDING) {
+    const listed = config.collections.find((one) => one.key === ref.collection);
+    if (listed?.registry === 'funding') {
         if (ref.subtask === undefined) return hub;
         return linkFolder(hub, host.fields.link) ?? hub;
     }

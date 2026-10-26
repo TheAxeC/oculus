@@ -1,7 +1,7 @@
 // Layer 2, client state. Which file of the primary hub a view is drawn from: one of the three feeds
 // by its kind, the career file, one of the five registry views with a pane of its own, or one
-// collection by its key. The registries' and the leads and radar feeds' files are the entries of
-// the `collections:` list under their keys.
+// collection by its key. The registries' and the leads and radar feeds' files are the files of the
+// entries of the `collections:` list whose `registry:` names them.
 // All of them are read from the merged configuration the config channel carries, so every view that
 // offers the file shares one rule and one answer.
 //
@@ -11,8 +11,9 @@
 // file is the view's own question, not this rule's.
 
 import { z } from 'zod';
+import { REGISTRY_WORDS, collectionFiles } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
-import type { FeedKind } from '../../data/model/index.ts';
+import type { CollectionEntry, FeedKind } from '../../data/model/index.ts';
 
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };
@@ -22,7 +23,7 @@ export type ViewSource = { root: string; path: string };
  */
 export type ViewSourceKind = FeedKind | 'collection' | 'career' | RegistryKind;
 
-/** The registry views drawn from a file of their own, each by the view's own id. */
+/** The registry views drawn from a file of their own, each by its registry word. */
 export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domains';
 
 /** The kinds whose file the `collections:` list names: the registry views and the YAML feeds. */
@@ -34,39 +35,24 @@ const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection' | ListedKind>, stri
     career: 'career_file'
 };
 
-/** The key of the `collections:` list each registry view's and YAML feed's file is named under. */
-const LISTED_COLLECTIONS: Record<ListedKind, string> = {
-    people: 'people',
-    venues: 'venues',
-    datasets: 'data',
-    pillars: 'pillars',
-    domains: 'domains',
-    leads: 'leads',
-    radar: 'radar'
-};
-
-/** Whether a kind is one whose file the `collections:` list names. */
+/** Whether a kind is one whose file the `collections:` list names, by a registry word. */
 function isListedKind(kind: ViewSourceKind): kind is ListedKind {
-    return Object.hasOwn(LISTED_COLLECTIONS, kind);
+    return (REGISTRY_WORDS as readonly string[]).includes(kind);
 }
 
 /** A configured path: a string with something in it once trimmed, answered trimmed. */
 const pathShape = z.string().trim().min(1);
 
-/** The entries of the config's `collections:` list, each read apart. */
-const collectionsShape = z.array(z.unknown());
-
-/** One entry of that list: the key it is found by and the file it names, read by `pathShape`. */
-const collectionShape = z.object({ key: z.string(), file: z.unknown().optional() });
-
-/** The `file:` of the entry of the config's `collections:` list that carries this key. */
-function collectionPath(config: Record<string, unknown>, key: string | undefined): string | null {
-    if (key === undefined) return null;
-    for (const row of readAs(collectionsShape, config.collections) ?? []) {
-        const held = readAs(collectionShape, row);
-        if (held?.key === key) return readAs(pathShape, held.file);
-    }
-    return null;
+/**
+ * The `file:` of the first entry of the config's `collections:` list the test takes: the one that
+ * carries a key, or the one that names a registry.
+ */
+function collectionPath(
+    config: Record<string, unknown>,
+    test: (entry: CollectionEntry) => boolean
+): string | null {
+    const held = collectionFiles(config.collections).find(test);
+    return held === undefined ? null : readAs(pathShape, held.file);
 }
 
 /**
@@ -82,9 +68,11 @@ export function viewSourceFile(
     if (primary === null) return null;
     const file =
         kind === 'collection'
-            ? collectionPath(config, collection)
+            ? collection === undefined
+                ? null
+                : collectionPath(config, (entry) => entry.key === collection)
             : isListedKind(kind)
-              ? collectionPath(config, LISTED_COLLECTIONS[kind])
+              ? collectionPath(config, (entry) => entry.registry === kind)
               : readAs(pathShape, config[FILE_KEYS[kind]]);
     return file === null ? null : { root: primary, path: file };
 }

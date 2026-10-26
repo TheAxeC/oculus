@@ -28,6 +28,16 @@ export const CONTROLS = [
 /** One of the words of CONTROLS. */
 export type Control = (typeof CONTROLS)[number];
 
+/**
+ * What a family's `holds:` may say: `lists`, a key/value family whose every key holds a list of
+ * values (or one value), and `record`, a family field with no `key` field whose value is one record
+ * of its fields, not a list of them.
+ */
+export const HOLDS = ['lists', 'record'] as const;
+
+/** One of the words of HOLDS. */
+export type Holds = (typeof HOLDS)[number];
+
 /** The subject headings of the Settings view, in the order they are drawn. */
 export const HEADINGS = [
     'appearance',
@@ -65,6 +75,7 @@ export const SOURCES = [
     'status_chips',
     'chip_flags',
     'entry_statuses',
+    'ticker_categories',
     'slide_tags',
     'code_themes',
     'views',

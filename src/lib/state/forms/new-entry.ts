@@ -9,17 +9,13 @@
 
 import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
-import { keyOf, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { hubsTaking } from '../shared/page/hubs.ts';
 import { wordsWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
-import { PEOPLE } from './page-entry.ts';
 import { identityField } from './record-fields.ts';
-
-/** The collection whose entries are tasks. */
-const TASKS = 'tasks';
 
 /** The longest key a task or a person is given, however long its words. */
 const TASK_KEY_MAX = 80;
@@ -64,15 +60,16 @@ function takenKeys(collection: Collection): Set<string> {
 }
 
 /**
- * What `:task-add` makes of a title: the fields of the task and the name of the hub it is added to,
- * or why it adds nothing.
+ * What `:task-add` makes of a title: the fields of the task, the name of the hub it is added to and
+ * that hub's key of the collection, or why it adds nothing.
  */
 type TaskFields =
-    { fields: Record<string, unknown>; hub: string } | { refusal: 'title' | 'key' | 'collection' };
+    | { fields: Record<string, unknown>; hub: string; collection: string }
+    | { refusal: 'title' | 'key' | 'collection' };
 
 /**
- * The task a title makes in `home`, the collection `tasks` of the hub it is added to. The key is
- * the title as lowercase ASCII words joined by hyphens, accents taken off and cut to
+ * The task a title makes in `home`, the collection flagged `tasks` of the hub it is added to. The
+ * key is the title as lowercase ASCII words joined by hyphens, accents taken off and cut to
  * `TASK_KEY_MAX`; a key the file holds already gets `-2`, `-3` and on, inside the same length. An
  * empty title, a title that gives no key (no ASCII letter or digit after the accents are taken off)
  * and no tasks collection give a refusal and no fields. The task's status is the word of `statuses`
@@ -93,7 +90,8 @@ function taskFields(
     const status = wordsWith(config, 'statuses', 'default_task').at(0);
     return {
         fields: { [identity]: key, title: words, ...(status === undefined ? {} : { status }) },
-        hub: rootOf(home)
+        hub: rootOf(home),
+        collection: bareId(home)
     };
 }
 
@@ -162,7 +160,7 @@ export async function addTask(
                 : refusalWords(made.refusal);
         return { id: '', label: '', said };
     }
-    const answer = await write(TASKS, made.fields, made.hub);
+    const answer = await write(made.collection, made.fields, made.hub);
     if (!answer.ok) return { id: '', label: '', said: answer.error ?? t('editor.failed', '') };
     const refused = answer.refused.map((one) => one.reason).join('; ');
     if (refused !== '' || answer.id === undefined) return { id: '', label: '', said: refused };
@@ -219,7 +217,7 @@ export async function addPerson(
     }
     const key = freeKey(words, takenKeys(home));
     const fields = { [identityField(home.schema)]: key, [NAME_FIELD]: words };
-    const answer = await write(PEOPLE, fields, rootOf(home));
+    const answer = await write(bareId(home), fields, rootOf(home));
     if (!answer.ok) return { key: '', said: answer.error ?? t('editor.failed', '') };
     const refused = answer.refused.map((one) => one.reason).join('; ');
     if (refused !== '' || answer.id === undefined) return { key: '', said: refused };

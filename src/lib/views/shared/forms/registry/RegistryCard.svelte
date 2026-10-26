@@ -25,7 +25,10 @@
 
     type Props = RecordCardProps & {
         id: string;
-        /** The registry's collection key: `pillars` or `domains`. */
+        /**
+         * The key the line's hub gives its registry, the pillars or the domains registry, which
+         * the line's page opens under.
+         */
         collection: string;
         title: string;
         /** A hue name from state/shared/words/tones.ts, or none for a card without a bar. */

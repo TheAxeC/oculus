@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { anyWord, hasWord, wordNumber, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { bareId, holdersOf, resolvedId, rootOf } from '../../../data/helpers/hub-names.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
-import type { Entry, Person, Project } from '../../../data/model/index.ts';
+import type { Collection, Entry, Person, Project } from '../../../data/model/index.ts';
 import { teamOf } from '../board/team.ts';
-import { FUNDING, JOINT_WORK, listWords } from '../collection.ts';
+import { listWords } from '../collection/index.ts';
 
 /** A string and nothing else, for the person a joint work's entry names. */
 const stringShape = z.string();
@@ -34,28 +34,31 @@ function stageOf(project: Project): string {
 /**
  * The projects that name one entry, grouped by stage with a count each.
  *
- * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, a joint work is the projects whose team (`lead:`, `collaborators:`
- * and `supervisors:`, state/boards/board/team.ts) holds its person, and every other collection has
- * no project-side inverse, so it is the entry's own `related:` list of keys. A key of the entry's
- * file names the record its hub resolves it to, the entry's own hub first, then the one other hub
- * that holds it (`resolvedId`); `people` are the people of the snapshot, which a joint work's
- * person is resolved among. A related key no project of the snapshot resolves is left out rather
- * than drawn as a dead link. Each project is grouped under its own hub's words when `wordsOf`
- * gives them (`groupProjects`).
+ * Which projects those are is the collection's own question and has three answers: an entry of the
+ * collection whose entry names the `funding` registry is a scheme, named by the manifests'
+ * `funding:` tags; an entry of a collection flagged `joint_work` is a joint work, named by the
+ * projects whose team (`lead:`, `collaborators:` and `supervisors:`, state/boards/board/team.ts)
+ * holds its person; and every other collection has no project-side inverse, so it is the entry's
+ * own `related:` list of keys. `collection` is the collection of the entry's own hub that holds
+ * it, none when the snapshot holds no such collection. A key of the entry's file names the record
+ * its hub resolves it to, the entry's own hub first, then the one other hub that holds it
+ * (`resolvedId`); `people` are the people of the snapshot, which a joint work's person is resolved
+ * among. A related key no project of the snapshot resolves is left out rather than drawn as a dead
+ * link. Each project is grouped under its own hub's words when `wordsOf` gives them
+ * (`groupProjects`).
  */
 export function crossLinks(
     entry: Entry,
-    collectionKey: string,
+    collection: Pick<Collection, 'registry' | 'joint_work'> | undefined,
     projects: Project[],
     people: readonly Person[],
     config: Record<string, unknown>,
     wordsOf?: WordsOf
 ): CrossGroup[] {
     let named: Project[];
-    if (collectionKey === FUNDING) {
+    if (collection?.registry === 'funding') {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
-    } else if (collectionKey === JOINT_WORK) {
+    } else if (collection?.joint_work === true) {
         const own = readAs(stringShape, entry.fields.person);
         const key = own ?? bareId(entry);
         const person = resolvedId(holdersOf(people), rootOf(entry), key);

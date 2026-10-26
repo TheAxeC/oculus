@@ -207,6 +207,8 @@ text:
             wants_scalar: 'Entry {0} must be one value or a list of values, not a record'
             wants_value: 'Entry {0} must be one value, not a list or a record'
             wants_records: This field takes a list of records
+            wants_pairs: This field takes a map whose every value is one value, or a list of values where the field takes one
+            wants_one_record: This field takes one map of the fields of the record
             wants_block: This field takes a map of the lists words, not_words, flags and not_flags, each a list of words
             not_flag: 'A flag is not one of the flags of the list {0}'
             field_problem: 'Entry {0}, field {1}: {2}'

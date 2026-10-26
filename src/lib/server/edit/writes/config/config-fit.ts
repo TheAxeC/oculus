@@ -25,6 +25,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { byKey, isMap } from '../../../../data/helpers/guards.ts';
 import {
     blockFlags,
+    familyForm,
     listedSources,
     pickedSources,
     readsOther,
@@ -115,6 +116,10 @@ function sentenceOf(
             return words(text, 'server.config_value.not_strings');
         case 'records':
             return words(text, 'server.config_value.wants_records');
+        case 'pairs':
+            return words(text, 'server.config_value.wants_pairs');
+        case 'record':
+            return words(text, 'server.config_value.wants_one_record');
         case 'block':
             return words(text, 'server.config_value.wants_block');
         case 'flag':
@@ -248,6 +253,52 @@ function parkedProblem(value: string[], ctx: Context): string | null {
     return null;
 }
 
+/**
+ * The reason a family field's value does not fit the fields that describe it, or null, by its
+ * form (the rule has held it to the form already): each record of a list, the one record, or
+ * each key and value of a map.
+ */
+function nestedProblem(spec: CatalogEntry, value: unknown, ctx: Context): string | null {
+    const fields = spec.fields ?? {};
+    switch (familyForm(spec)) {
+        case 'record': {
+            const record = value as Plain;
+            if (ctx.held.some((one) => isDeepStrictEqual(one, record))) return null;
+            const held = ctx.held.filter(isMap);
+            return recordProblem(fields, record, held, '1', ctx.fit);
+        }
+        case 'pairs':
+            return pairsProblem(fields, value as Plain, ctx);
+        default:
+            return recordsProblem(spec, value as unknown[], ctx);
+    }
+}
+
+/**
+ * The reason a key or a value of a map field does not fit, or null: each pair read as the record
+ * `{ key, value }` of the field's fields, a list of values item by item where the value is no list.
+ */
+function pairsProblem(
+    fields: Record<string, FieldSpec>,
+    value: Plain,
+    ctx: Context
+): string | null {
+    const held = ctx.held.flatMap((one) =>
+        isMap(one) ? Object.entries(one).map(([key, inner]) => ({ key, value: inner })) : []
+    );
+    const listed = fields.value.control === 'list' || fields.value.control === 'multi';
+    for (const [key, inner] of Object.entries(value)) {
+        const items: readonly unknown[] = Array.isArray(inner) && !listed ? inner : [inner];
+        for (const item of items) {
+            const record = { key, value: item };
+            if (held.some((one) => isDeepStrictEqual(one, { key, value: inner }))) continue;
+            const problem = recordProblem(fields, record, held, key, ctx.fit);
+            if (problem !== null) return problem;
+        }
+    }
+    return null;
+}
+
 /** The reason a list of records does not fit the fields that describe them, or null. */
 function recordsProblem(spec: CatalogEntry, value: unknown[], ctx: Context): string | null {
     const held = ctx.held.flatMap((one) => (Array.isArray(one) ? one.filter(isMap) : []));
@@ -284,7 +335,7 @@ function fullProblem(
             if (sources.hub === null) return words(ctx.fit.text, 'server.workspace.no_primary');
             return hubPathProblem(spec, value as string, ctx, sources.hub);
         case 'records':
-            return recordsProblem(spec, value as unknown[], ctx);
+            return nestedProblem(spec, value, ctx);
         default:
             return null;
     }

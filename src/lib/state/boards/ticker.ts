@@ -1,10 +1,14 @@
 // Layer 2, client state. Deadline, follow-up, subtask and venue-load arithmetic lives here because
 // ticker timing changes independently of the Focus board lanes. A record's stage and status are
-// read under the words of its own hub when the caller gives them (`wordsOf`).
+// read under the words of its own hub when the caller gives them (`wordsOf`). The deadline
+// categories are the words of `ticker_categories`, and the collections a dated line comes from
+// are those whose `collections:` entry gives a `ticker:`.
 
 import {
     optionKeys,
     type Collection,
+    type CollectionEntry,
+    type HubVocabs,
     type Id,
     type Project,
     type Rooted,
@@ -12,10 +16,19 @@ import {
     type Venue
 } from '../../data/model/index.ts';
 import { z } from 'zod';
-import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
-import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
-import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
-import { entryFollowups } from './collection.ts';
+import { byKey, text as str } from '../../data/helpers/guards.ts';
+import {
+    REGISTRY_VIEWS,
+    bareId,
+    hubId,
+    keyOf,
+    registryEntryOf,
+    rootOf,
+    type RegistryWord
+} from '../../data/helpers/hub-names.ts';
+import { mapShape, readAs } from '../../data/shapes/shapes.ts';
+import { hasGlyph, hasText, lookup } from '../shared/words/text.ts';
+import { entryFollowups } from './collection/index.ts';
 import { hasWord, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
@@ -39,7 +52,6 @@ import {
 import {
     closesDeadline,
     deadlineMet,
-    entriesOf,
     focusLabel,
     setting,
     settled,
@@ -53,32 +65,64 @@ import {
 export { dueFollowups, type TickerItem, type TickerTarget };
 
 /**
- * The deadline categories, in the order the ticker groups them: `ticker_categories` under `focus:`
- * of the merged config. They are different jobs: your own paper's submission date is not a
- * conference's open call, and neither is a grant deadline.
+ * One deadline category of `ticker_categories` (config/catalogs/vocab.yml): its word, the dotted
+ * keys of the text-catalog words its group is headed by (`label`) and a line of an entry or a lead
+ * is named by (`noun`, and `overdueNoun` once overdue, the noun when the word names none), the
+ * glyph name its lines are drawn with, and whether it is the category of the project manifests'
+ * deadlines. A field naming no word of the catalog is absent, and so is a glyph whose word holds no
+ * glyph name.
  */
-export function tickerCategories(config: Record<string, unknown>): string[] {
-    return strings(focusBlock(config).ticker_categories);
-}
+export type TickerCategory = {
+    key: string;
+    label?: string;
+    glyph?: string;
+    noun?: string;
+    overdueNoun?: string;
+    manifests: boolean;
+};
 
-/**
- * One source of dated entries, a row of `ticker_sources` under `focus:`: the collection read, the
- * category its lines carry, and whether an undated entry of it is open work (a task line).
- */
-type TickerSource = { collection: string; category: string; undated: boolean };
+/** A field of a category word: the dotted key of a text-catalog word, or nothing. */
+const wordKey = z.string().optional().catch(undefined);
 
-/** One row of `ticker_sources`; a row with no collection or no category is no source. */
-const sourceShape = z.object({
-    collection: z.string().min(1),
-    category: z.string().min(1),
-    undated: z.boolean().catch(false)
+/** One word of `ticker_categories` as written. */
+const categoryShape = z.object({
+    label: wordKey,
+    glyph: wordKey,
+    noun: wordKey,
+    overdue_noun: wordKey,
+    manifests: z.boolean().optional().catch(undefined)
 });
 
-const sourcesShape = rowsShape(sourceShape);
+/**
+ * The deadline categories, in the order the ticker groups them: the words of `ticker_categories`
+ * of `words`, the union of every hub's words on the Focus board. They are different jobs: your own
+ * paper's submission date is not a conference's open call, and neither is a grant deadline.
+ */
+export function tickerCategories(words: Record<string, unknown>): TickerCategory[] {
+    const held = (key: string | undefined): string | undefined =>
+        key !== undefined && hasText(key) ? key : undefined;
+    return Object.entries(readAs(mapShape, words.ticker_categories) ?? {}).flatMap(([key, row]) => {
+        const read = readAs(categoryShape, row);
+        if (read === null) return [];
+        const glyphWord = held(read.glyph);
+        const name = glyphWord === undefined ? '' : lookup(glyphWord);
+        const noun = held(read.noun);
+        return [
+            {
+                key,
+                label: held(read.label),
+                glyph: hasGlyph(name) ? name : undefined,
+                noun,
+                overdueNoun: held(read.overdue_noun) ?? noun,
+                manifests: read.manifests === true
+            }
+        ];
+    });
+}
 
-/** The rows of `ticker_sources`, in the config's order. */
-function tickerSources(config: Record<string, unknown>): TickerSource[] {
-    return readAs(sourcesShape, focusBlock(config).ticker_sources) ?? [];
+/** The glyph a line of the category is drawn with, the empty name for a category with none. */
+function glyphOf(categories: readonly TickerCategory[], category: string): string {
+    return categories.find((one) => one.key === category)?.glyph ?? '';
 }
 
 /**
@@ -89,28 +133,11 @@ export function venueWarn(config: Record<string, unknown>): number {
     return setting(config, 'venue_conc_warn', VENUE_WARN);
 }
 
-/** The key of the project manifests in `ticker_sources`; their deadlines have their own loop. */
-const PROJECTS = 'projects';
-
-/** The key of the funding collection, whose entries the scheme loops read. */
-const FUNDING = 'funding';
-
-/** The key of the leads feed, whose live leads have a loop of their own. */
-const LEADS = 'leads';
-
-/** The key of the venues registry, whose calls have a loop of their own. */
-const VENUES = 'venues';
-
 /**
- * The sources that have a loop of their own (the funding schemes, the leads, the venues' calls):
- * their rows of `ticker_sources` give only the category their lines carry.
+ * The hubs' `collections:` lists and oculus's own, by which the ticker finds the entry a hub reads
+ * a registry by (`registryEntryOf`): its key, and the `ticker:` its lines carry.
  */
-const OWN_LOOPS = [PROJECTS, FUNDING, LEADS, VENUES];
-
-/** The category a row of `ticker_sources` gives one source, or none when no row names it. */
-function categoryOf(sources: TickerSource[], collection: string): string | undefined {
-    return sources.find((one) => one.collection === collection)?.category;
-}
+export type TickerLists = Pick<HubVocabs, 'lists' | 'ownCollections'> | null;
 
 /**
  * What the ticker answers. Each list is already in the order it is shown in. A line that carries a
@@ -153,13 +180,17 @@ export function collectionStatuses(collection: Collection | undefined): string[]
 
 /**
  * The whole ticker, in the order the board shows its groups. `config` gives the settings, and a
- * record's stage and status are read under the words of its own hub when `wordsOf` gives them.
+ * record's stage and status are read under the words of its own hub when `wordsOf` gives them; the
+ * categories are those of every hub's words (`wordsOf()`). The funding schemes, the leads and the
+ * venues' calls are found through `lists`, each record by the entry its own hub reads the registry
+ * by, whose `ticker:` gives the category its lines carry.
  */
 export function ticker(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     now: number,
-    wordsOf?: WordsOf
+    wordsOf?: WordsOf,
+    lists: TickerLists = null
 ): Ticker {
     const at = (record: Rooted): Record<string, unknown> => wordsOf?.(rootOf(record)) ?? config;
     const horizon = setting(config, 'deadline_horizon_days', 90);
@@ -169,8 +200,18 @@ export function ticker(
     const projects = Object.values(snapshot.entities.projects);
     const liveProjects = projects.filter((one) => hasWord(at(one), 'stages', 'live', one.stage));
     const collections = snapshot.entities.collections;
-    const sources = tickerSources(config);
-    const categories = tickerCategories(config);
+    const categories = tickerCategories(wordsOf?.() ?? config);
+    const words = categories.map((one) => one.key);
+    /** The entry the hub of `record` reads the registry by. */
+    const entryOf = (record: Rooted, registry: RegistryWord): CollectionEntry | undefined =>
+        registryEntryOf(lists, rootOf(record), registry);
+    /** The category the registry's entry gives the lines of `record`, when it is a word. */
+    const registryCategory = (record: Rooted, registry: RegistryWord): string | undefined => {
+        const category = entryOf(record, registry)?.ticker?.category;
+        return category !== undefined && words.includes(category) ? category : undefined;
+    };
+    /** The key of the hub's funding collection, whose view a scheme's line opens. */
+    const fundingKey = (record: Rooted): string | undefined => entryOf(record, 'funding')?.key;
 
     const overdue: TickerItem[] = [];
     const dated: { category: string; line: TickerItem }[] = [];
@@ -183,17 +224,17 @@ export function ticker(
      * A project's own deadline, for a project of any tier: overdue behind it, on the paper group
      * before it. It stops only at a stage whose word of `stages` carries `deadline_met`. A deadline
      * that is no date is open work and is a task line. A line that shows folds its conference into
-     * itself, so the call is not listed a second time below. The category is the one the `projects`
-     * row of `ticker_sources` gives; with no such row no project deadline is read.
+     * itself, so the call is not listed a second time below. The category is the first word of
+     * `ticker_categories` carrying `manifests`; with none no project deadline is read.
      */
     const folded = new Set<string>();
-    const paper = categoryOf(sources, PROJECTS);
+    const paper = categories.find((one) => one.manifests)?.key;
     for (const project of projects) {
         const deadline = (project.deadline ?? '').trim();
         if (paper === undefined || deadline === '' || settled(project, at(project))) continue;
         const days = daysUntil(deadline, now);
         if (days !== null && days > horizon) continue;
-        const line = item(paper, GLYPHS[paper], focusLabel(project, labelMode), days, {
+        const line = item(paper, glyphOf(categories, paper), focusLabel(project, labelMode), days, {
             id: project.id,
             ...rootMark(project),
             target: { kind: 'manifest', id: project.id }
@@ -226,22 +267,24 @@ export function ticker(
     /**
      * A grant still waiting to be written. A submitted one has met its date and stops nagging. The
      * schemes are a registry entity rather than a collection (normalise leaves the collection out,
-     * since the registry already carries the file), and a line of one opens the Funding view. The
-     * category is the one the `funding` row of `ticker_sources` gives.
+     * since the registry already carries the file), and a line of one opens the view of the
+     * collection its hub keeps the schemes in. The category is the one the `ticker:` of the entry
+     * the scheme's hub reads the funding registry by gives.
      */
-    const grant = categoryOf(sources, FUNDING);
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
-        const words = at(scheme);
-        if (grant === undefined || closesDeadline(words, status) || deadlineMet(words, status)) {
+        const grant = registryCategory(scheme, 'funding');
+        const said = at(scheme);
+        if (grant === undefined || closesDeadline(said, status) || deadlineMet(said, status)) {
             continue;
         }
         const days = daysUntil(isoOf(scheme.deadline), now);
         if (days === null || days > horizon) continue;
-        const line = item(grant, GLYPHS[grant], scheme.title, days, {
-            entry: FUNDING,
+        const key = fundingKey(scheme);
+        const line = item(grant, glyphOf(categories, grant), scheme.title, days, {
+            entry: key,
             ...rootMark(scheme),
-            target: { kind: 'funding', id: scheme.id }
+            target: { kind: 'funding', id: scheme.id, collection: key }
         });
         if (snoozed(scheme.snooze, now)) {
             asleep.push({ ...line, snoozed: true });
@@ -252,27 +295,32 @@ export function ticker(
     }
 
     /**
-     * The collections the other rows of `ticker_sources` name (talks, teaching, tasks, positions
-     * and joint work on the shipped list): one rule over every file.
+     * The entries of every other collection whose entry gives a `ticker:` (talks, teaching, tasks,
+     * positions and joint work on the shipped list): one rule over every file, the category being
+     * the one that `ticker:` gives. The funding and venues registries' lines are their own loops'.
      */
-    for (const source of sources) {
-        if (OWN_LOOPS.includes(source.collection)) continue;
-        const { collection: key, category, undated } = source;
-        const statuses = collectionStatuses(collections[key]);
-        for (const entry of entriesOf(collections, key)) {
+    for (const collection of Object.values(collections)) {
+        const source = collection.ticker;
+        const looped = collection.registry === 'funding' || collection.registry === 'venues';
+        if (source === undefined || looped || !words.includes(source.category)) continue;
+        const key = bareId(collection);
+        const category = source.category;
+        const statuses = collectionStatuses(collection);
+        const task = collection.tasks === true ? { task: true as const } : {};
+        for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (closesDeadline(at(entry), status) || deadlineMet(at(entry), status)) continue;
             const days = daysUntil(entryDate(entry), now);
-            // An undated entry of a source marked `undated` (the tasks file) is open work rather
-            // than a date, so it is a task line; an undated entry of any other file names no
-            // moment and is on no list at all.
-            if (days === null && !undated) continue;
+            // An undated entry of a collection whose `ticker:` says `undated` (the tasks file) is
+            // open work rather than a date, so it is a task line; an undated entry of any other
+            // file names no moment and is on no list at all.
+            if (days === null && source.undated !== true) continue;
             if (days !== null && days > horizon) continue;
-            const line = item(category, GLYPHS[category], entry.title, days, {
+            const line = item(category, glyphOf(categories, category), entry.title, days, {
                 entry: key,
                 status,
                 ...rootMark(entry),
-                target: { kind: 'entry', id: entry.id, collection: key, statuses }
+                target: { kind: 'entry', id: entry.id, collection: key, statuses, ...task }
             });
             if (snoozed(entry.fields.snooze, now)) {
                 asleep.push({ ...line, snoozed: true });
@@ -280,7 +328,7 @@ export function ticker(
             }
             if (days === null) openEntries.push(line);
             else if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
-            else if (categories.includes(category)) dated.push({ category, line });
+            else dated.push({ category, line });
         }
     }
 
@@ -289,17 +337,18 @@ export function ticker(
      * than the ninety-day planning horizon, and they sit in the same group as the applications the
      * entry loop above found: both are positions. A closed status is left out here as well as where
      * the snapshot is built, so the line the reader sees never outlives the lead's own status. The
-     * category is the one the `leads` row of `ticker_sources` gives.
+     * category is the one the `ticker:` of the entry the lead's hub reads the leads registry by
+     * gives.
      */
     const leadsWindow = setting(config, 'leads_horizon_days', 21);
-    const position = categoryOf(sources, LEADS);
     for (const lead of snapshot.entities.feeds.leads ?? []) {
+        const position = registryCategory(lead, 'leads');
         if (position === undefined || isLeadClosed(at(lead), lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
         if (days === null || days < 0 || days > leadsWindow) continue;
         dated.push({
             category: position,
-            line: item(position, GLYPHS[position], lead.title, days, {
+            line: item(position, glyphOf(categories, position), lead.title, days, {
                 ...rootMark(lead),
                 target: { kind: 'lead', id: hubId(rootOf(lead), lead.title) }
             })
@@ -308,20 +357,21 @@ export function ticker(
 
     /**
      * A conference's open call, by its exact date or, with none, by its usual month, which opens
-     * the Venues view. The category is the one the `venues` row of `ticker_sources` gives.
+     * the Venues view. The category is the one the `ticker:` of the entry the venue's hub reads the
+     * venues registry by gives.
      */
-    const call = categoryOf(sources, VENUES);
+    const venuesView = REGISTRY_VIEWS.venues;
     for (const venue of Object.values(snapshot.entities.venues)) {
+        const call = registryCategory(venue, 'venues');
         if (call === undefined || folded.has(venue.id)) continue;
         const days = daysUntil(venue.deadline ?? '', now);
+        const target: TickerTarget = { kind: 'venue', id: venue.id };
+        const over = { entry: venuesView, ...rootMark(venue), target };
         if (days !== null) {
             if (days < 0 || days > horizon) continue;
             dated.push({
                 category: call,
-                line: item(call, GLYPHS[call], venueLabel(venue), days, {
-                    entry: VENUES,
-                    ...rootMark(venue)
-                })
+                line: item(call, glyphOf(categories, call), venueLabel(venue), days, over)
             });
             continue;
         }
@@ -329,10 +379,9 @@ export function ticker(
         if (ahead === null || ahead > months) continue;
         dated.push({
             category: call,
-            line: item(call, GLYPHS[call], venueLabel(venue), null, {
+            line: item(call, glyphOf(categories, call), venueLabel(venue), null, {
                 months: ahead,
-                entry: VENUES,
-                ...rootMark(venue)
+                ...over
             })
         });
     }
@@ -365,21 +414,22 @@ export function ticker(
         const status = scheme.status ?? '';
         if (closesDeadline(at(scheme), status) && !statusFlag(at(scheme), status, 'live_subtasks'))
             continue;
+        const key = fundingKey(scheme);
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
                 days,
                 line: item('followup', GLYPHS.followup, `${scheme.title} - ${note.do}`, days, {
-                    entry: FUNDING,
+                    entry: key,
                     ...rootMark(scheme),
-                    target: { kind: 'followup', id: scheme.id, collection: FUNDING, note: note.key }
+                    target: { kind: 'followup', id: scheme.id, collection: key, note: note.key }
                 })
             });
         }
     }
     for (const collection of Object.values(collections)) {
+        // The funding registry's entries are the schemes read above.
+        if (collection.registry === 'funding') continue;
         const key = bareId(collection);
-        // The funding collection's entries are the schemes read above.
-        if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (
@@ -431,18 +481,15 @@ export function ticker(
             'funding',
             now,
             rootMark(scheme),
-            {
-                kind: 'funding',
-                id: scheme.id
-            }
+            { kind: 'funding', id: scheme.id, collection: fundingKey(scheme) }
         )) {
             if (line.snoozed) asleep.push(line);
             else subtasks.push(line);
         }
     }
     for (const collection of Object.values(collections)) {
+        if (collection.registry === 'funding') continue;
         const key = bareId(collection);
-        if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (
@@ -472,7 +519,7 @@ export function ticker(
     overdue.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
     dated.sort(
         (one, two) =>
-            categories.indexOf(one.category) - categories.indexOf(two.category) ||
+            words.indexOf(one.category) - words.indexOf(two.category) ||
             (one.line.days ?? Number.MAX_SAFE_INTEGER) - (two.line.days ?? Number.MAX_SAFE_INTEGER)
     );
 
@@ -561,14 +608,14 @@ export function runsByKind(lines: TickerItem[]): { kind: string; lines: TickerIt
 }
 
 /** The deadlines under each category, in the categories' order, a category with none left out. */
-export function deadlinesByCategory<C extends string>(
+export function deadlinesByCategory(
     deadlines: TickerItem[],
-    categories: readonly C[]
-): { category: C; lines: TickerItem[] }[] {
+    categories: readonly TickerCategory[]
+): { category: TickerCategory; lines: TickerItem[] }[] {
     return categories
         .map((category) => ({
             category,
-            lines: deadlines.filter((line) => line.kind === category)
+            lines: deadlines.filter((line) => line.kind === category.key)
         }))
         .filter((one) => one.lines.length > 0);
 }

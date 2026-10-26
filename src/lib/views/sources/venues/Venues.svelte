@@ -56,7 +56,7 @@
 
     let { instance }: ViewProps = $props();
 
-    const file = registryFile(client, 'venues', 'venues');
+    const file = registryFile(client, 'venues');
     const allVenues = $derived(venues());
     const allProjects = $derived(realProjects(projects(), configMap(), vocabOf));
     const held = $derived(parseVenuesState(instanceState(instance.id)));

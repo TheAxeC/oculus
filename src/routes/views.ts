@@ -5,11 +5,11 @@ import type { Component } from 'svelte';
 import { z } from 'zod';
 import { appActive, appViewId } from '$lib/data/helpers/files/apps/apps';
 import { EDITOR_VIEW, PANEL_VIEW, contributedViewId } from '$lib/data/helpers/files/apps/views';
-import type { AppRow, HubVocabs } from '$lib/data/model';
-import { workspaceCollectionKeys } from '$lib/data/snapshot/normalise';
-import { itemsShape, readAs } from '$lib/data/shapes/shapes';
+import type { AppRow, HubVocabs, ListedCollection } from '$lib/data/model';
+import { workspaceCollectionViews, type CollectionViews } from '$lib/data/snapshot/normalise';
+import { unplacedGroup } from '$lib/data/sources/config/rail';
+import { itemsShape, mapShape, readAs } from '$lib/data/shapes/shapes';
 import { viewOffers, type ViewOffer } from '$lib/state/system/apps/shell/contributions';
-import { isPlacedCollection } from '$lib/state/workbench/layout/tabs/left-out';
 import type {
     RegistryStore,
     ViewProps,
@@ -17,7 +17,9 @@ import type {
 } from '$lib/state/workbench/navigation/registry';
 
 type RegistrationSource =
-    ViewRegistration | ViewRegistration[] | ((keys: string[]) => ViewRegistration[]);
+    | ViewRegistration
+    | ViewRegistration[]
+    | ((views: ListedCollection[], unplaced: string | null) => ViewRegistration[]);
 
 type ViewModule = {
     default: Component<ViewProps>;
@@ -27,9 +29,17 @@ type ViewModule = {
 /** The `collections` field of a pushed configuration, when it holds a list. */
 const pushedShape = z.object({ collections: itemsShape });
 
-/** Read one source as a list, leaving collection factories for registerCollections(). */
-function definitions(source: RegistrationSource, keys?: string[]): ViewRegistration[] {
-    if (typeof source === 'function') return keys === undefined ? [] : source(keys);
+/**
+ * Read one source as a list, leaving collection factories for registerCollections(), which hands a
+ * factory the collection views and the group the rail places a view no entry places in.
+ */
+function definitions(
+    source: RegistrationSource,
+    given?: Pick<CollectionViews, 'views' | 'unplaced'>
+): ViewRegistration[] {
+    if (typeof source === 'function') {
+        return given === undefined ? [] : source(given.views, given.unplaced);
+    }
     return Array.isArray(source) ? source : [source];
 }
 
@@ -53,22 +63,24 @@ export function registerAll(registry: RegistryStore): void {
 }
 
 /**
- * The collection keys a pushed configuration names with the hubs it was pushed with: those
- * `workspaceCollectionKeys` reads from its `collections` list and the hubs' lists, none for an
- * empty list and no hub listing one, and null when the configuration holds no list there.
+ * The collection views a pushed configuration names with the hubs it was pushed with: those
+ * `workspaceCollectionViews` reads from its `collections` list and the hubs' lists, none for an
+ * empty list and no hub listing one, and null when the configuration holds no list there. The
+ * group a view no entry places goes in is the one the configuration's rail flags.
  */
-export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): string[] | null {
+export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): CollectionViews | null {
     const held = readAs(pushedShape, pushed);
-    return held === null ? null : workspaceCollectionKeys(held, hubs);
+    if (held === null) return null;
+    return workspaceCollectionViews(held, hubs, unplacedGroup(readAs(mapShape, pushed) ?? {}));
 }
 
 /**
- * Register the generic Collection view once per configured collection key, and drop the views of
- * every key the list no longer holds, so a collection taken out of config/defaults/sources.yml
- * leaves the rail and the palette with the keys that took it out rather than at the next reload.
- * The tabs of a key oculus's pages place stay in their panes, which leave them out while no hub
- * lists the key and draw them again when one does (state/workbench/layout/tabs/left-out.ts); the
- * tabs of any other key close with its view.
+ * Register the generic Collection view once per collection view given, and drop the views of
+ * every key they no longer hold, so a collection taken out of config/defaults/sources.yml leaves
+ * the rail and the palette with the keys that took it out rather than at the next reload. The
+ * tabs of a key oculus's pages place (`placed`, the keys of oculus's entries with a `group:`) stay
+ * in their panes, which leave them out while no hub lists the key and draw them again when one
+ * does (state/workbench/layout/tabs/left-out.ts); the tabs of any other key close with its view.
  *
  * A key that is the id of a view a module registers as its own is left out, so a `collections:`
  * entry named `debug` or `files` never replaces a built-in view.
@@ -77,7 +89,7 @@ export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): stri
  * drawn by that module's own component, so this module owns the collection registrations without
  * keeping a second record of them anywhere.
  */
-export function registerCollections(registry: RegistryStore, keys: string[]): void {
+export function registerCollections(registry: RegistryStore, given: CollectionViews): void {
     const builtIn = new Set(
         Object.values(viewModules).flatMap((unknownModule) => {
             const source = (unknownModule as ViewModule).registration;
@@ -86,15 +98,15 @@ export function registerCollections(registry: RegistryStore, keys: string[]): vo
                 : definitions(source).map((registration) => registration.id);
         })
     );
-    const free = keys.filter((key) => !builtIn.has(key));
+    const free = given.views.filter((entry) => !builtIn.has(entry.key));
     for (const unknownModule of Object.values(viewModules)) {
         const module = unknownModule as ViewModule;
         if (typeof module.registration !== 'function') continue;
-        const wanted = definitions(module.registration, free);
+        const wanted = definitions(module.registration, { views: free, unplaced: given.unplaced });
         const ids = new Set(wanted.map((registration) => registration.id));
         for (const registration of registry.views()) {
             if (registration.component !== module.default || ids.has(registration.id)) continue;
-            if (isPlacedCollection(registration.id)) registry.dropView(registration.id);
+            if (given.placed.includes(registration.id)) registry.dropView(registration.id);
             else registry.unregisterView(registration.id);
         }
         registry.registerComponent(module.default, wanted);

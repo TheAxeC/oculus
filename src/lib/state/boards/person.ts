@@ -10,8 +10,7 @@
 
 import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import { joinedEntries, keyOf } from '../../data/helpers/hub-names.ts';
-import { JOINT_WORK } from './collection.ts';
+import { flaggedEntries, keyOf } from '../../data/helpers/hub-names.ts';
 
 /**
  * One person and what they are joined to; every join is empty for an id the registry does not hold.
@@ -52,9 +51,12 @@ export function personName(snapshot: Snapshot | null, id: Id): string {
     return held === undefined || held.name === '' ? keyOf(id) : held.name;
 }
 
-/** The joint-work entries naming one person, in the order the collection file writes them. */
+/**
+ * The joint-work entries naming one person, those of the collections flagged `joint_work` of every
+ * hub, in the order the collection files write them.
+ */
 function jointWorkOf(snapshot: Snapshot, id: Id): Entry[] {
-    const entries = joinedEntries(snapshot.entities.collections, JOINT_WORK);
+    const entries = flaggedEntries(snapshot.entities.collections, 'joint_work');
     const ids = new Set(
         snapshot.relations.jointWorkPerson.filter((pair) => pair[1] === id).map((pair) => pair[0])
     );

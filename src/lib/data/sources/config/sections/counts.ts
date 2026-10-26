@@ -7,11 +7,12 @@
 //
 // Which views draw a count is fixed by the views themselves: each one's registration has a count
 // hook. They are the boards of `boards`, the collections, which count by the `match` of their row
-// (Applications by its own rule), and the views of COUNTED. Which of them the rail sums is the
-// row's `rail`, read nowhere else.
+// (one flagged `open_badge` by its own rule), and the views of COUNTED. Which of them the rail sums
+// is the row's `rail`, read nowhere else.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { fields, isMap } from '../../../helpers/guards.ts';
+import { collectionFiles } from '../../../helpers/hub-names.ts';
 import type { Finding } from '../../../model/index.ts';
 import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem } from '../catalog/value-rule.ts';
@@ -34,34 +35,25 @@ const COUNTED: readonly string[] = [
     'session-list'
 ];
 
-/** The collection whose count is its own rule, the applications open, and which takes no match. */
-const APPLICATIONS = 'applications';
-
 /** The view whose row takes `days`. */
 const LEADS = 'leads';
 
 /** The fields a row of a collection takes, beside `tab` and `rail`. */
 const COLLECTION_FIELDS = ['match', 'label', 'tone'];
 
-/** The keys of the `collections` list of the merged config. */
-function collectionKeys(config: Record<string, unknown>): string[] {
-    const list: unknown[] = Array.isArray(config.collections) ? config.collections : [];
-    return list.flatMap((one) => (isMap(one) && typeof one.key === 'string' ? [one.key] : []));
-}
-
 /**
  * The fields one row may hold, or null when the view draws no count: a board's and a fixed view's
- * `tab` and `rail`, a collection's `match`, `label` and `tone` besides (Applications none of them),
- * and Position Leads' `days`.
+ * `tab` and `rail`, a collection's `match`, `label` and `tone` besides (a collection flagged
+ * `open_badge`, which counts its open entries by its own rule, none of them), and Position Leads'
+ * `days`.
  */
 function fieldsOf(config: Record<string, unknown>, view: string, row: Record<string, unknown>) {
     const flags = ['tab', 'rail'];
     if (view === LEADS) return [...flags, 'days'];
-    if (COUNTED.includes(view) || view === APPLICATIONS) return flags;
+    const entry = collectionFiles(config.collections).find((one) => one.key === view);
+    if (COUNTED.includes(view) || entry?.open_badge === true) return flags;
     if (Object.hasOwn(fields(config.boards), view)) return flags;
-    if (collectionKeys(config).includes(view) && row.match !== undefined) {
-        return [...flags, ...COLLECTION_FIELDS];
-    }
+    if (entry !== undefined && row.match !== undefined) return [...flags, ...COLLECTION_FIELDS];
     return null;
 }
 
@@ -69,7 +61,8 @@ function fieldsOf(config: Record<string, unknown>, view: string, row: Record<str
  * One finding for a `counts` that is not a map; for each row that is not a map or whose id is no
  * view that draws a count (an unknown id, LinkedIn's mark, a collection with no `match`), whose
  * row is then not read; for each field a row does not take (`days` on any row but Position Leads',
- * `match`, `label` or `tone` on a view that is no collection or on Applications, any other name);
+ * `match`, `label` or `tone` on a view that is no collection or on one flagged `open_badge`, any
+ * other name);
  * and for each field whose value its entry of the options catalog refuses (a `tab` of `yes`).
  */
 export function countsFindings(

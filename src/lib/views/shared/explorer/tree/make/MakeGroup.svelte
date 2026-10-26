@@ -42,7 +42,7 @@
                         onchange={(on: boolean) => ontick(group.id, row.key, on)}
                     />
                 {/if}
-                <span class="line">{rowLine(group.id, row.key)}</span>
+                <span class="line">{rowLine(group.id, row)}</span>
                 <span class="paths">{row.paths.join(', ')}</span>
             </li>
         {/each}

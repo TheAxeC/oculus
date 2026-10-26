@@ -20,14 +20,15 @@ import { parse } from 'yaml';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
     LOCAL_NAME,
-    collectionKeys,
     engineDir,
     glyphCatalog,
     iconCatalog,
     iconSet,
     loadConfig,
-    textCatalog
+    textCatalog,
+    unplacedGroup
 } from '../../../src/lib/data/sources/config.ts';
+import { collectionViews } from '../../../src/lib/data/snapshot/normalise.ts';
 import { iconFindings } from '../../../src/lib/data/sources/config/catalogs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
@@ -221,6 +222,7 @@ describe("oculus's own config directory", () => {
             'focus_lanes',
             'fund_stages',
             'focus_lane_tones',
+            'ticker_categories',
             'facet_tones',
             'tiers',
             'research_audit',
@@ -530,7 +532,7 @@ describe("oculus's own config directory", () => {
     it('gives every group a chord and a glyph, and no letter a key the workbench binds', async () => {
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
-        registerCollections(client.registry, collectionKeys(config));
+        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
         const groups: NavGroup[] = readGroups(config);
         const sections = arrange(
             views().filter((view) => view.listed !== false),
@@ -575,7 +577,7 @@ describe("oculus's own config directory", () => {
     it('names a configured group and a nonnegative order in every listed registration', () => {
         const { config } = loadConfig(engineDir());
         registerAll(client.registry);
-        registerCollections(client.registry, collectionKeys(config));
+        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
         const groups = new Set(readGroups(config).map((group) => group.id));
         const invalid = views()
             .filter((view) => view.listed !== false)

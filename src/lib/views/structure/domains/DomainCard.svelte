@@ -9,12 +9,13 @@
     import { isDormant, type Domain } from '$lib/state/boards/structure/lines';
     import { domainTone, vocabOf } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
+    import { rootOf } from '$lib/state/shared/page/hubs';
 
     type Props = RecordCardProps & { domain: Domain };
     let { domain, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
 
     const {
-        selectors: { configMap }
+        selectors: { configMap, registryKey }
     } = useState();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
@@ -23,7 +24,7 @@
 
 <div class:dormant={isDormant(projects, configMap(), vocabOf)} data-domain={domain.id}>
     <RegistryCard
-        collection="domains"
+        collection={registryKey('domains', rootOf(domain))}
         id={domain.id}
         {cursor}
         title={domain.title}

@@ -78,7 +78,7 @@
     const {
         clock: { minuteNow, startMinuteClock },
         fs: { primary, roots },
-        selectors: { configMap, selfPeople },
+        selectors: { configMap, hubVocabs, selfPeople },
         entities: { portfolio },
         layout: { openView },
         ui: { instanceState, setInstanceState }
@@ -116,7 +116,12 @@
     const page = $derived(
         snapshot === null
             ? null
-            : focusPage(snapshot, config, now, filter, { self, hubs, wordsOf: vocabOf })
+            : focusPage(snapshot, config, now, filter, {
+                  self,
+                  hubs,
+                  wordsOf: vocabOf,
+                  lists: hubVocabs()
+              })
     );
     const week = $derived(page?.sections.week ?? null);
     const strip = $derived(page?.sections.strip ?? null);

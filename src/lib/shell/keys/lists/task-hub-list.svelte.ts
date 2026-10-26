@@ -36,9 +36,9 @@ export type TaskHubList = {
     ask: (title: string, open: boolean) => void;
 };
 
-/** The hubs that hold the tasks collection, the primary first. */
+/** The hubs that hold a collection flagged `tasks`, the primary first. */
 export function taskHubs(client: Pick<ClientState, 'selectors' | 'fs'>): string[] {
-    return taskHubOrder(client.selectors.collectionsOfKey('tasks'), client.fs.primary());
+    return taskHubOrder(client.selectors.flaggedCollections('tasks'), client.fs.primary());
 }
 
 export function createTaskHubList(input: TaskHubListInput): TaskHubList {

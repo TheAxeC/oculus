@@ -45,7 +45,7 @@
     let { instance }: ViewProps = $props();
     const held = $derived(parseDomainsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const file = registryFile(client, 'domains', 'domains');
+    const file = registryFile(client, 'domains');
     const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
     const shown = $derived(domainsWithMembers(domains, projects(), configMap(), vocabOf));
     function write(next: Partial<DomainsState>): void {

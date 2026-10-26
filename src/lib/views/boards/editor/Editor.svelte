@@ -58,7 +58,6 @@
         type FormField
     } from '$lib/state/forms/schema';
     import { addPerson, unlessReverted } from '$lib/state/forms/new-entry';
-    import { PEOPLE } from '$lib/state/forms/page-entry';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
@@ -70,11 +69,11 @@
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
         fs: { primary },
         selectors: {
-            collectionsOfKey,
             fieldChoices,
             manifestFields,
             manifestSections,
             projectOf,
+            registryCollections,
             waitedOn
         },
         settled,
@@ -210,7 +209,7 @@
     function addTo(hub: string): (name: string) => ReturnType<typeof addPerson> {
         const home = hub === '' ? primary() : hub;
         return unlessReverted(
-            (name) => addPerson(name, collectionsOfKey(PEOPLE), home, newEntry),
+            (name) => addPerson(name, registryCollections('people'), home, newEntry),
             () => reverts
         );
     }

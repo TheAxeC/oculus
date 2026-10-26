@@ -17,11 +17,12 @@ import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import {
-    collectionKeys,
     engineDir,
     loadConfig,
-    textCatalog
+    textCatalog,
+    unplacedGroup
 } from '../../../src/lib/data/sources/config.ts';
+import { collectionViews } from '../../../src/lib/data/snapshot/normalise.ts';
 import {
     CATALOGS,
     LOCAL_NAME,
@@ -30,7 +31,7 @@ import {
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
-import { PAGE_FEEDS } from '../../../src/lib/state/forms/page-entry.ts';
+import { collectionFiles } from '../../../src/lib/data/sources/collections.ts';
 import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus/palette-table.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { vocabKeys } from '../../../src/lib/data/shapes/vocab-keys.ts';
@@ -59,7 +60,8 @@ beforeEach(() => {
     client = createClientState();
     ({ views } = client.registry);
     registerAll(client.registry);
-    registerCollections(client.registry, collectionKeys(config));
+    // Oculus's collection views.
+    registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
     registerApps(client.registry, [
         fixtureApp({ name: 'draft', approved: false, key: '' }),
         fixtureApp({ name: 'kept', kept: true }),
@@ -147,7 +149,9 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
  * each `raise(` call, and the readers of an app's `contributes` and of the settings stored for apps
  * word the key their callers name as a whole literal in each call, which the reader scan holds, and
  * the open workspace's findings, which carry the key their readers
- * (lib/server/files/workspace/folders.ts, open.ts) named as a whole literal.
+ * (lib/server/files/workspace/folders.ts, open.ts) named as a whole literal, and the findings of a
+ * `collections:` list, which carry the key the list reader (lib/data/helpers/hub-names.ts) named as
+ * a whole literal.
  */
 const COMPUTED_FINDING_KEYS = [
     { file: 'lib/server/content/audit/rules.ts', key: 'key' },
@@ -155,7 +159,8 @@ const COMPUTED_FINDING_KEYS = [
     { file: 'lib/data/sources/config/settings/scan.ts', key: 'id' },
     { file: 'lib/server/machine/apps/read/contributes/reader.ts', key: 'key' },
     { file: 'lib/server/machine/apps/read/across/stored.ts', key: 'text' },
-    { file: 'lib/server/files/workspace/words.ts', key: 'one.id' }
+    { file: 'lib/server/files/workspace/words.ts', key: 'one.id' },
+    { file: 'lib/data/sources/collections.ts', key: 'one.word' }
 ] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
@@ -196,22 +201,83 @@ function nameRefusalKeys(): string[] {
     return Object.values(NAME_REFUSALS).map((refusal) => nameRefusalMessage(refusal).key);
 }
 
+/** The catalog keys one field of the words of `ticker_categories` of oculus's vocab.yml names. */
+function tickerWords(field: string): string[] {
+    const held = loadConfig(engineDir()).config.ticker_categories as Record<
+        string,
+        Record<string, unknown>
+    >;
+    return Object.values(held).flatMap((row) => {
+        const key = row[field];
+        return typeof key === 'string' ? [key] : [];
+    });
+}
+
+/** The catalog keys one field of the entries of oculus's `collections:` list names. */
+function collectionWords(field: 'label' | 'glyph' | 'about'): string[] {
+    return collectionFiles(loadConfig(engineDir()).config.collections).flatMap((entry) => {
+        const key = entry[field];
+        return key === undefined ? [] : [key];
+    });
+}
+
+/** The collection views' registration, which reads the label and glyph words of each entry. */
+const COLLECTION_REGISTRATION = 'lib/views/boards/collection/registration.ts';
+
+/**
+ * The value of a string constant `name` the file at `rel` under src declares, read from its
+ * source as the check reads any literal key, or nothing when it declares none.
+ */
+function literalConstant(rel: string, name: string): string[] {
+    const declared = new RegExp(`const ${name} = ('([^'\\\\]*)'|"([^"\\\\]*)");`);
+    const match = declared.exec(codeOf(join(SRC, rel)));
+    const value = match?.at(2) ?? match?.at(3);
+    return value === undefined ? [] : [value];
+}
+
 /** The computed prefixes, with the file that computes each and the catalog keys it covers. */
 const COMPUTED_PREFIXES = [
     {
-        file: 'lib/views/boards/collection/Collection.svelte',
-        start: 'lookup(`views.${instance.view}`',
-        keys: () => collectionKeys(loadConfig(engineDir()).config).map((id) => `views.${id}`)
+        // A collection view is named by the word its entry's `label:` names, handed to the
+        // registry as the registration's label key; a registry an own view draws registers none,
+        // so its word is counted here rather than through the registered views.
+        file: COLLECTION_REGISTRATION,
+        start: 'return { label: entry.label }',
+        keys: () => collectionWords('label')
     },
     {
-        // An entry page names its collection by the key it was opened with when the collection
-        // is gone: a collection, or a feed that has pages.
-        file: 'lib/views/boards/entry/Entry.svelte',
-        start: 'lookup(`views.${collectionKey}`',
-        keys: () =>
-            [...collectionKeys(loadConfig(engineDir()).config), ...PAGE_FEEDS].map(
-                (id) => `views.${id}`
-            )
+        // It draws the glyph its entry's `glyph:` names, else the word of the literal
+        // COLLECTION_GLYPH.
+        file: COLLECTION_REGISTRATION,
+        start: 'glyph: entry.glyph ?? COLLECTION_GLYPH',
+        keys: () => [
+            ...collectionWords('glyph'),
+            ...literalConstant(COLLECTION_REGISTRATION, 'COLLECTION_GLYPH')
+        ]
+    },
+    {
+        // A collection's line in Make Folder a Hub is the word its entry's `about:` names.
+        file: 'lib/views/shared/explorer/tree/make/make-words.ts',
+        start: 't(row.about)',
+        keys: () => collectionWords('about')
+    },
+    {
+        // A command center group's glyph is the word its `ticker_categories` word's `glyph` names.
+        file: 'lib/state/boards/ticker.ts',
+        start: 'lookup(glyphWord)',
+        keys: () => tickerWords('glyph')
+    },
+    {
+        // A line's noun is the word its category's `noun` or `overdue_noun` names.
+        file: 'lib/views/boards/focus/CommandCenter.svelte',
+        start: 't(key)',
+        keys: () => [...tickerWords('noun'), ...tickerWords('overdue_noun')]
+    },
+    {
+        // A group's heading is the word its category's `label` names, else the word of no category.
+        file: 'lib/views/boards/focus/CommandCenter.svelte',
+        start: 't(one.category.label ??',
+        keys: () => [...tickerWords('label'), 'focus.command.kind_other']
     },
     {
         // The palette page reads the words of each row of the palette table by the catalog key the
@@ -541,6 +607,13 @@ describe('text keys', () => {
     it('uses literals except at the documented computed prefixes', () => {
         const computed = unapproved(found);
         expect(computed.map((call) => `${call.file}: ${call.text}`)).toEqual([]);
+    });
+
+    it('finds the place each documented prefix names in its file', () => {
+        const absent = COMPUTED_PREFIXES.filter(
+            (entry) => !codeOf(join(SRC, entry.file)).includes(entry.start)
+        ).map((entry) => `${entry.file}: ${entry.start}`);
+        expect(absent).toEqual([]);
     });
 
     it('names a catalog key in every literal read', () => {

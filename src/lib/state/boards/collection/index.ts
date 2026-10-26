@@ -11,9 +11,9 @@
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { z } from 'zod';
-import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
-import { isMap } from '../../data/helpers/guards.ts';
-import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
+import { ADDRESSED, HOSTED, isHubPath } from '../../../data/places/hub-address.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
+import { bareId, hubId, rootOf } from '../../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -26,7 +26,7 @@ import {
     readAs,
     recordItemsShape,
     searchRevealShape
-} from '../../data/shapes/shapes.ts';
+} from '../../../data/shapes/shapes.ts';
 import {
     FILTERED_TYPES,
     optionLabel,
@@ -34,13 +34,12 @@ import {
     type Followup,
     type SchemaField,
     type Subtask
-} from '../../data/model/index.ts';
-import { fileBytesUrl } from '../sources/fs-transport.ts';
-import { normalisePath } from '../sources/fs.ts';
-import { dirOf } from '../sources/repositories/change-tree.ts';
-import { entryPageState } from '../forms/page-entry.ts';
-import { JOINT_WORK } from '../forms/referrers.ts';
-import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
+} from '../../../data/model/index.ts';
+import { fileBytesUrl } from '../../sources/fs-transport.ts';
+import { normalisePath } from '../../sources/fs.ts';
+import { dirOf } from '../../sources/repositories/change-tree.ts';
+import { entryPageState } from '../../forms/page-entry.ts';
+import { TITLE_FIELD, identityField } from '../../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -48,11 +47,13 @@ export type {
     Collection,
     Entry,
     Followup,
+    ListedCollection,
     Project,
     SchemaField,
     Subtask
-} from '../../data/model/index.ts';
-export { optionKeys, optionLabel } from '../../data/model/index.ts';
+} from '../../../data/model/index.ts';
+export { optionKeys, optionLabel } from '../../../data/model/index.ts';
+export { joinedRegistries } from './joined.ts';
 
 // The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
 // here, since the boundary table keeps `views/` out of `data/`.
@@ -580,11 +581,6 @@ export function fieldFilters(
 
 /** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */
 export const NO_FUNDING = 'no-funding';
-
-/** The collection key whose entries the manifests' `funding:` tags name. */
-export const FUNDING = 'funding';
-
-export { JOINT_WORK };
 
 /** An identity a file writes as a string or a number, answered as text. */
 const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);

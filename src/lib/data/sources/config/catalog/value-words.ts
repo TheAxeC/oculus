@@ -97,6 +97,10 @@ export function mustBe(
             return findingText(catalog, 'findings.words.strings');
         case 'records':
             return findingText(catalog, 'findings.words.records');
+        case 'pairs':
+            return findingText(catalog, 'findings.words.pairs');
+        case 'record':
+            return findingText(catalog, 'findings.words.record');
         case 'block':
             return findingText(catalog, 'findings.words.block');
         case 'flag':

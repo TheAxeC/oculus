@@ -16,7 +16,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import FoldHead from '../../shared/card/FoldHead.svelte';
-    import { categoryLabel, runHeading } from './rows';
+    import { runHeading } from './rows';
 
     const {
         layout: { openView },
@@ -26,7 +26,8 @@
     type RowGroup = { kind: string; rows: TickerRow[] };
     type ViewRows = {
         overdue: TickerRow[];
-        categories: { category: string; rows: TickerRow[] }[];
+        /** Each deadline category's rows, under the heading its word names. */
+        categories: { category: string; label: string; rows: TickerRow[] }[];
         subtaskDated: RowGroup[];
         followups: TickerRow[];
         snoozed: TickerRow[];
@@ -227,7 +228,7 @@
                 glyph={t('focus.command.grp_deadlines_glyph')}
                 runs={view.categories.map((one) => ({
                     key: one.category,
-                    note: categoryLabel(one.category),
+                    note: one.label,
                     rows: one.rows
                 }))}
                 split

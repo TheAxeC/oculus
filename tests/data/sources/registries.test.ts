@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { readRegistries, registryFiles } from '../../../src/lib/data/sources/registries.ts';
-import { engineDefaults } from '../../../src/lib/data/sources/collections.ts';
+import { collectionFiles, engineDefaults } from '../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -115,6 +115,46 @@ describe('readRegistries', () => {
         expect(out.venues.meta).toEqual({ schema: [{ field: 'name', type: 'text' }] });
         expect(out.pillars.entries.map((e) => e.key)).toEqual(['federated']);
         expect(out.pillars.meta).toEqual({ schema: [] });
+    });
+});
+
+describe('the file of each registry, by the entry whose registry names it', () => {
+    /** Oculus's own list, as the registries' fallback. */
+    const own = (): ReturnType<typeof engineDefaults>['collections'] =>
+        engineDefaults().collections;
+
+    it('reads a registry from the entry naming it, whatever its key (case 2)', () => {
+        const files = registryFiles(
+            collectionFiles([
+                { key: 'outlets', file: 'lists/outlets.yml', registry: 'venues' },
+                { key: 'sets', file: 'lists/sets.yml', registry: 'datasets' },
+                { key: 'grants', file: 'lists/grants.yml', registry: 'funding' }
+            ]),
+            own
+        );
+        expect(files.venues).toBe('lists/outlets.yml');
+        expect(files.datasets).toBe('lists/sets.yml');
+        expect(files.funding).toBe('lists/grants.yml');
+        expect(files.pillars).toBe(REGISTRY_FILES.pillars);
+    });
+
+    it("reads oculus's entry of a registry for a list whose entry of that key names no registry (case 4)", () => {
+        const files = registryFiles(
+            collectionFiles([{ key: 'venues', file: 'lists/venues.yml' }]),
+            own
+        );
+        expect(files.venues).toBe(REGISTRY_FILES.venues);
+    });
+
+    it('reads the first of two entries naming one registry (case 5)', () => {
+        const files = registryFiles(
+            collectionFiles([
+                { key: 'outlets', file: 'lists/outlets.yml', registry: 'venues' },
+                { key: 'venues2', file: 'lists/venues2.yml', registry: 'venues' }
+            ]),
+            own
+        );
+        expect(files.venues).toBe('lists/outlets.yml');
     });
 });
 

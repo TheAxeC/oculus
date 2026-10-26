@@ -11,7 +11,8 @@
 // (server/edit/writes/hubs.ts), the primary's as any other, and an id that names no hub names no
 // file. A write that adds a record and names no hub changes the file of the hub the server gives
 // it: the primary's, else the first hub's in the folders' order, and for Save to Literature the
-// first of those that holds the Literature collection. A Settings write lands where the server
+// first of those that holds the Literature collection, under each hub's key of the `literature`
+// registry. A Settings write lands where the server
 // places it (server/edit/writes/config/config-place.ts): a key of the hub list in the primary hub's
 // settings file, any other option, the rail and the audit's mute list in the open workspace file,
 // which is named under the workspace folder of its hub, so the unsaved workspace and a workspace
@@ -23,7 +24,8 @@ import {
     MANIFEST,
     ROOT_FOLDER,
     addressOfId,
-    hubFileOf
+    hubFileOf,
+    type RegistryWord
 } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
@@ -49,6 +51,11 @@ export type FileLookups = {
      * when that hub holds no such collection.
      */
     collectionFile: (hub: string, name: string) => ViewSource | null;
+    /**
+     * The key the hub named `hub` gives a registry: the key of its own `collections:` entry of it,
+     * else of oculus's; the empty text when neither names it.
+     */
+    registryKey: (hub: string, registry: RegistryWord) => string;
     /** The file of each feed, per kind, as the page last received them. */
     feeds: () => FeedsPayload | null;
     /** The file a recorded change wrote, under the root that holds it, by its moment. */
@@ -84,6 +91,7 @@ export const NO_LOOKUPS: Readonly<FileLookups> = Object.freeze({
     workspaceFile: () => null,
     projectManifest: () => null,
     collectionFile: () => null,
+    registryKey: () => '',
     feeds: () => null,
     changeFile: () => null,
     unsavedUnknown: () => false
@@ -149,13 +157,17 @@ export function writtenFile(
     // The hub a write that adds a record names, else the primary's, else the first hub's.
     const home = (root: unknown): string =>
         text(root) || (look.primary() ?? look.hubs().at(0) ?? '');
-    // The hub a write to the collection `name` that names no hub goes to: the primary's when it
-    // holds the collection, else the first other hub's that does, else `home`'s.
-    const naming = (name: string): string => {
+    // The Literature collection of a hub: the file of its key of the `literature` registry.
+    const literature = (hub: string): ViewSource | null => {
+        const key = look.registryKey(hub, 'literature');
+        return key === '' ? null : collection(hub, key);
+    };
+    // The hub a Literature save that names no hub goes to: the primary's when it holds the
+    // collection, else the first other hub's that does, else `home`'s.
+    const literatureHome = (): string => {
         const primary = look.primary();
-        if (primary !== null && look.collectionFile(primary, name) !== null) return primary;
-        const holds = (hub: string) => hub !== primary && look.collectionFile(hub, name) !== null;
-        return look.hubs().find(holds) ?? home('');
+        if (primary !== null && literature(primary) !== null) return primary;
+        return look.hubs().find((hub) => hub !== primary && literature(hub) !== null) ?? home('');
     };
     // The file of the feed `kind` a write that adds to it changes: the primary's, as its
     // configuration names it, else the first hub's.
@@ -173,7 +185,7 @@ export function writtenFile(
         case 'new-entry':
             return collection(home(body.root), body.collection);
         case 'literature-save':
-            return collection(text(body.root) || naming('literature'), 'literature');
+            return literature(text(body.root) || literatureHome());
         case 'reorder':
             return holding(body.collection, Array.isArray(body.order) ? body.order[0] : '');
         case 'subtask':

@@ -81,13 +81,40 @@ describe('optionFindings', () => {
         expect(optionFindings(ENGINE, records).map((one) => [one.key, one.message])).toEqual([
             [
                 'probe',
-                'holds: lists is taken only by a family whose fields are key and value; the entry is read without it'
+                'holds: lists is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it'
             ]
         ]);
         expect(catalogOf(records)['behavior.yml'].probe.holds).toBeUndefined();
         const table = holding({ ...family, fields: { key: 'a key', value: 'a value' } });
         expect(optionFindings(ENGINE, table)).toEqual([]);
         expect(catalogOf(table)['behavior.yml'].probe.holds).toBe('lists');
+    });
+
+    // Fails when catalogOf keeps `holds: record` on an option of its own or on a family field with
+    // a key field, or drops it from a family field of record fields.
+    it('keeps holds: record only on a family field with no key field', () => {
+        const record = { help: 'A record.', holds: 'record', fields: { kind: 'a kind' } };
+        const entry = (inner: Record<string, unknown>) =>
+            holding({
+                help: 'A family.',
+                heading: 'editor',
+                fields: { key: 'a key', inner }
+            });
+        const kept = entry(record);
+        expect(optionFindings(ENGINE, kept)).toEqual([]);
+        expect(catalogOf(kept)['behavior.yml'].probe.fields?.inner.holds).toBe('record');
+        const sentence = (word: string) =>
+            `holds: ${word} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it`;
+        const keyed = entry({ ...record, fields: { key: 'a key', value: 'a value' } });
+        expect(optionFindings(ENGINE, keyed).map((one) => [one.key, one.message])).toEqual([
+            ['probe.inner', sentence('record')]
+        ]);
+        expect(catalogOf(keyed)['behavior.yml'].probe.fields?.inner.holds).toBeUndefined();
+        const top = holding({ heading: 'editor', ...record });
+        expect(optionFindings(ENGINE, top).map((one) => [one.key, one.message])).toEqual([
+            ['probe', sentence('record')]
+        ]);
+        expect(catalogOf(top)['behavior.yml'].probe.holds).toBeUndefined();
     });
 });
 

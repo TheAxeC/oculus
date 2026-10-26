@@ -9,7 +9,7 @@ import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type {
-    CollectionFile,
+    CollectionEntry,
     Finding,
     RawRegistry,
     RawRegistryEntry,
@@ -21,32 +21,21 @@ import type {
 /** The eight hub-relative paths, one per registry; declared with the other types in data/model/. */
 export type { RegistryFiles } from '../model/index.ts';
 
-/** The key of the `collections:` list each registry's file is named under. */
-export const REGISTRY_LIST_KEYS: Record<RegistryName, string> = {
-    venues: 'venues',
-    datasets: 'data',
-    pillars: 'pillars',
-    domains: 'domains',
-    funding: 'funding',
-    people: 'people',
-    organisations: 'organisations',
-    resources: 'resources'
-};
-
-const NAMES = Object.keys(REGISTRY_LIST_KEYS) as RegistryName[];
+/** The eight registries, in the order they are read. */
+export const REGISTRY_NAMES = Object.keys(REGISTRY_SHAPES) as RegistryName[];
 
 /**
- * The path of each registry: the file of the first entry of `listed` under the registry's key,
- * else the file of oculus's own list `defaults` under it (config/defaults/sources.yml, asked only
- * when `listed` leaves a key out), else the empty text.
+ * The path of each registry: the file of the entry of `listed` whose `registry:` names it, else
+ * the file of oculus's own entry of it in `defaults` (config/defaults/sources.yml, asked only when
+ * `listed` names no entry of a registry), else the empty text.
  */
 export function registryFiles(
-    listed: readonly CollectionFile[],
-    defaults: () => readonly CollectionFile[]
+    listed: readonly CollectionEntry[],
+    defaults: () => readonly CollectionEntry[]
 ): RegistryFiles {
-    const fileOf = (list: readonly CollectionFile[], name: RegistryName): string | undefined =>
-        list.find((one) => one.key === REGISTRY_LIST_KEYS[name])?.file;
-    const entries = NAMES.map((name) => [
+    const fileOf = (list: readonly CollectionEntry[], name: RegistryName): string | undefined =>
+        list.find((one) => one.registry === name)?.file;
+    const entries = REGISTRY_NAMES.map((name) => [
         name,
         fileOf(listed, name) ?? fileOf(defaults(), name) ?? ''
     ]);
@@ -134,7 +123,7 @@ export function readRegistries(
 ): Record<RegistryName, RawRegistry> & { findings: Finding[] } {
     const findings: Finding[] = [];
     const out = {} as Record<RegistryName, RawRegistry>;
-    for (const name of NAMES) {
+    for (const name of REGISTRY_NAMES) {
         out[name] = readRegistry(hub, name, files[name], catalog, findings, unnamed.includes(name));
     }
     return { ...out, findings };

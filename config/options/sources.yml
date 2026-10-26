@@ -50,12 +50,87 @@ options:
     collections:
         heading: sources
         section: Collections
-        help: The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. The keys data (the dataset registry), venues, pillars, domains, funding, people, organisations and resources name the file of the registry of that name, and the keys leads and radar the files the Position Leads and Lit Watch views read; a registry or feed the list leaves out is read from the engine's path, and one it names whose file is not there is a finding. Each key except data, venues, pillars, domains, leads and radar also becomes a collection view, a generic card list. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and data registries.
+        help: "The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. An entry's registry says which registry or feed its file is, and its flags which features read it, so the key is the hub's own word: a registry or feed no entry names is read from oculus's entry of it, and one an entry names whose file is not there is a finding. The files of the datasets, venues, pillars, domains, leads and radar registries are drawn by the Data, Venues, Pillars, Domains, Position Leads and Lit Watch views; every other entry also becomes a collection view, a generic card list, placed by its group and order and named by its label and glyph. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and datasets registries."
         fields:
             key: the collection's key, which the view and the entries' cross-links use
             file:
                 help: the YAML file of the collection, relative to the hub
                 control: file
+            registry:
+                help: 'the registry or feed the file is: datasets, venues, pillars, domains, funding, people, organisations, resources, literature, leads or radar; one word on two entries is a finding and the first is the registry'
+                control: choice
+                options:
+                    [
+                        datasets,
+                        venues,
+                        pillars,
+                        domains,
+                        funding,
+                        people,
+                        organisations,
+                        resources,
+                        literature,
+                        leads,
+                        radar
+                    ]
+            band_positions:
+                help: the Focus band's positions column lists the file's open entries
+                control: toggle
+            band_teaching:
+                help: the Focus band's teaching column lists the file's running entries
+                control: toggle
+            awaiting:
+                help: the Awaiting box lists the file's entries that are out for a decision
+                control: toggle
+            open_badge:
+                help: the file's view counts its open entries and draws them as a green badge
+                control: toggle
+            lead_applications:
+                help: a lead's applied press writes the application into this file; on two entries the first is read
+                control: toggle
+            dissemination:
+                help: Disseminated in on a project card lists the file's entries that name the project
+                control: toggle
+            dissemination_skip:
+                help: 'the entries Disseminated in leaves out: an entry is left out when each field this names holds its value or one of its values, such as { role: attend }'
+                holds: lists
+                fields:
+                    key: the field of the file's entries
+                    value: the value the field holds, or one of a list of values
+            tasks:
+                help: Add Task, Start Agent on a task card, the task hub list and the task lines read this file; on two entries the first is read
+                control: toggle
+            joint_work:
+                help: a person's joint work, the relation rows, the cross-links and the referrers read this file
+                control: toggle
+            ticker:
+                help: "the command center's lines of the file; with none the file gives no lines"
+                holds: record
+                fields:
+                    category:
+                        help: the word of ticker_categories the lines carry, which decides their group, glyph and words
+                        control: choice
+                        from: ticker_categories
+                    undated:
+                        help: an entry of the file with no date is a task line
+                        control: toggle
+            group:
+                help: the group of the view catalogue the file's view sits in, a rail page or a nav_groups key
+                control: choice
+                from: catalogue_groups
+            order:
+                help: the place of the file's view in its group
+                control: number
+                whole: true
+            label:
+                help: the dotted key of the text-catalog word the file's view is named by; with none, the file's title
+                control: text
+            glyph:
+                help: the dotted key of the text-catalog word holding the glyph the file's view draws
+                control: text
+            about:
+                help: the dotted key of the text-catalog word of the file's line in Make Folder a Hub
+                control: text
     chat_context:
         heading: sources
         section: Collections

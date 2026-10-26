@@ -1,8 +1,9 @@
 import {
     glyphCatalog,
     textCatalog,
+    unplacedGroup,
     vocabCatalog,
-    workspaceCollectionKeys
+    workspaceCollectionViews
 } from '$lib/data/sources/config';
 import { vscodeRuleIds } from '$lib/data/places/code-rules';
 import { platformText } from '$lib/data/places/platform';
@@ -39,9 +40,10 @@ import type { PageServerLoad } from './$types';
 // of waiting for that route. The page's first HTML is sent with the same theme already drawn
 // (hooks.server.ts), and that first draw keeps it.
 //
-// The collection keys ride with them for the same reason: the page registers the collection view
-// once per key before it renders, and the registry is filled in the page's script body rather than
-// from a fetch, so the view catalogue and the pane tabs draw every collection on the first frame.
+// The collection views ride with them for the same reason, each with the place, label and glyph
+// its entry gives: the page registers the collection view once per key before it renders, and the
+// registry is filled in the page's script body rather than from a fetch, so the view catalogue and
+// the pane tabs draw every collection on the first frame.
 //
 // The apps ride with them too, the held rows and findings and the apps folders, with the version of
 // the `apps` channel they are at least as new as, so the registry holds the apps' views before the
@@ -71,7 +73,7 @@ export const load: PageServerLoad = ({ locals }) => {
         hubs,
         codeThemeClasses,
         appThemes: firstAppThemes(locals.server.apps.held(), config),
-        collections: workspaceCollectionKeys(config, hubs),
+        collections: workspaceCollectionViews(config, hubs, unplacedGroup(config)),
         seed: configSeed(locals.server.hub, read, {
             hubs,
             text,

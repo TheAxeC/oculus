@@ -283,6 +283,64 @@ describe("the machine's own file", { tags: ['slow'] }, () => {
     });
 });
 
+describe("an entry's ticker and skip written into the hub's list", { tags: ['slow'] }, () => {
+    /** The hub's list in force with the `events` entry changed by `change`. */
+    function withEvents(one: World, change: Record<string, unknown>): Record<string, unknown>[] {
+        const list = inForce(one, 'collections') as Record<string, unknown>[];
+        return list.map((entry) => (entry.key === 'events' ? { ...entry, ...change } : entry));
+    }
+
+    /** A write of the list over a world's layers, its fields checked against the server's lists. */
+    function writeList(one: World, value: unknown) {
+        return writeConfigValue(
+            one.engine,
+            'sources.yml',
+            'collections',
+            value,
+            inForce(one, 'collections'),
+            { hub: one.hub, workspace: one.workspace },
+            { inputs: { hub: one.hub, primary: 'hub', projects: () => [] } }
+        );
+    }
+
+    it('writes an edited ticker and a skip of a list of values, and the merge gives them back', () => {
+        const one = world();
+        const seen = withEvents(one, {
+            ticker: { category: 'conference', undated: true },
+            dissemination_skip: { role: 'attend', kind: ['poster', 'demo'] }
+        });
+        const outcome = writeList(one, seen);
+        expect(outcome.refused).toEqual([]);
+        expect(outcome.changed).toEqual(['sources.yml:collections']);
+        expect(inForce(one, 'collections')).toEqual(seen);
+    });
+
+    it.each([
+        [
+            'a ticker that is no record',
+            { ticker: 'event' },
+            'Entry 10, field ticker: This field takes one map of the fields of the record'
+        ],
+        [
+            'a ticker naming no category',
+            { ticker: { category: 'nonesuch' } },
+            'Entry 10, field ticker: Entry 1, field category: This option takes one of the items of the list ticker_categories'
+        ],
+        [
+            'a skip that is no map',
+            { dissemination_skip: ['attend'] },
+            'Entry 10, field dissemination_skip: This field takes a map whose every value is one value, or a list of values where the field takes one'
+        ]
+    ])('refuses %s, and writes nothing', (_row, change, reason) => {
+        const one = world();
+        const before = readFileSync(one.workspace, 'utf8');
+        const outcome = writeList(one, withEvents(one, change));
+        expect(outcome.changed).toEqual([]);
+        expect(outcome.refused.map((refused) => refused.reason)).toEqual([reason]);
+        expect(readFileSync(one.workspace, 'utf8')).toBe(before);
+    });
+});
+
 describe('a write refused with nothing written', { tags: ['slow'] }, () => {
     it('refuses a base the merge no longer gives, with the sentence that it changed since it was read', () => {
         const one = world();

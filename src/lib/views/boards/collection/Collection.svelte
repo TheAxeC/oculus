@@ -1,34 +1,10 @@
 <script module lang="ts">
-    // Layer 3, view registration. The generic collection component registers each configured
-    // collection at its place in the catalogue, which is the rail page it sits on
-    // (state/workbench/layout/tabs/left-out.ts `COLLECTION_PLACES`), and a collection sources.yml
-    // or a hub adds that no placement names in the Registries group after them. What a collection
-    // counts is rail-part.ts's, and where the count is drawn is its row of `counts`.
-    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-    import { COLLECTION_PLACES } from '$lib/state/workbench/layout/tabs/left-out';
-    import { collectionCountPart } from './rail-part';
+    // Layer 3, view registration. The generic collection component registers each collection view
+    // the page is given at the place its `collections:` entry names, with its label and glyph
+    // (registration.ts).
+    import { registration } from './registration';
 
-    export const registration = (keys: string[]): ViewRegistration[] =>
-        keys.map((id, index) => {
-            const applications = id === 'applications';
-            const place = COLLECTION_PLACES[id] ?? { group: 'registries', order: 100 + index };
-            return {
-                id,
-                label: `views.${id}`,
-                glyph: `views.${id}_glyph`,
-                ...place,
-                badge: applications
-                    ? (client) => client.railBadges.applicationsBadge()
-                    : (client) => client.railBadges.collectionBadge(id),
-                badgeTone: applications
-                    ? () => 'green'
-                    : (client) => client.railBadges.collectionBadgeTone(id),
-                badgeTitle: applications
-                    ? undefined
-                    : (client) => client.railBadges.collectionBadgeTitle(id),
-                ...collectionCountPart(id)
-            };
-        });
+    export { registration };
 </script>
 
 <script lang="ts">
@@ -38,16 +14,19 @@
     // entry, the pinned ones first. The title of a card opens the entry's page, the `entry` view's
     // tab, where the entry is edited and deleted.
     //
-    // It is registered once per collection key of config/defaults/sources.yml and reads which
-    // collection it is from the id of the instance it was mounted as, exactly as Projects.svelte
-    // reads which board it is. Nothing here knows what an event or a scheme is: the fields a card
-    // draws and their order come from the file's own `schema:`, through the pure functions of
-    // state/boards/collection.ts.
+    // It is registered once per collection view the page is given and reads which collection it is
+    // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board
+    // it is. Nothing here knows what an event or a scheme is: the fields a card draws and their
+    // order come from the file's own `schema:`, through the pure functions of
+    // state/boards/collection/.
     //
-    // The funding collection carries one thing of its own, its file joined to the projects rather
-    // than a second view: the card of the projects no scheme covers. The Literature collection
-    // carries three: Add asks a DOI or an address and looks the paper up, its cards copy their
-    // BibTeX, and the toolbar copies the BibTeX of the entries shown.
+    // Each hub's file of the key is read by the registry that hub's own entry of the key names
+    // (state/boards/collection/joined.ts `joinedRegistries`). The files whose entry names the
+    // `funding` registry carry one thing of their own, joined to the projects rather than a second
+    // view: the card of the projects of those hubs none of their schemes covers. The files whose
+    // entry names the `literature` registry carry three: Add asks a DOI or an address, looks the
+    // paper up and saves it into one of those hubs, their cards copy their BibTeX, and the toolbar
+    // copies the BibTeX of their entries shown. An entry's page opens by its own hub's registry.
     //
     // A schema field marked `filter: true` is a filter in the bar (FieldFilters.svelte), its picks
     // and ranges the tab's instance state beside the search.
@@ -58,7 +37,7 @@
     // those that name no one; the Role facet, every row of `roles:` with its count; and the Lead
     // badge on an entry whose lead is the user. The rule is data/shapes/boards/roles.ts's, the one
     // the project boards read. While the workspace has more than one hub, the Hub chips follow
-    // (HubChips.svelte), and an unpressed one hides that hub's entries (state/boards/collection.ts
+    // (HubChips.svelte), and an unpressed one hides that hub's entries (state/boards/collection/
     // `keptByHub`). The line a write answered and the empty message are
     // views/shared/writes/SaidBody.svelte's, as on the project boards.
 
@@ -84,13 +63,13 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
-        FUNDING,
         NO_FUNDING,
         applyCollectionFilters,
         fieldFilters,
         fileOrder,
         identityFaults,
         identityValue,
+        joinedRegistries,
         keptByHub,
         movedOrder,
         offeredStatuses,
@@ -102,15 +81,14 @@
         type Entry
     } from '$lib/state/boards/collection';
     import { unfundedBy } from '$lib/state/boards/structure/cross-links';
-    import { LITERATURE } from '$lib/state/feeds/literature/saved';
     import { entryRoles } from '$lib/state/boards/board';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
-    import { lookup, t } from '$lib/state/shared/words/text';
+    import { t } from '$lib/state/shared/words/text';
     import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { fileUnder, hubList, rootOf } from '$lib/state/shared/page/hubs';
-    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
 
@@ -134,6 +112,8 @@
     const key = $derived(instance.view);
 
     const collection = $derived(collectionOf(key));
+    /** Each hub's file of the key read by the registry its own entry names. */
+    const joined = $derived(joinedRegistries(collectionsOfKey(key)));
     const schema = $derived(collection?.schema);
     const held = $derived(parseCollectionState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
@@ -194,7 +174,13 @@
 
     const all = $derived(projects());
     const unfunded = $derived(
-        key === FUNDING ? unfundedBy(all, entries, configMap(), vocabOf) : []
+        joined.funded.length > 0
+            ? unfundedBy(joined.fundedProjects(all), joined.funded, configMap(), vocabOf)
+            : []
+    );
+    /** The entries shown of the files whose entry names the `literature` registry. */
+    const shownPapers = $derived(
+        shown.filter((one) => one.part.collection.registry === 'literature').map((one) => one.entry)
     );
 
     let said = $state('');
@@ -217,7 +203,8 @@
 
     /** The page of one entry, opened from its card's title. */
     function openPage(entry: Entry): void {
-        const page = pageView(key, entry.id, entry.title === '' ? entry.id : entry.title);
+        const label = entry.title === '' ? entry.id : entry.title;
+        const page = pageView(key, entry.id, label, joined.registryOf(entry));
         openView(page.view, page.state);
     }
 
@@ -251,18 +238,23 @@
         write({ range: { ...held.range, [field]: bounds } });
     }
 
-    /** The Add of this collection: a DOI or an address for Literature, the key for any other. */
+    /**
+     * The Add of this collection: a DOI or an address saved into a hub whose entry names the
+     * `literature` registry while one does, the key for any other.
+     */
     function addAsk(): Ask {
         const plain = (chosen?: string): Ask => collectionAsk(client, key, schema, title(), chosen);
-        return key === LITERATURE ? literatureAsk(client, plain) : plain();
+        return joined.literature.length > 0
+            ? literatureAsk(client, plain, joined.literature)
+            : plain();
     }
 
-    /** Copy the BibTeX of the entries the search and the filters leave, in the view's order. */
+    /**
+     * Copy the BibTeX of the entries the search and the filters leave of the files whose entry
+     * names the `literature` registry, in the view's order.
+     */
     async function copyShown(): Promise<void> {
-        said = await copyBibtex(
-            shown.map((one) => one.entry),
-            writeToken()
-        );
+        said = await copyBibtex(shownPapers, writeToken());
     }
 
     /** Draw one entry's long text whole, or cut it to its clamp again. */
@@ -345,9 +337,14 @@
         void carry(asked.card, asked.step);
     });
 
-    /** The pane's words: the file's own title, and the view's registered name before it arrives. */
+    /**
+     * The pane's words: the file's own title, and the view's registered name before it arrives,
+     * else its key.
+     */
     function title(): string {
-        return collection?.title ?? lookup(`views.${instance.view}`);
+        if (collection !== null) return collection.title;
+        const view = client.registry.viewFor(instance.view);
+        return view === undefined ? instance.view : registrationLabel(view);
     }
 </script>
 
@@ -356,12 +353,12 @@
         {#if schema !== undefined}
             <AddButton onclick={() => (asking = addAsk())} />
         {/if}
-        {#if key === LITERATURE}
+        {#if joined.literature.length > 0}
             <ToolButton
                 label={t('literature.bibtex_shown')}
                 title={t('literature.bibtex_shown_tip')}
                 glyph="copy"
-                disabled={shown.length === 0}
+                disabled={shownPapers.length === 0}
                 onclick={copyShown}
             />
         {/if}
@@ -467,10 +464,20 @@
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
                             onpage={() => openPage(entry)}
-                            extra={taskCardActions(key, entry, configMap(), startAgent).concat(
-                                literatureCardActions(key, entry, writeToken, (words) => {
-                                    said = words;
-                                })
+                            extra={taskCardActions(
+                                part.collection,
+                                entry,
+                                configMap(),
+                                startAgent
+                            ).concat(
+                                literatureCardActions(
+                                    part.collection,
+                                    entry,
+                                    writeToken,
+                                    (words) => {
+                                        said = words;
+                                    }
+                                )
                             )}
                         />
                     </Reveal>

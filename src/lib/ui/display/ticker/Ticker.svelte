@@ -69,7 +69,9 @@
             onpointerenter={(event) => shown.measureCut(event, row)}
             onfocusin={(event) => shown.measureCut(event, row)}
         >
-            <Glyph name={row.glyph} />
+            {#if row.glyph !== ''}
+                <Glyph name={row.glyph} />
+            {/if}
             {#if row.mark !== undefined && marked !== undefined}
                 {@render marked(row.mark)}
             {/if}

@@ -155,11 +155,11 @@ function contextWords(
  * a portfolio or project chat's index holds for the hub, in the order written and each once. A
  * value of another kind than the `multi` control takes is a problem naming the key, and the entry's
  * default is read in its place. The list is the one the entry's `from` names, the keys of every
- * entry of `collections:` with the feeds `leads` and `radar` among them; a word that names none of
- * them adds nothing and is no problem, since the merged map cannot tell a word the hub wrote from
- * oculus's default and a hub whose own list is shorter wrote nothing wrong, while the Settings view
- * and the server's write refuse such a word by the same `from`. It throws only when the catalog
- * holds no entry for the key, or a default of another kind.
+ * entry of `collections:`, the entries naming the feeds `leads` and `radar` among them; a word that
+ * names none of them adds nothing and is no problem, since the merged map cannot tell a word the
+ * hub wrote from oculus's default and a hub whose own list is shorter wrote nothing wrong, while
+ * the Settings view and the server's write refuse such a word by the same `from`. It throws only
+ * when the catalog holds no entry for the key, or a default of another kind.
  */
 export function chatContext(
     config: Record<string, unknown>,

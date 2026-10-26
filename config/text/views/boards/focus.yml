@@ -46,6 +46,14 @@ text:
             emails: emails to reply / act on
             funding_deadline: funding deadline in {0}d
             generic_in: '{0} in {1}d'
+            glyph_collab: collab
+            glyph_conference: conference
+            glyph_event: events
+            glyph_funding: coin
+            glyph_paper: paper
+            glyph_position: scout
+            glyph_task: tasks
+            glyph_teaching: teaching
             grp_attention_glyph: attention
             grp_attention_label: Needs attention
             grp_deadlines_glyph: deadline
@@ -72,7 +80,6 @@ text:
             overdue_deadline: deadline {0}d ago
             overdue_funding: funding deadline {0}d ago
             overdue_generic: '{0} {1}d ago'
-            position_deadline: position deadline in {0}d
             refresh_glyph: refresh_live
             refresh_inbox_plain: 'Inbox: triaged {0}d ago | run Inbox from the Update tray'
             refresh_litwatch_plain: 'Lit Watch: {0} | run Lit Watch from the Update tray'
@@ -91,7 +98,11 @@ text:
             word_application: application
             word_collaboration: joint work
             word_commitment: commitment
+            word_conference: conference call
             word_event: event
+            word_funding: funding
+            word_paper: paper
+            word_position_deadline: position deadline
             word_task: task
             word_teaching: teaching
         days_ago: '{0}d ago'

@@ -27,6 +27,9 @@ options:
             group_glyph:
                 help: the glyph of the page's group heading in the view catalogue, one that no view of the group carries; without it the heading takes the glyph of the group's first view
                 control: glyph
+            unplaced_collections:
+                help: the page's group holds every collection view whose collections entry names no group, after the group's placed collection views; one entry carries it, and none or two is a finding, the first read
+                control: toggle
     nav_groups:
         heading: rail
         section: View catalogue

@@ -31,7 +31,16 @@ import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey, focusSetting } from '../../data/helpers/guards.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
-import { collectionsOf, hubId, rootOf } from '../../data/helpers/hub-names.ts';
+import {
+    collectionsOf,
+    flaggedCollections as flaggedOf,
+    hubId,
+    registryCollections as registryOf,
+    registryKeyOf,
+    rootOf,
+    type CollectionFlag,
+    type RegistryWord
+} from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
@@ -211,6 +220,15 @@ export type SelectorsStore = {
     hubDirOf: (id: Id) => string;
     collectionOf: (key: string) => Collection | null;
     collectionsOfKey: (key: string) => Collection[];
+    /** The collections of every hub whose entry carries the flag, the primary hub's first. */
+    flaggedCollections: (flag: CollectionFlag) => Collection[];
+    /** The collection of every hub whose entry names the registry, the primary hub's first. */
+    registryCollections: (registry: RegistryWord) => Collection[];
+    /**
+     * The key the hub `hub` (the primary when absent) gives the registry: its own list's entry of
+     * it, else oculus's; the empty text when neither names it.
+     */
+    registryKey: (registry: RegistryWord, hub?: string) => string;
     boardItemOf: (id: Id) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
     /** Whether the id is a person's or a project's, which a `waiting-on` name may be. */
@@ -444,6 +462,21 @@ export function createSelectors(
     function collectionsOfKey(key: string): Collection[] {
         const snapshot = entities.portfolio();
         return snapshot === null ? [] : collectionsOf(snapshot.entities.collections, key);
+    }
+
+    function flaggedCollections(flag: CollectionFlag): Collection[] {
+        const snapshot = entities.portfolio();
+        return snapshot === null ? [] : flaggedOf(snapshot.entities.collections, flag);
+    }
+
+    function registryCollections(registry: RegistryWord): Collection[] {
+        const snapshot = entities.portfolio();
+        return snapshot === null ? [] : registryOf(snapshot.entities.collections, registry);
+    }
+
+    function registryKey(registry: RegistryWord, hub?: string): string {
+        const named = hub ?? workspace().primary ?? '';
+        return registryKeyOf(hubVocabs(), named, registry) ?? '';
     }
 
     /**
@@ -776,6 +809,9 @@ export function createSelectors(
         hubDirOf,
         collectionOf,
         collectionsOfKey,
+        flaggedCollections,
+        registryCollections,
+        registryKey,
         boardItemOf,
         projectOf,
         waitedOn,

@@ -43,12 +43,20 @@ function settleOf(added: [string, string, Record<string, unknown>][]): Settle {
     };
 }
 
-/** The write store of a page whose primary hub is `hub`. */
+/**
+ * The write store of a page whose primary hub is `hub`, and whose hub `lab` keys the Literature
+ * collection, its entry of the `literature` registry, `papers`.
+ */
 function writesOf(settle: Settle) {
     return createWrites(
         () => ({}),
         () => false,
-        { ...NO_LOOKUPS, primary: () => 'hub' },
+        {
+            ...NO_LOOKUPS,
+            primary: () => 'hub',
+            registryKey: (hub, registry) =>
+                hub === 'lab' && registry === 'literature' ? 'papers' : ''
+        },
         settle
     );
 }
@@ -84,13 +92,13 @@ describe('a write that makes a record', () => {
         expect(added).toEqual([[feed, 'lab:Postdoc', { title: 'Postdoc' }]]);
     });
 
-    it('shows a paper saved with no hub under the id the server answers, its key the key of that id', async () => {
+    it('shows a paper saved with no hub under the id the server answers, its key the key of that id, in the collection the answered hub keys Literature by', async () => {
         answering({ ok: true, changed: ['entries'], refused: [], id: 'lab:smith2026' }, []);
         const added: [string, string, Record<string, unknown>][] = [];
         const paper = { doi: '10.1000/route.paper' };
         const answer = await writesOf(settleOf(added)).saveLiterature('hand', paper);
         expect(answer.id).toBe('lab:smith2026');
-        expect(added).toEqual([['literature', 'lab:smith2026', { ...paper, key: 'smith2026' }]]);
+        expect(added).toEqual([['papers', 'lab:smith2026', { ...paper, key: 'smith2026' }]]);
     });
 
     it('shows nothing for a create the server refuses or answers with no id', async () => {

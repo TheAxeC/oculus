@@ -73,10 +73,11 @@ export function shownTags(tags: BoardTag[], expanded: boolean): BoardTag[] {
 /**
  * The view one tag kind's entries open, and the empty string for a kind that is not a cross-link.
  * A tag of the team names a person rather than a record of a collection, so it opens the Person
- * view for that key; the funding tag opens the collection the scheme is an entry of.
+ * view for that key; the funding tag opens `funding`, the view of the funding registry under the
+ * key the project's hub gives it.
  */
-export function linkView(kind: string): string {
-    if (kind === 'funding') return 'funding';
+export function linkView(kind: string, funding: string): string {
+    if (kind === 'funding') return funding;
     if (kind === 'team') return 'person';
     return '';
 }

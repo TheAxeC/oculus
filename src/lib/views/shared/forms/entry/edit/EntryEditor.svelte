@@ -34,7 +34,7 @@
     import { blockedBy } from '../../entry-file';
     import { pagePayload, savePage } from '$lib/state/forms/entry-save';
     import { addPerson, unlessReverted, type PersonAdded } from '$lib/state/forms/new-entry';
-    import { PEOPLE, pageFields, sampleOf, type PageEntry } from '$lib/state/forms/page-entry';
+    import { pageFields, sampleOf, type PageEntry } from '$lib/state/forms/page-entry';
     import { fieldDiffers, payloadOf, toEdit } from '$lib/state/forms/record-values';
     import type { IdentityFault } from '$lib/state/boards/collection';
     import type { FormField } from '$lib/state/forms/schema';
@@ -45,7 +45,7 @@
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
         fs: { primary },
-        selectors: { collectionsOfKey, fieldChoices },
+        selectors: { fieldChoices, registryCollections },
         source: { unsavedFile },
         writes
     } = useState();
@@ -127,7 +127,7 @@
         (name) =>
             addPerson(
                 name,
-                collectionsOfKey(PEOPLE),
+                registryCollections('people'),
                 page.root === '' ? primary() : page.root,
                 writes.newEntry
             ),

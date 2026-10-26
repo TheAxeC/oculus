@@ -2,7 +2,47 @@
 // rules validate checks the portfolio's files against.
 // The portfolio aggregate imports these leaf types while data/model/index.ts is the facade.
 
-import type { Id, Rooted } from './model-entities.ts';
+import type { CollectionFile, Id, RawCollection, Rooted } from './model-entities.ts';
+
+/**
+ * The words a `collections:` entry's `registry:` names a registry or a feed by: the eight
+ * registries, the Literature collection, and the Position Leads and Lit Watch feeds.
+ */
+export const REGISTRY_WORDS = [
+    'datasets',
+    'venues',
+    'pillars',
+    'domains',
+    'funding',
+    'people',
+    'organisations',
+    'resources',
+    'literature',
+    'leads',
+    'radar'
+] as const;
+
+/** One word of `registry:`. */
+export type RegistryWord = (typeof REGISTRY_WORDS)[number];
+
+/**
+ * The flags a `collections:` entry sets to true, each the feature that reads its file: the Focus
+ * band's positions and teaching columns, the Awaiting box, the open count and green badge, where a
+ * lead's applied press writes, Disseminated in, the task features and joint work.
+ */
+export const COLLECTION_FLAGS = [
+    'band_positions',
+    'band_teaching',
+    'awaiting',
+    'open_badge',
+    'lead_applications',
+    'dissemination',
+    'tasks',
+    'joint_work'
+] as const;
+
+/** One flag of a `collections:` entry. */
+export type CollectionFlag = (typeof COLLECTION_FLAGS)[number];
 
 /**
  * One entry of one collection, as data/snapshot/normalise.ts fills it from a RawEntry. `id` is the
@@ -123,28 +163,79 @@ export type FromPicked = { field: string; sources: Record<string, string> };
  */
 export type When = Record<string, string | string[]>;
 
+/** Where the ticker reads an entry's lines from: the category its lines carry. */
+type TickerSource = {
+    /** A word of `ticker_categories`. */
+    category: string;
+    /** Set when an undated entry of the collection is open work, a task line. */
+    undated?: true;
+};
+
+/**
+ * What a `collections:` entry says its file is, beside its key and path: the registry it is
+ * (`registry:`), the features that read it (a flag of `COLLECTION_FLAGS` set to true), the entries
+ * Disseminated in leaves out of it (`dissemination_skip:`) and the ticker's reading of it
+ * (`ticker:`). A field the entry does not set, or sets to something no reader takes, is absent.
+ */
+export type CollectionTraits = {
+    registry?: RegistryWord;
+    dissemination_skip?: When;
+    ticker?: TickerSource;
+} & Partial<Record<CollectionFlag, true>>;
+
+/**
+ * Where a collection's own view sits in the view catalogue and what it is called: its group (a rail
+ * page or a `nav_groups` key) and its order there, and the dotted keys of the text-catalog words of
+ * its label, its glyph and its line in Make Folder a Hub.
+ */
+type CollectionPlace = {
+    group?: string;
+    order?: number;
+    label?: string;
+    glyph?: string;
+    about?: string;
+};
+
+/** One entry of a `collections:` list with every field it sets. */
+export type CollectionEntry = CollectionFile & CollectionTraits & CollectionPlace;
+
+/**
+ * A collection file as data/sources/collections.ts read it: the raw file, the traits its entry
+ * gives it, and the entry's position in its hub's list, which orders the collections of one hub
+ * that carry the same flag.
+ */
+export type ReadCollection = RawCollection & CollectionTraits & { index: number };
+
 /**
  * One collection: a hub file of like records the reader edits through the file's own schema. Its
  * entries are held inline rather than by id, since an entry belongs to exactly one collection and
- * no relation runs the other way, so no cycle can form. Five files are carried as entities too
- * (venues, pillars, domains, funding and data), the collection being what their entries are
- * edited as. The data file lists its records under `datasets:`; the others use `entries:`.
+ * no relation runs the other way, so no cycle can form. The files whose entry names a registry of
+ * venues, pillars, domains, funding, datasets, people, organisations or resources are carried as
+ * entities too, the collection being what their entries are edited as. The datasets registry's
+ * file lists its records under `datasets:`; the others use `entries:`. It carries its entry's
+ * traits and its position in its hub's list.
  */
-export type Collection = Rooted & {
-    /** The key from the `collections:` list, `funding` or `events`. */
-    id: Id;
-    title: string;
-    intro?: string;
-    /** Absolute path of the collection file. */
-    file: string;
-    /**
-     * The file's own `schema:`, absent when the file has none and when what it has is not a list
-     * of field maps; the schema check (data/snapshot/schema/run.ts) reports the second case as a
-     * finding.
-     */
-    schema?: SchemaField[];
-    entries: Entry[];
-};
+export type Collection = Rooted &
+    CollectionTraits & {
+        /** The key from the `collections:` list, `funding` or `events`. */
+        id: Id;
+        title: string;
+        intro?: string;
+        /** Absolute path of the collection file. */
+        file: string;
+        /**
+         * The file's own `schema:`, absent when the file has none and when what it has is not a list
+         * of field maps; the schema check (data/snapshot/schema/run.ts) reports the second case as a
+         * finding.
+         */
+        schema?: SchemaField[];
+        entries: Entry[];
+        /**
+         * The position of the collection's entry in its hub's `collections:` list, which orders the
+         * collections of one hub that carry the same flag; the read of a hub always sets it.
+         */
+        index?: number;
+    };
 
 /**
  * Everything the sources read, before anything is validated or resolved. This is what validate

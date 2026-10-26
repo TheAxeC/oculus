@@ -24,7 +24,13 @@ import type {
     Snapshot
 } from '../../../data/model/index.ts';
 import { byKey, text as str } from '../../../data/helpers/guards.ts';
-import { bareId, rootOf } from '../../../data/helpers/hub-names.ts';
+import {
+    bareId,
+    flaggedCollections,
+    hubId,
+    registryCollection,
+    rootOf
+} from '../../../data/helpers/hub-names.ts';
 import {
     entryPeople,
     isMine,
@@ -39,7 +45,6 @@ import { fieldItemsShape, mapShape, readAs } from '../../../data/shapes/shapes.t
 import type { WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
     deadlineMet,
-    entriesOf,
     focusWords,
     laneItems,
     lanes,
@@ -50,7 +55,7 @@ import {
     type Waiting
 } from '../focus.ts';
 import { personNames } from '../person.ts';
-import { ticker, type Ticker, type TickerItem } from '../ticker.ts';
+import { ticker, type Ticker, type TickerItem, type TickerLists } from '../ticker.ts';
 import { collectionLanes, stageItemCount, type Band } from './focus-lanes.ts';
 
 /** The choice of the Filter list: Mine only, and the roles, tiers and hubs left unticked. */
@@ -101,6 +106,8 @@ export type FilterScope = {
     self: ReadonlySet<Id>;
     hubs: readonly string[];
     wordsOf: WordsOf;
+    /** The hubs' `collections:` lists and oculus's own, which the ticker reads the registries by. */
+    lists: TickerLists;
 };
 
 /** The choice as the rule applies it: what is hidden, each list a set. */
@@ -171,8 +178,9 @@ function keepsEntry(entry: Entry, collection: Collection, rule: Rule, scope: Fil
 }
 
 /**
- * Whether the filter keeps a funding scheme: as the entry of the funding collection of its hub that
- * holds it, and by its hub alone where that collection holds no such entry.
+ * Whether the filter keeps a funding scheme: as the entry of its hub's collection whose entry names
+ * the `funding` registry that holds it, and by its hub alone where that collection holds no such
+ * entry.
  */
 function keepsScheme(
     scheme: Funding,
@@ -182,9 +190,7 @@ function keepsScheme(
 ): boolean {
     const root = rootOf(scheme);
     if (rule.hubs.has(root)) return false;
-    const file = Object.values(collections).find(
-        (one) => bareId(one) === 'funding' && rootOf(one) === root
-    );
+    const file = registryCollection(collections, 'funding', root);
     const entry = file?.entries.find((one) => bareId(one) === bareId(scheme));
     return file === undefined || entry === undefined || keepsEntry(entry, file, rule, scope);
 }
@@ -256,12 +262,13 @@ function sectionsOf(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     now: number,
-    wordsOf: WordsOf,
+    scope: FilterScope,
     known: Record<Id, Project>
 ): FocusSections {
+    const wordsOf = scope.wordsOf;
     const board = lanes(wordsOf());
     return {
-        week: ticker(snapshot, config, now, wordsOf),
+        week: ticker(snapshot, config, now, wordsOf, scope.lists),
         strip: waiting(snapshot, config, personNames(snapshot), wordsOf, known),
         band: collectionLanes(snapshot, config, wordsOf),
         lanes: laneItems(Object.values(snapshot.entities.projects), board, config, wordsOf)
@@ -432,10 +439,17 @@ function mineWouldHide(
         ...week.tasks,
         ...week.snoozed
     ];
+    // A scheme's follow-up names the collection of its hub whose entry names the funding registry.
+    const ofFunding = (collection: string, root: string): boolean =>
+        byKey(held.collections, hubId(root, collection))?.registry === 'funding';
     const hidesLine = (line: TickerItem): boolean => {
         const target = line.target;
         if (target?.kind === 'funding') return scheme(byKey(held.funding, target.id));
-        if (target?.collection === 'funding' && target.kind === 'followup') {
+        if (
+            target?.kind === 'followup' &&
+            target.collection !== undefined &&
+            ofFunding(target.collection, line.root ?? '')
+        ) {
             return scheme(byKey(held.funding, target.id));
         }
         if (target?.collection !== undefined) {
@@ -456,9 +470,11 @@ function mineWouldHide(
     );
     if (grants.some(scheme)) return true;
     const sent = focusWords(config, 'applications_sent');
-    return entriesOf(held.collections, 'applications')
-        .filter((one) => sent.includes(str(one.fields.status).trim().toLowerCase()))
-        .some((one) => entry('applications', rootOf(one), one.id));
+    return flaggedCollections(held.collections, 'awaiting').some((collection) =>
+        collection.entries
+            .filter((one) => sent.includes(str(one.fields.status).trim().toLowerCase()))
+            .some((one) => entry(bareId(collection), rootOf(one), one.id))
+    );
 }
 
 /**
@@ -475,7 +491,7 @@ export function focusPage(
     scope: FilterScope
 ): FocusPage {
     const known = snapshot.entities.projects;
-    const whole = sectionsOf(snapshot, config, now, scope.wordsOf, known);
+    const whole = sectionsOf(snapshot, config, now, scope, known);
     const mineHides = mineWouldHide(snapshot, config, whole, scope);
     const rule = ruleOf(filter, scope, filter.mine && mineHides);
     if (!hidesAny(rule)) {
@@ -488,7 +504,7 @@ export function focusPage(
         };
     }
     const held = keptSnapshot(snapshot, rule, scope);
-    const made = sectionsOf(held, config, now, scope.wordsOf, known);
+    const made = sectionsOf(held, config, now, scope, known);
     const sections = { ...made, week: hubLines(made.week, rule) };
     const hidden = hiddenOf(whole, sections);
     return { snapshot: held, sections, hidden, hides: hiddenTotal(hidden) > 0, mineHides };

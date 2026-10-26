@@ -28,7 +28,7 @@ const MILESTONE = 'milestone';
 const SITUATION = 'situation';
 const ORDER = 'order';
 
-/** The view the Funding obtained row opens. */
+/** The id the Funding obtained row is held under. */
 const FUNDING = 'funding';
 
 /** The id of the Edit button of a row of the file. */
@@ -76,6 +76,11 @@ export type CareerInput = {
     editable: boolean;
     /** The board a role's row opens, nothing for a role no board takes. */
     boardOf: (role: string) => string | undefined;
+    /**
+     * The view the Funding obtained row opens: the funding registry's, under the key the primary
+     * hub gives it; the empty text leaves the row plain.
+     */
+    funding: string;
 };
 
 /** The host an address names, as the URL parser gives it, and the address itself for none. */
@@ -228,7 +233,7 @@ function recordRows(input: CareerInput, make: Builder, glyph: string): TickerRow
         label: t('focus.career_funding_row'),
         tail: String(record.funding)
     };
-    return [...roles, make.view(funding, FUNDING)];
+    return [...roles, make.view(funding, input.funding === '' ? undefined : input.funding)];
 }
 
 /**

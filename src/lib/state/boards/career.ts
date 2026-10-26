@@ -13,7 +13,7 @@ import type { Id, Snapshot } from '../../data/model/index.ts';
 import { categoriesOf, categoryOf } from '../../data/shapes/boards/categories.ts';
 import { entryPeople, isLead, isSelfByKey, rolesOf } from '../../data/shapes/boards/roles.ts';
 import { boardRows, boardRuleOf, projectRole } from '../../data/shapes/boards/takes.ts';
-import { joinedEntries, rootOf } from '../../data/helpers/hub-names.ts';
+import { registryEntries, rootOf } from '../../data/helpers/hub-names.ts';
 import { str } from '../../data/helpers/guards.ts';
 import { wordFlag, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { daysUntil } from './board/index.ts';
@@ -53,7 +53,8 @@ export type TrackRecord = { roles: RoleRecord[]; funding: number };
 
 /**
  * The track record of the user the workspace setting `self` names, over every project and every
- * funding entry of the snapshot, which holds every hub of the workspace. For each role of `roles:`
+ * funding entry of the snapshot, which holds every hub of the workspace; the funding entries are
+ * those of each hub's collection whose entry names the `funding` registry. For each role of `roles:`
  * that has a field, in the roles' order, one line per row of `categories:` carrying `record: true`,
  * in the list's order, each with the number of projects whose category (`categoryOf`) is that row
  * and whose role (`projectRole`) is that role; a role with no project in any record row gives no
@@ -96,7 +97,7 @@ export function trackRecord(
         }))
         .filter((role) => role.lines.some((line) => line.count > 0));
     const isSelf = isSelfByKey(self);
-    const funding = joinedEntries(snapshot.entities.collections, 'funding').filter((entry) => {
+    const funding = registryEntries(snapshot.entities.collections, 'funding').filter((entry) => {
         const words = wordsOf(rootOf(entry));
         return (
             isLead(entryPeople(entry.fields), rolesOf(words), isSelf) &&

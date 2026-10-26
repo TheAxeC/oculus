@@ -11,6 +11,7 @@
 
 import { z } from 'zod';
 import { anyNumberShape, mapShape, readAs, unchanged } from '../../../data/shapes/shapes.ts';
+import type { RailEntry } from '../../../data/sources/config/rail.ts';
 import type { FollowupAction, SubtaskAction, SubtaskTarget } from './subtasks.ts';
 
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
@@ -120,8 +121,9 @@ const LITERATURE_SAVE_SOURCES = ['search', 'lit-watch', 'hand'] as const;
 
 /**
  * One paper saved to the Literature collection of the hub `root` names, else of the primary when
- * its `collections:` names `literature`, else, for the page, of the first hub that does: the fields
- * it carries, and where it came from. The server makes its key and its `added` date.
+ * an entry of its `collections:` names the `literature` registry, else, for the page, of the first
+ * hub that does: the fields it carries, and where it came from. The server makes its key and its
+ * `added` date.
  */
 export type LiteratureSaveWrite = {
     kind: 'literature-save';
@@ -194,11 +196,12 @@ export type RootsWrite =
 
 /**
  * The rail's whole list of pages, in order, each entry a label, a glyph name, a page key, and the
- * chord and heading glyph of its group in the view catalogue, each empty when it has none.
+ * chord and heading glyph of its group in the view catalogue, each empty when it has none, and
+ * whether its group takes the collection views whose entry names no group.
  */
 export type RailWrite = {
     kind: 'rail';
-    rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[];
+    rail: RailEntry[];
 };
 
 /**
@@ -454,7 +457,10 @@ const auditMuteShape = z.object({
     muted: z.boolean()
 }) satisfies z.ZodType<AuditMuteWrite>;
 
-/** A row of the rail keeps its five strings, the last two empty when not sent, and no other key. */
+/**
+ * A row of the rail keeps its five strings, the last two empty when not sent, and its flag, false
+ * when not sent, and no other key.
+ */
 const railShape = z.object({
     kind: z.literal('rail'),
     rail: z.array(
@@ -463,7 +469,8 @@ const railShape = z.object({
             glyph: z.string(),
             page: z.string(),
             chord: z.string().default(''),
-            group_glyph: z.string().default('')
+            group_glyph: z.string().default(''),
+            unplaced_collections: z.boolean().default(false)
         })
     )
 }) satisfies z.ZodType<RailWrite>;

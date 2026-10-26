@@ -15,7 +15,15 @@
 // its internal id.
 
 import { scalar } from '../../data/helpers/guards.ts';
-import { addressOfId, collectionsOf, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
+import {
+    addressOfId,
+    bareId,
+    collectionsOf,
+    hubId,
+    keyOf,
+    rootOf,
+    type RegistryWord
+} from '../../data/helpers/hub-names.ts';
 import type {
     Career,
     Collection,
@@ -100,22 +108,34 @@ export function revealState(collection: string, id: string): Record<string, unkn
     return { reveal };
 }
 
-/** The collection whose entries are people, whose page is the Person view. */
-export const PEOPLE = 'people';
-
 /**
  * The view that is the page of the entry of the internal id `id` and the state it is opened with:
- * the Person view for a person, the `entry` view for every other entry of a collection or a feed.
- * Either state names the entry by its hub and its key.
+ * the Person view for a person, an entry of the collection whose entry names the `people` registry
+ * (`registry`, the registry the collection's entry names), and the `entry` view for every other
+ * entry of a collection or a feed. Either state names the entry by its hub and its key.
  */
 export function pageView(
     collection: string,
     id: string,
-    label: string
+    label: string,
+    registry?: RegistryWord
 ): { view: string; state: Record<string, string> } {
-    return collection === PEOPLE
+    return registry === 'people'
         ? { view: 'person', state: { ...addressOfId(id), label } }
         : { view: 'entry', state: entryPageState(collection, id, label) };
+}
+
+/**
+ * The page of the entry `id` written into one of `collections`: `pageView` under the key and the
+ * registry of the collection of the entry's hub, and under no key when none of them is of that hub.
+ */
+export function writtenPage(
+    collections: readonly Collection[],
+    id: string,
+    label: string
+): { view: string; state: Record<string, string> } {
+    const home = collections.find((one) => rootOf(one) === addressOfId(id).hub);
+    return pageView(home === undefined ? '' : bareId(home), id, label, home?.registry);
 }
 
 /** The key a page of an entry of a collection is held under in the settled writes. */

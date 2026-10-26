@@ -48,6 +48,7 @@ text:
     views:
         applications: Applications
         applications_glyph: inbox
+        collection_glyph: list
         joint-work: Joint work
         joint-work_glyph: collab
         education: Education & Service

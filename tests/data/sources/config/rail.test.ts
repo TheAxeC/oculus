@@ -2,7 +2,11 @@
 // at every place the readers look. Findings are compared whole, in order.
 
 import { describe, expect, it } from 'vitest';
-import { railFindings, readRail } from '../../../../src/lib/data/sources/config/rail.ts';
+import {
+    railFindings,
+    readRail,
+    unplacedGroup
+} from '../../../../src/lib/data/sources/config/rail.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -20,7 +24,7 @@ const ROWS = [
     { label: 'A', glyph: 'g', page: 'a' },
     { label: 'A2', glyph: 'g', page: 'a' },
     { label: 'B', glyph: 'nope', page: 'b' },
-    { label: 'B', glyph: 'g', page: 'b' }
+    { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true }
 ];
 
 describe('railFindings', () => {
@@ -59,7 +63,10 @@ describe('railFindings', () => {
             { label: 'D', glyph: 'g', page: 'd', chord: 'd', group_glyph: 'g' },
             { label: 'E', glyph: 'g', page: 'e', chord: '' }
         ];
-        const config = { rail: rows, arrangements: { a: 1, b: 1, c: 1, d: 1, e: 1 } };
+        const config = {
+            rail: [...rows.slice(0, 4), { ...rows[4], unplaced_collections: true }],
+            arrangements: { a: 1, b: 1, c: 1, d: 1, e: 1 }
+        };
         const chord = (page: string) =>
             `the rail button for ${page} names a chord that is not one lowercase letter; its group has no chord`;
         const glyph = (page: string) =>
@@ -79,5 +86,57 @@ describe('railFindings', () => {
             ['d', 'd', 'g'],
             ['e', '', '']
         ]);
+    });
+
+    it('words a rail with no entry flagged unplaced_collections, and reads no group from it', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a' },
+            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: false }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail',
+                'no rail button carries unplaced_collections; a collection view whose entry names no group is in no group of the view catalogue'
+            )
+        ]);
+        expect(unplacedGroup(config)).toBe(null);
+    });
+
+    it('words a rail with two entries flagged, and reads the first', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', unplaced_collections: true },
+            { label: 'B', glyph: 'g', page: 'b' },
+            { label: 'C', glyph: 'g', page: 'c', unplaced_collections: true }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1, c: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail',
+                'the rail button for c carries unplaced_collections, as the one for a does; the collection views no entry places go in the group of a'
+            )
+        ]);
+        expect(unplacedGroup(config)).toBe('a');
+    });
+
+    it('words a flag that is not true or false, and keeps the button without it', () => {
+        const rows = [
+            { label: 'A', glyph: 'g', page: 'a', unplaced_collections: 'yes' },
+            { label: 'B', glyph: 'g', page: 'b', unplaced_collections: true }
+        ];
+        const config = { rail: rows, arrangements: { a: 1, b: 1 }, glyphs: { g: 'x' } };
+        expect(find(config)).toStrictEqual([
+            at(
+                'rail[0]',
+                'the rail button for a has an unplaced_collections that is not true or false; its group does not take the collection views no entry places'
+            )
+        ]);
+        expect(unplacedGroup(config)).toBe('b');
+    });
+
+    it("reads oculus's rail as one flagged entry, Registries, with no finding", () => {
+        const own = loadConfig(engineDir()).config;
+        expect(find(own)).toStrictEqual([]);
+        expect(unplacedGroup(own)).toBe('registries');
     });
 });

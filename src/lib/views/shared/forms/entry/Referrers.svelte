@@ -13,9 +13,11 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
+    import { addressOfId } from '$lib/state/shared/page/hubs';
 
     const {
-        layout: { openView }
+        layout: { openView },
+        selectors: { registryKey }
     } = useState();
 
     let { referrers }: { referrers: Referrer[] } = $props();
@@ -24,8 +26,9 @@
     function open(one: Referrer): void {
         if (one.kind === 'project') openView('project', recordState(one.id, one.label));
         else if (one.kind === 'person') openView('person', recordState(one.id, one.label));
-        else if (one.kind === 'funding') openPage('funding', one);
-        else if (one.collection !== undefined) openPage(one.collection, one);
+        else if (one.kind === 'funding') {
+            openPage(registryKey('funding', addressOfId(one.id).hub), one);
+        } else if (one.collection !== undefined) openPage(one.collection, one);
     }
 
     function openPage(collection: string, one: Referrer): void {

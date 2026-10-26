@@ -34,7 +34,7 @@ audit:
 
 
 # === The Focus board =========================================================
-# Its horizons, thresholds and cadences, and the lists that say what its command center and its columns read.
+# Its horizons, thresholds and cadences, and the lists of statuses its command center and its columns read.
 focus:
   # A manifest is stale when its `updated` date trails the newest project content by this many days.
   stale_lag_days: 1
@@ -52,21 +52,6 @@ focus:
 
   venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
   linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
-
-  # The command center's deadline groups, in the order it lists them.
-  ticker_categories: [paper, funding, event, teaching, position, collab, task, conference]
-
-  # Where the command center's dated lines come from: each row a source and the category of `ticker_categories` its lines carry. `projects` is the project manifests' deadlines, `funding` the funding schemes, `leads` the Position Leads feed and `venues` the venues' calls; any other source is a collection of the hub, whose undated entries are task lines when the row says `undated: true` and are left out otherwise. A source no row names is not read.
-  ticker_sources:
-    - { collection: projects,     category: paper }
-    - { collection: funding,      category: funding }
-    - { collection: events,       category: event }
-    - { collection: education,    category: teaching }
-    - { collection: tasks,        category: task, undated: true }
-    - { collection: applications, category: position }
-    - { collection: joint-work,   category: collab }
-    - { collection: leads,        category: position }
-    - { collection: venues,       category: conference }
 
   # The entry statuses the Focus columns and counts read, compared without regard to case: the applications the positions column shows and the Applications tab counts, the teaching the teaching column shows, and the applications the Awaiting box lists as out for a decision.
   applications_open: [active]

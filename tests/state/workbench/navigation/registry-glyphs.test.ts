@@ -4,11 +4,12 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    collectionKeys,
     engineDir,
     loadConfig,
-    textCatalog
+    textCatalog,
+    unplacedGroup
 } from '../../../../src/lib/data/sources/config.ts';
+import { collectionViews } from '../../../../src/lib/data/snapshot/normalise.ts';
 import { registrationGlyph } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { registerAll, registerCollections } from '../../../../src/routes/views.ts';
@@ -20,7 +21,7 @@ const drawn = new Set(Object.keys(config.glyphs ?? {}));
 
 const client = createClientState();
 registerAll(client.registry);
-registerCollections(client.registry, collectionKeys(config));
+registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
 const views = client.registry.views().map((view) => [view.id, view] as const);
 
 describe('the glyph of every registered view', () => {

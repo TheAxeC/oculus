@@ -4,7 +4,7 @@
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
-    // (state/boards/collection.ts's hubPathsOf): a path is offered only as the control that selects
+    // (hubPathsOf of state/boards/collection/): a path is offered only as the control that selects
     // it in the Files view under the root of the hub the venue is of, since a folder of the hub is
     // no site and the file address cannot serve it; an address is the site link, opened in a tab of
     // the browser's own. Both links the card draws, the site and the call, go through `hrefOf`, so
@@ -51,7 +51,7 @@
     const client = useState();
     const {
         layout: { openView, showInFiles },
-        selectors: { configMap },
+        selectors: { configMap, registryKey },
         source: { unsavedFile }
     } = client;
 
@@ -89,6 +89,9 @@
 
     /** True while the question before a delete is open. */
     let deleting = $state(false);
+
+    /** The key the venue's hub gives the venues registry, which its page and writes name. */
+    const collection = $derived(registryKey('venues', rootOf(venue)));
 
     const groups = $derived(groupProjects(projects, configMap(), vocabOf));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
@@ -130,7 +133,7 @@
     /** The venue's page, opened from its heading. */
     function openPage(): void {
         if (entry === null) return;
-        const page = pageView('venues', entry.id, venue.name);
+        const page = pageView(collection, entry.id, venue.name);
         openView(page.view, page.state);
     }
     const deadline = $derived(schema?.find((one) => one.field === 'deadline'));
@@ -271,14 +274,14 @@
         {#if entry?.fields.deadline !== undefined}
             <div class="deadline">
                 <span class="label">{deadline?.label ?? t('venues.deadline')}</span>
-                <InPlace field="deadline" collection="venues" {entry} {schema} {blocked} {onsaid} />
+                <InPlace field="deadline" {collection} {entry} {schema} {blocked} {onsaid} />
             </div>
         {/if}
     </Card>
 </div>
 
 {#if deleting && entry !== null}
-    <DeleteAsk collection="venues" id={entry.id} {onsaid} onclose={() => (deleting = false)} />
+    <DeleteAsk {collection} id={entry.id} {onsaid} onclose={() => (deleting = false)} />
 {/if}
 
 <style>

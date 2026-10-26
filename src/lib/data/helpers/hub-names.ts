@@ -16,8 +16,20 @@
 // reports. The joined id is internal: a file, a form, a finding, a label and an address name a
 // record by its hub and its key apart, and a page shows the key with the hub chip.
 
-import { isMap } from './guards.ts';
-import type { Collection, Id, RegistryName, Rooted } from '../model/index.ts';
+import { z } from 'zod';
+import { byKey, isMap } from './guards.ts';
+import {
+    COLLECTION_FLAGS,
+    REGISTRY_WORDS,
+    type Collection,
+    type CollectionEntry,
+    type CollectionFlag,
+    type HubVocabs,
+    type Id,
+    type RegistryName,
+    type RegistryWord,
+    type Rooted
+} from '../model/index.ts';
 
 /** The name of the hub a record was read from: the `root` it carries, the empty name for none. */
 export function rootOf(record: Rooted): string {
@@ -94,12 +106,342 @@ export function collectionsOf(collections: Record<Id, Collection>, key: string):
     return Object.values(collections).filter((one) => bareId(one) === key);
 }
 
-/** The entries of the collection `key` across the hubs, and none when no hub holds one. */
-export function joinedEntries(
+// The registry words and the flags of a `collections:` entry live in the model, whose collection
+// types name them, and are read here with the helpers that find a collection by them.
+export { COLLECTION_FLAGS, REGISTRY_WORDS, type CollectionFlag, type RegistryWord };
+
+/**
+ * The flags that name one file of a hub, a write's target: on a second entry of one list the flag
+ * is a finding and the first entry is the one read.
+ */
+const SINGLE_FLAGS = ['lead_applications', 'tasks'] as const;
+
+/** Take a single flag off an entry that a second entry of its list carried. */
+function dropFlag(entry: CollectionEntry, flag: (typeof SINGLE_FLAGS)[number]): void {
+    if (flag === 'tasks') delete entry.tasks;
+    else delete entry.lead_applications;
+}
+
+/**
+ * The registries one of oculus's own views draws, by that view's id. Their entries get no card-list
+ * view, and a plain collection keyed by one of those ids gets none either, since its view would
+ * take the id oculus's view holds.
+ */
+export const REGISTRY_VIEWS: Partial<Record<RegistryWord, string>> = {
+    datasets: 'data',
+    venues: 'venues',
+    pillars: 'pillars',
+    domains: 'domains',
+    leads: 'leads',
+    radar: 'radar'
+};
+
+/** The registry words that name a YAML feed's file, which is read as a feed and is no collection. */
+export const FEED_REGISTRIES = ['leads', 'radar'] as const;
+
+/** One feed a `collections:` entry names. */
+export type FeedRegistry = (typeof FEED_REGISTRIES)[number];
+
+/** Whether a `collections:` entry names a YAML feed's file. */
+export function isFeedEntry(entry: Pick<CollectionEntry, 'registry'>): boolean {
+    return (FEED_REGISTRIES as readonly string[]).includes(entry.registry ?? '');
+}
+
+/** Whether a `collections:` entry's key is the id of the view of one of oculus's registries. */
+function takesRegistryView(key: string): boolean {
+    return Object.values(REGISTRY_VIEWS).includes(key);
+}
+
+/**
+ * Whether the collection of a `collections:` entry is drawn as a card list of its own: a registry
+ * no view of oculus's draws, or a plain collection whose key no such view holds.
+ */
+export function hasCardList(entry: Pick<CollectionEntry, 'key' | 'registry'>): boolean {
+    if (entry.registry !== undefined) return !Object.hasOwn(REGISTRY_VIEWS, entry.registry);
+    return !takesRegistryView(entry.key);
+}
+
+/**
+ * The keys of the entries of a list whose collection view a page places, by the entry's `group:`:
+ * a pane leaves out the tab of such a key while no hub of the workspace lists it.
+ */
+export function placedKeys(list: readonly CollectionEntry[]): string[] {
+    return list
+        .filter((one) => one.group !== undefined && !isFeedEntry(one) && hasCardList(one))
+        .map((one) => one.key);
+}
+
+/**
+ * The collections given in the portfolio's order of the hubs, and each hub's in the order of its
+ * own `collections:` list.
+ */
+function inListOrder(collections: readonly Collection[]): Collection[] {
+    const hubs: string[] = [];
+    for (const one of collections) if (!hubs.includes(rootOf(one))) hubs.push(rootOf(one));
+    return [...collections].sort(
+        (one, two) =>
+            hubs.indexOf(rootOf(one)) - hubs.indexOf(rootOf(two)) ||
+            (one.index ?? 0) - (two.index ?? 0)
+    );
+}
+
+/**
+ * The collections of every hub whose entry carries the flag, the hubs in the portfolio's order and
+ * each hub's in its list's order; none when no hub flags one.
+ */
+export function flaggedCollections(
     collections: Record<Id, Collection>,
-    key: string
+    flag: CollectionFlag
+): Collection[] {
+    return inListOrder(Object.values(collections).filter((one) => one[flag] === true));
+}
+
+/** The entries of every collection carrying the flag, joined in `flaggedCollections`' order. */
+export function flaggedEntries(
+    collections: Record<Id, Collection>,
+    flag: CollectionFlag
 ): Collection['entries'] {
-    return collectionsOf(collections, key).flatMap((one) => one.entries);
+    return flaggedCollections(collections, flag).flatMap((one) => one.entries);
+}
+
+/** The collection of every hub whose entry names the registry, in the portfolio's order. */
+export function registryCollections(
+    collections: Record<Id, Collection>,
+    registry: RegistryWord
+): Collection[] {
+    return inListOrder(Object.values(collections).filter((one) => one.registry === registry));
+}
+
+/** The entries of the registry's collection of every hub, joined in the portfolio's order. */
+export function registryEntries(
+    collections: Record<Id, Collection>,
+    registry: RegistryWord
+): Collection['entries'] {
+    return registryCollections(collections, registry).flatMap((one) => one.entries);
+}
+
+/** The registry's collection of the hub named `hub`, or undefined when that hub holds none. */
+export function registryCollection(
+    collections: Record<Id, Collection>,
+    registry: RegistryWord,
+    hub: string
+): Collection | undefined {
+    return registryCollections(collections, registry).find((one) => rootOf(one) === hub);
+}
+
+/**
+ * The entry the hub named `hub` reads a registry by: its own list's entry of it, else oculus's own
+ * entry of it, which names the file such a hub reads; undefined when neither list names the
+ * registry.
+ */
+export function registryEntryOf(
+    hubs: Pick<HubVocabs, 'lists' | 'ownCollections'> | null,
+    hub: string,
+    registry: RegistryWord
+): CollectionEntry | undefined {
+    const named = (one: CollectionEntry): boolean => one.registry === registry;
+    const own = byKey(hubs?.lists ?? {}, hub)?.collections.find(named);
+    return own ?? hubs?.ownCollections.find(named);
+}
+
+/**
+ * The key the hub named `hub` gives a registry: the key of the entry it reads the registry by
+ * (`registryEntryOf`); undefined when neither its list nor oculus's names the registry.
+ */
+export function registryKeyOf(
+    hubs: Pick<HubVocabs, 'lists' | 'ownCollections'> | null,
+    hub: string,
+    registry: RegistryWord
+): string | undefined {
+    return registryEntryOf(hubs, hub, registry)?.key;
+}
+
+/** One entry of the `collections:` list as written: a key and a file, both texts, and the rest. */
+const entryShape = z.looseObject({ key: z.string(), file: z.string() });
+
+/** A condition of the `When` shape: each field a value or a list of values. */
+const whenShape = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
+
+/** A `ticker:` field: the category its lines carry, and whether an undated entry is a task. */
+const tickerShape = z.strictObject({
+    category: z.string().min(1),
+    undated: z.boolean().optional()
+});
+
+/** A text with something in it. */
+const wordShape = z.string().min(1);
+
+/** A whole number. */
+const orderShape = z.number().int();
+
+/** What a shape makes of a value, or null when it refuses it. */
+function parsed<T>(shape: z.ZodType<T>, value: unknown): T | null {
+    const read = shape.safeParse(value);
+    return read.success ? read.data : null;
+}
+
+/**
+ * The words the fields of a list are checked against: the flat text catalog, the words of
+ * `ticker_categories` and the ids of the view catalogue's groups (a rail page or a `nav_groups`
+ * key).
+ */
+export type ListWords = {
+    text: Readonly<Record<string, string>>;
+    categories: readonly string[];
+    groups: readonly string[];
+};
+
+/**
+ * What is wrong with one field of one entry of a list: the entry's position, the field, and the
+ * finding word of findings.yml with the values it names.
+ */
+export type ListProblem = { index: number; field: string; word: string; values: string[] };
+
+/** A list as its entries with the fields that read, and the problems of those that do not. */
+type ReadList = { entries: CollectionEntry[]; problems: ListProblem[] };
+
+/** Whether a value is one of the registry words. */
+function isRegistryWord(value: unknown): value is RegistryWord {
+    return (REGISTRY_WORDS as readonly unknown[]).includes(value);
+}
+
+/**
+ * One entry with the fields that read. A field of the wrong kind (a flag that is not true, an
+ * order that is no whole number) is left out here, and the options catalog's check of the list
+ * words it; an unknown registry word, a `ticker:` or a `dissemination_skip:` that does not read,
+ * and, when `words` is given, a word the catalog, the categories or the groups do not hold, is
+ * left out with a problem.
+ */
+function entryOf(
+    raw: z.infer<typeof entryShape>,
+    index: number,
+    words: ListWords | undefined,
+    problems: ListProblem[]
+): CollectionEntry {
+    const entry: CollectionEntry = { key: raw.key, file: raw.file };
+    const problem = (field: string, word: string, value: string): void => {
+        problems.push({ index, field, word, values: [value] });
+    };
+    if (raw.registry !== undefined) {
+        const named = raw.registry;
+        if (isRegistryWord(named)) entry.registry = named;
+        else {
+            const shown = typeof named === 'string' ? named : JSON.stringify(named);
+            problem('registry', 'findings.collections.registry_unknown', shown);
+        }
+    }
+    for (const flag of COLLECTION_FLAGS) if (raw[flag] === true) entry[flag] = true;
+    const unread = (field: string, word: string, value: unknown): void => {
+        problems.push({ index, field, word, values: [JSON.stringify(value), raw.key] });
+    };
+    if (raw.dissemination_skip !== undefined) {
+        const skip = parsed(whenShape, raw.dissemination_skip);
+        if (skip !== null) entry.dissemination_skip = skip;
+        else
+            unread(
+                'dissemination_skip',
+                'findings.collections.skip_unread',
+                raw.dissemination_skip
+            );
+    }
+    if (raw.ticker !== undefined) {
+        const ticker = parsed(tickerShape, raw.ticker);
+        if (ticker === null) unread('ticker', 'findings.collections.ticker_unread', raw.ticker);
+        else if (words === undefined || words.categories.includes(ticker.category)) {
+            entry.ticker = { category: ticker.category };
+            if (ticker.undated === true) entry.ticker.undated = true;
+        } else problem('ticker.category', 'findings.collections.category_unknown', ticker.category);
+    }
+    const group = parsed(wordShape, raw.group);
+    if (group !== null) {
+        if (words === undefined || words.groups.includes(group)) entry.group = group;
+        else problem('group', 'findings.collections.group_unknown', group);
+    }
+    const order = parsed(orderShape, raw.order);
+    if (order !== null) entry.order = order;
+    for (const field of ['label', 'glyph', 'about'] as const) {
+        const key = parsed(wordShape, raw[field]);
+        if (key === null) continue;
+        if (words === undefined || Object.hasOwn(words.text, key)) entry[field] = key;
+        else problem(field, 'findings.collections.word_unknown', key);
+    }
+    return entry;
+}
+
+/**
+ * A `collections:` list as its entries. A registry word an earlier entry already names, and a flag
+ * of `SINGLE_FLAGS` an earlier entry already carries, is left off the later entry, the first being
+ * the one read; a plain collection keyed by the id of the view of one of oculus's registries is
+ * kept, and is a problem, since it gets no card-list view. Anything that is no list names no entry,
+ * and an item with no text key or file is none.
+ */
+function readList(value: unknown, words?: ListWords): ReadList {
+    const entries: CollectionEntry[] = [];
+    const problems: ListProblem[] = [];
+    // The key of the first entry that names each registry word, and that carries each single flag.
+    const registries = new Map<string, string>();
+    const flags = new Map<string, string>();
+    (Array.isArray(value) ? value : []).forEach((item: unknown, index) => {
+        const raw = parsed(entryShape, item);
+        if (raw === null) return;
+        const entry = entryOf(raw, index, words, problems);
+        const registry = entry.registry;
+        if (registry !== undefined) {
+            const first = registries.get(registry);
+            if (first === undefined) registries.set(registry, entry.key);
+            else {
+                delete entry.registry;
+                problems.push({
+                    index,
+                    field: 'registry',
+                    word: 'findings.collections.registry_twice',
+                    values: [registry, first]
+                });
+            }
+        }
+        for (const flag of SINGLE_FLAGS) {
+            if (entry[flag] !== true) continue;
+            const first = flags.get(flag);
+            if (first === undefined) flags.set(flag, entry.key);
+            else {
+                dropFlag(entry, flag);
+                problems.push({
+                    index,
+                    field: flag,
+                    word: 'findings.collections.flag_twice',
+                    values: [flag, first]
+                });
+            }
+        }
+        if (entry.registry === undefined && takesRegistryView(entry.key)) {
+            problems.push({
+                index,
+                field: 'key',
+                word: 'findings.collections.view_id',
+                values: [entry.key]
+            });
+        }
+        entries.push(entry);
+    });
+    return { entries, problems };
+}
+
+/**
+ * A `collections:` list as its entries, each with the fields that read (`readList`); with `words`,
+ * a word the catalog, the categories or the groups do not hold is left out.
+ */
+export function collectionFiles(value: unknown, words?: ListWords): CollectionEntry[] {
+    return readList(value, words).entries;
+}
+
+/**
+ * The problems of a `collections:` list: an unknown registry word, a `ticker:` or a
+ * `dissemination_skip:` that does not read, a registry or a single flag an earlier entry already
+ * has, a group, a label, glyph or about, or a ticker category `words` does not hold, and a plain
+ * collection keyed by the id of the view of one of oculus's registries.
+ */
+export function listProblems(value: unknown, words: ListWords): ListProblem[] {
+    return readList(value, words).problems;
 }
 
 /** The hubs that hold each key of one kind of record, each key's hubs in the workspace's order. */
@@ -402,6 +744,7 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'venue_categories', file: 'catalogs/vocab.yml' },
     { key: 'venue_tiers', file: 'catalogs/vocab.yml' },
     { key: 'radar_buckets', file: 'catalogs/vocab.yml' },
+    { key: 'ticker_categories', file: 'catalogs/vocab.yml' },
     { key: 'manifest_fields', file: 'schemas/manifest-schema.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },

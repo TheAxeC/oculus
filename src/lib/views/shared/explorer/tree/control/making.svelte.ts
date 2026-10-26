@@ -9,10 +9,11 @@
 // server/files/fs.ts), and the offer is state/sources/explorer/view/place.ts's `heldOffer` over the
 // marks of the folder and of the folders above it in the tree, the rule the server applies. The
 // press of an item with a dialog reads the folder's offer, which holds the collections a new hub
-// may keep and which repository configuration files are there, and opens the dialog on it; the
-// server asks the offer again before it writes and refuses a file that is there already, so what
-// the page holds decides only what is drawn. A folder whose marks a program outside oculus changed
-// is listed again by the git watcher (server/root/watch/git.ts).
+// may keep, each with every field its template line sets, and which repository configuration files
+// are there, and opens the dialog on it; the server asks the offer again before it writes and
+// refuses a file that is there already, so what the page holds decides only what is drawn. A
+// folder whose marks a program outside oculus changed is listed again by the git watcher
+// (server/root/watch/git.ts).
 //
 // The hub dialog has two groups: the hub files (`config.yml`, always written and drawn with no box;
 // `local.yml` with its `.gitignore`; `schedules.yml`) and the collections, every box ticked to
@@ -44,7 +45,9 @@ const offerShape = z.object({
     project: z.boolean(),
     git: z.boolean(),
     repository: z.boolean(),
-    collections: z.array(z.object({ key: z.string(), file: z.string() })),
+    collections: z.array(
+        z.looseObject({ key: z.string(), file: z.string(), about: z.string().optional() })
+    ),
     configs: z.array(z.object({ name: z.string(), file: z.string(), there: z.boolean() }))
 });
 
@@ -66,14 +69,16 @@ type MakeAction = 'hub' | 'project' | 'git' | 'repository';
 /**
  * One row of a dialog: the name of a file choice or a collection, the paths it writes, whether it
  * is ticked, and whether it is drawn with no box: `fixed` for a file every make writes, `there`
- * for a file the folder holds already, which the make does not offer.
+ * for a file the folder holds already, which the make does not offer. A collection's row carries
+ * the word its template line's `about:` names, which is its line in the dialog.
  */
-type MakeRow = {
+export type MakeRow = {
     key: string;
     paths: readonly string[];
     ticked: boolean;
     fixed: boolean;
     there: boolean;
+    about?: string;
 };
 
 /** A group of a dialog's rows, by the id its words are found by. */
@@ -108,7 +113,13 @@ function hubGroups(offered: MakeOffer): MakeGroup[] {
                 ...HUB_CHOICES.map(([key, paths]) => row(key, paths))
             ]
         },
-        { id: 'collections', rows: offered.collections.map((one) => row(one.key, [one.file])) }
+        {
+            id: 'collections',
+            rows: offered.collections.map((one) => ({
+                ...row(one.key, [one.file]),
+                about: one.about
+            }))
+        }
     ];
 }
 

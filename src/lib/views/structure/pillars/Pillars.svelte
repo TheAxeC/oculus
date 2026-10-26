@@ -56,7 +56,7 @@
     const ARCHIVAL_CARD = 'pillars:archival';
     const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const file = registryFile(client, 'pillars', 'pillars');
+    const file = registryFile(client, 'pillars');
     const lines = $derived(registryLines(portfolio(), 'pillars', file.collection?.entries ?? []));
     const allProjects = $derived(projects());
     const config = $derived(configMap());

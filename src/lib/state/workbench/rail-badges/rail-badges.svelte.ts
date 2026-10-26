@@ -80,7 +80,8 @@ export type RailBadgesStore = {
     boardRail: (view: string) => RailPart;
     collectionCount: (key: string) => number;
     inboxCount: () => number;
-    applicationsCount: () => number;
+    /** The open entries of the collection `key`, one flagged `open_badge`. */
+    openCount: (key: string) => number;
     auditCount: () => number;
     problemsCount: () => number;
     repositoriesCount: () => number;
@@ -100,7 +101,8 @@ export type RailBadgesStore = {
     inboxBadge: () => string;
     leadsBadge: () => string;
     linkedinBadgeGlyph: () => string;
-    applicationsBadge: () => string;
+    /** The count of `openCount` as the badge draws it. */
+    openBadge: (key: string) => string;
     auditBadge: () => string;
     problemsBadge: () => string;
     problemsBadgeTitle: () => string;
@@ -255,11 +257,12 @@ export function createRailBadges(
     }
 
     /**
-     * The applications whose status is in `applications_open` under `focus:`, the ones the Focus
-     * band shows, which are urgent rather than a count of a `counts` row's `match`.
+     * The entries of the collection `key`, one flagged `open_badge`, whose status is in
+     * `applications_open` under `focus:`, the ones the Focus band shows, which are urgent rather
+     * than a count of a `counts` row's `match`.
      */
-    function applicationsCount(): number {
-        const entries = selectors.collectionOf('applications')?.entries ?? [];
+    function openCount(key: string): number {
+        const entries = selectors.collectionOf(key)?.entries ?? [];
         const open = focusWords(selectors.configMap(), 'applications_open');
         return entries.filter((entry) =>
             open.includes(scalar(entry.fields.status).trim().toLowerCase())
@@ -367,7 +370,7 @@ export function createRailBadges(
         boardRail,
         collectionCount,
         inboxCount: () => inbox.actionable(),
-        applicationsCount,
+        openCount,
         auditCount: () => audit.openCount(),
         problemsCount,
         repositoriesCount,
@@ -382,7 +385,7 @@ export function createRailBadges(
         inboxBadge,
         leadsBadge: () => countText(leadsCount()),
         linkedinBadgeGlyph,
-        applicationsBadge: () => countText(applicationsCount()),
+        openBadge: (key) => countText(openCount(key)),
         auditBadge,
         problemsBadge,
         problemsBadgeTitle,

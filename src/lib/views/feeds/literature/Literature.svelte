@@ -1,7 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. The Literature search opens the Literature page's group, before
     // Lit Watch and the Literature collection, so it is `b` then `1`. Its id is
-    // `literature-search`, since `literature` is the key of the collection of saved papers.
+    // `literature-search`, since `literature` is the key oculus's own list
+    // (config/defaults/sources.yml) gives the collection of saved papers, whose view has that id.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'literature-search',

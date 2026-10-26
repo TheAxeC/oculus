@@ -4,25 +4,25 @@
 # ===========================================================================
 
 
-# The hub's data files, one entry per key, each at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/.
+# The hub's data files, one entry each, at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/. Each entry carries the fields oculus's own list gives it (config/defaults/sources.yml): the registry it is, the features that read it, its ticker category, its place in the view catalogue and the words of its name, glyph and line.
 collections:
-  - { key: data,           file: ".oculus/data/research/data.yml" }
-  - { key: venues,         file: ".oculus/data/research/venues.yml" }
-  - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
-  - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
-  - { key: statements,     file: ".oculus/data/research/statements.yml" }
-  - { key: people,         file: ".oculus/data/people/people.yml" }
-  - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
-  - { key: resources,      file: ".oculus/data/research/resources.yml" }
-  - { key: funding,        file: ".oculus/data/academic/funding.yml" }
-  - { key: events,         file: ".oculus/data/academic/events.yml" }
-  - { key: education,      file: ".oculus/data/academic/education.yml" }
-  - { key: applications,   file: ".oculus/data/academic/applications.yml" }
-  - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
-  - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
-  - { key: literature,     file: ".oculus/data/literature/literature.yml" }
-  - { key: leads,          file: ".oculus/data/academic/leads.yml" }
-  - { key: radar,          file: ".oculus/data/literature/radar.yml" }
+  - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
+  - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
+  - { key: pillars, file: ".oculus/data/pillars/pillars.yml", registry: pillars, about: files.make_collection_line_pillars }
+  - { key: domains, file: ".oculus/data/pillars/domains.yml", registry: domains, about: files.make_collection_line_domains }
+  - { key: statements, file: ".oculus/data/research/statements.yml", group: registries, order: 3, label: views.statements, glyph: views.statements_glyph, about: files.make_collection_line_statements }
+  - { key: people, file: ".oculus/data/people/people.yml", registry: people, group: registries, order: 4, label: views.people, glyph: views.people_glyph, about: files.make_collection_line_people }
+  - { key: organisations, file: ".oculus/data/people/organisations.yml", registry: organisations, group: registries, order: 5, label: views.organisations, glyph: views.organisations_glyph, about: files.make_collection_line_organisations }
+  - { key: resources, file: ".oculus/data/research/resources.yml", registry: resources, group: registries, order: 6, label: views.resources, glyph: views.resources_glyph, about: files.make_collection_line_resources }
+  - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
+  - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
+  - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
+  - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+  - { key: joint-work, file: ".oculus/data/academic/joint-work.yml", joint_work: true, ticker: { category: collab }, group: academic, order: 4, label: views.joint-work, glyph: views.joint-work_glyph, about: files.make_collection_line_joint_work }
+  - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
+  - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
+  - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
+  - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
 
 
 # The hub's documents, each a tab of the page its group names.

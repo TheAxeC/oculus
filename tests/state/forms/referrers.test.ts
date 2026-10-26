@@ -31,15 +31,37 @@ const projects = [
     fixtureProject({ id: 'sketch', title: 'Sketch', lead: ['lena'] })
 ];
 
+/** The collection flagged `joint_work`, whose entries name a person. */
 const jointWork: Collection = {
     id: 'joint-work',
     title: 'Joint work',
     file: '/hub/.oculus/data/academic/joint-work.yml',
+    joint_work: true,
     entries: [
         { id: 'paper-a', title: 'Paper A', fields: {}, file: '', index: 0 },
         { id: 'paper-b', title: '', fields: {}, file: '', index: 1 }
     ]
 };
+
+/** A registry's collection under the key `id`, its entry naming `registry`; the joins read none. */
+function registry(id: string, word: Collection['registry']): [string, Collection] {
+    return [id, { id, title: id, file: `/hub/${id}.yml`, registry: word, entries: [] }];
+}
+
+/** The collections of the snapshot: the registries, one keyed otherwise, and the joint work. */
+const collections: Record<string, Collection> = Object.fromEntries([
+    registry('pillars', 'pillars'),
+    registry('domains', 'domains'),
+    registry('venues', 'venues'),
+    registry('data', 'datasets'),
+    registry('funding', 'funding'),
+    registry('people', 'people'),
+    registry('organisations', 'organisations'),
+    registry('resources', 'resources'),
+    registry('outlets', 'venues'),
+    ['statements', { id: 'statements', title: 'Statements', file: '', entries: [] }],
+    ['joint-work', jointWork]
+]);
 
 const snapshot = {
     entities: {
@@ -64,7 +86,7 @@ const snapshot = {
             veni: { id: 'veni', title: 'Veni', funder: 'nwo' },
             fwo: { id: 'fwo', title: '', funder: 'kuleuven' }
         },
-        collections: { 'joint-work': jointWork }
+        collections
     }
 } as unknown as Snapshot;
 
@@ -84,6 +106,7 @@ describe('referrersOf', () => {
         ['a pillar one project names', 'pillars', 'federated', ['project:hccnet']],
         ['a domain', 'domains', 'heart', ['project:raw-pls']],
         ['a venue', 'venues', 'media', ['project:raw-pls']],
+        ['a venue of the venues registry keyed otherwise', 'outlets', 'media', ['project:raw-pls']],
         ['a dataset', 'data', 'ptb', ['project:raw-pls']],
         ['a funding scheme', 'funding', 'veni', ['project:raw-pls']],
         ['a person a project names only as its lead', 'people', 'lena', ['project:sketch']],

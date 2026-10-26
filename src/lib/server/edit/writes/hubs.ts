@@ -21,7 +21,6 @@ import { inside, realPath } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import { engineLiteraturePath, literatureFile } from '../feeds/literature.ts';
-import { LITERATURE_KEY } from '../../../data/sources/collections.ts';
 import type { PrimaryTarget, WriteOutcome, WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 
@@ -182,9 +181,9 @@ export function rootedHome(
 
 /**
  * The target for a write that names no record and needs a hub (the career file, a new project or a
- * new entry with no root, a lead, a Lit Watch paper and a LinkedIn idea, and `homeNaming` when no
- * hub holds the collection): the primary's, else, for the page, the first hub of the workspace, and
- * null when the workspace lists no hub, or for an app when it has no primary.
+ * new entry with no root, a lead, a Lit Watch paper and a LinkedIn idea, and `homeOfLiterature`
+ * when no hub holds the collection): the primary's, else, for the page, the first hub of the
+ * workspace, and null when the workspace lists no hub, or for an app when it has no primary.
  */
 export function homeOf(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
     const own = primaryOf(into);
@@ -206,22 +205,17 @@ export function noHub(into: WriteTarget, app: HeldApp | null): Response {
 }
 
 /**
- * The target for a write to a collection that names no hub: the primary's when it holds the
- * collection, else the first hub's that does, else `homeOf`'s; for an app, the primary's alone. A
- * hub holds a collection its `collections:` names, and the Literature collection its list leaves to
- * the engine's path when it holds the file there (`literatureFile`, the file Save to Literature
- * writes).
+ * The target for a write to the Literature collection that names no hub: the primary's when it
+ * holds the collection, else the first hub's that does, else `homeOf`'s; for an app, the
+ * primary's alone. A hub holds it when an entry of its `collections:` names the `literature`
+ * registry, or when its list leaves it to oculus's entry and it holds the file there
+ * (`literatureFile`, the file Save to Literature writes).
  */
-export function homeNaming(
-    into: WriteTarget,
-    collection: string,
-    app: HeldApp | null
-): PrimaryTarget | null {
+export function homeOfLiterature(into: WriteTarget, app: HeldApp | null): PrimaryTarget | null {
     if (app !== null) return primaryOf(into);
-    const literature = collection === LITERATURE_KEY;
-    const enginePath = literature ? engineLiteraturePath(into.engineConfig()) : undefined;
+    const enginePath = engineLiteraturePath(into.engineConfig());
     const holds = (hub: string, config: WriteTarget['config']): boolean =>
-        config.collections.some((one) => one.key === collection) ||
+        config.collections.some((one) => one.registry === 'literature') ||
         (enginePath !== undefined && literatureFile(hub, config, enginePath) !== null);
     const own = primaryOf(into);
     if (own !== null && holds(own.hub, own.config)) return own;

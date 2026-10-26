@@ -68,7 +68,6 @@
     } from '$lib/state/system/config/editors/fields';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { addPerson, personToAdd, unlessReverted } from '$lib/state/forms/new-entry';
-    import { PEOPLE } from '$lib/state/forms/page-entry';
     import { recordChoices } from '$lib/state/forms/schema';
     import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
@@ -76,9 +75,12 @@
     const {
         entities: { portfolio },
         fs: { primary },
-        selectors: { collectionsOfKey },
+        selectors: { registryCollections },
         writes: { newEntry }
     } = useState();
+
+    /** The option source of the people registry's keys, which a person picker's `from` names. */
+    const PEOPLE_SOURCE = 'people';
 
     type Props = {
         spec: CatalogEntry;
@@ -127,7 +129,7 @@
         control === 'choice' &&
             Array.isArray(spec.from) &&
             spec.from.length === 1 &&
-            spec.from[0] === PEOPLE
+            spec.from[0] === PEOPLE_SOURCE
     );
     /** Whether an Add person write of this control is out. */
     let adding = $state(false);
@@ -154,7 +156,7 @@
         unadded = '';
         try {
             const write = unlessReverted(
-                (one) => addPerson(one, collectionsOfKey(PEOPLE), primary(), newEntry),
+                (one) => addPerson(one, registryCollections('people'), primary(), newEntry),
                 () => discards
             );
             const done = await write(name);

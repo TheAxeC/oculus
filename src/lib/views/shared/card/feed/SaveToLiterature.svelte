@@ -2,10 +2,11 @@
     // Layer 3, shared view partial. Save to Literature on a paper's card: the Literature search
     // card and the Lit Watch card draw it. The hubs it offers are those that could take a new entry
     // of the Literature collection (`hubsTaking` of state/shared/page/hubs.ts): a hub holds the
-    // collection its list names, and also the one its list leaves to the engine's path when the
-    // file is there. With more than one, a press opens a menu of them, the primary first, each by
-    // its name, and the pick saves the paper there; with one, a press saves there at once, primary
-    // or not. The save names the hub, so the server writes where the card looks. The button reads
+    // collection of the entry of its list that names the `literature` registry, and also the one
+    // its list leaves to oculus's entry when the file is there. With more than one, a press opens a
+    // menu of them, the primary first, each by its name, and the pick saves the paper there; with
+    // one, a press saves there at once, primary or not. The save names the hub, so the server writes
+    // where the card looks. The button reads
     // In Literature, not pressable, once any of those hubs' collections holds the paper by the rule
     // the server refuses a second copy by, so a card offers Save only while no hub holds it. In
     // Literature is drawn waiting, not disabled, so it keeps a place in the focus order: when a
@@ -18,7 +19,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { focusIsFree, focusQuietly } from '$lib/ui/frame/quiet-focus';
-    import { inLiterature, LITERATURE, type PaperIds } from '$lib/state/feeds/literature/saved';
+    import { inLiterature, type PaperIds } from '$lib/state/feeds/literature/saved';
     import { hubsTaking, keyOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -26,7 +27,7 @@
 
     const {
         fs: { primary },
-        selectors: { collectionsOfKey },
+        selectors: { registryCollections },
         writes: { saveLiterature }
     } = useState();
 
@@ -53,7 +54,7 @@
     let landed = false;
 
     /** The Literature collection of each hub that holds one. */
-    const held = $derived(collectionsOfKey(LITERATURE));
+    const held = $derived(registryCollections('literature'));
     /** The hubs a save can write to, the primary first. */
     const hubs = $derived(hubsTaking(held, primary()));
     const saved = $derived(

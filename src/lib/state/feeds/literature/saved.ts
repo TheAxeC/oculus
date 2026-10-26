@@ -12,9 +12,6 @@ import { textOrNumber } from '../../../data/shapes/shapes.ts';
 import type { SavedPaper } from './bibtex.ts';
 import type { MergedHit } from './merge.ts';
 
-/** The collection key of the saved papers. */
-export const LITERATURE = 'literature';
-
 /** What a paper is compared by: its DOI when it has one, and its title. */
 export type PaperIds = { doi?: string; title: string };
 

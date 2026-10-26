@@ -58,30 +58,36 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # The folder of the hub's own deck, opened by the Present view when no deck is named.
 # portfolio_deck: deck
 
-# The hub's data files, one entry per key. The keys data, venues, pillars, domains, funding,
-# people, organisations and resources are the registries, leads and radar the Position Leads and
-# Lit Watch feeds, and every other key is a card list. The domains registry holds each domain's
-# colour and label and which domains expect a dataset; the venues and data registries hold their
-# theme words as the options of their `themes` field. A key the list leaves out has no view, and
-# Make Folder a Hub writes the ticked keys with these paths.
+# The hub's data files, one entry each, a `key` and a `file`, and fields that say what the file
+# is and which features read it, so a hub keys its files as it likes: `registry:` the registry or
+# feed it is (datasets, venues, pillars, domains, funding, people, organisations, resources,
+# literature, leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`,
+# `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`), `tasks` and
+# `joint_work`; `ticker:` the word of `ticker_categories` its command center lines carry, with
+# `undated: true` for open work with no date; and `group:`, `order:`, `label:`, `glyph:` and
+# `about:`, its place in the view catalogue and the dotted keys of its name, glyph and line in
+# Make Folder a Hub. The domains registry holds each domain's colour and label and which domains
+# expect a dataset; the venues and datasets registries hold their theme words as the options of
+# their `themes` field. A file the list leaves out has no view, and Make Folder a Hub writes the
+# ticked entries as they stand here.
 # collections:
-#   - { key: data,           file: ".oculus/data/research/data.yml" }
-#   - { key: venues,         file: ".oculus/data/research/venues.yml" }
-#   - { key: pillars,        file: ".oculus/data/pillars/pillars.yml" }
-#   - { key: domains,        file: ".oculus/data/pillars/domains.yml" }
-#   - { key: statements,     file: ".oculus/data/research/statements.yml" }
-#   - { key: people,         file: ".oculus/data/people/people.yml" }
-#   - { key: organisations,  file: ".oculus/data/people/organisations.yml" }
-#   - { key: resources,      file: ".oculus/data/research/resources.yml" }
-#   - { key: funding,        file: ".oculus/data/academic/funding.yml" }
-#   - { key: events,         file: ".oculus/data/academic/events.yml" }
-#   - { key: education,      file: ".oculus/data/academic/education.yml" }
-#   - { key: applications,   file: ".oculus/data/academic/applications.yml" }
-#   - { key: joint-work,     file: ".oculus/data/academic/joint-work.yml" }
-#   - { key: tasks,          file: ".oculus/data/academic/tasks.yml" }
-#   - { key: literature,     file: ".oculus/data/literature/literature.yml" }
-#   - { key: leads,          file: ".oculus/data/academic/leads.yml" }
-#   - { key: radar,          file: ".oculus/data/literature/radar.yml" }
+#   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
+#   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
+#   - { key: pillars, file: ".oculus/data/pillars/pillars.yml", registry: pillars, about: files.make_collection_line_pillars }
+#   - { key: domains, file: ".oculus/data/pillars/domains.yml", registry: domains, about: files.make_collection_line_domains }
+#   - { key: statements, file: ".oculus/data/research/statements.yml", group: registries, order: 3, label: views.statements, glyph: views.statements_glyph, about: files.make_collection_line_statements }
+#   - { key: people, file: ".oculus/data/people/people.yml", registry: people, group: registries, order: 4, label: views.people, glyph: views.people_glyph, about: files.make_collection_line_people }
+#   - { key: organisations, file: ".oculus/data/people/organisations.yml", registry: organisations, group: registries, order: 5, label: views.organisations, glyph: views.organisations_glyph, about: files.make_collection_line_organisations }
+#   - { key: resources, file: ".oculus/data/research/resources.yml", registry: resources, group: registries, order: 6, label: views.resources, glyph: views.resources_glyph, about: files.make_collection_line_resources }
+#   - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
+#   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
+#   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
+#   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+#   - { key: joint-work, file: ".oculus/data/academic/joint-work.yml", joint_work: true, ticker: { category: collab }, group: academic, order: 4, label: views.joint-work, glyph: views.joint-work_glyph, about: files.make_collection_line_joint_work }
+#   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
+#   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
+#   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
+#   - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
 
 # The keys of the collections list whose files a chat's index holds for this hub, in this order.
 # chat_context: [funding, events, education, applications, joint-work, tasks]
@@ -255,6 +261,15 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # data_access: {}
 #   example:
 #   data_access: { embargoed: "#7c3aed" }
+
+# The command center's deadline groups, in the order it draws them, each with the dotted keys of the
+# words of its heading, its glyph and the noun of a line's due and overdue sentences; the word
+# `manifests: true` marks is the group of the projects' own deadlines. A collection's `ticker:`
+# names the group its lines carry.
+# ticker_categories: {}
+#   example:
+#   ticker_categories:
+#     report: { label: views.statements, glyph: views.statements_glyph, noun: focus.command.word_task }
 
 # The categories this hub's projects are filed under, each a row with its `key`. A row named here
 # replaces oculus's row of that key in oculus's place, a new row comes after oculus's, and
@@ -436,9 +451,8 @@ primary: my-hub
 # wallpaper image, the scan folders and the other hub settings) is set there and not here.
 # A scalar or a list without a key field replaces oculus's value whole. A keyed list (rail by
 # `page`, floats by `view`, themes, latex.recipes and latex.tools by `name`,
-# code_themes.vscode by `class`, code_themes.shiki by `id`, focus.ticker_sources by
-# `collection`) overrides oculus's entry with the same key, and
-# `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
+# code_themes.vscode by `class`, code_themes.shiki by `id`) overrides oculus's entry with the
+# same key, and `removed: true` takes oculus's entry out. A map (counts, boards, nav_groups and the others)
 # overrides by its keys, and a key set to null takes oculus's key out.
 # The six catalogs, `agents`, `patterns` (file nesting), `glyphs`, `icons`, `latex_editing` and
 # `latex_unimath`, are laid over oculus's in oculus's place: an entry named here replaces oculus's

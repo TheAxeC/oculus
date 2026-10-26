@@ -40,6 +40,7 @@ import {
     type Control,
     type Form,
     type Heading,
+    type Holds,
     type Source
 } from '../../../shapes/catalog-words.ts';
 import { mapShape, readOr } from '../../../shapes/shapes.ts';
@@ -104,7 +105,27 @@ export type FieldSpec = {
     joined?: boolean;
     allow_missing?: boolean | string;
     fields?: Record<string, FieldSpec>;
+    holds?: Holds;
 };
+
+/**
+ * What the value of a family field is: `list`, a list of records; `pairs`, a map from a key to a
+ * value, for a family whose fields are `key` and `value`; `record`, one record of its fields, for
+ * a family field marked `holds: record`.
+ */
+export type FamilyForm = 'list' | 'pairs' | 'record';
+
+/** Whether a family's fields are `key` and `value` and no more: a map from a key to one value. */
+export function isPairs(fields: Record<string, FieldSpec>): boolean {
+    const names = Object.keys(fields);
+    return names.length === 2 && names.includes('key') && names.includes('value');
+}
+
+/** The form of a family field's value; see FamilyForm. */
+export function familyForm(spec: Pick<FieldSpec, 'fields' | 'holds'>): FamilyForm {
+    if (spec.holds === 'record') return 'record';
+    return isPairs(spec.fields ?? {}) ? 'pairs' : 'list';
+}
 
 /**
  * One option, or one family. An option of a defaults file carries `default`, the value
@@ -115,11 +136,13 @@ export type FieldSpec = {
  * whatever order a file writes them in. A leaf option carries a `control`; a family carries
  * `fields` and no control, and a family that is a list of records may carry `key`, the field a
  * workspace file's `settings:` tells its rows apart by. A `local.yml` key has a help line, and a
- * `control` only where it takes a number or a choice. A key/value family (fields `key` and `value`)
- * may carry `holds: lists`, meaning each key of the map holds a list of values; the reader refuses
- * it on any other entry, and a family without it takes no list at a key. `heading` is the subject
- * the option is listed under (`unheaded` when it names none a HEADINGS word is), and `section` the
- * group inside that heading, the first segment of the key path when absent.
+ * `control` only where it takes a number or a choice. A key/value family (fields `key` and
+ * `value`), an entry or a field, may carry `holds: lists`, meaning each key of the map holds a list
+ * of values or one value; a family field with no `key` field may carry `holds: record`, meaning it
+ * holds one record of its fields. The reader refuses either word anywhere else, and a key/value
+ * family without `holds: lists` takes no list at a key. `heading` is the subject the option is
+ * listed under (`unheaded` when it names none a HEADINGS word is), and `section` the group inside
+ * that heading, the first segment of the key path when absent.
  */
 export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     control?: Control;
@@ -127,7 +150,6 @@ export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     in_place?: true;
     heading?: Heading | typeof UNHEADED;
     section?: string;
-    holds?: 'lists';
     key?: string;
 };
 
@@ -249,10 +271,11 @@ function valuesByOf(value: unknown, flag: (word: string) => void): ValuesBy | un
 
 /**
  * One entry or field read into its typed form. `top` is an entry of the file's map (it may carry a
- * heading, a section, a default, `holds` and `key`), `local` an entry of `local.yml` (a control
- * only where it takes a number or a choice, no heading). Everything wrong is pushed to `problems`;
- * a problem with the control reads the control as `text`, one with the heading puts the entry under
- * `unheaded`, and one with the key leaves the entry without it.
+ * heading, a section, a default and `key`; an entry or a field of a family may carry `holds`),
+ * `local` an entry of `local.yml` (a control only where it takes a number or a choice, no heading).
+ * Everything wrong is pushed to `problems`; a problem with the control reads the control as `text`,
+ * one with the heading puts the entry under `unheaded`, and one with the key leaves the entry
+ * without it.
  */
 function readSpec(
     raw: unknown,
@@ -362,19 +385,23 @@ function readSpec(
             if (typeof key === 'string' && Object.hasOwn(entry.fields ?? {}, key)) entry.key = key;
             else flag('key', typeof key === 'string' ? key : JSON.stringify(key));
         }
-        // Only a key/value family takes `holds: lists`: a map of lists of records is no shape.
-        if (map.holds === 'lists') {
-            const names = Object.keys(entry.fields ?? {});
-            const table = names.length === 2 && names.includes('key') && names.includes('value');
-            if (table) entry.holds = 'lists';
-            else flag('holds');
-        }
         if (!local) {
             const heading = str(map.heading);
             if (heading === undefined) flag('heading_missing');
             else if (!oneOf(HEADINGS, heading)) flag('heading_unknown', heading);
             entry.heading = oneOf(HEADINGS, heading) ? heading : UNHEADED;
         }
+    }
+    // Only a key/value family takes `holds: lists`, a map of lists of records being no shape, and
+    // only a family field with no `key` field takes `holds: record`.
+    if (map.holds !== undefined) {
+        const fields = entry.fields;
+        const lists = map.holds === 'lists' && fields !== undefined && isPairs(fields);
+        const record =
+            map.holds === 'record' && !top && fields !== undefined && !Object.hasOwn(fields, 'key');
+        if (lists) entry.holds = 'lists';
+        else if (record) entry.holds = 'record';
+        else flag('holds', typeof map.holds === 'string' ? map.holds : JSON.stringify(map.holds));
     }
     if (wrong.any && entry.fields === undefined) entry.control = 'text';
     return entry;
@@ -522,6 +549,7 @@ const FROM_CONFIG: readonly Source[] = [
     'status_chips',
     'chip_flags',
     'entry_statuses',
+    'ticker_categories',
     'bundle_ids'
 ];
 
@@ -592,6 +620,8 @@ export function configItems(source: Source, config: Record<string, unknown>): st
             return flagsOf(config.chips);
         case 'entry_statuses':
             return coloredWords(config.statuses);
+        case 'ticker_categories':
+            return keysAt(config.ticker_categories);
         default: {
             const open = isMap(config.open) ? config.open : {};
             const programs = isMap(open.program_ext) ? Object.values(open.program_ext) : [];

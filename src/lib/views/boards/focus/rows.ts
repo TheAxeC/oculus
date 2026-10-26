@@ -74,18 +74,12 @@ export function keptAction(actions: TickerAction[] | undefined): string | undefi
     return actions.find((action) => action.id === 'done' || action.id === `${STATUS}done`)?.id;
 }
 
-/** The collection of the entries a task start is offered on. */
-const TASKS = 'tasks';
-
-/** The collection a funding scheme's line belongs to. */
-const FUNDING = 'funding';
-
 /**
- * The collection whose file a line's buttons write, and nothing for a line whose target is a
- * project's manifest.
+ * The collection whose file a line's buttons write, by its key in the record's own hub, and
+ * nothing for a line whose target is a project's manifest.
  */
 function collectionOf(target: TickerTarget): string | undefined {
-    return target.kind === 'funding' ? FUNDING : target.collection;
+    return target.collection;
 }
 
 /**
@@ -143,22 +137,23 @@ function agentAction(): TickerAction {
 }
 
 /**
- * The reference of the task a line is: an entry of the tasks collection, or a subtask of a project,
- * a funding scheme or an entry with the key and the `do` text the line shows. Any other line is
- * no task.
+ * The reference of the task a line is: an entry of the collection flagged `tasks`, or a subtask of
+ * a project, a funding scheme or an entry with the key and the `do` text the line shows. Any other
+ * line is no task.
  */
 function taskRef(line: TickerItem): TaskRef | null {
     const target = line.target;
     if (target === undefined) return null;
     if (target.subtask === undefined) {
-        const entry = target.kind === 'entry' && target.collection === TASKS;
-        return entry ? { id: target.id, collection: TASKS } : null;
+        const entry = target.kind === 'entry' && target.task === true;
+        return entry && target.collection !== undefined
+            ? { id: target.id, collection: target.collection }
+            : null;
     }
     if (line.subtaskDo === undefined) return null;
     const subtask = { key: target.subtask, do: line.subtaskDo };
     if (target.kind === 'manifest') return { id: target.id, subtask };
-    if (target.kind === 'funding') return { id: target.id, collection: 'funding', subtask };
-    if (target.kind === 'entry' && target.collection !== undefined) {
+    if ((target.kind === 'funding' || target.kind === 'entry') && target.collection !== undefined) {
         return { id: target.id, collection: target.collection, subtask };
     }
     return null;
@@ -356,8 +351,7 @@ async function write(
     }
     const fields = fieldsFor(action, now);
     if (target.kind === 'manifest') return writes.writeManifest(target.id, fields);
-    if (target.kind === 'funding') return writes.writeEntry('funding', target.id, fields);
-    if (target.kind === 'entry' && target.collection !== undefined) {
+    if ((target.kind === 'funding' || target.kind === 'entry') && target.collection !== undefined) {
         return writes.writeEntry(target.collection, target.id, fields);
     }
     return null;
@@ -389,18 +383,6 @@ export async function act(
     if (!answer.ok) return t('editor.failed', answer.error ?? '');
     if (answer.changed.length === 0 && refused !== '') return t('editor.failed', refused);
     return t('editor.saved', answer.changed.join(', '));
-}
-
-/** A deadline category's heading from the text catalog. */
-export function categoryLabel(category: string): string {
-    if (category === 'paper') return t('focus.command.dlcat_paper');
-    if (category === 'funding') return t('focus.command.dlcat_funding');
-    if (category === 'event') return t('focus.command.dlcat_event_label');
-    if (category === 'teaching') return t('focus.command.dlcat_teaching');
-    if (category === 'position') return t('focus.command.dlcat_position');
-    if (category === 'collab') return t('focus.command.dlcat_collab');
-    if (category === 'task') return t('focus.command.dlcat_task');
-    return t('focus.command.dlcat_conference');
 }
 
 /**

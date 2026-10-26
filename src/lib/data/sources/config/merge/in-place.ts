@@ -61,7 +61,8 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     data_access: MAP,
     venue_categories: WHOLE,
     venue_tiers: WHOLE,
-    radar_buckets: WHOLE
+    radar_buckets: WHOLE,
+    ticker_categories: MAP
 };
 
 /**

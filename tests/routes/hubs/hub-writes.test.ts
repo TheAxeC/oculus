@@ -74,7 +74,7 @@ function heldBy(dir: string, file: string): boolean {
 }
 
 /** A collection file whose `person` field takes a key of the people registry. */
-const JOINT_WORK = `title: Joint work
+const PERSON_FIELD_FILE = `title: Joint work
 schema:
   - { field: key, type: text }
   - { field: title, type: text }
@@ -360,7 +360,7 @@ describe('a write to a record of the second hub', () => {
         // oculus's own, so it is no hub whose list names Literature.
         plantLiterature(first, '.oculus/data/research/literature.yml');
         plantLiterature(lab);
-        const collections = into.config.collections.filter((one) => one.key !== 'literature');
+        const collections = into.config.collections.filter((one) => one.registry !== 'literature');
         const narrowed: PrimaryTarget = { ...into, config: { ...into.config, collections } };
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(request(PAPER), TOKEN, narrowed);
@@ -377,7 +377,7 @@ describe('a write to a record of the second hub', () => {
         plantLiterature(lab);
         const held = into.hubs?.[0];
         if (held === undefined) throw new Error('the target names no second hub');
-        const collections = held.config.collections.filter((one) => one.key !== 'literature');
+        const collections = held.config.collections.filter((one) => one.registry !== 'literature');
         const narrowed: PrimaryTarget = {
             ...into,
             hubs: [{ ...held, config: { ...held.config, collections } }]
@@ -424,7 +424,10 @@ describe('a write to a record of the second hub', () => {
         const { into, first, lab } = twoHubs();
         for (const hub of [first, lab]) {
             mkdirSync(join(hub, '.oculus', 'data', 'academic'), { recursive: true });
-            writeFileSync(join(hub, '.oculus', 'data', 'academic', 'joint-work.yml'), JOINT_WORK);
+            writeFileSync(
+                join(hub, '.oculus', 'data', 'academic', 'joint-work.yml'),
+                PERSON_FIELD_FILE
+            );
         }
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(

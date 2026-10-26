@@ -5,9 +5,11 @@
     // It counts nothing. The groups are the ticker the board hands it and state/feeds/feeds.ts's
     // attention and refresh lines over the portfolio the board hands it, both of the records the
     // Focus filter keeps, and the heading row says how many rows the filter hides; what is here is
-    // the markup, the words, the writes and the opening controls. A line says what it is and what
-    // it can be written to (`kind` and `target`), and this file turns the first into a sentence
-    // through the text catalog; the second becomes buttons, and what one writes, in
+    // the markup, the words, the writes and the opening controls. A line says its category and what
+    // it can be written to (`kind` and `target`), and this file turns the two into a sentence
+    // through the text catalog, the sentence chosen by what the line was read from (its target's
+    // kind) and the noun by its category's word of `ticker_categories`; the target also becomes
+    // buttons, and what one writes, in
     // views/boards/focus/rows.ts, which the tasks section draws its rows with too. Lead and
     // attention lines open their views; refresh lines ask the shell for the Update tray through the
     // ui store.
@@ -65,40 +67,46 @@
     /** The threshold the venue-load line quotes: `venue_conc_warn` under `focus:`, behavior.yml. */
     const warnAt = $derived(venueWarn(config));
 
+    /** The deadline categories of every hub's words, in the order the groups are drawn. */
+    const categories = $derived(tickerCategories(vocabOf()));
+
     /**
-     * The word a collection's own dates are named by. The keys are literal so keys.test.ts sees
-     * them.
+     * The noun a line of an entry or a lead is named by, the overdue noun once overdue, as the
+     * line's category word names them; the empty text for a word that names none.
      */
-    function word(kind: string): string {
-        if (kind === 'event') return t('focus.command.word_event');
-        if (kind === 'teaching') return t('focus.command.word_teaching');
-        if (kind === 'task') return t('focus.command.word_task');
-        if (kind === 'position') return t('focus.command.word_application');
-        return t('focus.command.word_collaboration');
+    function noun(line: TickerItem, overdue: boolean): string {
+        const category = categories.find((one) => one.key === line.kind);
+        const key = overdue ? category?.overdueNoun : category?.noun;
+        return key === undefined ? '' : t(key);
     }
 
-    /** The same for an overdue line, where teaching uses the word commitment. */
-    function overdueWord(kind: string): string {
-        return kind === 'teaching' ? t('focus.command.word_commitment') : word(kind);
-    }
-
+    /**
+     * An overdue line's sentence, by what it was read from: a project's deadline, a funding
+     * scheme's, or an entry's, named by its category's overdue noun.
+     */
     function overdueTail(line: TickerItem): string {
         const days = -(line.days ?? 0);
-        if (line.kind === 'paper') return t('focus.command.overdue_deadline', days);
-        if (line.kind === 'funding') return t('focus.command.overdue_funding', days);
-        return t('focus.command.overdue_generic', overdueWord(line.kind), days);
+        const source = line.target?.kind;
+        if (source === 'manifest') return t('focus.command.overdue_deadline', days);
+        if (source === 'funding') return t('focus.command.overdue_funding', days);
+        return t('focus.command.overdue_generic', noun(line, true), days);
     }
 
+    /**
+     * A dated line's sentence, by what it was read from: a project's deadline, a funding scheme's,
+     * a venue's call by its date or its usual month, or a lead's or an entry's date, named by its
+     * category's noun.
+     */
     function deadlineTail(line: TickerItem): string {
         const days = line.days ?? 0;
-        if (line.kind === 'paper') return t('focus.command.submission_deadline', days);
-        if (line.kind === 'funding') return t('focus.command.funding_deadline', days);
-        if (line.kind === 'position') return t('focus.command.position_deadline', days);
-        if (line.kind === 'conference') {
+        const source = line.target?.kind;
+        if (source === 'manifest') return t('focus.command.submission_deadline', days);
+        if (source === 'funding') return t('focus.command.funding_deadline', days);
+        if (source === 'venue') {
             if (line.days !== null) return t('focus.command.conference_call', days);
             return t('focus.command.conference_call_approx', monthWords(line.months ?? 0));
         }
-        return t('focus.command.generic_in', word(line.kind), days);
+        return t('focus.command.generic_in', noun(line, false), days);
     }
 
     function monthWords(months: number): string {
@@ -129,16 +137,16 @@
                 kind: run.kind,
                 rows: run.lines.map((line) => row(line, dateTail(line)))
             }));
-        const order = tickerCategories(config);
-        const categories = deadlinesByCategory(week?.deadlines ?? [], order).map((one) => ({
-            category: one.category,
+        const groups = deadlinesByCategory(week?.deadlines ?? [], categories).map((one) => ({
+            category: one.category.key,
+            label: t(one.category.label ?? 'focus.command.kind_other'),
             rows: one.lines.map((line) => row(line, deadlineTail(line)))
         }));
         return {
             index,
             kept,
             overdue: (week?.overdue ?? []).map((line) => row(line, overdueTail(line))),
-            categories,
+            categories: groups,
             subtaskDated: byKind(week?.subtasks ?? []),
             followups: (week?.followups ?? []).map((line) => row(line, '')),
             snoozed: (week?.snoozed ?? []).map((line) => row(line, ''))

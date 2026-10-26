@@ -3,14 +3,15 @@
 // source it does not list, a choice with nothing to choose from, a field without a help line, an
 // entry under no heading or an unknown one, a range whose minimum is above its maximum, a `whole`
 // that is not true, a `form` that is not one of the forms, a list of slots that is not a list of
-// words, a `holds: lists` on an entry that is no key/value family, a `key` that names no field of
-// the records, and in `groups:` a group with no help line, a line for no group, and a `groups:`
-// that is no map. Each is a thing a saved edit can introduce while the server runs, where a throw
-// would take the page down with it; catalogOf reads the entry as a text option, or under the
-// heading for entries with none, and the finding says why. The problems are the reader's own
-// (readCatalog of options.ts), so the findings and the entries cannot disagree. They are worded
-// from the merged catalog, as languageFindings' are, and name the options file and the key: the
-// entry's path and field, or `groups.<group>` for a group line.
+// words, a `holds: lists` on a family that is no key/value family or a `holds: record` on one that
+// is no family field without a `key` field, a `key` that names no field of the records, and in
+// `groups:` a group with no help line, a line for no group, and a `groups:` that is no map. Each is
+// a thing a saved edit can introduce while the server runs, where a throw would take the page down
+// with it; catalogOf reads the entry as a text option, or under the heading for entries with none,
+// and the finding says why. The problems are the reader's own (readCatalog of options.ts), so the
+// findings and the entries cannot disagree. They are worded from the merged catalog, as
+// languageFindings' are, and name the options file and the key: the entry's path and field, or
+// `groups.<group>` for a group line.
 
 import { join } from 'node:path';
 import { findingText } from '../../../helpers/finding-text.ts';
@@ -50,7 +51,7 @@ function problemText(problem: OptionProblem, catalog: ReturnType<typeof textCata
         case 'slots':
             return findingText(catalog, 'findings.options.slots');
         case 'holds':
-            return findingText(catalog, 'findings.options.holds');
+            return findingText(catalog, 'findings.options.holds', problem.word);
         case 'heading_missing':
             return findingText(catalog, 'findings.options.heading_missing');
         case 'heading_unknown':

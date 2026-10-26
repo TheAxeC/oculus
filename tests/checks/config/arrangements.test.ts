@@ -6,7 +6,8 @@
 // `pinned:` of another value, which makes the arrangement not add up.
 
 import { describe, expect, it } from 'vitest';
-import { collectionKeys, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, unplacedGroup } from '../../../src/lib/data/sources/config.ts';
+import { collectionViews } from '../../../src/lib/data/snapshot/normalise.ts';
 import { parseArrangement } from '../../../src/lib/state/workbench/navigation/arrangement.ts';
 import { tabsOf } from '../../../src/lib/state/workbench/layout/index.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
@@ -25,7 +26,7 @@ describe('the arrangements of config/defaults/layout.yml', () => {
     it.each(pages)('the %s page parses and names only views the catalogue knows', (_page, node) => {
         const client = createClientState();
         registerAll(client.registry);
-        registerCollections(client.registry, collectionKeys(config));
+        registerCollections(client.registry, collectionViews(config, unplacedGroup(config)));
         const known = new Set(client.registry.views().map((view) => view.id));
         const built = parseArrangement(node);
         expect(built).not.toBeNull();

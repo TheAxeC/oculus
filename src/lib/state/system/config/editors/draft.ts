@@ -6,14 +6,17 @@
 // holding the picked words or the word block. A family whose fields are `key` and `value` is
 // `pairs`, a key and a value per entry. Any other family is `records`: one card per record with a
 // field per catalog field, the map's key being the card's `key` field when the file holds a map, a
-// nested list of records (a board's `columns` and `groups` in `boards`) drawn as cards of its own.
+// family field drawn as cards of its own: a nested list of records (a board's `columns`), a map
+// from a key to a value (a board's `stages`, a collection's `dissemination_skip`) as a key and a
+// value per card, and a field that holds one record (a collection's `ticker`) as one card.
 //
 // A field is held as its typed value (fields.ts): a toggle as a boolean, a number as the box's
-// text, a choice as its word, a multi as its words, a word block as its lists, a nested list of
-// records as cards of its own. A field the record does not hold is absent from its card and is left
-// out on Save; a nested list the record does not hold is an empty list of cards, and Save adds no
-// key for it unless a card was added. A field holding a value its control cannot show, and a field
-// the catalog does not name, are kept on the card as the file has them and sent back unchanged.
+// text, a choice as its word, a multi as its words, a word block as its lists, a family field as
+// cards of its own. A field the record does not hold is absent from its card and is left out on
+// Save; a family field the record does not hold is an empty list of cards, and Save adds no key for
+// it unless a card was added, nor for a record left with no field. A field holding a value its
+// control cannot show, and a field the catalog does not name, are kept on the card as the file has
+// them and sent back unchanged.
 //
 // A draft that does not read back is not an error: `draftValue` answers the problems, each with the
 // message to word it, and Save waits until there are none. A draft the page held in the form that
@@ -23,7 +26,7 @@
 // no draft.
 
 import { byKey, isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
-import type { FieldSpec } from '../../../../data/sources/config/catalog/options.ts';
+import { familyForm, type FieldSpec } from '../../../../data/sources/config/catalog/options.ts';
 import { message, type Message } from '../messages.ts';
 import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW } from '../groups.ts';
 import type { ConfigRow } from '../rows.ts';
@@ -33,6 +36,7 @@ import {
     cardsOf,
     controlOf,
     emptyCard,
+    pairValueSpec,
     readField,
     troubleMessage,
     wordsOf,
@@ -370,19 +374,9 @@ function recordOf(
         const held = byKey(card.fields, name);
         if (held === undefined) continue;
         if (controlOf(spec) === 'records') {
-            const nested = cardsOf(held);
-            const inner = nestedAt(base, name);
-            made[name] = nested.map((one, at) =>
-                childOf(
-                    one,
-                    spec.fields ?? {},
-                    { ...place, label: `${place.label}, ${name} ${at + 1}` },
-                    inner,
-                    lists,
-                    trust,
-                    problems
-                )
-            );
+            const nested = { spec, name, place, base, lists, trust, problems };
+            const value = nestedValue(cardsOf(held), nested);
+            if (value !== undefined) made[name] = value;
             continue;
         }
         const reading = {
@@ -404,6 +398,103 @@ function recordOf(
     for (const name of Object.keys(all))
         if (!Object.hasOwn(ordered, name)) put(ordered, name, all[name]);
     return ordered;
+}
+
+/** What a family field of a card is written in: its spec and name, the card's place and base. */
+type Nested = {
+    spec: FieldSpec;
+    name: string;
+    place: Place;
+    base: Base;
+    lists: Lists;
+    trust: boolean;
+    problems: Problem[];
+};
+
+/**
+ * The value the cards of a family field make, by its form: a list of records, the one record (left
+ * out when it holds no field), or a map of each card's key to its value.
+ */
+function nestedValue(cards: Card[], at: Nested): unknown {
+    const { spec, name, place, base, lists, trust, problems } = at;
+    const fields = spec.fields ?? {};
+    switch (familyForm(spec)) {
+        case 'record': {
+            const card = cards.at(0);
+            if (card === undefined) return undefined;
+            const label = { ...place, label: `${place.label}, ${name}` };
+            const inner = recordBase(base, name);
+            const record = childOf(card, fields, label, inner, lists, trust, problems);
+            return Object.keys(record).length === 0 ? undefined : record;
+        }
+        case 'pairs':
+            return pairsValue(cards, at);
+        default: {
+            const inner = nestedAt(base, name);
+            return cards.map((one, index) =>
+                childOf(
+                    one,
+                    fields,
+                    { ...place, label: `${place.label}, ${name} ${index + 1}` },
+                    inner,
+                    lists,
+                    trust,
+                    problems
+                )
+            );
+        }
+    }
+}
+
+/**
+ * The map the cards of a map field make: each card's key to its value, each written by its field,
+ * a value of one text kept one text where the map holds lists. An empty or a repeated key is a
+ * problem, and a value the control could not show is sent back as the file held it.
+ */
+function pairsValue(cards: Card[], at: Nested): Plain {
+    const { spec, name, place, lists, trust, problems } = at;
+    const fields = spec.fields ?? {};
+    const value: Plain = {};
+    const seen = new Set<string>();
+    cards.forEach((card, index) => {
+        const where = { ...place, label: `${place.label}, ${name} ${index + 1}` };
+        const raw = card.fields.key;
+        const key = (typeof raw === 'string' ? raw : '').trim();
+        if (key === '' || seen.has(key)) {
+            const said =
+                key === '' ? message('emptyKey', where.label) : message('duplicateKey', key);
+            problems.push({ index: place.index, field: name, said });
+            return;
+        }
+        seen.add(key);
+        const reading = { lists, record: card.fields, held: [], trust };
+        const named = writtenField(fields.key, key, reading);
+        if (!named.ok) {
+            problems.push(problemOf(where, 'key', named.trouble));
+            return;
+        }
+        if (Object.hasOwn(card.kept, 'value')) {
+            put(value, key, card.kept.value);
+            return;
+        }
+        const held = card.fields.value;
+        const one = typeof held === 'string' && spec.holds === 'lists';
+        const valueSpec = one ? fields.value : pairValueSpec(spec);
+        const written = writtenField(valueSpec, held, reading);
+        if (!written.ok) {
+            problems.push(problemOf(where, 'value', written.trouble));
+            return;
+        }
+        const listed = controlOf(valueSpec) === 'list' || controlOf(valueSpec) === 'multi';
+        put(value, key, written.value ?? (listed ? [] : ''));
+    });
+    return value;
+}
+
+/** The base of the one record a family field holds, for every card of the draft. */
+function recordBase(base: Base, name: string): Base {
+    const any = poolOf(valuesAt(base.any.records, name).filter(isMap));
+    return baseWith(any, valuesAt(base.same, name).filter(isMap));
 }
 
 /**

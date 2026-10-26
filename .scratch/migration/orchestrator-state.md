@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O78
-  brief_check: .scratch/migration/agents/reviews/O78-brief-check.md (ab5cec249b37c5055, claude-opus-5-5, 263896 tokens, 81 tool uses, 11 min 55 s)
-  base: e5ad5b79
-  worktree: .agents/worktrees/migration-O78
-  executor: agent
-  worker: claude:opus
-  session_id: a584e9b15ed298b15 (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O78-report.md
-  builder_usage: 180777 tokens, 1384 tool uses, 2 h 46 min 38 s
-  reviewer_report: .scratch/migration/agents/reviews/O78-refuter.md (a4d317d58db20e950, claude-opus-5-5, 225223 tokens, 136 tool uses, 24 min 41 s)
-  round: 1
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -588,6 +575,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O78 landed). O78 is on main (booked under O78 in `plan.md`, `agents/reviews/O78-landing.md`), checked in the gate worktree (`npm run diagrams && npm run test:quick`, every command passed, 395.1 s) and on main (every one of the 166 staged paths equal under `cmp` to the gate's file). Fixes at landing: the comment paragraphs of nine files rewrapped with no word changed, one test line split, one doc comment made multi-line; G131 added to `agents/guarded.md` and the Test lines of G9, G13, G32 and G96 extended. Looked at on a two-hub scratch server (8797). Nothing in flight. Next: O79, then O80 and O81 (O81 after O80), each through /spec, the build, /refute and /land. Open items: none.
 - 2026-10-26 (O78 round 1 sent; Z1018). The review is saved in `agents/reviews/O78-refuter.md` (a4d317d58db20e950, claude-opus-5-5, 225223 tokens, 136 tool uses, 24 min 41 s): items 1 and 5 violated, every case met, findings under Proof (missing rows of 'the fields of a collections entry', the `ticker_word_unknown` finding unrun, the key check's credits) and Standards (two false comments in `model-entities.ts`, a ruling id in `model-collections.ts`, the open-badge function names). Open item 414 (the rail page key `registries` written in `registration.ts`) raised from the orchestrator's read of the diff and closed under self-rule Z1018 (a). Round 1 (`agents/briefs/O78-round1.md`, 11 items, carrying Z1017 and Z1018) copied into the worktree's ledger; snapshot `.agents/worktrees/migration-O78-round-1` with `files.txt` (132 paths); builder a584e9b15ed298b15 resumed. In flight (1 of 6): O78 (repair round 1). Next: the round's report, its review, then /land. Open items: none.
 - 2026-10-26 (O78 reported; its review starting). The builder a584e9b15ed298b15 reported every item done except item 1's options description of `ticker:` and `dissemination_skip:` (the schema refuses both, 3 tests of `config-folder.test.ts` red), handed back as open item 413 and closed under self-rule Z1017 (a); its report is saved in `agents/reviews/O78-report.md` (2021 lines, ASCII) with `builder_usage`. The builder also handed back two comments of `model-entities.ts` outside its line range made false, and files changed outside its path list. In flight (1 of 6): O78 (review). Next: the refuter report, round 1 with Z1017 and the findings, the review over the round, /land O78. Open items: none.
 - 2026-10-26 (O78 building). O78's brief written from main at a374362d and checked (`agents/reviews/O78-brief-check.md`, ab5cec249b37c5055, claude-opus-5-5), every finding closed in the brief and named under the report's Closed heading; Z1011 and Z1012 written to keep reader words and glyph names in text words (the rules file, ruling 396 (a)), Z1014 to Z1016 booked; preparation commit e5ad5b79 is the base; worktree `.agents/worktrees/migration-O78`, base copy and unused exports in `.agents/worktrees/O78-base/`; builder a584e9b15ed298b15 launched on ordo-high, served claude-opus-5-5. Next: its report, the review, the landing (G131 added to `agents/guarded.md` then), then O79, O80, O81.

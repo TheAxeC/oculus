@@ -1,12 +1,13 @@
 // Layer 2, client state. The counts on a board's controls, sizes and dissemination live here
 // because they describe board content rather than its saved controls.
 
-import type { Id, Snapshot, Venue } from '../../../data/model/index.ts';
+import type { Id, Snapshot, Venue, When } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { anyWord, hasWord } from '../../../data/shapes/vocab-keys.ts';
 import {
+    bareId,
+    flaggedCollections,
     holdersOf,
-    joinedEntries,
     keyOf,
     resolvedId,
     rootOf
@@ -75,28 +76,35 @@ export function humanSize(bytes: number): string {
 /** One entry of a collection that names a project: which collection it is in, and its words. */
 export type Dissemination = { collection: string; id: Id; title: string };
 
-/** The collections whose entries say a project was presented, taught or applied with. */
-const ACTIVITY = ['events', 'education', 'applications'];
+/**
+ * Whether an entry meets a `dissemination_skip:` condition: each of its fields holds, as text, one
+ * of the values the condition names for it.
+ */
+function skipped(skip: When | undefined, fields: Record<string, unknown>): boolean {
+    if (skip === undefined) return false;
+    return Object.entries(skip).every(([field, wanted]) =>
+        (Array.isArray(wanted) ? wanted : [wanted]).includes(str(fields[field]))
+    );
+}
 
 /**
- * The events, education and applications entries whose `related:` names one project, which is where
- * the work was disseminated: a key of `related:` names the project its entry's hub resolves it to,
- * its own hub's first, then the one other hub's that holds it. An events entry the reader only
- * attended is not one: its `role` says `attend`, and attending somebody else's conference is not
- * this project appearing anywhere.
+ * The entries of the collections flagged `dissemination` (talks, teaching and applications on
+ * oculus's own list) whose `related:` names one project, which is where the work was disseminated:
+ * a key of `related:` names the project its entry's hub resolves it to, its own hub's first, then
+ * the one other hub's that holds it. An entry its collection's `dissemination_skip:` matches is not
+ * one: on oculus's list, an events entry whose `role` says `attend`, since attending somebody
+ * else's conference is not this project appearing anywhere. Each is named by its collection's key.
  */
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
     const found: Dissemination[] = [];
     const held = holdersOf(Object.values(snapshot.entities.projects));
     const names = (entry: { root?: string }, key: string): boolean =>
         resolvedId(held, rootOf(entry), key) === id;
-    for (const collection of ACTIVITY) {
-        const entries = joinedEntries(snapshot.entities.collections, collection);
-        for (const entry of entries) {
-            const role = str(entry.fields.role);
-            if (collection === 'events' && role === 'attend') continue;
+    for (const collection of flaggedCollections(snapshot.entities.collections, 'dissemination')) {
+        for (const entry of collection.entries) {
+            if (skipped(collection.dissemination_skip, entry.fields)) continue;
             if (!strings(entry.fields.related).some((one) => names(entry, one))) continue;
-            found.push({ collection, id: entry.id, title: entry.title });
+            found.push({ collection: bareId(collection), id: entry.id, title: entry.title });
         }
     }
     return found;

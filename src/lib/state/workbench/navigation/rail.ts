@@ -92,7 +92,8 @@ export function sameRail(left: readonly RailEntry[], right: readonly RailEntry[]
                 entry.glyph === right[at].glyph &&
                 entry.page === right[at].page &&
                 entry.chord === right[at].chord &&
-                entry.group_glyph === right[at].group_glyph
+                entry.group_glyph === right[at].group_glyph &&
+                entry.unplaced_collections === right[at].unplaced_collections
         )
     );
 }
@@ -122,8 +123,8 @@ export function moveRailEntry(rail: readonly RailEntry[], at: number, by: -1 | 1
 }
 
 /**
- * The `rail:` list as the config writes it, every entry as five strings whether or not the rule
- * keeps it, so the Settings view lists an entry a hand edit broke for the reader to mend.
+ * The `rail:` list as the config writes it, every entry as five strings and the flag whether or not
+ * the rule keeps it, so the Settings view lists an entry a hand edit broke for the reader to mend.
  */
 export function configRail(config: Record<string, unknown> | undefined): RailEntry[] {
     return railRows(config?.rail) ?? [];

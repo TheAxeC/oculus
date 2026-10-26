@@ -14,8 +14,9 @@
 // its menu draws the items as it opens; `markedBy` names the folder whose marks a written path may
 // change, which the git watcher lists again (watch/git.ts).
 //
-// `hub` writes `.oculus/config.yml` with the chosen collections, then the chosen hub files of
-// HUB_CHOICES (`local`: `.oculus/local.yml`, mode 600, with the `.oculus/.gitignore` that keeps
+// `hub` writes `.oculus/config.yml` with the chosen collections, each entry as its template line
+// sets it (its registry, flags, ticker and words with its key and file), then the chosen hub files
+// of HUB_CHOICES (`local`: `.oculus/local.yml`, mode 600, with the `.oculus/.gitignore` that keeps
 // it out of git; `schedules`: `.oculus/schedules.yml`), then each chosen collection's data file at
 // its default path. `project` writes `.oculus/project.yml`, and `repository` the chosen files of
 // REPOSITORY_FILES. Every file comes from its template in oculus's docs/templates.md
@@ -39,6 +40,7 @@ import { homedir } from 'node:os';
 import { dirname, join, sep } from 'node:path';
 import { z } from 'zod';
 import { FILES_KIND, type FileStamp } from '../../../data/file-ops.ts';
+import type { CollectionEntry } from '../../../data/model/index.ts';
 import {
     HUB_CHOICES,
     HUB_FILE,
@@ -89,8 +91,11 @@ const makeShape = z.object({
 /** The items that write files from the templates. */
 type FileAction = 'hub' | 'project' | 'repository';
 
-/** A collection a new hub may keep, as the dialog lists it. */
-type MakeCollection = { key: string; file: string };
+/**
+ * A collection a new hub may keep, as the dialog lists it: its template line's entry with every
+ * field the line sets, its line in the dialog named by `about:`.
+ */
+type MakeCollection = CollectionEntry;
 
 /** A repository configuration file, and whether the folder holds it already. */
 type MakeConfig = { name: string; file: string; there: boolean };
@@ -213,7 +218,9 @@ function readPage(engine: string): string | null {
 function offerOf(folder: string, page: string | null, home: string, root: boolean): MakeOffer {
     return {
         ...makeOffer(folderMarks(folder, home), hubAbove(folder, home), root),
-        collections: collectionTemplates(page ?? '').map(({ key, file }) => ({ key, file })),
+        collections: collectionTemplates(page ?? '').map(
+            ({ line: _line, body: _body, ...entry }): MakeCollection => entry
+        ),
         configs: REPOSITORY_FILES.map(([name, file]) => ({
             name,
             file,

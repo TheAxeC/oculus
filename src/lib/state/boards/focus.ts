@@ -13,11 +13,11 @@
 // without it; the board's lanes are those of the union of every hub's words.
 
 import { z } from 'zod';
-import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
+import type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
-import { joinedEntries, rootOf } from '../../data/helpers/hub-names.ts';
+import { flaggedEntries, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyWord,
     hasWord,
@@ -485,10 +485,10 @@ export function laneFacts(
  * `pauses_countdown` in `stages` (submitted). The blocked tally counts the projects on a lane that
  * carry a chip with `blocked` in `chips`, whatever else the project is waiting for. A
  * `waiting-on:` value is a people key or another project's id, drawn by waiting.ts. The
- * applications are the entries whose status is in `applications_sent` under `focus:` of
- * config/defaults/behavior.yml. A waited-on project is named from `known`, every project of the
- * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
- * projects without it.
+ * applications are the entries of the collections flagged `awaiting` whose status is in
+ * `applications_sent` under `focus:` of config/defaults/behavior.yml. A waited-on project is named
+ * from `known`, every project of the portfolio, when the snapshot holds only the projects a filter
+ * keeps, and from the snapshot's own projects without it.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -535,16 +535,11 @@ export function waiting(
         .map((scheme) => scheme.title)
         .sort();
     const sent = focusWords(config, 'applications_sent');
-    const applications = entriesOf(snapshot.entities.collections, 'applications')
+    const applications = flaggedEntries(snapshot.entities.collections, 'awaiting')
         .filter((entry) => sent.includes(str(entry.fields.status).trim().toLowerCase()))
         .map((entry) => entry.title)
         .sort();
     return { people: tallies(people), venues: tallies(held), blocked, grants, applications };
-}
-
-/** The entries of one collection of the snapshot, and none when it holds no such file. */
-export function entriesOf(collections: Record<Id, Collection>, key: string): Entry[] {
-    return joinedEntries(collections, key);
 }
 
 /** The label a card and a ticker line carry: the short handle whenever the manifest has one. */

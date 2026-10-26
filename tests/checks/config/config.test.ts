@@ -420,27 +420,8 @@ describe('behaviorFindings', () => {
     it.each([
         [3, [['focus', 'focus must be a map; none of its keys is read']]],
         [
-            { venue_conc_warn: 'x', ticker_categories: 5 },
-            [
-                ['focus.venue_conc_warn', 'focus.venue_conc_warn must be a number; it is not read'],
-                ['focus.ticker_categories', 'focus.ticker_categories must be']
-            ]
-        ],
-        [{ ticker_sources: 5 }, [['focus.ticker_sources', 'focus.ticker_sources must be']]],
-        [
-            {
-                ticker_sources: [
-                    'tasks',
-                    { collection: 'tasks' },
-                    { collection: 'tasks', category: 'task', undated: 'yes' },
-                    { collection: 'events', category: 'event' }
-                ]
-            },
-            [
-                ['focus.ticker_sources[0]', 'the row is not read'],
-                ['focus.ticker_sources[1].category', 'the row is not read'],
-                ['focus.ticker_sources[2].undated', 'the field is not read']
-            ]
+            { venue_conc_warn: 'x' },
+            [['focus.venue_conc_warn', 'focus.venue_conc_warn must be a number; it is not read']]
         ]
     ])('words a focus block of the form %j', (focus, expected) => {
         const engine = scratch();

@@ -84,7 +84,7 @@ function world() {
         for (const { client } of pages) {
             client.socket.installConfig({
                 config,
-                hubs: { primary: null, lists: {}, order: [], own: config },
+                hubs: { primary: null, lists: {}, order: [], own: config, ownCollections: [] },
                 text: textCatalog(config),
                 icons: {},
                 codeThemeClasses: [],

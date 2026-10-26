@@ -11,7 +11,7 @@
 // logged under.
 
 import { json } from '@sveltejs/kit';
-import { keyOf } from '../../../data/helpers/hub-names.ts';
+import { keyOf, type RegistryWord } from '../../../data/helpers/hub-names.ts';
 import { words } from '../../core/words.ts';
 import {
     feedDeleteWrite,
@@ -23,8 +23,8 @@ import {
     radarAddWrite
 } from '../writes/bodies.ts';
 import {
-    homeNaming,
     homeOf,
+    homeOfLiterature,
     noHub,
     routeRefusal,
     rootedHome,
@@ -51,8 +51,11 @@ export type FeedRouted = Response | { outcome: WriteOutcome; kind: string };
 /** What a write that names a record answers when its record is of no hub it may reach. */
 const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
 
-/** The collection key of the saved papers. */
-const LITERATURE = 'literature';
+/**
+ * The registry word of the saved papers, which a refusal names when a hub's list has no entry of
+ * it.
+ */
+const LITERATURE: RegistryWord = 'literature';
 
 /** A refusal of the route, with its status. */
 function refused(error: string, status: number): Response {
@@ -133,12 +136,10 @@ export function feedRoute(
 
     const paper = literatureSaveWrite(body);
     if (paper !== null) {
-        const home = rootedHome(into, paper.root, app, () => homeNaming(into, LITERATURE, app));
+        const home = rootedHome(into, paper.root, app, () => homeOfLiterature(into, app));
         if (home instanceof Response) return home;
-        if (
-            paper.root !== undefined &&
-            !home.config.collections.some((one) => one.key === LITERATURE)
-        ) {
+        const listed = home.config.collections.some((one) => one.registry === LITERATURE);
+        if (paper.root !== undefined && !listed) {
             const error = words(
                 text,
                 'server.write_route.no_collection_in_hub',

@@ -4,6 +4,7 @@
 // what the page reads.
 
 import { describe, expect, it } from 'vitest';
+import type { RegistryWord } from '../../../src/lib/data/helpers/hub-names.ts';
 import type {
     Career,
     Collection,
@@ -74,24 +75,43 @@ const pages = createPages(
 );
 
 describe('pageView', () => {
-    it.each([
+    it.each<[string, string, string, RegistryWord | undefined, Record<string, unknown>]>([
         [
             'a person opens the Person view',
             'people',
             'hub:wim',
+            'people',
+            { view: 'person', state: { hub: 'hub', key: 'wim', label: 'Wim' } }
+        ],
+        [
+            'a person of a people registry keyed otherwise opens the Person view',
+            'folks',
+            'hub:wim',
+            'people',
             { view: 'person', state: { hub: 'hub', key: 'wim', label: 'Wim' } }
         ],
         [
             'any other entry opens the entry view',
             'venues',
             'hub:jbhi',
+            'venues',
             {
                 view: 'entry',
                 state: { collection: 'venues', hub: 'hub', key: 'jbhi', label: 'Wim' }
             }
+        ],
+        [
+            'an entry of a collection keyed people that names no registry opens the entry view',
+            'people',
+            'hub:wim',
+            undefined,
+            {
+                view: 'entry',
+                state: { collection: 'people', hub: 'hub', key: 'wim', label: 'Wim' }
+            }
         ]
-    ])('%s', (_name, collectionKey, key, opened) => {
-        expect(pageView(collectionKey, key, 'Wim')).toEqual(opened);
+    ])('%s', (_name, collectionKey, key, registry, opened) => {
+        expect(pageView(collectionKey, key, 'Wim', registry)).toEqual(opened);
     });
 });
 

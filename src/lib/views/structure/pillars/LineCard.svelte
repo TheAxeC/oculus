@@ -48,7 +48,7 @@
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
     const {
-        selectors: { configMap }
+        selectors: { configMap, registryKey }
     } = useState();
     const flight = $derived(inFlight(projects, configMap(), vocabOf));
     const strip = $derived(tierStrip(projects, venues, tiers, configMap(), vocabOf));
@@ -60,7 +60,7 @@
 
 <div class:dormant={isDormant(projects, configMap(), vocabOf)} class:muted data-pillar={line.id}>
     <RegistryCard
-        collection="pillars"
+        collection={registryKey('pillars', rootOf(line))}
         id={line.id}
         {cursor}
         title={line.title}

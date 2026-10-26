@@ -203,7 +203,7 @@ export function buildIndex(
         for (const collection of Object.values(snapshot.entities.collections)) {
             for (const entry of collection.entries) {
                 const label = entry.title || bareId(entry);
-                const page = pageView(bareId(collection), entry.id, label);
+                const page = pageView(bareId(collection), entry.id, label, collection.registry);
                 found.push({
                     id: `collection:${collection.id}:${entry.id}`,
                     kind: 'collection',

@@ -28,13 +28,18 @@ type Sent = { what: string; fields: unknown; root: string | undefined };
 
 /**
  * A client whose portfolio holds the collection in the hubs named, each carrying its hub's name,
- * and whose writes record what they were asked and answer an entry written.
+ * the Literature collection keyed `literature` and naming the `literature` registry, and whose
+ * writes record what they were asked and answer an entry written.
  */
 function clientOf(hubs: string[], sent: Sent[]): ClientState {
     const client = {
         fs: { primary: () => PRIMARY },
         selectors: {
-            collectionsOfKey: () => hubs.map((name) => ({ root: name }))
+            collectionsOfKey: (key: string) =>
+                hubs.map((name) => ({ id: `${name}:${key}`, root: name })),
+            registryCollections: (registry: string) =>
+                hubs.map((name) => ({ id: `${name}:literature`, root: name, registry })),
+            registryKey: () => 'literature'
         },
         writes: {
             writeToken: () => 'token',

@@ -7,7 +7,7 @@
 
 import { describe, expect } from 'vitest';
 import { inAppsFolder } from '../../../../src/lib/data/helpers/files/apps/apps.ts';
-import type { Entry } from '../../../../src/lib/state/boards/collection.ts';
+import type { Entry } from '../../../../src/lib/state/boards/collection/index.ts';
 import {
     openBookmark,
     openPage,

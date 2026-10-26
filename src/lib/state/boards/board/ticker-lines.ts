@@ -1,6 +1,7 @@
 // Layer 2, client state. The lines the ticker is made of, and the builders that make them: the
-// shape of a line, the glyph of each category, the follow-ups that are due and the pending lines of
-// one checklist. The projects' and entries' lines are built in ticker.ts out of these builders.
+// shape of a line, the glyphs of an overdue line, a follow-up and a subtask, the follow-ups that
+// are due and the pending lines of one checklist. The projects' and entries' lines are built in
+// ticker.ts out of these builders.
 
 import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
@@ -9,16 +10,12 @@ import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.t
 import { snoozed } from '../focus.ts';
 import { daysUntil } from './index.ts';
 
-/** The glyph each category is drawn with, by the names of config/catalogs/glyphs.yml. */
+/**
+ * The glyph an overdue line, a follow-up and a subtask are drawn with, by the names of
+ * config/catalogs/glyphs.yml; a dated line of a category is drawn with its word's glyph
+ * (`ticker_categories`).
+ */
 export const GLYPHS: Record<string, string> = {
-    paper: 'paper',
-    funding: 'coin',
-    event: 'events',
-    teaching: 'teaching',
-    collab: 'collab',
-    task: 'tasks',
-    position: 'scout',
-    conference: 'conference',
     overdue: 'overdue',
     followup: 'followup',
     subtask: 'pin'
@@ -29,7 +26,8 @@ export const GLYPHS: Record<string, string> = {
  * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
  * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
  * `followup` note is marked done, which takes it out of its list, a snoozed line is woken, and a
- * `lead` carries none: its line opens the Leads view, where its actions are.
+ * `lead` and a `venue` carry none: a lead's line opens the Leads view, where its actions are, and a
+ * venue's call opens the Venues view.
  *
  * Keeping the words out is what lets one view draw every group: the buttons are the write path's
  * vocabulary and the sentences are the text catalogs', and neither of them is here.
@@ -38,8 +36,14 @@ export type TickerTarget = {
     kind: 'manifest' | 'entry' | 'funding' | 'venue' | 'lead' | 'followup';
     /** The project id, the entry id, the scheme id, the venue id, or the lead's own title. */
     id: string;
-    /** The collection an `entry` target sits in. */
+    /**
+     * The key, in the record's own hub, of the collection an `entry` target sits in, of the funding
+     * collection a `funding` target's scheme sits in, and of the collection a `followup` note's
+     * holder sits in when the holder is no project.
+     */
     collection?: string;
+    /** Set on an entry of the collection flagged `tasks`, whose line is a task an agent takes. */
+    task?: true;
     /** The key of the subtask line, for a line that is one. */
     subtask?: string;
     /** The key of the follow-up note, for a `followup` line. */

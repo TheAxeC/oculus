@@ -68,13 +68,13 @@
     import { isExpired, localDate } from '$lib/state/feeds/leads';
     import { isDismissed } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
-    import { REFERRED, referrersOf } from '$lib/state/forms/referrers';
+    import { listsReferrers, referrersOf } from '$lib/state/forms/referrers';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
     import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { stateRecord } from '$lib/state/shared/page/records';
-    import { lookup, t } from '$lib/state/shared/words/text';
-    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { t } from '$lib/state/shared/words/text';
+    import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
     import { useState } from '$lib/state/client/use';
     import { vocabOf } from '$lib/state/shared/words/tones';
@@ -146,10 +146,12 @@
     );
 
     const snapshot = $derived(portfolio());
+    /**
+     * Whether the page lists the entry's referrers, by the registry its collection's entry names.
+     */
+    const referred = $derived(listsReferrers(collection ?? held.at(0) ?? null));
     const referrers = $derived(
-        snapshot === null || !REFERRED.includes(collectionKey)
-            ? []
-            : referrersOf(snapshot, configMap(), collectionKey, key)
+        snapshot === null || !referred ? [] : referrersOf(snapshot, configMap(), collectionKey, key)
     );
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
@@ -212,9 +214,14 @@
         return page === null ? t('views.entry') : page.title;
     }
 
-    /** The words the entry's collection or feed is named by. */
+    /**
+     * The words the entry's collection or feed is named by: the file's title, else the name of the
+     * view registered under its key, else the key.
+     */
     function collectionTitle(): string {
-        return collection?.title ?? lookup(`views.${collectionKey}`);
+        if (collection !== null) return collection.title;
+        const view = client.registry.viewFor(collectionKey);
+        return view === undefined ? collectionKey : registrationLabel(view);
     }
 
     /** Open the workbench of the entry's folder, with this entry's page in its documents pane. */
@@ -290,8 +297,8 @@
                     fault={faults.get(entry.index)}
                     onsaid={say}
                     more
-                    extra={taskCardActions(collectionKey, entry, configMap(), startAgent).concat(
-                        literatureCardActions(collectionKey, entry, writeToken, say)
+                    extra={taskCardActions(collection, entry, configMap(), startAgent).concat(
+                        literatureCardActions(collection, entry, writeToken, say)
                     )}
                 />
             {:else if feedEntry !== null && collectionKey === 'leads'}
@@ -323,7 +330,7 @@
                 </section>
             </Surface>
 
-            {#if REFERRED.includes(collectionKey)}
+            {#if referred}
                 <Surface>
                     <Referrers {referrers} />
                 </Surface>

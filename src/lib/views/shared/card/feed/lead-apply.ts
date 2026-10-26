@@ -1,6 +1,7 @@
 // Layer 3, view helper of views/shared/card/feed/LeadCard.svelte. A lead's `applied` hand-off,
 // which the Leads view and the lead's own page both offer through the card: the Applications file
-// of a hub opened beside the view the card is drawn in, with an entry filled from the lead
+// of a hub, the file of its collection flagged `lead_applications`, opened beside the view the
+// card is drawn in, with an entry filled from the lead
 // (state/feeds/lead-application.ts) placed in its unsaved text, and then the lead set to the status
 // carrying `lead_applied` in `lead_statuses` of the lead's own hub. The entry's status is the word
 // carrying `default_application` in `statuses` of the hub that takes it. The hubs it offers are
@@ -14,19 +15,25 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import { appliedWord, type LeadEntry } from '$lib/state/feeds/leads';
-import { APPLICATIONS, LEADS_FEED, applicationFromLead } from '$lib/state/feeds/lead-application';
+import { LEADS_FEED, applicationFromLead } from '$lib/state/feeds/lead-application';
 import { sourceFileState } from '$lib/state/sessions/source/place';
 import { viewSourceFile } from '$lib/state/sessions/view-source';
-import { fileUnder, hubsTaking, rootOf } from '$lib/state/shared/page/hubs';
+import { bareId, fileUnder, hubsTaking, rootOf } from '$lib/state/shared/page/hubs';
 import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
 import { vocabOf } from '$lib/state/shared/words/tones';
 import { t } from '$lib/state/shared/words/text';
 import { answerWords } from '../../forms/answer-words';
 import { placeInFile } from '../../forms/entry-file';
 
-/** The hubs whose Applications file the portfolio holds, the primary first. */
+/**
+ * The hubs whose Applications file the portfolio holds, the collection flagged
+ * `lead_applications`, the primary first.
+ */
 export function applyHubs(client: ClientState): string[] {
-    return hubsTaking(client.selectors.collectionsOfKey(APPLICATIONS), client.fs.primary());
+    return hubsTaking(
+        client.selectors.flaggedCollections('lead_applications'),
+        client.fs.primary()
+    );
 }
 
 /**
@@ -41,25 +48,26 @@ export async function applyFromLead(
     beside: string,
     hub: string
 ): Promise<string> {
-    const { collectionsOfKey, configMap } = client.selectors;
+    const { configMap, flaggedCollections } = client.selectors;
     const primary = client.fs.primary();
-    const holders = collectionsOfKey(APPLICATIONS);
+    const holders = flaggedCollections('lead_applications');
     const held = holders.find((one) => rootOf(one) === hub);
     if (held === undefined) {
         return holders.length === 0
             ? t('leads.action.no_applications')
             : t('leads.action.hub_no_applications', hub);
     }
+    const key = bareId(held);
     const file =
         hub === primary
-            ? viewSourceFile('collection', configMap(), primary, APPLICATIONS)
+            ? viewSourceFile('collection', configMap(), primary, key)
             : fileUnder(held.file, client.fs.roots(), primary);
     if (file === null) return '';
     const placed = await placeInFile(
         client,
         file,
         held.schema,
-        APPLICATIONS,
+        key,
         applicationFromLead(entry, vocabOf(hub)),
         (one) => client.layout.openBeside('source', sourceFileState(client, one), undefined, beside)
     );

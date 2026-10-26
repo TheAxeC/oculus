@@ -6,13 +6,15 @@
 //
 // The rule answers what is wrong as a kind and its arguments and holds no sentence; each caller
 // words the kind from its own text catalog. What needs the disk or the value the file held stays
-// with its caller: a folder or file that is there, a parked list's items, a family's shape. A word
+// with its caller: a folder or file that is there, a parked list's items, the fields of a family's
+// records. A family field is held to its form (a list of records, a map, or one record). A word
 // block (the control `words`) is checked against the list its `from` names for its words and
 // against that list's flags (`flagged`) for its flags.
 
 import { BLOCK_LISTS, type WordBlock } from '../../../shapes/boards/words.ts';
 import {
     classOfHex,
+    familyForm,
     flagSources,
     hueNames,
     hueOfClass,
@@ -35,6 +37,8 @@ export type ValueProblem =
     | { kind: 'numbers' }
     | { kind: 'strings' }
     | { kind: 'records' }
+    | { kind: 'pairs' }
+    | { kind: 'record' }
     | { kind: 'block' }
     | { kind: 'flag'; sources: string[] }
     | { kind: 'choice'; values: string[] }
@@ -214,6 +218,38 @@ function listProblem(spec: CatalogEntry, value: unknown): ValueProblem | null {
     return null;
 }
 
+/**
+ * What is wrong with the shape of a family field's value, by its form: a list of records, a map
+ * whose every value is one text, number or flag (or a list of them where the field holds lists or
+ * its value is a list), or one record. Each field of a record, a key and a value are the caller's
+ * to check, against the lists of their own sources.
+ */
+function familyProblem(spec: CatalogEntry, value: unknown): ValueProblem | null {
+    switch (familyForm(spec)) {
+        case 'record':
+            return isMap(value) ? null : { kind: 'record' };
+        case 'pairs': {
+            if (!isMap(value)) return { kind: 'pairs' };
+            const control = spec.fields?.value.control;
+            const lists =
+                spec.holds === 'lists' ||
+                control === 'list' ||
+                control === 'multi' ||
+                control === 'parked';
+            const fits = (one: unknown): boolean =>
+                scalar(one) || (lists && Array.isArray(one) && one.every(scalar));
+            return Object.values(value).every(fits) ? null : { kind: 'pairs' };
+        }
+        default:
+            return Array.isArray(value) && value.every(isMap) ? null : { kind: 'records' };
+    }
+}
+
+/** Whether a value is one text, number or flag. */
+function scalar(value: unknown): boolean {
+    return ['string', 'number', 'boolean'].includes(typeof value);
+}
+
 /** What is wrong with a glyph, a hue or a colour, checked against the lists handed in. */
 function paletteProblem(spec: CatalogEntry, text: string, lists: RuleLists): ValueProblem | null {
     switch (spec.control) {
@@ -255,7 +291,7 @@ export function valueProblem(
         case 'parked':
             return stringList(value) ? null : { kind: 'strings' };
         case 'records':
-            return Array.isArray(value) && value.every(isMap) ? null : { kind: 'records' };
+            return familyProblem(spec, value);
         case 'words':
             return blockProblem(spec, value, lists);
         case 'text':

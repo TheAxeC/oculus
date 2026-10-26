@@ -15,9 +15,14 @@
 export { engineDir } from '../places/engine-dir.ts';
 
 /**
- * The pure reader of the `collections:` keys lives with the registry keys it excludes, client-safe.
+ * The pure readers of the collection views a `collections:` list registers, client-safe:
+ * `collectionViews` of the merged list alone, which utils/diagrams/palette.mjs registers the
+ * palette page's views from, and `workspaceCollectionViews` of the list joined with every hub's.
  */
-export { collectionKeys, workspaceCollectionKeys } from '../snapshot/normalise.ts';
+export { collectionViews, workspaceCollectionViews } from '../snapshot/normalise.ts';
+
+/** The group the rail places a collection view in when its entry names none. */
+export { unplacedGroup } from './config/rail.ts';
 
 export {
     type DownloadAccount,

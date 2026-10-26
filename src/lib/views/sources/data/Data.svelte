@@ -47,7 +47,7 @@
 
     let { instance }: ViewProps = $props();
 
-    const file = registryFile(client, 'datasets', 'data');
+    const file = registryFile(client, 'datasets');
     const allDatasets = $derived(datasets());
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));

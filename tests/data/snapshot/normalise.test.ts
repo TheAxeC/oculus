@@ -6,11 +6,11 @@ import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import { normalise } from '../../../src/lib/data/snapshot/normalise.ts';
 import type {
     DocPresence,
-    RawCollection,
     RawManifest,
     RawPortfolio,
     RawRegistry,
     RawRegistryEntry,
+    ReadCollection,
     RegistryName
 } from '../../../src/lib/data/model/index.ts';
 
@@ -50,13 +50,14 @@ function entries(name: RegistryName, items: Record<string, unknown>[]): RawRegis
     };
 }
 
-function collection(key: string, items: Record<string, unknown>[]): RawCollection {
+function collection(key: string, items: Record<string, unknown>[]): ReadCollection {
     const file = `/hub/${key}.yml`;
     return {
         key,
         file,
         meta: { title: key.toUpperCase(), intro: 'about it' },
-        entries: items.map((fields, index) => ({ ...fields, provenance: { file, index } }))
+        entries: items.map((fields, index) => ({ ...fields, provenance: { file, index } })),
+        index: 0
     };
 }
 

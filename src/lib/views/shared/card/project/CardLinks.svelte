@@ -36,6 +36,7 @@
     import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
+    import { addressOfId } from '$lib/state/shared/page/hubs';
 
     const client = useState();
     const {
@@ -167,8 +168,10 @@
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
         if (kind.key === RELATED) return () => openView('project', recordState(tag.id, tag.label));
         if (kind.key === TEAM) return () => openView('person', recordState(tag.id, tag.label));
-        if (linkView(kind.key) === '') return null;
-        return () => goto(client, linkView(kind.key), tag.label);
+        const funding = client.selectors.registryKey('funding', addressOfId(item.id).hub);
+        const view = linkView(kind.key, funding);
+        if (view === '') return null;
+        return () => goto(client, view, tag.label);
     }
 </script>
 

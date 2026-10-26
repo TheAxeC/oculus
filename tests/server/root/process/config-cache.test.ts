@@ -271,7 +271,7 @@ describe('the config cache of the server context', () => {
             others: () => [],
             folders: () => [],
             vocabs: () => ({
-                vocabs: { primary: null, lists: {}, order: [], own: {} },
+                vocabs: { primary: null, lists: {}, order: [], own: {}, ownCollections: [] },
                 files: []
             })
         });

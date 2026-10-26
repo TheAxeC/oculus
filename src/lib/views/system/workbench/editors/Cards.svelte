@@ -1,12 +1,14 @@
 <script lang="ts">
     // Layer 3, view partial. The entries of one list of an editor, as the form of the draft draws
     // them: one box per item for a list, a key and a value per entry for a key/value table, a card
-    // with a control per catalog field for a record (FieldControl.svelte), and for a field that is
-    // a nested list of records the same cards again inside the card. Each entry has Move up, Move
-    // down and Remove, and the list ends with Add; a value merged in oculus's place (`ordered`
-    // false) has no Move, since the merge keeps oculus's order. A list that names its items
-    // (`slots`) draws one box per name with no Add, Remove or Move; a parked list draws its items
-    // with Remove alone; a multi is one card holding its picker.
+    // with a control per catalog field for a record (FieldControl.svelte), and for a family field
+    // the same cards again inside the card: a card per record of a nested list, a key and a value
+    // per key of a map, and one card for a field that holds one record (`single`), which offers Add
+    // only while it holds none and no Move. Each entry has Move up, Move down and Remove, and the
+    // list ends with Add; a value merged in oculus's place (`ordered` false) has no Move, since the
+    // merge keeps oculus's order. A list that names its items (`slots`) draws one box per name with
+    // no Add, Remove or Move; a parked list draws its items with Remove alone; a multi is one card
+    // holding its picker.
     //
     // A value a record holds that its control cannot show is drawn after the card's fields as the
     // file has it, with the sentence that the control cannot show it, and so is a field the catalog
@@ -40,7 +42,9 @@
     import {
         cardsOf,
         controlOf,
+        familyForm,
         fromText,
+        pairValueSpec,
         textOf,
         type Card,
         type FieldSpec,
@@ -71,6 +75,8 @@
         slots?: string[];
         /** A list whose items can only be removed. */
         removeOnly?: boolean;
+        /** A field that holds one record: Add only while it holds none, and no Move. */
+        single?: boolean;
         /**
          * Whether the entries can be moved: false for a value merged in oculus's place, which
          * keeps oculus's order.
@@ -94,6 +100,7 @@
         title = '',
         slots,
         removeOnly = false,
+        single = false,
         ordered = true,
         discards = 0,
         onedit
@@ -156,7 +163,9 @@
      * Whether a field draws its name before its control: in a card, and in a list of named slots.
      */
     const worded = $derived(!inline || slots !== undefined);
-    const movable = $derived(!fixed && !removeOnly && ordered);
+    const movable = $derived(!fixed && !removeOnly && ordered && !single);
+    /** Whether the list ends with Add: a field of one record only while it holds none. */
+    const adds = $derived(!fixed && !removeOnly && (!single || cards.length === 0));
 
     /** The name of a field in a control's label, with the nested list it is in. */
     function nameOf(name: string, at: number): string {
@@ -175,6 +184,13 @@
     /** The spec of a field, or nothing for a name the catalog does not give. */
     function specOf(name: string): FieldSpec | undefined {
         return Object.hasOwn(specs, name) ? specs[name] : undefined;
+    }
+
+    /** The specs of the cards of a family field: a map's key and value, else its fields. */
+    function innerSpecs(spec: FieldSpec): Record<string, FieldSpec> {
+        const fields = spec.fields ?? {};
+        if (familyForm(spec) !== 'pairs') return fields;
+        return { key: fields.key, value: pairValueSpec(spec) };
     }
 
     /** The fields of a card its controls draw: not those it keeps as the file has them. */
@@ -205,13 +221,15 @@
                 {#each drawnOf(card) as name (name)}
                     {@const spec = specOf(name)}
                     {#if spec !== undefined && controlOf(spec) === 'records'}
+                        {@const inner = innerSpecs(spec)}
                         <div class="nested" data-field={name}>
                             <span class="word">{name}</span>
                             <Cards
                                 cards={cardsOf(card.fields[name])}
-                                fields={Object.keys(spec.fields ?? {})}
-                                specs={spec.fields ?? {}}
-                                form="nested"
+                                fields={Object.keys(inner)}
+                                specs={inner}
+                                form={familyForm(spec) === 'pairs' ? 'pairs' : 'nested'}
+                                single={familyForm(spec) === 'record'}
                                 {lists}
                                 {instance}
                                 {base}
@@ -312,7 +330,7 @@
             onclick={() => (shown += PAGE)}
         />
     {/if}
-    {#if !fixed && !removeOnly}
+    {#if adds}
         <ToolButton label={t('settings.editor_add')} glyph="add" onclick={add} />
     {/if}
 </div>

@@ -217,7 +217,7 @@ describe('a make', () => {
             action: 'hub',
             root: 'ws',
             path: 'f',
-            keys: ['venues', 'literature']
+            keys: ['funding', 'tasks']
         });
         expect(answer).toEqual({
             status: 200,
@@ -225,22 +225,43 @@ describe('a make', () => {
                 ok: true,
                 written: [
                     '.oculus/config.yml',
-                    '.oculus/data/research/venues.yml',
-                    '.oculus/data/literature/literature.yml'
+                    '.oculus/data/academic/funding.yml',
+                    '.oculus/data/academic/tasks.yml'
                 ]
             }
         });
         const folder = join(w.ws, 'f');
         const config = parse(readFileSync(join(folder, '.oculus/config.yml'), 'utf8')) as {
-            collections: { key: string; file: string }[];
+            collections: Record<string, unknown>[];
         };
+        // Each entry as the template line writes it: its registry, flags, ticker and words.
         expect(config.collections).toEqual([
-            { key: 'venues', file: '.oculus/data/research/venues.yml' },
-            { key: 'literature', file: '.oculus/data/literature/literature.yml' }
+            {
+                key: 'funding',
+                file: '.oculus/data/academic/funding.yml',
+                registry: 'funding',
+                ticker: { category: 'funding' },
+                group: 'academic',
+                order: 0,
+                label: 'views.funding',
+                glyph: 'views.funding_glyph',
+                about: 'files.make_collection_line_funding'
+            },
+            {
+                key: 'tasks',
+                file: '.oculus/data/academic/tasks.yml',
+                tasks: true,
+                ticker: { category: 'task', undated: true },
+                group: 'academic',
+                order: 5,
+                label: 'views.tasks',
+                glyph: 'views.tasks_glyph',
+                about: 'files.make_collection_line_tasks'
+            }
         ]);
         for (const file of [
-            '.oculus/data/research/venues.yml',
-            '.oculus/data/literature/literature.yml'
+            '.oculus/data/academic/funding.yml',
+            '.oculus/data/academic/tasks.yml'
         ]) {
             expect(parse(readFileSync(join(folder, file), 'utf8'))).toHaveProperty('schema');
         }

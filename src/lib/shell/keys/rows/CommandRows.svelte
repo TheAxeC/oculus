@@ -31,7 +31,7 @@
     import { landOn } from '$lib/shell/keys/palette-open';
     import { addTask, taskTitleRefusal } from '$lib/state/forms/new-entry';
     import type { TaskHubList } from '$lib/shell/keys/lists/task-hub-list.svelte';
-    import { pageView } from '$lib/state/forms/page-entry';
+    import { writtenPage } from '$lib/state/forms/page-entry';
     import { commandRowValue, type CommandRow } from '$lib/shell/keys/palette-modes';
     import type {
         CommandOutcome,
@@ -54,7 +54,7 @@
         fs: { primary },
         layout: { openView, reopenClosed },
         notices,
-        selectors: { collectionsOfKey, configMap, vocabOf },
+        selectors: { configMap, flaggedCollections, vocabOf },
         writes: { newEntry },
         float
     } = client;
@@ -121,9 +121,10 @@
     async function addTaskTitled(title: string, open: boolean, hub?: string): Promise<void> {
         if (adding) return;
         adding = true;
+        const tasks = flaggedCollections('tasks');
         const added = await addTask(
             title,
-            collectionsOfKey('tasks'),
+            tasks,
             primary(),
             configMap(),
             newEntry,
@@ -136,7 +137,8 @@
             onsaid(added.said);
             return;
         }
-        const page = pageView('tasks', added.id, added.label);
+        // The task's page opens under the key its hub gives the collection it was written to.
+        const page = writtenPage(tasks, added.id, added.label);
         notices.post(t('app.palette.task_added', added.label), {
             actions: [
                 {

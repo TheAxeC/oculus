@@ -279,6 +279,32 @@ const fundStage = z.strictObject({
         .describe('The statuses of a funding entry that place it in this stage.')
 });
 
+/**
+ * One word of `ticker_categories`, a deadline category of the command center: the dotted keys of
+ * the text-catalog words it is drawn with, and the flag the code reads.
+ */
+const tickerWord = z.strictObject({
+    label: text
+        .optional()
+        .describe("The dotted key of the word the category's group is headed by."),
+    glyph: text
+        .optional()
+        .describe("The dotted key of the word holding the glyph name the category's lines carry."),
+    noun: text
+        .optional()
+        .describe(
+            'The dotted key of the word a dated line of an entry or a lead is named by, as in "task in 3d".'
+        ),
+    overdue_noun: text
+        .optional()
+        .describe(
+            'The dotted key of the word an overdue line of an entry is named by; absent, the `noun`.'
+        ),
+    manifests: flag(
+        "The category of the project manifests' deadlines: the first word carrying it is read."
+    )
+});
+
 /** config/catalogs/vocab.yml: the controlled vocabularies the boards and the schemas draw from. */
 export const vocabFileShape = z.strictObject({
     palette: textMap
@@ -331,6 +357,12 @@ export const vocabFileShape = z.strictObject({
         .optional()
         .describe(
             'The hue name of the bar of each collection lane of the Focus board: funding, jobs and teaching.'
+        ),
+    ticker_categories: z
+        .record(z.string(), tickerWord)
+        .optional()
+        .describe(
+            "The command center's deadline categories, in the order it groups its dated lines, each with the words it is drawn with; a `collections:` entry's `ticker:` names one."
         ),
     facet_tones: textMap
         .optional()

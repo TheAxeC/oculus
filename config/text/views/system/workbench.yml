@@ -103,7 +103,7 @@ text:
         pages_rename_label: Name of {0}
         pages_toolbar: Pages actions
         pages_unsaved: unsaved
-        rail_about: "Each row is a button on the rail: its words, its icon, the page it shows, and the chord and heading icon of the page's group in the view catalogue, which is headed by the button's words."
+        rail_about: "Each row is a button on the rail: its words, its icon, the page it shows, and the chord and heading icon of the page's group in the view catalogue, which is headed by the button's words. The one row with Unplaced collections ticked holds the collection views whose entry names no group."
         rail_chord: Chord of button {0}
         rail_chord_empty: No chord
         rail_group_glyph: Group icon of button {0}
@@ -112,6 +112,9 @@ text:
         rail_word_group_glyph: Group icon
         rail_why_chord: 'button {0} names a chord that is not one lowercase letter'
         rail_why_group_glyph_unknown: 'button {0} names a group icon glyphs.yml does not hold'
+        rail_unplaced: Unplaced collections
+        rail_unplaced_of: "Button {0}'s group takes the collection views whose entry names no group"
+        rail_why_unplaced: 'button {0} has an unplaced collections flag that is not true or false'
         rail_add: Add a button
         rail_down: Move button {0} down
         rail_empty: The rail has no button.

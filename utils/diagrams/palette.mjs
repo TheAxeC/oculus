@@ -83,7 +83,10 @@ export async function paletteText(engine) {
 
         const registry = registryMod.createRegistry({ closeInstancesOfView: () => undefined });
         views.registerAll(registry);
-        views.registerCollections(registry, source.collectionKeys(config));
+        views.registerCollections(
+            registry,
+            source.collectionViews(config, source.unplacedGroup(config))
+        );
 
         const pinItems = [false, true].flatMap((pinned) =>
             palette.pinItems(

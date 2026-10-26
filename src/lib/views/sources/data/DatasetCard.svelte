@@ -38,12 +38,16 @@
 
     const client = useState();
     const {
-        layout: { openView, openBeside }
+        layout: { openView, openBeside },
+        selectors: { registryKey }
     } = client;
 
     type Props = RecordCardProps & { dataset: Dataset };
 
     let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
+
+    /** The key the dataset's hub gives the datasets registry, which its page and writes name. */
+    const collection = $derived(registryKey('datasets', rootOf(dataset)));
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
@@ -79,7 +83,7 @@
     function openPage(): void {
         if (entry === null) return;
         const page = pageView(
-            'data',
+            collection,
             entry.id,
             dataset.name === '' ? keyOf(dataset.id) : dataset.name
         );
@@ -181,7 +185,7 @@
 </div>
 
 {#if card.deleting && entry !== null}
-    <DeleteAsk collection="data" id={entry.id} {onsaid} onclose={card.close} />
+    <DeleteAsk {collection} id={entry.id} {onsaid} onclose={card.close} />
 {/if}
 
 <style>

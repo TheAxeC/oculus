@@ -36,88 +36,105 @@ import type {
     Pillar,
     Project,
     Reproduced,
-    RawCollection,
     RawDeck,
     RawEntry,
     RawManifest,
     RawPortfolio,
     RawRegistryEntry,
+    ReadCollection,
     RepositoryBlock,
     Resource,
     SchemaField,
     Snapshot,
     HubVocabs,
+    ListedCollection,
     Venue
 } from '../model/index.ts';
 import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
-import { tierOf } from '../helpers/hub-names.ts';
-import { vocabKeys } from '../shapes/vocab-keys.ts';
 import {
-    followups,
-    mapShape,
-    readOr,
-    rowsShape,
-    stringItemsShape,
-    subtasks
-} from '../shapes/shapes.ts';
+    collectionFiles,
+    hasCardList,
+    isFeedEntry,
+    placedKeys,
+    tierOf
+} from '../helpers/hub-names.ts';
+import { vocabKeys } from '../shapes/vocab-keys.ts';
+import { followups, mapShape, readOr, stringItemsShape, subtasks } from '../shapes/shapes.ts';
 
 /**
- * Registry-backed collection keys. Normalise carries these both as entities and collections so
- * their dedicated views can display entities and edit the same records through collection schemas.
- * Config registration uses this list to omit their duplicate generic collection views. `funding`
- * remains a generic collection because its editable collection view is its only dedicated view.
+ * The entries of a list with a card-list view of their own (`hasCardList`), each key once, the
+ * first entry of a key the one kept.
  */
-export const REGISTRY_KEYS = ['venues', 'datasets', 'pillars', 'domains', 'data'];
-
-/** The `key` of one entry of the `collections:` list: a text with something in it. */
-const collectionKeyShape = z.object({ key: z.string().min(1) }).transform((entry) => entry.key);
-
-/** The `collections:` list as the keys it names. */
-const collectionKeysShape = rowsShape(collectionKeyShape);
-
-/** The keys of the `collections:` list that name a YAML feed's file, which is no collection. */
-export const FEED_COLLECTION_KEYS = ['leads', 'radar'] as const;
-
-/** Whether a key of the `collections:` list names a YAML feed's file. */
-export function isFeedCollection(key: string): key is (typeof FEED_COLLECTION_KEYS)[number] {
-    return (FEED_COLLECTION_KEYS as readonly string[]).includes(key);
-}
-
-/**
- * The keys of the `collections:` list of config/defaults/sources.yml, in the file's order, minus
- * the four that name a registry with a dedicated view and the two that name a feed's file. They
- * ship as the page's data and the page registers the collection view once per key and again on
- * every config push, so a collection is added through sources.yml and its owner catalog file; the
- * collection registration supplies its group and order.
- */
-export function collectionKeys(config: Record<string, unknown>): string[] {
-    const keys: string[] = [];
-    for (const key of readOr(collectionKeysShape, config.collections, [])) {
-        if (REGISTRY_KEYS.includes(key) || isFeedCollection(key)) continue;
-        if (!keys.includes(key)) keys.push(key);
+function cardLists(list: readonly ListedCollection[]): ListedCollection[] {
+    const kept: ListedCollection[] = [];
+    for (const entry of list) {
+        if (isFeedEntry(entry) || !hasCardList(entry)) continue;
+        if (!kept.some((one) => one.key === entry.key)) kept.push(entry);
     }
-    return keys;
+    return kept;
 }
 
 /**
- * The collection keys the page registers a view for: the keys a hub of the workspace lists
- * (`HubVocab.collections`), in the merged config's order (`collectionKeys`) and then each hub's,
- * the registry and feed keys left out as there. A collection only a hub other than the primary
- * lists has its view, and a collection of the engine's list that no hub lists has none, so the
- * catalogue and the palette offer no view whose tab its pane would leave out.
+ * The collection views the page registers, each entry with the place, label and glyph it gives,
+ * the keys of oculus's own entries a page places (`placedKeys`), whose tabs a pane keeps while the
+ * views are gone, and the group a view whose entry names no `group:` is placed in: the page of the
+ * rail entry carrying `unplaced_collections`, or null when none does.
  */
-export function workspaceCollectionKeys(
+export type CollectionViews = {
+    views: ListedCollection[];
+    placed: string[];
+    unplaced: string | null;
+};
+
+/**
+ * The collection views of the `collections:` list of a merged config, in the list's order: each
+ * entry with a card-list view of its own, each key once. A registry one of oculus's views draws and
+ * a feed have none. The placed keys are the list's own. `unplaced` is the group the merged
+ * config's rail places the other views in (data/sources/config/rail.ts `unplacedGroup`, a folder
+ * above this one), handed through as it is given.
+ */
+export function collectionViews(
     config: Record<string, unknown>,
-    hubs: HubVocabs | null
-): string[] {
-    const listed = Object.values(hubs?.lists ?? {}).flatMap((vocab) => vocab.collections);
-    const keys = collectionKeys(config).filter((key) => listed.includes(key));
-    for (const key of listed) {
-        if (REGISTRY_KEYS.includes(key) || isFeedCollection(key)) continue;
-        if (!keys.includes(key)) keys.push(key);
-    }
-    return keys;
+    unplaced: string | null
+): CollectionViews {
+    const list = collectionFiles(config.collections);
+    return { views: cardLists(list), placed: placedKeys(list), unplaced };
+}
+
+/**
+ * The collection views the page registers: one per key a hub of the workspace lists
+ * (`HubVocab.collections`) with a card-list view, its place, label and glyph from the first hub in
+ * the workspace's order (the primary first) whose entry has that key, and the keys in the merged
+ * config's order (`collectionViews`) and then each hub's. A collection only a hub other than the
+ * primary lists has its view, and a collection of the engine's list that no hub lists has none, so
+ * the catalogue and the palette offer no view whose tab its pane would leave out. The placed keys
+ * are those of oculus's own list, the merged config's with no hubs read, and `unplaced` is handed
+ * through as `collectionViews` hands it.
+ */
+export function workspaceCollectionViews(
+    config: Record<string, unknown>,
+    hubs: HubVocabs | null,
+    unplaced: string | null
+): CollectionViews {
+    const order = hubs?.order ?? [];
+    const lists = Object.entries(hubs?.lists ?? {}).sort(
+        ([one], [two]) => rank(order, one) - rank(order, two)
+    );
+    const listed = cardLists(lists.flatMap(([, vocab]) => vocab.collections));
+    const merged = collectionViews(config, unplaced);
+    const keys = [...merged.views.map((entry) => entry.key), ...listed.map((entry) => entry.key)];
+    return {
+        views: [...new Set(keys)].flatMap((key) => listed.filter((entry) => entry.key === key)),
+        placed: hubs === null ? merged.placed : placedKeys(hubs.ownCollections),
+        unplaced
+    };
+}
+
+/** The place of a hub's name in the workspace's order, a name it does not hold after them all. */
+function rank(order: readonly string[], name: string): number {
+    const at = order.indexOf(name);
+    return at < 0 ? order.length : at;
 }
 
 /**
@@ -136,14 +153,6 @@ export const ENTITY_KINDS = [
     'resources',
     'collections'
 ];
-
-/**
- * The collection of joint work: one entry per piece of work with one person, whose `person:` field
- * is a key of the people registry. The key is named here because the relation table is built from
- * that collection and nowhere else; state/boards/collection.ts holds the same word for the client
- * side, which may not import this module.
- */
-const JOINT_WORK = 'joint-work';
 
 /** The field of a joint-work entry that names its person. */
 const PERSON_FIELD = 'person';
@@ -525,28 +534,30 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
     return fieldsOf(value);
 }
 
-function collection(raw: RawCollection): Collection {
+function collection(raw: ReadCollection): Collection {
     const schema = collectionSchema(raw.meta.schema);
     const ident = schema?.[0]?.field ?? 'title';
+    const { key, file, meta, entries, ...traits } = raw;
     return compact({
-        id: raw.key,
-        title: str(raw.meta.title) ?? raw.key,
-        intro: str(raw.meta.intro),
-        file: raw.file,
+        ...traits,
+        id: key,
+        title: str(meta.title) ?? key,
+        intro: str(meta.intro),
+        file,
         schema,
-        entries: raw.entries.map((item, index) => entry(item, index, ident))
+        entries: entries.map((item, index) => entry(item, index, ident))
     });
 }
 
 /**
- * Every entry of the joint-work collection that names a person, as the pair the relation is built
- * from, with the file the entry stands in. An entry with no `person:` field, or one whose value is
- * not a string, is no pair here and is a finding of validate's; it is not repaired.
+ * Every entry of the collections flagged `joint_work` that names a person, as the pair the relation
+ * is built from, with the file the entry stands in. An entry with no `person:` field, or one whose
+ * value is not a string, is no pair here and is a finding of validate's; it is not repaired.
  */
 export function jointWorkRows(collections: Collection[]): { id: Id; person: Id; file: string }[] {
-    const held = collections.find((one) => one.id === JOINT_WORK);
+    const held = collections.filter((one) => one.joint_work === true);
     const rows: { id: Id; person: Id; file: string }[] = [];
-    for (const one of held?.entries ?? []) {
+    for (const one of held.flatMap((collection) => collection.entries)) {
         const key = str(one.fields[PERSON_FIELD]);
         if (key !== undefined && key.length > 0) {
             rows.push({ id: one.id, person: key, file: one.file });

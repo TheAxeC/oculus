@@ -161,7 +161,10 @@ describe('the display language', () => {
             primary: () => null,
             others: () => [],
             folders: () => [],
-            vocabs: () => ({ vocabs: { primary: null, lists: {}, order: [], own: {} }, files: [] })
+            vocabs: () => ({
+                vocabs: { primary: null, lists: {}, order: [], own: {}, ownCollections: [] },
+                files: []
+            })
         });
         expect(textCatalog(cache.read().config)['views.settings']).toBe('Instellingen');
         now = {

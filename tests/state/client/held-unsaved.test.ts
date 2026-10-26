@@ -203,13 +203,20 @@ describe('a write to an entry of a hub other than the primary', () => {
         const lab = { root: 'lab', path: '.oculus/data/literature/literature.yml' };
         const writes = createWrites(
             () => ({
-                collections: [{ key: 'literature', file: '.oculus/data/literature/literature.yml' }]
+                collections: [
+                    {
+                        key: 'papers',
+                        file: '.oculus/data/literature/literature.yml',
+                        registry: 'literature'
+                    }
+                ]
             }),
             (file) => file.root === lab.root && file.path === lab.path,
             {
                 ...NO_LOOKUPS,
                 primary: () => 'hub',
-                collectionFile: (hub, name) => (hub === 'lab' && name === 'literature' ? lab : null)
+                registryKey: (_hub, registry) => (registry === 'literature' ? 'papers' : ''),
+                collectionFile: (hub, name) => (hub === 'lab' && name === 'papers' ? lab : null)
             }
         );
         const paper = { doi: '10.1000/one' };
@@ -226,7 +233,16 @@ describe('a write to an entry of a hub other than the primary', () => {
 describe('a Settings write over a file a source tab holds unsaved text of', () => {
     const WORKSPACE = '.oculus/workspaces/main.yml';
     const HUB = '/work/hub';
-    const RAIL = [{ label: 'Files', glyph: 'files', page: 'files', chord: '', group_glyph: '' }];
+    const RAIL = [
+        {
+            label: 'Files',
+            glyph: 'files',
+            page: 'files',
+            chord: '',
+            group_glyph: '',
+            unplaced_collections: true
+        }
+    ];
 
     /**
      * A dirty tab of `held` in the hub, the open workspace file at `open` (null when no workspace
@@ -429,10 +445,11 @@ describe('a write that adds a record and names no hub, in a workspace with no pr
                 ...NO_LOOKUPS,
                 hubs: () => ['one', 'two'],
                 feeds,
+                registryKey: (_hub, registry) => (registry === 'literature' ? 'papers' : ''),
                 collectionFile: (hub, name) =>
                     name === 'tasks' && hub === 'one'
                         ? { root: hub, path: '.oculus/data/academic/tasks.yml' }
-                        : name === 'literature' && hub === 'two'
+                        : name === 'papers' && hub === 'two'
                           ? { root: hub, path: 'literature.yml' }
                           : null
             }

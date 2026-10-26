@@ -48,7 +48,7 @@
 <g id="node34" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="1609.92,-59.24 1590.81,-59.24 1590.81,-46.76 1609.92,-46.76 1609.92,-59.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1600.37" y="-50.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">485</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1600.37" y="-50.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">489</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge41" class="edge">
@@ -177,7 +177,7 @@
 <g id="node40" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="589.79,-70.24 566.24,-70.24 566.24,-57.76 589.79,-57.76 589.79,-70.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="578.02" y="-61.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1056</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="578.02" y="-61.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1057</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge53" class="edge">
@@ -200,7 +200,7 @@
 <g id="node17" class="node">
 <title>routes to data</title>
 <polygon fill="none" stroke="none" points="1284.69,-292.24 1270.04,-292.24 1270.04,-279.76 1284.69,-279.76 1284.69,-292.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1277.37" y="-283.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">36</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1277.37" y="-283.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">37</text>
 </g>
 <!-- routes&#45;&gt;routes to data -->
 <g id="edge7" class="edge">
@@ -244,7 +244,7 @@
 <g id="node21" class="node">
 <title>routes to state</title>
 <polygon fill="none" stroke="none" points="437.61,-47.24 422.96,-47.24 422.96,-34.76 437.61,-34.76 437.61,-47.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="430.29" y="-38.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">28</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="430.29" y="-38.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
 </g>
 <!-- routes&#45;&gt;routes to state -->
 <g id="edge15" class="edge">

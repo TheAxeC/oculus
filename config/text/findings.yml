@@ -10,6 +10,16 @@ text:
         collections:
             file_missing: collection file does not exist
             key_read_twice: collection key {0} is already read from {1}
+            registry_unknown: 'registry {0} names no registry; the entry is a plain collection'
+            registry_twice: 'registry {0} is already named by the entry {1}; that entry is the registry and this one a plain collection'
+            flag_twice: '{0} is already set on the entry {1}; that entry is the one read'
+            group_unknown: 'group {0} names no rail page and no nav_groups key; the view is placed as one whose entry names no group'
+            word_unknown: '{0} names no word of the text catalog; the field is not read'
+            category_unknown: 'ticker category {0} names no word of ticker_categories; the entry gives no ticker lines'
+            ticker_unread: 'the ticker {0} of the entry {1} is not a map of a category word and an undated flag; the entry gives no ticker lines'
+            skip_unread: 'the dissemination_skip {0} of the entry {1} is not a map of fields to a value or a list of values; Disseminated in leaves none of its entries out'
+            view_id: "the key {0} is the id of one of oculus's own views; the collection gets no card-list view"
+            ticker_word_unknown: 'the {0} of the ticker category {1} names no word of the text catalog; the field is not read'
         registries:
             file_missing: registry file does not exist
             entry_no_id: entry has no string {0}
@@ -49,6 +59,9 @@ text:
             repeated: a second rail button names the page {0}; only the first is drawn
             chord: the rail button for {0} names a chord that is not one lowercase letter; its group has no chord
             group_glyph_unknown: the rail button for {0} names a group glyph glyphs.yml does not hold; its group heading takes the glyph of its first view
+            unplaced: the rail button for {0} has an unplaced_collections that is not true or false; its group does not take the collection views no entry places
+            unplaced_none: no rail button carries unplaced_collections; a collection view whose entry names no group is in no group of the view catalogue
+            unplaced_twice: the rail button for {0} carries unplaced_collections, as the one for {1} does; the collection views no entry places go in the group of {1}
         appearance:
             glyph: the theme {0} names no glyph; it is offered with its words alone
             glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
@@ -170,7 +183,6 @@ text:
             setting_field: '{0} must be {1}; the field is not read'
             focus_block: 'focus must be a map; none of its keys is read'
             focus_value: '{0} must be {1}; it is not read'
-            focus_row: '{0} must be {1}; the row is not read'
             counts_block: 'counts must be a map; no view draws a count'
             counts_view: '{0} names no view that draws a count; the row is not read'
             counts_field: '{0} is not a field this row takes; it is not read'
@@ -213,7 +225,7 @@ text:
             no_fields: a records field names no fields; it is drawn as a text box
             range: min is above max; the option is drawn as a text box
             slots: slots is not a list of words; the option is drawn as a text box
-            holds: 'holds: lists is taken only by a family whose fields are key and value; the entry is read without it'
+            holds: 'holds: {0} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it'
             heading_missing: the option names no heading; it is listed under Without a heading
             heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
             whole: whole is not true; the option is drawn as a text box
@@ -242,6 +254,8 @@ text:
             numbers: a list of numbers
             strings: a list of texts
             records: a list of maps
+            pairs: a map whose every value is one value, or a list of values where the field takes one
+            record: one map of the fields of the record
             block: 'a map of the lists words, not_words, flags and not_flags, each a list of words'
             flag: 'one of the flags of the list {0}'
             choice: 'one of {0}'

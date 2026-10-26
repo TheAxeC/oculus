@@ -57,8 +57,9 @@ export type CollectionFile = {
 
 /**
  * The three generated feed files the command center reads a count and a run date out of. They are
- * hub-relative like every other path in the config: the files of the `collections:` entries keyed
- * `leads` and `radar`, and `linkedin_dir`.
+ * hub-relative like every other path in the config: the files of the `collections:` entries whose
+ * `registry:` is `leads` and `radar`, whatever their key, oculus's entry of each when the list
+ * names none, and `linkedin_dir`.
  */
 export type FeedFiles = {
     leads: string;
@@ -645,8 +646,8 @@ export type Person = Rooted & {
     /**
      * Absolute path of the people file of the hub the person was read from, set by the merge of the
      * hubs. The Person view opens it under that hub's root for a person of a hub other than the
-     * primary, and the file the configuration's `collections:` entry keyed `people` names for a
-     * person of the primary.
+     * primary, and the file of the configuration's `collections:` entry whose `registry:` is
+     * `people` for a person of the primary.
      */
     file?: string;
     /**
@@ -654,7 +655,9 @@ export type Person = Rooted & {
      * whose team the person is; filled from the other side of the relation.
      */
     projectIds: Id[];
-    /** Entries of the joint-work collection whose `person:` is this key, by entry id. */
+    /**
+     * Entries of every collection flagged `joint_work` whose `person:` is this key, by entry id.
+     */
     jointWorkIds: Id[];
 };
 

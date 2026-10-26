@@ -666,7 +666,7 @@ describe('a hub reports only the files its own configuration names', () => {
 
     it('raises the finding for a registry its own collections list names and does not hold', () => {
         const { snapshot, lab } = joinedWith(
-            'scan:\n  - { dir: . }\ncollections:\n  - { key: venues, file: lists/venues.yml }\n',
+            'scan:\n  - { dir: . }\ncollections:\n  - { key: venues, file: lists/venues.yml, registry: venues }\n',
             PROJECTS
         );
         expect(
@@ -681,7 +681,8 @@ describe('a hub reports only the files its own configuration names', () => {
 
     it('reads a registry from the collections entry that names it and leaves the others unnamed', () => {
         const hub = plantScratch('oculus-collections-named-', {
-            '.oculus/config.yml': 'collections:\n  - { key: venues, file: elsewhere/venues.yml }\n'
+            '.oculus/config.yml':
+                'collections:\n  - { key: venues, file: elsewhere/venues.yml, registry: venues }\n'
         });
         const { config, from } = loadConfig(engineDir(), { hub });
         const named = portfolioConfigFrom(config, from);
@@ -696,7 +697,7 @@ describe('a hub reports only the files its own configuration names', () => {
     it('reads a feed from the collections entry that names it, as no collection, and finds a named file that is not there', () => {
         const hub = plantScratch('oculus-collections-feed-', {
             '.oculus/config.yml':
-                'collections:\n  - { key: radar, file: elsewhere/radar.yml }\n  - { key: leads, file: gone/leads.yml }\n',
+                'collections:\n  - { key: radar, file: elsewhere/radar.yml, registry: radar }\n  - { key: leads, file: gone/leads.yml, registry: leads }\n',
             'elsewhere/radar.yml': 'meta:\n  last_run: the last pass\nentries: []\n'
         });
         const { config, from } = loadConfig(engineDir(), { hub });
@@ -722,7 +723,8 @@ describe('a hub reports only the files its own configuration names', () => {
         "reads Literature from the engine's path when its list names none and it %s",
         (_name, held) => {
             const hub = plantScratch('oculus-collections-literature-', {
-                '.oculus/config.yml': 'collections:\n  - { key: venues, file: lists/venues.yml }\n',
+                '.oculus/config.yml':
+                    'collections:\n  - { key: venues, file: lists/venues.yml, registry: venues }\n',
                 'lists/venues.yml': 'entries: []\n',
                 ...(held
                     ? {
@@ -739,7 +741,9 @@ describe('a hub reports only the files its own configuration names', () => {
             expect({
                 file: literature?.file,
                 titles: literature?.entries.map((one) => one.fields.title),
-                listed: hubVocabOf(hub, portfolio).collections.includes('literature'),
+                listed: hubVocabOf(hub, portfolio).collections.some(
+                    (one) => one.registry === 'literature'
+                ),
                 findings: built.snapshot.findings.filter((one) =>
                     one.file.endsWith('literature.yml')
                 )
@@ -759,7 +763,7 @@ describe('a hub reports only the files its own configuration names', () => {
     it('reads the first of two collections entries for one key and names the key in a finding', () => {
         const hub = plantScratch('oculus-collections-twice-', {
             '.oculus/config.yml':
-                'collections:\n  - { key: venues, file: one.yml }\n  - { key: venues, file: two.yml }\n'
+                'collections:\n  - { key: venues, file: one.yml, registry: venues }\n  - { key: venues, file: two.yml, registry: venues }\n'
         });
         const { config, from } = loadConfig(engineDir(), { hub });
         const portfolio = portfolioConfigFrom(config, from);

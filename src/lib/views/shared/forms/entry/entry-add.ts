@@ -17,14 +17,21 @@
 
 import type { PromptField } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
-import type { SchemaField } from '$lib/state/boards/collection';
+import type { Collection, SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
-import { hubsTaking, keyOf } from '$lib/state/shared/page/hubs';
+import {
+    addressOfId,
+    bareId,
+    hubsTaking,
+    keyOf,
+    rootOf,
+    type RegistryWord
+} from '$lib/state/shared/page/hubs';
 import { askFields } from '$lib/state/forms/new-entry';
 import { radarBuckets } from '$lib/state/feeds/radar';
 import { vocabOf } from '$lib/state/shared/words/tones';
 import { lookUp, lookupOf, sourceName, sourcesAsked } from '$lib/state/feeds/literature/lookup';
-import { hitPaper, LITERATURE } from '$lib/state/feeds/literature/saved';
+import { hitPaper } from '$lib/state/feeds/literature/saved';
 import { t } from '$lib/state/shared/words/text';
 import { refusalWords } from '../answer-words';
 
@@ -40,32 +47,38 @@ export type Ask = {
 };
 
 /** Open the page of the entry just added, by its id in the portfolio; its tab shows its key. */
-function openPage(client: ClientState, collection: string, id: string): void {
-    const page = pageView(collection, id, keyOf(id));
+function openPage(
+    client: ClientState,
+    collection: string,
+    id: string,
+    registry?: RegistryWord
+): void {
+    const page = pageView(collection, id, keyOf(id), registry);
     void client.layout.openView(page.view, page.state);
 }
 
 /**
- * The hubs that could take a new entry of a collection, the primary first, as the choices of Add's
- * hub question: each hub's name, which is what a write names it by.
+ * The hubs that could take a new entry of a collection, given as the collection of each hub that
+ * holds one, the primary first, as the choices of Add's hub question: each hub's name, which is
+ * what a write names it by.
  */
-function hubChoices(client: ClientState, collection: string): { id: string; label: string }[] {
-    const hubs = hubsTaking(client.selectors.collectionsOfKey(collection), client.fs.primary());
+function hubChoices(client: ClientState, held: Collection[]): { id: string; label: string }[] {
+    const hubs = hubsTaking(held, client.fs.primary());
     return hubs.map((name) => ({ id: name, label: name }));
 }
 
 /**
- * Which hub an Add writes to: the question the box asks when more than one hub names the
- * collection, `chosen` chosen when it is one of them and the primary otherwise, the primary first,
- * and the hub a box's typed values name, which is that question's answer, the one hub naming the
- * collection when there is one, and none otherwise.
+ * Which hub an Add writes to: the question the box asks when more than one hub holds the
+ * collection (`held`, each hub's), `chosen` chosen when it is one of them and the primary
+ * otherwise, the primary first, and the hub a box's typed values name, which is that question's
+ * answer, the one hub holding the collection when there is one, and none otherwise.
  */
 function hubAsk(
     client: ClientState,
-    collection: string,
+    held: Collection[],
     chosen?: string
 ): { fields: PromptField[]; rootOf: (answer: string | undefined) => string | undefined } {
-    const hubs = hubChoices(client, collection);
+    const hubs = hubChoices(client, held);
     if (hubs.length > 1) {
         const value = hubs.some((one) => one.id === chosen) ? (chosen ?? '') : hubs[0].id;
         return {
@@ -78,18 +91,26 @@ function hubAsk(
 
 /**
  * The Add of a collection: the identity value of the new entry, the registry key if any, and the
- * hub to write it in when more than one hub lists the collection, `chosen` chosen when it is one of
- * them and the primary otherwise.
+ * hub to write it in when more than one hub holds the collection, `chosen` chosen when it is one of
+ * them and the primary otherwise. `held` is the collection of each hub that holds it, those of the
+ * key `collection` unless given (a registry's, whose key each hub's list gives); the entry is
+ * written under the key of the chosen hub's collection.
  */
 export function collectionAsk(
     client: ClientState,
     collection: string,
     schema: SchemaField[] | undefined,
     title: string,
-    chosen?: string
+    chosen?: string,
+    held: Collection[] = client.selectors.collectionsOfKey(collection)
 ): Ask {
     const asked = askFields(collection, schema);
-    const hub = hubAsk(client, collection, chosen);
+    const hub = hubAsk(client, held, chosen);
+    /** The key the hub `root` names the collection by, `collection` for none. */
+    const keyIn = (root: string | undefined): string => {
+        const one = held.find((each) => rootOf(each) === root);
+        return one === undefined ? collection : bareId(one);
+    };
     return {
         message: t('entry_form.add_ask', title),
         fields: [
@@ -99,10 +120,12 @@ export function collectionAsk(
         submit: async (values) => {
             const body = Object.fromEntries(asked.map((one, at) => [one.field, values[at].trim()]));
             const root = hub.rootOf(values.at(asked.length));
-            const answer = await client.writes.newEntry(collection, body, root);
+            const key = keyIn(root);
+            const answer = await client.writes.newEntry(key, body, root);
             const sentence = refusalWords(answer);
             if (sentence === '' && answer.id !== undefined) {
-                openPage(client, collection, answer.id);
+                const into = held.find((each) => rootOf(each) === root);
+                openPage(client, key, answer.id, into?.registry);
             }
             return sentence;
         }
@@ -162,12 +185,20 @@ export function paperAsk(client: ClientState): Ask {
 }
 
 /**
- * The Add of the Literature collection: one value, a DOI or an address, and the hub to save it in
- * when more than one hub names the collection, the primary chosen. `plain` is the collection's own
- * Add, which an empty answer turns the box into, given the hub chosen in this box.
+ * The Add of the Literature collection, the one whose entry names the `literature` registry: one
+ * value, a DOI or an address, and the hub to save it in when more than one hub holds such a
+ * collection, the primary chosen. `plain` is the collection's own Add, which an empty answer turns
+ * the box into, given the hub chosen in this box. `held` is the collection of each hub the paper
+ * may be saved in, every hub's whose entry names the registry unless given (a joined view's, whose
+ * hubs' entries of its key name it). The saved paper's page opens under its hub's key of the
+ * registry.
  */
-export function literatureAsk(client: ClientState, plain: (chosen?: string) => Ask): Ask {
-    const hub = hubAsk(client, LITERATURE);
+export function literatureAsk(
+    client: ClientState,
+    plain: (chosen?: string) => Ask,
+    held: Collection[] = client.selectors.registryCollections('literature')
+): Ask {
+    const hub = hubAsk(client, held);
     return {
         message: t('entry_form.add_literature_ask'),
         fields: [{ label: t('entry_form.add_literature_value'), value: '' }, ...hub.fields],
@@ -189,7 +220,9 @@ export function literatureAsk(client: ClientState, plain: (chosen?: string) => A
             const answer = await client.writes.saveLiterature('hand', paper, hub.rootOf(chosen));
             const sentence = refusalWords(answer);
             if (sentence === '' && answer.id !== undefined) {
-                openPage(client, LITERATURE, answer.id);
+                const into = addressOfId(answer.id).hub;
+                const key = client.selectors.registryKey('literature', into);
+                openPage(client, key, answer.id);
             }
             return sentence;
         }

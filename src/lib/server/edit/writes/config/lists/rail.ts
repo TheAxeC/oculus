@@ -29,14 +29,18 @@ const LAYOUT = 'layout.yml';
 /** What a rail write answers with: what it changed or why it was refused, or `invalid`. */
 export type RailOutcome = ConfigKeyOutcome | { error: 'invalid' };
 
-/** One entry as the file holds it: its chord and group glyph only when it has them. */
-function written(entry: RailEntry): Record<string, string> {
+/**
+ * One entry as the file holds it: its chord and group glyph only when it has them, and its
+ * `unplaced_collections` only when it carries it.
+ */
+function written(entry: RailEntry): Record<string, string | boolean> {
     return {
         label: entry.label,
         glyph: entry.glyph,
         page: entry.page,
         ...(entry.chord === '' ? {} : { chord: entry.chord }),
-        ...(entry.group_glyph === '' ? {} : { group_glyph: entry.group_glyph })
+        ...(entry.group_glyph === '' ? {} : { group_glyph: entry.group_glyph }),
+        ...(entry.unplaced_collections ? { unplaced_collections: true } : {})
     };
 }
 

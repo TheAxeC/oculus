@@ -1,13 +1,14 @@
-// Layer 3, shared view helper. Copy BibTeX of the Literature collection: on one entry's card, which
-// the collection view (views/boards/collection/Collection.svelte) and the entry page
-// (views/boards/entry/Entry.svelte) both draw, and of every entry the view shows, from its toolbar.
-// The entries are made by state/feeds/literature/bibtex.ts under each entry's own key; the copy
-// puts them on the clipboard and says how many it copied and which it could not.
+// Layer 3, shared view helper. Copy BibTeX of the collection whose entry names the `literature`
+// registry: on one entry's card, which the collection view
+// (views/boards/collection/Collection.svelte) and the entry page (views/boards/entry/Entry.svelte)
+// both draw, and of every entry the view shows, from its toolbar. The entries are made by
+// state/feeds/literature/bibtex.ts under each entry's own key; the copy puts them on the clipboard
+// and says how many it copied and which it could not.
 
 import { routeBody } from '$lib/state/feeds/literature/answers';
 import { savedEntriesFor, type Copied } from '$lib/state/feeds/literature/bibtex';
-import { LITERATURE, savedPaperOf } from '$lib/state/feeds/literature/saved';
-import type { Entry } from '$lib/state/boards/collection';
+import { savedPaperOf } from '$lib/state/feeds/literature/saved';
+import type { Collection, Entry } from '$lib/state/boards/collection';
 import { t } from '$lib/state/shared/words/text';
 import type { CardAction } from '../CardActions.svelte';
 
@@ -34,14 +35,18 @@ export async function copyBibtex(entries: Entry[], token: string): Promise<strin
     return copiedWords(copied);
 }
 
-/** The extra control of a Literature entry's card, Copy BibTeX, and none for another collection. */
+/**
+ * The extra control of a Literature entry's card, Copy BibTeX, for an entry of the collection whose
+ * entry names the `literature` registry (`collection` holds the entry, null for none), and none
+ * for another collection.
+ */
 export function literatureCardActions(
-    collection: string,
+    collection: Pick<Collection, 'registry'> | null,
     entry: Entry,
     token: () => string,
     onsaid: (words: string) => void
 ): CardAction[] {
-    if (collection !== LITERATURE) return [];
+    if (collection?.registry !== 'literature') return [];
     return [
         {
             id: 'bibtex',

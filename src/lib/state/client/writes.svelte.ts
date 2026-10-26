@@ -24,7 +24,7 @@
 
 import { tick } from 'svelte';
 import { fields } from '../../data/helpers/guards.ts';
-import { keyOf } from '../../data/helpers/hub-names.ts';
+import { addressOfId, keyOf } from '../../data/helpers/hub-names.ts';
 import { readJson } from '../../data/shapes/shapes.ts';
 import { answerShape, refusalsShape, writeTimeout } from './shapes/write-answer.ts';
 import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps/apps.ts';
@@ -38,6 +38,7 @@ import {
     type FileLookups
 } from '../sessions/source/write-files.ts';
 import { isPageFeed, type Settle } from '../forms/page-entry.ts';
+import type { RailEntry } from '../../data/sources/config/rail.ts';
 import type {
     DeckEditAct,
     FollowupAction,
@@ -473,7 +474,8 @@ export function createWrites(
     /**
      * Save one paper to the Literature collection of the hub `root` names, else of the primary when
      * it names the collection, else of the first hub that does. The answer's `id` is the paper's
-     * id in the portfolio: the hub the server wrote and the key it gave the paper.
+     * id in the portfolio: the hub the server wrote and the key it gave the paper; the page holds
+     * the paper under that hub's key of the `literature` registry until the snapshot does.
      */
     async function saveLiterature(
         source: 'search' | 'lit-watch' | 'hand',
@@ -487,7 +489,8 @@ export function createWrites(
                 : { kind: 'literature-save', source, paper, root }
         );
         if (answer.ok && answer.id !== undefined) {
-            settle.added('literature', answer.id, { ...paper, key: keyOf(answer.id) }, seq);
+            const key = look.registryKey(addressOfId(answer.id).hub, 'literature');
+            settle.added(key, answer.id, { ...paper, key: keyOf(answer.id) }, seq);
         }
         return answer;
     }
@@ -542,10 +545,7 @@ export function createWrites(
      * file's `settings:`, over oculus's rail entry by entry, and the watcher pushes the config,
      * which is what redraws the rail.
      */
-    async function writeRail(
-        rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[],
-        said = false
-    ): Promise<WriteAnswer> {
+    async function writeRail(rail: RailEntry[], said = false): Promise<WriteAnswer> {
         return send({ kind: 'rail', rail }, '/api/write', { said });
     }
 

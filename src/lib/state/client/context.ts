@@ -58,7 +58,7 @@ import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
 import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs } from '../sources/fs.svelte.ts';
-import { fileNamed, hubId } from '../../data/helpers/hub-names.ts';
+import { fileNamed, hubId, registryKeyOf } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
 import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
@@ -199,6 +199,8 @@ export function createClientState(
                 const held = entities.portfolio()?.entities.collections[hubId(hub, name)];
                 return held === undefined ? null : fileNamed(held.file, fs.roots(), fs.primary());
             },
+            registryKey: (hub, registry) =>
+                registryKeyOf(entities.config()?.hubs ?? null, hub, registry) ?? '',
             feeds: () => entities.feeds(),
             changeFile: (at) => {
                 const file = changes.rows().find((row) => row.at === at)?.file;

@@ -51,13 +51,12 @@
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { hubPathsOf } from '$lib/state/boards/collection';
-    import { PEOPLE } from '$lib/state/forms/page-entry';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { recordState, stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
+    import { addressOfId, bareId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -68,7 +67,7 @@
         fs: { primary, roots },
         layout: { openView },
         pages: { pageOf },
-        selectors: { configMap },
+        selectors: { configMap, flaggedCollections, registryKey },
         source: { unsavedFile },
         ui: { setSelf }
     } = client;
@@ -78,8 +77,10 @@
     /** The person this instance was opened for, from the state the tag handed openView. */
     const key = $derived(stateRecord(instance.state));
     const join = $derived(personJoin(portfolio(), key));
+    /** The key the person's hub gives the people registry, which the page and Delete name. */
+    const people = $derived(registryKey('people', addressOfId(key).hub));
     /** The person's registry entry as the editor sees it. */
-    const page = $derived(key === '' ? null : pageOf(PEOPLE, key));
+    const page = $derived(key === '' ? null : pageOf(people, key));
     const editFile = $derived(page === null ? null : pageFile(client, page));
     const fault = $derived(page === null ? undefined : pageFault(client, page));
     /** Why Delete is disabled: unsaved text of the people file, or an identity no write names. */
@@ -167,9 +168,14 @@
         openView('project', recordState(id, label));
     }
 
-    /** Open the joint-work collection, where the entries drawn here are edited. */
+    /**
+     * Open the joint-work collection, where the entries drawn here are edited: the collection
+     * flagged `joint_work` of the person's hub, else the first hub's.
+     */
     function openJointWork(): void {
-        openView('joint-work');
+        const held = flaggedCollections('joint_work');
+        const own = held.find((one) => rootOf(one) === hub) ?? held.at(0);
+        if (own !== undefined) openView(bareId(own));
     }
 </script>
 
@@ -329,7 +335,7 @@
 
 {#if deleting && page !== null}
     <DeleteAsk
-        collection={PEOPLE}
+        collection={people}
         id={key}
         onsaid={(answer: string) => (said = answer)}
         onclose={() => (deleting = false)}

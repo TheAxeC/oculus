@@ -7,10 +7,12 @@
 // A field is held in a draft as its typed value (FieldValue): a boolean for a toggle, the box's
 // text for a number, a string for text, long, choice, glyph, hue, colour, folder, file and path, a
 // list of words for multi, list and parked, a word block (its lists `words`, `not_words`, `flags`
-// and `not_flags`, each held while it has a word) for words, and a list of cards for a nested list
-// of records. A field the record does not hold is absent from the card, which is how a field is
-// unset. A held value its control cannot show (`tab_size: "4"`) is not read into the card's fields:
-// it stays in the card's `kept` as the file has it, and is sent back unchanged.
+// and `not_flags`, each held while it has a word) for words, and a list of cards for a family
+// field: a card per record of a nested list, a card of `key` and `value` per key of a map, and the
+// one card of a field that holds one record. A field the record does not hold is absent from the
+// card, which is how a field is unset. A held value its control cannot show (`tab_size: "4"`) is
+// not read into the card's fields: it stays in the card's `kept` as the file has it, and is sent
+// back unchanged.
 //
 // The sentences are messages (messages.ts) for the view to word; nothing here holds one. The page
 // refuses the number, form and path problems here, before the write, by the rule the server's write
@@ -26,6 +28,7 @@ import {
 } from '../../../../data/shapes/boards/words.ts';
 import {
     classOfHex,
+    familyForm,
     flagSources,
     hueHex,
     hueOfClass,
@@ -46,7 +49,7 @@ import {
 import { message, type Message } from '../messages.ts';
 import type { Lists } from './sources.ts';
 
-export { BLOCK_LISTS };
+export { BLOCK_LISTS, familyForm };
 export type { BlockList, CatalogEntry, FieldSpec };
 
 /** What a field holds in a draft; see the head of this file. */
@@ -183,6 +186,52 @@ export function cardsFrom(list: unknown[], specs: Record<string, FieldSpec>): Ca
     return cards;
 }
 
+/**
+ * The spec a value of a map field is drawn and read by: its `value` field, a list of texts where
+ * the field holds lists and its value is one text, so one box per item holds either.
+ */
+export function pairValueSpec(spec: CatalogEntry): FieldSpec {
+    const value = spec.fields?.value ?? { help: '', control: 'text' };
+    const single = value.control !== 'list' && value.control !== 'multi';
+    return spec.holds === 'lists' && single ? { ...value, control: 'list' } : value;
+}
+
+/**
+ * What the value of a family field reads into, by its form (familyForm): the cards of a list of
+ * records; one card per key of a map, its `key` and `value` fields; or the one card of a record.
+ * A value of another shape is not shown; a record of a list that cannot be drawn breaks the card.
+ */
+function readFamily(spec: CatalogEntry, held: unknown): Read {
+    const fields = spec.fields ?? {};
+    switch (familyForm(spec)) {
+        case 'record': {
+            if (!isMap(held)) return STUCK;
+            const card = cardOf(held, fields);
+            return card === null ? { kind: 'broken' } : value([card]);
+        }
+        case 'pairs': {
+            if (!isMap(held)) return STUCK;
+            // A map that holds lists holds one value at a key as that value, which its own spec
+            // reads, and a list by the list of its items.
+            const inner = pairValueSpec(spec);
+            const one = spec.holds === 'lists' ? (spec.fields?.value ?? inner) : inner;
+            const cards = Object.entries(held).map(([key, at]): Card => {
+                const read = readField(Array.isArray(at) ? inner : one, at);
+                const card: Card = { fields: { key }, kept: {}, order: [] };
+                if (read.kind === 'value') card.fields.value = read.value;
+                else card.kept.value = at;
+                return card;
+            });
+            return value(cards);
+        }
+        default: {
+            if (!Array.isArray(held)) return STUCK;
+            const cards = cardsFrom(held, fields);
+            return cards === null ? { kind: 'broken' } : value(cards);
+        }
+    }
+}
+
 /** What a value the file holds for a field reads into, by the field's control. */
 export function readField(spec: CatalogEntry, held: unknown): Read {
     switch (controlOf(spec)) {
@@ -211,11 +260,8 @@ export function readField(spec: CatalogEntry, held: unknown): Read {
             return Array.isArray(held) && held.every((one) => typeof one === 'string')
                 ? value(held.map(String))
                 : STUCK;
-        case 'records': {
-            if (!Array.isArray(held)) return STUCK;
-            const cards = cardsFrom(held, spec.fields ?? {});
-            return cards === null ? { kind: 'broken' } : value(cards);
-        }
+        case 'records':
+            return readFamily(spec, held);
         case 'words':
             return isBlock(held)
                 ? value(Object.fromEntries(Object.entries(held).map(([k, v]) => [k, [...v]])))

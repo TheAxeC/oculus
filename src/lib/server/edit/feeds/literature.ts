@@ -1,13 +1,13 @@
-// Layer 2, server. Save to Literature: one paper written to the `literature` collection file of a
-// hub, and the undo that takes it out again byte for byte.
+// Layer 2, server. Save to Literature: one paper written to the Literature file of a hub, and the
+// undo that takes it out again byte for byte.
 //
-// The file is the one the hub's `collections:` list names under the key `literature`, else the
-// engine's path for that key when the hub holds a file there. The paper's text is cleaned to plain
-// text as Lit Watch cleans it (data/prose/literature.ts), its key is made by literature-key.ts from
-// the file as it is read here, and a paper the file holds already is refused: the same DOI, or,
-// when either has no DOI, the same title, and for a paper saved from an address alone the same
-// address. The result is parsed again and kept only when it is the file as it was with this one
-// entry added.
+// The file is the one of the entry of the hub's `collections:` list that names the `literature`
+// registry, else the path of oculus's entry of it when the hub holds a file there. The paper's text
+// is cleaned to plain text as Lit Watch cleans it (data/prose/literature.ts), its key is made by
+// literature-key.ts from the file as it is read here, and a paper the file holds already is
+// refused: the same DOI, or, when either has no DOI, the same title, and for a paper saved from an
+// address alone the same address. The result is parsed again and kept only when it is the file as
+// it was with this one entry added.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -23,6 +23,7 @@ import {
     samePaper,
     wholeNumber
 } from '../../../data/prose/literature.ts';
+import { collectionFiles } from '../../../data/helpers/hub-names.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { inside } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
@@ -36,37 +37,33 @@ import type { LiteratureSaveWrite } from '../writes/bodies.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
-/** The collection key of the saved papers. */
-const LITERATURE = 'literature';
-
 /** The field a literature entry is keyed by. */
 const KEY = 'key';
 
 /** Where a saved paper came from, one of the options of the file's `source` field. */
 type LiteratureSource = LiteratureSaveWrite['source'];
 
-/** The `collections:` entries of a configuration, each a key and a file. */
-const listedShape = z.array(z.looseObject({ key: z.string(), file: z.string() })).catch([]);
-
 /**
  * The path the engine's own `collections:` list, in its configuration `engineConfig`, gives the
- * Literature file, if it names one.
+ * Literature file, the file of its entry of the `literature` registry, if it names one.
  */
 export function engineLiteraturePath(engineConfig: Record<string, unknown>): string | undefined {
-    const listed = listedShape.parse(engineConfig.collections);
-    return listed.find((one) => one.key === LITERATURE)?.file;
+    return collectionFiles(engineConfig.collections).find((one) => one.registry === 'literature')
+        ?.file;
 }
 
 /**
- * The Literature file of a hub: the file its `collections:` list names, else the engine's path
- * when the hub holds a file there, and null when there is neither or the path leaves the hub.
+ * The Literature file of a hub: the file of the entry of its `collections:` list that names the
+ * `literature` registry, else the engine's path when the hub holds a file there, and null when
+ * there is neither or the path leaves the hub.
  */
 export function literatureFile(
     hub: string,
     config: PortfolioConfig,
     enginePath: string | undefined
 ): string | null {
-    const named = config.collections.find((one) => one.key === LITERATURE)?.file ?? enginePath;
+    const named =
+        config.collections.find((one) => one.registry === 'literature')?.file ?? enginePath;
     if (named === undefined) return null;
     const path = resolve(join(hub, named));
     return inside(path, hub) && existsSync(path) ? path : null;

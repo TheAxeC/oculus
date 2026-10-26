@@ -35,6 +35,7 @@ import type {
     StatePayload,
     UsagePayload
 } from '../../../data/model/index.ts';
+import type { RailEntry } from '../../../data/sources/config/rail.ts';
 
 /** The payload each channel the page types carries, by channel. */
 export type Payloads = {
@@ -376,10 +377,7 @@ export type WritesStore = {
     /** One act on the files of a deck; the answer's `id` is what to show next. */
     writeDeckEdit: (act: DeckEditAct, said?: boolean) => Promise<WriteAnswer>;
     /** Rewrite the rail list; `said` when the caller posts the refusal's notification itself. */
-    writeRail: (
-        rail: { label: string; glyph: string; page: string; chord: string; group_glyph: string }[],
-        said?: boolean
-    ) => Promise<WriteAnswer>;
+    writeRail: (rail: RailEntry[], said?: boolean) => Promise<WriteAnswer>;
     /**
      * Set one option of a defaults file, by the file's name and the dotted key path, in the file
      * the user's value of it lives in; `copy` adds the key even when the value is the one in force.

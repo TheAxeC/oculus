@@ -86,88 +86,101 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.stages).toEqual(OCULUS.stages);
     });
 
-    it("takes a word the hub removes out of oculus's own lists that name it, and leaves the hub's own lists as written", () => {
-        const row = (config: Record<string, unknown>, key: string, name: string) =>
-            (config[key] as Record<string, unknown>[]).find((one) => one.key === name);
-        const everything = (read: ReturnType<typeof loadConfig>): string[] => [
-            ...said(read),
-            ...findingLines(readerFindings(read, HUB))
-        ];
-        const stage = withHub('stages: { nascent: null }\n');
-        expect(everything(stage)).toEqual([]);
-        expect(row(stage.config, 'categories', 'idea')).toEqual({
-            key: 'idea',
-            label: 'idea',
-            stages: { words: ['scoping'] }
-        });
-        expect(stage.from.categories).toBe('catalogs/vocab.yml');
-        const lane = withHub('stages: { exploring: null }\n');
-        expect(everything(lane)).toEqual([]);
-        expect(row(lane.config, 'focus_lanes', 'run')).toMatchObject({ key: 'run', stages: [] });
-        const chip = withHub('chips: { blocked: null }\n');
-        expect(everything(chip)).toEqual([]);
-        expect(row(chip.config, 'focus_lanes', 'blocked')).toMatchObject({
-            key: 'blocked',
-            chips: []
-        });
-        const tier = withHub('tiers: { research: null }\n');
-        expect(everything(tier)).toEqual([]);
-        const boards = tier.config.boards as Record<string, Record<string, unknown>>;
-        expect(boards.projects.tier).toEqual([]);
-        expect(boards.software.tier).toBe('software');
-        const own = withHub(
-            'stages: { nascent: null }\ncategories: [ { key: idea, label: idea, stages: { words: [nascent] } } ]\n'
-        );
-        expect(everything(own)).toEqual([
-            `${FILE} | categories[0].stages.words | categories[0].stages.words names nascent, which the hub's words no longer hold; it is not read`
-        ]);
-        expect(row(own.config, 'categories', 'idea')).toEqual({
-            key: 'idea',
-            label: 'idea',
-            stages: { words: [] }
-        });
-    });
+    it(
+        "takes a word the hub removes out of oculus's own lists that name it, and leaves the hub's own lists as written",
+        { tags: ['slow'] },
+        () => {
+            const row = (config: Record<string, unknown>, key: string, name: string) =>
+                (config[key] as Record<string, unknown>[]).find((one) => one.key === name);
+            const everything = (read: ReturnType<typeof loadConfig>): string[] => [
+                ...said(read),
+                ...findingLines(readerFindings(read, HUB))
+            ];
+            const stage = withHub('stages: { nascent: null }\n');
+            expect(everything(stage)).toEqual([]);
+            expect(row(stage.config, 'categories', 'idea')).toEqual({
+                key: 'idea',
+                label: 'idea',
+                stages: { words: ['scoping'] }
+            });
+            expect(stage.from.categories).toBe('catalogs/vocab.yml');
+            const lane = withHub('stages: { exploring: null }\n');
+            expect(everything(lane)).toEqual([]);
+            expect(row(lane.config, 'focus_lanes', 'run')).toMatchObject({
+                key: 'run',
+                stages: []
+            });
+            const chip = withHub('chips: { blocked: null }\n');
+            expect(everything(chip)).toEqual([]);
+            expect(row(chip.config, 'focus_lanes', 'blocked')).toMatchObject({
+                key: 'blocked',
+                chips: []
+            });
+            const tier = withHub('tiers: { research: null }\n');
+            expect(everything(tier)).toEqual([]);
+            const boards = tier.config.boards as Record<string, Record<string, unknown>>;
+            expect(boards.projects.tier).toEqual([]);
+            expect(boards.software.tier).toBe('software');
+            const own = withHub(
+                'stages: { nascent: null }\ncategories: [ { key: idea, label: idea, stages: { words: [nascent] } } ]\n'
+            );
+            expect(everything(own)).toEqual([
+                `${FILE} | categories[0].stages.words | categories[0].stages.words names nascent, which the hub's words no longer hold; it is not read`
+            ]);
+            expect(row(own.config, 'categories', 'idea')).toEqual({
+                key: 'idea',
+                label: 'idea',
+                stages: { words: [] }
+            });
+        }
+    );
 
-    it("takes a word out however the hub's value drops it, and words it once at its place in the hub's file", () => {
-        const everything = (read: ReturnType<typeof loadConfig>): string[] => [
-            ...said(read),
-            ...findingLines(readerFindings(read, HUB))
-        ];
-        const lane = withHub(
-            'chips: { blocked: null }\nfocus_lanes: [ { key: b, label: B, color: "#dc2626", cluster: parked, chips: [blocked] } ]\n'
-        );
-        expect(everything(lane)).toEqual([
-            `${FILE} | focus_lanes[0].chips | focus_lanes[0].chips names blocked, which the hub's words no longer hold; it is not read`
-        ]);
-        expect((lane.config.focus_lanes as Record<string, unknown>[])[0].chips).toEqual([]);
-        const roles = withHub('roles: [ { key: lead, label: Lead, field: lead } ]\n');
-        expect(everything(roles)).toEqual([]);
-        const boards = roles.config.boards as Record<string, Record<string, unknown>>;
-        expect(boards.supervision.role).toEqual([]);
-        expect(boards.projects.role).toBe('lead');
-        const stray = withHub('statuses: { applied: null }\nfocus: { applications_sent: [x] }\n');
-        expect(everything(stray)).toEqual([
-            `${FILE} | focus | key focus is not one the hub's settings file takes; it is not applied`
-        ]);
-        expect((stray.config.focus as Record<string, unknown>).applications_sent).toEqual([]);
-        const skip = withHub('tiers: { personal: null }\n');
-        expect(everything(skip)).toEqual([]);
-        expect(skip.config.research_audit).toEqual({ skip_tiers: [] });
-        const stage = withHub('stages: { nascent: null }\n');
-        const options = stage.config.options as Record<
-            string,
-            Record<string, { default: unknown }>
-        >;
-        const shipped = options['catalogs/vocab.yml'].categories.default as Record<
-            string,
-            unknown
-        >[];
-        expect(shipped.find((one) => one.key === 'idea')).toEqual({
-            key: 'idea',
-            label: 'idea',
-            stages: { words: ['scoping'] }
-        });
-    });
+    it(
+        "takes a word out however the hub's value drops it, and words it once at its place in the hub's file",
+        { tags: ['slow'] },
+        () => {
+            const everything = (read: ReturnType<typeof loadConfig>): string[] => [
+                ...said(read),
+                ...findingLines(readerFindings(read, HUB))
+            ];
+            const lane = withHub(
+                'chips: { blocked: null }\nfocus_lanes: [ { key: b, label: B, color: "#dc2626", cluster: parked, chips: [blocked] } ]\n'
+            );
+            expect(everything(lane)).toEqual([
+                `${FILE} | focus_lanes[0].chips | focus_lanes[0].chips names blocked, which the hub's words no longer hold; it is not read`
+            ]);
+            expect((lane.config.focus_lanes as Record<string, unknown>[])[0].chips).toEqual([]);
+            const roles = withHub('roles: [ { key: lead, label: Lead, field: lead } ]\n');
+            expect(everything(roles)).toEqual([]);
+            const boards = roles.config.boards as Record<string, Record<string, unknown>>;
+            expect(boards.supervision.role).toEqual([]);
+            expect(boards.projects.role).toBe('lead');
+            const stray = withHub(
+                'statuses: { applied: null }\nfocus: { applications_sent: [x] }\n'
+            );
+            expect(everything(stray)).toEqual([
+                `${FILE} | focus | key focus is not one the hub's settings file takes; it is not applied`
+            ]);
+            expect((stray.config.focus as Record<string, unknown>).applications_sent).toEqual([]);
+            const skip = withHub('tiers: { personal: null }\n');
+            expect(everything(skip)).toEqual([]);
+            expect(skip.config.research_audit).toEqual({ skip_tiers: [] });
+            const stage = withHub('stages: { nascent: null }\n');
+            const options = stage.config.options as Record<
+                string,
+                Record<string, { default: unknown }>
+            >;
+            const shipped = options['catalogs/vocab.yml'].categories.default as Record<
+                string,
+                unknown
+            >[];
+            expect(shipped.find((one) => one.key === 'idea')).toEqual({
+                key: 'idea',
+                label: 'idea',
+                stages: { words: ['scoping'] }
+            });
+        }
+    );
 
     it('replaces the lists whose order is their meaning whole', () => {
         const read = withHub(

@@ -21,7 +21,7 @@ import {
 
 /**
  * An instance's state with one more ask to show a path of a root in it, the rest kept. The path is
- * asked for by its segments (collection.ts's normalisePath), so `network/../funding` is `funding`;
+ * asked for by its segments (place.ts's normalisePath), so `network/../funding` is `funding`;
  * a path still climbing above its root is asked for as it is and is shown at the root's own line,
  * since no listing holds an entry named `..`. The filter is cleared, since a filter would leave the
  * row asked for out of the tree, and the last ask's outcome goes with it. With `open` the folder
