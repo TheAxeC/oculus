@@ -207,6 +207,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G132. A reference field offers the entries of the collection its `foreign_key:` names, each stored by that collection's primary key and labelled by its first filled field by `display:` rank; `vocab.<list>` offers the list's words; a key naming no collection, or a collection with no primary key, offers nothing and is a finding.
   Code: `src/lib/state/forms/schema.ts` (`recordChoices`, `entryChoices`, `choicesFor`, `targetChoices`, `vocabChoices`).
   Test: `tests/state/forms/choices.test.ts`, every row of describe 'offers the entries of the collection a reference names'.
+- G133. The user is the one person the key `self` of the primary hub's `.oculus/local.yml` names, resolved from the primary hub: the primary's person of that key, else the person of the one other hub that holds it; a key two or more other hubs hold, or one no hub holds, marks nobody and is one finding on that file; an empty key, or a workspace with no primary, marks nobody and gives no finding.
+  Code: the mark and its finding under `src/lib/data/snapshot/hubs/`.
+  Test: `tests/data/hubs/self.test.ts`, every row of describe 'the user the key self names'.
 
 ## It starts, and configuration is checked
 

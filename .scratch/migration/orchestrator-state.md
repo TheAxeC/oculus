@@ -33,6 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a932a66494c50d411 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O86-report.md
+  builder_usage: 77328 tokens, 340 tool uses, 59 min 35 s
   shared_paths: with O89, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O89, regenerated at each landing.
   round: 0
   landing: not-started
@@ -48,6 +49,8 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: with O86, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O86, regenerated at each landing. None other with O85.
   round: 0
   landing: not-started
+- step: O84
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -186,9 +189,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 465 (2026-10-26, /spec O84, its brief check): O84's mark of the user and its finding (cases 1 to 9 of `agents/briefs/O84.md`, kept aside until the ruling) need tests, and no entry of `agents/guarded.md` covers the merge of the hubs (`grep -n "snapshot/hubs\|resolveKey\|holdersOf" agents/guarded.md` prints nothing); the rules file says a step needing a new entry stops and asks Axel. Options: (a) a new entry G133: "The user is the one person the key `self` of the primary hub's `.oculus/local.yml` names, resolved from the primary hub: the primary's person of that key, else the person of the one other hub that holds it; a key two or more other hubs hold, or one no hub holds, marks nobody and is one finding on that file; an empty key, or a workspace with no primary, marks nobody and gives no finding." Code: the mark and its finding under `src/lib/data/snapshot/hubs/`. Test: `tests/data/hubs/self.test.ts`, one row per input of O84's cases 1 to 9. (b) no new entry: the mark and the finding are checked by runs the builder's report quotes, and no test guards them afterwards. Pros and cons: (a) guards who the user is, which every board, the chat and the audit read, at the cost of one small test file; (b) costs nothing now and leaves a wrong mark unguarded after O84. The lazy option is (b). Recommended: (a). Kind: a change to the user's written rules (the rules file's test rule).
-
 ## Closed items
+- 466 (2026-10-26): ruled by Axel, (a); O86's two scratch case programs are approved as programs that compute facts, booked in `plan.md` Rulings; the reviewer of O86 was told.
+- 465 (2026-10-26): ruled by Axel, (a); guarded entry G133 written in `agents/guarded.md`, booked in `plan.md` Rulings; O84 is prepared again with its test.
 - 464 (2026-10-26): ruled by Axel, (a); step O90 (the board bar's Waiting on toggle and group) booked in `plan.md` after O87, tagged (ruling 463) (ruling 464).
 - 463 (2026-10-26): ruled by Axel, (c) (the board bar gets a Waiting on toggle and a Waiting on group); booked in `plan.md` Rulings; scheduling it is open item 464.
 - 461 and 462 (2026-10-26): ruled by Axel, 461 (b) (O88 draws every grouping heading with `GroupHead`, each folding; O88's line rewritten) and 462 (a) (at O84's landing, O84's own `self` write run once on the hub's `local.yml` and `self:` taken out of the workspace file in a hub commit; O84's line rewritten); booked in `plan.md` Rulings.
