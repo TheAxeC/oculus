@@ -5173,3 +5173,12 @@ The options catalogue checks a field with no `control:` and no `fields:` as a te
 - Not chosen: (b) a new control `record` for both fields, which leaves the key/value family form unused for a field already in its shape and puts a family under the controls; (c) flattening the fields into `ticker_category`, `ticker_undated` and a text, which reverses Z1013 and Z1014. The lazy option is (d) a `map` control taking any map unchecked and drawn read-only.
 
 Where it applies: O78, its repair round 1. Booked in `plan.md` Rulings.
+
+## Z1018 (2026-10-26, O78's review, open item 414, the rail page of a collection view whose entry names no group, raised by the orchestrator's read of O78's diff, the orchestrator, automode): how a collection view with no `group:` finds its place
+
+O78's `src/lib/views/boards/collection/registration.ts:14-15` places a collection view whose `collections:` entry names no `group:` in the group `'registries'`, from order 100: a word of `config/defaults/layout.yml` (the rail page key `registries`, `layout.yml:17`) written in the code, against the rule that no config word and no hub key is written in code, and an order number with no source. A hub that renames or drops that rail page gets its unplaced collection views in a group that no longer exists.
+
+- Chosen: (a) a rail entry of `layout.yml` carries the flag `unplaced_collections: true` (set on the Registries entry), described in `config/options/layout.yml`; a collection view whose entry names no `group:` is placed in the group of the first rail entry carrying the flag, after the highest `order:` of that group's placed views; no entry carrying it, or two, is a finding, and with none the view is placed in no group and is reached from the view catalogue's ungrouped views. Settings edits the flag as it edits the rail's other fields.
+- Not chosen: (b) `group:` required on every `collections:` entry, a missing one a finding, which changes case 8 of the brief and makes every hub name a group for each entry it lists; (c) the group taken from the rail entry whose `page:` is the one the Venues view's arrangement holds, which gives a meaning to where a view is pinned. The lazy option is (d) the word left in code with a comment.
+
+Where it applies: O78, its repair round 1. Booked in `plan.md` Rulings.
