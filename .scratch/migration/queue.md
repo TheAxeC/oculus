@@ -1,7 +1,8 @@
 In flight (1 of 6 slots in use):
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), repair round 1.
 
-Queued, in order (2 steps):
+Queued, in order (3 steps):
+- O83 (one Slurm table failing alone keeps the queue and Recover live; ruling 430), being prepared; its paths are disjoint from O80's.
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waits for O80's landing (shared files not simple to merge); rulings 425 (a), 426 and 427 (a) given.
 - O81 (the grouping heading and the Venues view; rulings 395, 399 to 401, 403, 423), after O80.
 
