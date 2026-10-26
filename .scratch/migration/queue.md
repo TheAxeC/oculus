@@ -5,10 +5,10 @@ In flight (2 of 6 slots in use):
 Queued, in order: none.
 
 Owed looks:
-- none.
+- O83: the Live HPC partial and `slurm_down` states, the stale marks, the Focus pill and the rail badge with jobs; waits on open item 435.
 
 Landed, newest first:
-- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 09a1d663.
+- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 9961e0d5.
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.
 - O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
 - O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.

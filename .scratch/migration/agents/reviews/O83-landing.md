@@ -4,7 +4,7 @@ Position: roadmap entry migration (the cockpit-to-oculus migration); step O83, o
 
 ## Open items
 
-- none.
+- 435: the look at the partial and `slurm_down` states, the stale marks, the Focus pill and the rail badge needs a stub `ssh` on a scratch server's PATH, a script for Axel to approve; (a) approve it, recommended; (b) wait for the cluster to fail or hold jobs; (c) no look, the lazy option.
 
 ## Check of the agents
 
@@ -12,7 +12,7 @@ The runner's agent listing after the stops showed only O79's builder (aed0feff24
 
 ## NOT DONE
 
-- The look at the `unreachable`, `slurm_down`, partial and `error` states of Live HPC, its head bar, the Focus pill and the rail badge: the cluster host comes from `config/local.yml`, which is not opened, so no server can be pointed at a failing host. The words of each state rest on the case runs of the build and on reading `Hpc.svelte`, `Recent.svelte`, `Capacity.svelte`, `Head.svelte` and `status.ts`.
+- The look at the partial and `slurm_down` states, the stale marks, the Focus pill and the rail badge with jobs: a scratch server reaches only `unreachable` and `ok`; the rest waits on open item 435.
 
 ## What landed
 
@@ -42,7 +42,7 @@ Under the standing ruling "Unapproved builder scripts": the builder's case-run p
 - Gate (`npm run diagrams && npm run test:quick`), second run: ok prettier, ASCII gate, svelte-kit sync, eslint, svelte-check ("544 FILES 0 ERRORS 0 WARNINGS"), vitest, vitest checks; FAILED vitest slow, a 40 s timeout in `tests/server/machine/apps/tools/languages.test.ts`, a file the step does not change, which passed alone ("Tests 15 passed (15)"). The first run's eslint line was fixed, and its `runs.test.ts` slow timeout passed alone twice.
 - `npx vitest run tests/server/machine/runs/recover/runs.test.ts`: 16 passed, five runs.
 - Every one of the 23 staged paths on main equal under `cmp` to the gate's file.
-- The look on main's server: Live HPC `ok` ("live | queue empty | as of 13:14 | every 20m") and the tooltip "0 running | 0 pending | 0 total. Open Live HPC.".
+- The look on the TEST page of a scratch server on 8797: `unreachable` (the error box, no Jobs or Recent, the Login node, no rail badge, the tooltip "...on EduVPN? Open Live HPC.") and `ok` (live, queue empty, Capacity's 25 partitions, the tooltip "0 running | 0 pending | 0 total. Open Live HPC.").
 
 ## Agents
 
@@ -55,4 +55,4 @@ The builder's first report did not pass its bar; round 1 closed seven findings, 
 
 ## Next
 
-O79 and O81 report, are reviewed and land. No step is queued.
+O79 and O81 report, are reviewed and land. No step is queued. The owed O83 look waits on open item 435.
