@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O86 (the update tasks of every hub), repair round 1.
-- O89 (one record card, one way to add a dated line), building.
+- O89 (one record card, one way to add a dated line), repair round 1.
 - O84 (who the user is), building.
 
 Queued (3):

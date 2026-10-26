@@ -47,8 +47,10 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a6462cf6ae75f9bfa (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O89-report.md
+  builder_usage: 333768 tokens, 626 tool uses, 84 min 20 s
+  reviewer_report: .scratch/migration/agents/reviews/O89-refuter.md (a96110aabd9a11d96, claude-opus-5-5, 314122 tokens, 92 tool uses, 14 min 2 s)
   shared_paths: with O86, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O86, regenerated at each landing. None other with O85.
-  round: 0
+  round: 1
   landing: not-started
 - step: O84
   brief_check: .scratch/migration/agents/reviews/O84-brief-check.md (a16be0c5fb7576829, claude-opus-5-5, 291709 tokens, 129 tool uses, 16 min 43 s)
@@ -201,6 +203,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 ## Closed items
+- 467 (2026-10-26): ruled by Axel, (a); `test:quick` counts the source-scanning tree checks as related to every changed file under `src`, `tests` or `utils`; booked in `plan.md` Rulings, built in O89's repair round 1.
 - 466 (2026-10-26): ruled by Axel, (a); O86's two scratch case programs are approved as programs that compute facts, booked in `plan.md` Rulings; the reviewer of O86 was told.
 - 465 (2026-10-26): ruled by Axel, (a); guarded entry G133 written in `agents/guarded.md`, booked in `plan.md` Rulings; O84 is prepared again with its test.
 - 464 (2026-10-26): ruled by Axel, (a); step O90 (the board bar's Waiting on toggle and group) booked in `plan.md` after O87, tagged (ruling 463) (ruling 464).
